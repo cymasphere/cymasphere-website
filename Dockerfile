@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with legacy-peer-deps to handle TypeScript version conflicts
+RUN npm ci --legacy-peer-deps
 
 # Copy application code
 COPY src/ ./src/
