@@ -1,0 +1,2152 @@
+import React, { useState, useEffect } from 'react';
+import './App.css';
+
+function App() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [expandedFaqs, setExpandedFaqs] = useState({});
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  const toggleFaq = (index) => {
+    setExpandedFaqs(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  return (
+    <div className="App">
+      {/* Header */}
+      <header style={{
+        backgroundColor: scrolled ? 'rgba(18, 18, 18, 0.95)' : '#121212',
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        position: 'fixed',
+        width: '100%',
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+        boxShadow: scrolled ? '0 2px 10px rgba(0,0,0,0.3)' : 'none',
+        backdropFilter: scrolled ? 'blur(10px)' : 'none',
+        transition: 'all 0.3s ease'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img 
+            src={process.env.PUBLIC_URL + '/logo.png'} 
+            alt="Cymasphere" 
+            style={{ 
+              height: '40px', 
+              width: 'auto',
+              marginRight: '15px',
+              verticalAlign: 'middle'
+            }}
+          />
+          <h2 style={{
+            margin: 0,
+            fontFamily: "'Montserrat', 'Helvetica Neue', sans-serif",
+            fontSize: '1.4rem',
+            fontWeight: '600',
+            letterSpacing: '3px',
+            color: 'white',
+            textTransform: 'uppercase'
+          }}>
+            Cymasphere
+          </h2>
+        </div>
+        
+        <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{
+          display: 'none',
+          cursor: 'pointer',
+          zIndex: 1001,
+          position: 'relative'
+        }}>
+          <div style={{
+            width: '30px',
+            height: '3px',
+            backgroundColor: mobileMenuOpen ? 'transparent' : 'white',
+            margin: '6px 0',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            transform: mobileMenuOpen ? 'rotate(45deg)' : 'none'
+          }}></div>
+          <div style={{
+            width: '30px',
+            height: '3px',
+            backgroundColor: 'white',
+            margin: '6px 0',
+            transition: 'all 0.3s ease',
+            opacity: mobileMenuOpen ? 0 : 1
+          }}></div>
+          <div style={{
+            width: '30px',
+            height: '3px',
+            backgroundColor: 'white',
+            margin: '6px 0',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            transform: mobileMenuOpen ? 'rotate(-45deg) translate(7px, -7px)' : 'none'
+          }}></div>
+        </div>
+        
+        <nav style={{
+          transition: 'all 0.3s ease',
+          '@media (max-width: 480px)': {
+            position: 'fixed',
+            top: 0,
+            right: mobileMenuOpen ? 0 : '-100%',
+            width: '70%',
+            height: '100vh',
+            backgroundColor: '#121212',
+            boxShadow: '-5px 0 15px rgba(0,0,0,0.3)',
+            padding: '5rem 2rem 2rem',
+            zIndex: 1000
+          }
+        }}>
+          <ul style={{ 
+            display: 'flex', 
+            listStyle: 'none', 
+            margin: 0, 
+            gap: '2rem',
+            '@media (max-width: 480px)': {
+              flexDirection: 'column',
+              alignItems: 'flex-start'
+            }
+          }}>
+            <li><a href="#features" style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>Features</a></li>
+            <li><a href="#demo" style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>Demo</a></li>
+            <li><a href="#testimonials" style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>Testimonials</a></li>
+            <li><a href="#pricing" style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>Pricing</a></li>
+            <li><a href="#contact" style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>Contact</a></li>
+            <li><a href="#download" style={{ color: 'white', textDecoration: 'none', background: '#00bcd4', padding: '0.5rem 1rem', borderRadius: '4px' }}>Download</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div onClick={() => setMobileMenuOpen(false)} style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 999
+        }}></div>
+      )}
+
+      {/* Hero Section */}
+      <section style={{ 
+        backgroundColor: '#121212', 
+        minHeight: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        color: 'white',
+        padding: '120px 20px 80px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.1), transparent 50%), radial-gradient(circle at 70% 30%, rgba(78, 205, 196, 0.1), transparent 50%)',
+          zIndex: 1
+        }}></div>
+
+        {/* Animated circles */}
+        <div className="floating" style={{
+          position: 'absolute',
+          width: '300px',
+          height: '300px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(108, 99, 255, 0.05), transparent 70%)',
+          top: '20%',
+          left: '10%',
+          animationDelay: '0s',
+          animationDuration: '7s',
+          zIndex: 0
+        }}></div>
+        
+        <div className="floating" style={{
+          position: 'absolute',
+          width: '200px',
+          height: '200px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(0, 188, 212, 0.05), transparent 70%)',
+          bottom: '15%',
+          right: '10%',
+          animationDelay: '0.5s',
+          animationDuration: '5s',
+          zIndex: 0
+        }}></div>
+
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '3rem',
+          alignItems: 'center',
+          zIndex: 2
+        }}>
+          <div style={{
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            textAlign: 'left'
+          }}>
+            <h1 style={{ 
+              fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+              marginBottom: '20px',
+              backgroundImage: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              lineHeight: 1.2
+            }}>
+              Advanced Music Theory & Composition Tool
+            </h1>
+            <p style={{ 
+              fontSize: 'clamp(1rem, 1.5vw, 1.25rem)',
+              marginBottom: '40px',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              Cymasphere transforms how musicians compose by generating sophisticated chord voicings with proper voice leading. Our intelligent algorithms analyze chord progressions to create smooth, professional-sounding harmonies while handling complex music theory—so you can focus on creativity.
+            </p>
+            <div style={{ marginBottom: '30px' }}>
+              <ul style={{ 
+                listStyle: 'none', 
+                margin: '0 0 20px 0', 
+                padding: 0,
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)'
+              }}>
+                <li style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#4ECDC4', marginRight: '10px', fontWeight: 'bold' }}>✓</span>
+                  Multiple voice leading modes: Similar, Oblique, and Best Choice
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#4ECDC4', marginRight: '10px', fontWeight: 'bold' }}>✓</span>
+                  Access 200+ scales including modes of major, harmonic minor, melodic minor
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#4ECDC4', marginRight: '10px', fontWeight: 'bold' }}>✓</span>
+                  Seamless integration with all major DAWs via MIDI I/O
+                </li>
+              </ul>
+            </div>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <button className="primary" style={{ 
+                backgroundColor: '#6C63FF', 
+                color: 'white', 
+                border: 'none', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}>
+                Download Now
+              </button>
+              <button className="secondary" style={{ 
+                backgroundColor: 'transparent', 
+                color: 'white', 
+                border: '2px solid #6C63FF', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}>
+                Watch Demo
+              </button>
+            </div>
+            
+            {/* Trust badges */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              marginTop: '3rem',
+              gap: '2rem',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.9rem'
+              }}>
+                <span style={{ marginRight: '8px' }}>🔒</span>
+                Trusted by 10,000+ musicians
+              </div>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.9rem'
+              }}>
+                <span style={{ marginRight: '8px' }}>🎹</span>
+                Works with all major DAWs
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ position: 'relative' }}>
+            {/* App Interface Mockup */}
+            <div style={{ 
+              background: '#1A1A1A',
+              borderRadius: '10px',
+              padding: '20px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)', 
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              position: 'relative',
+              zIndex: 2
+            }}>
+              {/* App Header */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
+                paddingBottom: '15px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ 
+                  backgroundImage: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  fontWeight: 'bold',
+                  fontSize: '1.2rem'
+                }}>Cymasphere</div>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FF6B6B' }}></div>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FFC107' }}></div>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#4CAF50' }}></div>
+                </div>
+              </div>
+              
+              {/* App Content */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {/* Chord Section */}
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '8px', 
+                  padding: '15px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <div style={{ marginBottom: '10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>Chord Progression</div>
+                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px' }}>
+                    {['Cmaj7', 'Am7', 'Fmaj7', 'G7'].map((chord, i) => (
+                      <div key={i} style={{ 
+                        padding: '10px 15px', 
+                        background: i === 1 ? 'rgba(108, 99, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)', 
+                        borderRadius: '4px',
+                        border: i === 1 ? '1px solid rgba(108, 99, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                        minWidth: '60px',
+                        textAlign: 'center'
+                      }}>
+                        {chord}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Piano Roll Section */}
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '8px', 
+                  padding: '15px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  height: '120px'
+                }}>
+                  <div style={{ marginBottom: '10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem' }}>Voice Leading</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', height: '80px' }}>
+                    {[0, 1, 2, 3, 4, 5].map(i => (
+                      <div key={i} style={{ 
+                        height: '12px', 
+                        background: 'rgba(20, 20, 20, 0.8)',
+                        borderRadius: '2px',
+                        position: 'relative'
+                      }}>
+                        {/* Notes */}
+                        <div style={{ 
+                          position: 'absolute', 
+                          height: '10px', 
+                          width: '20px', 
+                          background: `rgba(${i % 2 === 0 ? '108, 99, 255' : '78, 205, 196'}, 0.7)`,
+                          borderRadius: '2px',
+                          top: '1px',
+                          left: `${30 + i * 10}px`
+                        }}></div>
+                        <div style={{ 
+                          position: 'absolute', 
+                          height: '10px', 
+                          width: '20px', 
+                          background: `rgba(${i % 2 === 0 ? '108, 99, 255' : '78, 205, 196'}, 0.7)`,
+                          borderRadius: '2px',
+                          top: '1px',
+                          left: `${100 + i * 15}px`
+                        }}></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Controls Section */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ 
+                      width: '30px', 
+                      height: '30px', 
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>▶</div>
+                    <div style={{ 
+                      width: '30px', 
+                      height: '30px', 
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>■</div>
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.8rem',
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  }}>Voice Leading: Optimal</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Floating musical notes */}
+            <div className="floating-note" style={{
+              position: 'absolute',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              top: '10%',
+              left: '-5%',
+              boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)',
+              zIndex: 3,
+              animationDuration: '3s',
+              animationDelay: '0s'
+            }}>♪</div>
+            
+            <div className="floating-note" style={{
+              position: 'absolute',
+              width: '30px',
+              height: '30px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #4ECDC4, #6C63FF)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              top: '20%',
+              right: '-5%',
+              boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)',
+              zIndex: 3,
+              animationDuration: '4s',
+              animationDelay: '0.5s'
+            }}>♫</div>
+            
+            <div className="floating-note" style={{
+              position: 'absolute',
+              width: '35px',
+              height: '35px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #FF6B6B, #6C63FF)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              bottom: '5%',
+              left: '10%',
+              boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)',
+              zIndex: 3,
+              animationDuration: '3.5s',
+              animationDelay: '1s'
+            }}>♩</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" style={{
+        padding: '100px 20px',
+        backgroundColor: '#1E1E1E',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 30%, rgba(108, 99, 255, 0.05), transparent 40%)',
+          zIndex: 0
+        }}></div>
+        
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <h2 style={{ 
+            marginBottom: '20px',
+            position: 'relative',
+            display: 'inline-block',
+            fontSize: 'clamp(2rem, 3vw, 2.5rem)'
+          }}>
+            Powerful Features
+            <span style={{
+              position: 'absolute',
+              bottom: '-15px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '80px',
+              height: '3px',
+              background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)'
+            }}></span>
+          </h2>
+          
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: 'clamp(1rem, 1.2vw, 1.2rem)',
+            maxWidth: '700px',
+            margin: '0 auto 60px'
+          }}>
+            Cymasphere combines advanced music theory with intuitive controls to help you create beautiful chord progressions with perfect voice leading.
+          </p>
+
+          <div className="feature-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '30px',
+            marginTop: '40px'
+          }}>
+            {/* Feature Cards */}
+            {[
+              { 
+                icon: '🎵', 
+                title: 'Advanced Voice Leading', 
+                desc: 'Generate musically correct chord voicings with smooth voice leading between chord changes. Choose from multiple voice leading modes including Similar, Oblique, and Best Choice for different musical contexts.'
+              },
+              { 
+                icon: '🎹', 
+                title: 'Comprehensive Scale Library', 
+                desc: 'Access a vast library of over 200 scales including modes of major, harmonic minor, melodic minor, harmonic major, and symmetrical scales to explore rich harmonic possibilities and exotic tonalities.'
+              },
+              { 
+                icon: '🎼', 
+                title: 'Intelligent Chord Voicing', 
+                desc: 'Create sophisticated chord voicings with proper spacing, voice distribution, and musical context awareness. Control inversions, bass notes, and voice count for complete customization.'
+              },
+              { 
+                icon: '🎚️', 
+                title: 'Expressive Performance Controls', 
+                desc: 'Fine-tune your musical expression with dynamic controls, strum simulation, sustain management, and velocity parameters for realistic performances that breathe life into your compositions.'
+              },
+              { 
+                icon: '🎛️', 
+                title: 'MIDI Integration', 
+                desc: 'Seamlessly integrate with your DAW through comprehensive MIDI input/output capabilities. Control external instruments or use as a virtual instrument with complete synchronization.'
+              },
+              { 
+                icon: '⏱️', 
+                title: 'Metronome & Timing', 
+                desc: 'Stay in perfect time with the built-in metronome featuring count-off functionality and synchronization with your DAW\'s transport controls for precise rhythmic performance.'
+              }
+            ].map((feature, index) => (
+              <div key={index} className="feature-card" style={{
+                backgroundColor: 'rgba(30, 30, 30, 0.5)',
+                borderRadius: '10px',
+                padding: '30px',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                textAlign: 'left',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <div style={{
+                  width: '70px',
+                  height: '70px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                  fontSize: '2rem',
+                  boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+                }}>
+                  {feature.icon}
+                </div>
+                <h3 style={{ 
+                  marginBottom: '15px',
+                  fontSize: 'clamp(1.2rem, 1.5vw, 1.5rem)'
+                }}>{feature.title}</h3>
+                <p style={{ 
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontSize: 'clamp(0.9rem, 1vw, 1rem)',
+                  lineHeight: '1.6',
+                  flex: '1'
+                }}>{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+          
+          <div style={{
+            marginTop: '60px',
+            background: 'rgba(0, 0, 0, 0.2)',
+            padding: '30px',
+            borderRadius: '10px',
+            border: '1px solid rgba(108, 99, 255, 0.1)'
+          }}>
+            <h3 style={{ marginBottom: '20px', color: 'rgba(255, 255, 255, 0.9)' }}>Compatible with All Major DAWs</h3>
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: '30px'
+            }}>
+              {['Logic Pro', 'Ableton Live', 'FL Studio', 'Pro Tools', 'Cubase', 'Studio One'].map((daw, index) => (
+                <div key={index} style={{
+                  padding: '10px 20px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '30px',
+                  fontSize: '0.9rem',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  {daw}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Section */}
+      <section id="demo" style={{
+        padding: '100px 20px',
+        backgroundColor: '#121212',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 2
+        }}>
+          <div className="demo-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+            gap: '50px',
+            alignItems: 'center'
+          }}>
+            <div>
+              <h2 style={{ 
+                marginBottom: '20px',
+                position: 'relative',
+                fontSize: 'clamp(2rem, 3vw, 2.5rem)',
+                textAlign: 'left'
+              }}>
+                See Cymasphere in Action
+                <span style={{
+                  position: 'absolute',
+                  bottom: '-15px',
+                  left: '0',
+                  width: '80px',
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)'
+                }}></span>
+              </h2>
+              
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: 'clamp(1rem, 1.2vw, 1.2rem)',
+                marginBottom: '30px',
+                lineHeight: '1.6'
+              }}>
+                Watch how Cymasphere transforms simple chord progressions into rich, professional voicings with perfect voice leading. Our intelligent algorithms handle the music theory so you can focus on creativity.
+              </p>
+              
+              <ul style={{
+                listStyle: 'none',
+                padding: '0',
+                margin: '0 0 30px 0'
+              }}>
+                {[
+                  'Save hours of composition time with instant, musically correct voicings',
+                  'Eliminate theory guesswork with intelligent chord suggestions',
+                  'Create professional-sounding progressions even with limited music theory knowledge',
+                  'Experiment with different voicing styles to find the perfect sound',
+                  'Seamlessly integrate with your existing workflow and DAW'
+                ].map((item, index) => (
+                  <li key={index} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    marginBottom: '15px',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: 'clamp(0.9rem, 1vw, 1rem)'
+                  }}>
+                    <div style={{
+                      minWidth: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '15px',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>✓</div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              
+              <button className="primary" style={{ 
+                backgroundColor: '#6C63FF', 
+                color: 'white', 
+                border: 'none', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}>
+                <span style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem'
+                }}>▶</span>
+                Watch Full Tutorial
+              </button>
+            </div>
+            
+            <div>
+              <div style={{
+                position: 'relative',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                aspectRatio: '16/9'
+              }}>
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: '#1a1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <div className="play-button" style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="white">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                  
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '20px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    padding: '10px 15px',
+                    borderRadius: '5px',
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.9)'
+                  }}>
+                    Cymasphere Tutorial - Voice Leading Fundamentals (4:32)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 70% 30%, rgba(108, 99, 255, 0.05), transparent 50%), radial-gradient(circle at 30% 70%, rgba(78, 205, 196, 0.05), transparent 50%)',
+          zIndex: 1
+        }}></div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" style={{
+        padding: '100px 20px',
+        backgroundColor: '#1E1E1E',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 30% 70%, rgba(108, 99, 255, 0.05), transparent 50%), radial-gradient(circle at 80% 30%, rgba(78, 205, 196, 0.05), transparent 50%)',
+          zIndex: 0
+        }}></div>
+        
+        {/* Decorative notes */}
+        <div className="floating-note" style={{
+          position: 'absolute',
+          bottom: '15%',
+          left: '5%',
+          color: 'rgba(108, 99, 255, 0.1)',
+          fontSize: '5rem',
+          zIndex: 1,
+          animationDuration: '7s'
+        }}>♪</div>
+        
+        <div className="floating-note" style={{
+          position: 'absolute',
+          top: '20%',
+          right: '10%',
+          color: 'rgba(78, 205, 196, 0.1)',
+          fontSize: '4rem',
+          zIndex: 1,
+          animationDuration: '5s',
+          animationDelay: '1s'
+        }}>♫</div>
+        
+        <div className="floating-note" style={{
+          position: 'absolute',
+          top: '60%',
+          right: '20%',
+          color: 'rgba(108, 99, 255, 0.1)',
+          fontSize: '3.5rem',
+          zIndex: 1,
+          animationDuration: '6s',
+          animationDelay: '0.5s'
+        }}>♩</div>
+        
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 2,
+          textAlign: 'center'
+        }}>
+          <h2 style={{ 
+            marginBottom: '20px',
+            position: 'relative',
+            display: 'inline-block',
+            fontSize: 'clamp(2rem, 3vw, 2.5rem)'
+          }}>
+            What Our Users Say
+            <span style={{
+              position: 'absolute',
+              bottom: '-15px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '80px',
+              height: '3px',
+              background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)'
+            }}></span>
+          </h2>
+          
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: 'clamp(1rem, 1.2vw, 1.2rem)',
+            maxWidth: '700px',
+            margin: '0 auto 60px'
+          }}>
+            Hear from composers and musicians who have transformed their workflow with Cymasphere's intelligent voice leading technology.
+          </p>
+          
+          <div className="testimonial-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '30px',
+            marginBottom: '40px'
+          }}>
+            {[
+              {
+                avatar: '👨‍🎨',
+                name: 'Michael Rodriguez',
+                title: 'Film Composer',
+                rating: 5,
+                comment: "Cymasphere has completely transformed my composition workflow. The voice leading algorithms are incredibly intelligent, and I can generate complex chord voicings in seconds that would have taken me hours to write out manually."
+              },
+              {
+                avatar: '👩‍🎤',
+                name: 'Sarah Johnson',
+                title: 'Music Producer',
+                rating: 5,
+                comment: "As someone who didn't formally study music theory, Cymasphere has been a game-changer. The voice leading algorithms are intuitive and the interface is easy to navigate. Now I can create sophisticated chord progressions without getting stuck on the theory."
+              },
+              {
+                avatar: '👨‍🏫',
+                name: 'David Chen',
+                title: 'Music Educator',
+                rating: 4,
+                comment: "I use Cymasphere in my advanced composition classes to help students understand complex chord relationships. It's an invaluable teaching tool that visualizes voice leading principles in a way that's immediately understandable."
+              }
+            ].map((testimonial, index) => (
+              <div key={index} className="testimonial-card" style={{
+                backgroundColor: 'rgba(30, 30, 30, 0.5)',
+                borderRadius: '10px',
+                padding: '30px',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                textAlign: 'left',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                position: 'relative',
+                zIndex: 1
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  fontSize: '3rem',
+                  color: 'rgba(108, 99, 255, 0.1)',
+                  fontFamily: 'serif',
+                  lineHeight: 1
+                }}>❝</div>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.8rem',
+                    marginRight: '15px'
+                  }}>
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <h3 style={{ 
+                      marginBottom: '5px',
+                      fontSize: 'clamp(1.1rem, 1.2vw, 1.3rem)'
+                    }}>{testimonial.name}</h3>
+                    <p style={{ 
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.9rem',
+                      margin: 0
+                    }}>{testimonial.title}</p>
+                  </div>
+                </div>
+                
+                <p style={{ 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: 'clamp(0.9rem, 1vw, 1rem)',
+                  lineHeight: '1.6',
+                  marginBottom: '20px',
+                  minHeight: '120px'
+                }}>{testimonial.comment}</p>
+                
+                <div style={{ display: 'flex' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} style={{ 
+                      color: i < testimonial.rating ? '#FFC107' : 'rgba(255, 255, 255, 0.2)',
+                      marginRight: '5px',
+                      fontSize: '1.2rem'
+                    }}>★</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <button className="secondary" style={{ 
+            backgroundColor: 'transparent', 
+            color: 'white', 
+            border: '2px solid #6C63FF', 
+            padding: '15px 30px', 
+            borderRadius: '5px', 
+            cursor: 'pointer',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            transition: 'transform 0.2s ease, background 0.2s ease'
+          }}>
+            View More Testimonials
+          </button>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" style={{
+        padding: '100px 20px',
+        backgroundColor: '#121212',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 70% 20%, rgba(108, 99, 255, 0.05), transparent 50%), radial-gradient(circle at 30% 80%, rgba(78, 205, 196, 0.05), transparent 50%)',
+          zIndex: 0
+        }}></div>
+        
+        <div style={{ 
+          maxWidth: '1000px', 
+          margin: '0 auto', 
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 2
+        }}>
+          <h2 style={{ 
+            marginBottom: '20px',
+            position: 'relative',
+            display: 'inline-block'
+          }}>
+            Frequently Asked Questions
+            <span style={{
+              position: 'absolute',
+              bottom: '-15px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '80px',
+              height: '3px',
+              background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)'
+            }}></span>
+          </h2>
+          
+          <p style={{ 
+            maxWidth: '700px', 
+            margin: '0 auto', 
+            marginBottom: '60px',
+            color: 'rgba(255, 255, 255, 0.7)'
+          }}>
+            Find answers to commonly asked questions about Cymasphere and its capabilities.
+          </p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {[
+              { 
+                question: "What is voice leading and how does Cymasphere implement it?", 
+                answer: "Voice leading is the way individual voices or notes move from chord to chord. Cymasphere uses advanced algorithms to ensure smooth voice leading by minimizing the distance each note moves between chords, avoiding parallel fifths/octaves, and resolving tendency tones correctly. You can choose from multiple voice leading modes including Similar, Oblique, and Best Choice." 
+              },
+              { 
+                question: "Do I need extensive music theory knowledge to use Cymasphere?", 
+                answer: "No, Cymasphere is designed to be accessible for users at all levels. The app handles the complex music theory for you, allowing you to create sophisticated chord progressions even with limited theoretical knowledge. For advanced users, there are additional controls to fine-tune the voice leading process." 
+              },
+              { 
+                question: "Which DAWs is Cymasphere compatible with?", 
+                answer: "Cymasphere works with all major DAWs including Logic Pro, Ableton Live, FL Studio, Pro Tools, Cubase, Studio One, and more. It supports both VST and AU plugin formats, as well as standalone operation." 
+              },
+              { 
+                question: "What are the system requirements for running Cymasphere?", 
+                answer: "Cymasphere runs on Windows 10/11 (64-bit) and macOS 10.13 or higher. Minimum requirements include a dual-core processor, 4GB RAM, and 500MB of free disk space. For optimal performance, we recommend a quad-core processor and 8GB RAM." 
+              },
+              { 
+                question: "Can I export MIDI files from Cymasphere to my DAW?", 
+                answer: "Yes, Cymasphere allows you to export your chord progressions and voicings as MIDI files that can be imported into any DAW. You can also use Cymasphere as a plugin directly within your DAW for seamless integration with your workflow." 
+              },
+              { 
+                question: "What's the difference between Basic, Professional, and Studio versions?", 
+                answer: "The Basic version includes standard voice leading features and 30+ scales. The Professional version adds advanced voice leading algorithms, extended chord library, and 100+ scales. The Studio version includes all features plus 200+ scales and lifetime updates." 
+              }
+            ].map((faq, index) => (
+              <div 
+                key={index} 
+                style={{
+                  backgroundColor: 'rgba(30, 30, 30, 0.5)',
+                  borderRadius: '10px',
+                  padding: '20px',
+                  boxShadow: '0 5px 15px rgba(0, 0, 0, 0.1)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}
+                onClick={() => toggleFaq(index)}
+                className="faq-item"
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center'
+                }}>
+                  <h3 style={{ margin: 0, textAlign: 'left' }}>{faq.question}</h3>
+                  <span style={{ 
+                    fontSize: '1.5rem', 
+                    transition: 'transform 0.3s ease',
+                    transform: expandedFaqs[index] ? 'rotate(45deg)' : 'rotate(0deg)'
+                  }}>
+                    {expandedFaqs[index] ? '×' : '+'}
+                  </span>
+                </div>
+                
+                <div style={{ 
+                  maxHeight: expandedFaqs[index] ? '1000px' : '0', 
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'left',
+                  marginTop: expandedFaqs[index] ? '20px' : '0',
+                  opacity: expandedFaqs[index] ? 1 : 0
+                }}>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{faq.answer}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ textAlign: 'center', marginTop: '50px' }}>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: 'clamp(1rem, 1.2vw, 1.2rem)',
+              marginBottom: '30px'
+            }}>
+              Still have questions? We're here to help.
+            </p>
+            
+            <a href="#contact" style={{ 
+              backgroundColor: '#6C63FF', 
+              color: 'white', 
+              border: 'none', 
+              padding: '15px 30px', 
+              borderRadius: '5px', 
+              cursor: 'pointer',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              display: 'inline-block',
+              transition: 'transform 0.2s ease, background 0.2s ease'
+            }}>
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" style={{
+        padding: '100px 20px',
+        backgroundColor: '#121212',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 80% 30%, rgba(78, 205, 196, 0.05), transparent 40%), radial-gradient(circle at 20% 70%, rgba(108, 99, 255, 0.05), transparent 40%)',
+          zIndex: 0
+        }}></div>
+        
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <h2 style={{ 
+            marginBottom: '20px',
+            position: 'relative',
+            display: 'inline-block',
+            fontSize: 'clamp(2rem, 3vw, 2.5rem)'
+          }}>
+            Simple, Transparent Pricing
+            <span style={{
+              position: 'absolute',
+              bottom: '-15px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '80px',
+              height: '3px',
+              background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)'
+            }}></span>
+          </h2>
+          
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: 'clamp(1rem, 1.2vw, 1.2rem)',
+            maxWidth: '700px',
+            margin: '0 auto 60px'
+          }}>
+            Choose the plan that fits your needs. All plans include our core chord voicing technology.
+          </p>
+
+          {/* Pricing comparison table */}
+          <div className="pricing-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '25px',
+            margin: '0 auto'
+          }}>
+            {/* Basic Plan */}
+            <div className="pricing-card" style={{
+              backgroundColor: 'rgba(30, 30, 30, 0.6)',
+              borderRadius: '12px',
+              padding: '40px 30px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                width: '70px',
+                height: '70px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6C63FF, #4ECDC4, #6C63FF)',
+                backgroundSize: '200% 200%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+                fontSize: '2rem',
+                color: 'white',
+                opacity: '0.9',
+                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <span>B</span>
+              </div>
+              
+              <h3 style={{ 
+                marginBottom: '10px', 
+                fontSize: 'clamp(1.5rem, 2vw, 1.8rem)',
+                color: 'white'
+              }}>Basic</h3>
+              
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                marginBottom: '25px'
+              }}>
+                Perfect for hobbyists and beginners
+              </p>
+              
+              <div style={{ marginBottom: '30px' }}>
+                <span style={{ 
+                  fontSize: 'clamp(2.5rem, 3vw, 3rem)',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>$49</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}> one-time</span>
+              </div>
+              
+              <ul style={{ 
+                listStyle: 'none',
+                padding: '0',
+                margin: '0 0 30px 0',
+                textAlign: 'left',
+                flex: '1'
+              }}>
+                {[
+                  'Standard chord voicing generation',
+                  'Basic voice leading modes',
+                  '30+ scales and modes',
+                  'MIDI output',
+                  'DAW integration',
+                  <span style={{ color: 'rgba(255, 255, 255, 0.3)', textDecoration: 'line-through' }}>Advanced voice leading algorithms</span>,
+                  <span style={{ color: 'rgba(255, 255, 255, 0.3)', textDecoration: 'line-through' }}>Extended chord library</span>,
+                  <span style={{ color: 'rgba(255, 255, 255, 0.3)', textDecoration: 'line-through' }}>Free updates for life</span>
+                ].map((feature, index) => (
+                  <li key={index} style={{
+                    margin: '15px 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: typeof feature === 'string' ? 'rgba(255, 255, 255, 0.8)' : undefined
+                  }}>
+                    <span style={{
+                      minWidth: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: typeof feature === 'string' ? 'linear-gradient(135deg, #6C63FF, #4ECDC4)' : 'rgba(255, 255, 255, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '15px',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>
+                      {typeof feature === 'string' ? '✓' : '×'}
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              
+              <button style={{ 
+                backgroundColor: 'transparent', 
+                color: 'white', 
+                border: '2px solid #6C63FF', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s ease, background 0.2s ease',
+                width: '100%'
+              }}>
+                Get Started
+              </button>
+            </div>
+            
+            {/* Professional Plan */}
+            <div className="pricing-card" style={{
+              backgroundColor: 'rgba(30, 30, 30, 0.6)',
+              borderRadius: '12px',
+              padding: '40px 30px',
+              border: '2px solid #6C63FF',
+              boxShadow: '0 15px 35px rgba(108, 99, 255, 0.15)',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              transform: 'scale(1.05)',
+              zIndex: '2',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '20px',
+                right: '-35px',
+                transform: 'rotate(45deg)',
+                background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                color: 'white',
+                padding: '5px 40px',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)'
+              }}>
+                MOST POPULAR
+              </div>
+            
+              <div style={{
+                width: '70px',
+                height: '70px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6C63FF, #4ECDC4, #6C63FF)',
+                backgroundSize: '200% 200%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+                fontSize: '2rem',
+                color: 'white',
+                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <span>P</span>
+              </div>
+              
+              <h3 style={{ 
+                marginBottom: '10px', 
+                fontSize: 'clamp(1.5rem, 2vw, 1.8rem)',
+                color: 'white'
+              }}>Professional</h3>
+              
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                marginBottom: '25px'
+              }}>
+                For serious musicians and composers
+              </p>
+              
+              <div style={{ marginBottom: '30px' }}>
+                <span style={{ 
+                  fontSize: 'clamp(2.5rem, 3vw, 3rem)',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>$99</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}> one-time</span>
+              </div>
+              
+              <ul style={{ 
+                listStyle: 'none',
+                padding: '0',
+                margin: '0 0 30px 0',
+                textAlign: 'left',
+                flex: '1'
+              }}>
+                {[
+                  'Advanced chord voicing generation',
+                  'All voice leading modes',
+                  '100+ scales and modes',
+                  'MIDI input/output',
+                  'DAW integration',
+                  'Advanced voice leading algorithms',
+                  'Extended chord library',
+                  <span style={{ color: 'rgba(255, 255, 255, 0.3)', textDecoration: 'line-through' }}>Free updates for life</span>
+                ].map((feature, index) => (
+                  <li key={index} style={{
+                    margin: '15px 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: typeof feature === 'string' ? 'rgba(255, 255, 255, 0.8)' : undefined
+                  }}>
+                    <span style={{
+                      minWidth: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: typeof feature === 'string' ? 'linear-gradient(135deg, #6C63FF, #4ECDC4)' : 'rgba(255, 255, 255, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '15px',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>
+                      {typeof feature === 'string' ? '✓' : '×'}
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              
+              <button className="primary" style={{ 
+                background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                color: 'white', 
+                border: 'none', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                width: '100%'
+              }}>
+                Get Started
+              </button>
+            </div>
+            
+            {/* Studio Plan */}
+            <div className="pricing-card" style={{
+              backgroundColor: 'rgba(30, 30, 30, 0.6)',
+              borderRadius: '12px',
+              padding: '40px 30px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                width: '70px',
+                height: '70px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6C63FF, #4ECDC4, #6C63FF)',
+                backgroundSize: '200% 200%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+                fontSize: '2rem',
+                color: 'white',
+                opacity: '0.9',
+                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <span>S</span>
+              </div>
+              
+              <h3 style={{ 
+                marginBottom: '10px', 
+                fontSize: 'clamp(1.5rem, 2vw, 1.8rem)',
+                color: 'white'
+              }}>Studio</h3>
+              
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                marginBottom: '25px'
+              }}>
+                Complete solution for studios and professionals
+              </p>
+              
+              <div style={{ marginBottom: '30px' }}>
+                <span style={{ 
+                  fontSize: 'clamp(2.5rem, 3vw, 3rem)',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>$149</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}> one-time</span>
+              </div>
+              
+              <ul style={{ 
+                listStyle: 'none',
+                padding: '0',
+                margin: '0 0 30px 0',
+                textAlign: 'left',
+                flex: '1'
+              }}>
+                {[
+                  'Advanced chord voicing generation',
+                  'All voice leading modes',
+                  '200+ scales and modes',
+                  'MIDI input/output',
+                  'DAW integration',
+                  'Advanced voice leading algorithms',
+                  'Extended chord library',
+                  'Free updates for life'
+                ].map((feature, index) => (
+                  <li key={index} style={{
+                    margin: '15px 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'rgba(255, 255, 255, 0.8)'
+                  }}>
+                    <span style={{
+                      minWidth: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '15px',
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>✓</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              
+              <button style={{ 
+                backgroundColor: 'transparent', 
+                color: 'white', 
+                border: '2px solid #6C63FF', 
+                padding: '15px 30px', 
+                borderRadius: '5px', 
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s ease, background 0.2s ease',
+                width: '100%'
+              }}>
+                Get Started
+              </button>
+            </div>
+          </div>
+          
+          <div style={{
+            marginTop: '50px',
+            padding: '25px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(108, 99, 255, 0.1)',
+            border: '1px solid rgba(108, 99, 255, 0.2)',
+            maxWidth: '700px',
+            margin: '50px auto 0'
+          }}>
+            <h3 style={{ 
+              fontSize: '1.2rem', 
+              color: 'white',
+              marginBottom: '10px' 
+            }}>Need a custom solution?</h3>
+            <p style={{ 
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '1rem',
+              marginBottom: '15px'
+            }}>
+              For educational institutions or enterprise users, we offer custom pricing with additional support options.
+            </p>
+            <a href="#contact" style={{ 
+              display: 'inline-block',
+              padding: '10px 25px', 
+              borderRadius: '5px', 
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              background: 'transparent',
+              border: '1px solid rgba(108, 99, 255, 0.5)',
+              color: 'rgba(255, 255, 255, 0.9)',
+              textDecoration: 'none',
+              transition: 'all 0.2s ease'
+            }}>
+              Contact us for custom pricing
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" style={{
+        padding: '6rem 2rem',
+        backgroundColor: '#121212',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 70% 30%, rgba(0, 188, 212, 0.05), transparent 50%)',
+          zIndex: 0
+        }}></div>
+        
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <h2 style={{ 
+            textAlign: 'center', 
+            color: 'white', 
+            fontSize: '2.5rem', 
+            marginBottom: '1rem',
+            fontWeight: 700
+          }}>Contact Us</h2>
+          
+          <p style={{ 
+            textAlign: 'center',
+            color: '#b0b0b0',
+            maxWidth: '700px',
+            margin: '0 auto 4rem',
+            fontSize: '1.1rem'
+          }}>
+            We'd love to hear from you! Fill out the form below or contact us directly.
+          </p>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '4rem',
+            alignItems: 'start'
+          }}>
+            {/* Contact Form */}
+            <div style={{
+              background: '#242424',
+              borderRadius: '8px',
+              padding: '2rem',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+              <h3 style={{ 
+                color: 'white', 
+                marginBottom: '1.5rem', 
+                fontSize: '1.5rem' 
+              }}>
+                Send Us a Message
+              </h3>
+              {(() => {
+                const [isSubmitting, setIsSubmitting] = React.useState(false);
+                
+                return (
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    setIsSubmitting(true);
+                    
+                    // Simulate API call with timeout
+                    setTimeout(() => {
+                      setIsSubmitting(false);
+                      alert('Thank you for your message! We will get back to you soon.');
+                      e.target.reset();
+                    }, 1500);
+                  }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label 
+                        htmlFor="name" 
+                        style={{ 
+                          display: 'block', 
+                          marginBottom: '0.5rem', 
+                          color: '#b0b0b0' 
+                        }}
+                      >
+                        Your Name
+                      </label>
+                      <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: 'white',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          transition: 'border-color 0.3s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#6C63FF';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label 
+                        htmlFor="email" 
+                        style={{ 
+                          display: 'block', 
+                          marginBottom: '0.5rem', 
+                          color: '#b0b0b0' 
+                        }}
+                      >
+                        Your Email
+                      </label>
+                      <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: 'white',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          transition: 'border-color 0.3s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#6C63FF';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label 
+                        htmlFor="subject" 
+                        style={{ 
+                          display: 'block', 
+                          marginBottom: '0.5rem', 
+                          color: '#b0b0b0' 
+                        }}
+                      >
+                        Subject
+                      </label>
+                      <input 
+                        type="text" 
+                        id="subject" 
+                        name="subject" 
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: 'white',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          transition: 'border-color 0.3s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#6C63FF';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <label 
+                        htmlFor="message" 
+                        style={{ 
+                          display: 'block', 
+                          marginBottom: '0.5rem', 
+                          color: '#b0b0b0' 
+                        }}
+                      >
+                        Your Message
+                      </label>
+                      <textarea 
+                        id="message" 
+                        name="message" 
+                        rows="5" 
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: 'white',
+                          fontSize: '1rem',
+                          resize: 'vertical',
+                          minHeight: '150px',
+                          outline: 'none',
+                          transition: 'border-color 0.3s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#6C63FF';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        }}
+                      ></textarea>
+                    </div>
+                    
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      style={{
+                        background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '4px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        width: '100%',
+                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        opacity: isSubmitting ? 0.8 : 1
+                      }}
+                      onMouseOver={(e) => {
+                        if (!isSubmitting) {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 5px 15px rgba(108, 99, 255, 0.3)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
+                    </button>
+                  </form>
+                );
+              })()}
+            </div>
+            
+            {/* Contact Information */}
+            <div>
+              <h3 style={{ 
+                color: 'white', 
+                marginBottom: '1.5rem', 
+                fontSize: '1.5rem' 
+              }}>
+                Get in Touch
+              </h3>
+              <p style={{ 
+                color: '#b0b0b0', 
+                marginBottom: '2rem',
+                lineHeight: '1.6' 
+              }}>
+                Have questions about Cymasphere? Want to request a demo or custom features? 
+                Our team is ready to help you get the most out of our voice leading technology.
+              </p>
+              
+              <div style={{ marginBottom: '2.5rem' }}>
+                {/* Email Contact */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '1.5rem' 
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '1rem',
+                    color: 'white',
+                    fontSize: '1.2rem'
+                  }}>
+                    ✉️
+                  </div>
+                  <div>
+                    <p style={{ 
+                      color: '#b0b0b0', 
+                      fontSize: '0.9rem', 
+                      marginBottom: '0.25rem' 
+                    }}>
+                      Email Us
+                    </p>
+                    <p style={{ 
+                      color: 'white', 
+                      fontSize: '1.1rem' 
+                    }}>
+                      support@cymasphere.com
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Phone Contact */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '1.5rem' 
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '1rem',
+                    color: 'white',
+                    fontSize: '1.2rem'
+                  }}>
+                    📞
+                  </div>
+                  <div>
+                    <p style={{ 
+                      color: '#b0b0b0', 
+                      fontSize: '0.9rem', 
+                      marginBottom: '0.25rem' 
+                    }}>
+                      Call Us
+                    </p>
+                    <p style={{ 
+                      color: 'white', 
+                      fontSize: '1.1rem' 
+                    }}>
+                      +1 (555) 123-4567
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Location */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '1rem',
+                    color: 'white',
+                    fontSize: '1.2rem'
+                  }}>
+                    📍
+                  </div>
+                  <div>
+                    <p style={{ 
+                      color: '#b0b0b0', 
+                      fontSize: '0.9rem', 
+                      marginBottom: '0.25rem' 
+                    }}>
+                      Our Location
+                    </p>
+                    <p style={{ 
+                      color: 'white', 
+                      fontSize: '1.1rem' 
+                    }}>
+                      Reno, NV
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Social Links */}
+              <div>
+                <p style={{ 
+                  color: '#b0b0b0', 
+                  marginBottom: '1rem' 
+                }}>
+                  Connect With Us
+                </p>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '1rem' 
+                }}>
+                  {['Twitter', 'Facebook', 'Instagram', 'YouTube'].map((platform, index) => (
+                    <a 
+                      key={index}
+                      href={`#${platform.toLowerCase()}`}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#b0b0b0',
+                        fontSize: '1.1rem',
+                        transition: 'all 0.3s ease',
+                        textDecoration: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#6C63FF';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.transform = 'translateY(-3px)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.color = '#b0b0b0';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      {platform.charAt(0)}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{
+        backgroundColor: '#121212',
+        padding: '2rem',
+        textAlign: 'center'
+      }}>
+        <p style={{ color: '#666' }}>
+          &copy; {new Date().getFullYear()} Cymasphere. All rights reserved.
+        </p>
+        <div style={{ display: 'flex', gap: '1.5rem' }}>
+          <a
+            href="#privacy-policy"
+            style={{ 
+              color: '#666', 
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              transition: 'color 0.2s ease'
+            }}
+            className="footer-link"
+          >
+            Privacy Policy
+          </a>
+          <a
+            href="#terms-of-service"
+            style={{ 
+              color: '#666', 
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              transition: 'color 0.2s ease'
+            }}
+            className="footer-link"
+          >
+            Terms of Service
+          </a>
+          <a
+            href="#cookies"
+            style={{ 
+              color: '#666', 
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              transition: 'color 0.2s ease'
+            }}
+            className="footer-link"
+          >
+            Cookies
+          </a>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;

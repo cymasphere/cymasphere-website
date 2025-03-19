@@ -1,0 +1,16 @@
+{
+  "short_name": "Cymasphere",
+  "name": "Cymasphere - Intelligent Chord Voicing Generator",
+  "icons": [
+    {
+      "src": "logo-cymasphere.svg",
+      "sizes": "64x64 32x32 24x24 16x16 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#6C63FF",
+  "background_color": "#0f0e17"
+}

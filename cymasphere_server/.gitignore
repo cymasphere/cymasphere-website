@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+# Deno lock file
+deno.lock
+
+# Logs
+*.log
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/ 
