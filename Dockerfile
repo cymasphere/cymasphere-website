@@ -10,9 +10,12 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy application code
-COPY . ./
+COPY src/ ./src/
+COPY public/ ./public/
+COPY *.js ./
+COPY tsconfig.json ./
 
-# Build the application - using Create React App build command
+# Build the application
 RUN npm run build
 
 # Production stage

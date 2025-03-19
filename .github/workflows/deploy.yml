@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'cymasphere-website/**'
-      - '.github/workflows/deploy.yml'
-      - 'Dockerfile'
 
 permissions:
   contents: read
@@ -36,17 +32,16 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./cymasphere-website
+          context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Setup SSH key
         run: |
           cat > lightsail.pem << 'EOL'
-          # You'll need to paste your SSH key here after creating this file
-          # Replace this with the contents of lightsail_key_new.pem
+          ${{ secrets.LIGHTSAIL_SSH_KEY }}
           EOL
           
           chmod 600 lightsail.pem
@@ -77,26 +72,25 @@ jobs:
           fi
           
           # Login to GitHub Container Registry
-          echo "$GITHUB_TOKEN" | sudo docker login ghcr.io -u "$REPO_OWNER" --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
           
           # Pull the latest image
-          sudo docker pull ghcr.io/$REPO_OWNER_LC/cymasphere:latest
+          docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
           # Stop and remove any existing container
-          sudo docker stop app-container || true
-          sudo docker rm app-container || true
+          docker stop cymasphere-container || true
+          docker rm cymasphere-container || true
           
           # Run the new container
-          sudo docker run -d --restart unless-stopped --name app-container -p 80:3000 ghcr.io/$REPO_OWNER_LC/cymasphere:latest
+          docker run -d --restart unless-stopped --name cymasphere-container -p 80:3000 ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
           # Clean up
-          sudo docker system prune -af
+          docker system prune -af
           EOL
           
           chmod +x deploy.sh
 
       - name: Deploy to Lightsail
         run: |
-          # Replace 3.84.23.10 with your instance's IP address if it changes
-          scp -o StrictHostKeyChecking=no -i lightsail.pem deploy.sh ubuntu@3.84.23.10:~/deploy.sh
-          ssh -o StrictHostKeyChecking=no -i lightsail.pem ubuntu@3.84.23.10 "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          scp -o StrictHostKeyChecking=no -i lightsail.pem deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
+          ssh -o StrictHostKeyChecking=no -i lightsail.pem ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
