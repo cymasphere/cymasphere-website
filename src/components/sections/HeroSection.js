@@ -902,7 +902,10 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          {t('hero.subtitle', 'Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.')}
+          {t('hero.subtitle', 'Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.')} 
+          <span style={{ display: 'block', marginTop: '10px', color: 'var(--accent)' }}>
+            🚀 Deployed with GitHub Actions & AWS Lightsail - v1.0
+          </span>
         </HeroSubtitle>
         
         <ButtonGroup
