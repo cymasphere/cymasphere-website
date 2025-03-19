@@ -13,7 +13,8 @@ RUN npm ci
 COPY src/ ./src/
 COPY public/ ./public/
 COPY *.js ./
-COPY tsconfig.json ./
+# Make tsconfig.json optional since it doesn't exist
+RUN touch tsconfig.json
 
 # Build the application
 RUN npm run build
