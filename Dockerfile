@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Prevent infinite install loop by not running scripts
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+
 # Install dependencies with legacy-peer-deps to handle TypeScript version conflicts
 RUN npm ci --legacy-peer-deps
 
@@ -16,7 +19,7 @@ COPY *.js ./
 # Make tsconfig.json optional since it doesn't exist
 RUN touch tsconfig.json
 
-# Build the application
+# Build the application with a clean environment
 RUN npm run build
 
 # Production stage
