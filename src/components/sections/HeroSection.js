@@ -903,7 +903,7 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          {t('hero.subtitle', 'Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.')} 
+          {t('hero.subtitle', 'Welcome to a new era, where chords and melodies work together in synchronicity. With powerful music theory principles built into every feature, your creative vision becomes reality.')} 
         </HeroSubtitle>
         
         <ButtonGroup
