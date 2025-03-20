@@ -38,20 +38,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Setup SSH key
-        run: |
-          cat > lightsail.pem << 'EOL'
-          ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          EOL
-          
-          chmod 600 lightsail.pem
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          known_hosts: unnecessary
+          if_key_exists: replace
 
-      - name: Create deploy script
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          REPO_OWNER_LC: ${{ env.REPO_OWNER_LC }}
+      - name: Add instance to known hosts
         run: |
+          # Disable strict host key checking
+          mkdir -p ~/.ssh
+          echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > ~/.ssh/config
+          
+          # Create deploy script
           cat > deploy.sh << EOL
           #!/bin/bash
           
@@ -90,7 +90,14 @@ jobs:
           
           chmod +x deploy.sh
 
+      - name: Debug SSH connection 
+        run: |
+          # Debug SSH details
+          echo "Testing SSH connection..."
+          ssh -v ubuntu@${{ secrets.LIGHTSAIL_IP }} "echo Connection test successful"
+
       - name: Deploy to Lightsail
         run: |
-          scp -o StrictHostKeyChecking=no -i lightsail.pem deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
-          ssh -o StrictHostKeyChecking=no -i lightsail.pem ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          # Try SCP and SSH
+          scp -v deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
+          ssh -v ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
