@@ -6,6 +6,7 @@ import * as Tone from 'tone';
 import SYNTH_PRESETS, { getPresetById } from '../../utils/presets';
 import { createSynth, disposeSynth } from '../../utils/synthUtils';
 import useEffectsChain from '../../hooks/useEffectsChain';
+import { Container, Button } from '../ui/CommonComponents';
 
 const HeroContainer = styled.section`
   min-height: 100vh;
@@ -898,14 +899,12 @@ const HeroSection = () => {
         </HeroTitle>
         
         <HeroSubtitle
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
         >
-          {t('hero.subtitle', 'Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.')} 
-          <span style={{ display: 'block', marginTop: '10px', color: 'var(--accent)' }}>
-            🚀 Deployed with GitHub Actions & AWS Lightsail - v1.0
-          </span>
+          Powerful tools for musicians, producers, and audio engineers.
+          <strong> Now deployed with GitHub Actions to AWS Lightsail!</strong>
         </HeroSubtitle>
         
         <ButtonGroup
