@@ -12,7 +12,7 @@ const ChordWebCanvas = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 2; /* Set below container to preserve molecule interactivity */
+  z-index: 4; /* Set above ContentContainer to ensure molecules are interactive */
   opacity: 1.0; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
   
@@ -905,6 +905,12 @@ const ContentContainer = styled.div`
   border-radius: 12px;
   padding: 60px 10px 50px;
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+
+  /* Enable pointer events for BillingToggleContainer and PricingCard */
+  & > div > div {
+    pointer-events: auto;
+  }
 `;
 
 const SectionTitle = styled.h2`
