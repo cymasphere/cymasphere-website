@@ -12,9 +12,10 @@ const ChordWebCanvas = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 4; /* Increased from 2 to 4 to be above ContentContainer (z-index: 3) */
+  z-index: 1; /* Decreased from 4 to 1 to be behind all interactive elements */
   opacity: 1.0; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
+  pointer-events: none; /* Don't capture any pointer events */
   
   /* Hide on mobile devices */
   @media (max-width: 768px) {
@@ -962,10 +963,16 @@ const BillingToggleButton = styled.button`
   margin: 0 6px;
   position: relative;
   flex: 1;
+  z-index: 10;
   
   &:hover {
     background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255, 255, 255, 0.1)'};
     color: ${props => props.$active ? 'white' : 'var(--text)'};
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(1px);
   }
 `;
 
@@ -1061,6 +1068,7 @@ const PricingCard = styled(motion.div)`
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
   border: 2px solid var(--primary);
+  z-index: 5; /* Ensure the card is above any animation elements */
   
   &:hover {
     transform: translateY(-8px);

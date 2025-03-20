@@ -22,10 +22,16 @@ const CheckoutButton = styled.button`
   cursor: pointer;
   margin-top: 15px;
   box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  position: relative;
+  z-index: 20;
   
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 18px rgba(108, 99, 255, 0.5);
+  }
+  
+  &:active {
+    transform: translateY(1px);
   }
   
   &:disabled {
@@ -50,11 +56,23 @@ const StatusMessage = styled.div`
  * @param {string} props.buttonText - Text to display on the checkout button
  * @param {string} props.billingPeriod - The selected billing period (monthly, yearly, or lifetime)
  * @param {string} props.price - The price of the plan to display
+ * @param {number} props.trialDays - Number of trial days (if applicable)
  */
-const StripeCheckout = ({ priceId, buttonText, billingPeriod, price }) => {
+const StripeCheckout = ({ priceId, buttonText, billingPeriod, price, trialDays }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
+  
+  // Use navigate in a way that works even if react-router isn't fully set up
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch (error) {
+    // Fallback function if useNavigate fails or isn't available
+    navigate = (path) => {
+      console.log('Navigation fallback used to:', path);
+      window.location.href = path;
+    };
+  }
   
   // Check if we're in development mode
   // In production, this would be set to 'production'
@@ -65,57 +83,63 @@ const StripeCheckout = ({ priceId, buttonText, billingPeriod, price }) => {
       setIsLoading(true);
       setErrorMessage('');
       
-      // For development environment, always use mock checkout to avoid 404 errors
-      if (isDevelopment) {
-        console.log('Development mode: Redirecting to mock checkout');
-        console.log('Checkout initiated with:', { priceId, billingPeriod, price });
-        
-        // Give some time for the loading state to show
-        setTimeout(() => {
-          // Redirect to mock checkout page with plan details
+      // Always use mock checkout for demo purposes
+      console.log('Redirecting to mock checkout');
+      console.log('Checkout initiated with:', { priceId, billingPeriod, price });
+      
+      // Give some time for the loading state to show
+      setTimeout(() => {
+        try {
+          // Try to use React Router navigation
           navigate(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
-          setIsLoading(false);
-        }, 800);
-        return;
-      }
-      
-      // For production, proceed with actual Stripe checkout
-      const stripe = await stripePromise;
-      
-      try {
-        // Make a request to your backend to create a checkout session
-        // In production, this would be the correct API endpoint
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://api.cymasphere.com';
-        
-        const response = await fetch(`${apiUrl}/create-checkout-session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            priceId,
-            billingPeriod
-          }),
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create checkout session');
+        } catch (navError) {
+          // Fallback to basic navigation
+          console.error('Navigation error:', navError);
+          window.location.href = `/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`;
         }
+        setIsLoading(false);
+      }, 800);
+      
+      // For production in a real app, this would handle Stripe
+      if (!isDevelopment && false) { // Disabled for demo
+        // This code would only run in production
+        const stripe = await stripePromise;
         
-        const session = await response.json();
-        
-        // Redirect to Stripe Checkout
-        const result = await stripe.redirectToCheckout({
-          sessionId: session.id,
-        });
-        
-        if (result.error) {
-          throw new Error(result.error.message);
+        try {
+          // Make a request to your backend to create a checkout session
+          const apiUrl = process.env.REACT_APP_API_URL || 'https://api.cymasphere.com';
+          
+          const response = await fetch(`${apiUrl}/create-checkout-session`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              priceId,
+              billingPeriod,
+              trialDays
+            }),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create checkout session');
+          }
+          
+          const session = await response.json();
+          
+          // Redirect to Stripe Checkout
+          const result = await stripe.redirectToCheckout({
+            sessionId: session.id,
+          });
+          
+          if (result.error) {
+            throw new Error(result.error.message);
+          }
+        } catch (fetchError) {
+          console.error('Error fetching checkout session:', fetchError);
+          throw new Error('Unable to connect to the payment server. Please try again later.');
         }
-      } catch (fetchError) {
-        console.error('Error fetching checkout session:', fetchError);
-        throw new Error('Unable to connect to the payment server. Please try again later.');
       }
       
     } catch (error) {
