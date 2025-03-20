@@ -41,41 +41,56 @@ const ChordWeb = React.memo(() => {
   
   // Initialize Tone.js synth
   useEffect(() => {
-    // Create a more ambient synth sound
+    // Create a more ambient synth sound with underwater qualities
     const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
       oscillator: {
         type: 'sine',
-        modulationType: 'sine'
+        modulationType: 'triangle' // Changed to triangle for more underwater harmonics
       },
       envelope: {
-        attack: 0.3,
-        decay: 2,
-        sustain: 0.4,
-        release: 6
+        attack: 0.5, // Slower attack for underwater muffled effect
+        decay: 3,    // Longer decay
+        sustain: 0.6, // Higher sustain
+        release: 8    // Much longer release for underwater trail
       },
       modulation: {
-        type: 'triangle'
+        type: 'sine',
+        frequency: 0.8 // Slower frequency for underwater wavering
       },
       modulationEnvelope: {
-        attack: 0.5,
-        decay: 0.5,
-        sustain: 0.2,
-        release: 7
+        attack: 0.8,  // Slower modulation attack
+        decay: 1.5,   // Longer decay
+        sustain: 0.4,
+        release: 10   // Much longer release
       }
     });
     
-    // Create reverb effect
+    // Create lowpass filter for underwater muffled effect
+    const filter = new Tone.Filter({
+      type: "lowpass",
+      frequency: 800, // Low frequency cutoff for underwater effect
+      Q: 1.5,
+      rolloff: -24
+    });
+    
+    // Create reverb effect with longer decay for underwater spaciousness
     const reverb = new Tone.Reverb({
-      decay: 12,
-      wet: 0.95,
-      preDelay: 0.1
+      decay: 16,     // Increased from 12 for more underwater echo
+      wet: 0.98,     // Higher wet mix
+      preDelay: 0.2  // Slightly higher preDelay
     }).toDestination();
     
     // Create a volume node to reduce gain
-    const volume = new Tone.Volume(-16); // Increased from -20 for slightly higher gain
+    const volume = new Tone.Volume(-14); // Slightly higher volume
     
-    // Chain effects
-    ambientSynth.chain(volume, reverb);
+    // Add vibrato for underwater wavering
+    const vibrato = new Tone.Vibrato({
+      frequency: 1.5, // Slow vibrato
+      depth: 0.3      // Moderate depth
+    });
+    
+    // Chain effects: synth -> vibrato -> filter -> volume -> reverb -> destination
+    ambientSynth.chain(vibrato, filter, volume, reverb);
     
     // Store synth in ref
     synth.current = ambientSynth;
@@ -86,6 +101,8 @@ const ChordWeb = React.memo(() => {
         synth.current.dispose();
       }
       reverb.dispose();
+      filter.dispose();
+      vibrato.dispose();
       volume.dispose();
     };
   }, []);
@@ -107,10 +124,30 @@ const ChordWeb = React.memo(() => {
     activeChords.current.add(chordIndex);
     
     // Convert note names to frequencies with octave information
-    const notes = chord.notes.map(note => {
-      // Determine octave (higher for upper notes in the chord)
-      const baseOctave = 2; // Lowered from 3 for a deeper sound with more harmonics for the reverb
-      const octave = chord.notes.indexOf(note) >= 3 ? baseOctave + 1 : baseOctave;
+    const notes = chord.notes.map((note, index) => {
+      // Determine octave (lower for string ensemble sound)
+      const baseOctave = 3; // Lower range for richness
+      
+      // Root note (first note) gets an octave lower for stronger bass foundation
+      if (index === 0) {
+        return `${note}${baseOctave - 1}`;
+      }
+      
+      // For the rest of the notes, distribute across orchestral string ranges
+      let octave = baseOctave;
+      
+      // For larger chords, distribute notes across octaves for orchestral arrangement
+      if (chord.notes.length > 3) {
+        // Middle range - viola-like
+        if (index < 3) {
+          octave = baseOctave;
+        } 
+        // Higher range - violin-like
+        else {
+          octave = baseOctave + 1;
+        }
+      }
+      
       return `${note}${octave}`;
     });
     
