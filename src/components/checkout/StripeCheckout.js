@@ -24,6 +24,7 @@ const CheckoutButton = styled.button`
   box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
   position: relative;
   z-index: 10;
+  pointer-events: auto !important;
   
   &:hover {
     transform: translateY(-3px);

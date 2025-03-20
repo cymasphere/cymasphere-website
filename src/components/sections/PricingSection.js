@@ -12,7 +12,7 @@ const ChordWebCanvas = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 4; /* Set above ContentContainer to ensure molecules are interactive */
+  z-index: 1; /* Set BELOW ContentContainer */
   opacity: 1.0; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
   
@@ -905,20 +905,16 @@ const ContentContainer = styled.div`
   border-radius: 12px;
   padding: 60px 10px 50px;
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-
-  /* Enable pointer events for BillingToggleContainer and PricingCard */
-  & > div > div {
-    pointer-events: auto;
-  }
+  pointer-events: none; /* Allow clicks to pass through to molecules */
 `;
 
 const SectionTitle = styled.h2`
   font-size: 2.2rem;
   text-align: center;
   margin-bottom: 0.8rem;
-  margin-top: 20px; /* Increased from 10px to 20px */
+  margin-top: 20px;
   position: relative;
+  pointer-events: none; /* No need for interaction */
   
   &:after {
     content: '';
@@ -939,6 +935,7 @@ const SectionSubtitle = styled.p`
   font-size: 1rem;
   max-width: 700px;
   margin: 0 auto 40px;
+  pointer-events: none; /* No need for interaction */
 `;
 
 // Update the container padding to accommodate the pointer
@@ -952,8 +949,8 @@ const BillingToggleContainer = styled.div`
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-  z-index: 9;
-  pointer-events: auto;
+  z-index: 5;
+  pointer-events: auto !important; /* Force pointer events */
 `;
 
 // Make the buttons larger to fill the width
@@ -970,7 +967,8 @@ const BillingToggleButton = styled.button`
   margin: 0 6px;
   position: relative;
   flex: 1;
-  z-index: 10;
+  z-index: 5;
+  pointer-events: auto !important; /* Force pointer events */
   
   &:hover {
     background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255, 255, 255, 0.1)'};
@@ -999,6 +997,7 @@ const TrialBanner = styled.div`
   border: 1px solid rgba(249, 200, 70, 0.3);
   position: relative;
   overflow: hidden;
+  pointer-events: none; /* No need for interaction */
   
   &:before {
     content: '';
@@ -1070,7 +1069,8 @@ const PricingCard = styled(motion.div)`
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
   border: 2px solid var(--primary);
-  z-index: 4; /* Ensure card is above canvas */
+  z-index: 5;
+  pointer-events: auto !important; /* Force pointer events */
   
   &:hover {
     transform: translateY(-8px);
@@ -1084,6 +1084,7 @@ const CardHeader = styled.div`
   color: white;
   text-align: center;
   position: relative;
+  pointer-events: auto !important;
   
   &::after {
     content: '';
@@ -1143,6 +1144,7 @@ const CardBody = styled.div`
   background: rgba(30, 28, 42, 0.8);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   z-index: 4; /* Add z-index here too */
+  pointer-events: auto !important;
 `;
 
 const Divider = styled.hr`
@@ -1197,6 +1199,7 @@ const SavingsInfo = styled.div`
   padding: 8px 15px;
   border-radius: 8px;
   display: inline-block;
+  pointer-events: none; /* No need for interaction */
   
   span {
     font-weight: 700;
