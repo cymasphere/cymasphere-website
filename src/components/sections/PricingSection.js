@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaCheck, FaGift, FaArrowRight, FaVolumeUp, FaVolumeOff } from 'react-icons/fa';
+import { FaCheck, FaGift, FaArrowRight } from 'react-icons/fa';
 import StripeCheckout from '../checkout/StripeCheckout';
 import * as Tone from 'tone'; // Import Tone.js for audio playback
 
@@ -30,7 +30,7 @@ const noteFrequencies = {
 };
 
 // Memoize the ChordWeb component to prevent re-renders when parent state changes
-const ChordWeb = React.memo(({ audioMuted }) => {
+const ChordWeb = React.memo(() => {
   const canvasRef = useRef(null);
   const requestIdRef = useRef(null);
   const positionsInitialized = useRef(false);
@@ -41,8 +41,6 @@ const ChordWeb = React.memo(({ audioMuted }) => {
   
   // Initialize Tone.js synth
   useEffect(() => {
-    console.log("Initializing Tone.js synth");
-    
     // Create a marimba-like synth sound
     const marimbaLikeSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 3.01,
@@ -82,29 +80,14 @@ const ChordWeb = React.memo(({ audioMuted }) => {
       wet: 0.3
     });
     
-    // Create a volume node with higher volume
-    const volume = new Tone.Volume(-2); // Increased from -10 to -2 for much louder sound
+    // Create a volume node
+    const volume = new Tone.Volume(-10);
     
     // Chain effects
     marimbaLikeSynth.chain(chorus, volume, reverb);
     
     // Store synth in ref
     synth.current = marimbaLikeSynth;
-    
-    // Try to start Tone.js context to prepare for audio
-    if (Tone.context.state !== 'running') {
-      console.log("Attempting to start Tone.js context on load");
-      // Use a user interaction event listener to start audio context when user clicks anywhere
-      const startAudio = () => {
-        Tone.start().then(() => {
-          console.log("Tone.js context started successfully");
-        }).catch(err => {
-          console.error("Failed to start Tone.js context:", err);
-        });
-        document.removeEventListener('click', startAudio);
-      };
-      document.addEventListener('click', startAudio);
-    }
     
     return () => {
       // Clean up synth and effects when component unmounts
@@ -119,33 +102,14 @@ const ChordWeb = React.memo(({ audioMuted }) => {
   
   // Function to play a chord when clicked
   const playChord = (chord, chordIndex) => {
-    console.log(`Attempting to play chord: ${chord.name}, Muted: ${audioMuted}`);
-    
-    // Check if audio is muted - still show visual feedback but don't play sound
-    if (audioMuted) {
-      console.log("Audio is muted - only showing visual effects");
-      // Add visual feedback for the playing chord without sound
-      const position = chordPositions.current[chordIndex];
-      if (position) {
-        position.playingTime = currentTime.current;
-        
-        // Remove visual effect after a short time
-        setTimeout(() => {
-          // No need to clean up activeChords since we didn't add to it
-        }, 2000);
-      }
-      return;
-    }
-    
     // Check if we've reached the maximum number of simultaneous chords (4)
     if (activeChords.current.size >= 4 && !activeChords.current.has(chordIndex)) {
-      console.log("Maximum number of chords already playing");
+      // If we're at the limit and this is a new chord, don't play it
       return;
     }
     
     // If this chord is already playing, don't play it again
     if (activeChords.current.has(chordIndex)) {
-      console.log("Chord already playing");
       return;
     }
     
@@ -176,43 +140,33 @@ const ChordWeb = React.memo(({ audioMuted }) => {
     
     // Start Tone.js audio context if it's not started yet
     if (Tone.context.state !== 'running') {
-      console.log("Tone.js context not running, attempting to start");
       Tone.start().then(() => {
-        console.log("Tone.js context started, playing notes");
         playNotes(notes, chordIndex);
-      }).catch(err => {
-        console.error("Failed to start Tone.js context:", err);
       });
     } else {
-      console.log("Tone.js context already running, playing notes");
       playNotes(notes, chordIndex);
     }
     
     function playNotes(notes, chordIndex) {
-      console.log(`Playing notes: ${notes.join(', ')}`);
-      try {
-        // Play chord with shorter duration for marimba-like articulation
-        synth.current.triggerAttackRelease(notes, "8n");
-        
-        // Clear any existing timeout for this chord
-        if (timeoutIds.current[chordIndex]) {
-          clearTimeout(timeoutIds.current[chordIndex]);
-        }
-        
-        // Add visual feedback for the playing chord
-        const position = chordPositions.current[chordIndex];
-        if (position) {
-          position.playingTime = currentTime.current; // Use the ref value instead of direct time variable
-        }
-        
-        // Set timeout to remove chord from active list after it finishes
-        timeoutIds.current[chordIndex] = setTimeout(() => {
-          activeChords.current.delete(chordIndex);
-          delete timeoutIds.current[chordIndex];
-        }, 2000); // Shorter duration for marimba sound
-      } catch (error) {
-        console.error("Error playing notes:", error);
+      // Play chord with shorter duration for marimba-like articulation
+      synth.current.triggerAttackRelease(notes, "8n");
+      
+      // Clear any existing timeout for this chord
+      if (timeoutIds.current[chordIndex]) {
+        clearTimeout(timeoutIds.current[chordIndex]);
       }
+      
+      // Add visual feedback for the playing chord
+      const position = chordPositions.current[chordIndex];
+      if (position) {
+        position.playingTime = currentTime.current; // Use the ref value instead of direct time variable
+      }
+      
+      // Set timeout to remove chord from active list after it finishes
+      timeoutIds.current[chordIndex] = setTimeout(() => {
+        activeChords.current.delete(chordIndex);
+        delete timeoutIds.current[chordIndex];
+      }, 2000); // Shorter duration for marimba sound
     }
   };
   
@@ -891,12 +845,10 @@ const ChordWeb = React.memo(({ audioMuted }) => {
     
     // Add click event listener for chord playback
     const handleCanvasClick = (event) => {
-      console.log("Canvas clicked");
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
       
-      let foundChord = false;
       // Find which chord was clicked (if any)
       for (let i = 0; i < chordPositions.current.length; i++) {
         const position = chordPositions.current[i];
@@ -914,20 +866,11 @@ const ChordWeb = React.memo(({ audioMuted }) => {
         const baseRadius = 25;
         const moleculeRadius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
         
-        // Use actual molecule radius for click detection with wider radius for easier clicking
-        const clickRadius = moleculeRadius * 2; // Doubled for easier clicking
-        console.log(`Chord ${chord.name} - Distance: ${distanceToCenter}, Radius: ${moleculeRadius}, Click Radius: ${clickRadius}`);
-        
-        if (distanceToCenter <= clickRadius) {
-          console.log(`Chord ${chord.name} clicked`);
+        // Use actual molecule radius for click detection
+        if (distanceToCenter <= moleculeRadius * 1.5) { // 1.5x for slightly easier clicking
           playChord(chords[i], i);
-          foundChord = true;
           break;
         }
-      }
-      
-      if (!foundChord) {
-        console.log("No chord was clicked");
       }
     };
     
@@ -1288,29 +1231,6 @@ const SavingsInfo = styled.div`
   }
 `;
 
-// Add a mute/unmute button to ensure audio context is started
-const AudioToggle = styled.button`
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(108, 99, 255, 0.8);
-  }
-`;
-
 const PricingSection = () => {
   // State to track the selected billing period
   const [billingPeriod, setBillingPeriod] = useState('monthly');
@@ -1318,40 +1238,10 @@ const PricingSection = () => {
   // State to track the pointer position
   const [pointerTop, setPointerTop] = useState(0);
   
-  // State to track audio mute status
-  const [audioMuted, setAudioMuted] = useState(true);
-  
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef(null);
   const yearlyBtnRef = React.useRef(null);
   const lifetimeBtnRef = React.useRef(null);
-  
-  // Handle audio toggle - this guarantees user interaction for audio context
-  const handleAudioToggle = () => {
-    // If currently muted, unmute and start audio context
-    if (audioMuted) {
-      console.log("Unmuting audio and starting Tone.js context");
-      Tone.start()
-        .then(() => {
-          console.log("Tone.js context started successfully by user interaction");
-          setAudioMuted(false);
-          
-          // Play a test note to verify audio is working
-          const testSynth = new Tone.Synth().toDestination();
-          testSynth.triggerAttackRelease("C5", "8n");
-          setTimeout(() => {
-            testSynth.dispose();
-          }, 500);
-        })
-        .catch(err => {
-          console.error("Failed to start Tone.js context:", err);
-        });
-    } else {
-      // Just mute the audio (don't actually stop the context)
-      console.log("Muting audio");
-      setAudioMuted(true);
-    }
-  };
   
   // Update pointer position when billing period changes
   useEffect(() => {
@@ -1438,15 +1328,9 @@ const PricingSection = () => {
 
   return (
     <PricingContainer id="pricing">
-      {/* Pass audioMuted state to ChordWeb */}
-      <ChordWeb audioMuted={audioMuted} />
+      {/* Render ChordWeb only once on initial mount - won't be affected by state changes */}
+      <ChordWeb />
       <Particle />
-      
-      {/* Audio toggle button */}
-      <AudioToggle onClick={handleAudioToggle}>
-        {audioMuted ? <FaVolumeOff /> : <FaVolumeUp />}
-      </AudioToggle>
-      
       <ContentContainer>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
