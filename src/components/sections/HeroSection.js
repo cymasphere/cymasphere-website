@@ -899,12 +899,11 @@ const HeroSection = () => {
         </HeroTitle>
         
         <HeroSubtitle
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, delay: 0.2 }}
         >
-          Powerful tools for musicians, producers, and audio engineers.
-          <strong> Now deployed with GitHub Actions to AWS Lightsail!</strong>
+          {t('hero.subtitle', 'Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.')} 
         </HeroSubtitle>
         
         <ButtonGroup
