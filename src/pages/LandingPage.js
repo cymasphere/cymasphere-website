@@ -5,7 +5,7 @@ import HowItWorksSection from '../components/sections/HowItWorksSection';
 import ContactSection from '../components/sections/ContactSection';
 import FAQSection from '../components/sections/FAQSection';
 import PricingSection from '../components/sections/PricingSection';
-import TestimonialsSection from '../components/sections/TestimonialsSection';
+// import TestimonialsSection from '../components/sections/TestimonialsSection';
 import Layout from '../components/layout/Layout';
 
 const LandingPage = () => {
@@ -15,7 +15,7 @@ const LandingPage = () => {
       <FeaturesSection />
       <HowItWorksSection />
       <PricingSection />
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
       <FAQSection />
       <ContactSection />
     </Layout>
