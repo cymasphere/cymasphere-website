@@ -12,10 +12,9 @@ const ChordWebCanvas = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1; /* Decreased from 4 to 1 to be behind all interactive elements */
+  z-index: 4; /* Set to 4 to be above ContentContainer */
   opacity: 1.0; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
-  pointer-events: none; /* Don't capture any pointer events */
   
   /* Hide on mobile devices */
   @media (max-width: 768px) {
@@ -896,7 +895,7 @@ const ContentContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
-  z-index: 3; /* Increased to be above the chord molecules (z-index: 2) */
+  z-index: 3;
   background: linear-gradient(
     rgba(var(--background-rgb), 0.8) 0%, 
     rgba(var(--background-rgb), 0.95) 20%,
@@ -904,8 +903,13 @@ const ContentContainer = styled.div`
     rgba(var(--background-rgb), 0.8) 100%
   );
   border-radius: 12px;
-  padding: 60px 10px 50px; /* Increased top padding from 30px to 60px */
+  padding: 60px 10px 50px;
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
+  pointer-events: none; /* This allows clicks to pass through to the canvas */
+  
+  & > * {
+    pointer-events: auto; /* This restores click events for all direct children */
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -947,6 +951,8 @@ const BillingToggleContainer = styled.div`
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
+  z-index: 5;
+  pointer-events: auto;
 `;
 
 // Make the buttons larger to fill the width
@@ -963,16 +969,11 @@ const BillingToggleButton = styled.button`
   margin: 0 6px;
   position: relative;
   flex: 1;
-  z-index: 10;
+  z-index: 6;
   
   &:hover {
     background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255, 255, 255, 0.1)'};
     color: ${props => props.$active ? 'white' : 'var(--text)'};
-    transform: translateY(-2px);
-  }
-  
-  &:active {
-    transform: translateY(1px);
   }
 `;
 
@@ -1068,7 +1069,6 @@ const PricingCard = styled(motion.div)`
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
   border: 2px solid var(--primary);
-  z-index: 5; /* Ensure the card is above any animation elements */
   
   &:hover {
     transform: translateY(-8px);
