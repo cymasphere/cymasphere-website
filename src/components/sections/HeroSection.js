@@ -57,7 +57,7 @@ const HeroSubtitle = styled(motion.p)`
   font-size: 1.25rem;
   color: var(--text-secondary);
   margin-bottom: 3rem;
-  max-width: 800px;
+  max-width: 900px;
   text-align: center;
 `;
 
