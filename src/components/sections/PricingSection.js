@@ -41,44 +41,53 @@ const ChordWeb = React.memo(() => {
   
   // Initialize Tone.js synth
   useEffect(() => {
-    // Create a more ambient synth sound
-    const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
+    // Create a marimba-like synth sound
+    const marimbaLikeSynth = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3.01,
+      modulationIndex: 14,
       oscillator: {
-        type: 'sine',
-        modulationType: 'sine'
+        type: "triangle"
       },
       envelope: {
-        attack: 0.3,
-        decay: 2,
-        sustain: 0.4,
-        release: 6
+        attack: 0.01,
+        decay: 0.3,
+        sustain: 0.1,
+        release: 1.2
       },
       modulation: {
-        type: 'triangle'
+        type: "sine"
       },
       modulationEnvelope: {
-        attack: 0.5,
-        decay: 0.5,
+        attack: 0.01,
+        decay: 0.2,
         sustain: 0.2,
-        release: 7
+        release: 0.5
       }
     });
     
-    // Create reverb effect
+    // Create reverb effect for resonance
     const reverb = new Tone.Reverb({
-      decay: 12,
-      wet: 0.95,
-      preDelay: 0.1
+      decay: 2.5,
+      wet: 0.45,
+      preDelay: 0.01
     }).toDestination();
     
-    // Create a volume node to reduce gain
-    const volume = new Tone.Volume(-16); // Increased from -20 for slightly higher gain
+    // Add a subtle chorus for depth
+    const chorus = new Tone.Chorus({
+      frequency: 1.5,
+      delayTime: 3.5,
+      depth: 0.7,
+      wet: 0.3
+    });
+    
+    // Create a volume node
+    const volume = new Tone.Volume(-10);
     
     // Chain effects
-    ambientSynth.chain(volume, reverb);
+    marimbaLikeSynth.chain(chorus, volume, reverb);
     
     // Store synth in ref
-    synth.current = ambientSynth;
+    synth.current = marimbaLikeSynth;
     
     return () => {
       // Clean up synth and effects when component unmounts
@@ -86,6 +95,7 @@ const ChordWeb = React.memo(() => {
         synth.current.dispose();
       }
       reverb.dispose();
+      chorus.dispose();
       volume.dispose();
     };
   }, []);
@@ -108,9 +118,23 @@ const ChordWeb = React.memo(() => {
     
     // Convert note names to frequencies with octave information
     const notes = chord.notes.map(note => {
-      // Determine octave (higher for upper notes in the chord)
-      const baseOctave = 2; // Lowered from 3 for a deeper sound with more harmonics for the reverb
-      const octave = chord.notes.indexOf(note) >= 3 ? baseOctave + 1 : baseOctave;
+      // Determine octave (higher for marimba-like sound)
+      const baseOctave = 4; // Higher octave range for marimba-like sound
+      const noteIndex = chord.notes.indexOf(note);
+      // Distribute notes across octaves for marimba-like playability
+      let octave = baseOctave;
+      
+      // For larger chords, distribute notes across octaves for better clarity
+      if (chord.notes.length > 3) {
+        if (noteIndex < 2) {
+          octave = baseOctave;
+        } else if (noteIndex < 4) {
+          octave = baseOctave + 1;
+        } else {
+          octave = baseOctave + 2;
+        }
+      }
+      
       return `${note}${octave}`;
     });
     
@@ -124,8 +148,8 @@ const ChordWeb = React.memo(() => {
     }
     
     function playNotes(notes, chordIndex) {
-      // Play chord for longer duration (2n = half note) to let reverb shine
-      synth.current.triggerAttackRelease(notes, "2n");
+      // Play chord with shorter duration for marimba-like articulation
+      synth.current.triggerAttackRelease(notes, "8n");
       
       // Clear any existing timeout for this chord
       if (timeoutIds.current[chordIndex]) {
@@ -142,7 +166,7 @@ const ChordWeb = React.memo(() => {
       timeoutIds.current[chordIndex] = setTimeout(() => {
         activeChords.current.delete(chordIndex);
         delete timeoutIds.current[chordIndex];
-      }, 5000); // Increased from 3000 to match longer reverb tail
+      }, 2000); // Shorter duration for marimba sound
     }
   };
   
