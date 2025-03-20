@@ -62,21 +62,22 @@ const StripeCheckout = ({ priceId, buttonText, billingPeriod, price, trialDays }
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Use navigate in a way that works even if react-router isn't fully set up
-  let navigate;
-  try {
-    navigate = useNavigate();
-  } catch (error) {
-    // Fallback function if useNavigate fails or isn't available
-    navigate = (path) => {
-      console.log('Navigation fallback used to:', path);
-      window.location.href = path;
-    };
-  }
+  // Always call hooks at the top level
+  const navigate = useNavigate();
   
   // Check if we're in development mode
   // In production, this would be set to 'production'
   const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  // Function to safely navigate using either react-router or fallback to window.location
+  const safeNavigate = (path) => {
+    try {
+      navigate(path);
+    } catch (navError) {
+      console.error('Navigation error:', navError);
+      window.location.href = path;
+    }
+  };
   
   const handleCheckout = async () => {
     try {
@@ -89,14 +90,7 @@ const StripeCheckout = ({ priceId, buttonText, billingPeriod, price, trialDays }
       
       // Give some time for the loading state to show
       setTimeout(() => {
-        try {
-          // Try to use React Router navigation
-          navigate(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
-        } catch (navError) {
-          // Fallback to basic navigation
-          console.error('Navigation error:', navError);
-          window.location.href = `/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`;
-        }
+        safeNavigate(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
         setIsLoading(false);
       }, 800);
       
