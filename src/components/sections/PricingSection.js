@@ -12,7 +12,7 @@ const ChordWebCanvas = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 4; /* Set to 4 to be above ContentContainer */
+  z-index: 2; /* Set below container to preserve molecule interactivity */
   opacity: 1.0; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
   
@@ -905,11 +905,6 @@ const ContentContainer = styled.div`
   border-radius: 12px;
   padding: 60px 10px 50px;
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
-  pointer-events: none; /* This allows clicks to pass through to the canvas */
-  
-  & > * {
-    pointer-events: auto; /* This restores click events for all direct children */
-  }
 `;
 
 const SectionTitle = styled.h2`
@@ -951,7 +946,7 @@ const BillingToggleContainer = styled.div`
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-  z-index: 5;
+  z-index: 9;
   pointer-events: auto;
 `;
 
@@ -969,7 +964,7 @@ const BillingToggleButton = styled.button`
   margin: 0 6px;
   position: relative;
   flex: 1;
-  z-index: 6;
+  z-index: 10;
   
   &:hover {
     background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255, 255, 255, 0.1)'};
@@ -1069,6 +1064,7 @@ const PricingCard = styled(motion.div)`
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
   border: 2px solid var(--primary);
+  z-index: 4; /* Ensure card is above canvas */
   
   &:hover {
     transform: translateY(-8px);
@@ -1140,6 +1136,7 @@ const CardBody = styled.div`
   padding: 25px 20px;
   background: rgba(30, 28, 42, 0.8);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 4; /* Add z-index here too */
 `;
 
 const Divider = styled.hr`
