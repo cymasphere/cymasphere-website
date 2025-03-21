@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaCheck, FaTimes, FaInfoCircle, FaCrown, FaGift } from 'react-icons/fa';
@@ -8,25 +8,27 @@ const ModalOverlay = styled(motion.div)`
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 20px;
+  will-change: opacity;
 `;
 
 const ModalContent = styled(motion.div)`
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  max-width: 800px;
+  background: rgba(25, 23, 36, 0.95);
+  border-radius: 16px;
   width: 100%;
+  max-width: 900px;
   max-height: 90vh;
-  overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  overflow: auto;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  will-change: transform, opacity;
 `;
 
 const ModalHeader = styled.div`
@@ -311,19 +313,30 @@ const PlanSelectionModal = ({
     }
   }
 }) => {
-  // Prevent body scrolling when modal is open
+  // Improved body overflow management to prevent memory leaks
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     }
     
-    // Cleanup function to ensure we restore scrolling if component unmounts
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
+
+  // Helper function to format date
+  const formatDateHelper = useCallback((date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, []);
 
   if (!isOpen) return null;
 
@@ -356,7 +369,7 @@ const PlanSelectionModal = ({
           {currentSubscription.interval === 'yearly' && (
             <PlanChangeInfo>
               <FaInfoCircle />
-              <p>Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {formatDate(currentSubscription.endDate)}.</p>
+              <p>Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {formatDateHelper(currentSubscription.endDate)}.</p>
             </PlanChangeInfo>
           )}
           
@@ -402,8 +415,8 @@ const PlanSelectionModal = ({
                     </div>
                     <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
                       {currentSubscription.inTrial 
-                        ? `First payment: ${formatDate(currentSubscription.trialEndDate)}`
-                        : `Next billing: ${formatDate(currentSubscription.endDate)}`}
+                        ? `First payment: ${formatDateHelper(currentSubscription.trialEndDate)}`
+                        : `Next billing: ${formatDateHelper(currentSubscription.endDate)}`}
                     </div>
                   </PlanPriceStyled>
                 )}
@@ -416,8 +429,8 @@ const PlanSelectionModal = ({
                     </div>
                     <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
                       {currentSubscription.inTrial 
-                        ? `First payment: ${formatDate(currentSubscription.trialEndDate)}`
-                        : `Next billing: ${formatDate(currentSubscription.endDate)}`}
+                        ? `First payment: ${formatDateHelper(currentSubscription.trialEndDate)}`
+                        : `Next billing: ${formatDateHelper(currentSubscription.endDate)}`}
                     </div>
                   </PlanPriceStyled>
                 )}
@@ -427,7 +440,7 @@ const PlanSelectionModal = ({
                     <div style={{ fontSize: '1rem', marginTop: '5px' }}>one-time purchase</div>
                     {currentSubscription.isLifetime && (
                       <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
-                        Purchased: {formatDate(currentSubscription.purchaseDate)}
+                        Purchased: {formatDateHelper(currentSubscription.purchaseDate)}
                       </div>
                     )}
                   </PlanPriceStyled>

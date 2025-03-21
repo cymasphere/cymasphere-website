@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaCheck, FaGift, FaArrowRight } from 'react-icons/fa';
@@ -32,12 +32,14 @@ const noteFrequencies = {
 // Memoize the ChordWeb component to prevent re-renders when parent state changes
 const ChordWeb = React.memo(() => {
   const canvasRef = useRef(null);
-  const requestIdRef = useRef(null);
+  const animationFrameId = useRef(null);
   const positionsInitialized = useRef(false);
   const synth = useRef(null);
   const activeChords = useRef(new Set()); // Track currently playing chords
   const timeoutIds = useRef({}); // Store timeout IDs for cleanup
   const currentTime = useRef(0); // Add a ref to store the current animation time
+  const mousePosition = useRef({ x: 0, y: 0 });
+  const isMouseOverCanvas = useRef(false);
   
   // Initialize Tone.js synth
   useEffect(() => {
@@ -108,7 +110,7 @@ const ChordWeb = React.memo(() => {
   }, []);
   
   // Function to play a chord when clicked
-  const playChord = (chord, chordIndex) => {
+  const playChord = useCallback((chord, chordIndex) => {
     // Check if we've reached the maximum number of simultaneous chords (4)
     if (activeChords.current.size >= 4 && !activeChords.current.has(chordIndex)) {
       // If we're at the limit and this is a new chord, don't play it
@@ -181,26 +183,46 @@ const ChordWeb = React.memo(() => {
         delete timeoutIds.current[chordIndex];
       }, 5000); // Increased from 3000 to match longer reverb tail
     }
-  };
+  }, []);
+  
+  // Pre-compute color values for better performance
+  const chordColors = useMemo(() => {
+    return [
+      'rgba(128, 119, 255, 0.9)',   // C major triad
+      'rgba(255, 210, 80, 0.9)',    // Eb major sus4
+      'rgba(150, 230, 255, 0.95)',  // C major 9th
+      'rgba(255, 130, 90, 0.9)',    // Eb major triad
+      'rgba(160, 255, 220, 0.95)',  // C major 13th
+      'rgba(150, 230, 255, 0.95)',  // Eb major 9th
+      'rgba(128, 119, 255, 0.9)',   // C major triad
+      'rgba(255, 200, 70, 0.95)',   // C major 7th with #11
+      'rgba(255, 210, 80, 0.9)',    // C major sus4
+      'rgba(255, 130, 90, 0.9)',    // Eb major triad
+      'rgba(255, 200, 70, 0.95)',   // C major 11th
+      'rgba(90, 255, 140, 0.9)',    // C major 7th
+      'rgba(160, 255, 220, 0.95)',  // Eb major 13th
+      'rgba(90, 255, 140, 0.9)'     // C major 7th
+    ];
+  }, []);
   
   // Reduce number of chords for better performance
-  const chords = [
+  const chords = useMemo(() => [
     // Evenly distributed chord types (triads, 7ths, 9ths, 11ths, 13ths)
-    { name: 'C', notes: ['C', 'E', 'G'], color: 'rgba(128, 119, 255, 0.9)' },             // C major triad
-    { name: 'Bb7sus4', notes: ['Bb', 'Eb', 'F', 'Ab'], color: 'rgba(255, 210, 80, 0.9)' }, // Eb major sus4
-    { name: 'Dmaj9', notes: ['D', 'F#', 'A', 'C#', 'E'], color: 'rgba(150, 230, 255, 0.95)' }, // C major 9th
-    { name: 'Gm', notes: ['G', 'Bb', 'D'], color: 'rgba(255, 130, 90, 0.9)' },           // Eb major triad
-    { name: 'Cmaj13', notes: ['C', 'E', 'G', 'B', 'D', 'A'], color: 'rgba(160, 255, 220, 0.95)' }, // C major 13th
-    { name: 'Ebm9', notes: ['Eb', 'Gb', 'Bb', 'Db', 'F'], color: 'rgba(150, 230, 255, 0.95)' }, // Eb major 9th
-    { name: 'Dm', notes: ['D', 'F', 'A'], color: 'rgba(128, 119, 255, 0.9)' },           // C major triad
-    { name: 'Fmaj7(#11)', notes: ['F', 'A', 'C', 'E', 'G', 'B'], color: 'rgba(255, 200, 70, 0.95)' }, // C major 7th with #11
-    { name: 'G7sus4', notes: ['G', 'C', 'D', 'F'], color: 'rgba(255, 210, 80, 0.9)' },   // C major sus4
-    { name: 'Eb', notes: ['Eb', 'G', 'Bb'], color: 'rgba(255, 130, 90, 0.9)' },          // Eb major triad
-    { name: 'Am11', notes: ['A', 'C', 'E', 'G', 'B', 'D'], color: 'rgba(255, 200, 70, 0.95)' }, // C major 11th
-    { name: 'Fmaj7', notes: ['F', 'A', 'C', 'E'], color: 'rgba(90, 255, 140, 0.9)' },    // C major 7th
-    { name: 'Abmaj13', notes: ['Ab', 'C', 'Eb', 'G', 'Bb', 'F'], color: 'rgba(160, 255, 220, 0.95)' }, // Eb major 13th
-    { name: 'Cmaj7', notes: ['C', 'E', 'G', 'B'], color: 'rgba(90, 255, 140, 0.9)' }     // C major 7th
-  ];
+    { name: 'C', notes: ['C', 'E', 'G'], color: chordColors[0] },
+    { name: 'Bb7sus4', notes: ['Bb', 'Eb', 'F', 'Ab'], color: chordColors[1] },
+    { name: 'Dmaj9', notes: ['D', 'F#', 'A', 'C#', 'E'], color: chordColors[2] },
+    { name: 'Gm', notes: ['G', 'Bb', 'D'], color: chordColors[3] },
+    { name: 'Cmaj13', notes: ['C', 'E', 'G', 'B', 'D', 'A'], color: chordColors[4] },
+    { name: 'Ebm9', notes: ['Eb', 'Gb', 'Bb', 'Db', 'F'], color: chordColors[5] },
+    { name: 'Dm', notes: ['D', 'F', 'A'], color: chordColors[6] },
+    { name: 'Fmaj7(#11)', notes: ['F', 'A', 'C', 'E', 'G', 'B'], color: chordColors[7] },
+    { name: 'G7sus4', notes: ['G', 'C', 'D', 'F'], color: chordColors[8] },
+    { name: 'Eb', notes: ['Eb', 'G', 'Bb'], color: chordColors[9] },
+    { name: 'Am11', notes: ['A', 'C', 'E', 'G', 'B', 'D'], color: chordColors[10] },
+    { name: 'Fmaj7', notes: ['F', 'A', 'C', 'E'], color: chordColors[11] },
+    { name: 'Abmaj13', notes: ['Ab', 'C', 'Eb', 'G', 'Bb', 'F'], color: chordColors[12] },
+    { name: 'Cmaj7', notes: ['C', 'E', 'G', 'B'], color: chordColors[13] }
+  ], [chordColors]);
   
   // Define positions for each chord molecule
   const chordPositions = useRef([]);
@@ -210,9 +232,10 @@ const ChordWeb = React.memo(() => {
   
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const context = canvas.getContext('2d', { alpha: true });
     let time = 0;
-    let animationFrameId;
     let lastFrameTime = 0;
     let resizeTimeout;
     
@@ -226,12 +249,18 @@ const ChordWeb = React.memo(() => {
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
       
+      // Store mouse position for use in animation loop instead of recalculating for each chord
+      mousePosition.current = { x: mouseX, y: mouseY };
+      
       let isOverMolecule = false;
       
-      // Find if mouse is over any chord molecule
+      // Find if mouse is over any chord molecule - only check visible ones
       for (let i = 0; i < chordPositions.current.length; i++) {
         const position = chordPositions.current[i];
         if (!position) continue;
+        
+        // Skip checking faraway molecules for performance
+        if (position.z > 100) continue;
         
         // Calculate distance to chord center
         const dx = mouseX - position.x;
@@ -248,58 +277,55 @@ const ChordWeb = React.memo(() => {
         // Use actual molecule radius for hover detection
         if (distanceToCenter <= moleculeRadius * 1.5) { // 1.5x for slightly easier hovering
           isOverMolecule = true;
-          position.isHovering = true;
-        } else {
-          position.isHovering = false;
+          break;
         }
       }
       
-      // Update cursor style based on whether mouse is over a molecule
-      canvas.style.cursor = isOverMolecule ? 'pointer' : 'default';
+      // Only change the cursor style if the state changes
+      if (isOverMolecule !== isMouseOverCanvas.current) {
+        canvas.style.cursor = isOverMolecule ? 'pointer' : 'default';
+        isMouseOverCanvas.current = isOverMolecule;
+      }
     };
     
-    // Add event listener for mousemove
-    canvas.addEventListener('mousemove', handleMouseMove);
-
-    // Set canvas dimensions with debouncing
+    // Debounced resize handler for better performance
     const resizeCanvas = () => {
-      clearTimeout(resizeTimeout);
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      
       resizeTimeout = setTimeout(() => {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
+        // Set canvas dimensions to match display size
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
         
-        // Set display size (css pixels)
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        
-        // Set actual size in memory (scaled for device pixel ratio)
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        
-        // Scale context to match dpr
-        context.scale(dpr, dpr);
-        
-        // Only initialize positions once to prevent jumping
-        if (!positionsInitialized.current) {
-          initializePositions(width, height);
-          positionsInitialized.current = true;
-        }
-      }, 250); // 250ms debounce
+        // Re-initialize positions after resize
+        positionsInitialized.current = false;
+      }, 200); // 200ms debounce
     };
+
+    // Set initial canvas size
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
     
+    // Add event listeners
+    canvas.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+    
+    // Initialize positions
     const initializePositions = (width, height) => {
       // Define center safe zone - no molecules in this area
       const centerX = width / 2;
       const centerY = height / 2;
-      const safeZoneWidth = width * 0.7;
-      const safeZoneHeight = height * 0.8;
+      
+      // Define a wider, more rectangular safe zone that better matches the content area
+      const safeZoneWidth = width * 0.9;  // Increased from 0.8 to 0.9
+      const safeZoneHeight = height * 0.95; // Increased from 0.85 to 0.95
       
       // Position chord molecules in an evenly distributed pattern
       const allPositions = [];
       
-      // Place chords evenly around the edges of the safe zone with some randomness
+      // Place chords evenly around the edges of the safe zone with LESS randomness
       const totalChords = chords.length;
       const angleStep = (2 * Math.PI) / totalChords;
       
@@ -308,54 +334,47 @@ const ChordWeb = React.memo(() => {
         const isComplex = chord.notes.length >= 5;
         
         // Calculate position along a rough ellipse around the content
-        const angle = index * angleStep + (Math.random() * 0.3 - 0.15); // Add slight randomness to angle
+        // Reduce randomness for more consistent oval shape
+        const angle = index * angleStep + (Math.random() * 0.2 - 0.1); // Reduced randomness
         
-        // Elliptical distribution with some randomness
-        const radiusX = width * 0.35 + (Math.random() * 0.1 - 0.05) * width; // Reduced from 0.45 to bring molecules closer
-        const radiusY = height * 0.35 + (Math.random() * 0.1 - 0.05) * height; // Reduced from 0.45 to bring molecules closer
+        // More pronounced elliptical distribution with less randomness and pushed further out
+        const radiusX = width * 0.45 + (Math.random() * 0.04 - 0.02) * width; // Increased from 0.38 to 0.45
+        const radiusY = height * 0.45 + (Math.random() * 0.04 - 0.02) * height; // Increased from 0.38 to 0.45
         
         const x = centerX + Math.cos(angle) * radiusX;
         const y = centerY + Math.sin(angle) * radiusY;
         
-        // Randomize movement properties - higher velocity for visibility
+        // Slower overall movement
         const movementSpeed = isComplex ? 
-          0.03 + Math.random() * 0.03 : // Reduced range for more consistent motion
-          0.04 + Math.random() * 0.04; // Reduced range for more consistent motion
+          0.02 + Math.random() * 0.02 : // Reduced from 0.03 for slower motion
+          0.025 + Math.random() * 0.025; // Reduced from 0.04 for slower motion
         
         // Use smaller z-depth range for better visibility
         const zDepth = isComplex ? 
           10 + Math.random() * 40 : // More visible
-          20 + Math.random() * 60; // More varied depth
-        
-        allPositions.push({
-          x,
-          y,
+          20 + Math.random() * 60;
+          
+        // Store Z-depth for z-sorting
+        const position = {
+          x: x,
+          y: y,
           z: zDepth,
-          vx: (Math.random() - 0.5) * movementSpeed,
-          vy: (Math.random() - 0.5) * movementSpeed,
-          vz: (Math.random() - 0.5) * 0.05,
-          rotationOffset: Math.random() * Math.PI * 2,
-          pulseSpeed: 0.3 + Math.random() * 0.5,
-          pulsePhase: Math.random() * Math.PI * 2,
-          wigglePhase: Math.random() * Math.PI * 2,
-          lastVisibilityChange: 0,
-          baseAngle: angle, // Store original angle for maintaining distribution
-          originalX: x, // Store original position to keep molecules from drifting too far
+          vx: 0,
+          vy: 0,
+          rotationOffset: Math.random() * Math.PI * 2, // Random starting rotation
+          originalX: x, // Store original position for gentle reset force
           originalY: y,
-          radiusX, // Store ellipse dimensions
-          radiusY
-        });
+          // Add a playing flag to track state (optimized for fewer property checks)
+          playingTime: null,
+          collisionTime: null
+        };
+        
+        chordPositions.current[index] = position;
       });
       
-      // Assign all positions
-      chordPositions.current = allPositions;
+      // Mark as initialized
+      positionsInitialized.current = true;
     };
-    
-    // Initial resize
-    resizeCanvas();
-    
-    // Throttled resize event listener
-    window.addEventListener('resize', resizeCanvas);
     
     // Draw a note (atom) with 3D effect - simplified for performance
     const drawNote = (x, y, z, noteName, color, time, index, totalNotes) => {
@@ -363,10 +382,13 @@ const ChordWeb = React.memo(() => {
       const scale = 400 / (400 + z);
       const size = 8 * scale; // Increased from 6 for better visibility
       
+      // Skip drawing very small notes for performance
+      if (size < 2) return;
+      
       // Simplified pulsing to improve performance
       const pulse = 1 + Math.sin(time * 2 + index * 0.5) * 0.2; // Increased from 0.15
       
-      // Stronger glow effect for better visibility
+      // Stronger glow effect for better visibility - only apply for closer objects
       if (size > 3) {
         context.shadowColor = color;
         context.shadowBlur = 8 * scale; // Increased from 4
@@ -397,181 +419,117 @@ const ChordWeb = React.memo(() => {
       context.shadowBlur = 0;
     };
     
-    // Draw a chord (molecule) with 3D effect - simplified for performance
+    // Cache gradient values
+    const backgroundGradients = {};
+    
+    // Draw a radiant background glow to enhance depth
+    const drawBackgroundRadiance = (deltaTime) => {
+      // Skip entirely for performance if needed
+      if (window.innerWidth < 1000) return;
+      
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      // Create a subtle gradient glow around canvas center
+      const radius = Math.max(width, height) * 0.5;
+      
+      // Use cached gradient if available
+      let gradient = backgroundGradients[width + 'x' + height];
+      if (!gradient) {
+        gradient = context.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, radius
+        );
+        
+        // Use gradient that matches the overall color theme
+        gradient.addColorStop(0, 'rgba(108, 99, 255, 0.03)'); // Center color - purple
+        gradient.addColorStop(0.5, 'rgba(78, 205, 196, 0.02)'); // Middle color - teal
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // Edge - transparent
+        
+        // Cache the gradient
+        backgroundGradients[width + 'x' + height] = gradient;
+      }
+      
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, width, height);
+    };
+    
+    // Draw a chord object
     const drawChord = (chordIndex, time, deltaTime) => {
       const chord = chords[chordIndex];
       const position = chordPositions.current[chordIndex];
       
-      if (!position) return;
+      if (!chord || !position) return null;
       
-      // Move the chord position with 3D effect - scale by deltaTime for consistent speed
-      // Use gentle velocity updates
-      position.x += position.vx * deltaTime * 8; // Reduced from 15 for gentler movement
-      position.y += position.vy * deltaTime * 8; // Reduced from 15 for gentler movement
-      position.z += position.vz * deltaTime * 5; // Kept lower for z-axis
-      
-      // Get canvas size for boundary checking
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      
-      // Bounce off the edges with gentle velocity changes
-      if (position.x < width * 0.05) {
-        position.vx = Math.abs(position.vx) * 0.5; // Gentle bounce
-        position.x = width * 0.05; // Prevent getting stuck at the boundary
-      } else if (position.x > width * 0.95) {
-        position.vx = -Math.abs(position.vx) * 0.5; // Gentle bounce
-        position.x = width * 0.95; // Prevent getting stuck at the boundary
-      }
-      
-      if (position.y < height * 0.05) {
-        position.vy = Math.abs(position.vy) * 0.5; // Gentle bounce
-        position.y = height * 0.05; // Prevent getting stuck at the boundary
-      } else if (position.y > height * 0.95) {
-        position.vy = -Math.abs(position.vy) * 0.5; // Gentle bounce
-        position.y = height * 0.95; // Prevent getting stuck at the boundary
-      }
-      
-      // Z-axis bounds with gentle correction
-      if (position.z < 0) {
-        position.vz = Math.abs(position.vz) * 0.5;
-        position.z = 0;
-      } else if (position.z > 200) {
-        position.vz = -Math.abs(position.vz) * 0.5;
-        position.z = 200;
-      }
-      
-      // Stay out of the center area
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const safeZoneWidth = width * 0.7; 
-      const safeZoneHeight = height * 0.8;
-      
-      // If entering safe zone, push away with stronger force (less expensive collision detection)
-      if (Math.abs(position.x - centerX) < safeZoneWidth / 2 && 
-          Math.abs(position.y - centerY) < safeZoneHeight / 2) {
-        const distToLeft = position.x - (centerX - safeZoneWidth / 2);
-        const distToRight = (centerX + safeZoneWidth / 2) - position.x;
-        const distToTop = position.y - (centerY - safeZoneHeight / 2);
-        const distToBottom = (centerY + safeZoneHeight / 2) - position.y;
-        
-        const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
-        
-        // Apply stronger repulsion with additional velocity - gentler version
-        if (minDist === distToLeft) {
-          position.vx = (-Math.abs(position.vx) - 0.02 * deltaTime * 10) * 0.7; // Damped repulsion
-          // Gently move outside safe zone
-          position.x = Math.min(position.x, centerX - safeZoneWidth/2 - 2);
-        } else if (minDist === distToRight) {
-          position.vx = (Math.abs(position.vx) + 0.02 * deltaTime * 10) * 0.7; // Damped repulsion
-          position.x = Math.max(position.x, centerX + safeZoneWidth/2 + 2);
-        } else if (minDist === distToTop) {
-          position.vy = (-Math.abs(position.vy) - 0.02 * deltaTime * 10) * 0.7; // Damped repulsion
-          position.y = Math.min(position.y, centerY - safeZoneHeight/2 - 2);
-        } else {
-          position.vy = (Math.abs(position.vy) + 0.02 * deltaTime * 10) * 0.7; // Damped repulsion
-          position.y = Math.max(position.y, centerY + safeZoneHeight/2 + 2);
-        }
-      }
-      
-      // Get canvas size for reference
-      // Calculate scale and radius for collision detection
+      // Calculate scale based on z-depth (perspective)
       const scale = 400 / (400 + position.z);
-      const pulse = Math.sin(time * position.pulseSpeed + position.pulsePhase) * 0.15 + 1;
-      const noteCount = chord.notes.length;
-      const baseRadius = 25;
-      const radius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
       
-      // Store radius and position for collision detection
-      position.displayRadius = radius;
-      position.displayScale = scale;
+      // Skip drawing very small chords for performance
+      if (scale < 0.3) return null;
       
-      // Check collisions with other chords (except those with very different z depths)
-      for (let i = 0; i < chordPositions.current.length; i++) {
-        if (i === chordIndex) continue; // Skip self
-        
-        const otherPosition = chordPositions.current[i];
-        if (!otherPosition || !otherPosition.displayRadius) continue;
-        
-        // Skip collision detection for chords with very different z-depths
-        const zDiff = Math.abs(position.z - otherPosition.z);
-        if (zDiff > 80) continue;
-        
-        // Calculate distance between chord centers
-        const dx = position.x - otherPosition.x;
-        const dy = position.y - otherPosition.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Sum of radii plus padding
-        const minDistance = position.displayRadius + otherPosition.displayRadius + 20; // Increased padding
-        
-        // If overlapping, push away
-        if (distance < minDistance) {
-          // Direction vector
-          const nx = dx / distance || 0;
-          const ny = dy / distance || 0;
-          
-          // Overlap amount - push harder when overlapping more
-          const overlap = (minDistance - distance) * 0.8; // Increased from 0.5 to 0.8
-          
-          // Scale repulsion by z-depth - closer chords (lower z) push harder
-          const zFactor = 1 - Math.min(0.8, zDiff / 100);
-          
-          // Apply stronger repulsion forces with elasticity (reduced speeds)
-          position.vx += nx * overlap * 0.01 * zFactor; // Very gentle repulsion
-          position.vy += ny * overlap * 0.01 * zFactor; // Very gentle repulsion
-          
-          // Add elasticity bounce effect (reduced rebound)
-          position.vx = position.vx * 0.95 + nx * Math.abs(position.vx) * 0.15; // More damping
-          position.vy = position.vy * 0.95 + ny * Math.abs(position.vy) * 0.15; // More damping
-          
-          // Cap maximum velocity to ensure super slow movement
-          const maxVelocity = 0.03; // Very low max velocity
-          position.vx = Math.max(-maxVelocity, Math.min(maxVelocity, position.vx));
-          position.vy = Math.max(-maxVelocity, Math.min(maxVelocity, position.vy));
-          position.vz = Math.max(-0.01, Math.min(0.01, position.vz)); // Minimal z-axis movement
-          
-          // More aggressive immediate position correction to prevent overlaps
-          position.x += nx * overlap * 0.05; // Reduced from 0.1
-          position.y += ny * overlap * 0.05; // Reduced from 0.1
-          
-          // Visual feedback for collision - briefly increase pulse
-          position.collisionTime = time;
-        }
-      }
+      // Create gentle pulse effect for visual interest
+      const pulseSpeed = 1 + (chord.notes.length > 4 ? 0.2 : 0); // Faster pulse for complex chords
+      const pulse = 1 + Math.sin(time * pulseSpeed + chordIndex * 0.7) * 0.1; // Gentle pulsing
       
-      // Add visual pulse effect when collision occurs
+      // Add collision feedback (visual response when chords collide)
       let collisionPulse = 0;
+      
+      // If recently collided, add pulse effect that fades with time
       if (position.collisionTime && time - position.collisionTime < 0.5) {
         collisionPulse = 0.3 * (1 - (time - position.collisionTime) / 0.5);
       }
       
       // Simplified pulse for performance
-      const rotationAngle = time * 0.5 + position.rotationOffset;
+      const rotationAngle = time * 0.1 + position.rotationOffset; // Reduced from 0.5 to 0.1 for much slower rotation
       
       // Simplified glow - only draw if object is large enough
       if (scale > 0.6) {
+        // Precalculate note positions for better performance
+        const noteCount = chord.notes.length;
+        const baseRadius = 25;
+        const radius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+        
+        // Store radius and position for collision detection
+        position.displayRadius = radius;
+        position.displayScale = scale;
+      
         // Add a background glow effect for the entire chord
         const glowRadius = 20 * scale * (pulse + collisionPulse);
         context.beginPath();
-        const gradient = context.createRadialGradient(
-          position.x, position.y, 0,
-          position.x, position.y, glowRadius
-        );
         
-        // Change glow color based on playing state
-        let glowColor;
-        if (position.playingTime && time - position.playingTime < 5) {
-          // Ethereal glow that fades slowly for reverb effect
-          const playFactor = Math.pow(1 - (time - position.playingTime) / 5, 1.2);
-          glowColor = chord.color.replace('0.9', (0.5 * playFactor + 0.2).toString());
-        } else if (position.collisionTime && time - position.collisionTime < 0.5) {
-          glowColor = chord.color.replace('0.9', '0.35'); // Brighter during collision 
-        } else {
-          glowColor = chord.color.replace('0.9', '0.2');
-        }
+        // Cache gradient for performance
+        const gradientKey = `${position.x.toFixed(0)},${position.y.toFixed(0)},${glowRadius.toFixed(1)}`;
+        let gradient = position.cachedGradient?.key === gradientKey 
+          ? position.cachedGradient.gradient 
+          : null;
+        
+        if (!gradient) {
+          gradient = context.createRadialGradient(
+            position.x, position.y, 0,
+            position.x, position.y, glowRadius
+          );
           
-        gradient.addColorStop(0, glowColor);
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+          // Change glow color based on playing state
+          let glowColor;
+          if (position.playingTime && time - position.playingTime < 5) {
+            // Ethereal glow that fades slowly for reverb effect
+            const playFactor = Math.pow(1 - (time - position.playingTime) / 5, 1.2);
+            glowColor = chord.color.replace('0.9', (0.5 * playFactor + 0.2).toString());
+          } else if (position.collisionTime && time - position.collisionTime < 0.5) {
+            glowColor = chord.color.replace('0.9', '0.35'); // Brighter during collision 
+          } else {
+            glowColor = chord.color.replace('0.9', '0.2');
+          }
+            
+          gradient.addColorStop(0, glowColor);
+          gradient.addColorStop(1, 'rgba(0,0,0,0)');
+          
+          // Cache the gradient
+          position.cachedGradient = { key: gradientKey, gradient };
+        }
+        
         context.fillStyle = gradient;
         
         // Larger glow radius when playing to match reverb effect
@@ -581,16 +539,6 @@ const ChordWeb = React.memo(() => {
           
         context.arc(position.x, position.y, displayRadius, 0, Math.PI * 2);
         context.fill();
-        
-        // Draw clickable area circle around molecule
-        const clickableRadius = radius * 3; // Reduced from 5 to 3 for smaller circles
-        
-        // Don't display the circle outline visually, but keep the clickable area
-        // context.beginPath();
-        // context.arc(position.x, position.y, clickableRadius, 0, Math.PI * 2);
-        // context.setLineDash([5, 3]);
-        // context.stroke();
-        // context.setLineDash([]); // Reset line dash
         
         // Draw chord name with "Click to play" indicator when hovering
         if (scale > 0.7) {
@@ -609,6 +557,61 @@ const ChordWeb = React.memo(() => {
           } else {
             context.fillText(chord.name, position.x, position.y - nameOffset);
           }
+        }
+      } else {
+        // Precalculate note positions for better performance even when not drawing
+        const noteCount = chord.notes.length;
+        const baseRadius = 25;
+        const radius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+        
+        // Store radius and position for collision detection
+        position.displayRadius = radius;
+        position.displayScale = scale;
+      }
+      
+      // Get the note positions based on the radius
+      const noteCount = chord.notes.length;
+      const baseRadius = 25;
+      const radius = position.displayRadius || (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+      
+      // Check collisions with other chords (except those with very different z depths)
+      for (let i = 0; i < chordPositions.current.length; i++) {
+        if (i === chordIndex) continue; // Skip self
+        
+        const otherPosition = chordPositions.current[i];
+        if (!otherPosition || !otherPosition.displayRadius) continue;
+        
+        // Skip collision detection for chords with very different z-depths
+        const zDiff = Math.abs(position.z - otherPosition.z);
+        if (zDiff > 80) continue;
+        
+        // Calculate distance between chord centers
+        const dx = position.x - otherPosition.x;
+        const dy = position.y - otherPosition.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Sum of radii plus padding
+        const minDistance = position.displayRadius + otherPosition.displayRadius + 20;
+        
+        // If colliding, apply collision physics
+        if (distance < minDistance) {
+          // Collision impulse strength
+          const collisionStrength = 0.01; // Adjusted for smoother motion
+          
+          // Direction vector between the two centers
+          const nx = dx / distance;
+          const ny = dy / distance;
+          
+          // Calculate impulse magnitude (stronger for more overlap)
+          const overlap = minDistance - distance;
+          const impulse = overlap * collisionStrength * (otherPosition.displayRadius / position.displayRadius);
+          
+          // Apply impulse to velocity and position
+          position.vx += nx * impulse;
+          position.vy += ny * impulse;
+          
+          // Update collision time for visual effect
+          position.collisionTime = time;
         }
       }
       
@@ -731,80 +734,53 @@ const ChordWeb = React.memo(() => {
       }
     };
     
-    // Simplified background radiance effect
-    const drawBackgroundRadiance = (deltaTime) => {
-      // Reduce to only 2 glow spots for performance
-      const glowSpots = [
-        { x: canvas.clientWidth * 0.1, y: canvas.clientHeight * 0.1, size: 250, color: 'rgba(108, 99, 255, 0.08)' }, // Increased from 0.04
-        { x: canvas.clientWidth * 0.9, y: canvas.clientHeight * 0.9, size: 250, color: 'rgba(249, 110, 70, 0.08)' } // Increased from 0.04
-      ];
-      
-      // Draw spots with less GPU-intensive gradients
-      glowSpots.forEach(spot => {
-        const pulse = 0.8 + Math.sin(time * 0.5) * 0.2;
-        context.beginPath();
-        const gradient = context.createRadialGradient(
-          spot.x, spot.y, 0,
-          spot.x, spot.y, spot.size * pulse
-        );
-        gradient.addColorStop(0, spot.color.replace('0.08', '0.12')); // Increased from 0.06
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-        
-        context.fillStyle = gradient;
-        context.arc(spot.x, spot.y, spot.size * pulse, 0, Math.PI * 2);
-        context.fill();
-      });
-    };
-    
-    // Frame rate throttling - aim for steady 30 FPS
-    const targetFPS = 20; // Increased from 15 for smoother animation
-    const frameInterval = 1000 / targetFPS;
-    let lastFrameTimestamp = 0;
-    
-    // Animation loop with performance optimizations
+    // Main animation loop - optimized
     const render = (timestamp) => {
-      // Skip frames to maintain target framerate
-      const elapsed = timestamp - lastFrameTimestamp;
-      if (elapsed < frameInterval) {
-        animationFrameId = requestAnimationFrame(render);
-        return;
+      // Skip initialization frames to prevent animation stutter
+      if (!positionsInitialized.current) {
+        // Initialize only when ready
+        initializePositions(canvas.width, canvas.height);
       }
       
-      lastFrameTimestamp = timestamp - (elapsed % frameInterval);
-      const deltaTime = Math.min(0.05, elapsed / 1000);
+      // Calculate time delta for smooth animation regardless of frame rate
+      const deltaTime = lastFrameTime ? (timestamp - lastFrameTime) / 1000 : 0.016;
+      lastFrameTime = timestamp;
       
-      time += animationSpeed * deltaTime * 60;
-      currentTime.current = time; // Update the time ref with the current animation time
+      // Clamp deltaTime to prevent jumps after tab switch
+      const clampedDelta = Math.min(deltaTime, 0.05);
       
-      // Get canvas dimensions
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      // Update time variable
+      time += clampedDelta;
+      currentTime.current = time;
       
-      // Simple update for all positions
+      // Simplified physics calculations - process movement only once per frame
+      const maxVelocity = 10; // Reduced from 20 for slower movement
       chordPositions.current.forEach(position => {
         if (!position) return;
         
-        // Apply wiggle effect to velocity - reduced for more gentle movement
-        const wiggleX = Math.sin(time * 0.8 + position.wigglePhase) * 0.01; // Reduced speed and amplitude
-        const wiggleY = Math.cos(time * 0.7 + position.wigglePhase) * 0.01; // Reduced speed and amplitude
+        // Apply slight random forces for gentle, continuous movement
+        // Reduced force magnitude for slower movement
+        const forceX = (Math.random() - 0.5) * animationSpeed * 0.6; // Reduced by 40%
+        const forceY = (Math.random() - 0.5) * animationSpeed * 0.6; // Reduced by 40%
         
-        // Add wiggle with damping to prevent accumulation
-        position.vx = position.vx * 0.98 + wiggleX; // 2% damping
-        position.vy = position.vy * 0.98 + wiggleY; // 2% damping
+        // Incorporate force, gravity, and damping in one step
+        position.vx += forceX;
+        position.vy += forceY;
         
-        // Ensure minimum velocity (never completely stop)
-        const minVelocity = 0.02; // Reduced from 0.05
-        const maxVelocity = 0.1;  // Reduced from 0.2
+        // Apply stronger velocity damping for more stable positions
+        position.vx *= 0.98; // Increased damping from 0.99
+        position.vy *= 0.98; // Increased damping from 0.99
         
-        // Normalize velocity if below minimum - with gentler transition
-        if (Math.abs(position.vx) < minVelocity) {
-          // Gradually increase toward minimum instead of jumping
-          position.vx += (position.vx >= 0 ? 1 : -1) * 0.001;
-        }
-        if (Math.abs(position.vy) < minVelocity) {
-          // Gradually increase toward minimum instead of jumping
-          position.vy += (position.vy >= 0 ? 1 : -1) * 0.001;
-        }
+        // Update position
+        position.x += position.vx;
+        position.y += position.vy;
+        
+        // Add z-axis movement in a sine wave pattern for 3D effect - reduced speed
+        position.z += Math.sin(time * 0.3 + position.x * 0.01) * 0.1; // Reduced from 0.5 and 0.2
+        
+        // Keep z-values within range for consistent depth perception
+        if (position.z < 10) position.z = 10;
+        if (position.z > 200) position.z = 200;
         
         // Cap maximum velocity with damping for smooth transitions
         if (Math.abs(position.vx) > maxVelocity) {
@@ -814,49 +790,73 @@ const ChordWeb = React.memo(() => {
           position.vy = (position.vy > 0 ? maxVelocity : -maxVelocity) * 0.95 + position.vy * 0.05;
         }
         
-        // Add gentle force to maintain original even distribution
+        // Add stronger force to maintain original positions
         // Calculate current distance from original position
         const dx = position.x - position.originalX;
         const dy = position.y - position.originalY;
         const distanceFromOrigin = Math.sqrt(dx * dx + dy * dy);
         
-        // Very gentle correction that increases with distance
-        const correctionFactor = 0.00015; // Very small value for extremely gentle correction
-        position.vx -= dx * correctionFactor;
-        position.vy -= dy * correctionFactor;
+        // Stronger correction that increases with distance
+        const correctionFactor = 0.0005; // Increased from 0.00015 for stronger return force
+        
+        // Apply stronger correction when further from original position
+        // This creates a "spring" effect that gets stronger with distance
+        const distanceMultiplier = 1.0 + (distanceFromOrigin / 100); // Scale force with distance
+        position.vx -= dx * correctionFactor * distanceMultiplier;
+        position.vy -= dy * correctionFactor * distanceMultiplier;
+        
+        // Hard boundary to prevent wandering too far from original position
+        const maxDistance = 150; // Maximum pixels to wander from starting point
+        if (distanceFromOrigin > maxDistance) {
+          // Force immediate position correction
+          position.x = position.originalX + (dx / distanceFromOrigin) * maxDistance;
+          position.y = position.originalY + (dy / distanceFromOrigin) * maxDistance;
+          
+          // Reverse velocity to bounce back toward origin
+          position.vx = -position.vx * 0.5;
+          position.vy = -position.vy * 0.5;
+        }
       });
       
       // Clear only once
       context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       
       // Draw background radiance with less intensity
-      drawBackgroundRadiance(deltaTime);
+      drawBackgroundRadiance(clampedDelta);
       
       // Draw all chords and collect their positions
       const chordCenters = [];
       
-      // Only process visible chords - skip every other chord when far away
-      for (let i = 0; i < chords.length; i++) {
+      // Sort by z-depth for proper rendering
+      const sortedIndices = [...Array(chords.length).keys()]
+        .filter(i => chordPositions.current[i])
+        .sort((a, b) => {
+          return chordPositions.current[b].z - chordPositions.current[a].z;
+        });
+        
+      // Draw chords in z-order (back to front)
+      for (const i of sortedIndices) {
         const position = chordPositions.current[i];
         if (!position) continue;
         
         // Skip some far chords for performance
         if (position.z > 120 && i % 2 !== 0) continue;
         
-        const center = drawChord(i, time, deltaTime);
+        const center = drawChord(i, time, clampedDelta);
         if (center) chordCenters.push(center);
       }
       
       // Draw connections between chords
       drawConnections(chordCenters);
       
-      animationFrameId = requestAnimationFrame(render);
+      // Request next frame
+      animationFrameId.current = requestAnimationFrame(render);
     };
     
     // Start animation
-    animationFrameId = requestAnimationFrame(render);
+    animationFrameId.current = requestAnimationFrame(render);
     
-    // Add click event listener for chord playback
+    // Add click event listener for chord playback - with optimization
     const handleCanvasClick = (event) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
@@ -866,6 +866,9 @@ const ChordWeb = React.memo(() => {
       for (let i = 0; i < chordPositions.current.length; i++) {
         const position = chordPositions.current[i];
         if (!position) continue;
+        
+        // Skip checking far chords that would be too small to click
+        if (position.z > 150) continue;
         
         // Calculate distance to chord center (direct)
         const dx = mouseX - position.x;
@@ -887,8 +890,8 @@ const ChordWeb = React.memo(() => {
       }
     };
     
-    // Add event listener
-    canvas.addEventListener('click', handleCanvasClick);
+    // Add event listener with passive flag for performance
+    canvas.addEventListener('click', handleCanvasClick, { passive: true });
     
     // Clean up when component unmounts
     return () => {
@@ -898,7 +901,9 @@ const ChordWeb = React.memo(() => {
       // Clean up other resources
       canvas.removeEventListener('click', handleCanvasClick);
       canvas.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
       window.removeEventListener('resize', resizeCanvas);
       clearTimeout(resizeTimeout);
     };
@@ -940,7 +945,7 @@ const ContentContainer = styled.div`
     rgba(var(--background-rgb), 0.8) 100%
   );
   border-radius: 12px;
-  padding: 60px 10px 50px;
+  padding: 60px 40px 50px; /* Increased horizontal padding from 10px to 40px */
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
   pointer-events: none; /* Allow clicks to pass through to molecules */
 `;

@@ -16,6 +16,7 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  will-change: opacity;
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -652,17 +653,18 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     }
   }, [initialIndex, isOpen]);
   
-  // Prevent body scrolling when modal is open
+  // Improved body overflow management to prevent memory leaks
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     }
     
-    // Cleanup function to ensure we restore scrolling if component unmounts
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
   
@@ -679,48 +681,52 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Preload images when modal opens
+  // Memoized image preloading function
+  const preloadImages = useCallback((features) => {
+    if (!features) return;
+
+    features.forEach((feature) => {
+      if (feature.title) {
+        const imagePath = feature.image || getImagePath(feature.title);
+        
+        // Skip if already loaded or has error
+        if (imagesLoaded[feature.title] || imageErrors[feature.title]) {
+          return;
+        }
+        
+        if (imagePath) {
+          console.log(`Preloading image for "${feature.title}": ${imagePath}`);
+          const img = new Image();
+          
+          img.onload = () => {
+            console.log(`Successfully loaded image for "${feature.title}"`);
+            setImagesLoaded(prev => ({
+              ...prev,
+              [feature.title]: true
+            }));
+          };
+          
+          img.onerror = (err) => {
+            console.error(`Failed to load image for "${feature.title}":`, err);
+            setImageErrors(prev => ({
+              ...prev,
+              [feature.title]: true
+            }));
+          };
+          
+          // Add cache-busting parameter to avoid browser caching issues
+          img.src = `${imagePath}?t=${new Date().getTime()}`;
+        }
+      }
+    });
+  }, [imagesLoaded, imageErrors]);
+  
+  // Use the memoized function in the effect
   useEffect(() => {
     if (isOpen && features) {
-      const newImagesLoaded = { ...imagesLoaded };
-      const newImageErrors = { ...imageErrors };
-      
-      features.forEach((feature) => {
-        if (feature.title) {
-          const imagePath = feature.image || getImagePath(feature.title);
-          
-          // Skip if already loaded or has error
-          if (newImagesLoaded[feature.title] || newImageErrors[feature.title]) {
-            return;
-          }
-          
-          if (imagePath) {
-            console.log(`Preloading image for "${feature.title}": ${imagePath}`);
-            const img = new Image();
-            
-            img.onload = () => {
-              console.log(`Successfully loaded image for "${feature.title}"`);
-              setImagesLoaded(prev => ({
-                ...prev,
-                [feature.title]: true
-              }));
-            };
-            
-            img.onerror = (err) => {
-              console.error(`Failed to load image for "${feature.title}":`, err);
-              setImageErrors(prev => ({
-                ...prev,
-                [feature.title]: true
-              }));
-            };
-            
-            // Add cache-busting parameter to avoid browser caching issues
-            img.src = `${imagePath}?t=${new Date().getTime()}`;
-          }
-        }
-      });
+      preloadImages(features);
     }
-  }, [isOpen, features]);
+  }, [isOpen, features, preloadImages]);
   
   // Toggle debug mode with Shift + D
   useEffect(() => {
@@ -829,7 +835,7 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
         >
           <ModalContainer
             ref={modalRef}
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}

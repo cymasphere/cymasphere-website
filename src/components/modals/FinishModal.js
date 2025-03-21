@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCheckCircle, FaMusic } from 'react-icons/fa';
@@ -15,6 +15,7 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  will-change: opacity;
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -179,17 +180,18 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
     }
   };
   
-  // Prevent body scrolling when modal is open
+  // Improved body overflow management to prevent memory leaks
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     }
     
-    // Cleanup function to ensure we restore scrolling if component unmounts
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
   
@@ -203,8 +205,8 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
     }
   }, [isOpen]);
   
-  // Get congratulations message from translations
-  const getMessage = () => {
+  // Memoize the congratulations message to prevent recreating on each render
+  const getMessage = useCallback(() => {
     if (t) {
       return t('synth.wizard.congratsMessage', 
         "Congratulations! You've just scratched the surface of Cymasphere's powerful music creation capabilities. Your song \"{songName}\" with the \"{trackName}\" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality.", 
@@ -213,7 +215,7 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
     }
     
     return `Congratulations! You've created a song called "${songName}" with a "${trackName}" track featuring a chord progression and melody pattern. This is just the beginning of what you can create with Cymasphere.`;
-  };
+  }, [t, songName, trackName]);
   
   return (
     <AnimatePresence>
@@ -226,7 +228,7 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
         >
           <ModalContainer
             id="finish-modal-container"
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}

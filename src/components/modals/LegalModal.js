@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
@@ -15,6 +15,7 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  will-change: opacity;
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -185,17 +186,18 @@ const LegalContent = styled.div`
 `;
 
 const LegalModal = ({ isOpen, onClose, modalType }) => {
-  // Prevent body scrolling when modal is open
+  // Improved body overflow management to prevent memory leaks
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     }
     
-    // Cleanup function to ensure we restore scrolling if component unmounts
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
 
@@ -205,119 +207,192 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
     }
   };
   
-  const getTitle = () => {
-    return modalType === 'terms' ? 'Terms and Conditions' : 'Privacy Policy';
-  };
+  // Memoize content rendering function to prevent unnecessary re-creation
+  const getTitle = useCallback(() => {
+    switch (modalType) {
+      case 'terms':
+        return 'Terms of Service';
+      case 'privacy':
+        return 'Privacy Policy';
+      default:
+        return 'Legal Information';
+    }
+  }, [modalType]);
   
-  const getContent = () => {
+  // Memoize the content to prevent expensive DOM creation on each render
+  const getContent = useCallback(() => {
     if (modalType === 'terms') {
       return (
         <LegalContent>
-          <p>Last updated: {new Date().toLocaleDateString()}</p>
+          <h2>Terms of Service</h2>
           
-          <p>Please read these Terms and Conditions carefully before using the Cymasphere website and services operated by Cymasphere.</p>
+          <section>
+            <h3>1. Acceptance of Terms</h3>
+            <p>
+              By accessing or using Cymasphere's services, website, or applications, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.
+            </p>
+          </section>
           
-          <h3>1. Agreement to Terms</h3>
-          <p>By accessing or using our services, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the service.</p>
+          <section>
+            <h3>2. Description of Service</h3>
+            <p>
+              Cymasphere provides music theory and composition tools through web and desktop applications. These services may change from time to time without prior notice.
+            </p>
+          </section>
           
-          <h3>2. Use License</h3>
-          <p>Permission is granted to temporarily use Cymasphere services for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:</p>
-          <ul>
-            <li>Modify or copy the materials</li>
-            <li>Use the materials for any commercial purpose</li>
-            <li>Attempt to decompile or reverse engineer any software contained in Cymasphere</li>
-            <li>Remove any copyright or other proprietary notations from the materials</li>
-            <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
-          </ul>
+          <section>
+            <h3>3. User Accounts</h3>
+            <p>
+              Some features of our services require you to create an account. You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account.
+            </p>
+          </section>
           
-          <h3>3. Subscription Services</h3>
-          <p>Cymasphere offers subscription-based services. By subscribing to our services, you agree to the following:</p>
-          <ul>
-            <li>Subscription fees are charged in advance on a monthly or yearly basis depending on your selected plan</li>
-            <li>Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period</li>
-            <li>You can cancel your subscription at any time through your account settings</li>
-            <li>No refunds will be provided for partial subscription periods</li>
-          </ul>
+          <section>
+            <h3>4. User Content</h3>
+            <p>
+              You retain all rights to any content you create, upload, or share through our services. By uploading content, you grant Cymasphere a non-exclusive license to use, reproduce, and distribute your content solely to provide services to you.
+            </p>
+          </section>
           
-          <h3>4. User Accounts</h3>
-          <p>When you create an account with us, you must provide information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account.</p>
-          <p>You are responsible for safeguarding the password that you use to access the service and for any activities or actions under your password.</p>
+          <section>
+            <h3>5. Intellectual Property</h3>
+            <p>
+              Cymasphere and its content, features, and functionality are owned by us and are protected by copyright, trademark, and other intellectual property laws.
+            </p>
+          </section>
           
-          <h3>5. Intellectual Property</h3>
-          <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Cymasphere. The Service is protected by copyright, trademark, and other laws.</p>
+          <section>
+            <h3>6. Subscription and Payments</h3>
+            <p>
+              Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees. Subscription fees are non-refundable except as required by law.
+            </p>
+          </section>
           
-          <h3>6. Termination</h3>
-          <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+          <section>
+            <h3>7. Termination</h3>
+            <p>
+              We reserve the right to terminate or suspend your account and access to our services for violations of these terms or for any other reason at our discretion.
+            </p>
+          </section>
           
-          <h3>7. Limitation of Liability</h3>
-          <p>In no event shall Cymasphere, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the service.</p>
+          <section>
+            <h3>8. Disclaimer of Warranties</h3>
+            <p>
+              Our services are provided on an "as is" and "as available" basis. We make no warranties, expressed or implied, regarding the reliability, availability, or accuracy of our services.
+            </p>
+          </section>
           
-          <h3>8. Changes</h3>
-          <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice prior to any new terms taking effect.</p>
+          <section>
+            <h3>9. Limitation of Liability</h3>
+            <p>
+              In no event shall Cymasphere be liable for any indirect, incidental, special, or consequential damages arising out of or in connection with your use of our services.
+            </p>
+          </section>
           
-          <h3>9. Contact Us</h3>
-          <p>If you have any questions about these Terms, please contact us at support@cymasphere.com.</p>
+          <section>
+            <h3>10. Changes to Terms</h3>
+            <p>
+              We may modify these terms at any time. Continued use of our services after changes constitutes acceptance of the modified terms.
+            </p>
+          </section>
+          
+          <section>
+            <h3>11. Governing Law</h3>
+            <p>
+              These terms shall be governed by the laws of the jurisdiction in which Cymasphere operates, without regard to its conflict of law provisions.
+            </p>
+          </section>
+          
+          <section>
+            <h3>12. Contact</h3>
+            <p>
+              For questions about these terms, please contact us at support@cymasphere.com.
+            </p>
+          </section>
+          
+          <p className="last-updated">Last Updated: March 1, 2023</p>
         </LegalContent>
       );
     } else {
       return (
         <LegalContent>
-          <p>Last updated: {new Date().toLocaleDateString()}</p>
+          <h2>Privacy Policy</h2>
           
-          <p>This Privacy Policy describes how Cymasphere collects, uses, and discloses your personal information when you use our website and services.</p>
+          <section>
+            <h3>1. Introduction</h3>
+            <p>
+              This Privacy Policy explains how Cymasphere collects, uses, and protects your personal information when you use our services. We respect your privacy and are committed to protecting your personal data.
+            </p>
+          </section>
           
-          <h3>1. Information We Collect</h3>
-          <p>We collect several types of information from and about users of our website, including:</p>
-          <ul>
-            <li><strong>Personal Information:</strong> Email address, name, billing address, payment information, and other information you provide when creating an account or subscribing to our services.</li>
-            <li><strong>Usage Data:</strong> Information about how you use our website, services, and features.</li>
-            <li><strong>Technical Data:</strong> IP address, browser type and version, device information, and other technology identifiers.</li>
-            <li><strong>User Content:</strong> Audio files, project data, settings, and other content you upload or create using our services.</li>
-          </ul>
+          <section>
+            <h3>2. Information We Collect</h3>
+            <p>
+              We collect information you provide directly to us, such as your name, email address, and payment information when you register for an account. We also collect usage data and technical information about your device and how you interact with our services.
+            </p>
+          </section>
           
-          <h3>2. How We Use Your Information</h3>
-          <p>We use the information we collect to:</p>
-          <ul>
-            <li>Provide, maintain, and improve our services</li>
-            <li>Process transactions and send related information</li>
-            <li>Send you technical notices, updates, security alerts, and support messages</li>
-            <li>Respond to your comments, questions, and requests</li>
-            <li>Personalize your experience with our services</li>
-            <li>Monitor and analyze usage patterns and trends</li>
-          </ul>
+          <section>
+            <h3>3. How We Use Your Information</h3>
+            <p>
+              We use your information to provide and improve our services, process transactions, communicate with you, and ensure security. We may also use your information for research and analytics to better understand how users interact with our services.
+            </p>
+          </section>
           
-          <h3>3. Data Sharing and Disclosure</h3>
-          <p>We may share your personal information in the following situations:</p>
-          <ul>
-            <li><strong>Service Providers:</strong> We may share your information with third-party vendors who provide services on our behalf.</li>
-            <li><strong>Business Transfers:</strong> In connection with any merger, sale of company assets, financing, or acquisition of all or a portion of our business.</li>
-            <li><strong>Legal Requirements:</strong> If required to do so by law or in response to valid requests by public authorities.</li>
-          </ul>
+          <section>
+            <h3>4. Data Sharing and Disclosure</h3>
+            <p>
+              We do not sell your personal information. We may share your information with third-party service providers who help us operate our services, process payments, or analyze data. We may also disclose your information if required by law.
+            </p>
+          </section>
           
-          <h3>4. Data Security</h3>
-          <p>We implement appropriate technical and organizational measures to protect the security of your personal information. However, please be aware that no method of transmission over the internet or method of electronic storage is 100% secure.</p>
+          <section>
+            <h3>5. Data Security</h3>
+            <p>
+              We implement appropriate security measures to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure.
+            </p>
+          </section>
           
-          <h3>5. Your Data Rights</h3>
-          <p>Depending on your location, you may have certain rights regarding your personal information, including:</p>
-          <ul>
-            <li>The right to access personal information we hold about you</li>
-            <li>The right to request correction or deletion of your personal information</li>
-            <li>The right to object to or restrict processing of your personal information</li>
-            <li>The right to data portability</li>
-          </ul>
+          <section>
+            <h3>6. Your Rights</h3>
+            <p>
+              Depending on your location, you may have certain rights regarding your personal data, including the right to access, correct, delete, or restrict processing of your data. Please contact us to exercise these rights.
+            </p>
+          </section>
           
-          <h3>6. Children's Privacy</h3>
-          <p>Our services are not intended for use by children under the age of 13. We do not knowingly collect personal information from children under 13.</p>
+          <section>
+            <h3>7. Cookies and Tracking Technologies</h3>
+            <p>
+              We use cookies and similar tracking technologies to enhance your experience, analyze usage, and collect information about how you interact with our services. You can control cookies through your browser settings.
+            </p>
+          </section>
           
-          <h3>7. Changes to This Privacy Policy</h3>
-          <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.</p>
+          <section>
+            <h3>8. Children's Privacy</h3>
+            <p>
+              Our services are not intended for children under 13. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child under 13, we will take steps to delete it.
+            </p>
+          </section>
           
-          <h3>8. Contact Us</h3>
-          <p>If you have any questions about this Privacy Policy, please contact us at privacy@cymasphere.com.</p>
+          <section>
+            <h3>9. Changes to This Privacy Policy</h3>
+            <p>
+              We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date.
+            </p>
+          </section>
+          
+          <section>
+            <h3>10. Contact Us</h3>
+            <p>
+              If you have questions about this Privacy Policy, please contact us at support@cymasphere.com.
+            </p>
+          </section>
+          
+          <p className="last-updated">Last Updated: March 1, 2023</p>
         </LegalContent>
       );
     }
-  };
+  }, [modalType]);
   
   return (
     <AnimatePresence>
@@ -329,7 +404,7 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
           onClick={handleBackdropClick}
         >
           <ModalContainer
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}

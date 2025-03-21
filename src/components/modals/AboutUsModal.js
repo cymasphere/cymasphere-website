@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
@@ -15,6 +15,7 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  will-change: opacity;
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -243,18 +244,127 @@ const CompanyHighlight = styled.div`
   border-radius: 0 8px 8px 0;
 `;
 
+// Memoize the about us content since it's static
+const AboutUsContentSection = memo(() => (
+  <AboutUsContent>
+    <h3>Our Mission</h3>
+    <p>
+      Cymasphere's mission is to bridge the gap between music theory and musical creativity. 
+      We believe that theory should enhance and guide the creative process, not constrain it.
+      Our tools are designed to provide both guidance and freedom, striking the perfect balance 
+      between inspiration and compositional integrity.
+    </p>
+    
+    <CompanyHighlight>
+      We're committed to empowering musicians of all skill levels by making music theory intuitive, 
+      interactive, and inspiring. Our goal is to see your creative vision flourish through better 
+      compositional tools.
+    </CompanyHighlight>
+    
+    <h3>Our Story</h3>
+    <p>
+      Founded in 2022 by a team of dedicated musicians, software engineers, and music theorists, 
+      Cymasphere began as an ambitious project to reimagine how musicians interact with harmony and composition.
+    </p>
+    
+    <p>
+      After years of frustration with existing music software that either lacked theoretical sophistication 
+      or was too complex for intuitive use, our founders set out to create a tool that would make 
+      music theory practical, visual, and genuinely helpful in the creative process.
+    </p>
+    
+    <h3>Our Team</h3>
+    <TeamSection>
+      <TeamMember>
+        <TeamMemberImage>
+          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+        </TeamMemberImage>
+        <TeamMemberName>David Chen</TeamMemberName>
+        <TeamMemberRole>Founder & Lead Developer</TeamMemberRole>
+      </TeamMember>
+      
+      <TeamMember>
+        <TeamMemberImage>
+          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+        </TeamMemberImage>
+        <TeamMemberName>Sarah Nguyen</TeamMemberName>
+        <TeamMemberRole>Music Theory Specialist</TeamMemberRole>
+      </TeamMember>
+      
+      <TeamMember>
+        <TeamMemberImage>
+          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+        </TeamMemberImage>
+        <TeamMemberName>Michael Park</TeamMemberName>
+        <TeamMemberRole>UI/UX Designer</TeamMemberRole>
+      </TeamMember>
+      
+      <TeamMember>
+        <TeamMemberImage>
+          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+        </TeamMemberImage>
+        <TeamMemberName>Emma Rodriguez</TeamMemberName>
+        <TeamMemberRole>Product Manager</TeamMemberRole>
+      </TeamMember>
+    </TeamSection>
+    
+    <h3>Our Values</h3>
+    <p>
+      At Cymasphere, we're guided by a set of core values that shape everything we do:
+    </p>
+    
+    <ul>
+      <li><strong>Musical Integrity</strong> - We respect the principles of music theory while embracing innovation</li>
+      <li><strong>Intuitive Design</strong> - Our interfaces are visually clear and immediately understandable</li>
+      <li><strong>Creative Freedom</strong> - We provide guidance without limiting expression</li>
+      <li><strong>Continuous Learning</strong> - Our tools help users develop their musical understanding</li>
+    </ul>
+    
+    <h3>Our Approach</h3>
+    <p>
+      Cymasphere takes a unique approach to music composition software by focusing on:
+    </p>
+    
+    <ol>
+      <li>Visualizing harmony and voice leading in intuitive ways</li>
+      <li>Providing intelligent suggestions while respecting your creative direction</li>
+      <li>Integrating theoretical concepts seamlessly into the creative workflow</li>
+      <li>Building bridges between composition, arrangement, and production</li>
+    </ol>
+    
+    <p>
+      We're constantly refining our approach based on user feedback and the latest 
+      developments in music technology. We believe in creating tools that grow with you 
+      and adapt to your evolving creative needs.
+    </p>
+    
+    <h3>Looking Forward</h3>
+    <p>
+      As we continue to develop Cymasphere, we're excited about the future of music creation. 
+      Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, 
+      deeper AI-assisted composition features, and much more.
+    </p>
+    
+    <p>
+      We invite you to join us on this journey and help shape the future of intelligent 
+      music creation tools.
+    </p>
+  </AboutUsContent>
+));
+
 const AboutUsModal = ({ isOpen, onClose }) => {
-  // Prevent body scrolling when modal is open
+  // Improved body overflow management to prevent memory leaks
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     }
     
-    // Cleanup function to ensure we restore scrolling if component unmounts
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
 
@@ -274,7 +384,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
           onClick={handleBackdropClick}
         >
           <ModalContainer
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}
@@ -290,79 +400,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
             </CloseButton>
             
             <ContentContainer>
-              <AboutUsContent>
-                <h3>Our Mission</h3>
-                <p>
-                  At NNAudio, we're on a mission to transform audio creation and production through innovative neural network technology. 
-                  Our flagship product, Cymasphere, represents our commitment to providing cutting-edge tools that empower musicians, 
-                  producers, and sound designers to push the boundaries of what's possible in audio production.
-                </p>
-                
-                <CompanyHighlight>
-                  <p>
-                    "We believe that the future of audio production lies at the intersection of human creativity and artificial intelligence. 
-                    Our goal is to build tools that enhance the creative process, not replace it."
-                  </p>
-                </CompanyHighlight>
-                
-                <h3>Our Story</h3>
-                <p>
-                  NNAudio was founded in 2020 by a team of audio engineers, AI researchers, and passionate musicians who 
-                  saw the potential of applying neural networks to audio processing. What started as a research project quickly evolved 
-                  into a mission to create accessible, powerful tools for the audio community.
-                </p>
-                <p>
-                  After two years of intensive development and testing with professional producers, we launched Cymasphere, 
-                  our revolutionary audio processing platform that combines the intuitive workflow musicians expect with the 
-                  cutting-edge capabilities of neural network technology.
-                </p>
-                
-                <h3>Our Technology</h3>
-                <p>
-                  Cymasphere is powered by our proprietary neural network architecture specifically designed for audio processing. 
-                  Our technology allows for:
-                </p>
-                <ul>
-                  <li>Real-time audio analysis with unprecedented accuracy</li>
-                  <li>Intelligent harmony and chord suggestions based on musical context</li>
-                  <li>Advanced pattern recognition for rhythmic and melodic elements</li>
-                  <li>Voice separation and manipulation with minimal artifacts</li>
-                  <li>AI-assisted mixing and mastering while maintaining creative control</li>
-                </ul>
-                
-                <h3>Our Team</h3>
-                <p>
-                  We're a diverse team of audio engineers, machine learning specialists, designers, and musicians working 
-                  together to create the future of audio production.
-                </p>
-                
-                <TeamSection>
-                  <TeamMember>
-                    <TeamMemberImage>RJ</TeamMemberImage>
-                    <TeamMemberName>Ryan Johnson</TeamMemberName>
-                    <TeamMemberRole>Founder & CEO</TeamMemberRole>
-                  </TeamMember>
-                  
-                  <TeamMember>
-                    <TeamMemberImage>GF</TeamMemberImage>
-                    <TeamMemberName>Garrett Fleischer</TeamMemberName>
-                    <TeamMemberRole>Co-founder & CTO</TeamMemberRole>
-                  </TeamMember>
-                </TeamSection>
-                
-                <h3>Join Us</h3>
-                <p>
-                  We're always looking for talented individuals who are passionate about audio and AI. 
-                  If you're interested in joining our team, check out our careers page or reach out to us at 
-                  careers@nnaudio.com.
-                </p>
-                
-                <h3>Contact</h3>
-                <p>
-                  Have questions or feedback? We'd love to hear from you. Reach out to us at info@nnaudio.com 
-                  or follow us on social media to stay updated on our latest developments.
-                </p>
-              </AboutUsContent>
+              <AboutUsContentSection />
             </ContentContainer>
           </ModalContainer>
         </ModalOverlay>
