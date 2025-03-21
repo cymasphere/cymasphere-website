@@ -57,6 +57,8 @@ const FeatureIcon = styled.div`
   box-shadow: 0 10px 20px rgba(108, 99, 255, 0.3);
   position: relative;
   transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateZ(0);
+  will-change: transform;
   
   &:before {
     content: '';
@@ -67,6 +69,10 @@ const FeatureIcon = styled.div`
     opacity: 0;
     transition: opacity 0.4s ease;
     z-index: -1;
+  }
+  
+  svg {
+    transition: transform 0.3s ease;
   }
 `;
 
@@ -98,6 +104,9 @@ const FeatureCard = styled(motion.div)`
   text-align: center;
   overflow: hidden;
   isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
   
   &:after {
     content: '';
@@ -111,38 +120,36 @@ const FeatureCard = styled(motion.div)`
     transform: scale(0.5);
     z-index: -1;
     transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    will-change: opacity, transform;
   }
   
   &:hover {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    transform: translateY(-10px);
+    transform: translateY(-10px) translateZ(0);
     
     &:after {
-      opacity: 1;
-      transform: scale(1.5);
+      opacity: 0.8;
+      transform: scale(1.2);
     }
     
     ${FeatureIcon} {
-      transform: translateY(-10px) scale(1.1);
+      transform: translateY(-5px) scale(1.05);
       
       &:before {
         opacity: 0.8;
-        animation: spin 4s linear infinite;
       }
       
       svg {
-        transform: scale(1.2);
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
       }
     }
     
     ${FeatureTitle} {
       color: var(--primary);
-      transform: translateY(-5px);
     }
     
     ${FeatureDescription} {
-      transform: translateY(-3px);
       color: var(--text-primary);
     }
   }
@@ -174,7 +181,7 @@ const FeaturesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(0);
   
-  const featuresData = [
+  const featuresData = React.useMemo(() => [
     {
       icon: <FaLayerGroup />,
       title: "Song Builder",
@@ -295,7 +302,7 @@ const FeaturesSection = () => {
       `,
       color: "#7ED321"
     }
-  ];
+  ], []);
   
   const openModal = (index) => {
     setSelectedFeature(index);
@@ -314,6 +321,7 @@ const FeaturesSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
+          style={{ willChange: "opacity, transform" }}
         >
           <SectionTitle>Powerful Features</SectionTitle>
         </motion.div>
@@ -325,9 +333,10 @@ const FeaturesSection = () => {
               custom={index}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
+              viewport={{ once: true, amount: 0.1 }}
               variants={cardVariants}
               onClick={() => openModal(index)}
+              style={{ willChange: "opacity, transform" }}
             >
               <FeatureIcon>{feature.icon}</FeatureIcon>
               <FeatureTitle>{feature.title}</FeatureTitle>

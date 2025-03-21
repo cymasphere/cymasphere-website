@@ -119,6 +119,11 @@ const FloatingNote = styled(motion.div)`
               inset 0 4px 10px rgba(255, 255, 255, 0.3),
               inset 0 -4px 10px rgba(0, 0, 0, 0.2);
   z-index: 2;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  pointer-events: none;
+  filter: blur(0); /* Force GPU rendering */
   
   &:after {
     content: '';
@@ -140,6 +145,11 @@ const NoteShadow = styled(motion.div)`
   background-color: rgba(0, 0, 0, 0.2);
   filter: blur(4px);
   z-index: 1;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  pointer-events: none;
+  filter: blur(4px) drop-shadow(0 0 1px rgba(0,0,0,0.1)); /* Force GPU rendering */
 `;
 
 const VoiceLeadingLine = styled(motion.div)`
@@ -903,7 +913,7 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          {t('hero.subtitle', 'Welcome to a new era, where chords and melodies work together in synchronicity. With powerful music theory principles built into every feature, your creative vision becomes reality.')} 
+          Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.
         </HeroSubtitle>
         
         <ButtonGroup
@@ -1031,7 +1041,7 @@ const HeroSection = () => {
       return (
         <React.Fragment key={positionKey}>
           {/* Note shadow */}
-          <motion.div
+          <NoteShadow
             key={`shadow-${positionKey}`}
             style={{
               position: 'absolute',
@@ -1046,26 +1056,22 @@ const HeroSection = () => {
               left: shadowLeft,
               right: shadowRight
             }}
-            // Use static values instead of keyframes for smoother transitions
             animate={{
-              scale: 1.1, 
-              opacity: 0.18
+              transform: [
+                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(1)`,
+                `translate3d(${Math.round(animationOffset.x - 1)}px, ${Math.round(animationOffset.y - 1)}px, 0) scale(0.975)`,
+                `translate3d(${Math.round(animationOffset.x + 2)}px, ${Math.round(animationOffset.y)}px, 0) scale(0.95)`,
+                `translate3d(${Math.round(animationOffset.x)}px, ${Math.round(animationOffset.y + 1)}px, 0) scale(0.975)`,
+                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(1)`,
+              ],
+              opacity: [0.4, 0.35, 0.3, 0.35, 0.4]
             }}
             transition={{
-              scale: { 
-                repeatType: "mirror", 
-                repeat: Infinity,
-                duration: 2.5,
-                ease: "easeInOut",
-                delay: animationOffset // Re-add the position-specific offset
-              },
-              opacity: { 
-                repeatType: "mirror", 
-                repeat: Infinity,
-                duration: 2.5,
-                ease: "easeInOut",
-                delay: animationOffset // Re-add the position-specific offset
-              }
+              duration: 7, // Same duration as the note animation
+              ease: [0.45, 0.05, 0.55, 0.95],
+              times: [0, 0.25, 0.5, 0.75, 1],
+              repeat: Infinity,
+              repeatType: "loop"
             }}
           />
           
@@ -1077,6 +1083,7 @@ const HeroSection = () => {
               width: '60px',
               height: '60px',
               borderRadius: '50%',
+              backgroundColor: noteColor,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1086,28 +1093,29 @@ const HeroSection = () => {
               textShadow: '0px 2px 3px rgba(0,0,0,0.5), 0px 1px 5px rgba(0,0,0,0.5)',
               zIndex: 2,
               cursor: 'pointer',
+              boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2), inset 0 4px 10px rgba(255, 255, 255, 0.3), inset 0 -4px 10px rgba(0, 0, 0, 0.2)',
               ...position
             }}
             title={t('hero.tooltips.playNote', 'Click to play this note')}
-            // Keep backgroundColor as the only animated property during transitions
-            animate={{ 
+            // Keep backgroundColor as an animated property during transitions
+            animate={{
               backgroundColor: noteColor,
-              boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2), inset 0 4px 10px rgba(255, 255, 255, 0.3), inset 0 -4px 10px rgba(0, 0, 0, 0.2)',
-              y: [0, -15, 0]
+              transform: [
+                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 4)}px, 0) scale(0.97)`,
+                `translate3d(${Math.round(animationOffset.x - 1)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(0.985)`,
+                `translate3d(${Math.round(animationOffset.x + 2)}px, ${Math.round(animationOffset.y)}px, 0) scale(1)`,
+                `translate3d(${Math.round(animationOffset.x)}px, ${Math.round(animationOffset.y + 3)}px, 0) scale(0.985)`,
+                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 4)}px, 0) scale(0.97)`,
+              ],
+              opacity: transitioning ? [1, 0.9, 0.8, 0.9, 1] : 1
             }}
-            transition={{ 
-              backgroundColor: { 
-                duration: 1.5, 
-                ease: "easeInOut"
-              },
-              y: {
-                repeat: Infinity,
-                duration: 4,
-                ease: "easeInOut",
-                times: [0, 0.5, 1],
-                repeatDelay: 0,
-                delay: animationOffset // Re-add the position-specific offset
-              }
+            transition={{
+              backgroundColor: { duration: 1.2, ease: "easeInOut" },
+              duration: 7, // Same duration as the note animation
+              ease: [0.45, 0.05, 0.55, 0.95],
+              times: [0, 0.25, 0.5, 0.75, 1],
+              repeat: Infinity,
+              repeatType: "loop"
             }}
             onClick={() => playNote(note)}
             whileHover={{ 
@@ -1204,6 +1212,39 @@ const HeroSection = () => {
       </motion.div>
     </AnimatePresence>
   );
+
+  // Effect for transitioning between chords
+  useEffect(() => {
+    if (!previousChord || !displayedChord) return;
+    
+    // Reduce the transition animation strength to make it less jumpy
+    if (transitioning) {
+      setTransitioning(true);
+      
+      // Use a smoother transition with a gentler curve
+      const transitionTimer = setTimeout(() => {
+        setTransitioning(false);
+      }, 1200); // Slightly longer transition time
+      
+      return () => {
+        clearTimeout(transitionTimer);
+      };
+    }
+  }, [displayedChord, previousChord, transitioning]);
+  
+  // Generate predictable position offsets for animations, but make them smaller
+  useEffect(() => {
+    if (!positionAnimationOffsets.current.length) {
+      // Generate very subtle offsets based on position index
+      positionAnimationOffsets.current = Array(8).fill(0).map((_, index) => {
+        return {
+          // Use even smaller animation range for smoother appearance
+          x: (index % 4) * 0.3,
+          y: Math.floor(index / 4) * 0.3
+        };
+      });
+    }
+  }, []);
 
   return (
     <HeroContainer id="home">
