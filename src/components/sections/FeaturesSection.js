@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaMusic, FaWaveSquare, FaPuzzlePiece, FaLayerGroup, FaRobot, FaVolumeUp } from 'react-icons/fa';
+import { FaMusic, FaWaveSquare, FaPuzzlePiece, FaLayerGroup, FaRobot, FaVolumeUp, FaClock } from 'react-icons/fa';
 import FeatureModal from '../modals/FeatureModal';
 
 const FeaturesContainer = styled.section`
@@ -178,37 +178,39 @@ const FeaturesSection = () => {
     {
       icon: <FaLayerGroup />,
       title: "Song Builder",
-      description: "Create complete songs with intelligent melody and chord progression generation based on your musical preferences.",
+      description: "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
       detailedDescription: `
-        <h3>Build Better Songs, Faster</h3>
-        <p>Our Song Builder streamlines the creative process by handling the technical details while you focus on making musical decisions. It's designed for both beginners and experienced musicians looking to accelerate their workflow.</p>
+        <h3>Central Music Creation Hub</h3>
+        <p>The Song Builder is your central creative hub where all musical elements come together. Create, arrange, and refine your music with an intuitive interface designed for both beginners and professionals.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Intelligent Chord Suggestions</strong> that respond to your musical choices</li>
-          <li><strong>Melodic Pattern Generation</strong> based on chord progressions</li>
-          <li><strong>Structure Templates</strong> for different musical styles and genres</li>
-          <li><strong>Real-time Feedback</strong> on your composition's musicality</li>
-          <li><strong>Export Options</strong> for DAW integration</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Integrated Workspace</strong> that combines all musical elements in one view</li>
+          <li><strong>Voicing and Pattern Tracks</strong> that work together seamlessly</li>
+          <li><strong>Chord Progression Integration</strong> that serves as the harmonic foundation</li>
+          <li><strong>Harmony Palette Access</strong> for quick chord selection and customization</li>
+          <li><strong>Multi-Track Organization</strong> for complete arrangement control</li>
+          <li><strong>Real-time Preview</strong> of your entire composition as you build</li>
         </ul>
       `,
       color: "#4A90E2"
     },
     {
       icon: <FaPuzzlePiece />,
-      title: "Interactive Harmony Palette",
-      description: "Explore chord relationships visually to quickly find the perfect progressions for your compositions.",
+      title: "Harmony Palettes",
+      description: "Visualize and organize chord voicings to create effortless, intuitive progressions.",
       detailedDescription: `
-        <h3>Visualize Music Theory</h3>
-        <p>Our interactive harmony palette transforms complex music theory concepts into intuitive visual relationships. See how chords connect and interact to create emotionally powerful progressions.</p>
+        <h3>Visualize Chord Relationships</h3>
+        <p>Interactive Harmony Palettes transform abstract music theory into a visual, tactile experience. Organize, customize, and discover chord voicings that bring your progressions to life with nuance and character.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Circle of Fifths Integration</strong> with interactive elements</li>
-          <li><strong>Common Chord Progressions</strong> highlighted based on genre</li>
-          <li><strong>Tension and Resolution Visualization</strong> for emotional impact</li>
-          <li><strong>Chord Substitution Suggestions</strong> for creative alternatives</li>
-          <li><strong>Favorite Combination Storage</strong> for your personal library</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Visual Chord Organization</strong> that makes music theory accessible</li>
+          <li><strong>Custom Voicing Libraries</strong> for your personal chord vocabulary</li>
+          <li><strong>Chord Relationship Mapping</strong> to find complementary harmonies</li>
+          <li><strong>Color-Coded Harmony Groups</strong> for intuitive progression building</li>
+          <li><strong>Favorites System</strong> for quick access to your go-to voicings</li>
+          <li><strong>Drag and Drop Interface</strong> for seamless workflow integration</li>
         </ul>
       `,
       color: "#50E3C2"
@@ -216,18 +218,19 @@ const FeaturesSection = () => {
     {
       icon: <FaWaveSquare />,
       title: "Dynamic Pattern Editor",
-      description: "Design complex musical patterns with an intuitive grid editor that visualizes rhythmic and harmonic relationships.",
+      description: "Create intelligent musical patterns that adapt to chord changes in real-time.",
       detailedDescription: `
-        <h3>Pattern-Based Music Creation</h3>
-        <p>The Pattern Editor makes it easy to create complex, evolving musical patterns that serve as the foundation for interesting compositions. Create once, then modify and reuse elements to build cohesive but varied tracks.</p>
+        <h3>Adaptive Musical Patterns</h3>
+        <p>The Dynamic Pattern Editor enables you to create complex musical motifs that respond intelligently to changes in your chord progressions. Build melodies and rhythmic sequences that maintain musical coherence even as the harmony shifts.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Grid-Based Interface</strong> for intuitive pattern creation</li>
-          <li><strong>Rhythmic Probability Controls</strong> for human-like variation</li>
-          <li><strong>Pattern Transformation Tools</strong> (inversion, retrograde, etc.)</li>
-          <li><strong>Layer System</strong> for combining multiple patterns</li>
-          <li><strong>Pattern Library</strong> with genre-specific templates</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Intelligent Adaptation</strong> to chord progression changes in real-time</li>
+          <li><strong>Advanced Piano Roll Interface</strong> with powerful editing tools</li>
+          <li><strong>Scale-Aware Note Entry</strong> that prevents harmonic clashes</li>
+          <li><strong>Rhythmic Pattern Templates</strong> for different musical styles</li>
+          <li><strong>Velocity and Articulation Controls</strong> for expressive performances</li>
+          <li><strong>Pattern Variations</strong> that generate coherent musical ideas</li>
         </ul>
       `,
       color: "#F5A623"
@@ -235,37 +238,39 @@ const FeaturesSection = () => {
     {
       icon: <FaMusic />,
       title: "Voicing Generator",
-      description: "Transform simple chord progressions into rich, nuanced voicings with the touch of a button.",
+      description: "Craft sophisticated chord voicings with smooth transitions and professional voice leading.",
       detailedDescription: `
-        <h3>Rich, Professional Chord Voicings</h3>
-        <p>Our Voicing Generator transforms basic chord progressions into sophisticated arrangements with proper voice leading. Create lush, professional-sounding harmonies without deep music theory knowledge.</p>
+        <h3>Master the Art of Chord Voicing</h3>
+        <p>The Voicing Generator gives you unprecedented control over how your chords are constructed and how they transition. Create professional-quality voice leading and chord textures that elevate your compositions with musical sophistication.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Multiple Voicing Styles</strong> from jazz to classical to pop</li>
-          <li><strong>Voice Leading Optimization</strong> for smooth chord transitions</li>
-          <li><strong>Tension Note Additions</strong> (9ths, 11ths, 13ths)</li>
-          <li><strong>Register Control</strong> for different instrument ranges</li>
-          <li><strong>MIDI Export</strong> for DAW integration</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Voice Leading Optimization</strong> for smooth, natural chord transitions</li>
+          <li><strong>Texture Controls</strong> for open, closed, and custom voicing styles</li>
+          <li><strong>Register Management</strong> to place voices in their ideal ranges</li>
+          <li><strong>Tension Note Integration</strong> for sophisticated harmonic color</li>
+          <li><strong>Style Templates</strong> from jazz to classical to contemporary pop</li>
+          <li><strong>Custom Voicing Rules</strong> for your personal compositional style</li>
         </ul>
       `,
       color: "#D0021B"
     },
     {
-      icon: <FaRobot />,
+      icon: <FaClock />,
       title: "Progression Timeline",
-      description: "Visualize and edit your chord progressions in a timeline view for perfect arrangement and song structure.",
+      description: "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
       detailedDescription: `
-        <h3>Perfect Your Song Structure</h3>
-        <p>The Progression Timeline gives you a bird's-eye view of your entire composition, making it easy to build effective song structures and ensure your arrangement maintains interest throughout.</p>
+        <h3>Master Chord Progression Creation</h3>
+        <p>The Progression Timeline streamlines the process of building, refining, and transforming chord progressions. With educational ghost tracks and powerful reharmonization tools, you can both learn from and reinvent your favorite music.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Visual Song Section Editing</strong> (verse, chorus, bridge, etc.)</li>
-          <li><strong>Harmonic Intensity Mapping</strong> across the composition</li>
-          <li><strong>Chord Duration Controls</strong> for rhythm and pacing</li>
-          <li><strong>Section Copying and Variation Tools</strong> for efficient workflow</li>
-          <li><strong>Tension/Release Visualization</strong> for emotional arcs</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Intuitive Timeline Interface</strong> for visual progression building</li>
+          <li><strong>Ghost Track Learning System</strong> that teaches progression structure</li>
+          <li><strong>Real-time Reharmonization</strong> to transform existing progressions</li>
+          <li><strong>Section-based Organization</strong> for structured composition</li>
+          <li><strong>Chord Substitution Suggestions</strong> based on music theory</li>
+          <li><strong>Harmonic Analysis</strong> that reveals the theory behind progressions</li>
         </ul>
       `,
       color: "#9013FE"
@@ -273,18 +278,19 @@ const FeaturesSection = () => {
     {
       icon: <FaVolumeUp />,
       title: "Advanced Voice Handling",
-      description: "Fine-tune individual voices within your chords for complete creative control over your harmonic texture.",
+      description: "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
       detailedDescription: `
-        <h3>Master the Details of Your Harmony</h3>
-        <p>Advanced Voice Handling gives you precise control over each note in your chords, allowing for expressive voice leading, contrary motion, and complex harmonic textures that bring your music to life.</p>
+        <h3>Complete Control Over Every Voice</h3>
+        <p>Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.</p>
         
-        <h3>Key Features:</h3>
-        <ul>
-          <li><strong>Individual Voice Editing</strong> for complete control</li>
-          <li><strong>Voice Leading Visualization</strong> across chord changes</li>
-          <li><strong>Motion Type Controls</strong> (parallel, contrary, oblique)</li>
-          <li><strong>Voice Range Limiting</strong> for instrument-appropriate writing</li>
-          <li><strong>Voice Muting/Soloing</strong> for focused editing</li>
+        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+        <ul style="margin-top: 0.5rem;">
+          <li><strong>Dynamic Voice Count</strong> for arrangement flexibility</li>
+          <li><strong>Voice Interaction Rules</strong> to control how voices move together</li>
+          <li><strong>Per-Voice MIDI Channel Routing</strong> for multi-instrument setups</li>
+          <li><strong>Voice Range Constraints</strong> for instrument-appropriate writing</li>
+          <li><strong>Voice Activity Patterns</strong> for creating rhythmic interplay</li>
+          <li><strong>Custom Voice Behaviors</strong> for unique compositional techniques</li>
         </ul>
       `,
       color: "#7ED321"
@@ -334,7 +340,7 @@ const FeaturesSection = () => {
       <FeatureModal 
         isOpen={modalOpen}
         onClose={closeModal}
-        initialFeature={selectedFeature}
+        initialIndex={selectedFeature}
         features={featuresData}
       />
     </FeaturesContainer>

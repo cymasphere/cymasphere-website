@@ -622,6 +622,13 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   const [debugMode, setDebugMode] = useState(false);
   const modalRef = useRef(null);
   
+  // Update currentIndex when initialIndex changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [initialIndex, isOpen]);
+  
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
