@@ -377,20 +377,20 @@ const MobileMenuContent = styled(motion.div)`
   flex-direction: column;
   align-items: center;
   margin: 0 auto;
-  margin-top: 40px;
-  padding: 40px;
+  margin-top: 20px;
+  padding: 30px;
   position: relative;
   z-index: 500;
   width: 100%;
   text-align: center;
   
   @media (max-width: 480px) {
-    padding: 30px 20px;
-    margin-top: 30px;
+    padding: 20px 15px;
+    margin-top: 15px;
   }
   
-  /* Add extra space for the language selector */
-  padding-bottom: 90px;
+  /* Add extra space for auth buttons at bottom */
+  padding-bottom: 60px;
 `;
 
 const MobileNavLink = styled(motion.a)`
@@ -921,6 +921,32 @@ const Header = () => {
               }
             }}
           >
+            {/* Language selector with extreme styling - moved to top */}
+            <div 
+              className="mobile-lang-wrapper" 
+              style={{ 
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '20px',
+                margin: '10px 0 30px',
+                transform: 'scale(1.3)',
+                transformOrigin: 'center center',
+                position: 'relative',
+                zIndex: 1500
+              }}
+            >
+              <motion.div
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 20 }
+                }}
+                style={{ display: 'inline-block' }}
+              >
+                <LanguageSelector />
+              </motion.div>
+            </div>
+            
             <MobileNavLink 
               href="#features" 
               onClick={toggleMobileMenu}
@@ -968,32 +994,6 @@ const Header = () => {
               <FaQuestionCircle />
               {t('header.faq', 'FAQ')}
             </MobileNavLink>
-            
-            {/* Language selector with extreme styling */}
-            <div 
-              className="mobile-lang-wrapper" 
-              style={{ 
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '20px',
-                margin: '40px 0 20px',
-                transform: 'scale(1.3)',  // Reduced from 4.5 to 1.3
-                transformOrigin: 'center center',
-                position: 'relative',
-                zIndex: 1500
-              }}
-            >
-              <motion.div
-                variants={{
-                  open: { opacity: 1, y: 0 },
-                  closed: { opacity: 0, y: 20 }
-                }}
-                style={{ display: 'inline-block' }} // Ensure proper display
-              >
-                <LanguageSelector />
-              </motion.div>
-            </div>
             
             {currentUser ? (
               <MobileUserMenu
