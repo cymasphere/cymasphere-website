@@ -532,13 +532,17 @@ const getImagePath = (title) => {
   // Explicitly use absolute paths with the public URL
   const publicUrl = process.env.PUBLIC_URL || '';
   
+  // Make Progression Timeline use the same image as Song Builder
+  if (title === "Progression Timeline") {
+    return `${publicUrl}/images/song_view.png`;
+  }
+  
   const titleToImage = {
     'Song Builder': `${publicUrl}/images/song_view.png`,
     'Harmony Palettes': `${publicUrl}/images/palette_view.png`,
     'Advanced Voice Handling': `${publicUrl}/images/advanced_voicing.png`,
     'Dynamic Pattern Editor': `${publicUrl}/images/pattern_view.png`,
     'Voicing Generator': `${publicUrl}/images/voicing_view.png`,
-    'Progression Timeline': `${publicUrl}/images/timeline_view.png`,
   };
   
   // Fallback images for any feature without a specific image

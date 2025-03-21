@@ -238,19 +238,18 @@ const FeaturesSection = () => {
     {
       icon: <FaMusic />,
       title: "Voicing Generator",
-      description: "Craft sophisticated chord voicings with smooth transitions and professional voice leading.",
+      description: "Transform chord progressions into rich, expressive voicings with professional-grade voice leading and harmonic control.",
       detailedDescription: `
-        <h3>Master the Art of Chord Voicing</h3>
-        <p>The Voicing Generator gives you unprecedented control over how your chords are constructed and how they transition. Create professional-quality voice leading and chord textures that elevate your compositions with musical sophistication.</p>
+        <h3>Limitless Harmonic Possibilities</h3>
+        <p>The Voicing Generator transforms simple chord symbols into complex, expressive harmonic structures. Fine-tune every aspect of your chord voicings from global styles to individual note placement, creating professional arrangements that breathe life into your music.</p>
         
         <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
         <ul style="margin-top: 0.5rem;">
-          <li><strong>Voice Leading Optimization</strong> for smooth, natural chord transitions</li>
-          <li><strong>Texture Controls</strong> for open, closed, and custom voicing styles</li>
-          <li><strong>Register Management</strong> to place voices in their ideal ranges</li>
-          <li><strong>Tension Note Integration</strong> for sophisticated harmonic color</li>
-          <li><strong>Style Templates</strong> from jazz to classical to contemporary pop</li>
-          <li><strong>Custom Voicing Rules</strong> for your personal compositional style</li>
+          <li><strong>Advanced Chord Editor</strong> with comprehensive scale and chord configuration tools for complete harmonic customization</li>
+          <li><strong>Intelligent Voice Leading</strong> with automatic smooth transitions between chord changes based on proximity, common tones, and voice direction</li>
+          <li><strong>Texture Controls</strong> including voicing width, density, inversions, octave distribution, and register placement</li>
+          <li><strong>Harmonic Extensions</strong> with configurable 7ths, 9ths, 11ths and 13ths to add richness and color to your progressions</li>
+          <li><strong>Multi-Level Settings</strong> allowing global changes to entire songs or focused edits to specific chord voicings with a single adjustment</li>
         </ul>
       `,
       color: "#D0021B"
@@ -269,8 +268,9 @@ const FeaturesSection = () => {
           <li><strong>Ghost Track Learning System</strong> that teaches progression structure</li>
           <li><strong>Real-time Reharmonization</strong> to transform existing progressions</li>
           <li><strong>Section-based Organization</strong> for structured composition</li>
-          <li><strong>Chord Substitution Suggestions</strong> based on music theory</li>
-          <li><strong>Harmonic Analysis</strong> that reveals the theory behind progressions</li>
+          <li><strong>Drag and Drop Chord Arrangement</strong> for easily rearranging chords and adjusting their length by dragging boundaries</li>
+          <li><strong>Display Toggling</strong> to show chord names as letters, Roman numerals, or solfege based on preference</li>
+          <li><strong>Dynamic Pattern Updates</strong> where patterns and voicings automatically adapt when changes are made to the progression</li>
         </ul>
       `,
       color: "#9013FE"
