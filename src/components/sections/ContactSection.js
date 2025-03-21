@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaTwitter, FaGithub, FaLinkedin } from 'react-icons/fa';
 
 const ContactContainer = styled.section`
   padding: 100px 20px;
@@ -62,31 +61,6 @@ const InfoText = styled.p`
   color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 30px;
-`;
-
-const SocialLinks = styled.div`
-  display: flex;
-  gap: 15px;
-  margin-top: 30px;
-`;
-
-const SocialLink = styled.a`
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background-color: var(--card-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text);
-  font-size: 20px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background-color: var(--primary);
-    color: white;
-    transform: translateY(-5px);
-  }
 `;
 
 const ContactForm = styled(motion.form)`
@@ -233,23 +207,8 @@ const ContactSection = () => {
                 Fill out the form and we'll get back to you as soon as possible.
               </InfoText>
               <InfoText>
-                You can also reach us directly at <strong>info@cymasphere.com</strong>
+                You can also reach us directly at <strong>support@cymasphere.com</strong>
               </InfoText>
-              
-              <SocialLinks>
-                <SocialLink href="#" target="_blank" aria-label="Email">
-                  <FaEnvelope />
-                </SocialLink>
-                <SocialLink href="#" target="_blank" aria-label="Twitter">
-                  <FaTwitter />
-                </SocialLink>
-                <SocialLink href="#" target="_blank" aria-label="GitHub">
-                  <FaGithub />
-                </SocialLink>
-                <SocialLink href="#" target="_blank" aria-label="LinkedIn">
-                  <FaLinkedin />
-                </SocialLink>
-              </SocialLinks>
             </motion.div>
           </ContactInfo>
           

@@ -652,6 +652,20 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     }
   }, [initialIndex, isOpen]);
   
+  // Prevent body scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Cleanup function to ensure we restore scrolling if component unmounts
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
+  
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
