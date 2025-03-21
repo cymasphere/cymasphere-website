@@ -196,21 +196,21 @@ const FeaturesSection = () => {
       color: "#4A90E2"
     },
     {
-      icon: <FaPuzzlePiece />,
+      icon: <FaVolumeUp />,
       title: "Harmony Palettes",
-      description: "Visualize and organize chord voicings to create effortless, intuitive progressions.",
+      description: "Shape melodies and chords through a tactile, gestural interface designed for fluid musical expression.",
       detailedDescription: `
         <h3>Visualize Chord Relationships</h3>
-        <p>Interactive Harmony Palettes transform abstract music theory into a visual, tactile experience. Organize, customize, and discover chord voicings that bring your progressions to life with nuance and character.</p>
+        <p>Control harmony like a physical instrument with our intuitive gestural interface. Manipulate, arrange, and explore chord relationships through a tactile experience that makes complex music theory accessible and expressive.</p>
         
         <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
         <ul style="margin-top: 0.5rem;">
-          <li><strong>Visual Chord Organization</strong> that makes music theory accessible</li>
-          <li><strong>Custom Voicing Libraries</strong> for your personal chord vocabulary</li>
-          <li><strong>Chord Relationship Mapping</strong> to find complementary harmonies</li>
-          <li><strong>Color-Coded Harmony Groups</strong> for intuitive progression building</li>
-          <li><strong>Favorites System</strong> for quick access to your go-to voicings</li>
-          <li><strong>Drag and Drop Interface</strong> for seamless workflow integration</li>
+          <li><strong>Customizable Bank Arrangement</strong> to organize your chord collections through drag and drop</li>
+          <li><strong>Drag and Drop Voicings</strong> directly from palettes to your progression timeline</li>
+          <li><strong>Curated Collection Library</strong> with pre-selected scales and chord relationships</li>
+          <li><strong>One-Click Transposition</strong> for instantly shifting keys across your entire composition</li>
+          <li><strong>Voicing Parameter Dashboard</strong> for quick adjustments to chord characteristics</li>
+          <li><strong>Custom Bank Creation</strong> for building your personal chord vocabulary</li>
         </ul>
       `,
       color: "#50E3C2"
@@ -276,7 +276,7 @@ const FeaturesSection = () => {
       color: "#9013FE"
     },
     {
-      icon: <FaVolumeUp />,
+      icon: <FaPuzzlePiece />,
       title: "Advanced Voice Handling",
       description: "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
       detailedDescription: `

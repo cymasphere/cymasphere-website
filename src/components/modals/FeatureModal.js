@@ -534,15 +534,11 @@ const getImagePath = (title) => {
   
   const titleToImage = {
     'Song Builder': `${publicUrl}/images/song_view.png`,
-    'Harmony Palette': `${publicUrl}/images/palette_view.png`,
-    'Pattern Editor': `${publicUrl}/images/pattern_view.png`,
+    'Harmony Palettes': `${publicUrl}/images/palette_view.png`,
+    'Advanced Voice Handling': `${publicUrl}/images/advanced_voicing.png`,
+    'Dynamic Pattern Editor': `${publicUrl}/images/pattern_view.png`,
     'Voicing Generator': `${publicUrl}/images/voicing_view.png`,
-    'Layer Manager': `${publicUrl}/images/layermanager_view.png`,
-    'Advanced Voicing': `${publicUrl}/images/advanced_voicing.png`,
-    'Chord Selection': `${publicUrl}/images/chord_selection.png`,
-    'Timeline View': `${publicUrl}/images/timeline_view.png`,
-    'Sound Design': `${publicUrl}/images/sound_design.png`,
-    'Export Features': `${publicUrl}/images/export_features.png`
+    'Progression Timeline': `${publicUrl}/images/timeline_view.png`,
   };
   
   // Fallback images for any feature without a specific image
@@ -699,14 +695,30 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   
   // Define these functions with useCallback before using them in useEffect
   const handleNext = useCallback(() => {
+    // Prevent rapid multiple clicks
+    if (direction !== 0) return;
+    
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % features.length);
-  }, [features.length]);
+  }, [features.length, direction]);
   
   const handlePrevious = useCallback(() => {
+    // Prevent rapid multiple clicks
+    if (direction !== 0) return;
+    
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
-  }, [features.length]);
+  }, [features.length, direction]);
+  
+  // Reset direction after animation completes
+  useEffect(() => {
+    if (direction !== 0) {
+      const timer = setTimeout(() => {
+        setDirection(0);
+      }, 500); // Match this with your animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [direction, currentIndex]);
   
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'ArrowRight') {
