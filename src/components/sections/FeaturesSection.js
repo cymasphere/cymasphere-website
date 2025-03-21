@@ -227,10 +227,10 @@ const FeaturesSection = () => {
         <ul style="margin-top: 0.5rem;">
           <li><strong>Intelligent Adaptation</strong> to chord progression changes in real-time</li>
           <li><strong>Advanced Piano Roll Interface</strong> with powerful editing tools</li>
-          <li><strong>Scale-Aware Note Entry</strong> that prevents harmonic clashes</li>
-          <li><strong>Rhythmic Pattern Templates</strong> for different musical styles</li>
-          <li><strong>Velocity and Articulation Controls</strong> for expressive performances</li>
-          <li><strong>Pattern Variations</strong> that generate coherent musical ideas</li>
+          <li><strong>Context-Aware Note Entry</strong> with scale, chord, and voicing intelligence to prevent harmonic clashes</li>
+          <li><strong>Intuitive Note Manipulation</strong> with easy selection, dragging, copying, and transformation tools</li>
+          <li><strong>Dual Mode Operation</strong> with relative and absolute patterns for both contextual and fixed melodic content</li>
+          <li><strong>Melodic Essence Extraction</strong> that captures the intent of any melody for reuse in different harmonic contexts</li>
         </ul>
       `,
       color: "#F5A623"
