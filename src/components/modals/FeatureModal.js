@@ -14,9 +14,10 @@ const ModalOverlay = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9000;
   backdrop-filter: blur(5px);
   will-change: opacity;
+  padding: 0;
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -31,8 +32,23 @@ const ModalContainer = styled(motion.div)`
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
+  margin-top: 60px;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    margin-top: 0;
+    padding-top: 70px; /* Match the TitleContainer height */
+    overflow: hidden; /* Prevent outer container from scrolling */
+  }
+  
+  @media (max-width: 480px) {
+    padding-top: 60px; /* Match the TitleContainer height */
+  }
   
   &:before {
     content: '';
@@ -47,8 +63,16 @@ const ModalContainer = styled(motion.div)`
       rgba(78, 205, 196, 0.7) 100%);
     border-radius: 28px;
     z-index: -1;
-    opacity: 0.6;
+    opacity: 0.7;
     filter: blur(8px);
+    
+    @media (max-width: 768px) {
+      border-radius: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
   }
   
   /* Custom outline style for focus */
@@ -56,24 +80,40 @@ const ModalContainer = styled(motion.div)`
     outline: none;
     border: 1px solid var(--primary);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--primary);
+    
+    @media (max-width: 768px) {
+      border: none;
+      box-shadow: none;
+    }
   }
 `;
 
 const TitleContainer = styled.div`
-  position: absolute;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
   padding: 20px 60px;
-  z-index: 5;
+  z-index: 9500 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(25, 23, 36, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(25, 23, 36, 0.95);
+  backdrop-filter: blur(15px);
   height: 80px;
   box-sizing: border-box;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  
+  @media (max-width: 768px) {
+    padding: 15px 50px;
+    height: 70px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 40px;
+    height: 60px;
+  }
   
   &:after {
     content: '';
@@ -84,8 +124,8 @@ const TitleContainer = styled.div`
     height: 1px;
     background: linear-gradient(to right, 
       transparent, 
-      rgba(108, 99, 255, 0.3), 
-      rgba(78, 205, 196, 0.3), 
+      rgba(108, 99, 255, 0.4), 
+      rgba(78, 205, 196, 0.4), 
       transparent);
   }
 `;
@@ -95,9 +135,14 @@ const ModalTitle = styled.h2`
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.5px;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  padding-left: 30px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
   color: white;
+  text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    padding-left: 0;
+  }
 `;
 
 const pulse = keyframes`
@@ -116,13 +161,13 @@ const pulse = keyframes`
 `;
 
 const InfoButton = styled.button`
-  position: absolute;
+  position: fixed !important;
   top: 20px;
   left: 20px;
   width: 40px;
   height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -130,9 +175,18 @@ const InfoButton = styled.button`
   color: white;
   font-size: 20px;
   cursor: pointer;
-  z-index: 10;
+  z-index: 9600 !important;
   transition: all 0.3s ease;
   animation: ${pulse} 2s infinite;
+  
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    top: 16px;
+    left: 16px;
+    display: none; /* Hide on mobile */
+  }
   
   &:hover {
     background: var(--primary);
@@ -143,13 +197,13 @@ const InfoButton = styled.button`
 `;
 
 const CloseButton = styled.button`
-  position: absolute;
+  position: fixed !important;
   top: 20px;
   right: 20px;
   width: 40px;
   height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -157,8 +211,22 @@ const CloseButton = styled.button`
   color: white;
   font-size: 20px;
   cursor: pointer;
-  z-index: 10;
+  z-index: 9600 !important;
   transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    top: 16px;
+    right: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
   
   &:hover {
     background: var(--primary);
@@ -174,6 +242,21 @@ const CarouselContainer = styled.div`
   overflow: hidden;
   margin-top: 80px; /* Same as TitleContainer height */
   margin-bottom: 80px; /* Same as CarouselControls height */
+  height: calc(100% - 160px); /* Subtract both header and footer heights */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  
+  @media (max-width: 768px) {
+    margin-top: 0; /* No top margin needed since we padded the container */
+    margin-bottom: 0; /* Footer is fixed now, so no margin needed */
+    height: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 `;
 
 const Slide = styled(motion.div)`
@@ -184,6 +267,7 @@ const Slide = styled(motion.div)`
   height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 `;
 
 const ImageContainer = styled.div`
@@ -195,6 +279,23 @@ const ImageContainer = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(10, 10, 15, 0.3);
+  padding-top: 0;
+  
+  @media (max-width: 768px) {
+    height: 45vh;
+    min-height: 250px;
+    max-height: 450px;
+    padding-top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  @media (max-width: 480px) {
+    height: 40vh;
+    min-height: 220px;
+    padding-top: 0;
+  }
 `;
 
 const FeatureImage = styled.div`
@@ -211,6 +312,12 @@ const FeatureImage = styled.div`
   color: white;
   font-size: 32px;
   font-weight: bold;
+  position: relative;
+  
+  @media (max-width: 768px) {
+    background-size: contain;
+    background-position: center;
+  }
   
   /* Show text only if no image is provided */
   ${props => props.imgSrc && `
@@ -230,23 +337,71 @@ const ContentOverlay = styled.div`
   background: rgba(15, 14, 22, 0.97);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   opacity: ${props => props.$visible ? 1 : 0};
   pointer-events: ${props => props.$visible ? 'auto' : 'none'};
   transition: opacity 0.3s ease;
   backdrop-filter: blur(20px);
-  padding: 100px 40px 100px;
+  padding-top: 20px;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-bottom: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  
+  @media (max-width: 768px) {
+    padding: 10px 15px 70px; /* Add padding at the bottom to account for fixed footer */
+    height: calc(100% - 0px); /* Take full height */
+    overflow-y: auto; /* Make sure this container is scrollable on mobile */
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 12px 60px; /* Add padding at the bottom to account for fixed footer */
+    height: calc(100% - 0px); /* Take full height */
+  }
+  
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(108, 99, 255, 0.3);
+    border-radius: 4px;
+    
+    &:hover {
+      background: rgba(108, 99, 255, 0.5);
+    }
+  }
 `;
 
 const ContentContainer = styled.div`
   max-width: 1000px;
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 30px;
+  padding-bottom: 10px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0 0 10px 0; /* Reduce bottom padding */
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 0 10px 0; /* Reduce bottom padding */
+  }
 `;
 
 const InfoImageContainer = styled.div`
@@ -256,17 +411,27 @@ const InfoImageContainer = styled.div`
   border-radius: 12px;
   overflow: visible;
   position: sticky;
-  top: 0;
-  align-self: center;
+  top: 20px;
+  align-self: flex-start;
   background: rgba(10, 10, 15, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   
-  @media (max-width: 900px) {
-    width: 80%;
-    height: 180px;
-    margin-bottom: 10px;
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16/10;
     position: relative;
+    top: 0;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 8px;
+    margin-bottom: 10px;
+    aspect-ratio: 16/9;
   }
   
   &:hover {
@@ -293,9 +458,22 @@ const InfoFeatureImage = styled.div`
   border-radius: 12px;
   overflow: hidden;
   
+  @media (max-width: 768px) {
+    font-size: 20px;
+    background-size: contain;
+    border-radius: 8px;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    
+    @media (max-width: 768px) {
+      transform: none;
+      box-shadow: none;
+    }
   }
   
   /* Show text only if no image is provided */
@@ -311,27 +489,23 @@ const ContentTextContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
+  overflow: visible;
   padding-right: 10px;
   
-  /* Scrollbar styling */
-  &::-webkit-scrollbar {
-    width: 6px;
+  @media (max-width: 768px) {
+    width: 100%;
+    padding-right: 0;
+    padding-top: 0;
+    flex: 1;
+    min-height: 0; /* Allow content to shrink */
+    height: auto;
+    padding-bottom: 0; /* Remove padding */
+    overflow: visible;
   }
   
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: rgba(108, 99, 255, 0.3);
-    border-radius: 4px;
-    
-    &:hover {
-      background: rgba(108, 99, 255, 0.5);
-    }
+  @media (max-width: 480px) {
+    padding-top: 0;
+    padding-bottom: 0; /* Remove padding */
   }
 `;
 
@@ -339,6 +513,8 @@ const FeatureDescription = styled.div`
   font-size: clamp(0.9rem, 1.5vw, 1.1rem);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.95);
+  flex: 1;
+  min-height: 0;
   
   h3 {
     font-size: clamp(1.4rem, 2vw, 1.7rem);
@@ -365,6 +541,10 @@ const FeatureDescription = styled.div`
   li {
     margin-bottom: 8px;
     position: relative;
+    
+    @media (max-width: 480px) {
+      margin-bottom: 12px;
+    }
   }
   
   /* Attribution styling */
@@ -374,6 +554,27 @@ const FeatureDescription = styled.div`
     font-size: 0.9em;
     margin-top: 12px;
     margin-bottom: 10px;
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-top: 0;
+    padding-bottom: 0;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    margin-top: 0;
+    padding-bottom: 0;
+    
+    h3 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+    
+    ul {
+      padding-left: 15px;
+    }
   }
 `;
 
@@ -390,7 +591,19 @@ const CarouselControls = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 6;
+  z-index: 9400;
+  
+  @media (max-width: 768px) {
+    height: 70px;
+    padding: 15px;
+    position: fixed;
+    bottom: 0;
+  }
+  
+  @media (max-width: 480px) {
+    height: 60px;
+    padding: 10px;
+  }
   
   &:before {
     content: '';
@@ -408,57 +621,86 @@ const CarouselControls = styled.div`
 `;
 
 const ControlButton = styled.button`
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
+  background: rgba(20, 18, 30, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
-  font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   
+  @media (max-width: 768px) {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
   &:hover {
     background: var(--primary);
-    color: white;
-    box-shadow: 0 0 15px rgba(108, 99, 255, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(108, 99, 255, 0.5);
   }
   
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    box-shadow: none;
+    
+    &:hover {
+      background: rgba(20, 18, 30, 0.5);
+      transform: none;
+      box-shadow: none;
+    }
   }
 `;
 
 const ProgressIndicator = styled.div`
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
   margin: 0 20px;
+  
+  @media (max-width: 768px) {
+    gap: 10px;
+    margin: 0 15px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin: 0 10px;
+  }
 `;
 
 const IndicatorDot = styled.button`
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  margin: 0 5px;
-  background-color: ${props => props.$active 
-    ? 'var(--primary)' 
-    : 'rgba(255, 255, 255, 0.2)'};
+  background: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.2)'};
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: ${props => props.$active ? '0 0 8px rgba(108, 99, 255, 0.6)' : 'none'};
+  transform: ${props => props.$active ? 'scale(1.2)' : 'scale(1)'};
+  
+  @media (max-width: 480px) {
+    width: 10px;
+    height: 10px;
+  }
   
   &:hover {
-    background-color: ${props => props.$active 
-      ? 'var(--primary)' 
-      : 'rgba(255, 255, 255, 0.4)'};
-    transform: scale(1.2);
+    background: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.4)'};
   }
 `;
 
@@ -549,6 +791,21 @@ const ImageDebug = styled.div`
   opacity: 0.7;
 `;
 
+// Feature descriptions object for detailed content
+const featureDescriptions = {
+  'Advanced Voice Handling': `<h3>Advanced Voice Handling</h3>
+    <p>Take complete control over your chord voicings with our sophisticated voice leading system, designed to give you both precise control and intelligent automation.</p>
+    <ul>
+      <li><strong>Intelligent Voice Leading</strong> - Automatically generate smooth transitions between chords that follow proper voice leading principles.</li>
+      <li><strong>Custom Voice Assignments</strong> - Manually assign specific notes to each voice for complete control over your harmonic expression.</li>
+      <li><strong>Voice Range Controls</strong> - Define upper and lower limits for each voice to ensure playability and optimal sound for your target instruments.</li>
+      <li><strong>Voice Motion Rules</strong> - Apply classical voice leading rules like avoiding parallel fifths or controlling voice crossing between parts.</li>
+      <li><strong>Multi-Instrument Voicing</strong> - Distribute voices across different instrument groups with intelligent orchestration suggestions.</li>
+      <li><strong>Style-Based Voicing Templates</strong> - Apply genre-specific voicing patterns like jazz, classical, or pop with a single click.</li>
+    </ul>
+    <p>Perfect for composers and songwriters looking for both intuitive control and professional results without requiring extensive music theory knowledge.</p>`,
+};
+
 // Function to get image path based on feature title
 const getImagePath = (title) => {
   if (!title) return null;
@@ -594,49 +851,111 @@ const getImagePath = (title) => {
 // Add a Loading indicator component with proper styling
 const LoadingIndicator = styled.div`
   position: absolute;
-  z-index: 2;
-  color: white;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: rgba(25, 23, 36, 0.5);
-  backdrop-filter: blur(5px);
+  gap: 15px;
+  
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const LoadingText = styled.div`
-  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 16px;
-  color: var(--text);
-  opacity: 0.8;
-  font-weight: 500;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
-const spinner = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+// Improved spinner for better mobile visibility
+const loadingSpinAnimation = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 `;
 
 const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
-  border-top: 4px solid var(--primary);
-  border-left: 4px solid var(--accent);
-  animation: ${spinner} 1s linear infinite;
+  animation: ${loadingSpinAnimation} 1s linear infinite;
+  
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+  }
+`;
+
+// Add a visual feedback indicator for swipe actions on mobile
+const SwipeIndicator = styled.div`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: ${props => props.$visible ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 24px;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0.8;
+  
+  &.left {
+    left: 20px;
+  }
+  
+  &.right {
+    right: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
 `;
 
 const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
+  // Find the Advanced Voice Handling feature and update its description before rendering
+  const updatedFeatures = features.map(feature => {
+    if (feature.title === "Advanced Voice Handling") {
+      return {
+        ...feature,
+        detailedDescription: `
+          <h3>Advanced Voice Handling</h3>
+          <p>Control how chord notes are distributed and voiced across instruments with intelligent voice leading.</p>
+          <ul>
+            <li><strong>Intelligent Voice Leading</strong> - Auto-generate smooth transitions between chords</li>
+            <li><strong>Custom Voice Assignments</strong> - Manually assign notes to each voice for complete control</li>
+            <li><strong>Voice Range Controls</strong> - Set upper and lower limits for each voice</li>
+            <li><strong>Voice Motion Rules</strong> - Apply classical voice leading principles</li>
+            <li><strong>Style-Based Voicing</strong> - Apply genre-specific voicing patterns with one click</li>
+          </ul>
+        `
+      };
+    }
+    return feature;
+  });
+  
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -644,7 +963,11 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [imageErrors, setImageErrors] = useState({});
   const [debugMode, setDebugMode] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [swipeDirection, setSwipeDirection] = useState(null);
   const modalRef = useRef(null);
+  const containerRef = useRef(null);
   
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
@@ -681,53 +1004,79 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Memoized image preloading function
-  const preloadImages = useCallback((features) => {
-    if (!features) return;
+  // Enhanced touch handlers with visual feedback
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setSwipeDirection(null);
+  };
+  
+  const handleTouchMove = (e) => {
+    const currentTouch = e.targetTouches[0].clientX;
+    setTouchEnd(currentTouch);
+    
+    if (touchStart && currentTouch) {
+      const diff = touchStart - currentTouch;
+      if (diff > 30) {
+        setSwipeDirection('left');
+      } else if (diff < -30) {
+        setSwipeDirection('right');
+      } else {
+        setSwipeDirection(null);
+      }
+    }
+  };
+  
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && features.length > 1) {
+      handleNext();
+    } else if (isRightSwipe && features.length > 1) {
+      handlePrevious();
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
+  }, [touchStart, touchEnd, features.length]);
 
-    features.forEach((feature) => {
-      if (feature.title) {
-        const imagePath = feature.image || getImagePath(feature.title);
-        
-        // Skip if already loaded or has error
-        if (imagesLoaded[feature.title] || imageErrors[feature.title]) {
-          return;
-        }
-        
-        if (imagePath) {
-          console.log(`Preloading image for "${feature.title}": ${imagePath}`);
-          const img = new Image();
-          
-          img.onload = () => {
-            console.log(`Successfully loaded image for "${feature.title}"`);
-            setImagesLoaded(prev => ({
-              ...prev,
-              [feature.title]: true
-            }));
-          };
-          
-          img.onerror = (err) => {
-            console.error(`Failed to load image for "${feature.title}":`, err);
-            setImageErrors(prev => ({
-              ...prev,
-              [feature.title]: true
-            }));
-          };
-          
-          // Add cache-busting parameter to avoid browser caching issues
-          img.src = `${imagePath}?t=${new Date().getTime()}`;
-        }
+  // Preload images for better mobile experience
+  const preloadNextImages = useCallback(() => {
+    const currentIdx = currentIndex;
+    const nextIdx = (currentIdx + 1) % features.length;
+    const prevIdx = (currentIdx - 1 + features.length) % features.length;
+    
+    // Preload current, next and previous images
+    [currentIdx, nextIdx, prevIdx].forEach(idx => {
+      const feature = features[idx];
+      if (!feature) return;
+      
+      const { title, image: featureImage } = feature;
+      const imagePath = featureImage || getImagePath(title);
+      
+      if (imagePath && !imagesLoaded[title] && !imageErrors[title]) {
+        const img = new Image();
+        img.onload = () => {
+          setImagesLoaded(prev => ({ ...prev, [title]: true }));
+        };
+        img.onerror = () => {
+          setImageErrors(prev => ({ ...prev, [title]: true }));
+        };
+        img.src = imagePath;
       }
     });
-  }, [imagesLoaded, imageErrors]);
-  
-  // Use the memoized function in the effect
+  }, [features, currentIndex, imagesLoaded, imageErrors]);
+
+  // Call the preload function when currentIndex changes
   useEffect(() => {
-    if (isOpen && features) {
-      preloadImages(features);
+    if (isOpen) {
+      preloadNextImages();
     }
-  }, [isOpen, features, preloadImages]);
-  
+  }, [currentIndex, isOpen, preloadNextImages]);
+
   // Toggle debug mode with Shift + D
   useEffect(() => {
     const handleDebugToggle = (e) => {
@@ -801,7 +1150,7 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     setInfoVisible(!infoVisible);
   };
 
-  const currentFeature = features[currentIndex] || {};
+  const currentFeature = updatedFeatures[currentIndex] || {};
   const { title, detailedDescription, image: featureImage } = currentFeature;
   const keyFeatures = extractKeyFeatures(detailedDescription || '');
   
@@ -855,7 +1204,21 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
               <FaTimes />
             </CloseButton>
             
-            <CarouselContainer>
+            <CarouselContainer
+              ref={containerRef}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Add these swipe indicators */}
+              <SwipeIndicator className="left" $visible={swipeDirection === 'right'}>
+                <FaChevronLeft />
+              </SwipeIndicator>
+              
+              <SwipeIndicator className="right" $visible={swipeDirection === 'left'}>
+                <FaChevronRight />
+              </SwipeIndicator>
+              
               <AnimatePresence initial={false} custom={direction}>
                 <Slide
                   key={currentIndex}
@@ -876,7 +1239,7 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                     {imagePath && !isImageLoaded && !hasImageError && (
                       <LoadingIndicator>
                         <LoadingSpinner />
-                        <LoadingText>Loading feature image...</LoadingText>
+                        <LoadingText>Loading image...</LoadingText>
                       </LoadingIndicator>
                     )}
                     {hasImageError && (
