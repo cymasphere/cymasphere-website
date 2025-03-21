@@ -185,12 +185,12 @@ const FeaturesSection = () => {
         
         <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
         <ul style="margin-top: 0.5rem;">
-          <li><strong>Integrated Workspace</strong> that combines all musical elements in one view</li>
-          <li><strong>Voicing and Pattern Tracks</strong> that work together seamlessly</li>
-          <li><strong>Chord Progression Integration</strong> that serves as the harmonic foundation</li>
-          <li><strong>Harmony Palette Access</strong> for quick chord selection and customization</li>
-          <li><strong>Multi-Track Organization</strong> for complete arrangement control</li>
-          <li><strong>Real-time Preview</strong> of your entire composition as you build</li>
+          <li><strong>Professional Transport Controls</strong> with play, stop, record, loop functionality, BPM, meter, metronome and DAW sync</li>
+          <li><strong>Interactive Timeline</strong> with grid snapping, zoom controls, and countoff capabilities</li>
+          <li><strong>Multi-Track Management</strong> with per-track mute/solo, volume controls, and routing options</li>
+          <li><strong>Comprehensive Arrangement View</strong> providing a holistic perspective of all voicings and patterns</li>
+          <li><strong>Chord Progression Framework</strong> serving as the harmonic foundation for your compositions</li>
+          <li><strong>Informative Keyboard Display</strong> showing chord voicings and voice leading</li>
         </ul>
       `,
       color: "#4A90E2"
