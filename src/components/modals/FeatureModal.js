@@ -938,14 +938,17 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
       return {
         ...feature,
         detailedDescription: `
-          <h3>Advanced Voice Handling</h3>
-          <p>Control how chord notes are distributed and voiced across instruments with intelligent voice leading.</p>
-          <ul>
-            <li><strong>Intelligent Voice Leading</strong> - Auto-generate smooth transitions between chords</li>
-            <li><strong>Custom Voice Assignments</strong> - Manually assign notes to each voice for complete control</li>
-            <li><strong>Voice Range Controls</strong> - Set upper and lower limits for each voice</li>
-            <li><strong>Voice Motion Rules</strong> - Apply classical voice leading principles</li>
-            <li><strong>Style-Based Voicing</strong> - Apply genre-specific voicing patterns with one click</li>
+          <h3>Complete Control Over Every Voice</h3>
+          <p>Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.</p>
+          
+          <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
+          <ul style="margin-top: 0.5rem;">
+            <li><strong>Dynamic Voice Count</strong> for arrangement flexibility - Add or remove voices for different textures</li>
+            <li><strong>Smooth Voice Leading</strong> to control how voices move together - Options for parallel, contrary, or independent motion</li>
+            <li><strong>Per-Voice MIDI Channel Routing</strong> for multi-instrument setups - Send voices to different instruments</li>
+            <li><strong>Voice Range Constraints</strong> for instrument-appropriate writing - Set upper and lower limits for each voice</li>
+            <li><strong>Designated Bass Channel</strong> for foundation control - Discrete controls for pedal tones and voice leading</li>
+            <li><strong>Voice / Channel Matrix</strong> for effortless MIDI routing - Visually map voices to MIDI channels and instruments</li>
           </ul>
         `
       };
