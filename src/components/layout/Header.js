@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
+import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaUserCircle, FaPuzzlePiece, FaQuestionCircle, FaRegLightbulb, FaRegCreditCard } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../i18n/LanguageSelector';
 import EnergyBall from '../common/EnergyBall';
 import { playLydianMaj7Chord } from '../../utils/audioUtils';
+import { motion } from 'framer-motion';
+import './MobileLanguageStyle.css';
 
 const HeaderContainer = styled.header`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  background-color: ${props => props.$isScrolled ? 'rgba(15, 14, 23, 0.95)' : 'transparent'};
-  backdrop-filter: ${props => props.$isScrolled ? 'blur(8px)' : 'none'};
+  z-index: 3000;
+  background-color: ${props => props.$isScrolled || props.$menuOpen ? 'rgba(15, 14, 23, 0.95)' : 'transparent'};
+  backdrop-filter: ${props => props.$isScrolled || props.$menuOpen ? 'blur(8px)' : 'none'};
   transition: all 0.3s ease-in-out;
-  box-shadow: ${props => props.$isScrolled ? '0 5px 20px rgba(0, 0, 0, 0.2)' : 'none'};
+  box-shadow: ${props => props.$isScrolled || props.$menuOpen ? '0 5px 20px rgba(0, 0, 0, 0.2)' : 'none'};
 `;
 
 const HeaderContent = styled.div`
@@ -28,6 +30,8 @@ const HeaderContent = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   transition: padding 0.3s ease;
+  position: relative;
+  z-index: 3500;
   
   @media (max-width: 768px) {
     padding: ${props => props.$isScrolled ? '12px 20px' : '20px 20px'};
@@ -44,6 +48,11 @@ const Logo = styled(Link)`
   cursor: pointer;
   position: relative;
   overflow: visible;
+  transition: all 0.3s ease;
+  
+  ${props => props.$menuOpen && `
+    filter: drop-shadow(0 0 8px rgba(108, 99, 255, 0.6));
+  `}
   
   &:hover {
     text-decoration: none;
@@ -69,20 +78,7 @@ const Nav = styled.nav`
   align-items: center;
   
   @media (max-width: 968px) {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    width: 280px;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding-top: 80px;
-    background-color: var(--background-alt);
-    transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(100%)'};
-    transition: transform 0.3s ease;
-    box-shadow: ${props => props.$isOpen ? '-10px 0 30px rgba(0, 0, 0, 0.3)' : 'none'};
-    z-index: 10;
+    display: none;
   }
 `;
 
@@ -354,6 +350,288 @@ const Ripple = styled.div`
   }
 `;
 
+// New fullscreen mobile menu
+const MobileMenu = styled(motion.div)`
+  display: flex;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 70px);
+  padding-top: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, var(--background), #0a0915);
+  z-index: 999;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
+  
+  @media (max-width: 968px) {
+    display: flex;
+  }
+`;
+
+const MobileMenuContent = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  margin-top: 40px;
+  padding: 40px;
+  position: relative;
+  z-index: 500;
+  width: 100%;
+  text-align: center;
+  
+  @media (max-width: 480px) {
+    padding: 30px 20px;
+    margin-top: 30px;
+  }
+  
+  /* Add extra space for the language selector */
+  padding-bottom: 90px;
+`;
+
+const MobileNavLink = styled(motion.a)`
+  color: var(--text);
+  text-decoration: none;
+  font-size: 2rem;
+  font-weight: 500;
+  margin: 15px 0;
+  padding: 10px;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg {
+    margin-right: 12px;
+    font-size: 1.75rem;
+    color: var(--primary);
+  }
+  
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 0.3s ease;
+  }
+  
+  &:hover {
+    color: var(--primary);
+    
+    &:after {
+      width: 80%;
+    }
+  }
+`;
+
+const MobileAuthButtons = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+  max-width: 300px;
+`;
+
+const MobileLoginButton = styled(Link)`
+  color: var(--text);
+  text-decoration: none;
+  padding: 15px 20px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 1.2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+  }
+`;
+
+const MobileSignUpButton = styled(Link)`
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: white;
+  padding: 15px 20px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 1.2rem;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+  
+  &:hover {
+    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
+    transform: translateY(-2px);
+    color: white;
+  }
+`;
+
+const MobileUserMenu = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  max-width: 300px;
+  margin-top: 30px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+`;
+
+const MobileUserMenuItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  padding: 18px 20px;
+  color: var(--text);
+  font-size: 1.2rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+  }
+  
+  svg {
+    margin-right: 15px;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+  }
+`;
+
+const MobileUserMenuLogout = styled.button`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 18px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(255, 107, 107, 0.1);
+  }
+  
+  svg {
+    margin-right: 15px;
+    font-size: 1.2rem;
+    color: var(--danger);
+  }
+`;
+
+const MobileMenuToggle = styled.button`
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 2100;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  
+  @media (max-width: 968px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+const MobileMenuBurger = styled.div`
+  width: 24px;
+  height: 20px;
+  position: relative;
+  transform: rotate(0deg);
+  transition: .5s ease-in-out;
+  
+  span {
+    display: block;
+    position: absolute;
+    height: 2px;
+    width: 100%;
+    background: var(--text);
+    border-radius: 9px;
+    opacity: 1;
+    left: 0;
+    transform: rotate(0deg);
+    transition: .25s ease-in-out;
+    
+    &:nth-child(1) {
+      top: ${props => props.$isOpen ? '9px' : '0px'};
+      transform: ${props => props.$isOpen ? 'rotate(135deg)' : 'rotate(0)'};
+    }
+    
+    &:nth-child(2) {
+      top: 9px;
+      opacity: ${props => props.$isOpen ? '0' : '1'};
+    }
+    
+    &:nth-child(3) {
+      top: ${props => props.$isOpen ? '9px' : '18px'};
+      transform: ${props => props.$isOpen ? 'rotate(-135deg)' : 'rotate(0)'};
+    }
+  }
+`;
+
+// Add a background decoration for the mobile menu
+const MobileMenuBackground = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0.6;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    right: -10%;
+    bottom: -10%;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(108, 99, 255, 0.15), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(78, 205, 196, 0.15), transparent 40%);
+    filter: blur(20px);
+    transform: translateZ(0);
+  }
+`;
+
+const FloatingCircle = styled(motion.div)`
+  position: absolute;
+  border-radius: 50%;
+  background: ${props => props.color || 'rgba(108, 99, 255, 0.15)'};
+  filter: blur(15px);
+  z-index: -1;
+`;
+
 const Header = () => {
   const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -474,13 +752,14 @@ const Header = () => {
   };
   
   return (
-    <HeaderContainer $isScrolled={isScrolled}>
+    <HeaderContainer $isScrolled={isScrolled} $menuOpen={isMobileMenuOpen}>
       <HeaderContent $isScrolled={isScrolled}>
         <Logo 
           to="/" 
           onClick={handleLogoClick}
           title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
           ref={logoRef}
+          $menuOpen={isMobileMenuOpen}
         >
           <EnergyBall marginRight="15px" />
           <LogoText>
@@ -493,13 +772,16 @@ const Header = () => {
           </RippleContainer>
         </Logo>
         
-        <MenuToggle onClick={toggleMobileMenu}>
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-        </MenuToggle>
+        <MobileMenuToggle onClick={toggleMobileMenu}>
+          <MobileMenuBurger $isOpen={isMobileMenuOpen}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </MobileMenuBurger>
+        </MobileMenuToggle>
         
-        <MobileNavOverlay $isOpen={isMobileMenuOpen} onClick={toggleMobileMenu} />
-        
-        <Nav $isOpen={isMobileMenuOpen}>
+        {/* Regular desktop navigation */}
+        <Nav>
           <NavLink href="#features">{t('header.features', 'Features')}</NavLink>
           <NavLink href="#how-it-works">{t('header.howItWorks', 'How It Works')}</NavLink>
           <NavLink href="#pricing">{t('header.pricing', 'Pricing')}</NavLink>
@@ -533,6 +815,216 @@ const Header = () => {
             </AuthButtons>
           )}
         </Nav>
+        
+        {/* Fullscreen mobile menu */}
+        <MobileMenu 
+          $isOpen={isMobileMenuOpen}
+          initial="closed"
+          animate={isMobileMenuOpen ? "open" : "closed"}
+          variants={{
+            open: {
+              opacity: 1,
+              y: 0,
+              transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                when: "beforeChildren",
+                staggerChildren: 0.05
+              }
+            },
+            closed: {
+              opacity: 0,
+              y: 50,
+              transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                when: "afterChildren",
+                staggerChildren: 0.05,
+                staggerDirection: -1
+              }
+            }
+          }}
+        >
+          <MobileMenuBackground>
+            <FloatingCircle
+              color="rgba(108, 99, 255, 0.15)"
+              style={{ width: '300px', height: '300px', top: '20%', right: '5%' }}
+              animate={{ 
+                y: [0, -20, 0],
+                x: [0, 10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut"
+              }}
+            />
+            <FloatingCircle
+              color="rgba(78, 205, 196, 0.15)"
+              style={{ width: '250px', height: '250px', bottom: '15%', left: '5%' }}
+              animate={{ 
+                y: [0, 20, 0],
+                x: [0, -10, 0],
+                scale: [1, 1.15, 1],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut"
+              }}
+            />
+            <FloatingCircle
+              color="rgba(255, 255, 255, 0.07)"
+              style={{ width: '150px', height: '150px', top: '70%', left: '30%' }}
+              animate={{ 
+                y: [0, -15, 0],
+                x: [0, 15, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut"
+              }}
+            />
+          </MobileMenuBackground>
+          <MobileMenuContent
+            variants={{
+              open: {
+                opacity: 1,
+                y: 0,
+                transition: {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  when: "beforeChildren",
+                  staggerChildren: 0.07
+                }
+              },
+              closed: {
+                opacity: 0,
+                y: 20,
+                transition: {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  when: "afterChildren",
+                  staggerChildren: 0.05,
+                  staggerDirection: -1
+                }
+              }
+            }}
+          >
+            <MobileNavLink 
+              href="#features" 
+              onClick={toggleMobileMenu}
+              variants={{
+                open: { opacity: 1, y: 0 },
+                closed: { opacity: 0, y: 20 }
+              }}
+            >
+              <FaPuzzlePiece />
+              {t('header.features', 'Features')}
+            </MobileNavLink>
+            
+            <MobileNavLink 
+              href="#how-it-works" 
+              onClick={toggleMobileMenu}
+              variants={{
+                open: { opacity: 1, y: 0 },
+                closed: { opacity: 0, y: 20 }
+              }}
+            >
+              <FaRegLightbulb />
+              {t('header.howItWorks', 'How It Works')}
+            </MobileNavLink>
+            
+            <MobileNavLink 
+              href="#pricing" 
+              onClick={toggleMobileMenu}
+              variants={{
+                open: { opacity: 1, y: 0 },
+                closed: { opacity: 0, y: 20 }
+              }}
+            >
+              <FaRegCreditCard />
+              {t('header.pricing', 'Pricing')}
+            </MobileNavLink>
+            
+            <MobileNavLink 
+              href="#faq" 
+              onClick={toggleMobileMenu}
+              variants={{
+                open: { opacity: 1, y: 0 },
+                closed: { opacity: 0, y: 20 }
+              }}
+            >
+              <FaQuestionCircle />
+              {t('header.faq', 'FAQ')}
+            </MobileNavLink>
+            
+            {/* Language selector with extreme styling */}
+            <div 
+              className="mobile-lang-wrapper" 
+              style={{ 
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '20px',
+                margin: '40px 0 20px',
+                transform: 'scale(1.3)',  // Reduced from 4.5 to 1.3
+                transformOrigin: 'center center',
+                position: 'relative',
+                zIndex: 1500
+              }}
+            >
+              <motion.div
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 20 }
+                }}
+                style={{ display: 'inline-block' }} // Ensure proper display
+              >
+                <LanguageSelector />
+              </motion.div>
+            </div>
+            
+            {currentUser ? (
+              <MobileUserMenu
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 20 }
+                }}
+              >
+                <MobileUserMenuItem to="/dashboard" onClick={toggleMobileMenu}>
+                  <FaUserCircle /> Dashboard
+                </MobileUserMenuItem>
+                <MobileUserMenuItem to="/profile" onClick={toggleMobileMenu}>
+                  <FaUser /> Profile
+                </MobileUserMenuItem>
+                <MobileUserMenuLogout onClick={() => { handleLogout(); toggleMobileMenu(); }}>
+                  <FaSignOutAlt /> Logout
+                </MobileUserMenuLogout>
+              </MobileUserMenu>
+            ) : (
+              <MobileAuthButtons
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 20 }
+                }}
+              >
+                <MobileLoginButton to="/login" onClick={toggleMobileMenu}>Login</MobileLoginButton>
+                <MobileSignUpButton to="/signup" onClick={toggleMobileMenu}>Sign Up</MobileSignUpButton>
+              </MobileAuthButtons>
+            )}
+          </MobileMenuContent>
+        </MobileMenu>
       </HeaderContent>
     </HeaderContainer>
   );
