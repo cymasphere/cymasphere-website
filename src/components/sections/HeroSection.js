@@ -416,9 +416,9 @@ const HeroSection = () => {
   
   // Create fixed animation offsets for each position - these will persist across chord changes
   const positionAnimationOffsets = useRef([
-    1.2, // First position offset
-    0.5, // Second position offset 
-    2.3  // Third position offset
+    {x: 0, y: 0, delay: 0},    // First position offset - start immediately
+    {x: 0, y: 0, delay: 0.8},  // Second position offset - delay by 0.8s
+    {x: 0, y: 0, delay: 1.5}   // Third position offset - delay by 1.5s
   ]);
   
   // Add this state to track outer word positions 
@@ -1057,21 +1057,24 @@ const HeroSection = () => {
               right: shadowRight
             }}
             animate={{
-              transform: [
-                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(1)`,
-                `translate3d(${Math.round(animationOffset.x - 1)}px, ${Math.round(animationOffset.y - 1)}px, 0) scale(0.975)`,
-                `translate3d(${Math.round(animationOffset.x + 2)}px, ${Math.round(animationOffset.y)}px, 0) scale(0.95)`,
-                `translate3d(${Math.round(animationOffset.x)}px, ${Math.round(animationOffset.y + 1)}px, 0) scale(0.975)`,
-                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(1)`,
-              ],
-              opacity: [0.4, 0.35, 0.3, 0.35, 0.4]
+              scale: [0.9, 1, 0.9],
+              opacity: [0.3, 0.4, 0.3]
             }}
             transition={{
-              duration: 7, // Same duration as the note animation
-              ease: [0.45, 0.05, 0.55, 0.95],
-              times: [0, 0.25, 0.5, 0.75, 1],
-              repeat: Infinity,
-              repeatType: "loop"
+              scale: { 
+                repeatType: "mirror", 
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay // Re-add the position-specific offset
+              },
+              opacity: { 
+                repeatType: "mirror", 
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay // Re-add the position-specific offset
+              }
             }}
           />
           
@@ -1100,22 +1103,28 @@ const HeroSection = () => {
             // Keep backgroundColor as an animated property during transitions
             animate={{
               backgroundColor: noteColor,
-              transform: [
-                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 4)}px, 0) scale(0.97)`,
-                `translate3d(${Math.round(animationOffset.x - 1)}px, ${Math.round(animationOffset.y - 2)}px, 0) scale(0.985)`,
-                `translate3d(${Math.round(animationOffset.x + 2)}px, ${Math.round(animationOffset.y)}px, 0) scale(1)`,
-                `translate3d(${Math.round(animationOffset.x)}px, ${Math.round(animationOffset.y + 3)}px, 0) scale(0.985)`,
-                `translate3d(${Math.round(animationOffset.x - 3)}px, ${Math.round(animationOffset.y - 4)}px, 0) scale(0.97)`,
-              ],
-              opacity: transitioning ? [1, 0.9, 0.8, 0.9, 1] : 1
+              y: [0, -15, 0],
+              scale: [1, 1.05, 1]
             }}
             transition={{
-              backgroundColor: { duration: 1.2, ease: "easeInOut" },
-              duration: 7, // Same duration as the note animation
-              ease: [0.45, 0.05, 0.55, 0.95],
-              times: [0, 0.25, 0.5, 0.75, 1],
-              repeat: Infinity,
-              repeatType: "loop"
+              backgroundColor: { 
+                duration: 1.5, 
+                ease: "easeInOut"
+              },
+              y: {
+                repeatType: "mirror",
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay
+              },
+              scale: {
+                repeatType: "mirror",
+                repeat: Infinity,
+                duration: 2.5,
+                ease: "easeInOut",
+                delay: animationOffset.delay
+              }
             }}
             onClick={() => playNote(note)}
             whileHover={{ 
@@ -1236,13 +1245,11 @@ const HeroSection = () => {
   useEffect(() => {
     if (!positionAnimationOffsets.current.length) {
       // Generate very subtle offsets based on position index
-      positionAnimationOffsets.current = Array(8).fill(0).map((_, index) => {
-        return {
-          // Use even smaller animation range for smoother appearance
-          x: (index % 4) * 0.3,
-          y: Math.floor(index / 4) * 0.3
-        };
-      });
+      positionAnimationOffsets.current = [
+        { x: 0, y: 0, delay: 0 },    // First note - starts immediately 
+        { x: 0, y: 0, delay: 0.9 },  // Second note - offset by 0.9s
+        { x: 0, y: 0, delay: 1.7 }   // Third note - offset by 1.7s
+      ];
     }
   }, []);
 
