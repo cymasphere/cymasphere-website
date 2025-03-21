@@ -245,20 +245,28 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 40px;
+  gap: 30px;
 `;
 
 const InfoImageContainer = styled.div`
   width: 40%;
   max-width: 400px;
-  height: 280px;
+  height: 260px;
   border-radius: 12px;
   overflow: visible;
-  position: relative;
+  position: sticky;
+  top: 0;
+  align-self: center;
   background: rgba(10, 10, 15, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
+  
+  @media (max-width: 900px) {
+    width: 80%;
+    height: 180px;
+    margin-bottom: 10px;
+    position: relative;
+  }
   
   &:hover {
     z-index: 10;
@@ -302,18 +310,40 @@ const ContentTextContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 10px;
+  
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(108, 99, 255, 0.3);
+    border-radius: 4px;
+    
+    &:hover {
+      background: rgba(108, 99, 255, 0.5);
+    }
+  }
 `;
 
 const FeatureDescription = styled.div`
-  font-size: 1.1rem;
-  line-height: 1.7;
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.95);
   
   h3 {
-    font-size: 2rem;
+    font-size: clamp(1.4rem, 2vw, 1.7rem);
     font-weight: 700;
-    margin-bottom: 24px;
+    margin-top: 0;
+    margin-bottom: 10px;
     background: linear-gradient(135deg, #6c63ff, #4ecdc4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -322,34 +352,27 @@ const FeatureDescription = styled.div`
   }
   
   p {
-    margin-bottom: 16px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 1.05rem;
-    line-height: 1.6;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
+    margin-bottom: 10px;
   }
   
   ul {
-    padding-left: 24px;
-    margin: 16px 0;
+    padding-left: 20px;
+    margin-top: 8px;
+    margin-bottom: 10px;
   }
   
   li {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     position: relative;
-    padding-left: 4px;
   }
   
-  .company-attribution {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+  /* Attribution styling */
+  p.attribution {
     font-style: italic;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.7;
+    font-size: 0.9em;
+    margin-top: 12px;
+    margin-bottom: 10px;
   }
 `;
 
