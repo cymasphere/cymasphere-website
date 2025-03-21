@@ -274,6 +274,30 @@ const interpolateColor = (startColor, endColor, progress) => {
   return rgbToHex(r, g, b);
 };
 
+// Add a custom hook for window size
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const HeroSection = () => {
   const { t, i18n } = useTranslation();
   
@@ -788,6 +812,9 @@ const HeroSection = () => {
     return colors;
   };
   
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
+  const isMobile = windowWidth <= 768;
+  
   // Move handlePlay inside useCallback to fix dependency issue
   const renderContent = useCallback(() => {
     // Get the current word from titleWords array
@@ -824,18 +851,26 @@ const HeroSection = () => {
         <HeroTitle 
           style={{ 
             position: 'relative',
-            minHeight: '100px',
+            minHeight: isMobile ? '260px' : '100px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center'
           }}
         >
           {/* Title container */}
-          <div style={{ position: 'relative', display: 'inline-block', textAlign: 'center' }}>
+          <div 
+            style={{ 
+              position: 'relative', 
+              display: 'inline-block', 
+              textAlign: 'center',
+              width: '100%'
+            }}
+            className="title-container"
+          >
             {/* Left word - Intelligent */}
             <motion.span
               animate={{ 
-                x: -(centerWordWidth/2) - 24,
+                x: !isMobile ? -(centerWordWidth/2) - 24 : 0,
                 opacity: 1
               }}
               transition={{ 
@@ -844,11 +879,16 @@ const HeroSection = () => {
                 duration: 0.5
               }}
               style={{ 
-                position: 'absolute',
-                right: '50%',
+                position: !isMobile ? 'absolute' : 'relative',
+                right: !isMobile ? '50%' : 'auto',
                 color: 'white',
                 whiteSpace: 'nowrap',
-                fontSize: '4rem'
+                fontSize: !isMobile ? '4rem' : '3rem',
+                display: !isMobile ? 'inline-block' : 'block',
+                textAlign: !isMobile ? 'right' : 'center',
+                marginBottom: !isMobile ? '0' : '1.5rem',
+                lineHeight: isMobile ? '1.2' : 'inherit',
+                fontWeight: 'bold'
               }}
             >
               {t('hero.titlePartA', 'Intelligent')}
@@ -857,10 +897,12 @@ const HeroSection = () => {
             {/* Center changing word - using a simpler approach */}
             <div style={{ 
                 display: 'inline-block',
-                position: 'relative',
+                position: !isMobile ? 'relative' : 'static',
                 minWidth: '120px',
                 padding: '0 10px',
-                textAlign: 'center'
+                textAlign: 'center',
+                marginBottom: !isMobile ? '0' : '1.5rem',
+                width: !isMobile ? 'auto' : '100%'
               }}
             >
               <AnimatePresence mode="wait">
@@ -876,7 +918,9 @@ const HeroSection = () => {
                   style={{ 
                     display: 'inline-block',
                     color: getWordColor(currentWordIndex),
-                    fontSize: '4rem'
+                    fontSize: !isMobile ? '4rem' : '3rem',
+                    lineHeight: isMobile ? '1.2' : 'inherit',
+                    fontWeight: 'bold'
                   }}
                 >
                   {currentWord}
@@ -887,7 +931,7 @@ const HeroSection = () => {
             {/* Right word - Creation */}
             <motion.span
               animate={{ 
-                x: (centerWordWidth/2) + 24,
+                x: !isMobile ? (centerWordWidth/2) + 24 : 0,
                 opacity: 1
               }}
               transition={{ 
@@ -896,11 +940,15 @@ const HeroSection = () => {
                 duration: 0.5
               }}
               style={{ 
-                position: 'absolute',
-                left: '50%',
+                position: !isMobile ? 'absolute' : 'relative',
+                left: !isMobile ? '50%' : 'auto',
                 color: 'white',
                 whiteSpace: 'nowrap',
-                fontSize: '4rem'
+                fontSize: !isMobile ? '4rem' : '3rem',
+                display: !isMobile ? 'inline-block' : 'block',
+                textAlign: !isMobile ? 'left' : 'center',
+                lineHeight: isMobile ? '1.2' : 'inherit',
+                fontWeight: 'bold'
               }}
             >
               {t('hero.titlePartB', 'Creation')}
@@ -938,7 +986,7 @@ const HeroSection = () => {
         </ButtonGroup>
       </HeroContent>
     );
-  }, [titleWords, currentWordIndex, t, audioContextStarted, playChord, synthRef, wordMeasureRef, centerWordWidth]);
+  }, [titleWords, currentWordIndex, t, audioContextStarted, playChord, synthRef, wordMeasureRef, centerWordWidth, isMobile]);
   
   // Render the voice leading lines during transitions
   const renderVoiceLeadingLines = () => {
@@ -954,20 +1002,20 @@ const HeroSection = () => {
       // Calculate line positions and angles
       // (Calculate positions based on viewport percentage)
       const startX = prevPos.left 
-        ? parseInt(prevPos.left.replace('%', '')) * window.innerWidth / 100 + 30 
-        : window.innerWidth - parseInt(prevPos.right.replace('%', '')) * window.innerWidth / 100 - 30;
+        ? parseInt(prevPos.left.replace('%', '')) * windowWidth / 100 + 30 
+        : windowWidth - parseInt(prevPos.right.replace('%', '')) * windowWidth / 100 - 30;
       
       const startY = prevPos.top 
-        ? parseInt(prevPos.top.replace('%', '')) * window.innerHeight / 100 + 30 
-        : window.innerHeight - parseInt(prevPos.bottom.replace('%', '')) * window.innerHeight / 100 - 30;
+        ? parseInt(prevPos.top.replace('%', '')) * windowHeight / 100 + 30 
+        : windowHeight - parseInt(prevPos.bottom.replace('%', '')) * windowHeight / 100 - 30;
       
       const endX = currPos.left 
-        ? parseInt(currPos.left.replace('%', '')) * window.innerWidth / 100 + 30 
-        : window.innerWidth - parseInt(currPos.right.replace('%', '')) * window.innerWidth / 100 - 30;
+        ? parseInt(currPos.left.replace('%', '')) * windowWidth / 100 + 30 
+        : windowWidth - parseInt(currPos.right.replace('%', '')) * windowWidth / 100 - 30;
       
       const endY = currPos.top 
-        ? parseInt(currPos.top.replace('%', '')) * window.innerHeight / 100 + 30 
-        : window.innerHeight - parseInt(currPos.bottom.replace('%', '')) * window.innerHeight / 100 - 30;
+        ? parseInt(currPos.top.replace('%', '')) * windowHeight / 100 + 30 
+        : windowHeight - parseInt(currPos.bottom.replace('%', '')) * windowHeight / 100 - 30;
       
       // Calculate line length and angle
       const deltaX = endX - startX;
@@ -1005,7 +1053,21 @@ const HeroSection = () => {
   const renderNotes = () => {
     return displayedChord.notes.map((note, index) => {
       // Get note position from state
-      const position = displayedChord.positions[index];
+      let position = {...displayedChord.positions[index]};
+      
+      // Adjust position for mobile - move the right ball (index 1) lower on mobile
+      if (isMobile && index === 1) {
+        position = {
+          top: '40%',  // Split the difference between 35% and 45%
+          right: '10%'  // Position it more to the right edge
+        };
+        
+        // If we're transitioning to mobile from desktop, don't use previous position for voice leading
+        if (transitioning && previousChord) {
+          // Make sure we don't have weird voice leading lines by adjusting the previous position
+          previousChord.positions[index] = {...position};
+        }
+      }
       
       // Calculate shadow position based on note position
       const shadowTop = position.top 
