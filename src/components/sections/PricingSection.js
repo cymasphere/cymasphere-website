@@ -1329,16 +1329,18 @@ const PricingSection = () => {
 
   // Features included in the plan
   const features = [
-    "Interactive Harmony Palette",
-    "Advanced Voice Leading Control",
-    "Unlimited Saved Progressions",
-    "Premium Sound Libraries",
-    "MIDI Export & Import",
-    "Dynamic Pattern Editor",
-    "Song Builder Tool",
-    "Cloud Storage & Backup",
-    "Priority Email Support",
-    "Free Updates"
+    "Song Builder with Multi-Track Management",
+    "Intelligent Pattern Editor & Chord Adaptation",
+    "Gestural Harmony Palette Interface",
+    "Advanced Voice Leading & Chord Voicings",
+    "Interactive Chord Progression Timeline",
+    "Complete Voice and Range Control",
+    "Standalone App & DAW Plugin Support",
+    "Real-Time Chord Reharmonization Tools",
+    "Comprehensive Arrangement View",
+    "Custom Voicing Generation Engine",
+    "Cloud Storage & Project Backups",
+    "Premium Support & All Future Updates"
   ];
 
   // Get the current plan based on selected billing period
