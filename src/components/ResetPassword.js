@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/NextAuthContext';
+import Link from 'next/link';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -28,7 +28,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.a`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -276,7 +276,8 @@ function ResetPassword() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { resetPassword } = useAuth();
+  const auth = useAuth() || {};
+  const { resetPassword } = auth;
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -309,9 +310,11 @@ function ResetPassword() {
   
   return (
     <AuthContainer>
-      <BackButton to="/">
-        <FaArrowLeft /> Back to Home
-      </BackButton>
+      <Link href="/login" passHref>
+        <BackButton>
+          <FaArrowLeft /> Back to Login
+        </BackButton>
+      </Link>
       
       <FormCard
         initial={{ opacity: 0, y: 20 }}
@@ -388,7 +391,7 @@ function ResetPassword() {
         </Form>
         
         <LinkText>
-          Remember your password? <Link to="/login">Login</Link>
+          Remember your password? <Link href="/login">Log in</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

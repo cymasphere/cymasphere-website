@@ -337,6 +337,9 @@ const HeroSection = () => {
   
   // Measure all word widths once on first render and when language changes
   useEffect(() => {
+    // Skip SSR execution
+    if (typeof window === 'undefined') return;
+    
     if (wordMeasureRef.current) {
       const widths = {};
       const tempDiv = wordMeasureRef.current;
@@ -368,6 +371,30 @@ const HeroSection = () => {
     }
   }, [titleWords, currentWordIndex, i18n.language]);
   
+  // ROBUST WORD CYCLING IMPLEMENTATION
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    console.log("Setting up word cycling with titleWords:", titleWords.length);
+    
+    // Create an interval that cycles the words every 2 seconds
+    const intervalId = setInterval(() => {
+      // Use function form of state update to ensure we're using the latest state
+      setCurrentWordIndex(prevIndex => {
+        const nextIndex = (prevIndex + 1) % titleWords.length;
+        console.log(`Cycling word from ${prevIndex} (${titleWords[prevIndex]}) to ${nextIndex} (${titleWords[nextIndex]})`);
+        return nextIndex;
+      });
+    }, 2000);
+    
+    // Clean up the interval on unmount
+    return () => {
+      console.log("Cleaning up word cycling interval");
+      clearInterval(intervalId);
+    };
+  }, [titleWords.length]); // Only depend on the length of titleWords, not the array itself
+
   // Update center word width whenever the word changes
   useEffect(() => {
     if (currentWordIndex !== null && initialWidthsMeasured) {
@@ -375,24 +402,6 @@ const HeroSection = () => {
       setCenterWordWidth(newWidth);
     }
   }, [currentWordIndex, initialWidthsMeasured, wordWidths]);
-
-  // SUPER SIMPLE CYCLING FUNCTIONALITY
-  useEffect(() => {
-    // EXTREMELY SIMPLE WORD CYCLING - NO FANCY ANIMATION
-    
-    // Create an interval that cycles the words every 2 seconds
-    const intervalId = setInterval(() => {
-      setCurrentWordIndex(prev => {
-        const nextIndex = (prev + 1) % titleWords.length;
-        return nextIndex;
-      });
-    }, 2000);
-    
-    // Clean up the interval on unmount
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [titleWords]); // Only titleWords as dependency
 
   // Function to get color for each title word
   const getWordColor = useCallback((index) => {

@@ -6,11 +6,11 @@ import ContactSection from '../components/sections/ContactSection';
 import FAQSection from '../components/sections/FAQSection';
 import PricingSection from '../components/sections/PricingSection';
 // import TestimonialsSection from '../components/sections/TestimonialsSection';
-import Layout from '../components/layout/Layout';
+import NextLayout from '../components/layout/NextLayout';
 
 const LandingPage = () => {
   return (
-    <Layout>
+    <NextLayout>
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />
@@ -18,7 +18,7 @@ const LandingPage = () => {
       {/* <TestimonialsSection /> */}
       <FAQSection />
       <ContactSection />
-    </Layout>
+    </NextLayout>
   );
 };
 

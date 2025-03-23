@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './common/LoadingSpinner';
 import EmailVerification from './EmailVerification';
@@ -13,6 +13,7 @@ import EmailVerification from './EmailVerification';
  */
 function PrivateRoute({ children, requireVerification = true }) {
   const { currentUser, loading } = useAuth();
+  const router = useRouter();
 
   // TEMPORARILY DISABLED - Always render children without authentication
   return children;
@@ -25,7 +26,8 @@ function PrivateRoute({ children, requireVerification = true }) {
   
   // Redirect to login if not authenticated
   if (!currentUser) {
-    return <Navigate to="/login" />;
+    router.push('/login');
+    return <LoadingSpinner fullScreen={true} text="Redirecting..." />;
   }
   
   // Check email verification if required

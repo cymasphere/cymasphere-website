@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/NextAuthContext";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
@@ -40,7 +41,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.a`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -51,15 +52,15 @@ const BackButton = styled(Link)`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
-
+  
   &:hover {
     color: var(--text);
   }
-
+  
   svg {
     margin-right: 8px;
   }
-
+  
   @media (max-width: 768px) {
     top: 20px;
     left: 20px;
@@ -355,17 +356,17 @@ const SuccessText = styled.div`
 `;
 
 function SignUp() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [username, setUsername] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const { signup, googleSignIn } = useAuth();
-  const navigate = useNavigate();
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const auth = useAuth() || {};
+  const { signup, googleSignIn } = auth;
+  const router = useRouter();
 
   // Force reset loading state if component unmounts
   useEffect(() => {
@@ -380,10 +381,15 @@ function SignUp() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "email") {
+      setEmail(value);
+    } else if (name === "password") {
+      setPassword(value);
+    } else if (name === "confirmPassword") {
+      setPasswordConfirm(value);
+    } else if (name === "name") {
+      setUsername(value);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -391,14 +397,13 @@ function SignUp() {
 
     // Reset any previous errors and success state
     setError("");
-    setSuccess(false);
 
     // Validate form
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== passwordConfirm) {
       return setError("Passwords do not match");
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       return setError("Password must be at least 6 characters");
     }
 
@@ -413,35 +418,15 @@ function SignUp() {
     }, 8000);
 
     try {
-      // Create account
-      console.log("Calling signup function with:", formData.email);
-      const response = await signup(
-        formData.email,
-        formData.password,
-        formData.name
-      );
-      console.log(
-        "User signed up successfully - email verification should have been sent"
-      );
-
-      // Clear hard timeout since operation succeeded
-      if (hardTimeoutId) clearTimeout(hardTimeoutId);
-
-      // IMPORTANT: Reset loading state immediately
-      setLoading(false);
-
-      // Clear form and show success message
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-
-      // Set success to true to show success message
-      setSuccess(true);
-
-      // Don't automatically redirect - let them see the verification message
+      setError("");
+      setLoading(true);
+      
+      if (!signup) {
+        throw new Error('Authentication is not initialized. Please try again later.');
+      }
+      
+      await signup(email, password, username);
+      router.push("/dashboard");
     } catch (err) {
       // Clear hard timeout since operation failed
       if (hardTimeoutId) clearTimeout(hardTimeoutId);
@@ -465,32 +450,16 @@ function SignUp() {
   };
 
   const handleGoogleSignIn = async () => {
-    // Initialize hardTimeoutId variable at the top of the function
-    let hardTimeoutId;
-
-    // Reset any previous errors
-    setError("");
-
-    // HARD TIMEOUT: No matter what, loading will stop after 8 seconds max
-    setLoading(true);
-    hardTimeoutId = setTimeout(() => {
-      console.log("Hard timeout reached, forcing loading state to false");
-      setLoading(false);
-    }, 8000);
-
     try {
-      // Sign in with Google
-      const response = await googleSignIn();
-      console.log("Google sign in successful");
-
-      // Clear hard timeout since operation succeeded
-      if (hardTimeoutId) clearTimeout(hardTimeoutId);
-
-      // IMPORTANT: Reset loading state immediately
-      setLoading(false);
-
-      // Redirect to dashboard
-      navigate("/dashboard");
+      setError("");
+      setLoading(true);
+      
+      if (!googleSignIn) {
+        throw new Error('Google authentication is not initialized. Please try again later.');
+      }
+      
+      await googleSignIn();
+      router.push("/dashboard");
     } catch (err) {
       // Clear hard timeout since operation failed
       if (hardTimeoutId) clearTimeout(hardTimeoutId);
@@ -506,9 +475,11 @@ function SignUp() {
 
   return (
     <AuthContainer>
-      <BackButton to="/">
-        <FaArrowLeft /> Back to Home
-      </BackButton>
+      <Link href="/" passHref>
+        <BackButton>
+          <FaArrowLeft /> Back to Home
+        </BackButton>
+      </Link>
 
       <FormCard
         className="form-card"

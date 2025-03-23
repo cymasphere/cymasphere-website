@@ -214,6 +214,46 @@ const SYNTH_PRESETS = {
     }
   },
   
+  // Ambient pad synth
+  "ambient-pad": {
+    name: "Ambient Pad",
+    description: "Spacious, evolving ambient pad with long release",
+    synthType: "padsynth",
+    synthParams: {
+      oscillator: {
+        type: "sine"
+      },
+      envelope: {
+        attack: 0.8,
+        decay: 1.5,
+        sustain: 0.8,
+        release: 8.0
+      },
+      volume: -20
+    },
+    effects: {
+      reverb: {
+        wet: 0.8,
+        decay: 10.0,
+        preDelay: 0.05
+      },
+      delay: {
+        wet: 0.5,
+        delayTime: 0.75,
+        feedback: 0.6
+      },
+      chorus: {
+        wet: 0.6,
+        frequency: 0.8,
+        depth: 0.8
+      },
+      stereoWidener: {
+        wet: 1.0,
+        width: 0.9
+      }
+    }
+  },
+  
   // Lead synth for melodies
   leadSynth: {
     name: "Lead Synth",

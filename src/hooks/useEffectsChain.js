@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as Tone from 'tone';
 import { initializeEffectsChain, disposeEffectsChain } from '../utils/effectsUtils';
 
 /**
@@ -12,7 +13,8 @@ const useEffectsChain = () => {
     // Initialize effects chain
     const initEffects = async () => {
       try {
-        const effects = await initializeEffectsChain();
+        // Pass the Tone library to the initializeEffectsChain function
+        const effects = await initializeEffectsChain({}, Tone);
         console.log("Effects chain initialized:", effects);
         setEffectsChain(effects);
       } catch (error) {

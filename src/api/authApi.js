@@ -1,107 +1,150 @@
-// Authentication API client
-import { API_BASE_URL } from "../config";
+/**
+ * Mock Authentication API
+ * This file simulates authentication API calls for development purposes
+ */
 
-// Helper function to handle API responses
-const handleResponse = async (response) => {
-  const data = await response.json();
+// Simulated delay to mimic network requests
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  if (!response.ok) {
-    const error = data.error || response.statusText;
-    throw new Error(error);
+/**
+ * Simulates a signup API call
+ */
+export async function signup(email, password, displayName) {
+  // Simulate network delay
+  await delay(800);
+  
+  // Validate inputs (simple validation for demo)
+  if (!email || !password || !displayName) {
+    throw new Error("All fields are required");
   }
-
-  return data;
-};
-
-// Register a new user
-export const signup = async (email, password, name) => {
-  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters");
+  }
+  
+  // In a real API, this would create a user account
+  // For demo, we'll return a simulated successful response
+  return {
+    user: {
+      id: "user_" + Math.random().toString(36).substring(2, 9),
       email,
-      password,
-      name,
-    }),
-    credentials: "include",
-  });
-
-  return handleResponse(response);
-};
-
-// Login
-export const login = async (email, password) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+      displayName,
+      emailVerified: false,
+      createdAt: new Date().toISOString()
     },
-    body: JSON.stringify({
+    token: "mock_token_" + Math.random().toString(36).substring(2, 15)
+  };
+}
+
+/**
+ * Simulates a login API call
+ */
+export async function login(email, password) {
+  // Simulate network delay
+  await delay(600);
+  
+  // Validate inputs
+  if (!email || !password) {
+    throw new Error("Email and password are required");
+  }
+  
+  // Simulate authentication logic
+  // In a real app, this would verify credentials against a database
+  if (email === "error@test.com") {
+    throw new Error("Invalid email or password");
+  }
+  
+  // Return simulated successful response
+  return {
+    user: {
+      id: "user_" + Math.random().toString(36).substring(2, 9),
       email,
-      password,
-    }),
-    credentials: "include",
-  });
-
-  return handleResponse(response);
-};
-
-// Google sign in
-export const googleSignIn = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/auth/google`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+      displayName: email.split('@')[0],
+      emailVerified: true,
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
     },
-    body: JSON.stringify({
-      token,
-    }),
-    credentials: "include",
-  });
+    token: "mock_token_" + Math.random().toString(36).substring(2, 15)
+  };
+}
 
-  return handleResponse(response);
-};
-
-// Forgot password
-export const forgotPassword = async (email) => {
-  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+/**
+ * Simulates a Google sign in API call
+ */
+export async function googleSignIn() {
+  // Simulate network delay
+  await delay(700);
+  
+  // Return simulated successful response
+  return {
+    user: {
+      id: "user_" + Math.random().toString(36).substring(2, 9),
+      email: "user@gmail.com",
+      displayName: "Google User",
+      emailVerified: true,
+      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days ago
     },
-    body: JSON.stringify({
-      email,
-    }),
-    credentials: "include",
-  });
+    token: "mock_token_" + Math.random().toString(36).substring(2, 15)
+  };
+}
 
-  return handleResponse(response);
-};
+/**
+ * Simulates a logout API call
+ */
+export async function logout() {
+  // Simulate network delay
+  await delay(300);
+  
+  // In a real app, this would invalidate the token on the server
+  return { success: true };
+}
 
-// Resend verification email
-export const resendVerificationEmail = async (email) => {
-  const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email,
-    }),
-    credentials: "include",
-  });
+/**
+ * Simulates a password reset API call
+ */
+export async function resetPassword(email) {
+  // Simulate network delay
+  await delay(500);
+  
+  // Validate input
+  if (!email) {
+    throw new Error("Email is required");
+  }
+  
+  // In a real app, this would send a password reset email
+  return { success: true };
+}
 
-  return handleResponse(response);
-};
+/**
+ * Simulates resending a verification email
+ */
+export async function resendVerificationEmail(email) {
+  // Simulate network delay
+  await delay(500);
+  
+  // Validate input
+  if (!email) {
+    throw new Error("Email is required");
+  }
+  
+  // In a real app, this would send a verification email
+  return { success: true };
+}
 
-// Logout
-export const logout = async () => {
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  return handleResponse(response);
-};
+/**
+ * Simulates updating user profile
+ */
+export async function updateProfile(data) {
+  // Simulate network delay
+  await delay(600);
+  
+  // Validate input
+  if (!data) {
+    throw new Error("Profile data is required");
+  }
+  
+  // In a real app, this would update the user profile in the database
+  return {
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+}

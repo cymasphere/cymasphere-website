@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import dynamic from 'next/dynamic';
 
+// Make the component client-side only to prevent SSR issues
 const LanguageSelector = () => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -112,4 +114,7 @@ const LanguageSelector = () => {
   );
 };
 
-export default LanguageSelector; 
+// Export as client-side only component
+export default dynamic(() => Promise.resolve(LanguageSelector), {
+  ssr: false
+}); 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import styled from 'styled-components';
 import { FaLock, FaCreditCard, FaCalendarAlt, FaShieldAlt, FaArrowLeft } from 'react-icons/fa';
 
@@ -351,27 +352,28 @@ const StripeInfo = styled.div`
   font-size: 0.75rem;
 `;
 
-// Function to parse query parameters
-const useQuery = () => {
-  return new URLSearchParams(useLocation().search);
+// Helper to get query parameters in Next.js
+const useQueryParams = () => {
+  const router = useRouter();
+  return router.query;
 };
 
 const MockCheckout = () => {
-  const navigate = useNavigate();
-  const query = useQuery();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const query = useQueryParams();
+  const [formState, setFormState] = useState({
     cardNumber: '',
-    cardExpiry: '',
-    cardCvc: '',
-    name: '',
-    email: '',
+    expiry: '',
+    cvc: '',
+    nameOnCard: '',
+    postalCode: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
-  // Parse the query parameters to get the plan details
-  const planName = query.get('plan') || 'Cymasphere Pro';
-  const billingPeriod = query.get('billing') || 'monthly';
-  const price = query.get('price') || '$19.99';
+  const plan = query.plan || '';
+  const billingPeriod = query.billing || '';
+  const price = query.price || '';
   
   // Format the price based on billing period
   const formatPrice = () => {
@@ -432,55 +434,48 @@ const MockCheckout = () => {
     const { name, value } = e.target;
     
     if (name === 'cardNumber') {
-      setFormData({
-        ...formData,
+      setFormState({
+        ...formState,
         [name]: formatCardNumber(value)
       });
-    } else if (name === 'cardExpiry') {
-      setFormData({
-        ...formData,
+    } else if (name === 'expiry') {
+      setFormState({
+        ...formState,
         [name]: formatExpiryDate(value)
       });
-    } else if (name === 'cardCvc') {
-      setFormData({
-        ...formData,
+    } else if (name === 'cvc') {
+      setFormState({
+        ...formState,
         [name]: formatCVC(value)
       });
     } else {
-      setFormData({
-        ...formData,
+      setFormState({
+        ...formState,
         [name]: value
       });
     }
   };
   
-  // Add a function to handle scrolling to pricing section
   const handleBackToPricing = (e) => {
     e.preventDefault();
-    navigate('/');
-    // Use setTimeout to ensure navigation completes before scrolling
-    setTimeout(() => {
-      const pricingSection = document.getElementById('pricing');
-      if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+    router.push('/pricing');
   };
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
+    setError('');
     
-    // Simulate payment processing
+    // Simulate API call to process payment
     setTimeout(() => {
-      // Check if using a test card number for failure (4000 0000 0000 0002 is a test decline card)
-      if (formData.cardNumber.replace(/\s/g, '') === '4000000000000002') {
-        // Redirect to an error page or stay on checkout with an error message
-        navigate(`/checkout-success?error=payment_failed&session_id=failed_${Date.now()}`);
-      } else {
-        // Redirect to success page
-        navigate(`/checkout-success?session_id=mock_session_${Date.now()}`);
+      if (formState.cardNumber.trim() === '') {
+        setError('Please enter a valid card number.');
+        setIsLoading(false);
+        return;
       }
+      
+      // Redirect to success page
+      router.push('/checkout-success?session_id=mock_session_123');
     }, 1500);
   };
   
@@ -512,7 +507,7 @@ const MockCheckout = () => {
           <OrderSummary>
             <OrderItem>
               <Label>Plan</Label>
-              <Value>{planName}</Value>
+              <Value>{plan}</Value>
             </OrderItem>
             <OrderItem>
               <Label>Billing</Label>
@@ -533,7 +528,7 @@ const MockCheckout = () => {
                 name="email" 
                 placeholder="your.email@example.com" 
                 required 
-                value={formData.email}
+                value={formState.email}
                 onChange={handleChange}
               />
             </FormGroup>
@@ -542,10 +537,10 @@ const MockCheckout = () => {
               <InputLabel>Cardholder Name</InputLabel>
               <Input 
                 type="text" 
-                name="name" 
+                name="nameOnCard" 
                 placeholder="Name on card" 
                 required
-                value={formData.name}
+                value={formState.nameOnCard}
                 onChange={handleChange}
               />
             </FormGroup>
@@ -558,7 +553,7 @@ const MockCheckout = () => {
                   name="cardNumber" 
                   placeholder="4242 4242 4242 4242" 
                   required
-                  value={formData.cardNumber}
+                  value={formState.cardNumber}
                   onChange={handleChange}
                   maxLength={19}
                 />
@@ -568,10 +563,10 @@ const MockCheckout = () => {
                 <InputLabel>Expiry Date</InputLabel>
                 <Input 
                   type="text" 
-                  name="cardExpiry" 
+                  name="expiry" 
                   placeholder="MM/YY" 
                   required
-                  value={formData.cardExpiry}
+                  value={formState.expiry}
                   onChange={handleChange}
                   maxLength={5}
                 />
@@ -581,18 +576,18 @@ const MockCheckout = () => {
                 <InputLabel>CVC</InputLabel>
                 <Input 
                   type="text" 
-                  name="cardCvc" 
+                  name="cvc" 
                   placeholder="123" 
                   required
-                  value={formData.cardCvc}
+                  value={formState.cvc}
                   onChange={handleChange}
                   maxLength={3}
                 />
               </CardCvcField>
             </InputRow>
             
-            <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Processing...' : 'Pay Now'} <FaLock size={14} />
+            <SubmitButton type="submit" disabled={isLoading}>
+              {isLoading ? 'Processing...' : 'Pay Now'} <FaLock size={14} />
             </SubmitButton>
             
             <SecurityNote>

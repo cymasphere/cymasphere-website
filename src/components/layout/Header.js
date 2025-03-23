@@ -1,26 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaUserCircle, FaPuzzlePiece, FaQuestionCircle, FaRegLightbulb, FaRegCreditCard } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useAuth } from '../../contexts/NextAuthContext';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from '../i18n/LanguageSelector';
-import EnergyBall from '../common/EnergyBall';
-import { playLydianMaj7Chord } from '../../utils/audioUtils';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import './MobileLanguageStyle.css';
+import styles from './MobileLanguageStyle.module.css';
+import { HeaderContainer, LogoContainer } from './HeaderStyles/index';
+import Image from 'next/image';
 
-const HeaderContainer = styled.header`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 3000;
-  background-color: ${props => props.$isScrolled || props.$menuOpen ? 'rgba(15, 14, 23, 0.95)' : 'transparent'};
-  backdrop-filter: ${props => props.$isScrolled || props.$menuOpen ? 'blur(8px)' : 'none'};
-  transition: all 0.3s ease-in-out;
-  box-shadow: ${props => props.$isScrolled || props.$menuOpen ? '0 5px 20px rgba(0, 0, 0, 0.2)' : 'none'};
-`;
+// Define animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } }
+};
+
+// Dynamically import components for client-side only
+const DynamicLanguageSelector = dynamic(() => import('../i18n/DynamicLanguageSelector'), { ssr: false });
+const EnergyBall = dynamic(() => import('../common/EnergyBall'), { ssr: false });
+
+// Import audio utilities dynamically to avoid SSR issues
+const playSound = async () => {
+  if (typeof window !== 'undefined') {
+    const { playLydianMaj7Chord } = await import('../../utils/audioUtils');
+    playLydianMaj7Chord();
+  }
+};
 
 const HeaderContent = styled.div`
   display: flex;
@@ -35,27 +43,6 @@ const HeaderContent = styled.div`
   
   @media (max-width: 768px) {
     padding: ${props => props.$isScrolled ? '12px 20px' : '20px 20px'};
-  }
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.8rem;
-  cursor: pointer;
-  position: relative;
-  overflow: visible;
-  transition: all 0.3s ease;
-  
-  ${props => props.$menuOpen && `
-    filter: drop-shadow(0 0 8px rgba(108, 99, 255, 0.6));
-  `}
-  
-  &:hover {
-    text-decoration: none;
   }
 `;
 
@@ -638,7 +625,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { currentUser, userDetails, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [ripples, setRipples] = useState([]);
   const logoRef = useRef(null);
   
@@ -671,10 +658,10 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
       setUserMenuOpen(false);
+      router.push('/login');
     } catch (error) {
-      console.error('Failed to log out:', error);
+      console.error('Logout error:', error);
     }
   };
   
@@ -719,7 +706,7 @@ const Header = () => {
     }
     
     // Play the chord
-    playLydianMaj7Chord();
+    playSound();
     
     // Create ripple effect
     const logoRect = logoRef.current.getBoundingClientRect();
@@ -754,23 +741,24 @@ const Header = () => {
   return (
     <HeaderContainer $isScrolled={isScrolled} $menuOpen={isMobileMenuOpen}>
       <HeaderContent $isScrolled={isScrolled}>
-        <Logo 
-          to="/" 
-          onClick={handleLogoClick}
-          title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
-          ref={logoRef}
-          $menuOpen={isMobileMenuOpen}
-        >
-          <EnergyBall marginRight="15px" />
-          <LogoText>
-            <span>CYMA</span>SPHERE
-          </LogoText>
-          <RippleContainer>
-            {ripples.map(ripple => (
-              <Ripple key={ripple.id} style={ripple.style} />
-            ))}
-          </RippleContainer>
-        </Logo>
+        <Link href="/" passHref legacyBehavior>
+          <LogoContainer 
+            onClick={handleLogoClick}
+            title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
+            ref={logoRef}
+            $menuOpen={isMobileMenuOpen}
+          >
+            <EnergyBall />
+            <LogoText>
+              <span>CYMA</span>SPHERE
+            </LogoText>
+            <RippleContainer>
+              {ripples.map(ripple => (
+                <Ripple key={ripple.id} style={ripple.style} />
+              ))}
+            </RippleContainer>
+          </LogoContainer>
+        </Link>
         
         <MobileMenuToggle onClick={toggleMobileMenu}>
           <MobileMenuBurger $isOpen={isMobileMenuOpen}>
@@ -788,7 +776,7 @@ const Header = () => {
           <NavLink href="#faq">{t('header.faq', 'FAQ')}</NavLink>
           
           <LanguageSelectorWrapper>
-            <LanguageSelector />
+            <DynamicLanguageSelector />
           </LanguageSelectorWrapper>
           
           {currentUser ? (
@@ -797,10 +785,10 @@ const Header = () => {
                 <UserAvatar>{getInitials()}</UserAvatar>
               </UserButton>
               <UserDropdown $isOpen={userMenuOpen}>
-                <UserMenuItem to="/dashboard" onClick={closeUserMenu}>
+                <UserMenuItem href="/dashboard" onClick={closeUserMenu}>
                   <FaUserCircle /> Dashboard
                 </UserMenuItem>
-                <UserMenuItem to="/profile" onClick={closeUserMenu}>
+                <UserMenuItem href="/profile" onClick={closeUserMenu}>
                   <FaUser /> Profile
                 </UserMenuItem>
                 <UserMenuLogout onClick={handleLogout}>
@@ -810,8 +798,8 @@ const Header = () => {
             </UserMenuContainer>
           ) : (
             <AuthButtons>
-              <LoginButton to="/login">Login</LoginButton>
-              <SignUpButton to="/signup">Sign Up</SignUpButton>
+              <LoginButton href="/login">Login</LoginButton>
+              <SignUpButton href="/signup">Sign Up</SignUpButton>
             </AuthButtons>
           )}
         </Nav>
@@ -923,7 +911,7 @@ const Header = () => {
           >
             {/* Language selector with extreme styling - moved to top */}
             <div 
-              className="mobile-lang-wrapper" 
+              className={styles.mobileWrapper} 
               style={{ 
                 width: '100%',
                 display: 'flex',
@@ -943,7 +931,7 @@ const Header = () => {
                 }}
                 style={{ display: 'inline-block' }}
               >
-                <LanguageSelector />
+                <DynamicLanguageSelector />
               </motion.div>
             </div>
             
@@ -1002,10 +990,10 @@ const Header = () => {
                   closed: { opacity: 0, y: 20 }
                 }}
               >
-                <MobileUserMenuItem to="/dashboard" onClick={toggleMobileMenu}>
+                <MobileUserMenuItem href="/dashboard" onClick={toggleMobileMenu}>
                   <FaUserCircle /> Dashboard
                 </MobileUserMenuItem>
-                <MobileUserMenuItem to="/profile" onClick={toggleMobileMenu}>
+                <MobileUserMenuItem href="/profile" onClick={toggleMobileMenu}>
                   <FaUser /> Profile
                 </MobileUserMenuItem>
                 <MobileUserMenuLogout onClick={() => { handleLogout(); toggleMobileMenu(); }}>
@@ -1013,14 +1001,13 @@ const Header = () => {
                 </MobileUserMenuLogout>
               </MobileUserMenu>
             ) : (
-              <MobileAuthButtons
-                variants={{
-                  open: { opacity: 1, y: 0 },
-                  closed: { opacity: 0, y: 20 }
-                }}
-              >
-                <MobileLoginButton to="/login" onClick={toggleMobileMenu}>Login</MobileLoginButton>
-                <MobileSignUpButton to="/signup" onClick={toggleMobileMenu}>Sign Up</MobileSignUpButton>
+              <MobileAuthButtons variants={fadeIn}>
+                <MobileLoginButton href="/login" onClick={toggleMobileMenu}>
+                  Login
+                </MobileLoginButton>
+                <MobileSignUpButton href="/signup" onClick={toggleMobileMenu}>
+                  Sign Up
+                </MobileSignUpButton>
               </MobileAuthButtons>
             )}
           </MobileMenuContent>

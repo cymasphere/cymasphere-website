@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import Header from './Header';
+import DynamicHeader from './DynamicHeader';
 import Footer from './Footer';
 import { motion } from 'framer-motion';
 
@@ -51,7 +51,7 @@ const pageVariants = {
 const Layout = ({ children }) => {
   return (
     <LayoutWrapper>
-      <Header />
+      <DynamicHeader />
       <Main
         initial="initial"
         animate="in"

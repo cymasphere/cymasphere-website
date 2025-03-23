@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaMusic, FaWaveSquare, FaPuzzlePiece, FaLayerGroup, FaRobot, FaVolumeUp, FaClock } from 'react-icons/fa';
-import FeatureModal from '../modals/FeatureModal';
+import dynamic from 'next/dynamic';
+
+// Dynamically import modal to avoid SSR issues
+const FeatureModal = dynamic(() => import('../modals/FeatureModal'), {
+  ssr: false
+});
 
 const FeaturesContainer = styled.section`
   padding: 100px 20px;

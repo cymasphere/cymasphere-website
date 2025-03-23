@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import './LanguageSelector.css';
+import styles from './LanguageSelector.module.css';
+import dynamic from 'next/dynamic';
 
 // Flag icons for each language
 const FLAGS = {
@@ -16,6 +17,7 @@ const LanguageSelector = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Use effect instead of useLayoutEffect for SSR compatibility
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -37,26 +39,26 @@ const LanguageSelector = () => {
   const currentLanguage = i18n.language || 'en';
 
   return (
-    <div className="language-selector" ref={dropdownRef}>
+    <div className={styles['language-selector']} ref={dropdownRef}>
       <div 
-        className="selected-language" 
+        className={styles['selected-language']} 
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="flag-icon">{FLAGS[currentLanguage]}</span>
-        <span className="language-name">{t(`language.${currentLanguage}`)}</span>
-        <span className="dropdown-arrow">▼</span>
+        <span className={styles['flag-icon']}>{FLAGS[currentLanguage]}</span>
+        <span className={styles['language-name']}>{t(`language.${currentLanguage}`)}</span>
+        <span className={styles['dropdown-arrow']}>▼</span>
       </div>
       
       {isOpen && (
-        <div className="language-dropdown">
+        <div className={styles['language-dropdown']}>
           {Object.keys(FLAGS).map((langCode) => (
             <div 
               key={langCode}
-              className={`language-option ${langCode === currentLanguage ? 'active' : ''}`}
+              className={`${styles['language-option']} ${langCode === currentLanguage ? styles['active'] : ''}`}
               onClick={() => changeLanguage(langCode)}
             >
-              <span className="flag-icon">{FLAGS[langCode]}</span>
-              <span className="language-name">{t(`language.${langCode}`)}</span>
+              <span className={styles['flag-icon']}>{FLAGS[langCode]}</span>
+              <span className={styles['language-name']}>{t(`language.${langCode}`)}</span>
             </div>
           ))}
         </div>
@@ -65,4 +67,7 @@ const LanguageSelector = () => {
   );
 };
 
-export default LanguageSelector; 
+// Export as client-side only component to avoid SSR issues
+export default dynamic(() => Promise.resolve(LanguageSelector), {
+  ssr: false
+}); 

@@ -4,8 +4,8 @@
 export const API_BASE_URL = "http://localhost:8000/api";
 
 // Authentication configuration
-export const AUTH_TOKEN_NAME = "authToken";
-export const USER_DATA_NAME = "userData";
+export const AUTH_TOKEN_NAME = "cymasphere_auth_token";
+export const USER_DATA_NAME = "cymasphere_user_data";
 
 // Application settings
 export const APP_NAME = "Cymasphere";
@@ -13,9 +13,9 @@ export const APP_VERSION = "1.0.0";
 
 // Feature flags
 export const FEATURES = {
-  GOOGLE_AUTH: true,
-  PASSWORD_RESET: true,
-  EMAIL_VERIFICATION: true,
+  enableSubscriptions: true,
+  enableNotifications: true,
+  enableDarkMode: true
 };
 
 // Export all configuration

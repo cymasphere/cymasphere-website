@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/NextAuthContext';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaArrowLeft } from 'react-icons/fa';
+import { FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaArrowLeft, FaTimes, FaCheck } from 'react-icons/fa';
 
 // Styled components
 const PageContainer = styled.div`
@@ -30,7 +31,7 @@ const PageContainer = styled.div`
   }
 `;
 
-const BackButton = styled(Link)`
+const BackLink = styled.a`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -193,47 +194,175 @@ const CountdownText = styled.div`
   margin-top: 0.75rem;
 `;
 
+const VerificationBanner = styled(motion.div)`
+  background: linear-gradient(to right, rgba(108, 99, 255, 0.1), rgba(36, 174, 143, 0.1));
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 30px;
+  position: relative;
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  overflow: hidden;
+`;
+
+const BannerContent = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+`;
+
+const MessageContainer = styled.div`
+  flex: 1;
+`;
+
+const Title = styled.h3`
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  color: var(--text);
+`;
+
+const Message = styled.p`
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+`;
+
+const ButtonsContainer = styled.div`
+  display: flex;
+  gap: 10px;
+  
+  @media (max-width: 768px) {
+    margin-top: 10px;
+  }
+`;
+
+const Button = styled.button`
+  padding: 8px 15px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const PrimaryButton = styled(Button)`
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: white;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+  }
+`;
+
+const SecondaryButton = styled(Button)`
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: var(--text);
+  }
+`;
+
+const SuccessOverlay = styled(motion.div)`
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  
+  svg {
+    font-size: 2.5rem;
+    color: #00C853;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    color: white;
+    font-size: 1.1rem;
+    margin: 0;
+    text-align: center;
+  }
+`;
+
+const LinkButton = styled(Button)`
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: white;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+  }
+`;
+
 /**
  * Component to display email verification status and allow resending verification emails
  */
 function EmailVerification() {
-  const { currentUser, resendVerificationEmail } = useAuth();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const auth = useAuth() || {};
+  const { currentUser, verifyEmail } = auth;
   const [status, setStatus] = useState('');
   const [isError, setIsError] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [isResending, setIsResending] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
 
   const isVerified = currentUser?.emailVerified;
   
   const handleResendEmail = async () => {
-    if (countdown > 0 || isResending) return;
-    
-    setIsResending(true);
-    setStatus('');
-    setIsError(false);
+    setLoading(true);
+    setError('');
+    setSuccess(false);
     
     try {
-      await resendVerificationEmail();
-      setStatus('Verification email sent successfully!');
-      setIsError(false);
+      if (!verifyEmail) {
+        throw new Error('Email verification is not initialized. Please try again later.');
+      }
       
-      // Start a 60-second countdown
-      setCountdown(60);
-      const timer = setInterval(() => {
-        setCountdown(prevCount => {
-          if (prevCount <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prevCount - 1;
-        });
-      }, 1000);
-      
+      await verifyEmail();
+      setSuccess(true);
     } catch (error) {
-      setStatus(`Error: ${error.message}`);
-      setIsError(true);
+      setError(error.message);
     } finally {
-      setIsResending(false);
+      setLoading(false);
     }
   };
   
@@ -244,15 +373,17 @@ function EmailVerification() {
   };
   
   // If no user or user is already verified, don't show this component
-  if (!currentUser || isVerified) {
+  if (!currentUser || isVerified || dismissed) {
     return null;
   }
   
   return (
     <PageContainer>
-      <BackButton to="/">
-        <FaArrowLeft /> Back to Home
-      </BackButton>
+      <Link href="/" passHref>
+        <BackLink>
+          <FaArrowLeft /> Back to Home
+        </BackLink>
+      </Link>
       
       <VerificationContainer
         initial={{ opacity: 0, y: 20 }}
@@ -275,11 +406,11 @@ function EmailVerification() {
           <ButtonGroup>
             <VerificationButton 
               onClick={handleResendEmail} 
-              disabled={countdown > 0 || isResending}
-              whileHover={!isResending ? { scale: 1.05 } : {}}
-              whileTap={!isResending ? { scale: 0.98 } : {}}
+              disabled={cooldown || sending}
+              whileHover={!sending ? { scale: 1.05 } : {}}
+              whileTap={!sending ? { scale: 0.98 } : {}}
             >
-              {isResending ? (
+              {sending ? (
                 <>
                   <LoadingDot animate={loadingAnimation} custom={0} />
                   <LoadingDot animate={{...loadingAnimation, transition: {delay: 0.2, ...loadingAnimation.transition}}} />
@@ -290,9 +421,9 @@ function EmailVerification() {
               )}
             </VerificationButton>
             
-            {countdown > 0 && (
+            {cooldown && (
               <CountdownText>
-                You can request another email in {countdown} seconds
+                You can request another email in {cooldownTime} seconds
               </CountdownText>
             )}
             
@@ -312,6 +443,66 @@ function EmailVerification() {
           </ButtonGroup>
         </VerificationContent>
       </VerificationContainer>
+      
+      <VerificationBanner
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <BannerContent>
+          <IconContainer>
+            <FaEnvelope />
+          </IconContainer>
+          <MessageContainer>
+            <Title>Verify your email address</Title>
+            <Message>
+              We sent a verification email to {currentUser.email}. 
+              Please check your inbox and spam folder.
+            </Message>
+          </MessageContainer>
+          <ButtonsContainer>
+            <PrimaryButton 
+              onClick={handleResendEmail}
+              disabled={cooldown || sending}
+            >
+              {cooldown 
+                ? `Resend (${cooldownTime}s)` 
+                : sending 
+                  ? 'Sending...' 
+                  : 'Resend Email'}
+            </PrimaryButton>
+            <SecondaryButton onClick={() => setDismissed(true)}>
+              Dismiss
+            </SecondaryButton>
+          </ButtonsContainer>
+        </BannerContent>
+        <CloseButton onClick={() => setDismissed(true)}>
+          <FaTimes />
+        </CloseButton>
+        
+        {/* Success message overlay */}
+        {showSuccess && (
+          <SuccessOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <FaCheck />
+            <p>Verification email sent successfully!</p>
+          </SuccessOverlay>
+        )}
+      </VerificationBanner>
+      
+      <ButtonGroup>
+        <Button type="button" onClick={handleResendEmail} disabled={loading}>
+          Resend Verification Email
+        </Button>
+        <Link href="/dashboard" passHref>
+          <LinkButton>
+            Continue to Dashboard
+          </LinkButton>
+        </Link>
+      </ButtonGroup>
     </PageContainer>
   );
 }

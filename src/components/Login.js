@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import { useAuth } from '../contexts/NextAuthContext';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaGoogle, FaArrowLeft, FaSpinner } from 'react-icons/fa';
@@ -28,7 +29,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled(Link)`
+const BackButton = styled.a`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -91,7 +92,7 @@ const LogoContainer = styled.div`
   margin-bottom: 2rem;
 `;
 
-const Logo = styled(Link)`
+const Logo = styled.a`
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -338,8 +339,8 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, googleSignIn } = useAuth();
-  const navigate = useNavigate();
+  const auth = useAuth() || {};
+  const router = useRouter();
   
   async function handleSubmit(e) {
     e.preventDefault();
@@ -348,10 +349,14 @@ function Login() {
     setError('');
     
     try {
+      if (!auth.login) {
+        throw new Error('Authentication is not initialized. Please try again later.');
+      }
+      
       setLoading(true);
-      await login(email, password);
+      await auth.login(email, password);
       console.log('User logged in successfully');
-      navigate('/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       
@@ -372,27 +377,30 @@ function Login() {
     }
   }
   
-  async function handleGoogleLogin() {
+  async function handleGoogleSignIn() {
+    setError('');
     try {
-      setError('');
-      setLoading(true);
+      if (!auth.googleSignIn) {
+        throw new Error('Google authentication is not initialized. Please try again later.');
+      }
       
-      await googleSignIn();
-      console.log('Google login successful');
-      navigate('/dashboard');
+      setLoading(true);
+      await auth.googleSignIn();
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Google login error:', error);
+      console.error('Google sign-in error:', error);
       setError(`Failed to sign in with Google: ${error.message}`);
-    } finally {
       setLoading(false);
     }
-  };
+  }
   
   return (
     <AuthContainer>
-      <BackButton to="/">
-        <FaArrowLeft /> Back to Home
-      </BackButton>
+      <Link href="/" passHref>
+        <BackButton>
+          <FaArrowLeft /> Back to Home
+        </BackButton>
+      </Link>
       
       <FormCard
         initial={{ opacity: 0, y: 20 }}
@@ -400,12 +408,14 @@ function Login() {
         transition={{ duration: 0.5 }}
       >
         <LogoContainer>
-          <Logo to="/">
-            <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-            <LogoText>
-              <span>CYMA</span>SPHERE
-            </LogoText>
-          </Logo>
+          <Link href="/" passHref>
+            <Logo>
+              <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
+              <LogoText>
+                <span>CYMA</span>SPHERE
+              </LogoText>
+            </Logo>
+          </Link>
         </LogoContainer>
         
         <Subtitle>Login to access your account</Subtitle>
@@ -444,7 +454,7 @@ function Login() {
           </FormGroup>
           
           <ForgotPassword>
-            <Link to="/reset-password">Forgot password?</Link>
+            <Link href="/reset-password">Forgot password?</Link>
           </ForgotPassword>
           
           <Button 
@@ -469,7 +479,7 @@ function Login() {
         
         <GoogleButton 
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={handleGoogleSignIn}
           disabled={loading}
         >
           <ButtonContent>
@@ -486,7 +496,7 @@ function Login() {
         </GoogleButton>
         
         <LinkText>
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link href="/signup">Sign up</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

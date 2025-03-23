@@ -2,17 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Tone from 'tone';
-import SynthSelector from '../synth/SynthSelector';
-import PresetSelector from '../synth/PresetSelector';
-import Timeline from '../timeline/Timeline';
-import ChordPad from '../chord/ChordPad';
-import ChordBank from '../chord/ChordBank';
-import DrumPattern from '../drum/DrumPattern';
+import SynthSelector from './SynthSelector';
+import PresetSelector from './PresetSelector';
+import SynthControls from './SynthControls';
+import ChordPad from './ChordPad';
+import ChordBank from '../synth/ChordBank';
+import DrumPattern from './DrumPattern';
 import PianoRoll from '../piano/PianoRoll';
 import ParticleSystem from '../visualizer/ParticleSystem';
-import Wizard from '../wizard/Wizard';
+import Wizard from './Wizard';
 import { determineKey } from '../../utils/music';
-import './SynthesizerContainer.css';
+import styles from './SynthesizerContainer.module.css';
 
 // Add modal components
 const ModalOverlay = styled(motion.div)`

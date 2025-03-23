@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from './dashboard/DashboardLayout';
 import { FaCreditCard, FaReceipt, FaHistory, FaTimes, FaCheck, FaInfoCircle, FaCrown, FaLock, FaGift } from 'react-icons/fa';
 import PlanSelectionModal from './modals/PlanSelectionModal';
@@ -550,7 +550,7 @@ function Billing() {
   const [showRemoveConfirmModal, setShowRemoveConfirmModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [confirmationTitle, setConfirmationTitle] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   
   // Mock user subscription data - in a real app, this would come from context/API
   const [userSubscription, setUserSubscription] = useState({
@@ -673,7 +673,7 @@ function Billing() {
     if (confirmationTitle === 'Upgrading Your Plan') {
       // In a real app, you would navigate to checkout
       console.log(`Redirecting to checkout for upgrade to ${userSubscription.interval}`);
-      // navigate('/checkout', { state: { interval: userSubscription.interval, upgrading: true } });
+      // router.push('/checkout', { state: { interval: userSubscription.interval, upgrading: true } });
     }
   };
   

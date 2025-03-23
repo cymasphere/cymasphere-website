@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { FaXTwitter, FaInstagram, FaFacebook, FaYoutube, FaDiscord } from 'react-icons/fa6';
 import LegalModal from '../modals/LegalModal';
 import AboutUsModal from '../modals/AboutUsModal';
@@ -45,7 +45,7 @@ const FooterColumn = styled.div`
   }
 `;
 
-const FooterLogo = styled(Link)`
+const FooterLogo = styled.a`
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -103,13 +103,13 @@ const FooterHeading = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-const FooterLink = styled(Link)`
-  font-size: 0.95rem;
+const FooterLink = styled.a`
   color: var(--text-secondary);
   text-decoration: none;
   margin-bottom: 0.75rem;
+  font-size: 0.95rem;
   transition: color 0.2s ease;
-  display: inline-block;
+  cursor: pointer;
   
   &:hover {
     color: var(--primary);
@@ -202,21 +202,26 @@ const Footer = () => {
     <FooterContainer>
       <FooterContent>
         <FooterColumn>
-          <FooterLogo 
-            to="/"
-            onClick={(e) => {
-              if (window.location.pathname === '/') {
-                e.preventDefault();
-              }
-              playLydianMaj7Chord();
-            }}
-            title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
-          >
-            <EnergyBall />
-            <LogoText>
-              <span>CYMA</span>SPHERE
-            </LogoText>
-          </FooterLogo>
+          <Link href="/" passHref>
+            <FooterLogo 
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  try {
+                    playLydianMaj7Chord();
+                  } catch (err) {
+                    console.log('Audio not available');
+                  }
+                }
+              }}
+            >
+              <EnergyBall size="35px" marginRight="12px" />
+              <LogoText>
+                <span>CYMA</span>SPHERE
+              </LogoText>
+            </FooterLogo>
+          </Link>
           <BrandCredit href="https://nnaud.io">by NNAudio</BrandCredit>
           <FooterDescription>
             Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.
@@ -242,7 +247,9 @@ const Footer = () => {
         
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
-          <FooterLink to="/">Home</FooterLink>
+          <Link href="/" passHref>
+            <FooterLink>Home</FooterLink>
+          </Link>
           <FooterAnchor href="#features">Features</FooterAnchor>
           <FooterAnchor href="#how-it-works">How It Works</FooterAnchor>
           <FooterAnchor href="#pricing">Pricing</FooterAnchor>
@@ -251,9 +258,15 @@ const Footer = () => {
         
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <FooterLink to="/login">Login</FooterLink>
-          <FooterLink to="/signup">Sign Up</FooterLink>
-          <FooterLink to="/dashboard">Account Dashboard</FooterLink>
+          <Link href="/login" passHref>
+            <FooterLink>Login</FooterLink>
+          </Link>
+          <Link href="/signup" passHref>
+            <FooterLink>Sign Up</FooterLink>
+          </Link>
+          <Link href="/dashboard" passHref>
+            <FooterLink>Account Dashboard</FooterLink>
+          </Link>
         </FooterColumn>
         
         <FooterColumn>

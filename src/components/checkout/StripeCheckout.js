@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 // Use environment variable for Stripe publishable key with a fallback
 // This ensures we at least have a valid string for Stripe initialization in all environments
@@ -57,7 +57,7 @@ const StatusMessage = styled.div`
 const StripeCheckout = ({ priceId, buttonText, billingPeriod, price }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   
   // Check if we're in development mode
   // In production, this would be set to 'production'
@@ -76,7 +76,7 @@ const StripeCheckout = ({ priceId, buttonText, billingPeriod, price }) => {
         // Give some time for the loading state to show
         setTimeout(() => {
           // Redirect to mock checkout page with plan details
-          navigate(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
+          router.push(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
           setIsLoading(false);
         }, 800);
         return;

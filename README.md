@@ -113,3 +113,36 @@ To run the complete application:
    ```
 
 The frontend will be available at http://localhost:3000 and the backend API at http://localhost:8000.
+
+## Next.js Implementation
+
+This project now includes a Next.js implementation for enhanced performance and SEO. To use the Next.js version:
+
+```bash
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+```
+
+### Key Features of Next.js Implementation:
+
+- **Server-Side Rendering (SSR)**: Pre-renders pages for better performance and SEO
+- **API Routes**: Built-in API functionality (see `/pages/api`)
+- **Optimized Routing**: File-based routing system
+- **CSS Modules**: Component-scoped styling
+- **Image Optimization**: Automatic image optimization
+
+### Getting Started with Next.js
+
+For comprehensive documentation on Next.js features, check [NEXT_README.md](./README_NEXT.md)
+
+For the original React implementation, use:
+
+```bash
+npm run react-start
+```

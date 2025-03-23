@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 // This component will scroll the window to the top whenever the pathname changes
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const router = useRouter();
 
   useEffect(() => {
     // Scroll to top on page refresh or route change
     window.scrollTo(0, 0);
-  }, [pathname]);
+  }, [router.pathname]);
 
   return null; // This component doesn't render anything
 };

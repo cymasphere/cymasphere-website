@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaTachometerAlt, FaUser, FaCreditCard, FaDownload, FaCog, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import EnergyBall from '../common/EnergyBall';
@@ -52,19 +53,16 @@ const LogoContainer = styled.div`
   margin-bottom: 2rem;
 `;
 
-const Logo = styled(Link)`
+const Logo = styled.a`
   display: flex;
   align-items: center;
-  text-decoration: none;
-  color: var(--text);
+  font-size: 1.25rem;
   font-weight: 700;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-decoration: none;
   cursor: pointer;
-  position: relative;
-  overflow: visible;
-  
-  &:hover {
-    text-decoration: none;
-  }
 `;
 
 const LogoText = styled.div`
@@ -88,25 +86,25 @@ const SidebarNav = styled.nav`
   flex-direction: column;
 `;
 
-const NavItem = styled(Link)`
-  padding: 0.85rem 1.5rem;
-  color: ${props => props.active === "true" ? 'var(--primary)' : 'var(--text-secondary)'};
+const NavItem = styled.a`
   display: flex;
   align-items: center;
+  padding: 1rem 2rem;
+  color: ${props => props.active === "true" ? 'var(--primary)' : 'var(--text-secondary)'};
+  font-weight: ${props => props.active === "true" ? '600' : '400'};
   text-decoration: none;
   transition: all 0.2s ease;
   background-color: ${props => props.active === "true" ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
-  border-left: 4px solid ${props => props.active === "true" ? 'var(--primary)' : 'transparent'};
+  border-left: 3px solid ${props => props.active === "true" ? 'var(--primary)' : 'transparent'};
   
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(108, 99, 255, 0.05);
     color: var(--text);
-    text-decoration: none;
   }
   
   svg {
-    margin-right: 0.75rem;
-    font-size: 1.1rem;
+    margin-right: 1rem;
+    font-size: 1.2rem;
   }
 `;
 
@@ -210,8 +208,7 @@ const LogoutButton = styled.button`
 function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, logout, userDetails } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const sidebarRef = useRef(null);
   
   const toggleSidebar = () => {
@@ -225,9 +222,9 @@ function DashboardLayout({ children }) {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      router.push('/login');
     } catch (error) {
-      console.error('Failed to log out', error);
+      console.error('Failed to log out:', error);
     }
   };
 
@@ -266,30 +263,42 @@ function DashboardLayout({ children }) {
     <LayoutContainer>
       <Sidebar ref={sidebarRef} isOpen={sidebarOpen}>
         <LogoContainer>
-          <Logo to="/dashboard" onClick={handleLogoClick}>
-            <EnergyBall size="35px" marginRight="12px" />
-            <LogoText>
-              <span>CYMA</span>SPHERE
-            </LogoText>
-          </Logo>
+          <Link href="/dashboard" passHref>
+            <Logo onClick={handleLogoClick}>
+              <EnergyBall size="35px" marginRight="12px" />
+              <LogoText>
+                <span>CYMA</span>SPHERE
+              </LogoText>
+            </Logo>
+          </Link>
         </LogoContainer>
         
         <SidebarNav>
-          <NavItem to="/dashboard" active={location.pathname === '/dashboard' ? "true" : "false"}>
-            <FaTachometerAlt /> Dashboard
-          </NavItem>
-          <NavItem to="/profile" active={location.pathname === '/profile' ? "true" : "false"}>
-            <FaUser /> Profile
-          </NavItem>
-          <NavItem to="/billing" active={location.pathname === '/billing' ? "true" : "false"}>
-            <FaCreditCard /> Billing
-          </NavItem>
-          <NavItem to="/downloads" active={location.pathname === '/downloads' ? "true" : "false"}>
-            <FaDownload /> Downloads
-          </NavItem>
-          <NavItem to="/settings" active={location.pathname === '/settings' ? "true" : "false"}>
-            <FaCog /> Settings
-          </NavItem>
+          <Link href="/dashboard" passHref>
+            <NavItem active={router.pathname === '/dashboard' ? "true" : "false"}>
+              <FaTachometerAlt /> Dashboard
+            </NavItem>
+          </Link>
+          <Link href="/profile" passHref>
+            <NavItem active={router.pathname === '/profile' ? "true" : "false"}>
+              <FaUser /> Profile
+            </NavItem>
+          </Link>
+          <Link href="/billing" passHref>
+            <NavItem active={router.pathname === '/billing' ? "true" : "false"}>
+              <FaCreditCard /> Billing
+            </NavItem>
+          </Link>
+          <Link href="/downloads" passHref>
+            <NavItem active={router.pathname === '/downloads' ? "true" : "false"}>
+              <FaDownload /> Downloads
+            </NavItem>
+          </Link>
+          <Link href="/settings" passHref>
+            <NavItem active={router.pathname === '/settings' ? "true" : "false"}>
+              <FaCog /> Settings
+            </NavItem>
+          </Link>
         </SidebarNav>
         
         <UserInfo>
@@ -302,7 +311,7 @@ function DashboardLayout({ children }) {
               <FaSignOutAlt />
             </LogoutButton>
           ) : (
-            <LogoutButton onClick={() => navigate('/login')} title="Login">
+            <LogoutButton onClick={() => router.push('/login')} title="Login">
               <FaSignOutAlt />
             </LogoutButton>
           )}
