@@ -455,6 +455,17 @@ const NextHeader = () => {
     router.push('/');
   };
   
+  // Add navigation handlers that force a refresh
+  const handleLoginClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/login';
+  };
+  
+  const handleSignupClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/signup';
+  };
+  
   // Handle navigation with route
   const navItems = [
     { name: t('header.features'), path: '/#features' },
@@ -513,7 +524,7 @@ const NextHeader = () => {
               </DropdownItem>
             </Link>
             
-            <DropdownItem href="#" onClick={handleLogout} $isLogout>
+            <DropdownItem as="button" onClick={handleLogout} $isLogout>
               <DropdownIcon $isLogout>
                 <FaSignOutAlt />
               </DropdownIcon>
@@ -526,14 +537,10 @@ const NextHeader = () => {
     
     return (
       <>
-        <Link href="/login" passHref>
-          <AuthButton>{t('header.login')}</AuthButton>
-        </Link>
-        <Link href="/signup" passHref>
-          <AuthButton $isPrimary>
-            {t('header.signUp')}
-          </AuthButton>
-        </Link>
+        <AuthButton as="a" onClick={handleLoginClick}>{t('header.login')}</AuthButton>
+        <AuthButton as="a" $isPrimary onClick={handleSignupClick}>
+          {t('header.signUp')}
+        </AuthButton>
       </>
     );
   };
@@ -617,23 +624,25 @@ const NextHeader = () => {
             </>
           ) : (
             <>
-              <Link href="/signup" passHref>
-                <AuthButton 
-                  $isPrimary 
-                  $isMobile
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t('header.signUp')}
-                </AuthButton>
-              </Link>
-              <Link href="/login" passHref>
-                <AuthButton 
-                  $isMobile
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t('header.login')}
-                </AuthButton>
-              </Link>
+              <AuthButton 
+                $isPrimary 
+                $isMobile
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/signup';
+                }}
+              >
+                {t('header.signUp')}
+              </AuthButton>
+              <AuthButton 
+                $isMobile
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/login';
+                }}
+              >
+                {t('header.login')}
+              </AuthButton>
             </>
           )}
         </MobileAuthSection>

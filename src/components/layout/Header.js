@@ -186,7 +186,7 @@ const AuthButtons = styled.div`
   }
 `;
 
-const LoginButton = styled(Link)`
+const LoginButton = styled.a`
   color: var(--text);
   text-decoration: none;
   padding: 8px 16px;
@@ -194,6 +194,7 @@ const LoginButton = styled(Link)`
   font-weight: 500;
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -201,7 +202,7 @@ const LoginButton = styled(Link)`
   }
 `;
 
-const SignUpButton = styled(Link)`
+const SignUpButton = styled.a`
   background: linear-gradient(90deg, var(--primary), var(--accent));
   color: white;
   padding: 8px 16px;
@@ -209,11 +210,11 @@ const SignUpButton = styled(Link)`
   font-weight: 500;
   text-decoration: none;
   transition: all 0.3s ease;
+  cursor: pointer;
   
   &:hover {
-    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
     transform: translateY(-2px);
-    color: white;
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.25);
   }
 `;
 
@@ -269,7 +270,7 @@ const UserDropdown = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const UserMenuItem = styled(Link)`
+const UserMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 10px 15px;
@@ -433,19 +434,18 @@ const MobileAuthButtons = styled(motion.div)`
   max-width: 300px;
 `;
 
-const MobileLoginButton = styled(Link)`
+const MobileLoginButton = styled.a`
   color: var(--text);
   text-decoration: none;
-  padding: 15px 20px;
-  border-radius: 30px;
+  padding: 12px 20px;
+  border-radius: 24px;
   font-weight: 500;
-  font-size: 1.2rem;
-  text-align: center;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  display: block;
-  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -453,24 +453,22 @@ const MobileLoginButton = styled(Link)`
   }
 `;
 
-const MobileSignUpButton = styled(Link)`
+const MobileSignUpButton = styled.a`
   background: linear-gradient(90deg, var(--primary), var(--accent));
   color: white;
-  padding: 15px 20px;
-  border-radius: 30px;
+  padding: 12px 20px;
+  border-radius: 24px;
   font-weight: 500;
-  font-size: 1.2rem;
-  text-align: center;
   text-decoration: none;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  display: block;
-  margin: 0 auto;
   
   &:hover {
-    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
     transform: translateY(-2px);
-    color: white;
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.25);
   }
 `;
 
@@ -738,6 +736,17 @@ const Header = () => {
     }, 1000); // Match animation duration
   };
   
+  // Add new navigation functions
+  const handleLoginClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/login';
+  };
+  
+  const handleSignupClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/signup';
+  };
+  
   return (
     <HeaderContainer $isScrolled={isScrolled} $menuOpen={isMobileMenuOpen}>
       <HeaderContent $isScrolled={isScrolled}>
@@ -785,12 +794,16 @@ const Header = () => {
                 <UserAvatar>{getInitials()}</UserAvatar>
               </UserButton>
               <UserDropdown $isOpen={userMenuOpen}>
-                <UserMenuItem href="/dashboard" onClick={closeUserMenu}>
-                  <FaUserCircle /> Dashboard
-                </UserMenuItem>
-                <UserMenuItem href="/profile" onClick={closeUserMenu}>
-                  <FaUser /> Profile
-                </UserMenuItem>
+                <Link href="/dashboard" passHref>
+                  <UserMenuItem onClick={closeUserMenu}>
+                    <FaUserCircle /> Dashboard
+                  </UserMenuItem>
+                </Link>
+                <Link href="/profile" passHref>
+                  <UserMenuItem onClick={closeUserMenu}>
+                    <FaUser /> Profile
+                  </UserMenuItem>
+                </Link>
                 <UserMenuLogout onClick={handleLogout}>
                   <FaSignOutAlt /> Logout
                 </UserMenuLogout>
@@ -798,8 +811,8 @@ const Header = () => {
             </UserMenuContainer>
           ) : (
             <AuthButtons>
-              <LoginButton href="/login">Login</LoginButton>
-              <SignUpButton href="/signup">Sign Up</SignUpButton>
+              <LoginButton onClick={handleLoginClick}>Login</LoginButton>
+              <SignUpButton onClick={handleSignupClick}>Sign Up</SignUpButton>
             </AuthButtons>
           )}
         </Nav>
@@ -1002,10 +1015,10 @@ const Header = () => {
               </MobileUserMenu>
             ) : (
               <MobileAuthButtons variants={fadeIn}>
-                <MobileLoginButton href="/login" onClick={toggleMobileMenu}>
+                <MobileLoginButton onClick={handleLoginClick}>
                   Login
                 </MobileLoginButton>
-                <MobileSignUpButton href="/signup" onClick={toggleMobileMenu}>
+                <MobileSignUpButton onClick={handleSignupClick}>
                   Sign Up
                 </MobileSignUpButton>
               </MobileAuthButtons>

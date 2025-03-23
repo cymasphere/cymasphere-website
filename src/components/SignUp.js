@@ -68,137 +68,113 @@ const BackButton = styled.a`
 `;
 
 const FormCard = styled(motion.div)`
-  max-width: 450px;
+  background-color: var(--card-bg);
+  border-radius: 16px;
   width: 100%;
+  max-width: 460px;
   padding: 2.5rem;
-  border-radius: 12px;
-  background: rgba(25, 23, 36, 0.85);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   position: relative;
   z-index: 1;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  margin: 0 20px;
-
+  overflow: hidden;
+  
+  @media (max-width: 520px) {
+    padding: 2rem 1.5rem;
+    width: 90%;
+  }
+  
   &:before {
-    content: "";
+    content: '';
     position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    background: linear-gradient(
-      135deg,
-      rgba(108, 99, 255, 0.5) 0%,
-      rgba(108, 99, 255, 0) 50%,
-      rgba(78, 205, 196, 0.5) 100%
-    );
-    border-radius: 18px;
-    z-index: -1;
-    opacity: 0.4;
-    filter: blur(8px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    z-index: 2;
   }
 `;
 
 const LogoContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
-const Logo = styled(Link)`
+const Logo = styled.a`
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.8rem;
-
+  transition: transform 0.3s ease;
+  
   &:hover {
-    text-decoration: none;
+    transform: scale(1.05);
   }
 `;
 
 const LogoImage = styled.img`
   height: 40px;
-  width: 40px;
   margin-right: 10px;
-  transition: transform 0.3s ease;
-
-  ${Logo}:hover & {
-    transform: rotate(20deg);
-  }
 `;
 
-const LogoText = styled.div`
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-
-  span {
-    font-family: "Montserrat", sans-serif;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-`;
-
-const Subtitle = styled.p`
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-`;
-
-const Title = styled(motion.h2)`
-  text-align: center;
-  margin-bottom: 2rem;
+const LogoText = styled.span`
   color: var(--text);
-  font-size: 2rem;
-
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  
   span {
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--primary);
   }
+`;
+
+const Subtitle = styled.h2`
+  text-align: center;
+  color: var(--text);
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
 `;
 
 const Form = styled.form`
-  display: flex;
-  flex-direction: column;
+  width: 100%;
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
 `;
 
 const Label = styled.label`
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--text);
   display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.9rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  font-size: 1rem;
-  background-color: rgba(15, 14, 23, 0.6);
+  background-color: rgba(255, 255, 255, 0.03);
   color: var(--text);
-  transition: all 0.3s ease;
-
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  
   &:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
   }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
 `;
 
 const Button = styled(motion.button)`
-  padding: 0.85rem;
+  width: 100%;
+  padding: 0.9rem;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   color: white;
   border: none;
@@ -206,77 +182,97 @@ const Button = styled(motion.button)`
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-top: 0.5rem;
+  
   &:hover {
-    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.23);
   }
-
+  
   &:disabled {
-    background: rgba(108, 99, 255, 0.5);
+    opacity: 0.7;
     cursor: not-allowed;
-    transform: translateY(0);
+    transform: none;
     box-shadow: none;
   }
 `;
 
-const ErrorMessage = styled(motion.div)`
-  color: var(--danger);
-  margin-bottom: 1.5rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  background-color: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
-`;
-
-const GoogleButton = styled(Button)`
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+const ButtonContent = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 1rem;
-  gap: 0.5rem;
+`;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
-  }
+const ErrorMessage = styled(motion.div)`
+  background-color: rgba(255, 87, 51, 0.1);
+  border-left: 3px solid var(--error);
+  color: var(--error);
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
 `;
 
 const OrDivider = styled.div`
   display: flex;
   align-items: center;
   margin: 1.5rem 0;
-
-  &:before,
-  &:after {
+  
+  &:before, &:after {
     content: "";
-    flex-grow: 1;
-    background-color: rgba(255, 255, 255, 0.1);
+    flex: 1;
     height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
   }
-
+  
   span {
-    margin: 0 10px;
+    margin: 0 1rem;
     color: var(--text-secondary);
     font-size: 0.9rem;
+  }
+`;
+
+const GoogleButton = styled(motion.button)`
+  width: 100%;
+  padding: 0.9rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  svg {
+    margin-right: 10px;
+    color: #DB4437;
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 
 const LinkText = styled.div`
   text-align: center;
   margin-top: 1.5rem;
-  font-size: 0.9rem;
   color: var(--text-secondary);
-
+  font-size: 0.9rem;
+  
   a {
     color: var(--primary);
     text-decoration: none;
-
+    font-weight: 500;
+    transition: color 0.3s ease;
+    
     &:hover {
       color: var(--accent);
       text-decoration: underline;
@@ -284,17 +280,37 @@ const LinkText = styled.div`
   }
 `;
 
-const ButtonContent = styled.div`
+const CheckboxContainer = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  margin-bottom: 1.5rem;
+`;
+
+const Checkbox = styled.input`
+  margin-right: 10px;
+  cursor: pointer;
+`;
+
+const CheckboxLabel = styled.label`
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
 const SpinnerIcon = styled(FaSpinner)`
-  animation: rotate 1s linear infinite;
-
-  @keyframes rotate {
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+  
+  @keyframes spin {
     from {
       transform: rotate(0deg);
     }
@@ -356,24 +372,25 @@ const SuccessText = styled.div`
 `;
 
 function SignUp() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [username, setUsername] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const auth = useAuth() || {};
-  const { signup, googleSignIn } = auth;
+  const [success, setSuccess] = useState(false);
+  
   const router = useRouter();
-
+  const auth = useAuth() || {};
+  
   // Force reset loading state if component unmounts
   useEffect(() => {
     return () => {
       if (loading) {
         console.log("Component unmounting while loading, forcing reset");
-        // This is for cleanup if the component unmounts while loading
         setLoading(false);
       }
     };
@@ -381,61 +398,51 @@ function SignUp() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "email") {
-      setEmail(value);
-    } else if (name === "password") {
-      setPassword(value);
-    } else if (name === "confirmPassword") {
-      setPasswordConfirm(value);
-    } else if (name === "name") {
-      setUsername(value);
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Reset any previous errors and success state
+    
+    // Reset any previous errors
     setError("");
-
+    
     // Validate form
-    if (password !== passwordConfirm) {
+    if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
 
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       return setError("Password must be at least 6 characters");
     }
-
-    // Initialize the hardTimeoutId at the top
-    let hardTimeoutId;
-
-    // HARD TIMEOUT: No matter what, loading will stop after 8 seconds max
-    setLoading(true);
-    hardTimeoutId = setTimeout(() => {
-      console.log("Hard timeout reached, forcing loading state to false");
-      setLoading(false);
-    }, 8000);
+    
+    if (!agreeToTerms) {
+      return setError("You must agree to the Terms of Service and Privacy Policy");
+    }
 
     try {
-      setError("");
       setLoading(true);
       
-      if (!signup) {
+      if (!auth.signup) {
         throw new Error('Authentication is not initialized. Please try again later.');
       }
       
-      await signup(email, password, username);
-      router.push("/dashboard");
+      await auth.signup(formData.email, formData.password, formData.name);
+      
+      // Show success message
+      setSuccess(true);
+      
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+      
     } catch (err) {
-      // Clear hard timeout since operation failed
-      if (hardTimeoutId) clearTimeout(hardTimeoutId);
-
       console.error("Sign up error:", err);
-
-      // IMPORTANT: Reset loading state immediately
-      setLoading(false);
-
+      
       // Handle specific errors
       if (err.message.includes("Email already in use")) {
         setError("Email is already in use");
@@ -446,6 +453,8 @@ function SignUp() {
       } else {
         setError(`Failed to create an account: ${err.message}`);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -454,22 +463,17 @@ function SignUp() {
       setError("");
       setLoading(true);
       
-      if (!googleSignIn) {
+      if (!auth.googleSignIn) {
         throw new Error('Google authentication is not initialized. Please try again later.');
       }
       
-      await googleSignIn();
+      await auth.googleSignIn();
       router.push("/dashboard");
     } catch (err) {
-      // Clear hard timeout since operation failed
-      if (hardTimeoutId) clearTimeout(hardTimeoutId);
-
       console.error("Google sign in error:", err);
-
-      // IMPORTANT: Reset loading state immediately
+      setError(`Failed to sign in with Google: ${err.message}`);
+    } finally {
       setLoading(false);
-
-      // Set error message
     }
   };
 
@@ -482,13 +486,12 @@ function SignUp() {
       </Link>
 
       <FormCard
-        className="form-card"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <LogoContainer>
-          <Logo to="/">
+          <Logo href="/">
             <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
             <LogoText>
               <span>CYMA</span>SPHERE
@@ -500,7 +503,11 @@ function SignUp() {
 
         {/* Display success message if signup was successful */}
         {success && (
-          <SuccessMessage>
+          <SuccessMessage
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <SuccessTitle>Account Created Successfully!</SuccessTitle>
             <SuccessText>
               <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
@@ -515,22 +522,6 @@ function SignUp() {
               <strong>
                 You must verify your email before accessing all features.
               </strong>
-              <br />
-              <br />
-              <button
-                onClick={() => navigate("/dashboard")}
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  padding: "10px 20px",
-                  cursor: "pointer",
-                  fontSize: "16px",
-                }}
-              >
-                Continue to Dashboard
-              </button>
             </SuccessText>
           </SuccessMessage>
         )}
@@ -594,8 +585,28 @@ function SignUp() {
               required
             />
           </FormGroup>
+          
+          <CheckboxContainer>
+            <Checkbox
+              type="checkbox"
+              id="terms"
+              checked={agreeToTerms}
+              onChange={() => setAgreeToTerms(!agreeToTerms)}
+              required
+            />
+            <CheckboxLabel htmlFor="terms">
+              I agree to the <Link href="/terms">Terms of Service</Link> and{" "}
+              <Link href="/privacy">Privacy Policy</Link>
+            </CheckboxLabel>
+          </CheckboxContainer>
 
-          <Button type="submit" disabled={loading}>
+          <Button 
+            type="submit" 
+            disabled={loading}
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
             <ButtonContent>
               {loading ? (
                 <>
@@ -616,6 +627,9 @@ function SignUp() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
+          variants={buttonVariants}
+          whileHover="hover"
+          whileTap="tap"
         >
           <ButtonContent>
             {loading ? (
@@ -631,7 +645,7 @@ function SignUp() {
         </GoogleButton>
 
         <LinkText>
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link href="/login">Log in</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>
