@@ -1,8 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import DynamicHeader from './DynamicHeader';
+import dynamic from 'next/dynamic';
 import Footer from './Footer';
 import { motion } from 'framer-motion';
+
+const DynamicHeader = dynamic(() => import('./NextHeader'), { ssr: false });
 
 const LayoutWrapper = styled.div`
   display: flex;

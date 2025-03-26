@@ -27,6 +27,24 @@ const playSound = async () => {
   }
 };
 
+// Animation variants
+const fadeIn = {
+  hidden: { 
+    opacity: 0,
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  },
+  visible: { 
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  }
+};
+
 const HeaderContainer = styled.header`
   position: fixed;
   top: 0;
@@ -42,25 +60,35 @@ const HeaderContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
-  max-width: 1440px;
+  padding: ${props => props.$isScrolled ? '15px 30px' : '25px 30px'};
+  max-width: 1400px;
   margin: 0 auto;
+  transition: padding 0.3s ease;
+  position: relative;
+  z-index: 3500;
   
   @media (max-width: 768px) {
-    padding: 15px 20px;
+    padding: ${props => props.$isScrolled ? '12px 20px' : '20px 20px'};
   }
 `;
 
-const Logo = styled.div`
+const LogoText = styled.div`
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
   font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  position: relative;
+  font-weight: 700;
   
+  span {
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
   /* Add glow effect */
+  position: relative;
   &:after {
     content: "Cymasphere";
     position: absolute;
@@ -69,22 +97,29 @@ const Logo = styled.div`
     z-index: -1;
     filter: blur(15px);
     opacity: 0.5;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
   }
 `;
 
-const NavLinks = styled.nav`
+const Nav = styled.nav`
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 15px;
   
-  @media (max-width: 991px) {
+  @media (max-width: 968px) {
     display: none;
+  }
+
+  .language-selector {
+    @media (max-width: 968px) {
+      display: none;
+    }
   }
 `;
 
@@ -94,6 +129,12 @@ const NavLink = styled.a`
   letter-spacing: 0.3px;
   position: relative;
   transition: color 0.3s ease;
+  margin: 0 15px;
+  text-decoration: none !important;
+  
+  &:hover {
+    color: white;
+  }
   
   &:after {
     content: '';
@@ -106,12 +147,13 @@ const NavLink = styled.a`
     transition: width 0.3s ease;
   }
   
-  &:hover {
-    color: white;
-    
-    &:after {
-      width: 100%;
-    }
+  &:hover:after {
+    width: 100%;
+  }
+  
+  @media (max-width: 968px) {
+    margin: 15px 30px;
+    font-size: 1.1rem;
   }
 `;
 
@@ -124,6 +166,13 @@ const AuthSection = styled.div`
   @media (max-width: 991px) {
     display: none;
   }
+
+  /* Hide language selector on mobile */
+  .language-selector {
+    @media (max-width: 991px) {
+      display: none;
+    }
+  }
 `;
 
 const MobileActions = styled.div`
@@ -134,6 +183,12 @@ const MobileActions = styled.div`
     display: flex;
     align-items: center;
     gap: 15px;
+  }
+
+  .language-selector {
+    @media (max-width: 991px) {
+      display: none;
+    }
   }
 `;
 
@@ -149,86 +204,170 @@ const MenuToggle = styled.div`
   }
 `;
 
-const MobileMenu = styled.div`
+const MobileMenu = styled(motion.div)`
+  display: flex;
   position: fixed;
-  top: 0;
+  top: 70px;
   left: 0;
   width: 100%;
-  height: 100vh;
-  background: rgba(10, 10, 15, 0.98);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  transform: translateY(${props => props.$isOpen ? '0' : '-100%'});
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 3000;
+  height: calc(100vh - 70px);
+  padding-top: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(165deg, 
+    rgba(15, 14, 23, 0.98) 0%,
+    rgba(27, 25, 40, 0.98) 50%,
+    rgba(35, 32, 52, 0.98) 100%
+  );
   backdrop-filter: blur(10px);
+  z-index: 999;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
+  overflow-y: auto;
   
-  /* Add animated background */
-  &:before {
+  &::before {
     content: '';
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(108, 99, 255, 0.05) 0%, transparent 70%);
-    z-index: -1;
-    opacity: ${props => props.$isOpen ? '1' : '0'};
-    transition: opacity 0.5s ease;
+    background: radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.15), transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(78, 205, 196, 0.15), transparent 50%);
+    z-index: 0;
+    pointer-events: none;
   }
+  
+  @media (max-width: 968px) {
+    display: flex;
+  }
+`;
+
+const MobileMenuContent = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  padding: 20px 0;
+  overflow-y: auto;
+`;
+
+const MobileNavTitle = styled.h2`
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: center;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
 `;
 
 const MobileNavLinks = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  margin-bottom: 40px;
-  width: 85%;
-  max-width: 300px;
+  width: 100%;
+  max-width: 400px;
+  align-items: center;
+  padding: 20px 0;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
 `;
 
-const MobileNavLink = styled.a`
-  color: white;
-  font-size: 1.3rem;
+const MobileNavLink = styled(motion.a)`
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.1rem;
   font-weight: 500;
+  margin: 8px 0;
+  padding: 14px 24px;
   text-align: center;
-  padding: 15px;
-  border-radius: 12px;
-  background: ${props => props.$isActive ? 'rgba(108, 99, 255, 0.15)' : 'transparent'};
-  transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 85%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: linear-gradient(120deg, 
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    opacity: 0;
-    z-index: -1;
-    transition: opacity 0.3s ease;
+  svg {
+    margin-right: 12px;
+    font-size: 1.2rem;
+    color: var(--primary);
+    transition: transform 0.3s ease;
   }
   
   &:hover {
-    transform: translateY(-3px);
-    
-    &:before {
-      opacity: 0.1;
+    color: var(--primary);
+    background: linear-gradient(120deg, 
+      rgba(108, 99, 255, 0.1) 0%,
+      rgba(108, 99, 255, 0.05) 100%
+    );
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+    svg {
+      transform: scale(1.1);
     }
+  }
+
+  &:active {
+    transform: translateY(0px);
   }
 `;
 
 const MobileAuthSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   width: 85%;
-  max-width: 300px;
+  max-width: 400px;
+  padding: 20px;
+  margin: 0 auto;
+  margin-top: auto;
+`;
+
+const MobileUserSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+  margin-top: 20px;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+`;
+
+const MobileFooter = styled.div`
+  width: 100%;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(0deg, 
+    rgba(15, 14, 23, 0.95) 0%,
+    rgba(27, 25, 40, 0) 100%
+  );
+  position: relative;
+  z-index: 1;
+
+  .language-selector {
+    transform: scale(1.2);
+  }
 `;
 
 const AuthButton = styled.a`
@@ -273,147 +412,177 @@ const Overlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 2999;
-  opacity: ${props => props.$isVisible ? 1 : 0};
-  visibility: ${props => props.$isVisible ? 'visible' : 'hidden'};
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  backdrop-filter: blur(3px);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  display: ${props => props.$isVisible ? 'block' : 'none'};
 `;
 
-const UserDropdown = styled.div`
+const UserMenuContainer = styled.div`
   position: relative;
-  z-index: 3200;
 `;
 
-const UserDropdownToggle = styled.div`
+const UserButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text);
   cursor: pointer;
-  padding: 8px 15px;
-  border-radius: 50px;
-  background: rgba(108, 99, 255, 0.1);
+  padding: 5px;
+  border-radius: 50%;
   transition: all 0.3s ease;
   
   &:hover {
-    background: rgba(108, 99, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
   }
   
-  /* Add subtle glow effect */
-  box-shadow: 0 0 15px rgba(108, 99, 255, 0.1);
+  svg {
+    font-size: 24px;
+  }
 `;
 
-const UserIcon = styled.div`
-  font-size: 1.2rem;
-  color: var(--primary);
-`;
-
-const UserName = styled.span`
-  font-weight: 500;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const DropdownMenu = styled.div`
+const UserDropdown = styled.div`
   position: absolute;
-  top: calc(100% + 15px);
+  top: 45px;
   right: 0;
-  width: 220px;
-  background: rgba(30, 30, 40, 0.95);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  opacity: ${props => props.$isOpen ? 1 : 0};
-  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.$isOpen ? '0' : '-10px'});
-  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
-  z-index: 3300;
-  backdrop-filter: blur(10px);
-  
-  /* Add subtle gradient border */
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    opacity: 0.5;
-  }
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  padding: 10px 0;
+  min-width: 180px;
+  width: 180px;
+  display: ${props => props.$isOpen ? 'block' : 'none'};
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const DropdownItem = styled.a`
+const UserMenuItem = styled.a`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  color: white;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
+  padding: 10px 15px;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 180px;
+  font-size: 14px;
+  font-weight: normal;
   
   &:hover {
-    background: rgba(108, 99, 255, 0.1);
-    border-left-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
   }
   
-  ${props => props.$isLogout && `
-    color: var(--error);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    
-    &:hover {
-      background: rgba(255, 94, 98, 0.1);
-      border-left-color: var(--error);
+  svg {
+    margin-right: 10px;
+    color: var(--text-secondary);
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const UserMenuLogout = styled.button`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  padding: 10px 15px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
+  font-size: 14px;
+  font-weight: normal;
+  font-family: inherit;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+  }
+  
+  svg {
+    margin-right: 10px;
+    color: var(--danger);
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const MobileUserMenu = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 20px;
+`;
+
+// Add animation variants for menu items
+const menuItemVariants = {
+  hidden: { 
+    opacity: 0,
+    y: 20,
+    transition: {
+      duration: 0.3,
     }
-  `}
-`;
-
-const DropdownIcon = styled.div`
-  font-size: 1.1rem;
-  color: ${props => props.$isLogout ? 'var(--error)' : 'var(--primary)'};
-  opacity: 0.9;
-`;
-
-const DropdownText = styled.span`
-  font-weight: 500;
-`;
+  },
+  visible: i => ({ 
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  })
+};
 
 const NextHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
   const { t } = useTranslation();
   const { currentUser, logout } = useAuth();
   const router = useRouter();
-  const dropdownRef = useRef(null);
-  
-  // Determine if we're on the landing page
-  const isLandingPage = router.pathname === "/";
+  const userMenuRef = useRef(null);
   
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsScrolled(scrollTop > 20);
+      if (window.scrollY > 50) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+
+      // Check which section is in view
+      const sections = ['features', 'how-it-works', 'pricing', 'faq'];
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const offset = 100; // Adjust this value based on your header height
+          if (rect.top <= offset && rect.bottom >= offset) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
     };
     
     window.addEventListener('scroll', handleScroll);
-    
-    // Set initial scroll state
-    handleScroll();
-    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
       }
     };
     
@@ -421,7 +590,6 @@ const NextHeader = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
-  // Prevent scrolling when mobile menu is open
   useEffect(() => {
     if (menuOpen) {
       document.body.style.overflow = 'hidden';
@@ -438,81 +606,61 @@ const NextHeader = () => {
     e.preventDefault();
     try {
       await logout();
+      setUserMenuOpen(false);
+      setMenuOpen(false);
       router.push('/login');
     } catch (error) {
-      console.error("Failed to log out", error);
+      console.error('Failed to log out:', error);
     }
   };
   
-  const handleLogoClick = () => {
-    playSound();
-    router.push('/mock-checkout');
-  };
-  
-  // Add navigation handlers that force a refresh
   const handleLoginClick = (e) => {
     e.preventDefault();
-    window.location.href = '/mock-checkout';
+    router.push('/login');
   };
   
   const handleSignupClick = (e) => {
     e.preventDefault();
-    window.location.href = '/mock-checkout';
+    router.push('/signup');
   };
   
-  // Handle navigation with route
   const navItems = [
-    { name: t('header.features'), path: '/#features' },
-    { name: t('header.howItWorks'), path: '/#how-it-works' },
-    { name: t('header.pricing'), path: '/#pricing' },
-    { name: t('header.faq'), path: '/#faq' },
-    { name: t('header.contact'), path: '/#contact' },
+    { name: 'Features', path: '/#features' },
+    { name: 'How It Works', path: '/#how-it-works' },
+    { name: 'Pricing', path: '/#pricing' },
+    { name: 'FAQ', path: '/#faq' }
   ];
   
-  // Desktop Auth Options
   const renderAuthSection = () => {
     if (currentUser) {
       return (
-        <UserDropdown ref={dropdownRef}>
-          <UserDropdownToggle onClick={(e) => {
-            e.stopPropagation();
-            setDropdownOpen(!dropdownOpen);
-          }}>
-            <UserIcon>
-              <FaUserCircle />
-            </UserIcon>
-            <UserName>{currentUser.displayName || currentUser.email}</UserName>
-          </UserDropdownToggle>
+        <UserMenuContainer ref={userMenuRef} className="user-menu">
+          <UserButton onClick={() => setUserMenuOpen(!userMenuOpen)}>
+            <FaUserCircle />
+          </UserButton>
           
-          <DropdownMenu $isOpen={dropdownOpen} onClick={(e) => e.stopPropagation()}>
+          <UserDropdown $isOpen={userMenuOpen}>
             <Link href="/mock-checkout" passHref legacyBehavior>
-              <DropdownItem onClick={(e) => {
-                e.preventDefault();
-                setDropdownOpen(false);
-                window.location.href = '/mock-checkout';
-              }}>
-                <DropdownIcon>
-                  <FaUser />
-                </DropdownIcon>
-                <DropdownText>My Account</DropdownText>
-              </DropdownItem>
+              <UserMenuItem onClick={() => setUserMenuOpen(false)}>
+                <FaUser />
+                My Account
+              </UserMenuItem>
             </Link>
-            
-            <DropdownItem as="button" onClick={handleLogout} $isLogout>
-              <DropdownIcon $isLogout>
-                <FaSignOutAlt />
-              </DropdownIcon>
-              <DropdownText>Logout</DropdownText>
-            </DropdownItem>
-          </DropdownMenu>
-        </UserDropdown>
+            <UserMenuLogout onClick={handleLogout}>
+              <FaSignOutAlt />
+              Logout
+            </UserMenuLogout>
+          </UserDropdown>
+        </UserMenuContainer>
       );
     }
     
     return (
       <>
-        <AuthButton as="a" onClick={handleLoginClick}>{t('header.login')}</AuthButton>
-        <AuthButton as="a" $isPrimary onClick={handleSignupClick}>
+        <AuthButton onClick={handleLoginClick}>
+          {t('header.login')}
+        </AuthButton>
+        <AuthButton $isPrimary onClick={handleSignupClick}>
           {t('header.signUp')}
         </AuthButton>
       </>
@@ -522,32 +670,36 @@ const NextHeader = () => {
   return (
     <>
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
-        <HeaderContent>
-          <Link href="/" passHref>
-            <CymasphereLogo />
+        <HeaderContent $isScrolled={isScrolled}>
+          <Link href="/" passHref legacyBehavior>
+            <a onClick={playSound} style={{ textDecoration: 'none' }}>
+              <LogoText>
+                <EnergyBall size="32px" marginRight="8px" />
+                <span>CYMA</span>SPHERE
+              </LogoText>
+            </a>
           </Link>
           
-          <NavLinks>
+          <Nav>
             {navItems.map((item) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
-                <NavLink $isActive={router.asPath === item.path}>
+                <NavLink $isActive={
+                  router.asPath === item.path || 
+                  activeSection === item.path.replace('/#', '')
+                }>
                   {item.name}
                 </NavLink>
               </Link>
             ))}
-          </NavLinks>
-          
-          <AuthSection>
-            {renderAuthSection()}
-            <div className={styles.mobileWrapper}>
+            <div className="language-selector">
               <DynamicLanguageSelector />
             </div>
-          </AuthSection>
+            <AuthSection>
+              {renderAuthSection()}
+            </AuthSection>
+          </Nav>
           
           <MobileActions>
-            <div className={styles.mobileWrapper}>
-              <DynamicLanguageSelector />
-            </div>
             <MenuToggle onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <FaTimes /> : <FaBars />}
             </MenuToggle>
@@ -555,74 +707,102 @@ const NextHeader = () => {
         </HeaderContent>
       </HeaderContainer>
       
-      <MobileMenu $isOpen={menuOpen}>
-        <MobileNavLinks>
-          {navItems.map((item) => (
-            <Link key={item.name} href={item.path} passHref legacyBehavior>
-              <MobileNavLink 
-                $isActive={router.asPath === item.path}
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.name}
-              </MobileNavLink>
-            </Link>
-          ))}
-        </MobileNavLinks>
-        
-        <MobileAuthSection>
-          {currentUser ? (
-            <>
-              <Link href="/mock-checkout" passHref legacyBehavior>
-                <AuthButton 
-                  $isPrimary 
-                  $isMobile
+      <MobileMenu 
+        $isOpen={menuOpen}
+        initial="hidden"
+        animate={menuOpen ? "visible" : "hidden"}
+        variants={fadeIn}
+      >
+        <MobileMenuContent>
+          <MobileNavTitle>Navigation</MobileNavTitle>
+          <MobileNavLinks>
+            {navItems.map((item, index) => (
+              <Link key={item.name} href={item.path} passHref legacyBehavior>
+                <MobileNavLink 
+                  $isActive={router.asPath === item.path}
+                  onClick={() => setMenuOpen(false)}
+                  variants={menuItemVariants}
+                  custom={index}
+                  initial="hidden"
+                  animate={menuOpen ? "visible" : "hidden"}
+                >
+                  {item.path === '/#features' && <FaPuzzlePiece />}
+                  {item.path === '/#how-it-works' && <FaRegLightbulb />}
+                  {item.path === '/#pricing' && <FaRegCreditCard />}
+                  {item.path === '/#faq' && <FaQuestionCircle />}
+                  {item.name}
+                </MobileNavLink>
+              </Link>
+            ))}
+            
+            {currentUser && (
+              <MobileUserSection>
+                <Link href="/mock-checkout" passHref legacyBehavior>
+                  <MobileNavLink 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      window.location.href = '/mock-checkout';
+                    }}
+                    variants={menuItemVariants}
+                    custom={navItems.length}
+                    initial="hidden"
+                    animate={menuOpen ? "visible" : "hidden"}
+                  >
+                    <FaUser />
+                    My Account
+                  </MobileNavLink>
+                </Link>
+                <MobileNavLink 
                   onClick={(e) => {
                     e.preventDefault();
+                    handleLogout(e);
                     setMenuOpen(false);
-                    window.location.href = '/mock-checkout';
                   }}
+                  variants={menuItemVariants}
+                  custom={navItems.length + 1}
+                  initial="hidden"
+                  animate={menuOpen ? "visible" : "hidden"}
                 >
-                  <FaUser />
-                  My Account
-                </AuthButton>
-              </Link>
-              <AuthButton 
-                $isMobile
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleLogout(e);
-                  setMenuOpen(false);
-                }}
-              >
-                <FaSignOutAlt />
-                Logout
-              </AuthButton>
-            </>
-          ) : (
-            <>
+                  <FaSignOutAlt />
+                  Logout
+                </MobileNavLink>
+              </MobileUserSection>
+            )}
+          </MobileNavLinks>
+
+          {!currentUser && (
+            <MobileAuthSection>
               <AuthButton 
                 $isPrimary 
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = '/mock-checkout';
+                  setMenuOpen(false);
+                  handleLoginClick(e);
                 }}
               >
-                {t('header.signUp')}
+                Login
               </AuthButton>
               <AuthButton 
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = '/mock-checkout';
+                  setMenuOpen(false);
+                  handleSignupClick(e);
                 }}
               >
-                {t('header.login')}
+                Sign Up
               </AuthButton>
-            </>
+            </MobileAuthSection>
           )}
-        </MobileAuthSection>
+        </MobileMenuContent>
+
+        <MobileFooter>
+          <div className="language-selector">
+            <DynamicLanguageSelector />
+          </div>
+        </MobileFooter>
       </MobileMenu>
       
       <Overlay 

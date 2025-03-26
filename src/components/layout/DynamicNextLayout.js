@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Head from 'next/head';
 
 // Dynamically import components that require client-side rendering
-const DynamicHeader = dynamic(() => import('./Header'), { ssr: false });
+const DynamicHeader = dynamic(() => import('./NextHeader'), { ssr: false });
 const NextFooter = dynamic(() => import('./NextFooter'), { ssr: false });
 
 const Main = styled.main`

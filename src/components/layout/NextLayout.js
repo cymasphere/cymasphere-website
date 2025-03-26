@@ -1,9 +1,11 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import styled from 'styled-components';
-import DynamicHeader from './DynamicHeader';
-import NextFooter from './NextFooter';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
+import NextFooter from './NextFooter';
+
+const DynamicHeader = dynamic(() => import('./NextHeader'), { ssr: false });
 
 const Main = styled.main`
   min-height: calc(100vh - 60px); // Adjust for footer height
