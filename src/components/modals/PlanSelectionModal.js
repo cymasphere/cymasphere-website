@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCheck, FaTimes, FaInfoCircle, FaCrown, FaGift } from 'react-icons/fa';
+import CymasphereLogo from '../common/CymasphereLogo';
 
 // Modal components
 const ModalOverlay = styled(motion.div)`
@@ -283,6 +284,29 @@ const PromotionSubtext = styled.p`
   margin: 0;
 `;
 
+const PlanNameContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .pro-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-8px);
+  }
+`;
+
 const PlanSelectionModal = ({ 
   isOpen, 
   onClose, 
@@ -475,7 +499,21 @@ const PlanSelectionModal = ({
                     </CurrentPlanIndicator>
                   )}
                   <PlanHeader>
-                    <PlanNameStyled>{planOptions?.pro?.name || "Cymasphere Pro"}</PlanNameStyled>
+                    {planOptions?.pro?.name === "Cymasphere Pro" ? (
+                      <PlanNameContainer>
+                        <div className="logo-container">
+                          <CymasphereLogo 
+                            size="32px" 
+                            fontSize="1.4rem"
+                            showText={true}
+                            onClick={(e) => e.preventDefault()} 
+                          />
+                          <span className="pro-label">PRO</span>
+                        </div>
+                      </PlanNameContainer>
+                    ) : (
+                      <PlanNameStyled>{planOptions?.pro?.name || "Cymasphere Pro"}</PlanNameStyled>
+                    )}
                     {selectedInterval === 'monthly' && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.monthlyPrice || 8} <span>/month</span>

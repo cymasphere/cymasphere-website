@@ -50,7 +50,7 @@ const LogoContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
   margin-bottom: 2rem;
 `;
 
@@ -306,7 +306,7 @@ function DashboardLayout({ children }) {
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/dashboard" passHref legacyBehavior>
-            <CymasphereLogo />
+            <CymasphereLogo size="32px" fontSize="1.4rem" />
           </Link>
         </LogoContainer>
         
