@@ -1,0 +1,7 @@
+/* Ripple animation for buttons */
+@keyframes ripple {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+} 

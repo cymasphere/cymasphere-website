@@ -347,6 +347,23 @@ const PlanSelectionModal = ({
   // State for client-side rendering
   const [isMounted, setIsMounted] = useState(false);
   
+  // Add local state to track the selected interval within the modal
+  const [selectedInterval, setSelectedInterval] = useState(currentSubscription?.interval || 'monthly');
+  
+  // Update local state when the modal opens with the current subscription
+  useEffect(() => {
+    if (isOpen && currentSubscription?.interval) {
+      setSelectedInterval(currentSubscription.interval);
+    }
+  }, [isOpen, currentSubscription?.interval]);
+  
+  // Handle interval change locally and propagate to parent
+  const handleIntervalChange = (interval) => {
+    console.log(`Setting interval to: ${interval} (local modal state)`);
+    setSelectedInterval(interval);
+    onIntervalChange(interval);
+  };
+  
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     setIsMounted(true);
@@ -418,23 +435,32 @@ const PlanSelectionModal = ({
               
               <BillingToggleContainer>                  
                 <BillingToggleButton 
-                  $active={currentSubscription?.interval === 'monthly'} 
-                  onClick={() => onIntervalChange('monthly')}
+                  $active={selectedInterval === 'monthly'} 
+                  onClick={() => {
+                    console.log('Monthly plan selected');
+                    handleIntervalChange('monthly');
+                  }}
                 >
                   Monthly
                 </BillingToggleButton>
                 
                 <BillingToggleButton 
-                  $active={currentSubscription?.interval === 'yearly'} 
-                  onClick={() => onIntervalChange('yearly')}
+                  $active={selectedInterval === 'yearly'} 
+                  onClick={() => {
+                    console.log('Yearly plan selected');
+                    handleIntervalChange('yearly');
+                  }}
                 >
                   Yearly
                   <SaveLabel>Save 25%</SaveLabel>
                 </BillingToggleButton>
                 
                 <BillingToggleButton 
-                  $active={currentSubscription?.interval === 'lifetime'} 
-                  onClick={() => onIntervalChange('lifetime')}
+                  $active={selectedInterval === 'lifetime'} 
+                  onClick={() => {
+                    console.log('Lifetime plan selected');
+                    handleIntervalChange('lifetime');
+                  }}
                 >
                   Lifetime
                   <SaveLabel>Best Value</SaveLabel>
@@ -443,14 +469,14 @@ const PlanSelectionModal = ({
               
               <PlanGrid>
                 <PlanCard style={{ position: 'relative' }}>
-                  {currentSubscription?.interval === (currentSubscription?.isLifetime ? "lifetime" : currentSubscription?.interval) && (
+                  {selectedInterval === (currentSubscription?.isLifetime ? "lifetime" : selectedInterval) && (
                     <CurrentPlanIndicator>
                       <FaCrown /> Current Plan
                     </CurrentPlanIndicator>
                   )}
                   <PlanHeader>
                     <PlanNameStyled>{planOptions?.pro?.name || "Cymasphere Pro"}</PlanNameStyled>
-                    {currentSubscription?.interval === 'monthly' && (
+                    {selectedInterval === 'monthly' && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.monthlyPrice || 8} <span>/month</span>
                         <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--primary)', fontWeight: 'bold' }}>
@@ -463,7 +489,7 @@ const PlanSelectionModal = ({
                         </div>
                       </PlanPriceStyled>
                     )}
-                    {currentSubscription?.interval === 'yearly' && (
+                    {selectedInterval === 'yearly' && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.yearlyPrice || 69} <span>/year</span>
                         <div style={{ fontSize: '1rem', marginTop: '5px' }}>$5.75/month billed annually</div>
@@ -477,7 +503,7 @@ const PlanSelectionModal = ({
                         </div>
                       </PlanPriceStyled>
                     )}
-                    {currentSubscription?.interval === 'lifetime' && (
+                    {selectedInterval === 'lifetime' && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.lifetimePrice || 199}
                         <div style={{ fontSize: '1rem', marginTop: '5px' }}>one-time purchase</div>
@@ -504,10 +530,39 @@ const PlanSelectionModal = ({
               <Button onClick={onClose} style={{ marginRight: '0.5rem', background: 'rgba(255, 255, 255, 0.1)' }}>
                 Cancel
               </Button>
-              <Button onClick={onConfirm}>
-                {currentSubscription?.inTrial && currentSubscription?.interval !== 'lifetime' 
+              <Button 
+                onClick={() => {
+                  console.log('Confirming plan: pro');
+                  onConfirm('pro');
+                }}
+                style={{ 
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseDown={(e) => {
+                  const btn = e.currentTarget;
+                  const circle = document.createElement('span');
+                  const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+                  
+                  circle.style.width = circle.style.height = `${diameter}px`;
+                  circle.style.position = 'absolute';
+                  circle.style.top = `${e.clientY - btn.offsetTop - diameter / 2}px`;
+                  circle.style.left = `${e.clientX - btn.offsetLeft - diameter / 2}px`;
+                  circle.style.background = 'rgba(255, 255, 255, 0.3)';
+                  circle.style.borderRadius = '50%';
+                  circle.style.transform = 'scale(0)';
+                  circle.style.animation = 'ripple 0.6s linear';
+                  
+                  btn.appendChild(circle);
+                  
+                  setTimeout(() => {
+                    circle.remove();
+                  }, 600);
+                }}
+              >
+                {currentSubscription?.inTrial && selectedInterval !== 'lifetime' 
                   ? "Choose Plan" 
-                  : currentSubscription?.interval === 'lifetime' 
+                  : selectedInterval === 'lifetime' 
                     ? "Purchase Lifetime License" 
                     : "Confirm Change"}
               </Button>

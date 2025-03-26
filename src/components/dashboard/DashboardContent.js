@@ -313,7 +313,7 @@ function DashboardContent() {
   const { currentUser, userDetails } = auth;
   
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [selectedBillingPeriod, setSelectedBillingPeriod] = useState('monthly');
+  const [selectedBillingPeriod, setSelectedBillingPeriod] = useState(auth.userDetails?.interval || 'monthly');
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState('');
   const [confirmationMessage, setConfirmationMessage] = useState('');
@@ -323,51 +323,76 @@ function DashboardContent() {
     message: '',
   });
   
-  // Mock data for demonstration
+  // Mock data for demonstration, updated to match structure in Billing.js
   const resolvedUserData = userDetails || {
     displayName: 'Guest User',
     email: 'guest@example.com',
   };
   
-  const userSubscription = {
-    interval: 'free',
+  // Convert to useState to make it properly updatable
+  const [userSubscription, setUserSubscription] = useState({
+    interval: 'monthly', // 'monthly', 'yearly', 'lifetime', null (for no plan)
     status: 'active',
-    startDate: new Date('2023-01-01'),
-    trialEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-    endDate: new Date('2023-12-31'),
-  };
+    isLifetime: false,
+    endDate: new Date(Date.now() + 30*24*60*60*1000), // 30 days from now
+    purchaseDate: new Date(Date.now() - 60*24*60*60*1000), // When lifetime license was purchased (60 days ago example)
+    // If user is on yearly plan, this would be the date the yearly subscription expires
+    yearlyExpiryDate: null,
+    subscriptionFailed: false,
+    inTrial: true, // Is the user in a trial period
+    trialEndDate: new Date(Date.now() + 14*24*60*60*1000), // 14 days from now
+  });
   
   const planOptions = {
     basic: {
+      name: "Cymasphere Basic",
       monthlyPrice: 0,
       yearlyPrice: 0,
+      description: "Basic features for casual users",
       features: [
-        'Basic Sound Visualization',
-        '5 Projects',
-        'Standard Quality Audio',
-        'Community Support',
+        "Simple Harmony Interface",
+        "Basic Voice Leading",
+        "Limited Saved Progressions",
+        "Standard Sound Library",
+        "Community Support"
       ]
     },
     pro: {
-      monthlyPrice: 12,
-      yearlyPrice: 99,
+      name: "Cymasphere Pro",
+      monthlyPrice: 8,
+      yearlyPrice: 69,
+      lifetimePrice: 199,
+      description: "Complete solution for music producers",
+      trialDays: 14,
       features: [
-        'Advanced Sound Visualization',
-        'Unlimited Projects',
-        'High Quality Audio',
-        'Priority Support',
-        'Advanced Audio Tools',
+        "Interactive Harmony Palette",
+        "Advanced Voice Leading Control",
+        "Unlimited Saved Progressions",
+        "Premium Sound Libraries",
+        "MIDI Export & Import",
+        "Dynamic Pattern Editor",
+        "Song Builder Tool",
+        "Cloud Storage & Backup",
+        "Priority Email Support",
+        "Free Updates"
       ]
     },
     team: {
-      monthlyPrice: 39,
-      yearlyPrice: 399,
+      name: "Cymasphere Team",
+      monthlyPrice: 20,
+      yearlyPrice: 190,
+      description: "Collaborative features for teams",
       features: [
-        'Everything in Pro',
-        'Team Collaboration',
-        '5 Team Members',
-        'Dedicated Support',
-        'API Access',
+        "All Pro Features",
+        "Team Collaboration Tools",
+        "Project Sharing",
+        "User Management",
+        "Team Workspaces",
+        "Advanced Analytics",
+        "Dedicated Support",
+        "Custom Onboarding",
+        "API Access",
+        "Volume Discounts"
       ]
     }
   };
@@ -398,19 +423,41 @@ function DashboardContent() {
   
   // Event handlers
   const handlePlanChange = () => {
+    // Reset to current interval when opening modal
+    setSelectedBillingPeriod(userSubscription.interval);
     setShowPlanModal(true);
   };
   
   const handleBillingPeriodChange = (period) => {
+    console.log(`Setting billing period to: ${period}`);
     setSelectedBillingPeriod(period);
   };
   
   const handleConfirmPlanChange = (plan) => {
     console.log(`Plan changed to: ${plan} (${selectedBillingPeriod})`);
+    
+    // Update the user subscription to reflect the new selection
+    // This would normally be done via an API call to update the subscription
+    const updatedSubscription = {
+      ...userSubscription,
+      interval: selectedBillingPeriod,
+      isLifetime: selectedBillingPeriod === 'lifetime'
+    };
+    
+    // Set the state properly
+    setUserSubscription(updatedSubscription);
+    
     setShowPlanModal(false);
     
-    setConfirmationTitle('Subscription Updated!');
-    setConfirmationMessage(`You have successfully updated to the ${plan} plan. Your subscription will be billed ${selectedBillingPeriod}.`);
+    // Show confirmation message similar to Billing component
+    if (selectedBillingPeriod === 'yearly' || selectedBillingPeriod === 'lifetime') {
+      setConfirmationTitle('Upgrading Your Plan');
+      setConfirmationMessage(`You're upgrading to the ${plan} ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`);
+    } else {
+      setConfirmationTitle('Plan Updated');
+      setConfirmationMessage(`You have successfully updated to the ${plan} plan. Your subscription will be billed ${selectedBillingPeriod}.`);
+    }
+    
     setShowConfirmationModal(true);
   };
   

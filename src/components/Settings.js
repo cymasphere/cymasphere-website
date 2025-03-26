@@ -6,6 +6,13 @@ import { FaGlobe, FaTrash, FaExclamationTriangle, FaSignOutAlt, FaMobileAlt, FaD
 
 const SettingsContainer = styled.div`
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+  }
 `;
 
 const SectionTitle = styled.h2`
