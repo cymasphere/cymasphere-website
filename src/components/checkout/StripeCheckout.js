@@ -75,8 +75,8 @@ const StripeCheckout = ({ priceId, buttonText, billingPeriod, price }) => {
         
         // Give some time for the loading state to show
         setTimeout(() => {
-          // Redirect to mock checkout page with plan details
-          router.push(`/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`);
+          // Redirect to mock checkout page with plan details and force a refresh
+          window.location.href = `/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`;
           setIsLoading(false);
         }, 800);
         return;

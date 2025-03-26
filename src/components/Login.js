@@ -224,8 +224,9 @@ const GoogleButton = styled(Button)`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 1rem;
+  margin: 1rem auto 0;
   gap: 0.5rem;
+  max-width: 250px;
   
   &:hover {
     background: rgba(255, 255, 255, 0.05);

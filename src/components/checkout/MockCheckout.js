@@ -427,7 +427,7 @@ const MockCheckout = () => {
   // Format CVC to only accept numbers
   const formatCVC = (value) => {
     // Remove all non-numeric characters
-    return value.replace(/\D/g, '').substring(0, 3);
+    return value.replace(/\D/g, '').substring(0, 4);
   };
   
   const handleChange = (e) => {
@@ -474,8 +474,8 @@ const MockCheckout = () => {
         return;
       }
       
-      // Redirect to success page
-      router.push('/checkout-success?session_id=mock_session_123');
+      // Redirect to success page with email
+      router.push(`/checkout-success?session_id=mock_session_123&email=${encodeURIComponent(formState.email)}`);
     }, 1500);
   };
   
@@ -581,7 +581,7 @@ const MockCheckout = () => {
                   required
                   value={formState.cvc}
                   onChange={handleChange}
-                  maxLength={3}
+                  maxLength={4}
                 />
               </CardCvcField>
             </InputRow>

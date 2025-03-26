@@ -609,30 +609,6 @@ function Dashboard() {
     return diffDays;
   };
 
-  const [showExtendTrialModal, setShowExtendTrialModal] = useState(false);
-  const [hasPaymentMethod, setHasPaymentMethod] = useState(false); // This would come from your backend
-
-  // Add this useEffect to check and show the trial extension popup
-  useEffect(() => {
-    const shouldShowExtendTrial = () => {
-      return isInTrialPeriod() && !hasPaymentMethod && currentUser;
-    };
-
-    if (shouldShowExtendTrial()) {
-      const hasSeenTrialPopup = localStorage.getItem('hasSeenTrialPopup');
-      if (!hasSeenTrialPopup) {
-        setShowExtendTrialModal(true);
-        localStorage.setItem('hasSeenTrialPopup', 'true');
-      }
-    }
-  }, [currentUser, hasPaymentMethod]);
-
-  const handleAddPaymentMethod = () => {
-    setShowExtendTrialModal(false);
-    // Navigate to payment method addition flow
-    setShowPaymentModal(true);
-  };
-
   return (
     <DynamicNextLayout title="Dashboard - Cymasphere">
       <DashboardContent />

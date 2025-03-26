@@ -396,6 +396,16 @@ function SignUp() {
     };
   }, [loading]);
 
+  // Handle email prefill from checkout
+  useEffect(() => {
+    if (router.isReady && router.query.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: router.query.email
+      }));
+    }
+  }, [router.isReady, router.query.email]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -559,7 +569,21 @@ function SignUp() {
               value={formData.email}
               onChange={handleChange}
               required
+              readOnly={!!router.query.checkout_complete}
+              style={router.query.checkout_complete ? {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                cursor: 'not-allowed'
+              } : {}}
             />
+            {router.query.checkout_complete && (
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: 'var(--text-secondary)', 
+                marginTop: '0.5rem' 
+              }}>
+                This email is linked to your purchase and cannot be changed
+              </div>
+            )}
           </FormGroup>
 
           <FormGroup>

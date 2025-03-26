@@ -238,6 +238,7 @@ function CheckoutSuccess() {
     try {
       // Get the session ID and error from the URL query parameters
       const sessionId = router.query.session_id;
+      const email = router.query.email;
       const errorParam = router.query.error;
       
       if (errorParam === 'payment_failed') {
@@ -251,43 +252,30 @@ function CheckoutSuccess() {
         setLoading(false);
         return;
       }
+
+      // Mock API call to check if user exists
+      const userExists = false; // This would be replaced with an actual API call
       
-      // In production, you'd call your backend to verify the session
-      if (process.env.NODE_ENV === 'production') {
-        try {
-          const response = await fetch(`/api/checkout-session?sessionId=${sessionId}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch session');
-          }
-          const data = await response.json();
-          setSessionData(data);
-          setLoading(false);
-        } catch (fetchError) {
-          console.error('Error fetching session data:', fetchError);
-          setError('Failed to verify your payment. Please contact support.');
-          setLoading(false);
-        }
-      } else {
-        // Mock data for development
-        setTimeout(() => {
-          setSessionData({
-            customerEmail: 'customer@example.com',
-            subscriptionType: 'Cymasphere Pro',
-            billingPeriod: 'Monthly',
-            amount: '$8.00',
-          });
-          setLoading(false);
-        }, 1000);
-      }
+      setSessionData({
+        id: sessionId,
+        status: 'complete',
+        customerEmail: email,
+        isExistingUser: userExists
+      });
+      
+      setLoading(false);
     } catch (err) {
-      console.error('Error fetching checkout session:', err);
-      setError('Failed to verify your payment. Please contact support.');
+      setError(err.message);
       setLoading(false);
     }
   }
   
-  const handleReturnToPricing = () => {
-    router.push('/pricing');
+  const handleContinue = () => {
+    if (sessionData?.isExistingUser) {
+      router.push('/dashboard');
+    } else {
+      router.push(`/signup?email=${encodeURIComponent(sessionData?.customerEmail)}&checkout_complete=true`);
+    }
   };
   
   if (loading) {
@@ -305,7 +293,7 @@ function CheckoutSuccess() {
         </HeaderNav>
         <LoadingContainer>
           <LoadingSpinner />
-          <LoadingText>Verifying your payment...</LoadingText>
+          <LoadingText>Processing your payment...</LoadingText>
         </LoadingContainer>
       </PageContainer>
     );
@@ -325,9 +313,9 @@ function CheckoutSuccess() {
           </HeaderContent>
         </HeaderNav>
         <ErrorContainer>
-          <ErrorTitle>Payment Error</ErrorTitle>
+          <ErrorTitle>Oops! Something went wrong</ErrorTitle>
           <ErrorMessage>{error}</ErrorMessage>
-          <BackButton onClick={handleReturnToPricing}>
+          <BackButton onClick={() => router.push('/#pricing')}>
             Return to Pricing
           </BackButton>
         </ErrorContainer>
@@ -351,39 +339,34 @@ function CheckoutSuccess() {
       <ContentContainer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5 }}
       >
         <SuccessIcon />
         <Title>Payment Successful!</Title>
-        <Subtitle>Welcome to Cymasphere Pro</Subtitle>
+        <Subtitle>Thank you for your purchase</Subtitle>
         <Message>
-          Thank you for subscribing to Cymasphere Pro! Your payment has been successfully processed. 
-          You now have access to all premium features. We've sent a confirmation email with all the details.
+          {sessionData?.isExistingUser ? 
+            "Your payment has been processed successfully. Click below to access your dashboard and start using Cymasphere Pro!" :
+            "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account. Click below to set up your account with your purchase email."}
         </Message>
         
-        {sessionData && (
-          <DetailsList>
-            <DetailsItem>
-              <ItemLabel>Email:</ItemLabel>
-              <ItemValue>{sessionData.customerEmail}</ItemValue>
-            </DetailsItem>
-            <DetailsItem>
-              <ItemLabel>Plan:</ItemLabel>
-              <ItemValue>{sessionData.subscriptionType}</ItemValue>
-            </DetailsItem>
-            <DetailsItem>
-              <ItemLabel>Billing Period:</ItemLabel>
-              <ItemValue>{sessionData.billingPeriod}</ItemValue>
-            </DetailsItem>
-            <DetailsItem>
-              <ItemLabel>Amount:</ItemLabel>
-              <ItemValue>{sessionData.amount}</ItemValue>
-            </DetailsItem>
-          </DetailsList>
-        )}
-        
-        <BackButton onClick={handleReturnToPricing}>
-          Return to Pricing
+        <DetailsList>
+          <DetailsItem>
+            <ItemLabel>Order ID:</ItemLabel>
+            <ItemValue>{sessionData?.id || 'Processing...'}</ItemValue>
+          </DetailsItem>
+          <DetailsItem>
+            <ItemLabel>Status:</ItemLabel>
+            <ItemValue>Complete</ItemValue>
+          </DetailsItem>
+          <DetailsItem>
+            <ItemLabel>Email:</ItemLabel>
+            <ItemValue>{sessionData?.customerEmail || 'Processing...'}</ItemValue>
+          </DetailsItem>
+        </DetailsList>
+
+        <BackButton onClick={handleContinue} style={{ marginTop: '2rem' }}>
+          {sessionData?.isExistingUser ? 'Go to Dashboard' : 'Create Your Account'}
         </BackButton>
       </ContentContainer>
     </PageContainer>
