@@ -5,14 +5,15 @@ import { FaCreditCard, FaHeadphones, FaCheck, FaTimes, FaPaperPlane } from 'reac
 import { useAuth } from '../../contexts/NextAuthContext';
 import EmailVerification from '../EmailVerification';
 import PlanSelectionModal from '../modals/PlanSelectionModal';
+import DashboardLayout from './DashboardLayout';
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 120px 20px 40px;
+  padding: 40px 20px;
   
   @media (max-width: 768px) {
-    padding: 100px 20px 40px;
+    padding: 30px 20px;
   }
 `;
 
@@ -692,4 +693,13 @@ function DashboardContent() {
   );
 }
 
-export default DashboardContent; 
+function DashboardWithLayout() {
+  return (
+    <DashboardLayout>
+      <DashboardContent />
+    </DashboardLayout>
+  );
+}
+
+export { DashboardContent };
+export default DashboardWithLayout; 

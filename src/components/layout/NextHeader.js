@@ -292,6 +292,7 @@ const Overlay = styled.div`
 
 const UserDropdown = styled.div`
   position: relative;
+  z-index: 3200;
 `;
 
 const UserDropdownToggle = styled.div`
@@ -338,7 +339,7 @@ const DropdownMenu = styled.div`
   visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   transform: translateY(${props => props.$isOpen ? '0' : '-10px'});
   transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
-  z-index: 3001;
+  z-index: 3300;
   backdrop-filter: blur(10px);
   
   /* Add subtle gradient border */
@@ -480,47 +481,27 @@ const NextHeader = () => {
     if (currentUser) {
       return (
         <UserDropdown ref={dropdownRef}>
-          <UserDropdownToggle onClick={() => setDropdownOpen(!dropdownOpen)}>
+          <UserDropdownToggle onClick={(e) => {
+            e.stopPropagation();
+            setDropdownOpen(!dropdownOpen);
+          }}>
             <UserIcon>
               <FaUserCircle />
             </UserIcon>
             <UserName>{currentUser.displayName || currentUser.email}</UserName>
           </UserDropdownToggle>
           
-          <DropdownMenu $isOpen={dropdownOpen}>
+          <DropdownMenu $isOpen={dropdownOpen} onClick={(e) => e.stopPropagation()}>
             <Link href="/dashboard" passHref>
-              <DropdownItem>
+              <DropdownItem onClick={(e) => {
+                e.preventDefault();
+                setDropdownOpen(false);
+                window.location.href = '/dashboard';
+              }}>
                 <DropdownIcon>
-                  <FaPuzzlePiece />
+                  <FaUser />
                 </DropdownIcon>
-                <DropdownText>{t('header.dashboard')}</DropdownText>
-              </DropdownItem>
-            </Link>
-            
-            <Link href="/billing" passHref>
-              <DropdownItem>
-                <DropdownIcon>
-                  <FaRegCreditCard />
-                </DropdownIcon>
-                <DropdownText>{t('header.billing')}</DropdownText>
-              </DropdownItem>
-            </Link>
-            
-            <Link href="/faq" passHref>
-              <DropdownItem>
-                <DropdownIcon>
-                  <FaQuestionCircle />
-                </DropdownIcon>
-                <DropdownText>{t('header.faq')}</DropdownText>
-              </DropdownItem>
-            </Link>
-            
-            <Link href="/guides" passHref>
-              <DropdownItem>
-                <DropdownIcon>
-                  <FaRegLightbulb />
-                </DropdownIcon>
-                <DropdownText>{t('header.guides')}</DropdownText>
+                <DropdownText>My Account</DropdownText>
               </DropdownItem>
             </Link>
             
@@ -528,7 +509,7 @@ const NextHeader = () => {
               <DropdownIcon $isLogout>
                 <FaSignOutAlt />
               </DropdownIcon>
-              <DropdownText>{t('header.logout')}</DropdownText>
+              <DropdownText>Logout</DropdownText>
             </DropdownItem>
           </DropdownMenu>
         </UserDropdown>
@@ -603,10 +584,14 @@ const NextHeader = () => {
                 <AuthButton 
                   $isPrimary 
                   $isMobile
-                  onClick={() => setMenuOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    window.location.href = '/dashboard';
+                  }}
                 >
-                  <FaPuzzlePiece />
-                  {t('header.dashboard')}
+                  <FaUser />
+                  My Account
                 </AuthButton>
               </Link>
               <AuthButton 
@@ -619,7 +604,7 @@ const NextHeader = () => {
                 }}
               >
                 <FaSignOutAlt />
-                {t('header.logout')}
+                Logout
               </AuthButton>
             </>
           ) : (

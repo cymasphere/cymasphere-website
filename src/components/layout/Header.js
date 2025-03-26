@@ -265,6 +265,7 @@ const UserDropdown = styled.div`
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
   padding: 10px 0;
   min-width: 180px;
+  width: 180px;
   display: ${props => props.$isOpen ? 'block' : 'none'};
   z-index: 10;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -277,6 +278,11 @@ const UserMenuItem = styled.a`
   color: var(--text);
   text-decoration: none;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 180px;
+  font-size: 14px;
+  font-weight: normal;
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
@@ -286,6 +292,8 @@ const UserMenuItem = styled.a`
   svg {
     margin-right: 10px;
     color: var(--text-secondary);
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -293,6 +301,7 @@ const UserMenuLogout = styled.button`
   display: flex;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
   text-align: left;
   padding: 10px 15px;
   background: transparent;
@@ -300,14 +309,21 @@ const UserMenuLogout = styled.button`
   color: var(--text);
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 180px;
+  font-size: 14px;
+  font-weight: normal;
+  font-family: inherit;
   
   &:hover {
-    background-color: rgba(255, 107, 107, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
   }
   
   svg {
     margin-right: 10px;
     color: var(--danger);
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -795,13 +811,12 @@ const Header = () => {
               </UserButton>
               <UserDropdown $isOpen={userMenuOpen}>
                 <Link href="/dashboard" passHref>
-                  <UserMenuItem onClick={closeUserMenu}>
-                    <FaUserCircle /> Dashboard
-                  </UserMenuItem>
-                </Link>
-                <Link href="/profile" passHref>
-                  <UserMenuItem onClick={closeUserMenu}>
-                    <FaUser /> Profile
+                  <UserMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    closeUserMenu();
+                    window.location.href = '/dashboard';
+                  }}>
+                    <FaUser /> My Account
                   </UserMenuItem>
                 </Link>
                 <UserMenuLogout onClick={handleLogout}>

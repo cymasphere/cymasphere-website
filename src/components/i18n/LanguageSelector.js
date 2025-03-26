@@ -12,6 +12,15 @@ const FLAGS = {
   ja: "🇯🇵"
 };
 
+// Language names mapping
+const LANGUAGE_NAMES = {
+  en: "English",
+  es: "Español",
+  fr: "Français",
+  de: "Deutsch",
+  ja: "日本語"
+};
+
 const LanguageSelector = () => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -39,13 +48,16 @@ const LanguageSelector = () => {
   const currentLanguage = i18n.language || 'en';
 
   return (
-    <div className={styles['language-selector']} ref={dropdownRef}>
+    <div className={`${styles['language-selector']} ${isOpen ? styles['open'] : ''}`} ref={dropdownRef} data-type="language-selector">
       <div 
         className={styles['selected-language']} 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent event bubbling
+          setIsOpen(!isOpen);
+        }}
       >
         <span className={styles['flag-icon']}>{FLAGS[currentLanguage]}</span>
-        <span className={styles['language-name']}>{t(`language.${currentLanguage}`)}</span>
+        <span className={styles['language-name']}>{LANGUAGE_NAMES[currentLanguage] || t(`language.${currentLanguage}`)}</span>
         <span className={styles['dropdown-arrow']}>▼</span>
       </div>
       
@@ -55,10 +67,13 @@ const LanguageSelector = () => {
             <div 
               key={langCode}
               className={`${styles['language-option']} ${langCode === currentLanguage ? styles['active'] : ''}`}
-              onClick={() => changeLanguage(langCode)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                changeLanguage(langCode);
+              }}
             >
               <span className={styles['flag-icon']}>{FLAGS[langCode]}</span>
-              <span className={styles['language-name']}>{t(`language.${langCode}`)}</span>
+              <span className={styles['language-name']}>{LANGUAGE_NAMES[langCode] || t(`language.${langCode}`)}</span>
             </div>
           ))}
         </div>

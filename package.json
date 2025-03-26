@@ -21,7 +21,7 @@
     "google-auth-library": "^9.15.1",
     "i18next": "^23.7.11",
     "i18next-browser-languagedetector": "^7.1.0",
-    "next": "^15.2.3",
+    "next": "^15.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet": "^6.1.0",
@@ -35,7 +35,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true && next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -65,7 +65,7 @@
     ]
   },
   "devDependencies": {
-    "eslint-config-next": "^15.2.3",
+    "eslint-config-next": "^15.2.4",
     "typescript": "4.9.5"
   }
 }

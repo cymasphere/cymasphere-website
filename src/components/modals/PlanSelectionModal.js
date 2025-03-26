@@ -8,246 +8,379 @@ const ModalOverlay = styled(motion.div)`
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  will-change: opacity;
 `;
 
 const ModalContent = styled(motion.div)`
-  background-color: var(--card-bg);
-  border-radius: 10px;
+  background: rgba(25, 23, 36, 0.95);
+  border-radius: 16px;
   width: 100%;
-  overflow: hidden;
-  max-width: 800px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  will-change: transform, opacity;
 `;
 
 const ModalHeader = styled.div`
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20px 25px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: space-between;
 `;
 
-const ModalTitle = styled.h3`
+const ModalTitle = styled.h2`
   margin: 0;
-  font-size: 1.3rem;
-`;
-
-const ModalBody = styled.div`
-  padding: 20px 25px;
-  max-height: 80vh;
-  overflow-y: auto;
-`;
-
-const ModalFooter = styled.div`
-  padding: 15px 25px;
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.5rem;
+  color: var(--text);
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
   
   &:hover {
     color: var(--text);
   }
 `;
 
-const BillingSelector = styled.div`
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 25px;
-  text-align: center;
+const ModalBody = styled.div`
+  padding: 1.5rem;
 `;
 
-const BillingToggle = styled.div`
-  display: inline-flex;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 30px;
-  padding: 5px;
-  margin-top: 15px;
+const ModalFooter = styled.div`
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
 `;
 
-const BillingOption = styled.button`
-  background: ${props => props.active ? 'linear-gradient(90deg, var(--primary), var(--accent))' : 'transparent'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
-  border: none;
-  border-radius: 25px;
-  padding: 8px 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 100px;
+const PlanGrid = styled.div`
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+`;
+
+const PlanCard = styled.div`
+  background-color: rgba(30, 30, 46, 0.5);
+  border: 2px solid var(--primary);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
   
   &:hover {
-    color: ${props => !props.active && 'var(--text)'};
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   }
 `;
 
-const SavingsBadge = styled.span`
-  display: inline-block;
-  background: linear-gradient(90deg, #00C853, #64DD17);
-  color: #1a1a1a;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  margin-left: 8px;
+const PlanHeader = styled.div`
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const PlansGrid = styled.div`
+const PlanNameStyled = styled.h3`
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+`;
+
+const PlanPriceStyled = styled.div`
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  
+  span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+`;
+
+const PlanDescription = styled.p`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+`;
+
+const PlanFeatures = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
+  margin: 1.5rem 0;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const PlanCard = styled.div`
-  background-color: ${props => props.recommended ? 'rgba(108, 99, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)'};
-  border: 2px solid ${props => props.recommended ? 'var(--primary)' : 'transparent'};
-  border-radius: 10px;
-  padding: 25px;
-  position: relative;
-  transition: all 0.3s;
-  cursor: pointer;
+const PlanFeature = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+  font-size: 0.9rem;
   
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  svg {
+    color: var(--primary);
+    margin-right: 0.5rem;
+    flex-shrink: 0;
   }
 `;
 
-const RecommendedBadge = styled.div`
+const CurrentPlanIndicator = styled.div`
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
   position: absolute;
   top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 20px;
+  box-shadow: 0 2px 10px rgba(108, 99, 255, 0.3);
+`;
+
+const Button = styled.button`
+  padding: 0.75rem 1rem;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-`;
-
-const PlanName = styled.h4`
-  font-size: 1.3rem;
-  margin: 15px 0 5px;
-  text-align: center;
-`;
-
-const PlanPrice = styled.div`
-  text-align: center;
-  margin-bottom: 20px;
-  
-  .amount {
-    font-size: 2.5rem;
-    font-weight: 700;
-    
-    .currency {
-      font-size: 1.2rem;
-      font-weight: 500;
-      vertical-align: super;
-    }
-  }
-  
-  .period {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-`;
-
-const FeaturesList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0 0 25px;
-  
-  li {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 0.95rem;
-    
-    svg {
-      color: #00C853;
-      margin-right: 10px;
-      flex-shrink: 0;
-    }
-  }
-`;
-
-const SelectButton = styled.button`
-  width: 100%;
-  background: ${props => props.recommended 
-    ? 'linear-gradient(90deg, var(--primary), var(--accent))'
-    : 'rgba(255, 255, 255, 0.1)'};
-  color: ${props => props.recommended ? 'white' : 'var(--text)'};
   border: none;
-  padding: 12px;
   border-radius: 8px;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  margin-top: auto;
+  transition: all 0.3s ease;
   
   &:hover {
-    background: ${props => props.recommended 
-      ? 'linear-gradient(90deg, var(--primary), var(--accent))' 
-      : 'rgba(255, 255, 255, 0.15)'};
+    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
     transform: translateY(-2px);
   }
 `;
 
-const Message = styled.p`
-  text-align: center;
-  color: var(--text-secondary);
-  margin-bottom: 20px;
-  font-size: 0.95rem;
+const BillingToggleContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  gap: 0.5rem;
 `;
 
-function PlanSelectionModal({ 
+const BillingToggleButton = styled.button`
+  background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(30, 30, 46, 0.5)'};
+  color: ${props => props.$active ? 'white' : 'var(--text)'};
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.1)'};
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-width: 100px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const SaveLabel = styled.span`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+`;
+
+const PlanChangeInfo = styled.div`
+  display: flex;
+  background-color: rgba(108, 99, 255, 0.1);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  
+  svg {
+    color: var(--primary);
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+`;
+
+const TrialBadge = styled.div`
+  background: linear-gradient(90deg, #F9C846, #F96E46);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(249, 110, 70, 0.3);
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
+const PromotionBanner = styled.div`
+  background: linear-gradient(135deg, rgba(249, 200, 70, 0.1), rgba(249, 110, 70, 0.1));
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(249, 200, 70, 0.3);
+`;
+
+const PromotionText = styled.p`
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  
+  span {
+    color: #F96E46;
+  }
+`;
+
+const PromotionSubtext = styled.p`
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+`;
+
+const PlanSelectionModal = ({ 
   isOpen, 
   onClose, 
-  currentSubscription, 
-  onIntervalChange, 
+  currentSubscription,
+  onIntervalChange,
   onConfirm,
   formatDate,
-  planOptions 
-}) {
-  const [billingInterval, setBillingInterval] = useState('monthly');
+  planOptions = {
+    basic: {
+      name: "Cymasphere Basic",
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      description: "Basic features for casual users",
+      features: [
+        "Simple Harmony Interface",
+        "Basic Voice Leading",
+        "Limited Saved Progressions",
+        "Standard Sound Library",
+        "Community Support"
+      ]
+    },
+    pro: {
+      name: "Cymasphere Pro",
+      monthlyPrice: 8,
+      yearlyPrice: 69,
+      lifetimePrice: 199,
+      description: "Complete solution for music producers",
+      trialDays: 14,
+      features: [
+        "Interactive Harmony Palette",
+        "Advanced Voice Leading Control",
+        "Unlimited Saved Progressions",
+        "Premium Sound Libraries",
+        "MIDI Export & Import",
+        "Dynamic Pattern Editor",
+        "Song Builder Tool",
+        "Cloud Storage & Backup",
+        "Priority Email Support",
+        "Free Updates"
+      ]
+    },
+    team: {
+      name: "Cymasphere Team",
+      monthlyPrice: 20,
+      yearlyPrice: 190,
+      description: "Collaborative features for teams",
+      features: [
+        "All Pro Features",
+        "Team Collaboration Tools",
+        "Project Sharing",
+        "User Management",
+        "Team Workspaces",
+        "Advanced Analytics",
+        "Dedicated Support",
+        "Custom Onboarding",
+        "API Access",
+        "Volume Discounts"
+      ]
+    }
+  }
+}) => {
+  // State for client-side rendering
+  const [isMounted, setIsMounted] = useState(false);
   
-  const handleIntervalChange = (interval) => {
-    setBillingInterval(interval);
-    onIntervalChange(interval);
-  };
+  // Improved body overflow management to prevent memory leaks
+  useEffect(() => {
+    setIsMounted(true);
+    
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalStyle;
+    }
+    
+    return () => {
+      document.body.style.overflow = originalStyle;
+      setIsMounted(false);
+    };
+  }, [isOpen]);
+
+  // Helper function to format date
+  const formatDateHelper = useCallback((date) => {
+    if (!date) return '';
+    return formatDate ? formatDate(date) : new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, [formatDate]);
+
+  // Don't render anything on the server
+  if (!isMounted) return null;
   
-  const calculateSavings = (monthlyPrice, yearlyPrice) => {
-    const monthlyCost = monthlyPrice * 12;
-    const yearlyCost = yearlyPrice;
-    const savings = ((monthlyCost - yearlyCost) / monthlyCost) * 100;
-    return Math.round(savings);
-  };
-  
+  // Don't render if modal is closed
+  if (!isOpen) return null;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -264,154 +397,126 @@ function PlanSelectionModal({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>Choose Your Plan</ModalTitle>
+              <ModalTitle>Change Your Billing Plan</ModalTitle>
               <CloseButton onClick={onClose}>
                 <FaTimes />
               </CloseButton>
             </ModalHeader>
-            
             <ModalBody>
-              <BillingSelector>
-                <div>Save money with annual billing</div>
-                <BillingToggle>
-                  <BillingOption 
-                    active={billingInterval === 'monthly'} 
-                    onClick={() => handleIntervalChange('monthly')}
-                  >
-                    Monthly
-                  </BillingOption>
-                  <BillingOption 
-                    active={billingInterval === 'yearly'} 
-                    onClick={() => handleIntervalChange('yearly')}
-                  >
-                    Yearly
-                    {billingInterval === 'yearly' && (
-                      <SavingsBadge>Save {calculateSavings(planOptions.pro.monthlyPrice, planOptions.pro.yearlyPrice)}%</SavingsBadge>
-                    )}
-                  </BillingOption>
-                </BillingToggle>
-              </BillingSelector>
+              <PromotionBanner>
+                <TrialBadge><FaGift /> Limited Time Offer</TrialBadge>
+                <PromotionText>Start with a <span>14-day FREE trial</span> on any plan!</PromotionText>
+                <PromotionSubtext>Experience all premium features without commitment. No credit card required to start.</PromotionSubtext>
+              </PromotionBanner>
               
-              <PlansGrid>
-                {/* Basic Plan */}
-                <PlanCard>
-                  <PlanName>Basic</PlanName>
-                  <PlanPrice>
-                    <div className="amount">
-                      <span className="currency">$</span>0
-                    </div>
-                    <div className="period">Free forever</div>
-                  </PlanPrice>
-                  
-                  <FeaturesList>
-                    {planOptions.basic.features.map((feature, index) => (
-                      <li key={index}>
-                        <FaCheck />
-                        {feature}
-                      </li>
-                    ))}
-                  </FeaturesList>
-                  
-                  <SelectButton 
-                    onClick={() => onConfirm('basic')}
-                  >
-                    Select Plan
-                  </SelectButton>
-                </PlanCard>
-                
-                {/* Pro Plan */}
-                <PlanCard recommended>
-                  <RecommendedBadge>Popular</RecommendedBadge>
-                  <PlanName>Pro</PlanName>
-                  <PlanPrice>
-                    <div className="amount">
-                      <span className="currency">$</span>
-                      {billingInterval === 'monthly' 
-                        ? planOptions.pro.monthlyPrice
-                        : Math.round(planOptions.pro.yearlyPrice / 12)}
-                    </div>
-                    <div className="period">
-                      per month{billingInterval === 'yearly' && ', billed annually'}
-                    </div>
-                  </PlanPrice>
-                  
-                  <FeaturesList>
-                    {planOptions.pro.features.map((feature, index) => (
-                      <li key={index}>
-                        <FaCheck />
-                        {feature}
-                      </li>
-                    ))}
-                  </FeaturesList>
-                  
-                  <SelectButton 
-                    recommended
-                    onClick={() => onConfirm('pro')}
-                  >
-                    Select Plan
-                  </SelectButton>
-                </PlanCard>
-                
-                {/* Team Plan */}
-                <PlanCard>
-                  <PlanName>Team</PlanName>
-                  <PlanPrice>
-                    <div className="amount">
-                      <span className="currency">$</span>
-                      {billingInterval === 'monthly' 
-                        ? planOptions.team.monthlyPrice
-                        : Math.round(planOptions.team.yearlyPrice / 12)}
-                    </div>
-                    <div className="period">
-                      per month{billingInterval === 'yearly' && ', billed annually'}
-                    </div>
-                  </PlanPrice>
-                  
-                  <FeaturesList>
-                    {planOptions.team.features.map((feature, index) => (
-                      <li key={index}>
-                        <FaCheck />
-                        {feature}
-                      </li>
-                    ))}
-                  </FeaturesList>
-                  
-                  <SelectButton 
-                    onClick={() => onConfirm('team')}
-                  >
-                    Select Plan
-                  </SelectButton>
-                </PlanCard>
-              </PlansGrid>
-              
-              {currentSubscription?.trialEndDate && (
-                <Message>
-                  Your free trial ends on {formatDate(currentSubscription.trialEndDate)}. 
-                  Choose a plan to continue using all features.
-                </Message>
+              {currentSubscription?.interval === 'yearly' && (
+                <PlanChangeInfo>
+                  <FaInfoCircle />
+                  <p>Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {formatDateHelper(currentSubscription.endDate)}.</p>
+                </PlanChangeInfo>
               )}
+              
+              <BillingToggleContainer>                  
+                <BillingToggleButton 
+                  $active={currentSubscription?.interval === 'monthly'} 
+                  onClick={() => onIntervalChange('monthly')}
+                >
+                  Monthly
+                </BillingToggleButton>
+                
+                <BillingToggleButton 
+                  $active={currentSubscription?.interval === 'yearly'} 
+                  onClick={() => onIntervalChange('yearly')}
+                >
+                  Yearly
+                  <SaveLabel>Save 25%</SaveLabel>
+                </BillingToggleButton>
+                
+                <BillingToggleButton 
+                  $active={currentSubscription?.interval === 'lifetime'} 
+                  onClick={() => onIntervalChange('lifetime')}
+                >
+                  Lifetime
+                  <SaveLabel>Best Value</SaveLabel>
+                </BillingToggleButton>
+              </BillingToggleContainer>
+              
+              <PlanGrid>
+                <PlanCard style={{ position: 'relative' }}>
+                  {currentSubscription?.interval === (currentSubscription?.isLifetime ? "lifetime" : currentSubscription?.interval) && (
+                    <CurrentPlanIndicator>
+                      <FaCrown /> Current Plan
+                    </CurrentPlanIndicator>
+                  )}
+                  <PlanHeader>
+                    <PlanNameStyled>{planOptions?.pro?.name || "Cymasphere Pro"}</PlanNameStyled>
+                    {currentSubscription?.interval === 'monthly' && (
+                      <PlanPriceStyled>
+                        ${planOptions?.pro?.monthlyPrice || 8} <span>/month</span>
+                        <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--primary)', fontWeight: 'bold' }}>
+                          After your 14-day free trial
+                        </div>
+                        <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
+                          {currentSubscription?.inTrial 
+                            ? `First payment: ${formatDateHelper(currentSubscription.trialEndDate)}`
+                            : `Next billing: ${formatDateHelper(currentSubscription.endDate)}`}
+                        </div>
+                      </PlanPriceStyled>
+                    )}
+                    {currentSubscription?.interval === 'yearly' && (
+                      <PlanPriceStyled>
+                        ${planOptions?.pro?.yearlyPrice || 69} <span>/year</span>
+                        <div style={{ fontSize: '1rem', marginTop: '5px' }}>$5.75/month billed annually</div>
+                        <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--primary)', fontWeight: 'bold' }}>
+                          After your 14-day free trial
+                        </div>
+                        <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
+                          {currentSubscription?.inTrial 
+                            ? `First payment: ${formatDateHelper(currentSubscription.trialEndDate)}`
+                            : `Next billing: ${formatDateHelper(currentSubscription.endDate)}`}
+                        </div>
+                      </PlanPriceStyled>
+                    )}
+                    {currentSubscription?.interval === 'lifetime' && (
+                      <PlanPriceStyled>
+                        ${planOptions?.pro?.lifetimePrice || 199}
+                        <div style={{ fontSize: '1rem', marginTop: '5px' }}>one-time purchase</div>
+                        {currentSubscription?.isLifetime && (
+                          <div style={{ fontSize: '0.9rem', marginTop: '5px', color: 'var(--text-secondary)' }}>
+                            Purchased: {formatDateHelper(currentSubscription.purchaseDate)}
+                          </div>
+                        )}
+                      </PlanPriceStyled>
+                    )}
+                    <PlanDescription>{planOptions?.pro?.description || "Complete solution for music producers"}</PlanDescription>
+                  </PlanHeader>
+                  
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--text)' }}>All Plans Include:</h4>
+                  <PlanFeatures>
+                    {planOptions?.pro?.features?.map((feature, index) => (
+                      <PlanFeature key={index}><FaCheck /> {feature}</PlanFeature>
+                    ))}
+                  </PlanFeatures>
+                </PlanCard>
+              </PlanGrid>
             </ModalBody>
-            
             <ModalFooter>
-              <button 
-                onClick={onClose}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: 'var(--text)',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-                }}
-              >
+              <Button onClick={onClose} style={{ marginRight: '0.5rem', background: 'rgba(255, 255, 255, 0.1)' }}>
                 Cancel
-              </button>
+              </Button>
+              <Button onClick={onConfirm}>
+                {currentSubscription?.inTrial && currentSubscription?.interval !== 'lifetime' 
+                  ? "Choose Plan" 
+                  : currentSubscription?.interval === 'lifetime' 
+                    ? "Purchase Lifetime License" 
+                    : "Confirm Change"}
+              </Button>
             </ModalFooter>
           </ModalContent>
         </ModalOverlay>
       )}
     </AnimatePresence>
   );
-}
+};
 
 export default PlanSelectionModal; 

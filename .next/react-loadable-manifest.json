@@ -1,4 +1,10 @@
 {
+  "pages/dashboard.js -> ../src/components/layout/DynamicNextLayout": {
+    "id": "pages/dashboard.js -> ../src/components/layout/DynamicNextLayout",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_layout_DynamicNextLayout_js.js"
+    ]
+  },
   "pages/index.js -> ../src/components/layout/NextLayout": {
     "id": "pages/index.js -> ../src/components/layout/NextLayout",
     "files": [
@@ -41,18 +47,6 @@
       "static/chunks/_pages-dir-browser_src_components_sections_PricingSection_js.js"
     ]
   },
-  "pages/login.js -> ../src/components/layout/DynamicNextLayout": {
-    "id": "pages/login.js -> ../src/components/layout/DynamicNextLayout",
-    "files": [
-      "static/chunks/_pages-dir-browser_src_components_layout_DynamicNextLayout_js.js"
-    ]
-  },
-  "pages/signup.js -> ../src/components/layout/DynamicNextLayout": {
-    "id": "pages/signup.js -> ../src/components/layout/DynamicNextLayout",
-    "files": [
-      "static/chunks/_pages-dir-browser_src_components_layout_DynamicNextLayout_js.js"
-    ]
-  },
   "src/components/i18n/DynamicLanguageSelector.js -> ./LanguageSelector": {
     "id": "src/components/i18n/DynamicLanguageSelector.js -> ./LanguageSelector",
     "files": [
@@ -79,15 +73,11 @@
   },
   "src/components/layout/Header.js -> ../../utils/audioUtils": {
     "id": "src/components/layout/Header.js -> ../../utils/audioUtils",
-    "files": [
-      "static/chunks/_pages-dir-browser_src_utils_audioUtils_js.js"
-    ]
+    "files": []
   },
   "src/components/layout/Header.js -> ../common/EnergyBall": {
     "id": "src/components/layout/Header.js -> ../common/EnergyBall",
-    "files": [
-      "static/chunks/_pages-dir-browser_src_components_common_EnergyBall_js.js"
-    ]
+    "files": []
   },
   "src/components/layout/Header.js -> ../i18n/DynamicLanguageSelector": {
     "id": "src/components/layout/Header.js -> ../i18n/DynamicLanguageSelector",

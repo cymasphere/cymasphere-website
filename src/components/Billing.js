@@ -8,6 +8,13 @@ import PlanSelectionModal from './modals/PlanSelectionModal';
 
 const BillingContainer = styled.div`
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -592,6 +599,19 @@ function Billing() {
   
   // Define the plan details for Pro tier
   const planOptions = {
+    basic: {
+      name: "Cymasphere Basic",
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      description: "Basic features for casual users",
+      features: [
+        "Simple Harmony Interface",
+        "Basic Voice Leading",
+        "Limited Saved Progressions",
+        "Standard Sound Library",
+        "Community Support"
+      ]
+    },
     pro: {
       name: "Cymasphere Pro",
       monthlyPrice: 8,
@@ -610,6 +630,24 @@ function Billing() {
         "Cloud Storage & Backup",
         "Priority Email Support",
         "Free Updates"
+      ]
+    },
+    team: {
+      name: "Cymasphere Team",
+      monthlyPrice: 20,
+      yearlyPrice: 190,
+      description: "Collaborative features for teams",
+      features: [
+        "All Pro Features",
+        "Team Collaboration Tools",
+        "Project Sharing",
+        "User Management",
+        "Team Workspaces",
+        "Advanced Analytics",
+        "Dedicated Support",
+        "Custom Onboarding",
+        "API Access",
+        "Volume Discounts"
       ]
     }
   };

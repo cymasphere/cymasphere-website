@@ -6,6 +6,13 @@ import { FaDownload, FaWindows, FaApple, FaFilePdf, FaInfoCircle } from 'react-i
 
 const DownloadsContainer = styled.div`
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -14,7 +21,7 @@ const SectionTitle = styled.h2`
   color: var(--text);
 `;
 
-const DownloadCard = styled(motion.div)`
+const DownloadCard = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
@@ -53,6 +60,7 @@ const DownloadItem = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
   
   &:hover {
     transform: translateY(-5px);
@@ -103,6 +111,10 @@ const DownloadVersion = styled.div`
 const DownloadDetails = styled.div`
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
 `;
 
 const DownloadDescription = styled.p`
@@ -124,6 +136,11 @@ const DownloadMeta = styled.div`
 const DownloadSize = styled.span``;
 
 const DownloadDate = styled.span``;
+
+const DownloadButtonContainer = styled.div`
+  margin-top: auto;
+  padding-top: 1rem;
+`;
 
 const DownloadButton = styled.a`
   display: inline-flex;
@@ -231,11 +248,7 @@ function Downloads() {
     <DownloadsContainer>
       <SectionTitle>Downloads</SectionTitle>
       
-      <DownloadCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+      <DownloadCard>
         <CardTitle><FaDownload /> Cymasphere Installers</CardTitle>
         <CardContent>
           <DownloadsGrid>
@@ -250,16 +263,20 @@ function Downloads() {
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
-                <DownloadDescription>
-                  Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.
-                </DownloadDescription>
-                <DownloadMeta>
-                  <DownloadSize>162 MB</DownloadSize>
-                  <DownloadDate>Updated: March 10, 2023</DownloadDate>
-                </DownloadMeta>
-                <DownloadButton href="#">
-                  <FaDownload /> Download for macOS
-                </DownloadButton>
+                <div>
+                  <DownloadDescription>
+                    Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.
+                  </DownloadDescription>
+                  <DownloadMeta>
+                    <DownloadSize>162 MB</DownloadSize>
+                    <DownloadDate>Updated: March 10, 2023</DownloadDate>
+                  </DownloadMeta>
+                </div>
+                <DownloadButtonContainer>
+                  <DownloadButton href="#">
+                    <FaDownload /> Download for macOS
+                  </DownloadButton>
+                </DownloadButtonContainer>
               </DownloadDetails>
             </DownloadItem>
             
@@ -274,27 +291,27 @@ function Downloads() {
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
-                <DownloadDescription>
-                  Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).
-                </DownloadDescription>
-                <DownloadMeta>
-                  <DownloadSize>145 MB</DownloadSize>
-                  <DownloadDate>Updated: March 10, 2023</DownloadDate>
-                </DownloadMeta>
-                <DownloadButton href="#">
-                  <FaDownload /> Download for Windows
-                </DownloadButton>
+                <div>
+                  <DownloadDescription>
+                    Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).
+                  </DownloadDescription>
+                  <DownloadMeta>
+                    <DownloadSize>145 MB</DownloadSize>
+                    <DownloadDate>Updated: March 10, 2023</DownloadDate>
+                  </DownloadMeta>
+                </div>
+                <DownloadButtonContainer>
+                  <DownloadButton href="#">
+                    <FaDownload /> Download for Windows
+                  </DownloadButton>
+                </DownloadButtonContainer>
               </DownloadDetails>
             </DownloadItem>
           </DownloadsGrid>
         </CardContent>
       </DownloadCard>
       
-      <DownloadCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
+      <DownloadCard>
         <CardTitle><FaInfoCircle /> Resources</CardTitle>
         <CardContent>
           <ResourcesSection>

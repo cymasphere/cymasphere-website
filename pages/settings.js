@@ -1,33 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useAuth } from '../src/contexts/NextAuthContext';
 import NextSEO from '../src/components/NextSEO';
 
-const DynamicSettings = dynamic(() => import('../src/components/Settings'), {
-  ssr: false,
-});
-
-const DynamicNextLayout = dynamic(() => import('../src/components/layout/DynamicNextLayout'), {
+const DynamicSettingsWithLayout = dynamic(() => import('../src/components/Settings'), {
   ssr: false,
 });
 
 function SettingsPage() {
-  const [isClient, setIsClient] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { currentUser, loading } = useAuth();
   const router = useRouter();
 
+  // Set isMounted to true on client side
   useEffect(() => {
-    setIsClient(true);
+    setIsMounted(true);
   }, []);
 
+  // AUTHENTICATION CHECK DISABLED FOR DEVELOPMENT
+  /* Original authentication check:
   useEffect(() => {
     if (!loading && !currentUser) {
       router.push('/login');
     }
   }, [currentUser, loading, router]);
 
-  if (!isClient || loading) {
+  if (!isMounted || loading) {
     return (
       <DynamicNextLayout title="Settings - CymaSphere">
         <div className="loading-container">
@@ -41,16 +40,22 @@ function SettingsPage() {
   if (!currentUser) {
     return null;
   }
+  */
+
+  // Don't render anything during SSR to avoid hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
 
   return (
-    <DynamicNextLayout title="Settings - CymaSphere">
+    <>
       <NextSEO
         title="Settings - CymaSphere"
         description="Manage your CymaSphere settings"
         noindex={true} // This is a private page
       />
-      <DynamicSettings />
-    </DynamicNextLayout>
+      <DynamicSettingsWithLayout />
+    </>
   );
 }
 

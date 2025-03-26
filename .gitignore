@@ -11,6 +11,14 @@
 # production
 /build
 
+# Next.js
+/.next/
+/out/
+
+# Duplicate project directories
+/cymasphere-nextjs/
+/cymasphere-website/
+
 # misc
 .DS_Store
 .env

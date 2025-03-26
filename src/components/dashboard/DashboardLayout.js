@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useAuth } from '../../contexts/AuthContext';
-import { FaTachometerAlt, FaUser, FaCreditCard, FaDownload, FaCog, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { useAuth } from '../../contexts/NextAuthContext';
+import { FaTachometerAlt, FaUser, FaCreditCard, FaDownload, FaCog, FaSignOutAlt, FaBars, FaTimes, FaHome, FaArrowLeft } from 'react-icons/fa';
 import EnergyBall from '../common/EnergyBall';
 import { playLydianMaj7Chord } from '../../utils/audioUtils';
 
@@ -30,7 +30,7 @@ const Sidebar = styled.aside`
   transition: transform 0.3s ease;
   
   @media (max-width: 768px) {
-    transform: translateX(${props => props.isOpen ? '0' : '-100%'});
+    transform: translateX(${props => props.$isOpen ? '0' : '-100%'});
   }
 `;
 
@@ -42,7 +42,7 @@ const MobileOverlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 90;
-  display: ${props => props.isOpen ? 'block' : 'none'};
+  display: ${props => props.$isOpen ? 'block' : 'none'};
 `;
 
 const LogoContainer = styled.div`
@@ -58,9 +58,6 @@ const Logo = styled.a`
   align-items: center;
   font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   text-decoration: none;
   cursor: pointer;
 `;
@@ -71,6 +68,7 @@ const LogoText = styled.div`
   text-transform: uppercase;
   letter-spacing: 2.5px;
   font-size: 1.4rem;
+  color: white;
   
   span {
     font-family: 'Montserrat', sans-serif;
@@ -90,12 +88,12 @@ const NavItem = styled.a`
   display: flex;
   align-items: center;
   padding: 1rem 2rem;
-  color: ${props => props.active === "true" ? 'var(--primary)' : 'var(--text-secondary)'};
-  font-weight: ${props => props.active === "true" ? '600' : '400'};
+  color: ${props => props.$active === "true" ? 'var(--primary)' : 'var(--text-secondary)'};
+  font-weight: ${props => props.$active === "true" ? '600' : '400'};
   text-decoration: none;
   transition: all 0.2s ease;
-  background-color: ${props => props.active === "true" ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
-  border-left: 3px solid ${props => props.active === "true" ? 'var(--primary)' : 'transparent'};
+  background-color: ${props => props.$active === "true" ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
+  border-left: 3px solid ${props => props.$active === "true" ? 'var(--primary)' : 'transparent'};
   
   &:hover {
     background-color: rgba(108, 99, 255, 0.05);
@@ -154,11 +152,11 @@ const MenuButton = styled.button`
 const MobileLogo = styled.div`
   font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: white;
   display: flex;
   align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   
   img {
     height: 30px;
@@ -205,11 +203,42 @@ const LogoutButton = styled.button`
   }
 `;
 
+const BackButton = styled.a`
+  position: fixed;
+  top: 25px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 1rem;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: var(--text);
+  }
+  
+  svg {
+    margin-left: 8px;
+  }
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
 function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, logout, userDetails } = useAuth();
   const router = useRouter();
   const sidebarRef = useRef(null);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Set isMounted to true after component has mounted to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const toggleSidebar = () => {
     setSidebarOpen(prevState => !prevState);
@@ -234,6 +263,7 @@ function DashboardLayout({ children }) {
     } catch (e) {
       console.log('Audio not available');
     }
+    window.location.href = '/dashboard';
   };
   
   useEffect(() => {
@@ -255,13 +285,24 @@ function DashboardLayout({ children }) {
     email: 'demo@cymasphere.com'
   };
   
+  // Return loading state if not mounted yet
+  if (!isMounted) {
+    return (
+      <LayoutContainer>
+        <Content style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          Loading...
+        </Content>
+      </LayoutContainer>
+    );
+  }
+  
   // Use real user data if available, otherwise use demo data
   const displayUserDetails = userDetails || demoUserDetails;
   const displayUser = currentUser || { email: 'demo@cymasphere.com' };
   
   return (
     <LayoutContainer>
-      <Sidebar ref={sidebarRef} isOpen={sidebarOpen}>
+      <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/dashboard" passHref>
             <Logo onClick={handleLogoClick}>
@@ -275,27 +316,57 @@ function DashboardLayout({ children }) {
         
         <SidebarNav>
           <Link href="/dashboard" passHref>
-            <NavItem active={router.pathname === '/dashboard' ? "true" : "false"}>
+            <NavItem 
+              $active={router.pathname === '/dashboard' ? "true" : "false"}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/dashboard';
+              }}
+            >
               <FaTachometerAlt /> Dashboard
             </NavItem>
           </Link>
           <Link href="/profile" passHref>
-            <NavItem active={router.pathname === '/profile' ? "true" : "false"}>
+            <NavItem 
+              $active={router.pathname === '/profile' ? "true" : "false"}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/profile';
+              }}
+            >
               <FaUser /> Profile
             </NavItem>
           </Link>
           <Link href="/billing" passHref>
-            <NavItem active={router.pathname === '/billing' ? "true" : "false"}>
+            <NavItem 
+              $active={router.pathname === '/billing' ? "true" : "false"}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/billing';
+              }}
+            >
               <FaCreditCard /> Billing
             </NavItem>
           </Link>
           <Link href="/downloads" passHref>
-            <NavItem active={router.pathname === '/downloads' ? "true" : "false"}>
+            <NavItem 
+              $active={router.pathname === '/downloads' ? "true" : "false"}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/downloads';
+              }}
+            >
               <FaDownload /> Downloads
             </NavItem>
           </Link>
           <Link href="/settings" passHref>
-            <NavItem active={router.pathname === '/settings' ? "true" : "false"}>
+            <NavItem 
+              $active={router.pathname === '/settings' ? "true" : "false"}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/settings';
+              }}
+            >
               <FaCog /> Settings
             </NavItem>
           </Link>
@@ -306,19 +377,13 @@ function DashboardLayout({ children }) {
             <h4>{displayUserDetails?.displayName || 'Demo User'}</h4>
             <p>{displayUser?.email}</p>
           </UserName>
-          {currentUser ? (
-            <LogoutButton onClick={handleLogout} title="Logout">
-              <FaSignOutAlt />
-            </LogoutButton>
-          ) : (
-            <LogoutButton onClick={() => router.push('/login')} title="Login">
-              <FaSignOutAlt />
-            </LogoutButton>
-          )}
+          <LogoutButton onClick={handleLogout} title="Logout">
+            <FaSignOutAlt />
+          </LogoutButton>
         </UserInfo>
       </Sidebar>
       
-      <MobileOverlay isOpen={sidebarOpen} onClick={closeSidebar} />
+      <MobileOverlay $isOpen={sidebarOpen} onClick={closeSidebar} />
       
       <MobileHeader>
         <MenuButton onClick={toggleSidebar}>
@@ -326,9 +391,24 @@ function DashboardLayout({ children }) {
         </MenuButton>
         <MobileLogo>
           <EnergyBall size="30px" marginRight="8px" />
-          CYMASPHERE
+          <span style={{
+            background: 'linear-gradient(90deg, var(--primary), var(--accent))', 
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>CYMA</span>
+          SPHERE
         </MobileLogo>
       </MobileHeader>
+      
+      <BackButton 
+        href="/"
+        onClick={(e) => {
+          e.preventDefault();
+          window.location.href = '/';
+        }}
+      >
+        Back to Site <FaArrowLeft />
+      </BackButton>
       
       <Content>
         {children}

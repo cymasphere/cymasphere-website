@@ -11,181 +11,80 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Mock user for development
+const MOCK_USER = {
+  id: "dev_user_123",
+  email: "dev@cymasphere.com",
+  displayName: "Development User",
+  emailVerified: true,
+  createdAt: new Date().toISOString(),
+  isAdmin: true
+};
+
 // Provider component that wraps your app and makes auth object available to any child component that calls useAuth()
 export function AuthProvider({ children }) {
+  // Start with null (not MOCK_USER) to avoid hydration mismatch
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [authError, setAuthError] = useState("");
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
-  // Check if user is logged in on page load
+  // Check if we're running on client side
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        // In a real app, this would validate the token with your API
-        const token = localStorage.getItem(AUTH_TOKEN_NAME);
-        if (token) {
-          // Get user data from localStorage
-          const userData = JSON.parse(localStorage.getItem(USER_DATA_NAME) || '{}');
-          
-          if (userData && Object.keys(userData).length > 0) {
-            setCurrentUser(userData);
-          }
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only run in the browser
-    if (typeof window !== "undefined") {
-      checkAuthStatus();
-    } else {
-      setLoading(false);
-    }
+    setIsClient(true);
+    // Set mock user after component has mounted to avoid hydration mismatch
+    setCurrentUser(MOCK_USER);
+    setLoading(false);
   }, []);
 
-  // Sign up function
+  // Sign up function - simplified for development
   async function signup(email, password, displayName) {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      const response = await authApi.signup(email, password, displayName);
-      
-      // Store token and user data
-      localStorage.setItem(AUTH_TOKEN_NAME, response.token);
-      localStorage.setItem(USER_DATA_NAME, JSON.stringify(response.user));
-      
-      setCurrentUser(response.user);
-      return response;
-    } catch (error) {
-      setAuthError(error.message || "Failed to create an account");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    // Just return mock response
+    return { user: MOCK_USER, token: "mock_token_dev" };
   }
 
-  // Log in function
+  // Log in function - simplified for development
   async function login(email, password) {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      const response = await authApi.login(email, password);
-      
-      // Store token and user data
-      localStorage.setItem(AUTH_TOKEN_NAME, response.token);
-      localStorage.setItem(USER_DATA_NAME, JSON.stringify(response.user));
-      
-      setCurrentUser(response.user);
-      return response;
-    } catch (error) {
-      setAuthError(error.message || "Failed to log in");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    // Just return mock response
+    return { user: MOCK_USER, token: "mock_token_dev" };
   }
 
-  // Google sign-in function
+  // Google sign-in function - simplified for development
   async function googleSignIn() {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      const response = await authApi.googleSignIn();
-      
-      // Store token and user data
-      localStorage.setItem(AUTH_TOKEN_NAME, response.token);
-      localStorage.setItem(USER_DATA_NAME, JSON.stringify(response.user));
-      
-      setCurrentUser(response.user);
-      return response;
-    } catch (error) {
-      setAuthError(error.message || "Failed to sign in with Google");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    // Just return mock response
+    return { user: MOCK_USER, token: "mock_token_dev" };
   }
 
-  // Log out function
+  // Log out function - simplified for development
   async function logout() {
-    setAuthError("");
-    
-    try {
-      await authApi.logout();
-      
-      // Clear stored data
-      localStorage.removeItem(AUTH_TOKEN_NAME);
-      localStorage.removeItem(USER_DATA_NAME);
-      
-      setCurrentUser(null);
-    } catch (error) {
-      setAuthError(error.message || "Failed to log out");
-      throw error;
-    }
+    // Do nothing, keep the mock user
+    console.log("Logout called - ignored in development mode");
   }
 
-  // Reset password function
+  // Reset password function - simplified for development
   async function resetPassword(email) {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      await authApi.resetPassword(email);
-    } catch (error) {
-      setAuthError(error.message || "Failed to reset password");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    console.log("Reset password called for:", email);
+    return { success: true };
   }
 
-  // Resend verification email function
+  // Resend verification email function - simplified for development
   async function resendVerificationEmail() {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      if (!currentUser) throw new Error("No user is signed in");
-      await authApi.resendVerificationEmail(currentUser.email);
-    } catch (error) {
-      setAuthError(error.message || "Failed to send verification email");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    console.log("Resend verification called");
+    return { success: true };
   }
 
   // Function to navigate to email verification screen
   function verifyEmail() {
-    router.push("/verify-email");
+    console.log("Verify email called - not redirecting in development mode");
   }
 
-  // Update user profile
+  // Update user profile - simplified for development
   async function updateProfile(data) {
-    setLoading(true);
-    setAuthError("");
-    
-    try {
-      const updatedUser = await authApi.updateProfile(data);
-      
-      // Update stored user data
-      localStorage.setItem(USER_DATA_NAME, JSON.stringify(updatedUser));
-      
-      setCurrentUser(updatedUser);
-      return updatedUser;
-    } catch (error) {
-      setAuthError(error.message || "Failed to update profile");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    console.log("Update profile called with data:", data);
+    const updatedUser = { ...MOCK_USER, ...data };
+    setCurrentUser(updatedUser);
+    return updatedUser;
   }
 
   const value = {

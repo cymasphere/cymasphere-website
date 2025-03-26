@@ -2,6 +2,7 @@
 .mobile-lang-wrapper .language-selector {
   font-size: 16px !important;
   min-width: 150px !important;
+  width: auto !important;
   filter: drop-shadow(0 0 10px rgba(108, 99, 255, 0.3)) !important;
   transition: all 0.3s ease !important;
 }
@@ -15,6 +16,7 @@
   backdrop-filter: blur(8px) !important;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), 
               inset 0 0 10px rgba(108, 99, 255, 0.1) !important;
+  width: 100% !important;
 }
 
 .mobile-lang-wrapper .flag-icon {
@@ -48,6 +50,7 @@
   backdrop-filter: blur(8px) !important;
   overflow: hidden !important;
   padding: 6px !important;
+  width: 100% !important;
 }
 
 .mobile-lang-wrapper .language-option {
@@ -55,6 +58,7 @@
   border-radius: 8px !important;
   margin: 3px 0 !important;
   transition: all 0.3s ease !important;
+  width: 100% !important;
 }
 
 .mobile-lang-wrapper .language-option:hover {

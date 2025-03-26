@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaTimesCircle, FaSave, FaCheck, FaTimes } from 'react-icons/fa';
+import DashboardLayout from './dashboard/DashboardLayout';
 
 const ProfileContainer = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 120px 20px 40px;
+  padding: 40px 20px;
   
   @media (max-width: 768px) {
-    padding: 100px 20px 40px;
+    padding: 30px 20px;
   }
 `;
 
@@ -388,4 +389,13 @@ function Profile() {
   );
 }
 
-export default Profile; 
+function ProfileWithLayout() {
+  return (
+    <DashboardLayout>
+      <Profile />
+    </DashboardLayout>
+  );
+}
+
+export { Profile };
+export default ProfileWithLayout; 

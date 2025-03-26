@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaGlobe, FaTrash, FaExclamationTriangle, FaSignOutAlt, FaMobileAlt, FaDesktop, FaTabletAlt, FaTimes, FaCheck, FaInfoCircle, FaCog, FaBell, FaPalette, FaChartLine, FaToggleOn, FaToggleOff } from 'react-icons/fa';
+import DashboardLayout from './dashboard/DashboardLayout';
 
 const SettingsContainer = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 120px 20px 40px;
+  padding: 40px 20px;
   
   @media (max-width: 768px) {
-    padding: 100px 20px 40px;
+    padding: 30px 20px;
   }
 `;
 
@@ -583,4 +584,13 @@ function Settings() {
   );
 }
 
-export default Settings; 
+function SettingsWithLayout() {
+  return (
+    <DashboardLayout>
+      <Settings />
+    </DashboardLayout>
+  );
+}
+
+export { Settings };
+export default SettingsWithLayout; 
