@@ -39,8 +39,8 @@ export default function DashboardPage() {
   return (
     <>
       <NextSEO 
-        title="Dashboard | CymaSphere" 
-        description="Access your CymaSphere account dashboard"
+        title="Dashboard | Cymasphere" 
+        description="Access your Cymasphere account dashboard"
         index={false}
         robots="noindex, nofollow"
       />

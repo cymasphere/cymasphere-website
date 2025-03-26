@@ -69,7 +69,7 @@ const Logo = styled.div`
   
   /* Add glow effect */
   &:after {
-    content: "CymaSphere";
+    content: "Cymasphere";
     position: absolute;
     top: 0;
     left: 0;
@@ -531,7 +531,7 @@ const NextHeader = () => {
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
         <HeaderContent>
           <LogoContainer onClick={handleLogoClick}>
-            <Logo>CymaSphere</Logo>
+            <Logo>Cymasphere</Logo>
             <EnergyBall size={30} color="rgba(108, 99, 255, 0.7)" />
           </LogoContainer>
           

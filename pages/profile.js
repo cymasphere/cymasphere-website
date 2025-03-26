@@ -37,8 +37,8 @@ export default function ProfilePage() {
   return (
     <>
       <NextSEO
-        title="Profile - CymaSphere"
-        description="Your CymaSphere profile"
+        title="Profile - Cymasphere"
+        description="Your Cymasphere profile"
         canonical="/profile"
         noindex={true} // Private page
       />

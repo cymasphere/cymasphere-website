@@ -6,7 +6,7 @@ export default function StartPage() {
   return (
     <>
       <Head>
-        <title>CymaSphere - Next.js Navigation</title>
+        <title>Cymasphere - Next.js Navigation</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={{ 
@@ -28,7 +28,7 @@ export default function StartPage() {
           WebkitTextFillColor: 'transparent',
           display: 'inline-block'
         }}>
-          CymaSphere - Next.js Navigation
+          Cymasphere - Next.js Navigation
         </h1>
         <p style={{ 
           fontSize: '1.2rem', 

@@ -28,7 +28,7 @@ function SettingsPage() {
 
   if (!isMounted || loading) {
     return (
-      <DynamicNextLayout title="Settings - CymaSphere">
+      <DynamicNextLayout title="Settings - Cymasphere">
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <div>Loading...</div>
@@ -50,8 +50,8 @@ function SettingsPage() {
   return (
     <>
       <NextSEO
-        title="Settings - CymaSphere"
-        description="Manage your CymaSphere settings"
+        title="Settings - Cymasphere"
+        description="Manage your Cymasphere settings"
         noindex={true} // This is a private page
       />
       <DynamicSettingsWithLayout />

@@ -45,7 +45,7 @@ export default class MyDocument extends Document {
           {/* Meta tags for SEO and social sharing */}
           <meta name="theme-color" content="#6c63ff" />
           <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="CymaSphere" />
+          <meta property="og:site_name" content="Cymasphere" />
           <meta property="twitter:card" content="summary_large_image" />
           
           {/* PWA support */}

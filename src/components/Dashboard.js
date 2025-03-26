@@ -562,7 +562,7 @@ function Dashboard() {
   };
 
   return (
-    <DynamicNextLayout title="Dashboard - CymaSphere">
+    <DynamicNextLayout title="Dashboard - Cymasphere">
       <DashboardContent />
     </DynamicNextLayout>
   );

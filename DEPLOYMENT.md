@@ -1,6 +1,6 @@
-# Deployment Guide for CymaSphere Next.js
+# Deployment Guide for Cymasphere Next.js
 
-This document outlines the various methods for deploying the Next.js version of the CymaSphere website.
+This document outlines the various methods for deploying the Next.js version of the Cymasphere website.
 
 ## Prerequisites
 

@@ -10,10 +10,10 @@ const DynamicNextLayout = dynamic(() => import('../src/components/layout/Dynamic
 
 export default function SignUpPage() {
   return (
-    <DynamicNextLayout title="Sign Up - CymaSphere" showHeader={false} showFooter={false}>
+    <DynamicNextLayout title="Sign Up - Cymasphere" showHeader={false} showFooter={false}>
       <NextSEO 
-        title="Sign Up - CymaSphere"
-        description="Create your CymaSphere account"
+        title="Sign Up - Cymasphere"
+        description="Create your Cymasphere account"
         canonical="/signup"
       />
       <SignUp />

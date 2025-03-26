@@ -51,7 +51,7 @@
   },
   "features": {
     "title": "Features",
-    "subtitle": "Discover what CymaSphere can do for you",
+    "subtitle": "Discover what Cymasphere can do for you",
     "aiComposition": "AI Composition",
     "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
     "livePerformance": "Live Performance",
@@ -135,7 +135,7 @@
     }
   },
   "footer": {
-    "copyright": "© 2023 CymaSphere. All rights reserved.",
+    "copyright": "© 2023 Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },

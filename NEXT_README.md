@@ -1,4 +1,4 @@
-# CymaSphere Next.js Implementation
+# Cymasphere Next.js Implementation
 
 This project has been migrated to use Next.js for improved performance, server-side rendering, and additional features like API routes.
 

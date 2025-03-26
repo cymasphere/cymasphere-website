@@ -52,12 +52,12 @@ export default function Fallback() {
   return (
     <>
       <Head>
-        <title>CymaSphere - Development Mode</title>
-        <meta name="description" content="CymaSphere development fallback page" />
+        <title>Cymasphere - Development Mode</title>
+        <meta name="description" content="Cymasphere development fallback page" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Container>
-        <Title>CymaSphere Next.js Integration</Title>
+        <Title>Cymasphere Next.js Integration</Title>
         <Message>
           The Next.js integration is in progress. This fallback page ensures you can still navigate
           even if some components are experiencing rendering issues during development.

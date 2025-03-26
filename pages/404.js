@@ -50,7 +50,7 @@ export default function Custom404() {
   return (
     <>
       <Head>
-        <title>Page Not Found - CymaSphere</title>
+        <title>Page Not Found - Cymasphere</title>
         <meta name="description" content="The page you are looking for does not exist" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

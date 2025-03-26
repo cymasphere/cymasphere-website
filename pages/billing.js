@@ -37,8 +37,8 @@ export default function BillingPage() {
   return (
     <>
       <NextSEO
-        title="Billing - CymaSphere"
-        description="Manage your CymaSphere subscription"
+        title="Billing - Cymasphere"
+        description="Manage your Cymasphere subscription"
         canonical="/billing"
         noindex={true} // Private page
       />

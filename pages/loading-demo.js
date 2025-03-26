@@ -5,8 +5,8 @@ export default function LoadingDemoPage() {
   return (
     <>
       <Head>
-        <title>Loading Demo - CymaSphere</title>
-        <meta name="description" content="CymaSphere loading demo" />
+        <title>Loading Demo - Cymasphere</title>
+        <meta name="description" content="Cymasphere loading demo" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

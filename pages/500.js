@@ -50,7 +50,7 @@ export default function Custom500() {
   return (
     <>
       <Head>
-        <title>Server Error - CymaSphere</title>
+        <title>Server Error - Cymasphere</title>
         <meta name="description" content="An error occurred on the server" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

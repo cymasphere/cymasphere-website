@@ -10,10 +10,10 @@ const DynamicNextLayout = dynamic(() => import('../src/components/layout/Dynamic
 
 export default function ResetPasswordPage() {
   return (
-    <DynamicNextLayout title="Reset Password - CymaSphere">
+    <DynamicNextLayout title="Reset Password - Cymasphere">
       <NextSEO 
-        title="Reset Password - CymaSphere"
-        description="Reset your CymaSphere account password"
+        title="Reset Password - Cymasphere"
+        description="Reset your Cymasphere account password"
         canonical="/reset-password"
       />
       <ResetPassword />

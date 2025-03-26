@@ -118,10 +118,10 @@ export default function AccountSummary({ initialData }) {
   };
 
   return (
-    <DynamicNextLayout title="Account Summary - CymaSphere">
+    <DynamicNextLayout title="Account Summary - Cymasphere">
       <NextSEO 
-        title="Account Summary - CymaSphere"
-        description="View your CymaSphere account summary and usage details"
+        title="Account Summary - Cymasphere"
+        description="View your Cymasphere account summary and usage details"
         canonical="/account-summary"
         noindex={true} // Private page
       />

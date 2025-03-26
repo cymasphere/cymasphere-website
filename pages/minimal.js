@@ -5,7 +5,7 @@ export default function MinimalPage() {
   return (
     <>
       <Head>
-        <title>CymaSphere - Minimal Page</title>
+        <title>Cymasphere - Minimal Page</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={{ 
@@ -27,7 +27,7 @@ export default function MinimalPage() {
           WebkitTextFillColor: 'transparent',
           display: 'inline-block'
         }}>
-          CymaSphere - Next.js Integration
+          Cymasphere - Next.js Integration
         </h1>
         <p style={{ 
           fontSize: '1.2rem', 

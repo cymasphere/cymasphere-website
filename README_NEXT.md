@@ -1,4 +1,4 @@
-# CymaSphere Next.js Implementation
+# Cymasphere Next.js Implementation
 
 This project utilizes Next.js for enhanced performance, SEO optimization, and a better developer experience.
 

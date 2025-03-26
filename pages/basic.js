@@ -103,8 +103,8 @@ export default function BasicPage() {
   return (
     <>
       <Head>
-        <title>CymaSphere - Basic Page</title>
-        <meta name="description" content="CymaSphere with Next.js integration" />
+        <title>Cymasphere - Basic Page</title>
+        <meta name="description" content="Cymasphere with Next.js integration" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Container>
@@ -129,7 +129,7 @@ export default function BasicPage() {
         </Main>
         
         <Footer>
-          © {new Date().getFullYear()} CymaSphere. All rights reserved.
+          © {new Date().getFullYear()} Cymasphere. All rights reserved.
         </Footer>
       </Container>
     </>

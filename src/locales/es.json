@@ -51,7 +51,7 @@
   },
   "features": {
     "title": "Características",
-    "subtitle": "Descubre lo que CymaSphere puede hacer por ti",
+    "subtitle": "Descubre lo que Cymasphere puede hacer por ti",
     "aiComposition": "Composición con IA",
     "aiCompositionDesc": "Genera música con solo un clic usando nuestra IA avanzada",
     "livePerformance": "Interpretación en Vivo",
@@ -135,7 +135,7 @@
     }
   },
   "footer": {
-    "copyright": "© 2023 CymaSphere. Todos los derechos reservados.",
+    "copyright": "© 2023 Cymasphere. Todos los derechos reservados.",
     "privacyPolicy": "Política de Privacidad",
     "termsOfService": "Términos de Servicio"
   },

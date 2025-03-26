@@ -37,8 +37,8 @@ export default function DownloadsPage() {
   return (
     <>
       <NextSEO
-        title="Downloads - CymaSphere"
-        description="Your CymaSphere downloads"
+        title="Downloads - Cymasphere"
+        description="Your Cymasphere downloads"
         canonical="/downloads"
         noindex={true} // Private page
       />

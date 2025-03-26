@@ -14,12 +14,12 @@ const ContactSection = dynamic(() => import('../src/components/sections/ContactS
 export default function Home() {
   return (
     <DynamicNextLayout
-      title="CymaSphere - Sound Therapy & Brainwave Entertainment"
-      description="Experience the healing power of sound and light with CymaSphere. Our application uses science-backed techniques to help you relax, focus, and achieve deeper states of consciousness."
+      title="Cymasphere - Sound Therapy & Brainwave Entertainment"
+      description="Experience the healing power of sound and light with Cymasphere. Our application uses science-backed techniques to help you relax, focus, and achieve deeper states of consciousness."
     >
       <NextSEO 
-        title="CymaSphere - Sound Therapy & Brainwave Entertainment"
-        description="Experience the healing power of sound and light with CymaSphere. Our application uses science-backed techniques to help you relax, focus, and achieve deeper states of consciousness."
+        title="Cymasphere - Sound Therapy & Brainwave Entertainment"
+        description="Experience the healing power of sound and light with Cymasphere. Our application uses science-backed techniques to help you relax, focus, and achieve deeper states of consciousness."
         canonical="/"
       />
       <DynamicHeroSection />

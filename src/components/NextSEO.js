@@ -6,7 +6,7 @@ import Head from 'next/head';
  * This component handles all meta tags for SEO and social sharing
  */
 const NextSEO = ({ 
-  title = 'CymaSphere - Discover Sound in a New Way',
+  title = 'Cymasphere - Discover Sound in a New Way',
   description = 'A platform for exploring and creating with sound in a new dimension.',
   keywords = 'music, sound, visualization, audio, synthesis',
   canonical = '',
@@ -35,7 +35,7 @@ const NextSEO = ({
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={`${siteUrl}${ogImage}`} />
-      <meta property="og:site_name" content="CymaSphere" />
+      <meta property="og:site_name" content="Cymasphere" />
       
       {/* Twitter Tags */}
       <meta name="twitter:card" content={twitterCard} />
