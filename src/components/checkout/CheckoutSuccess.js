@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
+import CymasphereLogo from '../common/CymasphereLogo';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -44,33 +45,6 @@ const HeaderContent = styled.div`
   align-items: center;
   padding: 1rem 2rem;
   width: 100%;
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  align-items: center;
-  z-index: 10;
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text);
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  margin-right: 10px;
-`;
-
-const LogoText = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
 `;
 
 const ContentContainer = styled(motion.div)`
@@ -283,12 +257,7 @@ function CheckoutSuccess() {
       <PageContainer>
         <HeaderNav>
           <HeaderContent>
-            <LogoContainer>
-              <Logo href="/">
-                <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-                <LogoText>CYMASPHERE</LogoText>
-              </Logo>
-            </LogoContainer>
+            <CymasphereLogo size="40px" fontSize="1.8rem" />
           </HeaderContent>
         </HeaderNav>
         <LoadingContainer>
@@ -304,12 +273,7 @@ function CheckoutSuccess() {
       <PageContainer>
         <HeaderNav>
           <HeaderContent>
-            <LogoContainer>
-              <Logo href="/">
-                <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-                <LogoText>CYMASPHERE</LogoText>
-              </Logo>
-            </LogoContainer>
+            <CymasphereLogo size="40px" fontSize="1.8rem" />
           </HeaderContent>
         </HeaderNav>
         <ErrorContainer>
@@ -327,12 +291,7 @@ function CheckoutSuccess() {
     <PageContainer>
       <HeaderNav>
         <HeaderContent>
-          <LogoContainer>
-            <Logo href="/">
-              <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-              <LogoText>CYMASPHERE</LogoText>
-            </Logo>
-          </LogoContainer>
+          <CymasphereLogo size="40px" fontSize="1.8rem" />
         </HeaderContent>
       </HeaderNav>
       

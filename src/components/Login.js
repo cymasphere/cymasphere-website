@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/NextAuthContext';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaGoogle, FaArrowLeft, FaSpinner } from 'react-icons/fa';
+import CymasphereLogo from './common/CymasphereLogo';
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -83,50 +84,6 @@ const FormCard = styled(motion.div)`
     z-index: -1;
     opacity: 0.4;
     filter: blur(8px);
-  }
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-`;
-
-const Logo = styled.a`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.8rem;
-  
-  &:hover {
-    text-decoration: none;
-  }
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  width: 40px;
-  margin-right: 10px;
-  transition: transform 0.3s ease;
-  
-  ${Logo}:hover & {
-    transform: rotate(20deg);
-  }
-`;
-
-const LogoText = styled.div`
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  
-  span {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
 `;
 
@@ -408,16 +365,9 @@ function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <LogoContainer>
-          <Link href="/" passHref>
-            <Logo>
-              <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-              <LogoText>
-                <span>CYMA</span>SPHERE
-              </LogoText>
-            </Logo>
-          </Link>
-        </LogoContainer>
+        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+          <CymasphereLogo size="40px" fontSize="1.8rem" />
+        </div>
         
         <Subtitle>Login to access your account</Subtitle>
         

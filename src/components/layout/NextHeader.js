@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import styles from './MobileLanguageStyle.module.css';
+import CymasphereLogo from '../common/CymasphereLogo';
 
 // Dynamically import components with browser-only APIs
 const DynamicLanguageSelector = dynamic(() => import('../i18n/DynamicLanguageSelector'), {
@@ -48,14 +49,6 @@ const HeaderContent = styled.div`
   @media (max-width: 768px) {
     padding: 15px 20px;
   }
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  z-index: 3001;
-  position: relative;
 `;
 
 const Logo = styled.div`
@@ -530,10 +523,9 @@ const NextHeader = () => {
     <>
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
         <HeaderContent>
-          <LogoContainer onClick={handleLogoClick}>
-            <Logo>Cymasphere</Logo>
-            <EnergyBall size={30} color="rgba(108, 99, 255, 0.7)" />
-          </LogoContainer>
+          <Link href="/" passHref>
+            <CymasphereLogo />
+          </Link>
           
           <NavLinks>
             {navItems.map((item) => (

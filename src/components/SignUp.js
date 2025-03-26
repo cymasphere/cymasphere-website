@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import CymasphereLogo from './common/CymasphereLogo';
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -92,39 +93,6 @@ const FormCard = styled(motion.div)`
     height: 5px;
     background: linear-gradient(90deg, var(--primary), var(--accent));
     z-index: 2;
-  }
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-`;
-
-const Logo = styled.a`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  margin-right: 10px;
-`;
-
-const LogoText = styled.span`
-  color: var(--text);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  
-  span {
-    color: var(--primary);
   }
 `;
 
@@ -500,14 +468,9 @@ function SignUp() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <LogoContainer>
-          <Logo href="/">
-            <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-            <LogoText>
-              <span>CYMA</span>SPHERE
-            </LogoText>
-          </Logo>
-        </LogoContainer>
+        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+          <CymasphereLogo size="40px" fontSize="1.8rem" />
+        </div>
 
         <Subtitle>Create an account</Subtitle>
 

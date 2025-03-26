@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FaCheck, FaGift, FaArrowRight } from 'react-icons/fa';
 import StripeCheckout from '../checkout/StripeCheckout';
 import * as Tone from 'tone'; // Import Tone.js for audio playback
+import CymasphereLogo from '../common/CymasphereLogo';
 
 // ChordWeb component for molecular chord background
 const ChordWebCanvas = styled.canvas`
@@ -1120,6 +1121,30 @@ const PricingCard = styled(motion.div)`
   }
 `;
 
+const PlanName = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: relative;
+  
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .pro-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-8px);
+  }
+`;
+
 const CardHeader = styled.div`
   padding: 20px;
   background: linear-gradient(90deg, #000000, #1a1a2e);
@@ -1136,34 +1161,6 @@ const CardHeader = styled.div`
     right: 0;
     height: 6px;
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(26, 26, 46, 0.3));
-  }
-`;
-
-const PlanName = styled.h3`
-  font-size: 1.8rem;
-  margin-bottom: 5px;
-  font-weight: 700;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  width: 40px;
-  margin-right: 10px;
-  transition: transform 0.3s ease;
-`;
-
-const LogoText = styled.span`
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  
-  span {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
 `;
 
@@ -1434,11 +1431,13 @@ const PricingSection = () => {
             )}
             <CardHeader>
               <PlanName>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-                  <LogoText>
-                    <span>CYMA</span>SPHERE PRO
-                  </LogoText>
+                <div className="logo-container">
+                  <CymasphereLogo 
+                    size="40px" 
+                    showText={true}
+                    onClick={(e) => e.preventDefault()} 
+                  />
+                  <span className="pro-label">PRO</span>
                 </div>
               </PlanName>
               <div style={{ fontSize: '1.1rem', opacity: 0.8 }}>

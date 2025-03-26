@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/NextAuthContext';
 import { FaTachometerAlt, FaUser, FaCreditCard, FaDownload, FaCog, FaSignOutAlt, FaBars, FaTimes, FaHome, FaArrowLeft } from 'react-icons/fa';
 import EnergyBall from '../common/EnergyBall';
 import { playLydianMaj7Chord } from '../../utils/audioUtils';
+import CymasphereLogo from '../common/CymasphereLogo';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -305,12 +306,7 @@ function DashboardLayout({ children }) {
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/dashboard" passHref legacyBehavior>
-            <Logo onClick={handleLogoClick}>
-              <EnergyBall size="35px" marginRight="12px" />
-              <LogoText>
-                <span>CYMA</span>SPHERE
-              </LogoText>
-            </Logo>
+            <CymasphereLogo />
           </Link>
         </LogoContainer>
         

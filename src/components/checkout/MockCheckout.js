@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import styled from 'styled-components';
 import { FaLock, FaCreditCard, FaCalendarAlt, FaShieldAlt, FaArrowLeft } from 'react-icons/fa';
+import CymasphereLogo from '../common/CymasphereLogo';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -44,50 +45,6 @@ const HeaderContent = styled.div`
   
   @media (max-width: 768px) {
     padding: 20px;
-  }
-`;
-
-const LogoContainer = styled.div`
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.8rem;
-  
-  &:hover {
-    text-decoration: none;
-  }
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  width: 40px;
-  margin-right: 10px;
-  transition: transform 0.3s ease;
-  
-  ${Logo}:hover & {
-    transform: rotate(20deg);
-  }
-`;
-
-const LogoText = styled.div`
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  
-  span {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
 `;
 
@@ -483,17 +440,12 @@ const MockCheckout = () => {
     <PageContainer>
       <HeaderNav>
         <HeaderContent>
-          <LogoContainer>
-            <Logo href="/">
-              <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-              <LogoText>
-                <span>CYMA</span>SPHERE
-              </LogoText>
-            </Logo>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <CymasphereLogo size="40px" fontSize="1.8rem" />
             <BackButton href="/#pricing">
               <FaArrowLeft /> Back to Pricing
             </BackButton>
-          </LogoContainer>
+          </div>
         </HeaderContent>
       </HeaderNav>
       

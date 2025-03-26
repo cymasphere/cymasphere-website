@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaArrowLeft } from 'react-icons/fa';
+import CymasphereLogo from './common/CymasphereLogo';
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -322,12 +323,9 @@ function ResetPassword() {
         transition={{ duration: 0.5 }}
       >
         <LogoContainer>
-          <Logo to="/">
-            <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
-            <LogoText>
-              <span>CYMA</span>SPHERE
-            </LogoText>
-          </Logo>
+          <Link href="/" passHref>
+            <CymasphereLogo size="48px" />
+          </Link>
         </LogoContainer>
         
         <Title

@@ -1,6 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import EnergyBall from './EnergyBall';
+import CymasphereLogo from './CymasphereLogo';
 
 // Pulse animation for the text
 const textPulse = keyframes`
@@ -26,14 +27,6 @@ const LoadingWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 30px;
   position: relative;
 `;
 
@@ -77,14 +70,10 @@ const LoadingSpinner = ({ size = 'medium', fullScreen = false, text = 'Loading..
   return (
     <Container $fullScreen={fullScreen}>
       <LoadingWrapper>
-        <LogoContainer>
-          <EnergyBallContainer>
-            <EnergyBall size={energyBallSize} />
-          </EnergyBallContainer>
-          <LogoText $size={size}>
-            <span>CYMA</span>SPHERE
-          </LogoText>
-        </LogoContainer>
+        <EnergyBallContainer>
+          <EnergyBall size={energyBallSize} />
+        </EnergyBallContainer>
+        <CymasphereLogo size="60px" showText={false} />
         {text && <LoadingText $size={size}>{text}</LoadingText>}
       </LoadingWrapper>
     </Container>

@@ -10,7 +10,7 @@ const DynamicNextLayout = dynamic(() => import('../src/components/layout/Dynamic
 
 export default function VerifyEmailPage() {
   return (
-    <DynamicNextLayout title="Verify Email - Cymasphere">
+    <DynamicNextLayout title="Verify Email - CymaSphere">
       <NextSEO 
         title="Verify Email - Cymasphere"
         description="Verify your email address for your Cymasphere account"
