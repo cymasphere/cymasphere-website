@@ -263,21 +263,51 @@ const NextFooter = () => {
         
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <Link href="/login" passHref>
-            <FooterNextLink>Login</FooterNextLink>
-          </Link>
-          <Link href="/signup" passHref>
-            <FooterNextLink>Sign Up</FooterNextLink>
-          </Link>
-          <Link href="/dashboard" passHref>
-            <FooterNextLink>Dashboard</FooterNextLink>
-          </Link>
-          <Link href="/profile" passHref>
-            <FooterNextLink>Profile</FooterNextLink>
-          </Link>
-          <Link href="/settings" passHref>
-            <FooterNextLink>Settings</FooterNextLink>
-          </Link>
+          <FooterAnchor 
+            href="/login"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/login';
+            }}
+          >
+            Login
+          </FooterAnchor>
+          <FooterAnchor 
+            href="/signup"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/signup';
+            }}
+          >
+            Sign Up
+          </FooterAnchor>
+          <FooterAnchor 
+            href="/dashboard"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/dashboard';
+            }}
+          >
+            Dashboard
+          </FooterAnchor>
+          <FooterAnchor 
+            href="/profile"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/profile';
+            }}
+          >
+            Profile
+          </FooterAnchor>
+          <FooterAnchor 
+            href="/settings"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/settings';
+            }}
+          >
+            Settings
+          </FooterAnchor>
         </FooterColumn>
         
         <FooterColumn>

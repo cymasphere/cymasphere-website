@@ -59,12 +59,6 @@
       "static/chunks/_pages-dir-browser_src_components_Settings_js.js"
     ]
   },
-  "pages/signup.js -> ../src/components/layout/DynamicNextLayout": {
-    "id": "pages/signup.js -> ../src/components/layout/DynamicNextLayout",
-    "files": [
-      "static/chunks/_pages-dir-browser_src_components_layout_DynamicNextLayout_js.js"
-    ]
-  },
   "src/components/i18n/DynamicLanguageSelector.js -> ./LanguageSelector": {
     "id": "src/components/i18n/DynamicLanguageSelector.js -> ./LanguageSelector",
     "files": [
