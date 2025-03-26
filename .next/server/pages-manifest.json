@@ -2,8 +2,13 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/404": "pages/404.js",
+  "/profile": "pages/profile.js",
+  "/downloads": "pages/downloads.js",
   "/dashboard": "pages/dashboard.js",
+  "/billing": "pages/billing.js",
   "/": "pages/index.js",
-  "/downloads": "pages/downloads.js"
+  "/login": "pages/login.js",
+  "/404": "pages/404.js",
+  "/signup": "pages/signup.js",
+  "/settings": "pages/settings.js"
 }

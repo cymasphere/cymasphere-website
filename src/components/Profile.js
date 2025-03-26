@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaTimesCircle, FaSave, FaCheck, FaTimes } from 'react-icons/fa';
 import DashboardLayout from './dashboard/DashboardLayout';
+import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaTimesCircle, FaSave } from 'react-icons/fa';
 
 const ProfileContainer = styled.div`
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  
-  @media (max-width: 768px) {
-    padding: 30px 20px;
-  }
 `;
 
 const SectionTitle = styled.h2`
@@ -133,123 +126,87 @@ const Message = styled.div`
   }
 `;
 
-const SuccessMessage = styled(Message)`
-  background-color: rgba(0, 201, 167, 0.1);
-  border-color: rgba(0, 201, 167, 0.3);
-`;
-
-const ErrorMessage = styled(Message)`
-  background-color: rgba(255, 87, 51, 0.1);
-  border-color: rgba(255, 87, 51, 0.3);
-`;
-
-const VerifiedBadge = styled.span`
-  background-color: rgba(0, 201, 167, 0.1);
-  border-radius: 6px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  color: var(--success);
-  margin-left: 0.5rem;
-`;
-
-const UnverifiedBadge = styled.span`
-  background-color: rgba(255, 87, 51, 0.1);
-  border-radius: 6px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  color: var(--error);
-  margin-left: 0.5rem;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const FormRow = styled.div`
-  display: flex;
-  gap: 1.5rem;
-`;
-
 function Profile() {
   const [profile, setProfile] = useState({
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
-    isEmailVerified: true,
-  });
-  
-  const [isEditing, setIsEditing] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [passwordFields, setPasswordFields] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
+    confirmPassword: ''
   });
   
-  const handleProfileChange = (e, key) => {
-    setProfile({
-      ...profile,
-      [key]: e.target.value,
-    });
-  };
+  const [message, setMessage] = useState({ text: '', type: '' });
   
+  const handleProfileChange = (e, key) => {
+    setProfile(prevProfile => ({
+      ...prevProfile,
+      [key]: e.target.value
+    }));
+  };
+
   const handleUpdateProfile = (e) => {
     e.preventDefault();
+    // Handle profile update logic here
+    console.log('Profile updated:', profile);
+    setMessage({
+      text: 'Profile information updated successfully!',
+      type: 'success'
+    });
     
-    // Mock implementation - would be replaced with actual API call
-    console.log('Updating profile:', profile);
-    setSuccessMessage('Profile updated successfully!');
-    setIsEditing(false);
-    
-    // Clear success message after 3 seconds
+    // Clear message after 3 seconds
     setTimeout(() => {
-      setSuccessMessage('');
+      setMessage({ text: '', type: '' });
     }, 3000);
   };
-  
+
   const handleChangePassword = (e) => {
     e.preventDefault();
     
-    // Implement password validation
-    if (passwordFields.newPassword !== passwordFields.confirmPassword) {
-      setErrorMessage('New passwords do not match');
+    if (profile.newPassword !== profile.confirmPassword) {
+      setMessage({
+        text: 'New passwords do not match!',
+        type: 'error'
+      });
       return;
     }
     
-    // Mock implementation - would be replaced with actual API call
-    console.log('Changing password');
-    setSuccessMessage('Password changed successfully!');
+    if (!profile.currentPassword) {
+      setMessage({
+        text: 'Current password is required!',
+        type: 'error'
+      });
+      return;
+    }
     
-    // Clear all password fields
-    setPasswordFields({
+    // Reset password fields
+    setProfile(prev => ({
+      ...prev,
       currentPassword: '',
       newPassword: '',
-      confirmPassword: '',
+      confirmPassword: ''
+    }));
+    
+    setMessage({
+      text: 'Password changed successfully!',
+      type: 'success'
     });
     
-    // Clear success message after 3 seconds
+    // Clear message after 3 seconds
     setTimeout(() => {
-      setSuccessMessage('');
+      setMessage({ text: '', type: '' });
     }, 3000);
   };
   
   return (
     <ProfileContainer>
-      <SectionTitle>Profile</SectionTitle>
+      <SectionTitle>My Profile</SectionTitle>
       
-      {successMessage && (
-        <SuccessMessage>
-          {successMessage}
-        </SuccessMessage>
-      )}
-      
-      {errorMessage && (
-        <ErrorMessage>
-          {errorMessage}
-        </ErrorMessage>
+      {message.text && (
+        <Message type={message.type}>
+          {message.type === 'error' ? <FaTimesCircle /> : <FaUser />}
+          {message.text}
+        </Message>
       )}
       
       <ProfileCard
@@ -257,132 +214,92 @@ function Profile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <CardTitle>
-          <FaUser /> Personal Information
-        </CardTitle>
-        <Form onSubmit={handleUpdateProfile}>
-          <FormRow>
-            <FormGroup>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                type="text"
-                id="firstName"
-                value={profile.firstName}
-                onChange={(e) => handleProfileChange(e, 'firstName')}
-                disabled={!isEditing}
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                type="text"
-                id="lastName"
-                value={profile.lastName}
-                onChange={(e) => handleProfileChange(e, 'lastName')}
-                disabled={!isEditing}
-              />
-            </FormGroup>
-          </FormRow>
-          <FormGroup>
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              type="email"
-              id="email"
-              value={profile.email}
-              onChange={(e) => handleProfileChange(e, 'email')}
-              disabled={!isEditing}
-            />
-            {profile.isEmailVerified ? (
-              <VerifiedBadge>
-                <FaCheck /> Verified
-              </VerifiedBadge>
-            ) : (
-              <UnverifiedBadge>
-                <FaTimes /> Not Verified
-              </UnverifiedBadge>
-            )}
-          </FormGroup>
-          
-          <ButtonGroup>
-            {isEditing ? (
-              <>
-                <Button type="submit">
-                  <FaSave /> Save Changes
-                </Button>
-                <CancelButton type="button" onClick={() => setIsEditing(false)}>
-                  <FaTimesCircle /> Cancel
-                </CancelButton>
-              </>
-            ) : (
-              <Button type="button" onClick={() => setIsEditing(true)}>
-                Edit Profile
-              </Button>
-            )}
-          </ButtonGroup>
-        </Form>
-      </ProfileCard>
-      
-      <ProfileCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-      >
-        <CardTitle>
-          <FaLock /> Security
-        </CardTitle>
-        <Form onSubmit={handleChangePassword}>
-          <FormGroup>
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <Input
-              type="password"
-              id="currentPassword"
-              value={passwordFields.currentPassword}
-              onChange={(e) => setPasswordFields({...passwordFields, currentPassword: e.target.value})}
-            />
-          </FormGroup>
-          <FormRow>
-            <FormGroup>
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                type="password"
-                id="newPassword"
-                value={passwordFields.newPassword}
-                onChange={(e) => setPasswordFields({...passwordFields, newPassword: e.target.value})}
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                type="password"
-                id="confirmPassword"
-                value={passwordFields.confirmPassword}
-                onChange={(e) => setPasswordFields({...passwordFields, confirmPassword: e.target.value})}
-              />
-            </FormGroup>
-          </FormRow>
-          <ButtonGroup>
-            <Button type="submit">
-              Change Password
-            </Button>
-          </ButtonGroup>
-        </Form>
-      </ProfileCard>
-      
-      <ProfileCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-      >
-        <CardTitle>
-          <FaShieldAlt /> Account Protection
-        </CardTitle>
+        <CardTitle><FaUser /> Personal Information</CardTitle>
         <CardContent>
-          <p>Two-factor authentication adds an extra layer of security to your account. When enabled, you'll need to provide a verification code in addition to your password when signing in.</p>
-          <ButtonGroup>
-            <Button type="button">
-              Enable Two-Factor Authentication
+          <Form onSubmit={handleUpdateProfile}>
+            <TwoColumnGrid>
+              <FormGroup>
+                <Label>First Name</Label>
+                <Input
+                  type="text"
+                  value={profile.firstName}
+                  onChange={(e) => handleProfileChange(e, 'firstName')}
+                  required
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Last Name</Label>
+                <Input
+                  type="text"
+                  value={profile.lastName}
+                  onChange={(e) => handleProfileChange(e, 'lastName')}
+                  required
+                />
+              </FormGroup>
+            </TwoColumnGrid>
+            
+            <FormGroup>
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                value={profile.email}
+                onChange={(e) => handleProfileChange(e, 'email')}
+                required
+              />
+            </FormGroup>
+            
+            <Button type="submit">
+              <FaSave /> Save Changes
             </Button>
-          </ButtonGroup>
+          </Form>
+        </CardContent>
+      </ProfileCard>
+      
+      <ProfileCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <CardTitle><FaLock /> Change Password</CardTitle>
+        <CardContent>
+          <Form onSubmit={handleChangePassword}>
+            <FormGroup>
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={profile.currentPassword}
+                onChange={(e) => handleProfileChange(e, 'currentPassword')}
+                required
+              />
+            </FormGroup>
+            
+            <TwoColumnGrid>
+              <FormGroup>
+                <Label>New Password</Label>
+                <Input
+                  type="password"
+                  value={profile.newPassword}
+                  onChange={(e) => handleProfileChange(e, 'newPassword')}
+                  required
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Confirm New Password</Label>
+                <Input
+                  type="password"
+                  value={profile.confirmPassword}
+                  onChange={(e) => handleProfileChange(e, 'confirmPassword')}
+                  required
+                />
+              </FormGroup>
+            </TwoColumnGrid>
+            
+            <Button type="submit">
+              <FaLock /> Update Password
+            </Button>
+          </Form>
         </CardContent>
       </ProfileCard>
     </ProfileContainer>
@@ -397,5 +314,4 @@ function ProfileWithLayout() {
   );
 }
 
-export { Profile };
 export default ProfileWithLayout; 
