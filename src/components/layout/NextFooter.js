@@ -104,49 +104,24 @@ const FooterHeading = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-const FooterNextLink = styled.a`
+const FooterLink = styled.a`
   font-size: 0.95rem;
   color: var(--text-secondary);
   text-decoration: none;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   transition: color 0.2s ease;
-  display: inline-block;
-  
-  &:hover {
-    color: var(--primary);
-    text-decoration: none;
-  }
-`;
-
-const FooterAnchor = styled.a`
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  margin-bottom: 0.75rem;
-  transition: color 0.2s ease;
-  display: inline-block;
+  display: block;
   cursor: pointer;
-  
-  &:hover {
-    color: var(--primary);
-    text-decoration: none;
-  }
-`;
-
-const FooterButton = styled.button`
   background: none;
   border: none;
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  text-align: left;
   padding: 0;
-  margin-bottom: 0.75rem;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  display: inline-block;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
   
   &:hover {
     color: var(--primary);
+    text-decoration: none;
   }
 `;
 
@@ -253,17 +228,18 @@ const NextFooter = () => {
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
           <Link href="/" passHref legacyBehavior>
-            <FooterNextLink>Home</FooterNextLink>
+            <FooterLink>Home</FooterLink>
           </Link>
-          <FooterAnchor href="#features">Features</FooterAnchor>
-          <FooterAnchor href="#how-it-works">How It Works</FooterAnchor>
-          <FooterAnchor href="#pricing">Pricing</FooterAnchor>
-          <FooterAnchor href="#faq">FAQ</FooterAnchor>
+          <FooterLink as="a" href="#features">Features</FooterLink>
+          <FooterLink as="a" href="#how-it-works">How It Works</FooterLink>
+          <FooterLink as="a" href="#pricing">Pricing</FooterLink>
+          <FooterLink as="a" href="#faq">FAQ</FooterLink>
         </FooterColumn>
         
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <FooterAnchor 
+          <FooterLink 
+            as="a"
             href="/login"
             onClick={(e) => {
               e.preventDefault();
@@ -271,8 +247,9 @@ const NextFooter = () => {
             }}
           >
             Login
-          </FooterAnchor>
-          <FooterAnchor 
+          </FooterLink>
+          <FooterLink 
+            as="a"
             href="/signup"
             onClick={(e) => {
               e.preventDefault();
@@ -280,8 +257,9 @@ const NextFooter = () => {
             }}
           >
             Sign Up
-          </FooterAnchor>
-          <FooterAnchor 
+          </FooterLink>
+          <FooterLink 
+            as="a"
             href="/dashboard"
             onClick={(e) => {
               e.preventDefault();
@@ -289,8 +267,9 @@ const NextFooter = () => {
             }}
           >
             Dashboard
-          </FooterAnchor>
-          <FooterAnchor 
+          </FooterLink>
+          <FooterLink 
+            as="a"
             href="/profile"
             onClick={(e) => {
               e.preventDefault();
@@ -298,8 +277,9 @@ const NextFooter = () => {
             }}
           >
             Profile
-          </FooterAnchor>
-          <FooterAnchor 
+          </FooterLink>
+          <FooterLink 
+            as="a"
             href="/settings"
             onClick={(e) => {
               e.preventDefault();
@@ -307,17 +287,44 @@ const NextFooter = () => {
             }}
           >
             Settings
-          </FooterAnchor>
+          </FooterLink>
         </FooterColumn>
         
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
-          <FooterButton onClick={() => setShowAboutModal(true)}>About Us</FooterButton>
+          <FooterLink 
+            as="a" 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              setShowAboutModal(true);
+            }}
+          >
+            About Us
+          </FooterLink>
           <Link href="/contact" passHref legacyBehavior>
-            <FooterNextLink>Contact</FooterNextLink>
+            <FooterLink>Contact</FooterLink>
           </Link>
-          <FooterButton onClick={() => setShowTermsModal(true)}>Terms of Service</FooterButton>
-          <FooterButton onClick={() => setShowPrivacyModal(true)}>Privacy Policy</FooterButton>
+          <FooterLink 
+            as="a" 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              setShowTermsModal(true);
+            }}
+          >
+            Terms of Service
+          </FooterLink>
+          <FooterLink 
+            as="a" 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              setShowPrivacyModal(true);
+            }}
+          >
+            Privacy Policy
+          </FooterLink>
         </FooterColumn>
       </FooterContent>
       

@@ -12,8 +12,8 @@ export default function VerifyEmailPage() {
   return (
     <DynamicNextLayout title="Verify Email - CymaSphere">
       <NextSEO 
-        title="Verify Email - Cymasphere"
-        description="Verify your email address for your Cymasphere account"
+        title="Verify Email - CymaSphere"
+        description="Verify your email address for your CymaSphere account"
         canonical="/verify-email"
       />
       <EmailVerification />
