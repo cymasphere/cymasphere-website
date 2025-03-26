@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import DashboardLayout from './dashboard/DashboardLayout';
 import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaTimesCircle, FaSave } from 'react-icons/fa';
+import { useRouter } from 'next/router';
 
 const ProfileContainer = styled.div`
   width: 100%;
@@ -11,7 +12,7 @@ const ProfileContainer = styled.div`
   padding: 40px 20px;
   
   @media (max-width: 768px) {
-    padding: 30px 20px;
+    padding: 20px 15px;
   }
 `;
 
@@ -19,6 +20,11 @@ const SectionTitle = styled.h2`
   font-size: 1.75rem;
   margin-bottom: 1.5rem;
   color: var(--text);
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const ProfileCard = styled(motion.div)`
@@ -27,6 +33,11 @@ const ProfileCard = styled(motion.div)`
   padding: 1.5rem;
   margin-bottom: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    border-radius: 10px;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -52,6 +63,10 @@ const Form = styled.form`
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.25rem;
+  }
 `;
 
 const Label = styled.label`
@@ -59,6 +74,10 @@ const Label = styled.label`
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
   color: var(--text);
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const Input = styled.input`
@@ -73,6 +92,12 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--primary);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.85rem 1rem;
+    font-size: 16px; /* Prevent zoom on iOS */
+    border-radius: 8px;
   }
 `;
 
@@ -97,6 +122,14 @@ const Button = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.85rem 1.5rem;
+    width: 100%;
+    justify-content: center;
+    border-radius: 8px;
+    margin-top: 1.5rem;
   }
 `;
 
@@ -131,7 +164,42 @@ const Message = styled.div`
   svg {
     margin-right: 0.75rem;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.85rem;
+    border-radius: 8px;
+  }
 `;
+
+// Add animation variants
+const cardVariants = {
+  hidden: { 
+    opacity: 0,
+    y: 20,
+  },
+  visible: (custom) => ({ 
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      delay: custom * 0.1,
+    }
+  })
+};
+
+const buttonVariants = {
+  hover: {
+    scale: 1.03,
+    boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  },
+  tap: {
+    scale: 0.98
+  }
+};
 
 function Profile() {
   const [profile, setProfile] = useState({
@@ -144,7 +212,23 @@ function Profile() {
   });
   
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [isMounted, setIsMounted] = useState(false);
   
+  // Set isMounted to true after component has mounted to prevent state updates during unmounting
+  useEffect(() => {
+    setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
+  
+  // Use this function to safely update state only if the component is still mounted
+  const safeSetMessage = (messageData) => {
+    if (isMounted) {
+      setMessage(messageData);
+    }
+  };
+
   const handleProfileChange = (e, key) => {
     setProfile(prevProfile => ({
       ...prevProfile,
@@ -156,22 +240,25 @@ function Profile() {
     e.preventDefault();
     // Handle profile update logic here
     console.log('Profile updated:', profile);
-    setMessage({
+    safeSetMessage({
       text: 'Profile information updated successfully!',
       type: 'success'
     });
     
     // Clear message after 3 seconds
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
+    const timer = setTimeout(() => {
+      safeSetMessage({ text: '', type: '' });
     }, 3000);
+    
+    // Clear timeout if component unmounts
+    return () => clearTimeout(timer);
   };
 
   const handleChangePassword = (e) => {
     e.preventDefault();
     
     if (profile.newPassword !== profile.confirmPassword) {
-      setMessage({
+      safeSetMessage({
         text: 'New passwords do not match!',
         type: 'error'
       });
@@ -179,7 +266,7 @@ function Profile() {
     }
     
     if (!profile.currentPassword) {
-      setMessage({
+      safeSetMessage({
         text: 'Current password is required!',
         type: 'error'
       });
@@ -194,15 +281,18 @@ function Profile() {
       confirmPassword: ''
     }));
     
-    setMessage({
+    safeSetMessage({
       text: 'Password changed successfully!',
       type: 'success'
     });
     
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
+    // Clear message after 3 seconds with proper cleanup
+    const timer = setTimeout(() => {
+      safeSetMessage({ text: '', type: '' });
     }, 3000);
+    
+    // Clear timeout if component unmounts
+    return () => clearTimeout(timer);
   };
   
   return (
@@ -217,9 +307,10 @@ function Profile() {
       )}
       
       <ProfileCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        custom={0}
       >
         <CardTitle><FaUser /> Personal Information</CardTitle>
         <CardContent>
@@ -256,7 +347,13 @@ function Profile() {
               />
             </FormGroup>
             
-            <Button type="submit">
+            <Button 
+              type="submit"
+              as={motion.button}
+              whileHover="hover"
+              whileTap="tap"
+              variants={buttonVariants}
+            >
               <FaSave /> Save Changes
             </Button>
           </Form>
@@ -264,9 +361,10 @@ function Profile() {
       </ProfileCard>
       
       <ProfileCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        custom={1}
       >
         <CardTitle><FaLock /> Change Password</CardTitle>
         <CardContent>
@@ -281,29 +379,33 @@ function Profile() {
               />
             </FormGroup>
             
-            <TwoColumnGrid>
-              <FormGroup>
-                <Label>New Password</Label>
-                <Input
-                  type="password"
-                  value={profile.newPassword}
-                  onChange={(e) => handleProfileChange(e, 'newPassword')}
-                  required
-                />
-              </FormGroup>
-              
-              <FormGroup>
-                <Label>Confirm New Password</Label>
-                <Input
-                  type="password"
-                  value={profile.confirmPassword}
-                  onChange={(e) => handleProfileChange(e, 'confirmPassword')}
-                  required
-                />
-              </FormGroup>
-            </TwoColumnGrid>
+            <FormGroup>
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={profile.newPassword}
+                onChange={(e) => handleProfileChange(e, 'newPassword')}
+                required
+              />
+            </FormGroup>
             
-            <Button type="submit">
+            <FormGroup>
+              <Label>Confirm New Password</Label>
+              <Input
+                type="password"
+                value={profile.confirmPassword}
+                onChange={(e) => handleProfileChange(e, 'confirmPassword')}
+                required
+              />
+            </FormGroup>
+            
+            <Button 
+              type="submit"
+              as={motion.button}
+              whileHover="hover"
+              whileTap="tap"
+              variants={buttonVariants}
+            >
               <FaLock /> Update Password
             </Button>
           </Form>
@@ -314,9 +416,11 @@ function Profile() {
 }
 
 function ProfileWithLayout() {
+  const router = useRouter();
+  
   return (
     <DashboardLayout>
-      <Profile />
+      <Profile key={router.pathname} />
     </DashboardLayout>
   );
 }

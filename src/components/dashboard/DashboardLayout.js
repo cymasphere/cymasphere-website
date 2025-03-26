@@ -7,6 +7,7 @@ import { FaTachometerAlt, FaUser, FaCreditCard, FaDownload, FaCog, FaSignOutAlt,
 import EnergyBall from '../common/EnergyBall';
 import { playLydianMaj7Chord } from '../../utils/audioUtils';
 import CymasphereLogo from '../common/CymasphereLogo';
+import { motion } from 'framer-motion';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -31,13 +32,13 @@ const Sidebar = styled.aside`
   transition: transform 0.3s ease;
   
   @media (max-width: 768px) {
-    transform: translateX(${props => props.$isOpen ? '0' : '-100%'});
+    display: none; /* Hide sidebar completely on mobile */
   }
 `;
 
 const MobileOverlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 60px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -128,11 +129,13 @@ const MobileHeader = styled.header`
   right: 0;
   height: 60px;
   background-color: var(--card-bg);
-  z-index: 80;
-  padding: 0 1rem;
+  z-index: 9999;
+  padding: 0 20px;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  background-color: rgba(15, 14, 23, 0.95);
   
   @media (max-width: 768px) {
     display: flex;
@@ -148,6 +151,16 @@ const MenuButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: var(--primary);
+  }
+`;
+
+const MobileLogoContainer = styled.a`
+  cursor: pointer;
+  text-decoration: none;
 `;
 
 const MobileLogo = styled.div`
@@ -229,6 +242,112 @@ const BackButton = styled.a`
   }
 `;
 
+const MobileMenu = styled(motion.div)`
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px);
+  z-index: 999;
+  padding: 1.5rem 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(165deg, 
+    rgba(15, 14, 23, 0.98) 0%,
+    rgba(27, 25, 40, 0.98) 50%,
+    rgba(35, 32, 52, 0.98) 100%
+  );
+  backdrop-filter: blur(10px);
+  align-items: center;
+  
+  &::before {
+    content: '';
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.15), transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(78, 205, 196, 0.15), transparent 50%);
+    z-index: -1;
+    pointer-events: none;
+  }
+`;
+
+const MobileNavItem = styled(motion.a)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 30px;
+  color: ${props => props.$active === "true" ? 'var(--primary)' : 'rgba(255, 255, 255, 0.7)'};
+  font-weight: ${props => props.$active === "true" ? '600' : '500'};
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  width: 100%;
+  cursor: pointer;
+  margin: 0.5rem 0;
+  position: relative;
+  font-size: 1.1rem;
+  
+  &:hover {
+    color: white;
+  }
+  
+  svg {
+    margin-right: 1rem;
+    font-size: 1.2rem;
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 20%;
+    width: ${props => props.$active === "true" ? '60%' : '0'};
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 0.3s ease;
+  }
+  
+  &:hover:after {
+    width: 60%;
+  }
+`;
+
+const MobileNavTitle = styled.h3`
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 1.5rem;
+  padding: 0 2rem;
+  text-align: center;
+  width: 100%;
+`;
+
+const MobileBackButton = styled(MobileNavItem)`
+  margin-top: auto;
+  color: var(--text-secondary);
+  background-color: transparent;
+`;
+
+const MobileUserInfo = styled(UserInfo)`
+  margin-top: 1rem;
+  width: 80%;
+  max-width: 400px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+`;
+
+// Add page transition animation wrapper
+const PageTransition = styled(motion.div)`
+  width: 100%;
+  height: 100%;
+`;
+
 function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, logout, userDetails } = useAuth();
@@ -270,7 +389,7 @@ function DashboardLayout({ children }) {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target) && sidebarOpen) {
-        closeSidebar();
+        // Do nothing - removed auto-closing behavior
       }
     };
     
@@ -301,12 +420,84 @@ function DashboardLayout({ children }) {
   const displayUserDetails = userDetails || demoUserDetails;
   const displayUser = currentUser || { email: 'demo@cymasphere.com' };
   
+  // Animation variants
+  const fadeIn = {
+    hidden: { 
+      opacity: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut"
+      }
+    },
+    visible: { 
+      opacity: 1,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut"
+      }
+    }
+  };
+  
+  // Animation variants for menu items
+  const menuItemVariants = {
+    hidden: { 
+      opacity: 0,
+      y: 20,
+      transition: {
+        duration: 0.3,
+      }
+    },
+    visible: i => ({ 
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: i * 0.1,
+        duration: 0.3,
+        ease: "easeOut"
+      }
+    })
+  };
+  
+  // Animation variants for smooth page transitions
+  const pageVariants = {
+    initial: {
+      opacity: 0,
+      y: 10
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut"
+      }
+    },
+    exit: {
+      opacity: 0,
+      y: -10,
+      transition: {
+        duration: 0.3,
+        ease: "easeIn"
+      }
+    }
+  };
+  
+  // Function to handle navigation with router
+  const handleNavigation = (e, path) => {
+    e.preventDefault();
+    router.push(path);
+  };
+  
   return (
     <LayoutContainer>
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/dashboard" passHref legacyBehavior>
-            <CymasphereLogo size="32px" fontSize="1.4rem" />
+            <CymasphereLogo 
+              size="32px" 
+              fontSize="1.4rem" 
+              onClick={(e) => handleNavigation(e, '/dashboard')}
+            />
           </Link>
         </LogoContainer>
         
@@ -314,10 +505,7 @@ function DashboardLayout({ children }) {
           <Link href="/dashboard" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/dashboard' ? "true" : "false"}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/dashboard';
-              }}
+              onClick={(e) => handleNavigation(e, '/dashboard')}
             >
               <FaTachometerAlt /> Dashboard
             </NavItem>
@@ -325,10 +513,7 @@ function DashboardLayout({ children }) {
           <Link href="/profile" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/profile' ? "true" : "false"}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/profile';
-              }}
+              onClick={(e) => handleNavigation(e, '/profile')}
             >
               <FaUser /> Profile
             </NavItem>
@@ -336,10 +521,7 @@ function DashboardLayout({ children }) {
           <Link href="/billing" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/billing' ? "true" : "false"}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/billing';
-              }}
+              onClick={(e) => handleNavigation(e, '/billing')}
             >
               <FaCreditCard /> Billing
             </NavItem>
@@ -347,10 +529,7 @@ function DashboardLayout({ children }) {
           <Link href="/downloads" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/downloads' ? "true" : "false"}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/downloads';
-              }}
+              onClick={(e) => handleNavigation(e, '/downloads')}
             >
               <FaDownload /> Downloads
             </NavItem>
@@ -358,10 +537,7 @@ function DashboardLayout({ children }) {
           <Link href="/settings" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/settings' ? "true" : "false"}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/settings';
-              }}
+              onClick={(e) => handleNavigation(e, '/settings')}
             >
               <FaCog /> Settings
             </NavItem>
@@ -379,35 +555,135 @@ function DashboardLayout({ children }) {
         </UserInfo>
       </Sidebar>
       
-      <MobileOverlay $isOpen={sidebarOpen} onClick={closeSidebar} />
+      <MobileOverlay $isOpen={sidebarOpen} />
       
       <MobileHeader>
+        <Link href="/dashboard" passHref legacyBehavior>
+          <MobileLogoContainer onClick={(e) => handleNavigation(e, '/dashboard')}>
+            <CymasphereLogo size="32px" fontSize="1.5rem" />
+          </MobileLogoContainer>
+        </Link>
+        
         <MenuButton onClick={toggleSidebar}>
           {sidebarOpen ? <FaTimes /> : <FaBars />}
         </MenuButton>
-        <MobileLogo>
-          <EnergyBall size="30px" marginRight="8px" />
-          <span style={{
-            background: 'linear-gradient(90deg, var(--primary), var(--accent))', 
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>CYMA</span>
-          SPHERE
-        </MobileLogo>
       </MobileHeader>
+      
+      {sidebarOpen && (
+        <MobileMenu
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+        >
+          <MobileNavTitle>Account</MobileNavTitle>
+          
+          <Link href="/dashboard" passHref legacyBehavior>
+            <MobileNavItem 
+              $active={router.pathname === '/dashboard' ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={0}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/dashboard')}
+            >
+              <FaTachometerAlt /> Dashboard
+            </MobileNavItem>
+          </Link>
+          
+          <Link href="/profile" passHref legacyBehavior>
+            <MobileNavItem 
+              $active={router.pathname === '/profile' ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={1}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/profile')}
+            >
+              <FaUser /> Profile
+            </MobileNavItem>
+          </Link>
+          
+          <Link href="/billing" passHref legacyBehavior>
+            <MobileNavItem 
+              $active={router.pathname === '/billing' ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={2}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/billing')}
+            >
+              <FaCreditCard /> Billing
+            </MobileNavItem>
+          </Link>
+          
+          <Link href="/downloads" passHref legacyBehavior>
+            <MobileNavItem 
+              $active={router.pathname === '/downloads' ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={3}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/downloads')}
+            >
+              <FaDownload /> Downloads
+            </MobileNavItem>
+          </Link>
+          
+          <Link href="/settings" passHref legacyBehavior>
+            <MobileNavItem 
+              $active={router.pathname === '/settings' ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={4}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/settings')}
+            >
+              <FaCog /> Settings
+            </MobileNavItem>
+          </Link>
+          
+          <Link href="/" passHref legacyBehavior>
+            <MobileNavItem 
+              as={MobileBackButton}
+              variants={menuItemVariants}
+              custom={5}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, '/')}
+            >
+              <FaHome /> Back to Home
+            </MobileNavItem>
+          </Link>
+          
+          <MobileUserInfo>
+            <UserName>
+              <h4>{displayUserDetails?.displayName || 'Demo User'}</h4>
+              <p>{displayUser?.email}</p>
+            </UserName>
+            <LogoutButton onClick={handleLogout} title="Logout">
+              <FaSignOutAlt />
+            </LogoutButton>
+          </MobileUserInfo>
+        </MobileMenu>
+      )}
       
       <BackButton 
         href="/"
-        onClick={(e) => {
-          e.preventDefault();
-          window.location.href = '/';
-        }}
+        onClick={(e) => handleNavigation(e, '/')}
       >
         Back to Site <FaArrowLeft />
       </BackButton>
       
       <Content>
-        {children}
+        <PageTransition
+          key={router.pathname}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={pageVariants}
+        >
+          {children}
+        </PageTransition>
       </Content>
     </LayoutContainer>
   );

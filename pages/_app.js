@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { AuthProvider } from '../src/contexts/NextAuthContext';
 import { ToastProvider } from '../src/context/ToastContext';
+import { useRouter } from 'next/router';
 // Import global styles
 import '../styles/globals.css';
 import '../src/App.css';
@@ -43,6 +44,27 @@ const GlobalStyle = createGlobalStyle`
 
 // Custom App component
 function MyApp({ Component, pageProps }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Handle route change errors
+    const handleRouteChangeError = (err, url) => {
+      // Ignore cancel errors ("Cancel rendering route")
+      if (err.cancelled) {
+        console.log(`Route to ${url} was cancelled!`);
+      } else {
+        console.error('Route change error:', err);
+      }
+    };
+
+    // Subscribe to router events for better error handling
+    router.events.on('routeChangeError', handleRouteChangeError);
+
+    return () => {
+      router.events.off('routeChangeError', handleRouteChangeError);
+    };
+  }, [router]);
+
   return (
     <ThemeProvider theme={{}}>
       <GlobalStyle />

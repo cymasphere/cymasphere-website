@@ -640,7 +640,7 @@ const NextHeader = () => {
           </UserButton>
           
           <UserDropdown $isOpen={userMenuOpen}>
-            <Link href="/mock-checkout" passHref legacyBehavior>
+            <Link href="/dashboard" passHref legacyBehavior>
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                 <FaUser />
                 My Account
@@ -737,12 +737,12 @@ const NextHeader = () => {
             
             {currentUser && (
               <MobileUserSection>
-                <Link href="/mock-checkout" passHref legacyBehavior>
+                <Link href="/dashboard" passHref legacyBehavior>
                   <MobileNavLink 
                     onClick={(e) => {
                       e.preventDefault();
                       setMenuOpen(false);
-                      window.location.href = '/mock-checkout';
+                      router.push('/dashboard');
                     }}
                     variants={menuItemVariants}
                     custom={navItems.length}
