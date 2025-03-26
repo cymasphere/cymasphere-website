@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCreditCard, FaHeadphones, FaCheck, FaTimes, FaPaperPlane } from 'react-icons/fa';
+import { FaCreditCard, FaHeadphones, FaCheck, FaTimes, FaPaperPlane, FaLaptop } from 'react-icons/fa';
 import { useAuth } from '../../contexts/NextAuthContext';
 import EmailVerification from '../EmailVerification';
 import PlanSelectionModal from '../modals/PlanSelectionModal';
@@ -308,6 +308,63 @@ const FormTextarea = styled.textarea`
   }
 `;
 
+const DeviceList = styled.div`
+  margin-top: 15px;
+`;
+
+const DeviceItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const DeviceInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  svg {
+    color: var(--primary);
+  }
+`;
+
+const DeviceDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const DeviceName = styled.span`
+  font-weight: 500;
+`;
+
+const DeviceLastUsed = styled.span`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+`;
+
+const DeviceCount = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  
+  span {
+    color: var(--text-secondary);
+  }
+  
+  strong {
+    color: var(--primary);
+  }
+`;
+
 function DashboardContent() {
   const auth = useAuth() || {};
   const { currentUser, userDetails } = auth;
@@ -396,6 +453,15 @@ function DashboardContent() {
       ]
     }
   };
+  
+  // Mock device data - in production this would come from your backend
+  const connectedDevices = [
+    { id: 1, name: "MacBook Pro", lastUsed: "Last used 2 hours ago" },
+    { id: 2, name: "Studio PC", lastUsed: "Last used yesterday" },
+    { id: 3, name: "iPad Pro", lastUsed: "Last used 3 days ago" }
+  ];
+  
+  const maxDevices = 5;
   
   // Helper functions
   const formatDate = (date) => {
@@ -523,6 +589,19 @@ function DashboardContent() {
               ? `${getDaysLeftInTrial()} days left in your free trial`
               : "Upgrade to access premium features"}
           </StatDescription>
+        </StatCard>
+        
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        >
+          <StatHeader>
+            <StatTitle>Connected Devices</StatTitle>
+            <StatIcon color="linear-gradient(90deg, #FF6B6B, #FF8E53)">
+              <FaLaptop />
+            </StatIcon>
+          </StatHeader>
+          <StatValue>{connectedDevices.length} / {maxDevices}</StatValue>
+          <StatDescription>Active device connections</StatDescription>
         </StatCard>
         
         <StatCard
