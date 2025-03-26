@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from './dashboard/DashboardLayout';
-import { FaCreditCard, FaHeadphones, FaTimes, FaCheck, FaPaperPlane } from 'react-icons/fa';
+import { FaCreditCard, FaHeadphones, FaTimes, FaCheck, FaPaperPlane, FaGift } from 'react-icons/fa';
 import LoadingSpinner from './common/LoadingSpinner';
 import EmailVerification from './EmailVerification';
 import PlanSelectionModal from './modals/PlanSelectionModal';
@@ -384,16 +384,64 @@ const FormTextarea = styled.textarea`
 // Add these styled components near the other styled components
 const TrialBadge = styled.div`
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: 0;
+  right: 0;
   background: linear-gradient(90deg, #F9C846, #F96E46);
   color: white;
   font-size: 0.8rem;
   font-weight: 600;
   padding: 0.4rem 0.8rem;
-  border-radius: 20px;
+  border-radius: 0 0 0 12px;
   box-shadow: 0 4px 10px rgba(249, 110, 70, 0.3);
-  z-index: 1;
+  transform-origin: top right;
+  z-index: 2;
+`;
+
+const ExtendTrialModal = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  text-align: center;
+`;
+
+const ExtendTrialIcon = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #F9C846, #F96E46);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: white;
+  font-size: 1.5rem;
+`;
+
+const ExtendTrialTitle = styled.h3`
+  font-size: 1.3rem;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+`;
+
+const ExtendTrialText = styled.p`
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
+const ExtendTrialButton = styled(Button)`
+  width: 100%;
+  margin-top: 0;
+  background: linear-gradient(90deg, #F9C846, #F96E46);
+  
+  &:hover {
+    box-shadow: 0 5px 15px rgba(249, 110, 70, 0.4);
+  }
 `;
 
 function Dashboard() {
@@ -561,9 +609,63 @@ function Dashboard() {
     return diffDays;
   };
 
+  const [showExtendTrialModal, setShowExtendTrialModal] = useState(false);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState(false); // This would come from your backend
+
+  // Add this useEffect to check and show the trial extension popup
+  useEffect(() => {
+    const shouldShowExtendTrial = () => {
+      return isInTrialPeriod() && !hasPaymentMethod && currentUser;
+    };
+
+    if (shouldShowExtendTrial()) {
+      const hasSeenTrialPopup = localStorage.getItem('hasSeenTrialPopup');
+      if (!hasSeenTrialPopup) {
+        setShowExtendTrialModal(true);
+        localStorage.setItem('hasSeenTrialPopup', 'true');
+      }
+    }
+  }, [currentUser, hasPaymentMethod]);
+
+  const handleAddPaymentMethod = () => {
+    setShowExtendTrialModal(false);
+    // Navigate to payment method addition flow
+    setShowPaymentModal(true);
+  };
+
   return (
     <DynamicNextLayout title="Dashboard - Cymasphere">
       <DashboardContent />
+      
+      {/* Trial Extension Modal */}
+      <AnimatePresence>
+        {showExtendTrialModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowExtendTrialModal(false)}
+          >
+            <ExtendTrialModal
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExtendTrialIcon>
+                <FaGift />
+              </ExtendTrialIcon>
+              <ExtendTrialTitle>Enjoying your trial?</ExtendTrialTitle>
+              <ExtendTrialText>
+                Add a credit card now to extend your trial by 7 days! No charges until your trial ends.
+              </ExtendTrialText>
+              <ExtendTrialButton onClick={handleAddPaymentMethod}>
+                Add Payment Method
+              </ExtendTrialButton>
+            </ExtendTrialModal>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
     </DynamicNextLayout>
   );
 }

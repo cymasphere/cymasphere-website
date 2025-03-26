@@ -304,7 +304,7 @@ function DashboardLayout({ children }) {
     <LayoutContainer>
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
-          <Link href="/dashboard" passHref>
+          <Link href="/dashboard" passHref legacyBehavior>
             <Logo onClick={handleLogoClick}>
               <EnergyBall size="35px" marginRight="12px" />
               <LogoText>
@@ -315,7 +315,7 @@ function DashboardLayout({ children }) {
         </LogoContainer>
         
         <SidebarNav>
-          <Link href="/dashboard" passHref>
+          <Link href="/dashboard" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/dashboard' ? "true" : "false"}
               onClick={(e) => {
@@ -326,7 +326,7 @@ function DashboardLayout({ children }) {
               <FaTachometerAlt /> Dashboard
             </NavItem>
           </Link>
-          <Link href="/profile" passHref>
+          <Link href="/profile" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/profile' ? "true" : "false"}
               onClick={(e) => {
@@ -337,7 +337,7 @@ function DashboardLayout({ children }) {
               <FaUser /> Profile
             </NavItem>
           </Link>
-          <Link href="/billing" passHref>
+          <Link href="/billing" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/billing' ? "true" : "false"}
               onClick={(e) => {
@@ -348,7 +348,7 @@ function DashboardLayout({ children }) {
               <FaCreditCard /> Billing
             </NavItem>
           </Link>
-          <Link href="/downloads" passHref>
+          <Link href="/downloads" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/downloads' ? "true" : "false"}
               onClick={(e) => {
@@ -359,7 +359,7 @@ function DashboardLayout({ children }) {
               <FaDownload /> Downloads
             </NavItem>
           </Link>
-          <Link href="/settings" passHref>
+          <Link href="/settings" passHref legacyBehavior>
             <NavItem 
               $active={router.pathname === '/settings' ? "true" : "false"}
               onClick={(e) => {

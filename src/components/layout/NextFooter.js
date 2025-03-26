@@ -252,7 +252,7 @@ const NextFooter = () => {
         
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
-          <Link href="/" passHref>
+          <Link href="/" passHref legacyBehavior>
             <FooterNextLink>Home</FooterNextLink>
           </Link>
           <FooterAnchor href="#features">Features</FooterAnchor>
@@ -313,7 +313,7 @@ const NextFooter = () => {
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
           <FooterButton onClick={() => setShowAboutModal(true)}>About Us</FooterButton>
-          <Link href="/contact" passHref>
+          <Link href="/contact" passHref legacyBehavior>
             <FooterNextLink>Contact</FooterNextLink>
           </Link>
           <FooterButton onClick={() => setShowTermsModal(true)}>Terms of Service</FooterButton>

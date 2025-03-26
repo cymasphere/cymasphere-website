@@ -484,13 +484,13 @@ const MockCheckout = () => {
       <HeaderNav>
         <HeaderContent>
           <LogoContainer>
-            <Logo to="/">
+            <Logo href="/">
               <LogoImage src="/logo-cymasphere.svg" alt="CYMASPHERE Logo" />
               <LogoText>
                 <span>CYMA</span>SPHERE
               </LogoText>
             </Logo>
-            <BackButton to="/" onClick={handleBackToPricing}>
+            <BackButton href="/#pricing">
               <FaArrowLeft /> Back to Pricing
             </BackButton>
           </LogoContainer>

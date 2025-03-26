@@ -453,18 +453,18 @@ const NextHeader = () => {
   
   const handleLogoClick = () => {
     playSound();
-    router.push('/');
+    router.push('/mock-checkout');
   };
   
   // Add navigation handlers that force a refresh
   const handleLoginClick = (e) => {
     e.preventDefault();
-    window.location.href = '/login';
+    window.location.href = '/mock-checkout';
   };
   
   const handleSignupClick = (e) => {
     e.preventDefault();
-    window.location.href = '/signup';
+    window.location.href = '/mock-checkout';
   };
   
   // Handle navigation with route
@@ -492,11 +492,11 @@ const NextHeader = () => {
           </UserDropdownToggle>
           
           <DropdownMenu $isOpen={dropdownOpen} onClick={(e) => e.stopPropagation()}>
-            <Link href="/dashboard" passHref>
+            <Link href="/mock-checkout" passHref legacyBehavior>
               <DropdownItem onClick={(e) => {
                 e.preventDefault();
                 setDropdownOpen(false);
-                window.location.href = '/dashboard';
+                window.location.href = '/mock-checkout';
               }}>
                 <DropdownIcon>
                   <FaUser />
@@ -537,7 +537,7 @@ const NextHeader = () => {
           
           <NavLinks>
             {navItems.map((item) => (
-              <Link key={item.name} href={item.path} passHref>
+              <Link key={item.name} href={item.path} passHref legacyBehavior>
                 <NavLink $isActive={router.asPath === item.path}>
                   {item.name}
                 </NavLink>
@@ -566,7 +566,7 @@ const NextHeader = () => {
       <MobileMenu $isOpen={menuOpen}>
         <MobileNavLinks>
           {navItems.map((item) => (
-            <Link key={item.name} href={item.path} passHref>
+            <Link key={item.name} href={item.path} passHref legacyBehavior>
               <MobileNavLink 
                 $isActive={router.asPath === item.path}
                 onClick={() => setMenuOpen(false)}
@@ -580,14 +580,14 @@ const NextHeader = () => {
         <MobileAuthSection>
           {currentUser ? (
             <>
-              <Link href="/dashboard" passHref>
+              <Link href="/mock-checkout" passHref legacyBehavior>
                 <AuthButton 
                   $isPrimary 
                   $isMobile
                   onClick={(e) => {
                     e.preventDefault();
                     setMenuOpen(false);
-                    window.location.href = '/dashboard';
+                    window.location.href = '/mock-checkout';
                   }}
                 >
                   <FaUser />
@@ -614,7 +614,7 @@ const NextHeader = () => {
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = '/signup';
+                  window.location.href = '/mock-checkout';
                 }}
               >
                 {t('header.signUp')}
@@ -623,7 +623,7 @@ const NextHeader = () => {
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = '/login';
+                  window.location.href = '/mock-checkout';
                 }}
               >
                 {t('header.login')}
