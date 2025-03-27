@@ -108,7 +108,7 @@ const Title = styled(motion.h2)`
   text-align: center;
   margin-bottom: 2rem;
   color: var(--text);
-  font-size: 2rem;
+  font-size: 1.4rem;
   
   span {
     background: linear-gradient(90deg, var(--primary), var(--accent));
