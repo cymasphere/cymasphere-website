@@ -492,7 +492,7 @@ function SignUp() {
           <CymasphereLogo size="40px" fontSize="1.8rem" />
         </div>
 
-        <Title>Create an account</Title>
+        <Title>Create an <span>account</span></Title>
 
         {/* Display success message if signup was successful */}
         {success && (
