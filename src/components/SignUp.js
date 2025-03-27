@@ -69,39 +69,59 @@ const BackButton = styled.a`
 `;
 
 const FormCard = styled(motion.div)`
-  background-color: var(--card-bg);
-  border-radius: 16px;
+  max-width: 450px;
   width: 100%;
-  max-width: 460px;
   padding: 2.5rem;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: rgba(25, 23, 36, 0.85);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0 20px;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(135deg, 
+      rgba(108, 99, 255, 0.5) 0%, 
+      rgba(108, 99, 255, 0) 50%, 
+      rgba(78, 205, 196, 0.5) 100%);
+    border-radius: 18px;
+    z-index: -1;
+    opacity: 0.4;
+    filter: blur(8px);
+  }
   
   @media (max-width: 520px) {
     padding: 2rem 1.5rem;
     width: 90%;
   }
+`;
+
+const Title = styled(motion.h2)`
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--text);
+  font-size: 2rem;
   
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
+  span {
     background: linear-gradient(90deg, var(--primary), var(--accent));
-    z-index: 2;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 `;
 
-const Subtitle = styled.h2`
+const Subtitle = styled.p`
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
   text-align: center;
-  color: var(--text);
-  font-size: 1.5rem;
-  margin-bottom: 2rem;
-  font-weight: 600;
 `;
 
 const Form = styled.form`
@@ -472,7 +492,7 @@ function SignUp() {
           <CymasphereLogo size="40px" fontSize="1.8rem" />
         </div>
 
-        <Subtitle>Create an account</Subtitle>
+        <Title>Create an account</Title>
 
         {/* Display success message if signup was successful */}
         {success && (
