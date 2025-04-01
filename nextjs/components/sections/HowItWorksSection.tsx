@@ -68,7 +68,7 @@ const TabsContainer = styled.div`
 
 const Tab = styled.button`
   background: ${(props) =>
-    props.active
+    props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
       : "rgba(30, 30, 46, 0.6)"};
   color: white;
@@ -76,16 +76,16 @@ const Tab = styled.button`
   border-radius: 30px;
   padding: 12px 25px;
   font-size: 1rem;
-  font-weight: ${(props) => (props.active ? "600" : "400")};
+  font-weight: ${(props) => (props.$active ? "600" : "400")};
   margin: 0 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: ${(props) =>
-    props.active ? "0 5px 15px rgba(108, 99, 255, 0.3)" : "none"};
+    props.$active ? "0 5px 15px rgba(108, 99, 255, 0.3)" : "none"};
 
   &:hover {
     background: ${(props) =>
-      props.active
+      props.$active
         ? "linear-gradient(135deg, var(--primary), var(--accent))"
         : "rgba(40, 40, 60, 0.8)"};
   }
@@ -389,19 +389,19 @@ const HowItWorksSection = () => {
 
       <TabsContainer>
         <Tab
-          active={activeTab === "create"}
+          $active={activeTab === "create"}
           onClick={() => setActiveTab("create")}
         >
           CREATE
         </Tab>
         <Tab
-          active={activeTab === "learn"}
+          $active={activeTab === "learn"}
           onClick={() => setActiveTab("learn")}
         >
           LEARN
         </Tab>
         <Tab
-          active={activeTab === "integrate"}
+          $active={activeTab === "integrate"}
           onClick={() => setActiveTab("integrate")}
         >
           INTEGRATE

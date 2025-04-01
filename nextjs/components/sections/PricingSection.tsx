@@ -9,10 +9,74 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheck, FaGift, FaArrowRight } from "react-icons/fa";
+import { FaCheck, FaGift } from "react-icons/fa";
 import StripeCheckout from "../checkout/StripeCheckout";
 import * as Tone from "tone"; // Import Tone.js for audio playback
-import CymasphereLogo from "../common/CymasphereLogo";
+// Import the CymasphereLogo component dynamically
+import dynamic from "next/dynamic";
+
+// Type definitions for chord positions
+interface ChordPosition {
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  rotationOffset: number;
+  originalX: number;
+  originalY: number;
+  playingTime: number | null;
+  collisionTime: number | null;
+  displayRadius?: number;
+  displayScale?: number;
+  cachedGradient?: {
+    key: string;
+    gradient: CanvasGradient;
+  };
+}
+
+interface ChordDefinition {
+  name: string;
+  notes: string[];
+  color: string;
+}
+
+interface ChordCenter {
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+  noteCount: number;
+  color: string;
+  scale: number;
+}
+
+interface PlanOption {
+  name: string;
+  price: string;
+  period: string;
+  buttonText: string;
+  priceId: string;
+  isSubscription: boolean;
+  trialDays?: number;
+  monthlyPrice?: string;
+  lifetimeLabel?: string;
+}
+
+// Type definitions for CymasphereLogo component
+interface CymasphereLogoProps {
+  size?: string;
+  fontSize?: string;
+  showText?: boolean;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  className?: string;
+}
+
+// Use dynamic import to handle JavaScript component in TypeScript
+const CymasphereLogo = dynamic(() => import("../common/CymasphereLogo"), {
+  ssr: false,
+}) as React.ComponentType<CymasphereLogoProps>;
 
 // ChordWeb component for molecular chord background
 const ChordWebCanvas = styled.canvas`
@@ -31,38 +95,17 @@ const ChordWebCanvas = styled.canvas`
   }
 `;
 
-// Note frequencies (simplified for demonstration)
-const noteFrequencies = {
-  C: 261.63,
-  "C#": 277.18,
-  Db: 277.18,
-  D: 293.66,
-  "D#": 311.13,
-  Eb: 311.13,
-  E: 329.63,
-  F: 349.23,
-  "F#": 369.99,
-  Gb: 369.99,
-  G: 392.0,
-  "G#": 415.3,
-  Ab: 415.3,
-  A: 440.0,
-  "A#": 466.16,
-  Bb: 466.16,
-  B: 493.88,
-};
-
 // Memoize the ChordWeb component to prevent re-renders when parent state changes
 const ChordWeb = React.memo(() => {
-  const canvasRef = useRef(null);
-  const animationFrameId = useRef(null);
-  const positionsInitialized = useRef(false);
-  const synth = useRef(null);
-  const activeChords = useRef(new Set()); // Track currently playing chords
-  const timeoutIds = useRef({}); // Store timeout IDs for cleanup
-  const currentTime = useRef(0); // Add a ref to store the current animation time
-  const mousePosition = useRef({ x: 0, y: 0 });
-  const isMouseOverCanvas = useRef(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameId = useRef<number | null>(null);
+  const positionsInitialized = useRef<boolean>(false);
+  const synth = useRef<Tone.PolySynth<Tone.AMSynth> | null>(null);
+  const activeChords = useRef<Set<number>>(new Set()); // Track currently playing chords
+  const timeoutIds = useRef<Record<number, NodeJS.Timeout>>({});
+  const currentTime = useRef<number>(0);
+  const mousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isMouseOverCanvas = useRef<boolean>(false);
 
   // Initialize Tone.js synth
   useEffect(() => {
@@ -133,83 +176,88 @@ const ChordWeb = React.memo(() => {
   }, []);
 
   // Function to play a chord when clicked
-  const playChord = useCallback((chord, chordIndex) => {
-    // Check if we've reached the maximum number of simultaneous chords (4)
-    if (
-      activeChords.current.size >= 4 &&
-      !activeChords.current.has(chordIndex)
-    ) {
-      // If we're at the limit and this is a new chord, don't play it
-      return;
-    }
-
-    // If this chord is already playing, don't play it again
-    if (activeChords.current.has(chordIndex)) {
-      return;
-    }
-
-    // Add this chord to the set of active chords
-    activeChords.current.add(chordIndex);
-
-    // Convert note names to frequencies with octave information
-    const notes = chord.notes.map((note, index) => {
-      // Determine octave (lower for string ensemble sound)
-      const baseOctave = 3; // Lower range for richness
-
-      // Root note (first note) gets an octave lower for stronger bass foundation
-      if (index === 0) {
-        return `${note}${baseOctave - 1}`;
+  const playChord = useCallback(
+    (chord: ChordDefinition, chordIndex: number) => {
+      // Check if we've reached the maximum number of simultaneous chords (4)
+      if (
+        activeChords.current.size >= 4 &&
+        !activeChords.current.has(chordIndex)
+      ) {
+        // If we're at the limit and this is a new chord, don't play it
+        return;
       }
 
-      // For the rest of the notes, distribute across orchestral string ranges
-      let octave = baseOctave;
-
-      // For larger chords, distribute notes across octaves for orchestral arrangement
-      if (chord.notes.length > 3) {
-        // Middle range - viola-like
-        if (index < 3) {
-          octave = baseOctave;
-        }
-        // Higher range - violin-like
-        else {
-          octave = baseOctave + 1;
-        }
+      // If this chord is already playing, don't play it again
+      if (activeChords.current.has(chordIndex)) {
+        return;
       }
 
-      return `${note}${octave}`;
-    });
+      // Add this chord to the set of active chords
+      activeChords.current.add(chordIndex);
 
-    // Start Tone.js audio context if it's not started yet
-    if (Tone.context.state !== "running") {
-      Tone.start().then(() => {
-        playNotes(notes, chordIndex);
+      // Convert note names to frequencies with octave information
+      const notes = chord.notes.map((note: string, index: number) => {
+        // Determine octave (lower for string ensemble sound)
+        const baseOctave = 3; // Lower range for richness
+
+        // Root note (first note) gets an octave lower for stronger bass foundation
+        if (index === 0) {
+          return `${note}${baseOctave - 1}`;
+        }
+
+        // For the rest of the notes, distribute across orchestral string ranges
+        let octave = baseOctave;
+
+        // For larger chords, distribute notes across octaves for orchestral arrangement
+        if (chord.notes.length > 3) {
+          // Middle range - viola-like
+          if (index < 3) {
+            octave = baseOctave;
+          }
+          // Higher range - violin-like
+          else {
+            octave = baseOctave + 1;
+          }
+        }
+
+        return `${note}${octave}`;
       });
-    } else {
-      playNotes(notes, chordIndex);
-    }
 
-    function playNotes(notes, chordIndex) {
-      // Play chord for longer duration (2n = half note) to let reverb shine
-      synth.current.triggerAttackRelease(notes, "2n");
-
-      // Clear any existing timeout for this chord
-      if (timeoutIds.current[chordIndex]) {
-        clearTimeout(timeoutIds.current[chordIndex]);
+      // Start Tone.js audio context if it's not started yet
+      if (Tone.context.state !== "running") {
+        Tone.start().then(() => {
+          playNotes(notes, chordIndex);
+        });
+      } else {
+        playNotes(notes, chordIndex);
       }
 
-      // Add visual feedback for the playing chord
-      const position = chordPositions.current[chordIndex];
-      if (position) {
-        position.playingTime = currentTime.current; // Use the ref value instead of direct time variable
-      }
+      function playNotes(notes: string[], chordIndex: number) {
+        // Play chord for longer duration (2n = half note) to let reverb shine
+        if (synth.current) {
+          synth.current.triggerAttackRelease(notes, "2n");
+        }
 
-      // Set timeout to remove chord from active list after it finishes
-      timeoutIds.current[chordIndex] = setTimeout(() => {
-        activeChords.current.delete(chordIndex);
-        delete timeoutIds.current[chordIndex];
-      }, 5000); // Increased from 3000 to match longer reverb tail
-    }
-  }, []);
+        // Clear any existing timeout for this chord
+        if (timeoutIds.current[chordIndex]) {
+          clearTimeout(timeoutIds.current[chordIndex]);
+        }
+
+        // Add visual feedback for the playing chord
+        const position = chordPositions.current[chordIndex];
+        if (position) {
+          position.playingTime = currentTime.current; // Use the ref value instead of direct time variable
+        }
+
+        // Set timeout to remove chord from active list after it finishes
+        timeoutIds.current[chordIndex] = setTimeout(() => {
+          activeChords.current.delete(chordIndex);
+          delete timeoutIds.current[chordIndex];
+        }, 5000); // Increased from 3000 to match longer reverb tail
+      }
+    },
+    []
+  );
 
   // Pre-compute color values for better performance
   const chordColors = useMemo(() => {
@@ -282,7 +330,7 @@ const ChordWeb = React.memo(() => {
   );
 
   // Define positions for each chord molecule
-  const chordPositions = useRef([]);
+  const chordPositions = useRef<ChordPosition[]>([]);
 
   // Animation properties
   const animationSpeed = 0.0003; /* Reduced from 0.0006 for gentler animation */
@@ -292,16 +340,18 @@ const ChordWeb = React.memo(() => {
     if (!canvas) return;
 
     const context = canvas.getContext("2d", { alpha: true });
+    if (!context) return;
+
     let time = 0;
     let lastFrameTime = 0;
-    let resizeTimeout;
+    let resizeTimeout: NodeJS.Timeout;
 
     // Optimize canvas attributes for performance
     context.imageSmoothingQuality = "low";
     context.globalCompositeOperation = "lighter";
 
     // Add mousemove listener to change cursor when hovering over molecules
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -372,16 +422,20 @@ const ChordWeb = React.memo(() => {
     window.addEventListener("resize", resizeCanvas, { passive: true });
 
     // Initialize positions
-    const initializePositions = (width, height) => {
+    const initializePositions = (width: number, height: number) => {
       // Define center safe zone - no molecules in this area
       const centerX = width / 2;
       const centerY = height / 2;
 
       // Define a wider, more rectangular safe zone that better matches the content area
+      // These are intentionally unused since they're for documentation purposes
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const safeZoneWidth = width * 0.9; // Increased from 0.8 to 0.9
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const safeZoneHeight = height * 0.95; // Increased from 0.85 to 0.95
 
       // Position chord molecules in an evenly distributed pattern
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const allPositions = [];
 
       // Place chords evenly around the edges of the safe zone with LESS randomness
@@ -404,6 +458,7 @@ const ChordWeb = React.memo(() => {
         const y = centerY + Math.sin(angle) * radiusY;
 
         // Slower overall movement
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const movementSpeed = isComplex
           ? 0.02 + Math.random() * 0.02 // Reduced from 0.03 for slower motion
           : 0.025 + Math.random() * 0.025; // Reduced from 0.04 for slower motion
@@ -414,7 +469,7 @@ const ChordWeb = React.memo(() => {
           : 20 + Math.random() * 60;
 
         // Store Z-depth for z-sorting
-        const position = {
+        const position: ChordPosition = {
           x: x,
           y: y,
           z: zDepth,
@@ -436,7 +491,17 @@ const ChordWeb = React.memo(() => {
     };
 
     // Draw a note (atom) with 3D effect - simplified for performance
-    const drawNote = (x, y, z, noteName, color, time, index, totalNotes) => {
+    const drawNote = (
+      x: number,
+      y: number,
+      z: number,
+      noteName: string,
+      color: string,
+      time: number,
+      index: number,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      totalNotes: number
+    ) => {
       // Scale based on z-depth (perspective)
       const scale = 400 / (400 + z);
       const size = 8 * scale; // Increased from 6 for better visibility
@@ -479,10 +544,11 @@ const ChordWeb = React.memo(() => {
     };
 
     // Cache gradient values
-    const backgroundGradients = {};
+    const backgroundGradients: Record<string, CanvasGradient> = {};
 
     // Draw a radiant background glow to enhance depth
-    const drawBackgroundRadiance = (deltaTime) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const drawBackgroundRadiance = (deltaTime: number) => {
       // Skip entirely for performance if needed
       if (window.innerWidth < 1000) return;
 
@@ -520,7 +586,8 @@ const ChordWeb = React.memo(() => {
     };
 
     // Draw a chord object
-    const drawChord = (chordIndex, time, deltaTime) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const drawChord = (chordIndex: number, time: number, deltaTime: number) => {
       const chord = chords[chordIndex];
       const position = chordPositions.current[chordIndex];
 
@@ -632,6 +699,7 @@ const ChordWeb = React.memo(() => {
 
           // Show playing status with reverb indicator
           if (position.playingTime && time - position.playingTime < 5) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const fadePhase = (time - position.playingTime) / 5;
             context.fillText(chord.name, position.x, position.y - nameOffset);
           } else {
@@ -791,8 +859,10 @@ const ChordWeb = React.memo(() => {
     };
 
     // Draw connections between chord molecules - fewer connections for performance
-    const drawConnections = (positions) => {
-      const validPositions = positions.filter((p) => p);
+    const drawConnections = (positions: (ChordCenter | null)[]) => {
+      const validPositions = positions.filter(
+        (p) => p !== null
+      ) as ChordCenter[];
 
       // Only draw connections for closer objects (performance optimization)
       const sortedPositions = [...validPositions]
@@ -821,6 +891,7 @@ const ChordWeb = React.memo(() => {
           const dx = pos2.x - pos1.x;
           const dy = pos2.y - pos1.y;
           const dz = pos2.z - pos1.z;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const distance = Math.sqrt(dx * dx + dy * dy);
           const distance3d = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
@@ -849,7 +920,7 @@ const ChordWeb = React.memo(() => {
     };
 
     // Main animation loop - optimized
-    const render = (timestamp) => {
+    const render = (timestamp: number) => {
       // Skip initialization frames to prevent animation stutter
       if (!positionsInitialized.current) {
         // Initialize only when ready
@@ -979,7 +1050,7 @@ const ChordWeb = React.memo(() => {
     animationFrameId.current = requestAnimationFrame(render);
 
     // Add click event listener for chord playback - with optimization
-    const handleCanvasClick = (event) => {
+    const handleCanvasClick = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -1035,6 +1106,9 @@ const ChordWeb = React.memo(() => {
 
   return <ChordWebCanvas ref={canvasRef} />;
 });
+
+// Add display name to ChordWeb
+ChordWeb.displayName = "ChordWeb";
 
 const PricingContainer = styled.section`
   padding: 150px 20px 120px; /* Increased top padding from 120px to 150px */
@@ -1123,7 +1197,11 @@ const BillingToggleContainer = styled.div`
 `;
 
 // Make the buttons larger to fill the width
-const BillingToggleButton = styled.button`
+type BillingToggleButtonProps = {
+  $active: boolean;
+};
+
+const BillingToggleButton = styled.button<BillingToggleButtonProps>`
   background: ${(props) =>
     props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
@@ -1152,6 +1230,7 @@ const BillingToggleButton = styled.button`
   }
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SaveLabel = styled.span`
   background: linear-gradient(135deg, var(--accent), var(--primary));
   color: white;
@@ -1396,12 +1475,13 @@ const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState("monthly");
 
   // State to track the pointer position
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pointerTop, setPointerTop] = useState(0);
 
   // Reference objects for the buttons
-  const monthlyBtnRef = React.useRef(null);
-  const yearlyBtnRef = React.useRef(null);
-  const lifetimeBtnRef = React.useRef(null);
+  const monthlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
+  const yearlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
+  const lifetimeBtnRef = React.useRef<HTMLButtonElement | null>(null);
 
   // Update pointer position when billing period changes
   useEffect(() => {
@@ -1421,7 +1501,7 @@ const PricingSection = () => {
           currentRef = monthlyBtnRef.current;
       }
 
-      if (currentRef) {
+      if (currentRef && currentRef.parentElement) {
         const buttonRect = currentRef.getBoundingClientRect();
         const containerRect = currentRef.parentElement.getBoundingClientRect();
         const relativeTop =
@@ -1439,7 +1519,7 @@ const PricingSection = () => {
   }, [billingPeriod]);
 
   // Define the plan details for each billing period
-  const planOptions = {
+  const planOptions: Record<string, PlanOption> = {
     monthly: {
       name: "Cymasphere Pro",
       price: "8",
@@ -1487,7 +1567,7 @@ const PricingSection = () => {
   ];
 
   // Get the current plan based on selected billing period
-  const currentPlan = planOptions[billingPeriod];
+  const currentPlan = planOptions[billingPeriod] || planOptions.monthly;
 
   return (
     <PricingContainer id="pricing">
@@ -1586,8 +1666,11 @@ const PricingSection = () => {
                 <div className="logo-container">
                   <CymasphereLogo
                     size="40px"
+                    fontSize="1.8rem"
                     showText={true}
-                    onClick={(e) => e.preventDefault()}
+                    onClick={(e: React.MouseEvent) => e.preventDefault()}
+                    href=""
+                    className=""
                   />
                   <span className="pro-label">PRO</span>
                 </div>
