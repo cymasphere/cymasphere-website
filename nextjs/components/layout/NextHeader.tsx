@@ -1,48 +1,63 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaUserCircle, FaPuzzlePiece, FaQuestionCircle, FaRegLightbulb, FaRegCreditCard } from 'react-icons/fa';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { useAuth } from '../../contexts/NextAuthContext';
-import { useTranslation } from 'react-i18next';
-import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
-import styles from './MobileLanguageStyle.module.css';
-import CymasphereLogo from '../common/CymasphereLogo';
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import styled from "styled-components";
+import {
+  FaBars,
+  FaTimes,
+  FaUser,
+  FaSignOutAlt,
+  FaUserCircle,
+  FaPuzzlePiece,
+  FaQuestionCircle,
+  FaRegLightbulb,
+  FaRegCreditCard,
+} from "react-icons/fa";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
+import styles from "./MobileLanguageStyle.module.css";
+import CymasphereLogo from "../common/CymasphereLogo";
 
 // Dynamically import components with browser-only APIs
-const DynamicLanguageSelector = dynamic(() => import('../i18n/DynamicLanguageSelector'), {
-  ssr: false
-});
+const DynamicLanguageSelector = dynamic(
+  () => import("../i18n/DynamicLanguageSelector"),
+  {
+    ssr: false,
+  }
+);
 
-const EnergyBall = dynamic(() => import('../common/EnergyBall'), {
-  ssr: false
+const EnergyBall = dynamic(() => import("../common/EnergyBall"), {
+  ssr: false,
 });
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
-  if (typeof window !== 'undefined') {
-    const { playLydianMaj7Chord } = await import('../../utils/audioUtils');
+  if (typeof window !== "undefined") {
+    const { playLydianMaj7Chord } = await import("../../utils/audioUtils");
     playLydianMaj7Chord();
   }
 };
 
 // Animation variants
 const fadeIn = {
-  hidden: { 
+  hidden: {
     opacity: 0,
     transition: {
       duration: 0.3,
-      ease: "easeInOut"
-    }
+      ease: "easeInOut",
+    },
   },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: {
       duration: 0.3,
-      ease: "easeInOut"
-    }
-  }
+      ease: "easeInOut",
+    },
+  },
 };
 
 const HeaderContainer = styled.header`
@@ -51,8 +66,12 @@ const HeaderContainer = styled.header`
   left: 0;
   right: 0;
   z-index: 3000;
-  background-color: ${props => props.$isScrolled || props.$menuOpen ? 'rgba(15, 14, 23, 0.95)' : 'transparent'};
-  backdrop-filter: ${props => props.$isScrolled || props.$menuOpen ? 'blur(8px)' : 'none'};
+  background-color: ${(props) =>
+    props.$isScrolled || props.$menuOpen
+      ? "rgba(15, 14, 23, 0.95)"
+      : "transparent"};
+  backdrop-filter: ${(props) =>
+    props.$isScrolled || props.$menuOpen ? "blur(8px)" : "none"};
   transition: all 0.3s ease-in-out;
 `;
 
@@ -60,15 +79,15 @@ const HeaderContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${props => props.$isScrolled ? '15px 30px' : '25px 30px'};
+  padding: ${(props) => (props.$isScrolled ? "15px 30px" : "25px 30px")};
   max-width: 1400px;
   margin: 0 auto;
   transition: padding 0.3s ease;
   position: relative;
   z-index: 3500;
-  
+
   @media (max-width: 768px) {
-    padding: ${props => props.$isScrolled ? '12px 20px' : '20px 20px'};
+    padding: ${(props) => (props.$isScrolled ? "12px 20px" : "20px 20px")};
   }
 `;
 
@@ -79,9 +98,9 @@ const LogoText = styled.div`
   letter-spacing: 2.5px;
   font-size: 1.8rem;
   font-weight: 700;
-  
+
   span {
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -111,7 +130,7 @@ const Nav = styled.nav`
   display: flex;
   align-items: center;
   gap: 15px;
-  
+
   @media (max-width: 968px) {
     display: none;
   }
@@ -124,33 +143,33 @@ const Nav = styled.nav`
 `;
 
 const NavLink = styled.a`
-  color: ${props => props.$isActive ? 'white' : 'rgba(255, 255, 255, 0.7)'};
-  font-weight: ${props => props.$isActive ? '600' : '500'};
+  color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.7)")};
+  font-weight: ${(props) => (props.$isActive ? "600" : "500")};
   letter-spacing: 0.3px;
   position: relative;
   transition: color 0.3s ease;
   margin: 0 15px;
   text-decoration: none !important;
-  
+
   &:hover {
     color: white;
   }
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -5px;
     left: 0;
-    width: ${props => props.$isActive ? '100%' : '0'};
+    width: ${(props) => (props.$isActive ? "100%" : "0")};
     height: 2px;
     background: linear-gradient(90deg, var(--primary), var(--accent));
     transition: width 0.3s ease;
   }
-  
+
   &:hover:after {
     width: 100%;
   }
-  
+
   @media (max-width: 968px) {
     margin: 15px 30px;
     font-size: 1.1rem;
@@ -162,7 +181,7 @@ const AuthSection = styled.div`
   align-items: center;
   gap: 20px;
   z-index: 3001;
-  
+
   @media (max-width: 991px) {
     display: none;
   }
@@ -178,7 +197,7 @@ const AuthSection = styled.div`
 const MobileActions = styled.div`
   display: none;
   z-index: 3001;
-  
+
   @media (max-width: 991px) {
     display: flex;
     align-items: center;
@@ -198,7 +217,7 @@ const MenuToggle = styled.div`
   color: white;
   z-index: 3001;
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: var(--primary);
   }
@@ -213,7 +232,8 @@ const MobileMenu = styled(motion.div)`
   height: calc(100vh - 70px);
   padding-top: 10px;
   box-sizing: border-box;
-  background: linear-gradient(165deg, 
+  background: linear-gradient(
+    165deg,
     rgba(15, 14, 23, 0.98) 0%,
     rgba(27, 25, 40, 0.98) 50%,
     rgba(35, 32, 52, 0.98) 100%
@@ -223,22 +243,30 @@ const MobileMenu = styled(motion.div)`
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
+  pointer-events: ${(props) => (props.$isOpen ? "auto" : "none")};
   overflow-y: auto;
-  
+
   &::before {
-    content: '';
+    content: "";
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.15), transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(78, 205, 196, 0.15), transparent 50%);
+    background: radial-gradient(
+        circle at 30% 50%,
+        rgba(108, 99, 255, 0.15),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 30%,
+        rgba(78, 205, 196, 0.15),
+        transparent 50%
+      );
     z-index: 0;
     pointer-events: none;
   }
-  
+
   @media (max-width: 968px) {
     display: flex;
   }
@@ -295,22 +323,24 @@ const MobileNavLink = styled(motion.a)`
   width: 85%;
   box-sizing: border-box;
   border-radius: 12px;
-  background: linear-gradient(120deg, 
+  background: linear-gradient(
+    120deg,
     rgba(255, 255, 255, 0.03) 0%,
     rgba(255, 255, 255, 0.05) 100%
   );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
     color: var(--primary);
     transition: transform 0.3s ease;
   }
-  
+
   &:hover {
     color: var(--primary);
-    background: linear-gradient(120deg, 
+    background: linear-gradient(
+      120deg,
       rgba(108, 99, 255, 0.1) 0%,
       rgba(108, 99, 255, 0.05) 100%
     );
@@ -346,7 +376,8 @@ const MobileUserSection = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 20px;
   margin-top: 20px;
-  background: linear-gradient(180deg, 
+  background: linear-gradient(
+    180deg,
     rgba(255, 255, 255, 0.02) 0%,
     rgba(255, 255, 255, 0) 100%
   );
@@ -358,7 +389,8 @@ const MobileFooter = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: center;
-  background: linear-gradient(0deg, 
+  background: linear-gradient(
+    0deg,
     rgba(15, 14, 23, 0.95) 0%,
     rgba(27, 25, 40, 0) 100%
   );
@@ -375,13 +407,15 @@ const AuthButton = styled.a`
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: ${props => props.$isPrimary ? '10px 24px' : '9px 20px'};
+  padding: ${(props) => (props.$isPrimary ? "10px 24px" : "9px 20px")};
   border-radius: 50px;
   font-weight: 600;
   transition: all 0.3s ease;
   letter-spacing: 0.3px;
-  
-  ${props => props.$isPrimary ? `
+
+  ${(props) =>
+    props.$isPrimary
+      ? `
     background: linear-gradient(90deg, var(--primary), var(--accent));
     color: white;
     box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
@@ -390,7 +424,8 @@ const AuthButton = styled.a`
       transform: translateY(-3px);
       box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
     }
-  ` : `
+  `
+      : `
     background: transparent;
     color: white;
     border: 2px solid var(--primary);
@@ -399,9 +434,11 @@ const AuthButton = styled.a`
       background: rgba(108, 99, 255, 0.1);
     }
   `}
-  
+
   /* For mobile menu */
-  ${props => props.$isMobile && `
+  ${(props) =>
+    props.$isMobile &&
+    `
     padding: 15px 24px;
     width: 100%;
     font-size: 1.1rem;
@@ -416,7 +453,7 @@ const Overlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 998;
-  display: ${props => props.$isVisible ? 'block' : 'none'};
+  display: ${(props) => (props.$isVisible ? "block" : "none")};
 `;
 
 const UserMenuContainer = styled.div`
@@ -434,11 +471,11 @@ const UserButton = styled.button`
   padding: 5px;
   border-radius: 50%;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   svg {
     font-size: 24px;
   }
@@ -454,7 +491,7 @@ const UserDropdown = styled.div`
   padding: 10px 0;
   min-width: 180px;
   width: 180px;
-  display: ${props => props.$isOpen ? 'block' : 'none'};
+  display: ${(props) => (props.$isOpen ? "block" : "none")};
   z-index: 10;
   border: 1px solid rgba(255, 255, 255, 0.05);
 `;
@@ -471,12 +508,12 @@ const UserMenuItem = styled.a`
   min-width: 180px;
   font-size: 14px;
   font-weight: normal;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--primary);
   }
-  
+
   svg {
     margin-right: 10px;
     color: var(--text-secondary);
@@ -501,12 +538,12 @@ const UserMenuLogout = styled.button`
   font-size: 14px;
   font-weight: normal;
   font-family: inherit;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--primary);
   }
-  
+
   svg {
     margin-right: 10px;
     color: var(--danger);
@@ -524,34 +561,35 @@ const MobileUserMenu = styled(motion.div)`
 
 // Add animation variants for menu items
 const menuItemVariants = {
-  hidden: { 
+  hidden: {
     opacity: 0,
     y: 20,
     transition: {
       duration: 0.3,
-    }
+    },
   },
-  visible: i => ({ 
+  visible: (i) => ({
     opacity: 1,
     y: 0,
     transition: {
       delay: i * 0.1,
       duration: 0.3,
-      ease: "easeOut"
-    }
-  })
+      ease: "easeOut",
+    },
+  }),
 };
 
 const NextHeader = () => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('');
+  const [activeSection, setActiveSection] = useState("");
   const { t } = useTranslation();
-  const { currentUser, logout } = useAuth();
-  const router = useRouter();
+  const { user, logout } = useAuth();
   const userMenuRef = useRef(null);
-  
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -561,7 +599,7 @@ const NextHeader = () => {
       }
 
       // Check which section is in view
-      const sections = ['features', 'how-it-works', 'pricing', 'faq'];
+      const sections = ["features", "how-it-works", "pricing", "faq"];
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -574,71 +612,69 @@ const NextHeader = () => {
         }
       }
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   useEffect(() => {
     if (menuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
-    
+
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [menuOpen]);
-  
+
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
       await logout();
-      setUserMenuOpen(false);
-      setMenuOpen(false);
-      router.push('/login');
+      router.push("/");
     } catch (error) {
-      console.error('Failed to log out:', error);
+      console.error("Logout failed:", error);
     }
   };
-  
+
   const handleLoginClick = (e) => {
     e.preventDefault();
-    router.push('/login');
+    router.push("/login");
   };
-  
+
   const handleSignupClick = (e) => {
     e.preventDefault();
-    router.push('/signup');
+    router.push("/signup");
   };
-  
+
   const navItems = [
-    { name: 'Features', path: '/#features' },
-    { name: 'How It Works', path: '/#how-it-works' },
-    { name: 'Pricing', path: '/#pricing' },
-    { name: 'FAQ', path: '/#faq' }
+    { name: "Features", path: "/#features" },
+    { name: "How It Works", path: "/#how-it-works" },
+    { name: "Pricing", path: "/#pricing" },
+    { name: "FAQ", path: "/#faq" },
   ];
-  
+
   const renderAuthSection = () => {
-    if (currentUser) {
+    if (user) {
       return (
         <UserMenuContainer ref={userMenuRef} className="user-menu">
           <UserButton onClick={() => setUserMenuOpen(!userMenuOpen)}>
             <FaUserCircle />
           </UserButton>
-          
+
           <UserDropdown $isOpen={userMenuOpen}>
             <Link href="/dashboard" passHref legacyBehavior>
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
@@ -654,39 +690,39 @@ const NextHeader = () => {
         </UserMenuContainer>
       );
     }
-    
+
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>
-          {t('header.login')}
-        </AuthButton>
+        <AuthButton onClick={handleLoginClick}>{t("header.login")}</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
-          {t('header.signUp')}
+          {t("header.signUp")}
         </AuthButton>
       </>
     );
   };
-  
+
   return (
     <>
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
         <HeaderContent $isScrolled={isScrolled}>
           <Link href="/" passHref legacyBehavior>
-            <a onClick={playSound} style={{ textDecoration: 'none' }}>
+            <a onClick={playSound} style={{ textDecoration: "none" }}>
               <LogoText>
                 <EnergyBall size="32px" marginRight="8px" />
                 <span>CYMA</span>SPHERE
               </LogoText>
             </a>
           </Link>
-          
+
           <Nav>
             {navItems.map((item) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
-                <NavLink $isActive={
-                  router.asPath === item.path || 
-                  activeSection === item.path.replace('/#', '')
-                }>
+                <NavLink
+                  $isActive={
+                    pathname === item.path ||
+                    activeSection === item.path.replace("/#", "")
+                  }
+                >
                   {item.name}
                 </NavLink>
               </Link>
@@ -694,11 +730,9 @@ const NextHeader = () => {
             <div className="language-selector">
               <DynamicLanguageSelector />
             </div>
-            <AuthSection>
-              {renderAuthSection()}
-            </AuthSection>
+            <AuthSection>{renderAuthSection()}</AuthSection>
           </Nav>
-          
+
           <MobileActions>
             <MenuToggle onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <FaTimes /> : <FaBars />}
@@ -706,8 +740,8 @@ const NextHeader = () => {
           </MobileActions>
         </HeaderContent>
       </HeaderContainer>
-      
-      <MobileMenu 
+
+      <MobileMenu
         $isOpen={menuOpen}
         initial="hidden"
         animate={menuOpen ? "visible" : "hidden"}
@@ -718,31 +752,31 @@ const NextHeader = () => {
           <MobileNavLinks>
             {navItems.map((item, index) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
-                <MobileNavLink 
-                  $isActive={router.asPath === item.path}
+                <MobileNavLink
+                  $isActive={pathname === item.path}
                   onClick={() => setMenuOpen(false)}
                   variants={menuItemVariants}
                   custom={index}
                   initial="hidden"
                   animate={menuOpen ? "visible" : "hidden"}
                 >
-                  {item.path === '/#features' && <FaPuzzlePiece />}
-                  {item.path === '/#how-it-works' && <FaRegLightbulb />}
-                  {item.path === '/#pricing' && <FaRegCreditCard />}
-                  {item.path === '/#faq' && <FaQuestionCircle />}
+                  {item.path === "/#features" && <FaPuzzlePiece />}
+                  {item.path === "/#how-it-works" && <FaRegLightbulb />}
+                  {item.path === "/#pricing" && <FaRegCreditCard />}
+                  {item.path === "/#faq" && <FaQuestionCircle />}
                   {item.name}
                 </MobileNavLink>
               </Link>
             ))}
-            
-            {currentUser && (
+
+            {user && (
               <MobileUserSection>
                 <Link href="/dashboard" passHref legacyBehavior>
-                  <MobileNavLink 
+                  <MobileNavLink
                     onClick={(e) => {
                       e.preventDefault();
                       setMenuOpen(false);
-                      router.push('/dashboard');
+                      router.push("/dashboard");
                     }}
                     variants={menuItemVariants}
                     custom={navItems.length}
@@ -753,7 +787,7 @@ const NextHeader = () => {
                     My Account
                   </MobileNavLink>
                 </Link>
-                <MobileNavLink 
+                <MobileNavLink
                   onClick={(e) => {
                     e.preventDefault();
                     handleLogout(e);
@@ -771,10 +805,10 @@ const NextHeader = () => {
             )}
           </MobileNavLinks>
 
-          {!currentUser && (
+          {!user && (
             <MobileAuthSection>
-              <AuthButton 
-                $isPrimary 
+              <AuthButton
+                $isPrimary
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
@@ -784,7 +818,7 @@ const NextHeader = () => {
               >
                 Login
               </AuthButton>
-              <AuthButton 
+              <AuthButton
                 $isMobile
                 onClick={(e) => {
                   e.preventDefault();
@@ -804,13 +838,10 @@ const NextHeader = () => {
           </div>
         </MobileFooter>
       </MobileMenu>
-      
-      <Overlay 
-        $isVisible={menuOpen} 
-        onClick={() => setMenuOpen(false)}
-      />
+
+      <Overlay $isVisible={menuOpen} onClick={() => setMenuOpen(false)} />
     </>
   );
 };
 
-export default NextHeader; 
+export default NextHeader;
