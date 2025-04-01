@@ -1,7 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaCheckCircle, FaMusic } from 'react-icons/fa';
+"use client";
+
+import React, { useEffect, useCallback } from "react";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaTimes, FaCheckCircle, FaMusic } from "react-icons/fa";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -31,18 +33,20 @@ const ModalContainer = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding-bottom: 20px;
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: -5px;
     left: -5px;
     right: -5px;
     bottom: -5px;
-    background: linear-gradient(135deg, 
-      rgba(108, 99, 255, 0.7) 0%, 
-      rgba(108, 99, 255, 0.2) 50%, 
-      rgba(78, 205, 196, 0.7) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.7) 0%,
+      rgba(108, 99, 255, 0.2) 50%,
+      rgba(78, 205, 196, 0.7) 100%
+    );
     border-radius: 28px;
     z-index: -1;
     opacity: 0.6;
@@ -60,19 +64,21 @@ const TitleContainer = styled.div`
   height: 80px;
   box-sizing: border-box;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     top: 80px;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, 
-      transparent, 
-      rgba(108, 99, 255, 0.3), 
-      rgba(78, 205, 196, 0.3), 
-      transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(108, 99, 255, 0.3),
+      rgba(78, 205, 196, 0.3),
+      transparent
+    );
   }
 `;
 
@@ -102,7 +108,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   z-index: 10;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: var(--primary);
     transform: scale(1.1);
@@ -121,11 +127,11 @@ const ContentContainer = styled.div`
 
 const SuccessIcon = styled.div`
   font-size: 6rem;
-  color: #4ECDC4;
+  color: #4ecdc4;
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
-  
+
   svg {
     filter: drop-shadow(0 0 15px rgba(78, 205, 196, 0.5));
   }
@@ -147,9 +153,10 @@ const ButtonContainer = styled.div`
 
 const Button = styled.button`
   padding: 12px 24px;
-  background: ${props => props.$primary 
-    ? 'linear-gradient(90deg, #4ECDC4, #2ecc71)' 
-    : 'rgba(255, 255, 255, 0.1)'};
+  background: ${(props) =>
+    props.$primary
+      ? "linear-gradient(90deg, #4ECDC4, #2ecc71)"
+      : "rgba(255, 255, 255, 0.1)"};
   color: white;
   border-radius: 6px;
   font-weight: bold;
@@ -159,12 +166,13 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.2s ease;
   border: none;
-  
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.$primary 
-      ? '0 4px 10px rgba(78, 205, 196, 0.3)' 
-      : '0 4px 10px rgba(255, 255, 255, 0.1)'};
+    box-shadow: ${(props) =>
+      props.$primary
+        ? "0 4px 10px rgba(78, 205, 196, 0.3)"
+        : "0 4px 10px rgba(255, 255, 255, 0.1)"};
   }
 `;
 
@@ -179,44 +187,45 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
       onClose();
     }
   };
-  
+
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
-    
+
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = originalStyle;
     }
-    
+
     return () => {
       document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
-  
+
   // Automatically focus on the modal when it opens for keyboard navigation
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
-        document.getElementById('finish-modal-container')?.focus();
+        document.getElementById("finish-modal-container")?.focus();
       }, 100);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
-  
+
   // Memoize the congratulations message to prevent recreating on each render
   const getMessage = useCallback(() => {
     if (t) {
-      return t('synth.wizard.congratsMessage', 
-        "Congratulations! You've just scratched the surface of Cymasphere's powerful music creation capabilities. Your song \"{songName}\" with the \"{trackName}\" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality.", 
+      return t(
+        "synth.wizard.congratsMessage",
+        'Congratulations! You\'ve just scratched the surface of Cymasphere\'s powerful music creation capabilities. Your song "{songName}" with the "{trackName}" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality.',
         { songName, trackName }
       );
     }
-    
+
     return `Congratulations! You've created a song called "${songName}" with a "${trackName}" track featuring a chord progression and melody pattern. This is just the beginning of what you can create with Cymasphere.`;
   }, [t, songName, trackName]);
-  
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -228,7 +237,11 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
         >
           <ModalContainer
             id="finish-modal-container"
-            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
+            initial={{
+              scale: 0.9,
+              opacity: 0,
+              willChange: "transform, opacity",
+            }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}
@@ -238,18 +251,18 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
             <TitleContainer>
               <ModalTitle>Creation Complete!</ModalTitle>
             </TitleContainer>
-            
+
             <CloseButton onClick={onClose} aria-label="Close modal">
               <FaTimes />
             </CloseButton>
-            
+
             <ContentContainer>
               <SuccessIcon>
                 <FaCheckCircle />
               </SuccessIcon>
-              
+
               <Message>{getMessage()}</Message>
-              
+
               <ButtonContainer>
                 <Button $primary onClick={onClose}>
                   <MusicIcon /> Continue Creating
@@ -263,4 +276,4 @@ const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
   );
 };
 
-export default FinishModal; 
+export default FinishModal;

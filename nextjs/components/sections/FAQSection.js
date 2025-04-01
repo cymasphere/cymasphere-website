@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
+"use client";
+
+import React, { useState } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
 
 const FAQContainer = styled.section`
   padding: 100px 20px;
@@ -19,9 +21,9 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 2.5rem;
   position: relative;
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -49,7 +51,7 @@ const FAQHeader = styled.div`
   cursor: pointer;
   background-color: var(--card-bg);
   transition: background-color 0.3s ease;
-  
+
   &:hover {
     background-color: rgba(108, 99, 255, 0.05);
   }
@@ -67,7 +69,7 @@ const ToggleButton = styled.span`
   font-size: 1.5rem;
   font-weight: bold;
   transition: transform 0.3s ease;
-  transform: ${props => props.isOpen ? 'rotate(45deg)' : 'rotate(0)'};
+  transform: ${(props) => (props.isOpen ? "rotate(45deg)" : "rotate(0)")};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,51 +86,61 @@ const Answer = styled(motion.div)`
 
 const FAQSection = () => {
   const [expandedFaqs, setExpandedFaqs] = useState({});
-  
+
   const toggleFaq = (index) => {
-    setExpandedFaqs(prev => ({
+    setExpandedFaqs((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !prev[index],
     }));
   };
-  
+
   const faqItems = [
     {
       question: "What is Cymasphere?",
-      answer: "Cymasphere is an advanced music theory and composition tool available both as a standalone application and as a plugin (AU & VST3) for your DAW. It helps musicians create better chord progressions with intelligent voice leading and harmony visualization."
+      answer:
+        "Cymasphere is an advanced music theory and composition tool available both as a standalone application and as a plugin (AU & VST3) for your DAW. It helps musicians create better chord progressions with intelligent voice leading and harmony visualization.",
     },
     {
       question: "What problems does Cymasphere solve for musicians?",
-      answer: "Cymasphere solves common compositional challenges like creating interesting chord progressions, developing smooth voice leading, and finding harmonic inspiration. It helps bridge the gap between music theory knowledge and practical application, making composition more intuitive and accessible."
+      answer:
+        "Cymasphere solves common compositional challenges like creating interesting chord progressions, developing smooth voice leading, and finding harmonic inspiration. It helps bridge the gap between music theory knowledge and practical application, making composition more intuitive and accessible.",
     },
     {
-      question: "What are the differences between the standalone app and the plugin?",
-      answer: "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs."
+      question:
+        "What are the differences between the standalone app and the plugin?",
+      answer:
+        "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs.",
     },
     {
       question: "Which DAWs are compatible with the Cymasphere plugin?",
-      answer: "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported."
+      answer:
+        "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported.",
     },
     {
       question: "How does the Interactive Harmony Palette work?",
-      answer: "The Interactive Harmony Palette provides a visual interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions in both the standalone app and plugin versions."
+      answer:
+        "The Interactive Harmony Palette provides a visual interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions in both the standalone app and plugin versions.",
     },
     {
       question: "What makes the Voicing Generator special?",
-      answer: "Our Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes your chord progression to ensure smooth voice transitions between chords, whether you're using the standalone app or plugin version."
+      answer:
+        "Our Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes your chord progression to ensure smooth voice transitions between chords, whether you're using the standalone app or plugin version.",
     },
     {
       question: "How does the Song Builder help with composition?",
-      answer: "The Song Builder allows you to arrange chord progressions into complete song structures. You can experiment with different sections, try various arrangements, and build a cohesive composition from your chord ideas. This feature works seamlessly in both the standalone app and DAW plugin versions of Cymasphere."
+      answer:
+        "The Song Builder allows you to arrange chord progressions into complete song structures. You can experiment with different sections, try various arrangements, and build a cohesive composition from your chord ideas. This feature works seamlessly in both the standalone app and DAW plugin versions of Cymasphere.",
     },
     {
       question: "Is Cymasphere suitable for beginners?",
-      answer: "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony concepts visually. Both the standalone app and DAW plugin versions are designed to be user-friendly for all skill levels."
+      answer:
+        "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony concepts visually. Both the standalone app and DAW plugin versions are designed to be user-friendly for all skill levels.",
     },
     {
       question: "Do I need to know music theory to use Cymasphere?",
-      answer: "No, that's one of Cymasphere's strengths! While music theory knowledge can enhance your experience, Cymasphere is designed to be intuitive even for those with limited theory background. The visual interface helps you understand musical relationships as you compose, making it an excellent learning tool."
-    }
+      answer:
+        "No, that's one of Cymasphere's strengths! While music theory knowledge can enhance your experience, Cymasphere is designed to be intuitive even for those with limited theory background. The visual interface helps you understand musical relationships as you compose, making it an excellent learning tool.",
+    },
   ];
 
   return (
@@ -156,13 +168,13 @@ const FAQSection = () => {
                 <Question>{faq.question}</Question>
                 <ToggleButton isOpen={expandedFaqs[index]}>+</ToggleButton>
               </FAQHeader>
-              
+
               <Answer
                 initial={false}
                 animate={{
-                  height: expandedFaqs[index] ? 'auto' : 0,
+                  height: expandedFaqs[index] ? "auto" : 0,
                   opacity: expandedFaqs[index] ? 1 : 0,
-                  marginBottom: expandedFaqs[index] ? '20px' : 0
+                  marginBottom: expandedFaqs[index] ? "20px" : 0,
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -176,4 +188,4 @@ const FAQSection = () => {
   );
 };
 
-export default FAQSection; 
+export default FAQSection;

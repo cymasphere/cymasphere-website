@@ -1,10 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaCheck, FaGift, FaArrowRight } from 'react-icons/fa';
-import StripeCheckout from '../checkout/StripeCheckout';
-import * as Tone from 'tone'; // Import Tone.js for audio playback
-import CymasphereLogo from '../common/CymasphereLogo';
+"use client";
+
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { FaCheck, FaGift, FaArrowRight } from "react-icons/fa";
+import StripeCheckout from "../checkout/StripeCheckout";
+import * as Tone from "tone"; // Import Tone.js for audio playback
+import CymasphereLogo from "../common/CymasphereLogo";
 
 // ChordWeb component for molecular chord background
 const ChordWebCanvas = styled.canvas`
@@ -14,9 +22,9 @@ const ChordWebCanvas = styled.canvas`
   width: 100%;
   height: 100%;
   z-index: 1; /* Set BELOW ContentContainer */
-  opacity: 1.0; /* Maximum opacity for full visibility */
+  opacity: 1; /* Maximum opacity for full visibility */
   cursor: default; /* Use default cursor by default */
-  
+
   /* Hide on mobile devices */
   @media (max-width: 768px) {
     display: none;
@@ -25,9 +33,23 @@ const ChordWebCanvas = styled.canvas`
 
 // Note frequencies (simplified for demonstration)
 const noteFrequencies = {
-  'C': 261.63, 'C#': 277.18, 'Db': 277.18, 'D': 293.66, 'D#': 311.13, 'Eb': 311.13,
-  'E': 329.63, 'F': 349.23, 'F#': 369.99, 'Gb': 369.99, 'G': 392.00, 'G#': 415.30, 
-  'Ab': 415.30, 'A': 440.00, 'A#': 466.16, 'Bb': 466.16, 'B': 493.88
+  C: 261.63,
+  "C#": 277.18,
+  Db: 277.18,
+  D: 293.66,
+  "D#": 311.13,
+  Eb: 311.13,
+  E: 329.63,
+  F: 349.23,
+  "F#": 369.99,
+  Gb: 369.99,
+  G: 392.0,
+  "G#": 415.3,
+  Ab: 415.3,
+  A: 440.0,
+  "A#": 466.16,
+  Bb: 466.16,
+  B: 493.88,
 };
 
 // Memoize the ChordWeb component to prevent re-renders when parent state changes
@@ -41,63 +63,63 @@ const ChordWeb = React.memo(() => {
   const currentTime = useRef(0); // Add a ref to store the current animation time
   const mousePosition = useRef({ x: 0, y: 0 });
   const isMouseOverCanvas = useRef(false);
-  
+
   // Initialize Tone.js synth
   useEffect(() => {
     // Create a more ambient synth sound with underwater qualities
     const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
       oscillator: {
-        type: 'sine',
-        modulationType: 'triangle' // Changed to triangle for more underwater harmonics
+        type: "sine",
+        modulationType: "triangle", // Changed to triangle for more underwater harmonics
       },
       envelope: {
         attack: 0.5, // Slower attack for underwater muffled effect
-        decay: 3,    // Longer decay
+        decay: 3, // Longer decay
         sustain: 0.6, // Higher sustain
-        release: 8    // Much longer release for underwater trail
+        release: 8, // Much longer release for underwater trail
       },
       modulation: {
-        type: 'sine',
-        frequency: 0.8 // Slower frequency for underwater wavering
+        type: "sine",
+        frequency: 0.8, // Slower frequency for underwater wavering
       },
       modulationEnvelope: {
-        attack: 0.8,  // Slower modulation attack
-        decay: 1.5,   // Longer decay
+        attack: 0.8, // Slower modulation attack
+        decay: 1.5, // Longer decay
         sustain: 0.4,
-        release: 10   // Much longer release
-      }
+        release: 10, // Much longer release
+      },
     });
-    
+
     // Create lowpass filter for underwater muffled effect
     const filter = new Tone.Filter({
       type: "lowpass",
       frequency: 800, // Low frequency cutoff for underwater effect
       Q: 1.5,
-      rolloff: -24
+      rolloff: -24,
     });
-    
+
     // Create reverb effect with longer decay for underwater spaciousness
     const reverb = new Tone.Reverb({
-      decay: 16,     // Increased from 12 for more underwater echo
-      wet: 0.98,     // Higher wet mix
-      preDelay: 0.2  // Slightly higher preDelay
+      decay: 16, // Increased from 12 for more underwater echo
+      wet: 0.98, // Higher wet mix
+      preDelay: 0.2, // Slightly higher preDelay
     }).toDestination();
-    
+
     // Create a volume node to reduce gain
     const volume = new Tone.Volume(-14); // Slightly higher volume
-    
+
     // Add vibrato for underwater wavering
     const vibrato = new Tone.Vibrato({
       frequency: 1.5, // Slow vibrato
-      depth: 0.3      // Moderate depth
+      depth: 0.3, // Moderate depth
     });
-    
+
     // Chain effects: synth -> vibrato -> filter -> volume -> reverb -> destination
     ambientSynth.chain(vibrato, filter, volume, reverb);
-    
+
     // Store synth in ref
     synth.current = ambientSynth;
-    
+
     return () => {
       // Clean up synth and effects when component unmounts
       if (synth.current) {
@@ -109,75 +131,78 @@ const ChordWeb = React.memo(() => {
       volume.dispose();
     };
   }, []);
-  
+
   // Function to play a chord when clicked
   const playChord = useCallback((chord, chordIndex) => {
     // Check if we've reached the maximum number of simultaneous chords (4)
-    if (activeChords.current.size >= 4 && !activeChords.current.has(chordIndex)) {
+    if (
+      activeChords.current.size >= 4 &&
+      !activeChords.current.has(chordIndex)
+    ) {
       // If we're at the limit and this is a new chord, don't play it
       return;
     }
-    
+
     // If this chord is already playing, don't play it again
     if (activeChords.current.has(chordIndex)) {
       return;
     }
-    
+
     // Add this chord to the set of active chords
     activeChords.current.add(chordIndex);
-    
+
     // Convert note names to frequencies with octave information
     const notes = chord.notes.map((note, index) => {
       // Determine octave (lower for string ensemble sound)
       const baseOctave = 3; // Lower range for richness
-      
+
       // Root note (first note) gets an octave lower for stronger bass foundation
       if (index === 0) {
         return `${note}${baseOctave - 1}`;
       }
-      
+
       // For the rest of the notes, distribute across orchestral string ranges
       let octave = baseOctave;
-      
+
       // For larger chords, distribute notes across octaves for orchestral arrangement
       if (chord.notes.length > 3) {
         // Middle range - viola-like
         if (index < 3) {
           octave = baseOctave;
-        } 
+        }
         // Higher range - violin-like
         else {
           octave = baseOctave + 1;
         }
       }
-      
+
       return `${note}${octave}`;
     });
-    
+
     // Start Tone.js audio context if it's not started yet
-    if (Tone.context.state !== 'running') {
+    if (Tone.context.state !== "running") {
       Tone.start().then(() => {
         playNotes(notes, chordIndex);
       });
     } else {
       playNotes(notes, chordIndex);
     }
-    
+
     function playNotes(notes, chordIndex) {
       // Play chord for longer duration (2n = half note) to let reverb shine
       synth.current.triggerAttackRelease(notes, "2n");
-      
+
       // Clear any existing timeout for this chord
       if (timeoutIds.current[chordIndex]) {
         clearTimeout(timeoutIds.current[chordIndex]);
       }
-      
+
       // Add visual feedback for the playing chord
       const position = chordPositions.current[chordIndex];
       if (position) {
         position.playingTime = currentTime.current; // Use the ref value instead of direct time variable
       }
-      
+
       // Set timeout to remove chord from active list after it finishes
       timeoutIds.current[chordIndex] = setTimeout(() => {
         activeChords.current.delete(chordIndex);
@@ -185,121 +210,154 @@ const ChordWeb = React.memo(() => {
       }, 5000); // Increased from 3000 to match longer reverb tail
     }
   }, []);
-  
+
   // Pre-compute color values for better performance
   const chordColors = useMemo(() => {
     return [
-      'rgba(128, 119, 255, 0.9)',   // C major triad
-      'rgba(255, 210, 80, 0.9)',    // Eb major sus4
-      'rgba(150, 230, 255, 0.95)',  // C major 9th
-      'rgba(255, 130, 90, 0.9)',    // Eb major triad
-      'rgba(160, 255, 220, 0.95)',  // C major 13th
-      'rgba(150, 230, 255, 0.95)',  // Eb major 9th
-      'rgba(128, 119, 255, 0.9)',   // C major triad
-      'rgba(255, 200, 70, 0.95)',   // C major 7th with #11
-      'rgba(255, 210, 80, 0.9)',    // C major sus4
-      'rgba(255, 130, 90, 0.9)',    // Eb major triad
-      'rgba(255, 200, 70, 0.95)',   // C major 11th
-      'rgba(90, 255, 140, 0.9)',    // C major 7th
-      'rgba(160, 255, 220, 0.95)',  // Eb major 13th
-      'rgba(90, 255, 140, 0.9)'     // C major 7th
+      "rgba(128, 119, 255, 0.9)", // C major triad
+      "rgba(255, 210, 80, 0.9)", // Eb major sus4
+      "rgba(150, 230, 255, 0.95)", // C major 9th
+      "rgba(255, 130, 90, 0.9)", // Eb major triad
+      "rgba(160, 255, 220, 0.95)", // C major 13th
+      "rgba(150, 230, 255, 0.95)", // Eb major 9th
+      "rgba(128, 119, 255, 0.9)", // C major triad
+      "rgba(255, 200, 70, 0.95)", // C major 7th with #11
+      "rgba(255, 210, 80, 0.9)", // C major sus4
+      "rgba(255, 130, 90, 0.9)", // Eb major triad
+      "rgba(255, 200, 70, 0.95)", // C major 11th
+      "rgba(90, 255, 140, 0.9)", // C major 7th
+      "rgba(160, 255, 220, 0.95)", // Eb major 13th
+      "rgba(90, 255, 140, 0.9)", // C major 7th
     ];
   }, []);
-  
+
   // Reduce number of chords for better performance
-  const chords = useMemo(() => [
-    // Evenly distributed chord types (triads, 7ths, 9ths, 11ths, 13ths)
-    { name: 'C', notes: ['C', 'E', 'G'], color: chordColors[0] },
-    { name: 'Bb7sus4', notes: ['Bb', 'Eb', 'F', 'Ab'], color: chordColors[1] },
-    { name: 'Dmaj9', notes: ['D', 'F#', 'A', 'C#', 'E'], color: chordColors[2] },
-    { name: 'Gm', notes: ['G', 'Bb', 'D'], color: chordColors[3] },
-    { name: 'Cmaj13', notes: ['C', 'E', 'G', 'B', 'D', 'A'], color: chordColors[4] },
-    { name: 'Ebm9', notes: ['Eb', 'Gb', 'Bb', 'Db', 'F'], color: chordColors[5] },
-    { name: 'Dm', notes: ['D', 'F', 'A'], color: chordColors[6] },
-    { name: 'Fmaj7(#11)', notes: ['F', 'A', 'C', 'E', 'G', 'B'], color: chordColors[7] },
-    { name: 'G7sus4', notes: ['G', 'C', 'D', 'F'], color: chordColors[8] },
-    { name: 'Eb', notes: ['Eb', 'G', 'Bb'], color: chordColors[9] },
-    { name: 'Am11', notes: ['A', 'C', 'E', 'G', 'B', 'D'], color: chordColors[10] },
-    { name: 'Fmaj7', notes: ['F', 'A', 'C', 'E'], color: chordColors[11] },
-    { name: 'Abmaj13', notes: ['Ab', 'C', 'Eb', 'G', 'Bb', 'F'], color: chordColors[12] },
-    { name: 'Cmaj7', notes: ['C', 'E', 'G', 'B'], color: chordColors[13] }
-  ], [chordColors]);
-  
+  const chords = useMemo(
+    () => [
+      // Evenly distributed chord types (triads, 7ths, 9ths, 11ths, 13ths)
+      { name: "C", notes: ["C", "E", "G"], color: chordColors[0] },
+      {
+        name: "Bb7sus4",
+        notes: ["Bb", "Eb", "F", "Ab"],
+        color: chordColors[1],
+      },
+      {
+        name: "Dmaj9",
+        notes: ["D", "F#", "A", "C#", "E"],
+        color: chordColors[2],
+      },
+      { name: "Gm", notes: ["G", "Bb", "D"], color: chordColors[3] },
+      {
+        name: "Cmaj13",
+        notes: ["C", "E", "G", "B", "D", "A"],
+        color: chordColors[4],
+      },
+      {
+        name: "Ebm9",
+        notes: ["Eb", "Gb", "Bb", "Db", "F"],
+        color: chordColors[5],
+      },
+      { name: "Dm", notes: ["D", "F", "A"], color: chordColors[6] },
+      {
+        name: "Fmaj7(#11)",
+        notes: ["F", "A", "C", "E", "G", "B"],
+        color: chordColors[7],
+      },
+      { name: "G7sus4", notes: ["G", "C", "D", "F"], color: chordColors[8] },
+      { name: "Eb", notes: ["Eb", "G", "Bb"], color: chordColors[9] },
+      {
+        name: "Am11",
+        notes: ["A", "C", "E", "G", "B", "D"],
+        color: chordColors[10],
+      },
+      { name: "Fmaj7", notes: ["F", "A", "C", "E"], color: chordColors[11] },
+      {
+        name: "Abmaj13",
+        notes: ["Ab", "C", "Eb", "G", "Bb", "F"],
+        color: chordColors[12],
+      },
+      { name: "Cmaj7", notes: ["C", "E", "G", "B"], color: chordColors[13] },
+    ],
+    [chordColors]
+  );
+
   // Define positions for each chord molecule
   const chordPositions = useRef([]);
-  
+
   // Animation properties
   const animationSpeed = 0.0003; /* Reduced from 0.0006 for gentler animation */
-  
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const context = canvas.getContext('2d', { alpha: true });
+
+    const context = canvas.getContext("2d", { alpha: true });
     let time = 0;
     let lastFrameTime = 0;
     let resizeTimeout;
-    
+
     // Optimize canvas attributes for performance
-    context.imageSmoothingQuality = 'low';
-    context.globalCompositeOperation = 'lighter';
+    context.imageSmoothingQuality = "low";
+    context.globalCompositeOperation = "lighter";
 
     // Add mousemove listener to change cursor when hovering over molecules
     const handleMouseMove = (event) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
-      
+
       // Store mouse position for use in animation loop instead of recalculating for each chord
       mousePosition.current = { x: mouseX, y: mouseY };
-      
+
       let isOverMolecule = false;
-      
+
       // Find if mouse is over any chord molecule - only check visible ones
       for (let i = 0; i < chordPositions.current.length; i++) {
         const position = chordPositions.current[i];
         if (!position) continue;
-        
+
         // Skip checking faraway molecules for performance
         if (position.z > 100) continue;
-        
+
         // Calculate distance to chord center
         const dx = mouseX - position.x;
         const dy = mouseY - position.y;
         const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
-        
+
         // Get molecule properties - use actual molecule radius
         const scale = position.displayScale || 400 / (400 + position.z);
         const chord = chords[i];
         const noteCount = chord.notes.length;
         const baseRadius = 25;
-        const moleculeRadius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
-        
+        const moleculeRadius =
+          (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+
         // Use actual molecule radius for hover detection
-        if (distanceToCenter <= moleculeRadius * 1.5) { // 1.5x for slightly easier hovering
+        if (distanceToCenter <= moleculeRadius * 1.5) {
+          // 1.5x for slightly easier hovering
           isOverMolecule = true;
           break;
         }
       }
-      
+
       // Only change the cursor style if the state changes
       if (isOverMolecule !== isMouseOverCanvas.current) {
-        canvas.style.cursor = isOverMolecule ? 'pointer' : 'default';
+        canvas.style.cursor = isOverMolecule ? "pointer" : "default";
         isMouseOverCanvas.current = isOverMolecule;
       }
     };
-    
+
     // Debounced resize handler for better performance
     const resizeCanvas = () => {
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
-      
+
       resizeTimeout = setTimeout(() => {
         // Set canvas dimensions to match display size
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
-        
+
         // Re-initialize positions after resize
         positionsInitialized.current = false;
       }, 200); // 200ms debounce
@@ -308,53 +366,53 @@ const ChordWeb = React.memo(() => {
     // Set initial canvas size
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    
+
     // Add event listeners
-    canvas.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('resize', resizeCanvas, { passive: true });
-    
+    canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("resize", resizeCanvas, { passive: true });
+
     // Initialize positions
     const initializePositions = (width, height) => {
       // Define center safe zone - no molecules in this area
       const centerX = width / 2;
       const centerY = height / 2;
-      
+
       // Define a wider, more rectangular safe zone that better matches the content area
-      const safeZoneWidth = width * 0.9;  // Increased from 0.8 to 0.9
+      const safeZoneWidth = width * 0.9; // Increased from 0.8 to 0.9
       const safeZoneHeight = height * 0.95; // Increased from 0.85 to 0.95
-      
+
       // Position chord molecules in an evenly distributed pattern
       const allPositions = [];
-      
+
       // Place chords evenly around the edges of the safe zone with LESS randomness
       const totalChords = chords.length;
       const angleStep = (2 * Math.PI) / totalChords;
-      
+
       chords.forEach((chord, index) => {
         // Consider chords with 5+ notes "complex"
         const isComplex = chord.notes.length >= 5;
-        
+
         // Calculate position along a rough ellipse around the content
         // Reduce randomness for more consistent oval shape
         const angle = index * angleStep + (Math.random() * 0.2 - 0.1); // Reduced randomness
-        
+
         // More pronounced elliptical distribution with less randomness and pushed further out
         const radiusX = width * 0.45 + (Math.random() * 0.04 - 0.02) * width; // Increased from 0.38 to 0.45
         const radiusY = height * 0.45 + (Math.random() * 0.04 - 0.02) * height; // Increased from 0.38 to 0.45
-        
+
         const x = centerX + Math.cos(angle) * radiusX;
         const y = centerY + Math.sin(angle) * radiusY;
-        
+
         // Slower overall movement
-        const movementSpeed = isComplex ? 
-          0.02 + Math.random() * 0.02 : // Reduced from 0.03 for slower motion
-          0.025 + Math.random() * 0.025; // Reduced from 0.04 for slower motion
-        
+        const movementSpeed = isComplex
+          ? 0.02 + Math.random() * 0.02 // Reduced from 0.03 for slower motion
+          : 0.025 + Math.random() * 0.025; // Reduced from 0.04 for slower motion
+
         // Use smaller z-depth range for better visibility
-        const zDepth = isComplex ? 
-          10 + Math.random() * 40 : // More visible
-          20 + Math.random() * 60;
-          
+        const zDepth = isComplex
+          ? 10 + Math.random() * 40 // More visible
+          : 20 + Math.random() * 60;
+
         // Store Z-depth for z-sorting
         const position = {
           x: x,
@@ -367,190 +425,211 @@ const ChordWeb = React.memo(() => {
           originalY: y,
           // Add a playing flag to track state (optimized for fewer property checks)
           playingTime: null,
-          collisionTime: null
+          collisionTime: null,
         };
-        
+
         chordPositions.current[index] = position;
       });
-      
+
       // Mark as initialized
       positionsInitialized.current = true;
     };
-    
+
     // Draw a note (atom) with 3D effect - simplified for performance
     const drawNote = (x, y, z, noteName, color, time, index, totalNotes) => {
       // Scale based on z-depth (perspective)
       const scale = 400 / (400 + z);
       const size = 8 * scale; // Increased from 6 for better visibility
-      
+
       // Skip drawing very small notes for performance
       if (size < 2) return;
-      
+
       // Simplified pulsing to improve performance
       const pulse = 1 + Math.sin(time * 2 + index * 0.5) * 0.2; // Increased from 0.15
-      
+
       // Stronger glow effect for better visibility - only apply for closer objects
       if (size > 3) {
         context.shadowColor = color;
         context.shadowBlur = 8 * scale; // Increased from 4
       }
-      
+
       // Main circle
       context.beginPath();
       context.arc(x, y, size * pulse, 0, Math.PI * 2);
       context.fillStyle = color;
       context.fill();
-      
+
       // Add outline for better visibility
-      context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      context.strokeStyle = "rgba(255, 255, 255, 0.7)";
       context.lineWidth = 1 * scale;
       context.stroke();
-      
+
       // Only draw text if note is large enough (optimization)
       if (size > 3.5) {
         // Note name (small label)
         context.font = `bold ${8 * scale}px Arial`; // Made font bold and slightly larger
-        context.fillStyle = 'rgba(255, 255, 255, 1)'; // Full opacity
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
+        context.fillStyle = "rgba(255, 255, 255, 1)"; // Full opacity
+        context.textAlign = "center";
+        context.textBaseline = "middle";
         context.fillText(noteName, x, y);
       }
-      
+
       // Reset shadow
       context.shadowBlur = 0;
     };
-    
+
     // Cache gradient values
     const backgroundGradients = {};
-    
+
     // Draw a radiant background glow to enhance depth
     const drawBackgroundRadiance = (deltaTime) => {
       // Skip entirely for performance if needed
       if (window.innerWidth < 1000) return;
-      
+
       const width = canvas.width;
       const height = canvas.height;
       const centerX = width / 2;
       const centerY = height / 2;
-      
+
       // Create a subtle gradient glow around canvas center
       const radius = Math.max(width, height) * 0.5;
-      
+
       // Use cached gradient if available
-      let gradient = backgroundGradients[width + 'x' + height];
+      let gradient = backgroundGradients[width + "x" + height];
       if (!gradient) {
         gradient = context.createRadialGradient(
-          centerX, centerY, 0,
-          centerX, centerY, radius
+          centerX,
+          centerY,
+          0,
+          centerX,
+          centerY,
+          radius
         );
-        
+
         // Use gradient that matches the overall color theme
-        gradient.addColorStop(0, 'rgba(108, 99, 255, 0.03)'); // Center color - purple
-        gradient.addColorStop(0.5, 'rgba(78, 205, 196, 0.02)'); // Middle color - teal
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // Edge - transparent
-        
+        gradient.addColorStop(0, "rgba(108, 99, 255, 0.03)"); // Center color - purple
+        gradient.addColorStop(0.5, "rgba(78, 205, 196, 0.02)"); // Middle color - teal
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)"); // Edge - transparent
+
         // Cache the gradient
-        backgroundGradients[width + 'x' + height] = gradient;
+        backgroundGradients[width + "x" + height] = gradient;
       }
-      
+
       context.fillStyle = gradient;
       context.fillRect(0, 0, width, height);
     };
-    
+
     // Draw a chord object
     const drawChord = (chordIndex, time, deltaTime) => {
       const chord = chords[chordIndex];
       const position = chordPositions.current[chordIndex];
-      
+
       if (!chord || !position) return null;
-      
+
       // Calculate scale based on z-depth (perspective)
       const scale = 400 / (400 + position.z);
-      
+
       // Skip drawing very small chords for performance
       if (scale < 0.3) return null;
-      
+
       // Create gentle pulse effect for visual interest
       const pulseSpeed = 1 + (chord.notes.length > 4 ? 0.2 : 0); // Faster pulse for complex chords
       const pulse = 1 + Math.sin(time * pulseSpeed + chordIndex * 0.7) * 0.1; // Gentle pulsing
-      
+
       // Add collision feedback (visual response when chords collide)
       let collisionPulse = 0;
-      
+
       // If recently collided, add pulse effect that fades with time
       if (position.collisionTime && time - position.collisionTime < 0.5) {
         collisionPulse = 0.3 * (1 - (time - position.collisionTime) / 0.5);
       }
-      
+
       // Simplified pulse for performance
       const rotationAngle = time * 0.1 + position.rotationOffset; // Reduced from 0.5 to 0.1 for much slower rotation
-      
+
       // Simplified glow - only draw if object is large enough
       if (scale > 0.6) {
         // Precalculate note positions for better performance
         const noteCount = chord.notes.length;
         const baseRadius = 25;
         const radius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
-        
+
         // Store radius and position for collision detection
         position.displayRadius = radius;
         position.displayScale = scale;
-      
+
         // Add a background glow effect for the entire chord
         const glowRadius = 20 * scale * (pulse + collisionPulse);
         context.beginPath();
-        
+
         // Cache gradient for performance
-        const gradientKey = `${position.x.toFixed(0)},${position.y.toFixed(0)},${glowRadius.toFixed(1)}`;
-        let gradient = position.cachedGradient?.key === gradientKey 
-          ? position.cachedGradient.gradient 
-          : null;
-        
+        const gradientKey = `${position.x.toFixed(0)},${position.y.toFixed(
+          0
+        )},${glowRadius.toFixed(1)}`;
+        let gradient =
+          position.cachedGradient?.key === gradientKey
+            ? position.cachedGradient.gradient
+            : null;
+
         if (!gradient) {
           gradient = context.createRadialGradient(
-            position.x, position.y, 0,
-            position.x, position.y, glowRadius
+            position.x,
+            position.y,
+            0,
+            position.x,
+            position.y,
+            glowRadius
           );
-          
+
           // Change glow color based on playing state
           let glowColor;
           if (position.playingTime && time - position.playingTime < 5) {
             // Ethereal glow that fades slowly for reverb effect
-            const playFactor = Math.pow(1 - (time - position.playingTime) / 5, 1.2);
-            glowColor = chord.color.replace('0.9', (0.5 * playFactor + 0.2).toString());
-          } else if (position.collisionTime && time - position.collisionTime < 0.5) {
-            glowColor = chord.color.replace('0.9', '0.35'); // Brighter during collision 
+            const playFactor = Math.pow(
+              1 - (time - position.playingTime) / 5,
+              1.2
+            );
+            glowColor = chord.color.replace(
+              "0.9",
+              (0.5 * playFactor + 0.2).toString()
+            );
+          } else if (
+            position.collisionTime &&
+            time - position.collisionTime < 0.5
+          ) {
+            glowColor = chord.color.replace("0.9", "0.35"); // Brighter during collision
           } else {
-            glowColor = chord.color.replace('0.9', '0.2');
+            glowColor = chord.color.replace("0.9", "0.2");
           }
-            
+
           gradient.addColorStop(0, glowColor);
-          gradient.addColorStop(1, 'rgba(0,0,0,0)');
-          
+          gradient.addColorStop(1, "rgba(0,0,0,0)");
+
           // Cache the gradient
           position.cachedGradient = { key: gradientKey, gradient };
         }
-        
+
         context.fillStyle = gradient;
-        
+
         // Larger glow radius when playing to match reverb effect
-        const displayRadius = position.playingTime && time - position.playingTime < 5 
-          ? glowRadius * (1.5 + Math.sin(time * 2) * 0.2) // Pulsing effect for playing
-          : glowRadius;
-          
+        const displayRadius =
+          position.playingTime && time - position.playingTime < 5
+            ? glowRadius * (1.5 + Math.sin(time * 2) * 0.2) // Pulsing effect for playing
+            : glowRadius;
+
         context.arc(position.x, position.y, displayRadius, 0, Math.PI * 2);
         context.fill();
-        
+
         // Draw chord name with "Click to play" indicator when hovering
         if (scale > 0.7) {
           // Draw chord name with 3D effect - position further away from the molecule
           const nameOffset = radius + 15 * scale;
-          
+
           context.font = `${12 * scale}px Arial`;
-          context.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
-          context.textAlign = 'center';
-          context.textBaseline = 'middle';
-          
+          context.fillStyle = "rgba(255, 255, 255, 0.9)";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+
           // Show playing status with reverb indicator
           if (position.playingTime && time - position.playingTime < 5) {
             const fadePhase = (time - position.playingTime) / 5;
@@ -564,165 +643,199 @@ const ChordWeb = React.memo(() => {
         const noteCount = chord.notes.length;
         const baseRadius = 25;
         const radius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
-        
+
         // Store radius and position for collision detection
         position.displayRadius = radius;
         position.displayScale = scale;
       }
-      
+
       // Get the note positions based on the radius
       const noteCount = chord.notes.length;
       const baseRadius = 25;
-      const radius = position.displayRadius || (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
-      
+      const radius =
+        position.displayRadius ||
+        (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+
       // Check collisions with other chords (except those with very different z depths)
       for (let i = 0; i < chordPositions.current.length; i++) {
         if (i === chordIndex) continue; // Skip self
-        
+
         const otherPosition = chordPositions.current[i];
         if (!otherPosition || !otherPosition.displayRadius) continue;
-        
+
         // Skip collision detection for chords with very different z-depths
         const zDiff = Math.abs(position.z - otherPosition.z);
         if (zDiff > 80) continue;
-        
+
         // Calculate distance between chord centers
         const dx = position.x - otherPosition.x;
         const dy = position.y - otherPosition.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         // Sum of radii plus padding
-        const minDistance = position.displayRadius + otherPosition.displayRadius + 20;
-        
+        const minDistance =
+          position.displayRadius + otherPosition.displayRadius + 20;
+
         // If colliding, apply collision physics
         if (distance < minDistance) {
           // Collision impulse strength
           const collisionStrength = 0.01; // Adjusted for smoother motion
-          
+
           // Direction vector between the two centers
           const nx = dx / distance;
           const ny = dy / distance;
-          
+
           // Calculate impulse magnitude (stronger for more overlap)
           const overlap = minDistance - distance;
-          const impulse = overlap * collisionStrength * (otherPosition.displayRadius / position.displayRadius);
-          
+          const impulse =
+            overlap *
+            collisionStrength *
+            (otherPosition.displayRadius / position.displayRadius);
+
           // Apply impulse to velocity and position
           position.vx += nx * impulse;
           position.vy += ny * impulse;
-          
+
           // Update collision time for visual effect
           position.collisionTime = time;
         }
       }
-      
+
       const notePositions = chord.notes.map((note, index) => {
         // 3D rotation effect
         const angle = (index / noteCount) * Math.PI * 2;
         const x3d = Math.cos(angle) * radius;
         const y3d = Math.sin(angle) * radius;
-        
+
         // Apply 3D rotation
-        const rotatedX = x3d * Math.cos(rotationAngle) - y3d * Math.sin(rotationAngle);
-        const rotatedY = x3d * Math.sin(rotationAngle) + y3d * Math.cos(rotationAngle);
-        
+        const rotatedX =
+          x3d * Math.cos(rotationAngle) - y3d * Math.sin(rotationAngle);
+        const rotatedY =
+          x3d * Math.sin(rotationAngle) + y3d * Math.cos(rotationAngle);
+
         return {
           x: position.x + rotatedX,
           y: position.y + rotatedY,
           z: position.z,
-          note
+          note,
         };
       });
-      
+
       // Draw lines connecting notes (bonds) with glow effect BEFORE drawing notes
       if (scale > 0.5) {
         context.shadowColor = chord.color;
-        
+
         // Enhanced glow for playing chords
-        const playingEffect = position.playingTime && time - position.playingTime < 5
-          ? 3 * Math.pow(1 - (time - position.playingTime) / 5, 1.5) // Stronger glow that fades with reverb
-          : 0;
-          
-        context.shadowBlur = 3 * scale * (1 + (collisionPulse + playingEffect) * 2);
+        const playingEffect =
+          position.playingTime && time - position.playingTime < 5
+            ? 3 * Math.pow(1 - (time - position.playingTime) / 5, 1.5) // Stronger glow that fades with reverb
+            : 0;
+
+        context.shadowBlur =
+          3 * scale * (1 + (collisionPulse + playingEffect) * 2);
         context.beginPath();
-        
+
         // For all chords, connect in a circular pattern
         notePositions.forEach((notePos, index) => {
           const nextNotePos = notePositions[(index + 1) % noteCount];
           context.moveTo(notePos.x, notePos.y);
           context.lineTo(nextNotePos.x, nextNotePos.y);
         });
-        
+
         // Brighter lines when playing to match reverb effect
         let lineOpacity;
         if (position.playingTime && time - position.playingTime < 5) {
           // Fade out slowly to match reverb tail
-          lineOpacity = 0.5 + 0.4 * Math.pow(1 - (time - position.playingTime) / 5, 1.2);
-        } else if (position.collisionTime && time - position.collisionTime < 0.5) {
+          lineOpacity =
+            0.5 + 0.4 * Math.pow(1 - (time - position.playingTime) / 5, 1.2);
+        } else if (
+          position.collisionTime &&
+          time - position.collisionTime < 0.5
+        ) {
           lineOpacity = 0.7; // Bright during collision
         } else {
           lineOpacity = 0.5; // Normal state
         }
-        
+
         context.strokeStyle = `rgba(255, 255, 255, ${lineOpacity})`;
-        context.lineWidth = 1.2 * scale * (pulse + (collisionPulse + playingEffect) * 0.5);
+        context.lineWidth =
+          1.2 * scale * (pulse + (collisionPulse + playingEffect) * 0.5);
         context.stroke();
         context.shadowBlur = 0;
       }
-      
+
       // Draw notes AFTER drawing the connecting lines
       notePositions.forEach((notePos, index) => {
-        drawNote(notePos.x, notePos.y, notePos.z, notePos.note, chord.color, time, index, noteCount);
+        drawNote(
+          notePos.x,
+          notePos.y,
+          notePos.z,
+          notePos.note,
+          chord.color,
+          time,
+          index,
+          noteCount
+        );
       });
-      
+
       // Return center position for web connections with z-depth
-      return { 
-        x: position.x, 
-        y: position.y, 
-        z: position.z, 
+      return {
+        x: position.x,
+        y: position.y,
+        z: position.z,
         radius: 20 * scale * pulse,
         noteCount: noteCount,
         color: chord.color,
-        scale: scale
+        scale: scale,
       };
     };
-    
+
     // Draw connections between chord molecules - fewer connections for performance
     const drawConnections = (positions) => {
-      const validPositions = positions.filter(p => p);
-      
+      const validPositions = positions.filter((p) => p);
+
       // Only draw connections for closer objects (performance optimization)
       const sortedPositions = [...validPositions]
-        .filter(p => p.scale > 0.4) // Only include more visible chords
+        .filter((p) => p.scale > 0.4) // Only include more visible chords
         .sort((a, b) => a.z - b.z)
         .slice(0, 8); // Limit to 8 closest chords
-      
+
       // Limit the number of connections (performance optimization)
       const maxConnections = 8;
       let connectionCount = 0;
-      
-      for (let i = 0; i < sortedPositions.length && connectionCount < maxConnections; i++) {
-        for (let j = i + 1; j < sortedPositions.length && connectionCount < maxConnections; j++) {
+
+      for (
+        let i = 0;
+        i < sortedPositions.length && connectionCount < maxConnections;
+        i++
+      ) {
+        for (
+          let j = i + 1;
+          j < sortedPositions.length && connectionCount < maxConnections;
+          j++
+        ) {
           const pos1 = sortedPositions[i];
           const pos2 = sortedPositions[j];
-          
+
           // Calculate 3D distance
           const dx = pos2.x - pos1.x;
           const dy = pos2.y - pos1.y;
           const dz = pos2.z - pos1.z;
           const distance = Math.sqrt(dx * dx + dy * dy);
           const distance3d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-          
+
           // Use consistent connection threshold
           const connectionThreshold = 300;
-          
+
           // Only connect if close enough
           if (distance3d < connectionThreshold) {
             connectionCount++;
-            
+
             // Opacity based on distance and perspective
-            const opacity = (1 - (distance3d / connectionThreshold)) * Math.min(pos1.scale, pos2.scale);
-            
+            const opacity =
+              (1 - distance3d / connectionThreshold) *
+              Math.min(pos1.scale, pos2.scale);
+
             // Simplified connection style
             context.beginPath();
             context.moveTo(pos1.x, pos1.y);
@@ -734,7 +847,7 @@ const ChordWeb = React.memo(() => {
         }
       }
     };
-    
+
     // Main animation loop - optimized
     const render = (timestamp) => {
       // Skip initialization frames to prevent animation stutter
@@ -742,174 +855,184 @@ const ChordWeb = React.memo(() => {
         // Initialize only when ready
         initializePositions(canvas.width, canvas.height);
       }
-      
+
       // Calculate time delta for smooth animation regardless of frame rate
-      const deltaTime = lastFrameTime ? (timestamp - lastFrameTime) / 1000 : 0.016;
+      const deltaTime = lastFrameTime
+        ? (timestamp - lastFrameTime) / 1000
+        : 0.016;
       lastFrameTime = timestamp;
-      
+
       // Clamp deltaTime to prevent jumps after tab switch
       const clampedDelta = Math.min(deltaTime, 0.05);
-      
+
       // Update time variable
       time += clampedDelta;
       currentTime.current = time;
-      
+
       // Simplified physics calculations - process movement only once per frame
       const maxVelocity = 10; // Reduced from 20 for slower movement
-      chordPositions.current.forEach(position => {
+      chordPositions.current.forEach((position) => {
         if (!position) return;
-        
+
         // Apply slight random forces for gentle, continuous movement
         // Reduced force magnitude for slower movement
         const forceX = (Math.random() - 0.5) * animationSpeed * 0.6; // Reduced by 40%
         const forceY = (Math.random() - 0.5) * animationSpeed * 0.6; // Reduced by 40%
-        
+
         // Incorporate force, gravity, and damping in one step
         position.vx += forceX;
         position.vy += forceY;
-        
+
         // Apply stronger velocity damping for more stable positions
         position.vx *= 0.98; // Increased damping from 0.99
         position.vy *= 0.98; // Increased damping from 0.99
-        
+
         // Update position
         position.x += position.vx;
         position.y += position.vy;
-        
+
         // Add z-axis movement in a sine wave pattern for 3D effect - reduced speed
         position.z += Math.sin(time * 0.3 + position.x * 0.01) * 0.1; // Reduced from 0.5 and 0.2
-        
+
         // Keep z-values within range for consistent depth perception
         if (position.z < 10) position.z = 10;
         if (position.z > 200) position.z = 200;
-        
+
         // Cap maximum velocity with damping for smooth transitions
         if (Math.abs(position.vx) > maxVelocity) {
-          position.vx = (position.vx > 0 ? maxVelocity : -maxVelocity) * 0.95 + position.vx * 0.05;
+          position.vx =
+            (position.vx > 0 ? maxVelocity : -maxVelocity) * 0.95 +
+            position.vx * 0.05;
         }
         if (Math.abs(position.vy) > maxVelocity) {
-          position.vy = (position.vy > 0 ? maxVelocity : -maxVelocity) * 0.95 + position.vy * 0.05;
+          position.vy =
+            (position.vy > 0 ? maxVelocity : -maxVelocity) * 0.95 +
+            position.vy * 0.05;
         }
-        
+
         // Add stronger force to maintain original positions
         // Calculate current distance from original position
         const dx = position.x - position.originalX;
         const dy = position.y - position.originalY;
         const distanceFromOrigin = Math.sqrt(dx * dx + dy * dy);
-        
+
         // Stronger correction that increases with distance
         const correctionFactor = 0.0005; // Increased from 0.00015 for stronger return force
-        
+
         // Apply stronger correction when further from original position
         // This creates a "spring" effect that gets stronger with distance
-        const distanceMultiplier = 1.0 + (distanceFromOrigin / 100); // Scale force with distance
+        const distanceMultiplier = 1.0 + distanceFromOrigin / 100; // Scale force with distance
         position.vx -= dx * correctionFactor * distanceMultiplier;
         position.vy -= dy * correctionFactor * distanceMultiplier;
-        
+
         // Hard boundary to prevent wandering too far from original position
         const maxDistance = 150; // Maximum pixels to wander from starting point
         if (distanceFromOrigin > maxDistance) {
           // Force immediate position correction
-          position.x = position.originalX + (dx / distanceFromOrigin) * maxDistance;
-          position.y = position.originalY + (dy / distanceFromOrigin) * maxDistance;
-          
+          position.x =
+            position.originalX + (dx / distanceFromOrigin) * maxDistance;
+          position.y =
+            position.originalY + (dy / distanceFromOrigin) * maxDistance;
+
           // Reverse velocity to bounce back toward origin
           position.vx = -position.vx * 0.5;
           position.vy = -position.vy * 0.5;
         }
       });
-      
+
       // Clear only once
       context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      
+
       // Draw background radiance with less intensity
       drawBackgroundRadiance(clampedDelta);
-      
+
       // Draw all chords and collect their positions
       const chordCenters = [];
-      
+
       // Sort by z-depth for proper rendering
       const sortedIndices = [...Array(chords.length).keys()]
-        .filter(i => chordPositions.current[i])
+        .filter((i) => chordPositions.current[i])
         .sort((a, b) => {
           return chordPositions.current[b].z - chordPositions.current[a].z;
         });
-        
+
       // Draw chords in z-order (back to front)
       for (const i of sortedIndices) {
         const position = chordPositions.current[i];
         if (!position) continue;
-        
+
         // Skip some far chords for performance
         if (position.z > 120 && i % 2 !== 0) continue;
-        
+
         const center = drawChord(i, time, clampedDelta);
         if (center) chordCenters.push(center);
       }
-      
+
       // Draw connections between chords
       drawConnections(chordCenters);
-      
+
       // Request next frame
       animationFrameId.current = requestAnimationFrame(render);
     };
-    
+
     // Start animation
     animationFrameId.current = requestAnimationFrame(render);
-    
+
     // Add click event listener for chord playback - with optimization
     const handleCanvasClick = (event) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
-      
+
       // Find which chord was clicked (if any)
       for (let i = 0; i < chordPositions.current.length; i++) {
         const position = chordPositions.current[i];
         if (!position) continue;
-        
+
         // Skip checking far chords that would be too small to click
         if (position.z > 150) continue;
-        
+
         // Calculate distance to chord center (direct)
         const dx = mouseX - position.x;
         const dy = mouseY - position.y;
         const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
-        
+
         // Get molecule properties - use actual molecule radius
         const scale = position.displayScale || 400 / (400 + position.z);
         const chord = chords[i];
         const noteCount = chord.notes.length;
         const baseRadius = 25;
-        const moleculeRadius = (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
-        
+        const moleculeRadius =
+          (baseRadius + Math.sqrt(noteCount - 3) * 5) * scale;
+
         // Use actual molecule radius for click detection
-        if (distanceToCenter <= moleculeRadius * 1.5) { // 1.5x for slightly easier clicking
+        if (distanceToCenter <= moleculeRadius * 1.5) {
+          // 1.5x for slightly easier clicking
           playChord(chords[i], i);
           break;
         }
       }
     };
-    
+
     // Add event listener with passive flag for performance
-    canvas.addEventListener('click', handleCanvasClick, { passive: true });
-    
+    canvas.addEventListener("click", handleCanvasClick, { passive: true });
+
     // Clean up when component unmounts
     return () => {
       // Clean up all timeouts
-      Object.values(timeoutIds.current).forEach(id => clearTimeout(id));
-      
+      Object.values(timeoutIds.current).forEach((id) => clearTimeout(id));
+
       // Clean up other resources
-      canvas.removeEventListener('click', handleCanvasClick);
-      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener("click", handleCanvasClick);
+      canvas.removeEventListener("mousemove", handleMouseMove);
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
       }
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       clearTimeout(resizeTimeout);
     };
   }, []); // Empty dependency array means this effect runs once on mount
-  
+
   return <ChordWebCanvas ref={canvasRef} />;
 });
 
@@ -919,16 +1042,19 @@ const PricingContainer = styled.section`
   position: relative;
   overflow: hidden;
   min-height: 1000px; /* Increased from 900px for more vertical space */
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
-      radial-gradient(circle at 80% 20%, rgba(108, 99, 255, 0.08), transparent 40%);
+    background: radial-gradient(
+      circle at 80% 20%,
+      rgba(108, 99, 255, 0.08),
+      transparent 40%
+    );
     opacity: 0.6;
     z-index: 0;
   }
@@ -940,7 +1066,7 @@ const ContentContainer = styled.div`
   position: relative;
   z-index: 3;
   background: linear-gradient(
-    rgba(var(--background-rgb), 0.8) 0%, 
+    rgba(var(--background-rgb), 0.8) 0%,
     rgba(var(--background-rgb), 0.95) 20%,
     rgba(var(--background-rgb), 0.95) 80%,
     rgba(var(--background-rgb), 0.8) 100%
@@ -958,9 +1084,9 @@ const SectionTitle = styled.h2`
   margin-top: 20px;
   position: relative;
   pointer-events: none; /* No need for interaction */
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -8px;
     left: 50%;
@@ -998,12 +1124,16 @@ const BillingToggleContainer = styled.div`
 
 // Make the buttons larger to fill the width
 const BillingToggleButton = styled.button`
-  background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'transparent'};
-  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
-  border: ${props => props.$active ? 'none' : '1px solid rgba(255, 255, 255, 0.2)'};
+  background: ${(props) =>
+    props.$active
+      ? "linear-gradient(135deg, var(--primary), var(--accent))"
+      : "transparent"};
+  color: ${(props) => (props.$active ? "white" : "var(--text-secondary)")};
+  border: ${(props) =>
+    props.$active ? "none" : "1px solid rgba(255, 255, 255, 0.2)"};
   border-radius: 30px;
   padding: 12px 10px;
-  font-weight: ${props => props.$active ? '600' : '400'};
+  font-weight: ${(props) => (props.$active ? "600" : "400")};
   font-size: 1.05rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1012,10 +1142,13 @@ const BillingToggleButton = styled.button`
   flex: 1;
   z-index: 5;
   pointer-events: auto !important; /* Force pointer events */
-  
+
   &:hover {
-    background: ${props => props.$active ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255, 255, 255, 0.1)'};
-    color: ${props => props.$active ? 'white' : 'var(--text)'};
+    background: ${(props) =>
+      props.$active
+        ? "linear-gradient(135deg, var(--primary), var(--accent))"
+        : "rgba(255, 255, 255, 0.1)"};
+    color: ${(props) => (props.$active ? "white" : "var(--text)")};
   }
 `;
 
@@ -1031,7 +1164,11 @@ const SaveLabel = styled.span`
 
 // Add new styled components for the free trial
 const TrialBanner = styled.div`
-  background: linear-gradient(135deg, rgba(249, 200, 70, 0.1), rgba(249, 110, 70, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(249, 200, 70, 0.1),
+    rgba(249, 110, 70, 0.1)
+  );
   border-radius: 10px;
   padding: 12px 20px;
   margin: 20px auto 30px;
@@ -1041,15 +1178,19 @@ const TrialBanner = styled.div`
   position: relative;
   overflow: hidden;
   pointer-events: none; /* No need for interaction */
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(45deg, rgba(249, 200, 70, 0.05), rgba(249, 110, 70, 0.05));
+    background: linear-gradient(
+      45deg,
+      rgba(249, 200, 70, 0.05),
+      rgba(249, 110, 70, 0.05)
+    );
     z-index: 0;
   }
 `;
@@ -1057,7 +1198,7 @@ const TrialBanner = styled.div`
 const TrialText = styled.div`
   position: relative;
   z-index: 1;
-  
+
   h3 {
     font-size: 1.4rem;
     margin: 0 0 5px;
@@ -1065,21 +1206,21 @@ const TrialText = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     svg {
       margin-right: 10px;
-      color: #F96E46;
+      color: #f96e46;
     }
-    
+
     span {
-      background: linear-gradient(90deg, #F9C846, #F96E46);
+      background: linear-gradient(90deg, #f9c846, #f96e46);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 700;
       margin: 0 5px;
     }
   }
-  
+
   p {
     margin: 0;
     color: var(--text-secondary);
@@ -1091,7 +1232,7 @@ const TrialBadge = styled.div`
   position: absolute;
   top: -15px;
   right: -15px;
-  background: linear-gradient(90deg, #F9C846, #F96E46);
+  background: linear-gradient(90deg, #f9c846, #f96e46);
   color: white;
   font-size: 0.8rem;
   font-weight: 600;
@@ -1114,7 +1255,7 @@ const PricingCard = styled(motion.div)`
   border: 2px solid var(--primary);
   z-index: 5;
   pointer-events: auto !important; /* Force pointer events */
-  
+
   &:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
@@ -1127,12 +1268,12 @@ const PlanName = styled.div`
   justify-content: center;
   margin-bottom: 30px;
   position: relative;
-  
+
   .logo-container {
     display: flex;
     align-items: center;
   }
-  
+
   .pro-label {
     font-size: 1.2rem;
     font-weight: 600;
@@ -1152,15 +1293,19 @@ const CardHeader = styled.div`
   text-align: center;
   position: relative;
   pointer-events: auto !important;
-  
+
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(26, 26, 46, 0.3));
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.7),
+      rgba(26, 26, 46, 0.3)
+    );
   }
 `;
 
@@ -1232,64 +1377,65 @@ const SavingsInfo = styled.div`
   text-align: center;
   margin: 8px auto 20px;
   font-size: 0.95rem;
-  color: #F96E46;
+  color: #f96e46;
   font-weight: 600;
   background: rgba(249, 110, 70, 0.08);
   padding: 8px 15px;
   border-radius: 8px;
   display: inline-block;
   pointer-events: none; /* No need for interaction */
-  
+
   span {
     font-weight: 700;
-    color: #F9C846;
+    color: #f9c846;
   }
 `;
 
 const PricingSection = () => {
   // State to track the selected billing period
-  const [billingPeriod, setBillingPeriod] = useState('monthly');
-  
+  const [billingPeriod, setBillingPeriod] = useState("monthly");
+
   // State to track the pointer position
   const [pointerTop, setPointerTop] = useState(0);
-  
+
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef(null);
   const yearlyBtnRef = React.useRef(null);
   const lifetimeBtnRef = React.useRef(null);
-  
+
   // Update pointer position when billing period changes
   useEffect(() => {
     const updatePointerPosition = () => {
       let currentRef;
-      switch(billingPeriod) {
-        case 'monthly':
+      switch (billingPeriod) {
+        case "monthly":
           currentRef = monthlyBtnRef.current;
           break;
-        case 'yearly':
+        case "yearly":
           currentRef = yearlyBtnRef.current;
           break;
-        case 'lifetime':
+        case "lifetime":
           currentRef = lifetimeBtnRef.current;
           break;
         default:
           currentRef = monthlyBtnRef.current;
       }
-      
+
       if (currentRef) {
         const buttonRect = currentRef.getBoundingClientRect();
         const containerRect = currentRef.parentElement.getBoundingClientRect();
-        const relativeTop = buttonRect.top - containerRect.top + buttonRect.height/2 - 10;
+        const relativeTop =
+          buttonRect.top - containerRect.top + buttonRect.height / 2 - 10;
         setPointerTop(relativeTop);
       }
     };
-    
+
     // Update position after render
     updatePointerPosition();
-    
+
     // Also update on window resize
-    window.addEventListener('resize', updatePointerPosition);
-    return () => window.removeEventListener('resize', updatePointerPosition);
+    window.addEventListener("resize", updatePointerPosition);
+    return () => window.removeEventListener("resize", updatePointerPosition);
   }, [billingPeriod]);
 
   // Define the plan details for each billing period
@@ -1301,7 +1447,7 @@ const PricingSection = () => {
       buttonText: "Start Free Trial",
       priceId: process.env.REACT_APP_STRIPE_PRICE_MONTHLY || "price_monthly",
       isSubscription: true,
-      trialDays: 14
+      trialDays: 14,
     },
     yearly: {
       name: "Cymasphere Pro",
@@ -1311,7 +1457,7 @@ const PricingSection = () => {
       buttonText: "Start Free Trial",
       priceId: process.env.REACT_APP_STRIPE_PRICE_YEARLY || "price_yearly",
       isSubscription: true,
-      trialDays: 14
+      trialDays: 14,
     },
     lifetime: {
       name: "Cymasphere Pro",
@@ -1320,8 +1466,8 @@ const PricingSection = () => {
       lifetimeLabel: "one-time purchase",
       buttonText: "Buy Now",
       priceId: process.env.REACT_APP_STRIPE_PRICE_LIFETIME || "price_lifetime",
-      isSubscription: false
-    }
+      isSubscription: false,
+    },
   };
 
   // Features included in the plan
@@ -1337,7 +1483,7 @@ const PricingSection = () => {
     "Comprehensive Arrangement View",
     "Custom Voicing Generation Engine",
     "Cloud Storage & Project Backups",
-    "Premium Support & All Future Updates"
+    "Premium Support & All Future Updates",
   ];
 
   // Get the current plan based on selected billing period
@@ -1356,61 +1502,67 @@ const PricingSection = () => {
           viewport={{ once: true, amount: 0.2 }}
         >
           <SectionTitle>Simple, Transparent Pricing</SectionTitle>
-          
+
           {/* Free Trial Banner - Moved above the subtext */}
           <TrialBanner>
             <TrialText>
-              <h3><FaGift /> Try <span> FREE </span> for 14 days</h3>
-              <p>Experience all premium features without commitment.
-              <br />No credit card required to start.</p>
+              <h3>
+                <FaGift /> Try <span> FREE </span> for 14 days
+              </h3>
+              <p>
+                Experience all premium features without commitment.
+                <br />
+                No credit card required to start.
+              </p>
             </TrialText>
           </TrialBanner>
-          
+
           <SectionSubtitle>
             Choose the billing option that works best for you.
-            <br />All options include full access to all features.
+            <br />
+            All options include full access to all features.
           </SectionSubtitle>
-        
+
           {/* Billing period toggle */}
           <BillingToggleContainer>
-            <BillingToggleButton 
+            <BillingToggleButton
               ref={monthlyBtnRef}
-              $active={billingPeriod === 'monthly'} 
-              onClick={() => setBillingPeriod('monthly')}
+              $active={billingPeriod === "monthly"}
+              onClick={() => setBillingPeriod("monthly")}
             >
               Monthly
             </BillingToggleButton>
-            
-            <BillingToggleButton 
+
+            <BillingToggleButton
               ref={yearlyBtnRef}
-              $active={billingPeriod === 'yearly'} 
-              onClick={() => setBillingPeriod('yearly')}
+              $active={billingPeriod === "yearly"}
+              onClick={() => setBillingPeriod("yearly")}
             >
               Yearly
             </BillingToggleButton>
-            
-            <BillingToggleButton 
+
+            <BillingToggleButton
               ref={lifetimeBtnRef}
-              $active={billingPeriod === 'lifetime'} 
-              onClick={() => setBillingPeriod('lifetime')}
+              $active={billingPeriod === "lifetime"}
+              onClick={() => setBillingPeriod("lifetime")}
             >
               Lifetime
             </BillingToggleButton>
           </BillingToggleContainer>
-          
+
           {/* Savings info based on selected billing period */}
-          <div style={{ textAlign: 'center' }}>
-            {billingPeriod === 'monthly' && (
+          <div style={{ textAlign: "center" }}>
+            {billingPeriod === "monthly" && (
               <SavingsInfo>
                 <span>Most Flexible</span> - Pay month-to-month, cancel anytime
               </SavingsInfo>
             )}
-            {billingPeriod === 'yearly' && (
+            {billingPeriod === "yearly" && (
               <SavingsInfo>
                 Save <span>25%</span> with yearly billing
               </SavingsInfo>
             )}
-            {billingPeriod === 'lifetime' && (
+            {billingPeriod === "lifetime" && (
               <SavingsInfo>
                 <span>Best Value</span> - One-time payment, lifetime access
               </SavingsInfo>
@@ -1426,57 +1578,67 @@ const PricingSection = () => {
           viewport={{ once: true, amount: 0.2 }}
         >
           <PricingCard>
-            {billingPeriod !== 'lifetime' && (
+            {billingPeriod !== "lifetime" && (
               <TrialBadge>14-Day Free Trial</TrialBadge>
             )}
             <CardHeader>
               <PlanName>
                 <div className="logo-container">
-                  <CymasphereLogo 
-                    size="40px" 
+                  <CymasphereLogo
+                    size="40px"
                     showText={true}
-                    onClick={(e) => e.preventDefault()} 
+                    onClick={(e) => e.preventDefault()}
                   />
                   <span className="pro-label">PRO</span>
                 </div>
               </PlanName>
-              <div style={{ fontSize: '1.1rem', opacity: 0.8 }}>
+              <div style={{ fontSize: "1.1rem", opacity: 0.8 }}>
                 Complete solution for music producers
               </div>
-              
+
               <PlanPrice>
                 <Price>${currentPlan.price}</Price>
                 <BillingPeriod>{currentPlan.period}</BillingPeriod>
-                {billingPeriod === 'yearly' && (
-                  <div style={{ marginTop: '5px', fontSize: '1rem' }}>
+                {billingPeriod === "yearly" && (
+                  <div style={{ marginTop: "5px", fontSize: "1rem" }}>
                     {currentPlan.monthlyPrice} billed annually
                   </div>
                 )}
-                {billingPeriod === 'lifetime' && (
-                  <div style={{ marginTop: '5px', fontSize: '1rem', opacity: 0.8 }}>
+                {billingPeriod === "lifetime" && (
+                  <div
+                    style={{ marginTop: "5px", fontSize: "1rem", opacity: 0.8 }}
+                  >
                     {currentPlan.lifetimeLabel}
                   </div>
                 )}
-                {billingPeriod !== 'lifetime' && (
-                  <div style={{ 
-                    marginTop: '10px', 
-                    fontSize: '0.9rem', 
-                    color: '#F96E46', 
-                    fontWeight: 'bold',
-                    background: 'rgba(249, 110, 70, 0.1)',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    display: 'inline-block'
-                  }}>
+                {billingPeriod !== "lifetime" && (
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      fontSize: "0.9rem",
+                      color: "#F96E46",
+                      fontWeight: "bold",
+                      background: "rgba(249, 110, 70, 0.1)",
+                      padding: "5px 10px",
+                      borderRadius: "6px",
+                      display: "inline-block",
+                    }}
+                  >
                     First {currentPlan.trialDays} days free - Cancel anytime
                   </div>
                 )}
               </PlanPrice>
             </CardHeader>
-            
+
             <CardBody>
               <Divider />
-              <h4 style={{ marginBottom: '0.5rem', color: 'var(--text)', marginTop: '0' }}>
+              <h4
+                style={{
+                  marginBottom: "0.5rem",
+                  color: "var(--text)",
+                  marginTop: "0",
+                }}
+              >
                 All Plans Include:
               </h4>
               <FeaturesList>
@@ -1489,8 +1651,8 @@ const PricingSection = () => {
                   </Feature>
                 ))}
               </FeaturesList>
-              
-              <StripeCheckout 
+
+              <StripeCheckout
                 priceId={currentPlan.priceId}
                 buttonText={currentPlan.buttonText}
                 billingPeriod={billingPeriod}

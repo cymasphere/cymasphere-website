@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaQuoteLeft, FaStar } from 'react-icons/fa';
+"use client";
+
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { FaQuoteLeft, FaStar } from "react-icons/fa";
 
 const TestimonialsContainer = styled.section`
   padding: 100px 20px;
@@ -21,9 +23,9 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 3rem;
   position: relative;
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -96,7 +98,7 @@ const AuthorImage = styled.div`
   overflow: hidden;
   margin-bottom: 15px;
   border: 3px solid var(--primary);
-  
+
   img {
     width: 100%;
     height: 100%;
@@ -119,7 +121,7 @@ const AuthorTitle = styled.p`
 const RatingStars = styled.div`
   display: flex;
   gap: 5px;
-  color: #FFD700;
+  color: #ffd700;
   font-size: 20px;
   margin-bottom: 10px;
 `;
@@ -144,7 +146,7 @@ const NavButton = styled.button`
   cursor: pointer;
   font-size: 20px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: var(--primary);
     color: white;
@@ -163,70 +165,74 @@ const Dot = styled.button`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: ${(props) => props.$active ? 'var(--primary)' : 'rgba(108, 99, 255, 0.3)'};
+  background-color: ${(props) =>
+    props.$active ? "var(--primary)" : "rgba(108, 99, 255, 0.3)"};
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
-    background-color: ${(props) => props.$active ? 'var(--primary)' : 'rgba(108, 99, 255, 0.5)'};
+    background-color: ${(props) =>
+      props.$active ? "var(--primary)" : "rgba(108, 99, 255, 0.5)"};
   }
 `;
 
 const TestimonialsSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  
+
   const testimonials = [
     {
       text: "Cymasphere has completely transformed my approach to chord progressions. The Interactive Harmony Palette makes theory accessible and fun, while the voicing generator creates rich, professional sounds I couldn't achieve before.",
       author: "Sarah Johnson",
       title: "Independent Songwriter",
       rating: 5,
-      image: "https://randomuser.me/api/portraits/women/44.jpg"
+      image: "https://randomuser.me/api/portraits/women/44.jpg",
     },
     {
       text: "As a music educator, I've been looking for tools that make complex harmony concepts more visual and intuitive. Cymasphere does exactly that, and my students are showing better understanding and more creativity in their compositions.",
       author: "David Chen",
       title: "Professor of Music Theory",
       rating: 5,
-      image: "https://randomuser.me/api/portraits/men/32.jpg"
+      image: "https://randomuser.me/api/portraits/men/32.jpg",
     },
     {
       text: "The Dynamic Pattern Editor is a game-changer for my workflow. I can quickly test different rhythmic ideas and build complex patterns that would take hours to program manually. The voice control features give me precise control over every element.",
       author: "Maria Rodriguez",
       title: "Film Composer",
       rating: 5,
-      image: "https://randomuser.me/api/portraits/women/68.jpg"
-    }
+      image: "https://randomuser.me/api/portraits/women/68.jpg",
+    },
   ];
-  
+
   const nextSlide = () => {
     setActiveIndex((prev) => (prev + 1) % testimonials.length);
     setIsAutoPlaying(false);
   };
-  
+
   const prevSlide = () => {
-    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setActiveIndex(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length
+    );
     setIsAutoPlaying(false);
   };
-  
+
   const goToSlide = (index) => {
     setActiveIndex(index);
     setIsAutoPlaying(false);
   };
-  
+
   // Auto-rotate testimonials
   useEffect(() => {
     if (!isAutoPlaying) return;
-    
+
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % testimonials.length);
     }, 6000);
-    
+
     return () => clearInterval(interval);
   }, [isAutoPlaying, testimonials.length]);
-  
+
   return (
     <TestimonialsContainer id="testimonials">
       <ContentContainer>
@@ -238,7 +244,7 @@ const TestimonialsSection = () => {
         >
           <SectionTitle>What Our Users Say</SectionTitle>
         </motion.div>
-        
+
         <TestimonialWrapper>
           <TestimonialSlider $activeIndex={activeIndex}>
             {testimonials.map((testimonial, index) => (
@@ -268,18 +274,18 @@ const TestimonialsSection = () => {
               </TestimonialCard>
             ))}
           </TestimonialSlider>
-          
+
           <NavigationButtons>
             <NavButton onClick={prevSlide}>&#10094;</NavButton>
             <NavButton onClick={nextSlide}>&#10095;</NavButton>
           </NavigationButtons>
-          
+
           <TestimonialDots>
             {testimonials.map((_, index) => (
-              <Dot 
-                key={index} 
-                $active={activeIndex === index} 
-                onClick={() => goToSlide(index)} 
+              <Dot
+                key={index}
+                $active={activeIndex === index}
+                onClick={() => goToSlide(index)}
               />
             ))}
           </TestimonialDots>
@@ -289,4 +295,4 @@ const TestimonialsSection = () => {
   );
 };
 
-export default TestimonialsSection; 
+export default TestimonialsSection;

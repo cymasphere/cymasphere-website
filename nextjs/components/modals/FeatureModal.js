@@ -1,8 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle } from 'react-icons/fa';
-import DOMPurify from 'dompurify';
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import styled, { keyframes } from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaTimes,
+  FaChevronLeft,
+  FaChevronRight,
+  FaCheck,
+  FaInfoCircle,
+} from "react-icons/fa";
+import DOMPurify from "dompurify";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -35,7 +43,7 @@ const ModalContainer = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   margin-top: 60px;
-  
+
   @media (max-width: 768px) {
     width: 100%;
     height: 100vh;
@@ -45,27 +53,29 @@ const ModalContainer = styled(motion.div)`
     padding-top: 70px; /* Match the TitleContainer height */
     overflow: hidden; /* Prevent outer container from scrolling */
   }
-  
+
   @media (max-width: 480px) {
     padding-top: 60px; /* Match the TitleContainer height */
   }
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: -5px;
     left: -5px;
     right: -5px;
     bottom: -5px;
-    background: linear-gradient(135deg, 
-      rgba(108, 99, 255, 0.7) 0%, 
-      rgba(108, 99, 255, 0.2) 50%, 
-      rgba(78, 205, 196, 0.7) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.7) 0%,
+      rgba(108, 99, 255, 0.2) 50%,
+      rgba(78, 205, 196, 0.7) 100%
+    );
     border-radius: 28px;
     z-index: -1;
     opacity: 0.7;
     filter: blur(8px);
-    
+
     @media (max-width: 768px) {
       border-radius: 0;
       top: 0;
@@ -74,13 +84,13 @@ const ModalContainer = styled(motion.div)`
       bottom: 0;
     }
   }
-  
+
   /* Custom outline style for focus */
   &:focus {
     outline: none;
     border: 1px solid var(--primary);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--primary);
-    
+
     @media (max-width: 768px) {
       border: none;
       box-shadow: none;
@@ -104,29 +114,31 @@ const TitleContainer = styled.div`
   box-sizing: border-box;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  
+
   @media (max-width: 768px) {
     padding: 15px 50px;
     height: 70px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 10px 40px;
     height: 60px;
   }
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, 
-      transparent, 
-      rgba(108, 99, 255, 0.4), 
-      rgba(78, 205, 196, 0.4), 
-      transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(108, 99, 255, 0.4),
+      rgba(78, 205, 196, 0.4),
+      transparent
+    );
   }
 `;
 
@@ -138,7 +150,7 @@ const ModalTitle = styled.h2`
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
   color: white;
   text-align: center;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     padding-left: 0;
@@ -178,7 +190,7 @@ const InfoButton = styled.button`
   z-index: 9600 !important;
   transition: all 0.3s ease;
   animation: ${pulse} 2s infinite;
-  
+
   @media (max-width: 768px) {
     width: 36px;
     height: 36px;
@@ -187,7 +199,7 @@ const InfoButton = styled.button`
     left: 16px;
     display: none; /* Hide on mobile */
   }
-  
+
   &:hover {
     background: var(--primary);
     transform: scale(1.1);
@@ -213,7 +225,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   z-index: 9600 !important;
   transition: all 0.3s ease;
-  
+
   @media (max-width: 768px) {
     width: 36px;
     height: 36px;
@@ -221,13 +233,13 @@ const CloseButton = styled.button`
     top: 16px;
     right: 16px;
   }
-  
+
   @media (max-width: 480px) {
     width: 36px;
     height: 36px;
     font-size: 18px;
   }
-  
+
   &:hover {
     background: var(--primary);
     transform: scale(1.1);
@@ -246,13 +258,13 @@ const CarouselContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  
+
   @media (max-width: 768px) {
     margin-top: 0; /* No top margin needed since we padded the container */
     margin-bottom: 0; /* Footer is fixed now, so no margin needed */
     height: 100%;
   }
-  
+
   @media (max-width: 480px) {
     margin-top: 0;
     margin-bottom: 0;
@@ -280,7 +292,7 @@ const ImageContainer = styled.div`
   align-items: center;
   background-color: rgba(10, 10, 15, 0.3);
   padding-top: 0;
-  
+
   @media (max-width: 768px) {
     height: 45vh;
     min-height: 250px;
@@ -290,7 +302,7 @@ const ImageContainer = styled.div`
     justify-content: center;
     align-items: center;
   }
-  
+
   @media (max-width: 480px) {
     height: 40vh;
     min-height: 220px;
@@ -302,7 +314,8 @@ const FeatureImage = styled.div`
   width: 100%;
   height: 100%;
   background-color: transparent;
-  background-image: ${props => props.imgSrc ? `url(${props.imgSrc})` : 'none'};
+  background-image: ${(props) =>
+    props.imgSrc ? `url(${props.imgSrc})` : "none"};
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -313,14 +326,16 @@ const FeatureImage = styled.div`
   font-size: 32px;
   font-weight: bold;
   position: relative;
-  
+
   @media (max-width: 768px) {
     background-size: contain;
     background-position: center;
   }
-  
+
   /* Show text only if no image is provided */
-  ${props => props.imgSrc && `
+  ${(props) =>
+    props.imgSrc &&
+    `
     font-size: 0;
     &::after {
       content: none;
@@ -339,8 +354,8 @@ const ContentOverlay = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  opacity: ${props => props.$visible ? 1 : 0};
-  pointer-events: ${props => props.$visible ? 'auto' : 'none'};
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  pointer-events: ${(props) => (props.$visible ? "auto" : "none")};
   transition: opacity 0.3s ease;
   backdrop-filter: blur(20px);
   padding-top: 20px;
@@ -350,32 +365,32 @@ const ContentOverlay = styled.div`
   overflow-y: auto;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  
+
   @media (max-width: 768px) {
     padding: 10px 15px 70px; /* Add padding at the bottom to account for fixed footer */
     height: calc(100% - 0px); /* Take full height */
     overflow-y: auto; /* Make sure this container is scrollable on mobile */
   }
-  
+
   @media (max-width: 480px) {
     padding: 10px 12px 60px; /* Add padding at the bottom to account for fixed footer */
     height: calc(100% - 0px); /* Take full height */
   }
-  
+
   /* Scrollbar styling */
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(108, 99, 255, 0.3);
     border-radius: 4px;
-    
+
     &:hover {
       background: rgba(108, 99, 255, 0.5);
     }
@@ -390,7 +405,7 @@ const ContentContainer = styled.div`
   align-items: flex-start;
   gap: 30px;
   padding-bottom: 10px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: center;
@@ -398,7 +413,7 @@ const ContentContainer = styled.div`
     width: 100%;
     padding: 0 0 10px 0; /* Reduce bottom padding */
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 0 10px 0; /* Reduce bottom padding */
   }
@@ -416,7 +431,7 @@ const InfoImageContainer = styled.div`
   background: rgba(10, 10, 15, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  
+
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
@@ -427,13 +442,13 @@ const InfoImageContainer = styled.div`
     margin-bottom: 10px;
     flex-shrink: 0;
   }
-  
+
   @media (max-width: 480px) {
     border-radius: 8px;
     margin-bottom: 10px;
     aspect-ratio: 16/9;
   }
-  
+
   &:hover {
     z-index: 10;
   }
@@ -443,7 +458,8 @@ const InfoFeatureImage = styled.div`
   width: 100%;
   height: 100%;
   background-color: transparent;
-  background-image: ${props => props.imgSrc ? `url(${props.imgSrc})` : 'none'};
+  background-image: ${(props) =>
+    props.imgSrc ? `url(${props.imgSrc})` : "none"};
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -457,7 +473,7 @@ const InfoFeatureImage = styled.div`
   transition: transform 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     font-size: 20px;
     background-size: contain;
@@ -465,19 +481,21 @@ const InfoFeatureImage = styled.div`
     transform: none !important;
     box-shadow: none !important;
   }
-  
+
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-    
+
     @media (max-width: 768px) {
       transform: none;
       box-shadow: none;
     }
   }
-  
+
   /* Show text only if no image is provided */
-  ${props => props.imgSrc && `
+  ${(props) =>
+    props.imgSrc &&
+    `
     font-size: 0;
     &::after {
       content: none;
@@ -491,7 +509,7 @@ const ContentTextContainer = styled.div`
   flex-direction: column;
   overflow: visible;
   padding-right: 10px;
-  
+
   @media (max-width: 768px) {
     width: 100%;
     padding-right: 0;
@@ -502,7 +520,7 @@ const ContentTextContainer = styled.div`
     padding-bottom: 0; /* Remove padding */
     overflow: visible;
   }
-  
+
   @media (max-width: 480px) {
     padding-top: 0;
     padding-bottom: 0; /* Remove padding */
@@ -515,7 +533,7 @@ const FeatureDescription = styled.div`
   color: rgba(255, 255, 255, 0.95);
   flex: 1;
   min-height: 0;
-  
+
   h3 {
     font-size: clamp(1.4rem, 2vw, 1.7rem);
     font-weight: 700;
@@ -527,26 +545,26 @@ const FeatureDescription = styled.div`
     letter-spacing: -0.5px;
     display: inline-block;
   }
-  
+
   p {
     margin-bottom: 10px;
   }
-  
+
   ul {
     padding-left: 20px;
     margin-top: 8px;
     margin-bottom: 10px;
   }
-  
+
   li {
     margin-bottom: 8px;
     position: relative;
-    
+
     @media (max-width: 480px) {
       margin-bottom: 12px;
     }
   }
-  
+
   /* Attribution styling */
   p.attribution {
     font-style: italic;
@@ -555,23 +573,23 @@ const FeatureDescription = styled.div`
     margin-top: 12px;
     margin-bottom: 10px;
   }
-  
+
   @media (max-width: 768px) {
     width: 100%;
     margin-top: 0;
     padding-bottom: 0;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1rem;
     margin-top: 0;
     padding-bottom: 0;
-    
+
     h3 {
       font-size: 1.5rem;
       margin-bottom: 15px;
     }
-    
+
     ul {
       padding-left: 15px;
     }
@@ -592,31 +610,33 @@ const CarouselControls = styled.div`
   left: 0;
   right: 0;
   z-index: 9400;
-  
+
   @media (max-width: 768px) {
     height: 70px;
     padding: 15px;
     position: fixed;
     bottom: 0;
   }
-  
+
   @media (max-width: 480px) {
     height: 60px;
     padding: 10px;
   }
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, 
-      transparent, 
-      rgba(108, 99, 255, 0.3), 
-      rgba(78, 205, 196, 0.3), 
-      transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(108, 99, 255, 0.3),
+      rgba(78, 205, 196, 0.3),
+      transparent
+    );
   }
 `;
 
@@ -633,29 +653,29 @@ const ControlButton = styled.button`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   @media (max-width: 768px) {
     width: 44px;
     height: 44px;
     font-size: 18px;
   }
-  
+
   @media (max-width: 480px) {
     width: 40px;
     height: 40px;
     font-size: 16px;
   }
-  
+
   &:hover {
     background: var(--primary);
     transform: scale(1.1);
     box-shadow: 0 0 20px rgba(108, 99, 255, 0.5);
   }
-  
+
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-    
+
     &:hover {
       background: rgba(20, 18, 30, 0.5);
       transform: none;
@@ -671,12 +691,12 @@ const ProgressIndicator = styled.div`
   gap: 12px;
   flex: 1;
   margin: 0 20px;
-  
+
   @media (max-width: 768px) {
     gap: 10px;
     margin: 0 15px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 8px;
     margin: 0 10px;
@@ -687,20 +707,23 @@ const IndicatorDot = styled.button`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.2)'};
+  background: ${(props) =>
+    props.$active ? "var(--primary)" : "rgba(255, 255, 255, 0.2)"};
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: ${props => props.$active ? '0 0 8px rgba(108, 99, 255, 0.6)' : 'none'};
-  transform: ${props => props.$active ? 'scale(1.2)' : 'scale(1)'};
-  
+  box-shadow: ${(props) =>
+    props.$active ? "0 0 8px rgba(108, 99, 255, 0.6)" : "none"};
+  transform: ${(props) => (props.$active ? "scale(1.2)" : "scale(1)")};
+
   @media (max-width: 480px) {
     width: 10px;
     height: 10px;
   }
-  
+
   &:hover {
-    background: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.4)'};
+    background: ${(props) =>
+      props.$active ? "var(--primary)" : "rgba(255, 255, 255, 0.4)"};
   }
 `;
 
@@ -710,70 +733,88 @@ const parseHtml = (htmlContent) => {
   if (React.isValidElement(htmlContent)) {
     return htmlContent;
   }
-  
+
   // If it's a string that might contain HTML
-  if (typeof htmlContent === 'string') {
+  if (typeof htmlContent === "string") {
     // Clean up HTML before sanitizing (fix common issues)
     let cleanHtml = htmlContent
-      .replace(/&nbsp;/g, ' ')
-      .replace(/<br>/g, '<br />')
-      .replace(/<p>\s*<\/p>/g, '');
-      
+      .replace(/&nbsp;/g, " ")
+      .replace(/<br>/g, "<br />")
+      .replace(/<p>\s*<\/p>/g, "");
+
     // Ensure headings are properly formatted
-    if (!cleanHtml.includes('<h3>') && !cleanHtml.includes('<h2>')) {
+    if (!cleanHtml.includes("<h3>") && !cleanHtml.includes("<h2>")) {
       // Extract first sentence as title if no heading exists
-      const firstPeriod = cleanHtml.indexOf('.');
+      const firstPeriod = cleanHtml.indexOf(".");
       if (firstPeriod > 10 && firstPeriod < 100) {
         const title = cleanHtml.substring(0, firstPeriod + 1);
         const rest = cleanHtml.substring(firstPeriod + 1);
         cleanHtml = `<h3>${title}</h3>${rest}`;
       }
     }
-    
+
     // Sanitize the HTML to prevent XSS
     const sanitizedHtml = DOMPurify.sanitize(cleanHtml, {
       USE_PROFILES: { html: true },
-      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'a'],
-      ALLOWED_ATTR: ['href', 'target', 'rel']
+      ALLOWED_TAGS: [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "p",
+        "br",
+        "ul",
+        "ol",
+        "li",
+        "strong",
+        "em",
+        "b",
+        "i",
+        "a",
+      ],
+      ALLOWED_ATTR: ["href", "target", "rel"],
     });
-    
+
     return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
   }
-  
-  return '';
+
+  return "";
 };
 
 // Helper function to extract key features
 const extractKeyFeatures = (detailedDescription) => {
   if (!detailedDescription) return [];
-  
+
   // If there's a ul element, extract its contents
   if (detailedDescription?.props?.children) {
-    const ulElement = Array.isArray(detailedDescription.props.children) 
-      ? detailedDescription.props.children.find(child => child.type === 'ul')
+    const ulElement = Array.isArray(detailedDescription.props.children)
+      ? detailedDescription.props.children.find((child) => child.type === "ul")
       : null;
-      
+
     if (ulElement && ulElement.props && ulElement.props.children) {
       return Array.isArray(ulElement.props.children)
-        ? ulElement.props.children.map(li => 
-            typeof li.props.children === 'string' 
-              ? li.props.children 
-              : Array.isArray(li.props.children) 
-                ? li.props.children.map(child => 
-                    typeof child === 'string' ? child : ''
-                  ).join('') 
-                : ''
+        ? ulElement.props.children.map((li) =>
+            typeof li.props.children === "string"
+              ? li.props.children
+              : Array.isArray(li.props.children)
+              ? li.props.children
+                  .map((child) => (typeof child === "string" ? child : ""))
+                  .join("")
+              : ""
           )
         : [ulElement.props.children];
     }
   }
-  
+
   // If no ul element found, create some default features from the description
-  if (typeof detailedDescription === 'string') {
-    const sentences = detailedDescription.split('.');
-    return sentences.filter(s => s.trim().length > 20 && s.trim().length < 100).slice(0, 3);
+  if (typeof detailedDescription === "string") {
+    const sentences = detailedDescription.split(".");
+    return sentences
+      .filter((s) => s.trim().length > 20 && s.trim().length < 100)
+      .slice(0, 3);
   }
-  
+
   return [];
 };
 
@@ -793,7 +834,7 @@ const ImageDebug = styled.div`
 
 // Feature descriptions object for detailed content
 const featureDescriptions = {
-  'Advanced Voice Handling': `<h3>Advanced Voice Handling</h3>
+  "Advanced Voice Handling": `<h3>Advanced Voice Handling</h3>
     <p>Take complete control over your chord voicings with our sophisticated voice leading system, designed to give you both precise control and intelligent automation.</p>
     <ul>
       <li><strong>Intelligent Voice Leading</strong> - Automatically generate smooth transitions between chords that follow proper voice leading principles.</li>
@@ -809,42 +850,46 @@ const featureDescriptions = {
 // Function to get image path based on feature title
 const getImagePath = (title) => {
   if (!title) return null;
-  
+
   // Explicitly use absolute paths with the public URL
-  const publicUrl = process.env.PUBLIC_URL || '';
-  
+  const publicUrl = process.env.PUBLIC_URL || "";
+
   // Make Progression Timeline use the same image as Song Builder
   if (title === "Progression Timeline") {
     return `${publicUrl}/images/song_view.png`;
   }
-  
+
   const titleToImage = {
-    'Song Builder': `${publicUrl}/images/song_view.png`,
-    'Harmony Palettes': `${publicUrl}/images/palette_view.png`,
-    'Advanced Voice Handling': `${publicUrl}/images/advanced_voicing.png`,
-    'Dynamic Pattern Editor': `${publicUrl}/images/pattern_view.png`,
-    'Voicing Generator': `${publicUrl}/images/voicing_view.png`,
+    "Song Builder": `${publicUrl}/images/song_view.png`,
+    "Harmony Palettes": `${publicUrl}/images/palette_view.png`,
+    "Advanced Voice Handling": `${publicUrl}/images/advanced_voicing.png`,
+    "Dynamic Pattern Editor": `${publicUrl}/images/pattern_view.png`,
+    "Voicing Generator": `${publicUrl}/images/voicing_view.png`,
   };
-  
+
   // Fallback images for any feature without a specific image
   const fallbackImages = [
     `${publicUrl}/images/song_view.png`,
     `${publicUrl}/images/palette_view.png`,
     `${publicUrl}/images/pattern_view.png`,
-    `${publicUrl}/images/voicing_view.png`
+    `${publicUrl}/images/voicing_view.png`,
   ];
-  
+
   let imagePath = titleToImage[title];
-  
+
   // If no specific image is found, use a fallback based on the title's hash
   if (!imagePath) {
-    const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = title
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     imagePath = fallbackImages[hash % fallbackImages.length];
-    console.log(`No specific image for "${title}", using fallback: ${imagePath}`);
+    console.log(
+      `No specific image for "${title}", using fallback: ${imagePath}`
+    );
   } else {
     console.log(`For title "${title}", using image path: ${imagePath}`);
   }
-  
+
   return imagePath;
 };
 
@@ -858,7 +903,7 @@ const LoadingIndicator = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 15px;
-  
+
   @media (max-width: 480px) {
     gap: 10px;
   }
@@ -867,7 +912,7 @@ const LoadingIndicator = styled.div`
 const LoadingText = styled.div`
   color: rgba(255, 255, 255, 0.7);
   font-size: 16px;
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
   }
@@ -890,7 +935,7 @@ const LoadingSpinner = styled.div`
   border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: ${loadingSpinAnimation} 1s linear infinite;
-  
+
   @media (max-width: 480px) {
     width: 30px;
     height: 30px;
@@ -903,7 +948,7 @@ const SwipeIndicator = styled.div`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  display: ${props => props.$visible ? 'flex' : 'none'};
+  display: ${(props) => (props.$visible ? "flex" : "none")};
   align-items: center;
   justify-content: center;
   width: 50px;
@@ -915,15 +960,15 @@ const SwipeIndicator = styled.div`
   z-index: 20;
   pointer-events: none;
   opacity: 0.8;
-  
+
   &.left {
     left: 20px;
   }
-  
+
   &.right {
     right: 20px;
   }
-  
+
   @media (max-width: 480px) {
     width: 40px;
     height: 40px;
@@ -933,7 +978,7 @@ const SwipeIndicator = styled.div`
 
 const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   // Find the Advanced Voice Handling feature and update its description before rendering
-  const updatedFeatures = features.map(feature => {
+  const updatedFeatures = features.map((feature) => {
     if (feature.title === "Advanced Voice Handling") {
       return {
         ...feature,
@@ -950,18 +995,18 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
             <li><strong>Designated Bass Channel</strong> for foundation control - Discrete controls for pedal tones and voice leading</li>
             <li><strong>Voice / Channel Matrix</strong> for effortless MIDI routing - Visually map voices to MIDI channels and instruments</li>
           </ul>
-        `
+        `,
       };
     }
     return feature;
   });
-  
+
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
-    height: window.innerHeight
+    height: window.innerHeight,
   });
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [imageErrors, setImageErrors] = useState({});
@@ -971,77 +1016,77 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   const [swipeDirection, setSwipeDirection] = useState(null);
   const modalRef = useRef(null);
   const containerRef = useRef(null);
-  
+
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex);
     }
   }, [initialIndex, isOpen]);
-  
+
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
-    
+
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = originalStyle;
     }
-    
+
     return () => {
       document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
-  
+
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       });
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
+
   // Enhanced touch handlers with visual feedback
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
     setSwipeDirection(null);
   };
-  
+
   const handleTouchMove = (e) => {
     const currentTouch = e.targetTouches[0].clientX;
     setTouchEnd(currentTouch);
-    
+
     if (touchStart && currentTouch) {
       const diff = touchStart - currentTouch;
       if (diff > 30) {
-        setSwipeDirection('left');
+        setSwipeDirection("left");
       } else if (diff < -30) {
-        setSwipeDirection('right');
+        setSwipeDirection("right");
       } else {
         setSwipeDirection(null);
       }
     }
   };
-  
+
   const handleTouchEnd = useCallback(() => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
-    
+
     if (isLeftSwipe && features.length > 1) {
       handleNext();
     } else if (isRightSwipe && features.length > 1) {
       handlePrevious();
     }
-    
+
     setTouchStart(null);
     setTouchEnd(null);
   }, [touchStart, touchEnd, features.length]);
@@ -1051,22 +1096,22 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     const currentIdx = currentIndex;
     const nextIdx = (currentIdx + 1) % features.length;
     const prevIdx = (currentIdx - 1 + features.length) % features.length;
-    
+
     // Preload current, next and previous images
-    [currentIdx, nextIdx, prevIdx].forEach(idx => {
+    [currentIdx, nextIdx, prevIdx].forEach((idx) => {
       const feature = features[idx];
       if (!feature) return;
-      
+
       const { title, image: featureImage } = feature;
       const imagePath = featureImage || getImagePath(title);
-      
+
       if (imagePath && !imagesLoaded[title] && !imageErrors[title]) {
         const img = new Image();
         img.onload = () => {
-          setImagesLoaded(prev => ({ ...prev, [title]: true }));
+          setImagesLoaded((prev) => ({ ...prev, [title]: true }));
         };
         img.onerror = () => {
-          setImageErrors(prev => ({ ...prev, [title]: true }));
+          setImageErrors((prev) => ({ ...prev, [title]: true }));
         };
         img.src = imagePath;
       }
@@ -1083,32 +1128,32 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   // Toggle debug mode with Shift + D
   useEffect(() => {
     const handleDebugToggle = (e) => {
-      if (e.shiftKey && e.key === 'D') {
-        setDebugMode(prev => !prev);
+      if (e.shiftKey && e.key === "D") {
+        setDebugMode((prev) => !prev);
       }
     };
-    
-    window.addEventListener('keydown', handleDebugToggle);
-    return () => window.removeEventListener('keydown', handleDebugToggle);
+
+    window.addEventListener("keydown", handleDebugToggle);
+    return () => window.removeEventListener("keydown", handleDebugToggle);
   }, []);
-  
+
   // Define these functions with useCallback before using them in useEffect
   const handleNext = useCallback(() => {
     // Prevent rapid multiple clicks
     if (direction !== 0) return;
-    
+
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % features.length);
   }, [features.length, direction]);
-  
+
   const handlePrevious = useCallback(() => {
     // Prevent rapid multiple clicks
     if (direction !== 0) return;
-    
+
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
   }, [features.length, direction]);
-  
+
   // Reset direction after animation completes
   useEffect(() => {
     if (direction !== 0) {
@@ -1118,31 +1163,34 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
       return () => clearTimeout(timer);
     }
   }, [direction, currentIndex]);
-  
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'ArrowRight') {
-      handleNext();
-    } else if (e.key === 'ArrowLeft') {
-      handlePrevious();
-    } else if (e.key === 'Escape') {
-      onClose();
-    }
-  }, [handleNext, handlePrevious, onClose]);
-  
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "ArrowRight") {
+        handleNext();
+      } else if (e.key === "ArrowLeft") {
+        handlePrevious();
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    },
+    [handleNext, handlePrevious, onClose]
+  );
+
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener("keydown", handleKeyDown);
       };
     }
   }, [isOpen, handleKeyDown]);
-  
+
   const handleDotClick = (index) => {
     setDirection(index > currentIndex ? 1 : -1);
     setCurrentIndex(index);
   };
-  
+
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -1155,23 +1203,23 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
 
   const currentFeature = updatedFeatures[currentIndex] || {};
   const { title, detailedDescription, image: featureImage } = currentFeature;
-  const keyFeatures = extractKeyFeatures(detailedDescription || '');
-  
+  const keyFeatures = extractKeyFeatures(detailedDescription || "");
+
   // Use the provided image or get one based on title
   const imagePath = featureImage || getImagePath(title);
   const isImageLoaded = imagesLoaded[title] || false;
   const hasImageError = imageErrors[title] || false;
 
   // We'll keep this function but won't use it for the FeatureImage background
-  // eslint-disable-next-line no-unused-vars
+
   const getFeatureColor = (index) => {
     const colors = [
-      '#4A90E2', // Song Builder - Blue
-      '#50E3C2', // Harmony Palette - Teal
-      '#F5A623', // Pattern Editor - Orange
-      '#D0021B', // Voicing Generator - Red
-      '#9013FE', // Progression Timeline - Purple
-      '#7ED321'  // Voice Handling - Green
+      "#4A90E2", // Song Builder - Blue
+      "#50E3C2", // Harmony Palette - Teal
+      "#F5A623", // Pattern Editor - Orange
+      "#D0021B", // Voicing Generator - Red
+      "#9013FE", // Progression Timeline - Purple
+      "#7ED321", // Voice Handling - Green
     ];
     return colors[index % colors.length];
   };
@@ -1187,7 +1235,11 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
         >
           <ModalContainer
             ref={modalRef}
-            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
+            initial={{
+              scale: 0.9,
+              opacity: 0,
+              willChange: "transform, opacity",
+            }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}
@@ -1202,11 +1254,11 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
             <InfoButton onClick={toggleInfo} aria-label="Show feature details">
               <FaInfoCircle />
             </InfoButton>
-            
+
             <CloseButton onClick={onClose} aria-label="Close modal">
               <FaTimes />
             </CloseButton>
-            
+
             <CarouselContainer
               ref={containerRef}
               onTouchStart={handleTouchStart}
@@ -1214,29 +1266,37 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
               onTouchEnd={handleTouchEnd}
             >
               {/* Add these swipe indicators */}
-              <SwipeIndicator className="left" $visible={swipeDirection === 'right'}>
+              <SwipeIndicator
+                className="left"
+                $visible={swipeDirection === "right"}
+              >
                 <FaChevronLeft />
               </SwipeIndicator>
-              
-              <SwipeIndicator className="right" $visible={swipeDirection === 'left'}>
+
+              <SwipeIndicator
+                className="right"
+                $visible={swipeDirection === "left"}
+              >
                 <FaChevronRight />
               </SwipeIndicator>
-              
+
               <AnimatePresence initial={false} custom={direction}>
                 <Slide
                   key={currentIndex}
                   custom={direction}
-                  initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
+                  initial={{ x: direction > 0 ? "100%" : "-100%", opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: direction < 0 ? '100%' : '-100%', opacity: 0 }}
+                  exit={{ x: direction < 0 ? "100%" : "-100%", opacity: 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 >
                   <ImageContainer>
                     {debugMode && (
                       <ImageDebug>
-                        Path: {imagePath || 'None'}<br />
-                        Loaded: {isImageLoaded ? 'Yes' : 'No'}<br />
-                        Error: {hasImageError ? 'Yes' : 'No'}
+                        Path: {imagePath || "None"}
+                        <br />
+                        Loaded: {isImageLoaded ? "Yes" : "No"}
+                        <br />
+                        Error: {hasImageError ? "Yes" : "No"}
                       </ImageDebug>
                     )}
                     {imagePath && !isImageLoaded && !hasImageError && (
@@ -1250,26 +1310,28 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                         <LoadingText>Failed to load image</LoadingText>
                       </LoadingIndicator>
                     )}
-                    <FeatureImage 
+                    <FeatureImage
                       imgSrc={isImageLoaded ? imagePath : null}
                       onClick={toggleInfo}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     >
-                      {(!imagePath || hasImageError) && features[currentIndex].title}
+                      {(!imagePath || hasImageError) &&
+                        features[currentIndex].title}
                     </FeatureImage>
                   </ImageContainer>
 
                   <ContentOverlay $visible={infoVisible}>
                     <ContentContainer>
                       <InfoImageContainer>
-                        <InfoFeatureImage 
+                        <InfoFeatureImage
                           imgSrc={isImageLoaded ? imagePath : null}
                           onClick={toggleInfo}
                         >
-                          {(!imagePath || hasImageError) && features[currentIndex].title}
+                          {(!imagePath || hasImageError) &&
+                            features[currentIndex].title}
                         </InfoFeatureImage>
                       </InfoImageContainer>
-                      
+
                       <ContentTextContainer>
                         {detailedDescription && (
                           <FeatureDescription>
@@ -1282,16 +1344,16 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                 </Slide>
               </AnimatePresence>
             </CarouselContainer>
-            
+
             <CarouselControls>
-              <ControlButton 
+              <ControlButton
                 onClick={handlePrevious}
                 disabled={features.length <= 1}
                 aria-label="Previous feature"
               >
                 <FaChevronLeft />
               </ControlButton>
-              
+
               <ProgressIndicator>
                 {features.map((_, index) => (
                   <IndicatorDot
@@ -1302,8 +1364,8 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                   />
                 ))}
               </ProgressIndicator>
-              
-              <ControlButton 
+
+              <ControlButton
                 onClick={handleNext}
                 disabled={features.length <= 1}
                 aria-label="Next feature"
@@ -1318,4 +1380,4 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   );
 };
 
-export default FeatureModal; 
+export default FeatureModal;

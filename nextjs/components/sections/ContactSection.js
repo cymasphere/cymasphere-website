@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
+"use client";
+
+import React, { useState } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
 
 const ContactContainer = styled.section`
   padding: 100px 20px;
@@ -22,9 +24,9 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 2.5rem;
   position: relative;
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -41,7 +43,7 @@ const ContactFlexContainer = styled.div`
   width: 100%;
   gap: 50px;
   margin-top: 30px;
-  
+
   @media (max-width: 968px) {
     flex-direction: column;
   }
@@ -91,7 +93,7 @@ const Input = styled.input`
   color: var(--text);
   font-size: 16px;
   transition: border-color 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: var(--primary);
@@ -109,7 +111,7 @@ const TextArea = styled.textarea`
   transition: border-color 0.3s ease;
   min-height: 150px;
   resize: vertical;
-  
+
   &:focus {
     outline: none;
     border-color: var(--primary);
@@ -127,7 +129,7 @@ const SubmitButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   display: inline-block;
-  
+
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(108, 99, 255, 0.3);
@@ -145,35 +147,35 @@ const SuccessMessage = styled(motion.div)`
 
 const ContactSection = () => {
   const [formState, setFormState] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
-  
+
   const [isSubmitted, setIsSubmitted] = useState(false);
-  
+
   const handleChange = (e) => {
     setFormState({
       ...formState,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Here you would normally send the form data to your server
-    console.log('Form data:', formState);
-    
+    console.log("Form data:", formState);
+
     // For demo purposes, we'll just show a success message
     setIsSubmitted(true);
     setFormState({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
+      name: "",
+      email: "",
+      subject: "",
+      message: "",
     });
-    
+
     // Reset the success message after 5 seconds
     setTimeout(() => {
       setIsSubmitted(false);
@@ -191,7 +193,7 @@ const ContactSection = () => {
         >
           <SectionTitle>Get In Touch</SectionTitle>
         </motion.div>
-        
+
         <ContactFlexContainer>
           <ContactInfo>
             <motion.div
@@ -202,16 +204,18 @@ const ContactSection = () => {
             >
               <InfoTitle>Have questions about Cymasphere?</InfoTitle>
               <InfoText>
-                We'd love to hear from you! Whether you have questions about features, 
-                pricing, or just want to share your feedback, our team is here to help.
-                Fill out the form and we'll get back to you as soon as possible.
+                We'd love to hear from you! Whether you have questions about
+                features, pricing, or just want to share your feedback, our team
+                is here to help. Fill out the form and we'll get back to you as
+                soon as possible.
               </InfoText>
               <InfoText>
-                You can also reach us directly at <strong>support@cymasphere.com</strong>
+                You can also reach us directly at{" "}
+                <strong>support@cymasphere.com</strong>
               </InfoText>
             </motion.div>
           </ContactInfo>
-          
+
           <ContactForm
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -222,60 +226,60 @@ const ContactSection = () => {
             {isSubmitted && (
               <SuccessMessage
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
                 Thank you for your message! We'll get back to you soon.
               </SuccessMessage>
             )}
-            
+
             <FormGroup>
               <Label htmlFor="name">Name</Label>
-              <Input 
-                type="text" 
-                id="name" 
-                name="name" 
+              <Input
+                type="text"
+                id="name"
+                name="name"
                 value={formState.name}
                 onChange={handleChange}
-                required 
+                required
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label htmlFor="email">Email</Label>
-              <Input 
-                type="email" 
-                id="email" 
-                name="email" 
+              <Input
+                type="email"
+                id="email"
+                name="email"
                 value={formState.email}
                 onChange={handleChange}
-                required 
+                required
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label htmlFor="subject">Subject</Label>
-              <Input 
-                type="text" 
-                id="subject" 
-                name="subject" 
+              <Input
+                type="text"
+                id="subject"
+                name="subject"
                 value={formState.subject}
                 onChange={handleChange}
-                required 
+                required
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label htmlFor="message">Message</Label>
-              <TextArea 
-                id="message" 
-                name="message" 
+              <TextArea
+                id="message"
+                name="message"
                 value={formState.message}
                 onChange={handleChange}
-                required 
+                required
               />
             </FormGroup>
-            
+
             <SubmitButton type="submit">Send Message</SubmitButton>
           </ContactForm>
         </ContactFlexContainer>
@@ -284,4 +288,4 @@ const ContactSection = () => {
   );
 };
 
-export default ContactSection; 
+export default ContactSection;

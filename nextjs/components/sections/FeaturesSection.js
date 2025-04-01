@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaMusic, FaWaveSquare, FaPuzzlePiece, FaLayerGroup, FaRobot, FaVolumeUp, FaClock } from 'react-icons/fa';
-import dynamic from 'next/dynamic';
+"use client";
+
+import React, { useState } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import {
+  FaMusic,
+  FaWaveSquare,
+  FaPuzzlePiece,
+  FaLayerGroup,
+  FaRobot,
+  FaVolumeUp,
+  FaClock,
+} from "react-icons/fa";
+import dynamic from "next/dynamic";
 
 // Dynamically import modal to avoid SSR issues
-const FeatureModal = dynamic(() => import('../modals/FeatureModal'), {
-  ssr: false
+const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
+  ssr: false,
 });
 
 const FeaturesContainer = styled.section`
@@ -27,9 +37,9 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 2.5rem;
   position: relative;
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -64,18 +74,23 @@ const FeatureIcon = styled.div`
   transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform: translateZ(0);
   will-change: transform;
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     inset: -3px;
     border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--primary), var(--accent), var(--primary));
+    background: conic-gradient(
+      from 0deg,
+      var(--primary),
+      var(--accent),
+      var(--primary)
+    );
     opacity: 0;
     transition: opacity 0.4s ease;
     z-index: -1;
   }
-  
+
   svg {
     transition: transform 0.3s ease;
   }
@@ -112,53 +127,57 @@ const FeatureCard = styled(motion.div)`
   transform: translateZ(0);
   will-change: transform, box-shadow;
   backface-visibility: hidden;
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at center, rgba(108, 99, 255, 0.2) 0%, transparent 70%);
+    background: radial-gradient(
+      circle at center,
+      rgba(108, 99, 255, 0.2) 0%,
+      transparent 70%
+    );
     opacity: 0;
     transform: scale(0.5);
     z-index: -1;
     transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     will-change: opacity, transform;
   }
-  
+
   &:hover {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     transform: translateY(-10px) translateZ(0);
-    
+
     &:after {
       opacity: 0.8;
       transform: scale(1.2);
     }
-    
+
     ${FeatureIcon} {
       transform: translateY(-5px) scale(1.05);
-      
+
       &:before {
         opacity: 0.8;
       }
-      
+
       svg {
         transform: scale(1.1);
         filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
       }
     }
-    
+
     ${FeatureTitle} {
       color: var(--primary);
     }
-    
+
     ${FeatureDescription} {
       color: var(--text-primary);
     }
   }
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -177,21 +196,23 @@ const cardVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.6,
-      ease: "easeOut"
-    }
-  })
+      ease: "easeOut",
+    },
+  }),
 };
 
 const FeaturesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(0);
-  
-  const featuresData = React.useMemo(() => [
-    {
-      icon: <FaLayerGroup />,
-      title: "Song Builder",
-      description: "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
-      detailedDescription: `
+
+  const featuresData = React.useMemo(
+    () => [
+      {
+        icon: <FaLayerGroup />,
+        title: "Song Builder",
+        description:
+          "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
+        detailedDescription: `
         <h3>Central Music Creation Hub</h3>
         <p>The Song Builder is your central creative hub where all musical elements come together. Create, arrange, and refine your music with an intuitive interface designed for both beginners and professionals.</p>
         
@@ -205,13 +226,14 @@ const FeaturesSection = () => {
           <li><strong>Informative Keyboard Display</strong> showing chord voicings and voice leading</li>
         </ul>
       `,
-      color: "#4A90E2"
-    },
-    {
-      icon: <FaVolumeUp />,
-      title: "Harmony Palettes",
-      description: "Shape melodies and chords through a tactile, gestural interface designed for fluid musical expression.",
-      detailedDescription: `
+        color: "#4A90E2",
+      },
+      {
+        icon: <FaVolumeUp />,
+        title: "Harmony Palettes",
+        description:
+          "Shape melodies and chords through a tactile, gestural interface designed for fluid musical expression.",
+        detailedDescription: `
         <h3>Visualize Chord Relationships</h3>
         <p>Control harmony like a physical instrument with our intuitive gestural interface. Manipulate, arrange, and explore chord relationships through a tactile experience that makes complex music theory accessible and expressive.</p>
         
@@ -225,13 +247,14 @@ const FeaturesSection = () => {
           <li><strong>Custom Bank Creation</strong> for building your personal chord vocabulary</li>
         </ul>
       `,
-      color: "#50E3C2"
-    },
-    {
-      icon: <FaWaveSquare />,
-      title: "Dynamic Pattern Editor",
-      description: "Create intelligent musical patterns that adapt to chord changes in real-time.",
-      detailedDescription: `
+        color: "#50E3C2",
+      },
+      {
+        icon: <FaWaveSquare />,
+        title: "Dynamic Pattern Editor",
+        description:
+          "Create intelligent musical patterns that adapt to chord changes in real-time.",
+        detailedDescription: `
         <h3>Adaptive Musical Patterns</h3>
         <p>The Dynamic Pattern Editor enables you to create complex musical motifs that respond intelligently to changes in your chord progressions. Build melodies and rhythmic sequences that maintain musical coherence even as the harmony shifts.</p>
         
@@ -245,13 +268,14 @@ const FeaturesSection = () => {
           <li><strong>Melodic Essence Extraction</strong> that captures the intent of any melody for reuse in different harmonic contexts</li>
         </ul>
       `,
-      color: "#F5A623"
-    },
-    {
-      icon: <FaMusic />,
-      title: "Voicing Generator",
-      description: "Transform chord progressions into rich, expressive voicings with professional-grade voice leading and harmonic control.",
-      detailedDescription: `
+        color: "#F5A623",
+      },
+      {
+        icon: <FaMusic />,
+        title: "Voicing Generator",
+        description:
+          "Transform chord progressions into rich, expressive voicings with professional-grade voice leading and harmonic control.",
+        detailedDescription: `
         <h3>Limitless Harmonic Possibilities</h3>
         <p>The Voicing Generator transforms simple chord symbols into complex, expressive harmonic structures. Fine-tune every aspect of your chord voicings from global styles to individual note placement, creating professional arrangements that breathe life into your music.</p>
         
@@ -264,13 +288,14 @@ const FeaturesSection = () => {
           <li><strong>Multi-Level Settings</strong> allowing global changes to entire songs or focused edits to specific chord voicings with a single adjustment</li>
         </ul>
       `,
-      color: "#D0021B"
-    },
-    {
-      icon: <FaClock />,
-      title: "Progression Timeline",
-      description: "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
-      detailedDescription: `
+        color: "#D0021B",
+      },
+      {
+        icon: <FaClock />,
+        title: "Progression Timeline",
+        description:
+          "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
+        detailedDescription: `
         <h3>Master Chord Progression Creation</h3>
         <p>The Progression Timeline streamlines the process of building, refining, and transforming chord progressions. With educational ghost tracks and powerful reharmonization tools, you can both learn from and reinvent your favorite music.</p>
         
@@ -285,13 +310,14 @@ const FeaturesSection = () => {
           <li><strong>Dynamic Pattern Updates</strong> where patterns and voicings automatically adapt when changes are made to the progression</li>
         </ul>
       `,
-      color: "#9013FE"
-    },
-    {
-      icon: <FaPuzzlePiece />,
-      title: "Advanced Voice Handling",
-      description: "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
-      detailedDescription: `
+        color: "#9013FE",
+      },
+      {
+        icon: <FaPuzzlePiece />,
+        title: "Advanced Voice Handling",
+        description:
+          "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
+        detailedDescription: `
         <h3>Complete Control Over Every Voice</h3>
         <p>Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.</p>
         
@@ -305,15 +331,17 @@ const FeaturesSection = () => {
           <li><strong>Custom Voice Behaviors</strong> for unique compositional techniques</li>
         </ul>
       `,
-      color: "#7ED321"
-    }
-  ], []);
-  
+        color: "#7ED321",
+      },
+    ],
+    []
+  );
+
   const openModal = (index) => {
     setSelectedFeature(index);
     setModalOpen(true);
   };
-  
+
   const closeModal = () => {
     setModalOpen(false);
   };
@@ -350,8 +378,8 @@ const FeaturesSection = () => {
           ))}
         </FeaturesGrid>
       </FeaturesContent>
-      
-      <FeatureModal 
+
+      <FeatureModal
         isOpen={modalOpen}
         onClose={closeModal}
         initialIndex={selectedFeature}
@@ -361,4 +389,4 @@ const FeaturesSection = () => {
   );
 };
 
-export default FeaturesSection; 
+export default FeaturesSection;

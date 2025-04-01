@@ -1,7 +1,9 @@
-import React, { useEffect, memo } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes } from 'react-icons/fa';
+"use client";
+
+import React, { useEffect, memo } from "react";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaTimes } from "react-icons/fa";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -32,24 +34,26 @@ const ModalContainer = styled(motion.div)`
   flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: -5px;
     left: -5px;
     right: -5px;
     bottom: -5px;
-    background: linear-gradient(135deg, 
-      rgba(108, 99, 255, 0.7) 0%, 
-      rgba(108, 99, 255, 0.2) 50%, 
-      rgba(78, 205, 196, 0.7) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.7) 0%,
+      rgba(108, 99, 255, 0.2) 50%,
+      rgba(78, 205, 196, 0.7) 100%
+    );
     border-radius: 28px;
     z-index: -1;
     opacity: 0.6;
     filter: blur(8px);
   }
-  
+
   /* Custom outline style for focus */
   &:focus {
     outline: none;
@@ -73,19 +77,21 @@ const TitleContainer = styled.div`
   height: 80px;
   box-sizing: border-box;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  
+
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, 
-      transparent, 
-      rgba(108, 99, 255, 0.3), 
-      rgba(78, 205, 196, 0.3), 
-      transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(108, 99, 255, 0.3),
+      rgba(78, 205, 196, 0.3),
+      transparent
+    );
   }
 `;
 
@@ -115,7 +121,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   z-index: 10;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: var(--primary);
     transform: scale(1.1);
@@ -127,22 +133,22 @@ const ContentContainer = styled.div`
   flex: 1;
   padding: 30px;
   overflow-y: auto;
-  
+
   /* Custom scrollbar */
   &::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(108, 99, 255, 0.5);
     border-radius: 4px;
   }
-  
+
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(108, 99, 255, 0.7);
   }
@@ -152,7 +158,7 @@ const AboutUsContent = styled.div`
   color: var(--text);
   font-size: 1rem;
   line-height: 1.7;
-  
+
   h3 {
     font-size: 1.6rem;
     margin-top: 30px;
@@ -163,25 +169,26 @@ const AboutUsContent = styled.div`
     -webkit-text-fill-color: transparent;
     display: inline-block;
   }
-  
+
   p {
     margin-bottom: 20px;
   }
-  
-  ul, ol {
+
+  ul,
+  ol {
     margin-bottom: 20px;
     padding-left: 25px;
   }
-  
+
   li {
     margin-bottom: 12px;
   }
-  
+
   a {
     color: var(--accent);
     text-decoration: none;
     transition: color 0.2s;
-    
+
     &:hover {
       color: var(--primary);
       text-decoration: underline;
@@ -215,7 +222,7 @@ const TeamMemberImage = styled.div`
   justify-content: center;
   font-size: 40px;
   color: var(--primary);
-  
+
   img {
     width: 100%;
     height: 100%;
@@ -249,30 +256,33 @@ const AboutUsContentSection = memo(() => (
   <AboutUsContent>
     <h3>Our Mission</h3>
     <p>
-      Cymasphere's mission is to bridge the gap between music theory and musical creativity. 
-      We believe that theory should enhance and guide the creative process, not constrain it.
-      Our tools are designed to provide both guidance and freedom, striking the perfect balance 
-      between inspiration and compositional integrity.
+      Cymasphere's mission is to bridge the gap between music theory and musical
+      creativity. We believe that theory should enhance and guide the creative
+      process, not constrain it. Our tools are designed to provide both guidance
+      and freedom, striking the perfect balance between inspiration and
+      compositional integrity.
     </p>
-    
+
     <CompanyHighlight>
-      We're committed to empowering musicians of all skill levels by making music theory intuitive, 
-      interactive, and inspiring. Our goal is to see your creative vision flourish through better 
-      compositional tools.
+      We're committed to empowering musicians of all skill levels by making
+      music theory intuitive, interactive, and inspiring. Our goal is to see
+      your creative vision flourish through better compositional tools.
     </CompanyHighlight>
-    
+
     <h3>Our Story</h3>
     <p>
-      Founded in 2022 by a team of dedicated musicians, software engineers, and music theorists, 
-      Cymasphere began as an ambitious project to reimagine how musicians interact with harmony and composition.
+      Founded in 2022 by a team of dedicated musicians, software engineers, and
+      music theorists, Cymasphere began as an ambitious project to reimagine how
+      musicians interact with harmony and composition.
     </p>
-    
+
     <p>
-      After years of frustration with existing music software that either lacked theoretical sophistication 
-      or was too complex for intuitive use, our founders set out to create a tool that would make 
-      music theory practical, visual, and genuinely helpful in the creative process.
+      After years of frustration with existing music software that either lacked
+      theoretical sophistication or was too complex for intuitive use, our
+      founders set out to create a tool that would make music theory practical,
+      visual, and genuinely helpful in the creative process.
     </p>
-    
+
     <h3>Our Team</h3>
     <TeamSection>
       <TeamMember>
@@ -282,7 +292,7 @@ const AboutUsContentSection = memo(() => (
         <TeamMemberName>David Chen</TeamMemberName>
         <TeamMemberRole>Founder & Lead Developer</TeamMemberRole>
       </TeamMember>
-      
+
       <TeamMember>
         <TeamMemberImage>
           {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
@@ -290,7 +300,7 @@ const AboutUsContentSection = memo(() => (
         <TeamMemberName>Sarah Nguyen</TeamMemberName>
         <TeamMemberRole>Music Theory Specialist</TeamMemberRole>
       </TeamMember>
-      
+
       <TeamMember>
         <TeamMemberImage>
           {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
@@ -298,7 +308,7 @@ const AboutUsContentSection = memo(() => (
         <TeamMemberName>Michael Park</TeamMemberName>
         <TeamMemberRole>UI/UX Designer</TeamMemberRole>
       </TeamMember>
-      
+
       <TeamMember>
         <TeamMemberImage>
           {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
@@ -307,47 +317,67 @@ const AboutUsContentSection = memo(() => (
         <TeamMemberRole>Product Manager</TeamMemberRole>
       </TeamMember>
     </TeamSection>
-    
+
     <h3>Our Values</h3>
     <p>
-      At Cymasphere, we're guided by a set of core values that shape everything we do:
+      At Cymasphere, we're guided by a set of core values that shape everything
+      we do:
     </p>
-    
+
     <ul>
-      <li><strong>Musical Integrity</strong> - We respect the principles of music theory while embracing innovation</li>
-      <li><strong>Intuitive Design</strong> - Our interfaces are visually clear and immediately understandable</li>
-      <li><strong>Creative Freedom</strong> - We provide guidance without limiting expression</li>
-      <li><strong>Continuous Learning</strong> - Our tools help users develop their musical understanding</li>
+      <li>
+        <strong>Musical Integrity</strong> - We respect the principles of music
+        theory while embracing innovation
+      </li>
+      <li>
+        <strong>Intuitive Design</strong> - Our interfaces are visually clear
+        and immediately understandable
+      </li>
+      <li>
+        <strong>Creative Freedom</strong> - We provide guidance without limiting
+        expression
+      </li>
+      <li>
+        <strong>Continuous Learning</strong> - Our tools help users develop
+        their musical understanding
+      </li>
     </ul>
-    
+
     <h3>Our Approach</h3>
     <p>
-      Cymasphere takes a unique approach to music composition software by focusing on:
+      Cymasphere takes a unique approach to music composition software by
+      focusing on:
     </p>
-    
+
     <ol>
       <li>Visualizing harmony and voice leading in intuitive ways</li>
-      <li>Providing intelligent suggestions while respecting your creative direction</li>
-      <li>Integrating theoretical concepts seamlessly into the creative workflow</li>
+      <li>
+        Providing intelligent suggestions while respecting your creative
+        direction
+      </li>
+      <li>
+        Integrating theoretical concepts seamlessly into the creative workflow
+      </li>
       <li>Building bridges between composition, arrangement, and production</li>
     </ol>
-    
+
     <p>
-      We're constantly refining our approach based on user feedback and the latest 
-      developments in music technology. We believe in creating tools that grow with you 
-      and adapt to your evolving creative needs.
+      We're constantly refining our approach based on user feedback and the
+      latest developments in music technology. We believe in creating tools that
+      grow with you and adapt to your evolving creative needs.
     </p>
-    
+
     <h3>Looking Forward</h3>
     <p>
-      As we continue to develop Cymasphere, we're excited about the future of music creation. 
-      Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, 
-      deeper AI-assisted composition features, and much more.
+      As we continue to develop Cymasphere, we're excited about the future of
+      music creation. Our roadmap includes advanced integration with major DAWs,
+      expanded harmonic palettes, deeper AI-assisted composition features, and
+      much more.
     </p>
-    
+
     <p>
-      We invite you to join us on this journey and help shape the future of intelligent 
-      music creation tools.
+      We invite you to join us on this journey and help shape the future of
+      intelligent music creation tools.
     </p>
   </AboutUsContent>
 ));
@@ -356,13 +386,13 @@ const AboutUsModal = ({ isOpen, onClose }) => {
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
-    
+
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = originalStyle;
     }
-    
+
     return () => {
       document.body.style.overflow = originalStyle;
     };
@@ -373,7 +403,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
       onClose();
     }
   };
-  
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -384,7 +414,11 @@ const AboutUsModal = ({ isOpen, onClose }) => {
           onClick={handleBackdropClick}
         >
           <ModalContainer
-            initial={{ scale: 0.9, opacity: 0, willChange: 'transform, opacity' }}
+            initial={{
+              scale: 0.9,
+              opacity: 0,
+              willChange: "transform, opacity",
+            }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20 }}
@@ -394,11 +428,11 @@ const AboutUsModal = ({ isOpen, onClose }) => {
             <TitleContainer>
               <ModalTitle>About Us</ModalTitle>
             </TitleContainer>
-            
+
             <CloseButton onClick={onClose} aria-label="Close modal">
               <FaTimes />
             </CloseButton>
-            
+
             <ContentContainer>
               <AboutUsContentSection />
             </ContentContainer>
@@ -409,4 +443,4 @@ const AboutUsModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default AboutUsModal; 
+export default AboutUsModal;

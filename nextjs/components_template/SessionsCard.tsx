@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 interface SessionsCardProps {
   user: User;
