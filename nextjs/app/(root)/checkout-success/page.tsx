@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
@@ -215,20 +215,18 @@ export default function CheckoutSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Only run when router is ready
-    if (!router.isReady) return;
-
     fetchCheckoutSession();
-  }, [router.isReady]);
+  }, [searchParams]);
 
   async function fetchCheckoutSession() {
     try {
       // Get the session ID and error from the URL query parameters
-      const sessionId = router.query.session_id;
-      const email = router.query.email;
-      const errorParam = router.query.error;
+      const sessionId = searchParams.get("session_id");
+      const email = searchParams.get("email");
+      const errorParam = searchParams.get("error");
 
       if (errorParam === "payment_failed") {
         setError(
@@ -255,8 +253,8 @@ export default function CheckoutSuccess() {
       });
 
       setLoading(false);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setError("Failed to fetch session data");
       setLoading(false);
     }
   }

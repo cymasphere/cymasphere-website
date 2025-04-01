@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 // import { loadStripe } from "@stripe/stripe-js";
 import styled from "styled-components";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 // Use environment variable for Stripe publishable key with a fallback
 // This ensures we at least have a valid string for Stripe initialization in all environments
@@ -63,6 +63,7 @@ const StripeCheckout = ({
   price,
   trialDays,
 }) => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -87,7 +88,9 @@ const StripeCheckout = ({
         // Give some time for the loading state to show
         setTimeout(() => {
           // Redirect to mock checkout page with plan details and force a refresh
-          window.location.href = `/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`;
+          router.push(
+            `/mock-checkout?plan=Cymasphere Pro&billing=${billingPeriod}&price=${price}`
+          );
           setIsLoading(false);
         }, 800);
         return;

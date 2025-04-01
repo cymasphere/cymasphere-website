@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/NextAuthContext";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
-import CymasphereLogo from './common/CymasphereLogo';
+import CymasphereLogo from "./common/CymasphereLogo";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -53,15 +53,15 @@ const BackButton = styled.a`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: var(--text);
   }
-  
+
   svg {
     margin-right: 8px;
   }
-  
+
   @media (max-width: 768px) {
     top: 20px;
     left: 20px;
@@ -80,24 +80,26 @@ const FormCard = styled(motion.div)`
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin: 0 20px;
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: -5px;
     left: -5px;
     right: -5px;
     bottom: -5px;
-    background: linear-gradient(135deg, 
-      rgba(108, 99, 255, 0.5) 0%, 
-      rgba(108, 99, 255, 0) 50%, 
-      rgba(78, 205, 196, 0.5) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.5) 0%,
+      rgba(108, 99, 255, 0) 50%,
+      rgba(78, 205, 196, 0.5) 100%
+    );
     border-radius: 18px;
     z-index: -1;
     opacity: 0.4;
     filter: blur(8px);
   }
-  
+
   @media (max-width: 520px) {
     padding: 2rem 1.5rem;
     width: 90%;
@@ -109,7 +111,7 @@ const Title = styled(motion.h2)`
   margin-bottom: 2rem;
   color: var(--text);
   font-size: 1.4rem;
-  
+
   span {
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
@@ -148,13 +150,13 @@ const Input = styled.input`
   color: var(--text);
   font-size: 1rem;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
   }
-  
+
   &::placeholder {
     color: rgba(255, 255, 255, 0.3);
   }
@@ -172,12 +174,12 @@ const Button = styled(motion.button)`
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   margin-top: 0.5rem;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(108, 99, 255, 0.23);
   }
-  
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -206,14 +208,15 @@ const OrDivider = styled.div`
   display: flex;
   align-items: center;
   margin: 1.5rem 0;
-  
-  &:before, &:after {
+
+  &:before,
+  &:after {
     content: "";
     flex: 1;
     height: 1px;
     background-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   span {
     margin: 0 1rem;
     color: var(--text-secondary);
@@ -232,17 +235,17 @@ const GoogleButton = styled(motion.button)`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.25);
   }
-  
+
   svg {
     margin-right: 10px;
-    color: #DB4437;
+    color: #db4437;
   }
-  
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -254,13 +257,13 @@ const LinkText = styled.div`
   margin-top: 1.5rem;
   color: var(--text-secondary);
   font-size: 0.9rem;
-  
+
   a {
     color: var(--primary);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
-    
+
     &:hover {
       color: var(--accent);
       text-decoration: underline;
@@ -283,11 +286,11 @@ const CheckboxLabel = styled.label`
   color: var(--text-secondary);
   font-size: 0.9rem;
   cursor: pointer;
-  
+
   a {
     color: var(--primary);
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -297,7 +300,7 @@ const CheckboxLabel = styled.label`
 const SpinnerIcon = styled(FaSpinner)`
   animation: spin 1s linear infinite;
   margin-right: 8px;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -364,16 +367,16 @@ function SignUp() {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   const router = useRouter();
   const auth = useAuth() || {};
-  
+
   // Force reset loading state if component unmounts
   useEffect(() => {
     return () => {
@@ -387,27 +390,27 @@ function SignUp() {
   // Handle email prefill from checkout
   useEffect(() => {
     if (router.isReady && router.query.email) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        email: router.query.email
+        email: router.query.email,
       }));
     }
   }, [router.isReady, router.query.email]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Reset any previous errors
     setError("");
-    
+
     // Validate form
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
@@ -416,31 +419,34 @@ function SignUp() {
     if (formData.password.length < 6) {
       return setError("Password must be at least 6 characters");
     }
-    
+
     if (!agreeToTerms) {
-      return setError("You must agree to the Terms of Service and Privacy Policy");
+      return setError(
+        "You must agree to the Terms of Service and Privacy Policy"
+      );
     }
 
     try {
       setLoading(true);
-      
+
       if (!auth.signup) {
-        throw new Error('Authentication is not initialized. Please try again later.');
+        throw new Error(
+          "Authentication is not initialized. Please try again later."
+        );
       }
-      
+
       await auth.signup(formData.email, formData.password, formData.name);
-      
+
       // Show success message
       setSuccess(true);
-      
+
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-      
     } catch (err) {
       console.error("Sign up error:", err);
-      
+
       // Handle specific errors
       if (err.message.includes("Email already in use")) {
         setError("Email is already in use");
@@ -460,11 +466,13 @@ function SignUp() {
     try {
       setError("");
       setLoading(true);
-      
+
       if (!auth.googleSignIn) {
-        throw new Error('Google authentication is not initialized. Please try again later.');
+        throw new Error(
+          "Google authentication is not initialized. Please try again later."
+        );
       }
-      
+
       await auth.googleSignIn();
       router.push("/dashboard");
     } catch (err) {
@@ -488,11 +496,19 @@ function SignUp() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+        <div
+          style={{
+            marginBottom: "2rem",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
           <CymasphereLogo size="40px" fontSize="1.8rem" />
         </div>
 
-        <Title>Create an <span>account</span></Title>
+        <Title>
+          Create an <span>account</span>
+        </Title>
 
         {/* Display success message if signup was successful */}
         {success && (
@@ -553,17 +569,23 @@ function SignUp() {
               onChange={handleChange}
               required
               readOnly={!!router.query.checkout_complete}
-              style={router.query.checkout_complete ? {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                cursor: 'not-allowed'
-              } : {}}
+              style={
+                router.query.checkout_complete
+                  ? {
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      cursor: "not-allowed",
+                    }
+                  : {}
+              }
             />
             {router.query.checkout_complete && (
-              <div style={{ 
-                fontSize: '0.8rem', 
-                color: 'var(--text-secondary)', 
-                marginTop: '0.5rem' 
-              }}>
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  marginTop: "0.5rem",
+                }}
+              >
                 This email is linked to your purchase and cannot be changed
               </div>
             )}
@@ -592,7 +614,7 @@ function SignUp() {
               required
             />
           </FormGroup>
-          
+
           <CheckboxContainer>
             <Checkbox
               type="checkbox"
@@ -607,8 +629,8 @@ function SignUp() {
             </CheckboxLabel>
           </CheckboxContainer>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={loading}
             variants={buttonVariants}
             whileHover="hover"

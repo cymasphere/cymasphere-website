@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import {
@@ -297,13 +297,15 @@ interface FormState {
   processing: boolean;
   success: boolean;
   error: string;
+  plan: string;
+  billing: string;
+  price: number;
 }
 
 const MockCheckout: React.FC = () => {
-  const queryParams = useQueryParams();
   const router = useRouter();
-
-  const [formData, setFormData] = useState<FormState>({
+  const searchParams = useSearchParams();
+  const [formState, setFormState] = useState<FormState>({
     name: "",
     email: "",
     cardNumber: "",
@@ -313,10 +315,26 @@ const MockCheckout: React.FC = () => {
     processing: false,
     success: false,
     error: "",
+    plan: "",
+    billing: "",
+    price: 0,
   });
 
-  const planId = queryParams.plan || "pro";
-  const billing = queryParams.billing || "monthly";
+  useEffect(() => {
+    // Get query parameters from URL
+    const plan = searchParams.get("plan");
+    const billing = searchParams.get("billing");
+    const price = searchParams.get("price");
+
+    if (plan && billing && price) {
+      setFormState((prev) => ({
+        ...prev,
+        plan,
+        billing,
+        price: parseFloat(price),
+      }));
+    }
+  }, [searchParams]);
 
   const formatPrice = (): string => {
     const prices: Record<string, Record<string, number>> = {
@@ -325,7 +343,7 @@ const MockCheckout: React.FC = () => {
       enterprise: { monthly: 49, yearly: 490 },
     };
 
-    const price = prices[planId]?.[billing] || 0;
+    const price = prices[formState.plan]?.[formState.billing] || 0;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -377,7 +395,7 @@ const MockCheckout: React.FC = () => {
       formattedValue = formatCVC(value);
     }
 
-    setFormData((prev) => ({
+    setFormState((prev) => ({
       ...prev,
       [name]: formattedValue,
     }));
@@ -392,11 +410,11 @@ const MockCheckout: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    setFormData((prev) => ({ ...prev, processing: true, error: "" }));
+    setFormState((prev) => ({ ...prev, processing: true, error: "" }));
 
     // Simulate processing time
     setTimeout(() => {
-      setFormData((prev) => ({ ...prev, processing: false, success: true }));
+      setFormState((prev) => ({ ...prev, processing: false, success: true }));
 
       // Redirect to dashboard after payment success
       setTimeout(() => {
