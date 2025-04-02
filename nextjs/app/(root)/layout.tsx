@@ -3,13 +3,14 @@
 import React from "react";
 
 import styled from "styled-components";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
 import Footer from "@/components/layout/Footer";
 import { motion } from "framer-motion";
+import NextHeader from "@/components/layout/NextHeader";
 
-const DynamicHeader = dynamic(() => import("@/components/layout/NextHeader"), {
-  ssr: false,
-});
+// const DynamicHeader = dynamic(() => import("@/components/layout/NextHeader"), {
+//   ssr: false,
+// });
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -62,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <LayoutWrapper>
-      <DynamicHeader />
+      <NextHeader />
       <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
         {children}
       </Main>

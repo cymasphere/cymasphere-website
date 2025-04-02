@@ -5,7 +5,7 @@ import FAQSection from "@/components/sections/FAQSection";
 import ContactSection from "@/components/sections/ContactSection";
 import { Metadata } from "next";
 import ScrollToTop from "@/components/ScrollToTop";
-import Hero from "@/components/sections/Hero";
+import HeroSection from "@/components/sections/HeroSection";
 
 export const metadata: Metadata = {
   title: "Cymasphere",
@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <>
       <ScrollToTop />
-      <Hero />
+      <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />
       <PricingSection />
