@@ -368,7 +368,7 @@ const HeroSection = () => {
       t("hero.titleWords.voicing", "Voicing"),
       t("hero.titleWords.harmony", "Harmony"),
     ],
-    [t, i18n.language]
+    [t]
   ); // Only recreate when translation function or language changes
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isAnimatingWord, setIsAnimatingWord] = useState(false);
@@ -389,35 +389,39 @@ const HeroSection = () => {
     if (typeof window === "undefined") return;
 
     if (wordMeasureRef.current) {
-      const widths = {};
-      const tempDiv = wordMeasureRef.current;
-      const baseStyle = {
-        visibility: "hidden",
-        position: "absolute",
-        fontSize: "4rem",
-        whiteSpace: "nowrap",
-        padding: "0 10px",
-      };
+      const widths = wordWidths;
 
-      // Apply base style to the measurement div
-      Object.assign(tempDiv.style, baseStyle);
-      document.body.appendChild(tempDiv);
+      if (!initialWidthsMeasured) {
+        const tempDiv = wordMeasureRef.current;
+        const baseStyle = {
+          visibility: "hidden",
+          position: "absolute",
+          fontSize: "4rem",
+          whiteSpace: "nowrap",
+          padding: "0 10px",
+        };
 
-      // Measure each word
-      titleWords.forEach((word, index) => {
-        tempDiv.textContent = word;
-        widths[index] = tempDiv.offsetWidth;
-      });
+        // Apply base style to the measurement div
+        Object.assign(tempDiv.style, baseStyle);
+        document.body.appendChild(tempDiv);
 
-      // Clean up
-      document.body.removeChild(tempDiv);
-      setWordWidths(widths);
-      setInitialWidthsMeasured(true);
+        // Measure each word
+        titleWords.forEach((word, index) => {
+          tempDiv.textContent = word;
+          widths[index] = tempDiv.offsetWidth;
+        });
 
+        // Clean up
+        document.body.removeChild(tempDiv);
+        setWordWidths(widths);
+        setInitialWidthsMeasured(true);
+      }
+
+      console.log("widths", widths);
       // Set initial width for the current word
       setCenterWordWidth(widths[currentWordIndex] || 120);
     }
-  }, [titleWords, currentWordIndex, i18n.language]);
+  }, []);
 
   // ROBUST WORD CYCLING IMPLEMENTATION
   useEffect(() => {
@@ -431,9 +435,9 @@ const HeroSection = () => {
       // Use function form of state update to ensure we're using the latest state
       setCurrentWordIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % titleWords.length;
-        console.log(
-          `Cycling word from ${prevIndex} (${titleWords[prevIndex]}) to ${nextIndex} (${titleWords[nextIndex]})`
-        );
+        // console.log(
+        //   `Cycling word from ${prevIndex} (${titleWords[prevIndex]}) to ${nextIndex} (${titleWords[nextIndex]})`
+        // );
         return nextIndex;
       });
     }, 2000);
@@ -505,23 +509,23 @@ const HeroSection = () => {
   ]);
 
   // Add this state to track outer word positions
-  const [outerWordsOffsets, setOuterWordsOffsets] = useState({
-    left: 0,
-    right: 0,
-  });
+  // const [outerWordsOffsets, setOuterWordsOffsets] = useState({
+  //   left: 0,
+  //   right: 0,
+  // });
 
-  // Measure word widths and update offsets when words change
-  useEffect(() => {
-    // Get approximate width based on the length of the word
-    const newWidth = (currentWord) => Math.max(100, currentWord.length * 22);
-    const currentWordWidth = newWidth(titleWords[currentWordIndex]);
+  // // Measure word widths and update offsets when words change
+  // useEffect(() => {
+  //   // Get approximate width based on the length of the word
+  //   const newWidth = (currentWord) => Math.max(100, currentWord.length * 22);
+  //   const currentWordWidth = newWidth(titleWords[currentWordIndex]);
 
-    // Calculate new offsets
-    setOuterWordsOffsets({
-      left: -(currentWordWidth / 2) - 20, // Add some padding
-      right: currentWordWidth / 2 + 20, // Add some padding
-    });
-  }, [currentWordIndex, titleWords]);
+  //   // Calculate new offsets
+  //   setOuterWordsOffsets({
+  //     left: -(currentWordWidth / 2) - 20, // Add some padding
+  //     right: currentWordWidth / 2 + 20, // Add some padding
+  //   });
+  // }, [currentWordIndex, titleWords]);
 
   // Use the synth in a way consistent with the Try Me section
   useEffect(() => {
@@ -752,7 +756,7 @@ const HeroSection = () => {
     const nextNotes = chordProgression[nextIndex].notes;
 
     // Voice leading assignment
-    let assignedNextNotes = [...currentNotes];
+    const assignedNextNotes = [...currentNotes];
     const assignedNextChordNotes = new Set();
 
     // First pass: Keep notes that are the same

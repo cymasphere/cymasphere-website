@@ -887,7 +887,7 @@ const getImagePath = (title) => {
       `No specific image for "${title}", using fallback: ${imagePath}`
     );
   } else {
-    console.log(`For title "${title}", using image path: ${imagePath}`);
+    // console.log(`For title "${title}", using image path: ${imagePath}`);
   }
 
   return imagePath;

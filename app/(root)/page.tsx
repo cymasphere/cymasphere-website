@@ -4,7 +4,6 @@ import PricingSection from "@/components/sections/PricingSection";
 import FAQSection from "@/components/sections/FAQSection";
 import ContactSection from "@/components/sections/ContactSection";
 import { Metadata } from "next";
-import ScrollToTop from "@/components/ScrollToTop";
 import HeroSection from "@/components/sections/HeroSection";
 
 export const metadata: Metadata = {
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <ScrollToTop />
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />

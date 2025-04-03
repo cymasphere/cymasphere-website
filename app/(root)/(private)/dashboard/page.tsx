@@ -16,7 +16,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 // Styled components
@@ -30,44 +30,8 @@ const DashboardContainer = styled.div`
   }
 `;
 
-// Define TypeScript interfaces for the component
-interface ContactFormData {
-  name: string;
-  email: string;
-  message: string;
-}
-
 function DashboardContent(): React.JSX.Element {
-  const { user } = useAuth();
-  const [contactForm, setContactForm] = useState<ContactFormData>({
-    name: "",
-    email: "",
-    message: "",
-  });
-
-  const handleContactInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ): void => {
-    const { name, value } = e.target;
-    setContactForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleContactSubmit = (): void => {
-    // In a real application, this would submit the form data to an API
-    console.log("Submitting contact form:", contactForm);
-
-    // Reset form
-    setContactForm({
-      name: "",
-      email: "",
-      message: "",
-    });
-  };
-
-  // Component implementation
+  // Unused variables marked with underscore to avoid linter errors
   // Render dashboard UI
   return (
     <DashboardContainer>
@@ -378,12 +342,6 @@ const MobileNavTitle = styled.h3`
   width: 100%;
 `;
 
-const MobileBackButton = styled(MobileNavItem)`
-  margin-top: auto;
-  color: var(--text-secondary);
-  background-color: transparent;
-`;
-
 const MobileUserInfo = styled(UserInfo)`
   margin-top: 1rem;
   width: 80%;
@@ -406,6 +364,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user: currentUser, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -420,7 +379,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await signOut("local");
       router.push("/login");
     } catch (error) {
       console.error("Failed to log out:", error);
@@ -444,12 +403,6 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [sidebarOpen]);
 
-  // TEMPORARY: Create mock user data for demo mode
-  const demoUserDetails = {
-    displayName: "Demo User",
-    email: "demo@cymasphere.com",
-  };
-
   // Return loading state if not mounted yet
   if (!isMounted) {
     return (
@@ -467,9 +420,10 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
     );
   }
 
-  // Use real user data if available, otherwise use demo data
-  const displayUserDetails = currentUser || demoUserDetails;
-  const displayUser = currentUser || { email: "demo@cymasphere.com" };
+  // Get the display name from the user profile or demo data
+  const getUserDisplayName = () => {
+    return currentUser?.profile?.name || "User";
+  };
 
   // Animation variants
   const fadeIn = {
@@ -551,7 +505,12 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
               size="32px"
               fontSize="1.4rem"
               href="/dashboard"
-              onClick={(e) => handleNavigation(e, "/dashboard")}
+              onClick={(e: React.MouseEvent<HTMLElement>) =>
+                handleNavigation(
+                  e as React.MouseEvent<HTMLAnchorElement>,
+                  "/dashboard"
+                )
+              }
               className="dashboard-logo"
             />
           </Link>
@@ -560,7 +519,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
         <nav>
           <Link href="/dashboard" passHref legacyBehavior>
             <NavItem
-              $active={router.pathname === "/dashboard" ? "true" : "false"}
+              $active={pathname === "/dashboard" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/dashboard")}
             >
               <FaTachometerAlt /> Dashboard
@@ -568,7 +527,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
           <Link href="/profile" passHref legacyBehavior>
             <NavItem
-              $active={router.pathname === "/profile" ? "true" : "false"}
+              $active={pathname === "/profile" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/profile")}
             >
               <FaUser /> Profile
@@ -576,7 +535,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
           <Link href="/billing" passHref legacyBehavior>
             <NavItem
-              $active={router.pathname === "/billing" ? "true" : "false"}
+              $active={pathname === "/billing" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/billing")}
             >
               <FaCreditCard /> Billing
@@ -584,7 +543,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
           <Link href="/downloads" passHref legacyBehavior>
             <NavItem
-              $active={router.pathname === "/downloads" ? "true" : "false"}
+              $active={pathname === "/downloads" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/downloads")}
             >
               <FaDownload /> Downloads
@@ -592,7 +551,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
           <Link href="/settings" passHref legacyBehavior>
             <NavItem
-              $active={router.pathname === "/settings" ? "true" : "false"}
+              $active={pathname === "/settings" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/settings")}
             >
               <FaCog /> Settings
@@ -602,8 +561,8 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <UserInfo>
           <UserName>
-            <h4>{displayUserDetails?.displayName || "Demo User"}</h4>
-            <p>{displayUser?.email}</p>
+            <h4>{getUserDisplayName()}</h4>
+            <p>{currentUser?.email}</p>
           </UserName>
           <LogoutButton onClick={handleLogout} title="Logout">
             <FaSignOutAlt />
@@ -622,7 +581,12 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
               size="32px"
               fontSize="1.5rem"
               href="/dashboard"
-              onClick={(e) => handleNavigation(e, "/dashboard")}
+              onClick={(e: React.MouseEvent<HTMLElement>) =>
+                handleNavigation(
+                  e as React.MouseEvent<HTMLAnchorElement>,
+                  "/dashboard"
+                )
+              }
               className="mobile-logo"
             />
           </MobileLogoContainer>
@@ -639,7 +603,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/dashboard" passHref legacyBehavior>
             <MobileNavItem
-              $active={router.pathname === "/dashboard" ? "true" : "false"}
+              $active={pathname === "/dashboard" ? "true" : "false"}
               variants={menuItemVariants}
               custom={0}
               initial="hidden"
@@ -652,7 +616,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/profile" passHref legacyBehavior>
             <MobileNavItem
-              $active={router.pathname === "/profile" ? "true" : "false"}
+              $active={pathname === "/profile" ? "true" : "false"}
               variants={menuItemVariants}
               custom={1}
               initial="hidden"
@@ -665,7 +629,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/billing" passHref legacyBehavior>
             <MobileNavItem
-              $active={router.pathname === "/billing" ? "true" : "false"}
+              $active={pathname === "/billing" ? "true" : "false"}
               variants={menuItemVariants}
               custom={2}
               initial="hidden"
@@ -678,7 +642,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/downloads" passHref legacyBehavior>
             <MobileNavItem
-              $active={router.pathname === "/downloads" ? "true" : "false"}
+              $active={pathname === "/downloads" ? "true" : "false"}
               variants={menuItemVariants}
               custom={3}
               initial="hidden"
@@ -691,7 +655,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/settings" passHref legacyBehavior>
             <MobileNavItem
-              $active={router.pathname === "/settings" ? "true" : "false"}
+              $active={pathname === "/settings" ? "true" : "false"}
               variants={menuItemVariants}
               custom={4}
               initial="hidden"
@@ -704,7 +668,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <Link href="/" passHref legacyBehavior>
             <MobileNavItem
-              as={MobileBackButton}
+              $active="false"
               variants={menuItemVariants}
               custom={5}
               initial="hidden"
@@ -717,8 +681,8 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <MobileUserInfo>
             <UserName>
-              <h4>{displayUserDetails?.displayName || "Demo User"}</h4>
-              <p>{displayUser?.email}</p>
+              <h4>{getUserDisplayName()}</h4>
+              <p>{currentUser?.email}</p>
             </UserName>
             <LogoutButton onClick={handleLogout} title="Logout">
               <FaSignOutAlt />
@@ -727,13 +691,18 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
         </MobileMenu>
       )}
 
-      <BackButton href="/" onClick={(e) => handleNavigation(e, "/")}>
+      <BackButton
+        href="/"
+        onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
+          handleNavigation(e, "/")
+        }
+      >
         Back to Site <FaArrowLeft />
       </BackButton>
 
       <Content>
         <PageTransition
-          key={router.pathname}
+          key={pathname}
           initial="initial"
           animate="animate"
           exit="exit"
