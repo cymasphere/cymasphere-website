@@ -18,28 +18,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import NextSEO from "@/components/NextSEO";
-
-// Styled components
-const DashboardContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-
-  @media (max-width: 768px) {
-    padding: 30px 20px;
-  }
-`;
-
-function DashboardContent(): React.JSX.Element {
-  // Unused variables marked with underscore to avoid linter errors
-  // Render dashboard UI
-  return (
-    <DashboardContainer>
-      {/* Dashboard content implementation */}
-    </DashboardContainer>
-  );
-}
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -362,7 +340,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user: currentUser, signOut } = useAuth();
   const router = useRouter();
@@ -725,20 +703,5 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
         </PageTransition>
       </Content>
     </LayoutContainer>
-  );
-}
-
-export default function DashboardPage(): React.JSX.Element {
-  return (
-    <>
-      <NextSEO
-        title="Dashboard | Cymasphere"
-        description="Access your Cymasphere account dashboard"
-        noindex={true}
-      />
-      <DashboardLayout>
-        <DashboardContent />
-      </DashboardLayout>
-    </>
   );
 }
