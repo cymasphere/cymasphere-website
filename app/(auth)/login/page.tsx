@@ -43,7 +43,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.span`
   position: fixed;
   top: 25px;
   left: 30px;

@@ -1,7 +1,8 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
@@ -42,7 +43,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.div`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -53,6 +54,7 @@ const BackButton = styled.a`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     color: var(--text);
@@ -375,6 +377,7 @@ function SignUp() {
   const [success, setSuccess] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAuth() || {};
 
   // Force reset loading state if component unmounts
@@ -389,15 +392,16 @@ function SignUp() {
 
   // Handle email prefill from checkout
   useEffect(() => {
-    if (router.isReady && router.query.email) {
+    const email = searchParams.get("email");
+    if (email) {
       setFormData((prev) => ({
         ...prev,
-        email: router.query.email,
+        email,
       }));
     }
-  }, [router.isReady, router.query.email]);
+  }, [searchParams]);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -405,7 +409,7 @@ function SignUp() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Reset any previous errors
@@ -438,27 +442,31 @@ function SignUp() {
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Sign up error:", err);
 
       // Handle specific errors
-      if (err.message.includes("Email already in use")) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      if (errorMessage.includes("Email already in use")) {
         setError("Email is already in use");
-      } else if (err.message.includes("invalid email")) {
+      } else if (errorMessage.includes("invalid email")) {
         setError("Invalid email address");
-      } else if (err.message.includes("weak password")) {
+      } else if (errorMessage.includes("weak password")) {
         setError("Password is too weak. Please use a stronger password.");
       } else {
-        setError(`Failed to create an account: ${err.message}`);
+        setError(`Failed to create an account: ${errorMessage}`);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const isCheckoutComplete = searchParams.get("checkout_complete") === "true";
+
   return (
     <AuthContainer>
-      <Link href="/" passHref>
+      <Link href="/" passHref legacyBehavior={false}>
         <BackButton>
           <FaArrowLeft /> Back to Home
         </BackButton>
@@ -476,7 +484,14 @@ function SignUp() {
             justifyContent: "center",
           }}
         >
-          <CymasphereLogo size="40px" fontSize="1.8rem" />
+          <CymasphereLogo
+            size="40px"
+            fontSize="1.8rem"
+            showText={true}
+            href={null}
+            onClick={null}
+            className={null}
+          />
         </div>
 
         <Title>
@@ -541,9 +556,9 @@ function SignUp() {
               value={formData.email}
               onChange={handleChange}
               required
-              readOnly={!!router.query.checkout_complete}
+              readOnly={isCheckoutComplete}
               style={
-                router.query.checkout_complete
+                isCheckoutComplete
                   ? {
                       backgroundColor: "rgba(255, 255, 255, 0.05)",
                       cursor: "not-allowed",
@@ -551,7 +566,7 @@ function SignUp() {
                   : {}
               }
             />
-            {router.query.checkout_complete && (
+            {isCheckoutComplete && (
               <div
                 style={{
                   fontSize: "0.8rem",

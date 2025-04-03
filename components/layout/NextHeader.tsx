@@ -21,6 +21,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import styles from "./MobileLanguageStyle.module.css";
 import CymasphereLogo from "../common/CymasphereLogo";
+import EnergyBall from "../common/EnergyBall";
 
 // Dynamically import components with browser-only APIs
 const DynamicLanguageSelector = dynamic(
@@ -29,10 +30,6 @@ const DynamicLanguageSelector = dynamic(
     ssr: false,
   }
 );
-
-const EnergyBall = dynamic(() => import("../common/EnergyBall"), {
-  ssr: false,
-});
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -60,7 +57,10 @@ const fadeIn = {
   },
 };
 
-const HeaderContainer = styled.header`
+const HeaderContainer = styled.header<{
+  $isScrolled: boolean;
+  $menuOpen: boolean;
+}>`
   position: fixed;
   top: 0;
   left: 0;
@@ -75,7 +75,7 @@ const HeaderContainer = styled.header`
   transition: all 0.3s ease-in-out;
 `;
 
-const HeaderContent = styled.div`
+const HeaderContent = styled.div<{ $isScrolled: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -142,7 +142,7 @@ const Nav = styled.nav`
   }
 `;
 
-const NavLink = styled.a`
+const NavLink = styled.a<{ $isActive: boolean }>`
   color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.7)")};
   font-weight: ${(props) => (props.$isActive ? "600" : "500")};
   letter-spacing: 0.3px;
@@ -150,6 +150,7 @@ const NavLink = styled.a`
   transition: color 0.3s ease;
   margin: 0 15px;
   text-decoration: none !important;
+  cursor: pointer;
 
   &:hover {
     color: white;
@@ -223,7 +224,7 @@ const MenuToggle = styled.div`
   }
 `;
 
-const MobileMenu = styled(motion.div)`
+const MobileMenu = styled(motion.div)<{ $isOpen: boolean }>`
   display: flex;
   position: fixed;
   top: 70px;
@@ -308,7 +309,7 @@ const MobileNavLinks = styled.div`
   z-index: 1;
 `;
 
-const MobileNavLink = styled(motion.a)`
+const MobileNavLink = styled(motion.a)<{ $isActive?: boolean }>`
   color: var(--text);
   text-decoration: none;
   font-size: 1.1rem;
@@ -402,7 +403,7 @@ const MobileFooter = styled.div`
   }
 `;
 
-const AuthButton = styled.a`
+const AuthButton = styled.a<{ $isPrimary?: boolean; $isMobile?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -412,6 +413,7 @@ const AuthButton = styled.a`
   font-weight: 600;
   transition: all 0.3s ease;
   letter-spacing: 0.3px;
+  cursor: pointer;
 
   ${(props) =>
     props.$isPrimary
@@ -445,7 +447,7 @@ const AuthButton = styled.a`
   `}
 `;
 
-const Overlay = styled.div`
+const Overlay = styled.div<{ $isVisible: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -481,7 +483,7 @@ const UserButton = styled.button`
   }
 `;
 
-const UserDropdown = styled.div`
+const UserDropdown = styled.div<{ $isOpen: boolean }>`
   position: absolute;
   top: 45px;
   right: 0;
@@ -552,13 +554,6 @@ const UserMenuLogout = styled.button`
   }
 `;
 
-const MobileUserMenu = styled(motion.div)`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin-top: 20px;
-`;
-
 // Add animation variants for menu items
 const menuItemVariants = {
   hidden: {
@@ -568,7 +563,7 @@ const menuItemVariants = {
       duration: 0.3,
     },
   },
-  visible: (i) => ({
+  visible: (i: number) => ({
     opacity: 1,
     y: 0,
     transition: {
@@ -587,8 +582,8 @@ const NextHeader = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
-  const userMenuRef = useRef(null);
+  const { user, signOut } = useAuth();
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -618,8 +613,11 @@ const NextHeader = () => {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setUserMenuOpen(false);
       }
     };
@@ -640,22 +638,22 @@ const NextHeader = () => {
     };
   }, [menuOpen]);
 
-  const handleLogout = async (e) => {
+  const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      await logout();
+      await signOut("local");
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
-  const handleLoginClick = (e) => {
+  const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push("/login");
   };
 
-  const handleSignupClick = (e) => {
+  const handleSignupClick = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push("/signup");
   };
@@ -693,9 +691,9 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>{t("header.login")}</AuthButton>
+        <AuthButton onClick={handleLoginClick}>Login</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
-          {t("header.signUp")}
+          Sign Up
         </AuthButton>
       </>
     );

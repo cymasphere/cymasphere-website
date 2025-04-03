@@ -20,6 +20,7 @@ type AuthContextType = {
   user: UserProfile | null;
   session: Session | null;
   supabase: SupabaseClient;
+  loading: boolean;
   signUp: (
     name: string,
     email: string,
@@ -46,12 +47,14 @@ const supabase = createBrowserClient();
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     console.log("auth context triggered");
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
       try {
         console.log(event);
         const session_user = session?.user;
@@ -85,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log(JSON.stringify(error));
         setUser(null);
       }
+      setLoading(false);
     });
 
     return () => {
@@ -131,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     supabase,
+    loading,
     signIn,
     signUp,
     signOut,

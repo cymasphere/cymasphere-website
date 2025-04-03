@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { useAuth } from '../contexts/NextAuthContext';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaGoogle, FaArrowLeft, FaSpinner } from 'react-icons/fa';
-import CymasphereLogo from './common/CymasphereLogo';
+import React, { useState } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { useAuth } from "../contexts/NextAuthContext";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import CymasphereLogo from "./common/CymasphereLogo";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -15,22 +15,34 @@ const AuthContainer = styled.div`
   padding: 2rem;
   background-color: var(--background);
   position: relative;
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.15), transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(78, 205, 196, 0.15), transparent 50%),
-                radial-gradient(circle at 40% 70%, rgba(108, 99, 255, 0.1), transparent 40%);
+    background: radial-gradient(
+        circle at 30% 50%,
+        rgba(108, 99, 255, 0.15),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 30%,
+        rgba(78, 205, 196, 0.15),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 40% 70%,
+        rgba(108, 99, 255, 0.1),
+        transparent 40%
+      );
     z-index: 0;
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.span`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -41,15 +53,15 @@ const BackButton = styled.a`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: var(--text);
   }
-  
+
   svg {
     margin-right: 8px;
   }
-  
+
   @media (max-width: 768px) {
     top: 20px;
     left: 20px;
@@ -68,18 +80,20 @@ const FormCard = styled(motion.div)`
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin: 0 20px;
-  
+
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     top: -5px;
     left: -5px;
     right: -5px;
     bottom: -5px;
-    background: linear-gradient(135deg, 
-      rgba(108, 99, 255, 0.5) 0%, 
-      rgba(108, 99, 255, 0) 50%, 
-      rgba(78, 205, 196, 0.5) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(108, 99, 255, 0.5) 0%,
+      rgba(108, 99, 255, 0) 50%,
+      rgba(78, 205, 196, 0.5) 100%
+    );
     border-radius: 18px;
     z-index: -1;
     opacity: 0.4;
@@ -92,7 +106,7 @@ const Title = styled(motion.h2)`
   margin-bottom: 2rem;
   color: var(--text);
   font-size: 2rem;
-  
+
   span {
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
@@ -132,7 +146,7 @@ const Input = styled.input`
   background-color: rgba(15, 14, 23, 0.6);
   color: var(--text);
   transition: all 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: var(--primary);
@@ -150,12 +164,12 @@ const Button = styled(motion.button)`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
     transform: translateY(-2px);
   }
-  
+
   &:disabled {
     background: rgba(108, 99, 255, 0.5);
     cursor: not-allowed;
@@ -184,7 +198,7 @@ const GoogleButton = styled(Button)`
   margin: 1rem auto 0;
   gap: 0.5rem;
   max-width: 250px;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.05);
     transform: translateY(-2px);
@@ -195,14 +209,15 @@ const OrDivider = styled.div`
   display: flex;
   align-items: center;
   margin: 1.5rem 0;
-  
-  &:before, &:after {
+
+  &:before,
+  &:after {
     content: "";
     flex-grow: 1;
     background-color: rgba(255, 255, 255, 0.1);
     height: 1px;
   }
-  
+
   span {
     margin: 0 10px;
     color: var(--text-secondary);
@@ -215,11 +230,11 @@ const LinkText = styled.div`
   margin-top: 1.5rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  
+
   a {
     color: var(--primary);
     text-decoration: none;
-    
+
     &:hover {
       color: var(--accent);
       text-decoration: underline;
@@ -230,12 +245,12 @@ const LinkText = styled.div`
 const ForgotPassword = styled.div`
   text-align: right;
   margin-bottom: 1.5rem;
-  
+
   a {
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.9rem;
-    
+
     &:hover {
       color: var(--primary);
       text-decoration: underline;
@@ -252,7 +267,7 @@ const ButtonContent = styled.div`
 
 const SpinnerIcon = styled(FaSpinner)`
   animation: rotate 1s linear infinite;
-  
+
   @keyframes rotate {
     from {
       transform: rotate(0deg);
@@ -266,16 +281,16 @@ const SpinnerIcon = styled(FaSpinner)`
 const formVariants = {
   hidden: {
     opacity: 0,
-    y: 20
+    y: 20,
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut"
-    }
-  }
+      ease: "easeOut",
+    },
+  },
 };
 
 const buttonVariants = {
@@ -284,49 +299,53 @@ const buttonVariants = {
     boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
     transition: {
       duration: 0.3,
-      ease: "easeInOut"
-    }
+      ease: "easeInOut",
+    },
   },
   tap: {
-    scale: 0.98
-  }
+    scale: 0.98,
+  },
 };
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const auth = useAuth() || {};
   const router = useRouter();
-  
+
   async function handleSubmit(e) {
     e.preventDefault();
-    
+
     // Reset any previous errors
-    setError('');
-    
+    setError("");
+
     try {
       if (!auth.login) {
-        throw new Error('Authentication is not initialized. Please try again later.');
+        throw new Error(
+          "Authentication is not initialized. Please try again later."
+        );
       }
-      
+
       setLoading(true);
       await auth.login(email, password);
-      console.log('User logged in successfully');
-      router.push('/dashboard');
+      console.log("User logged in successfully");
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Login error:', error);
-      
+      console.error("Login error:", error);
+
       // Handle specific error codes
-      if (error.code === 'auth/user-not-found') {
-        setError('No account found with this email. Please sign up first.');
-      } else if (error.code === 'auth/wrong-password') {
-        setError('Incorrect password. Please try again.');
-      } else if (error.code === 'auth/invalid-email') {
-        setError('Invalid email format.');
-      } else if (error.code === 'auth/too-many-requests') {
-        setError('Too many failed login attempts. Please try again later or reset your password.');
+      if (error.code === "auth/user-not-found") {
+        setError("No account found with this email. Please sign up first.");
+      } else if (error.code === "auth/wrong-password") {
+        setError("Incorrect password. Please try again.");
+      } else if (error.code === "auth/invalid-email") {
+        setError("Invalid email format.");
+      } else if (error.code === "auth/too-many-requests") {
+        setError(
+          "Too many failed login attempts. Please try again later or reset your password."
+        );
       } else {
         setError(`Failed to log in: ${error.message}`);
       }
@@ -334,24 +353,26 @@ function Login() {
       setLoading(false);
     }
   }
-  
+
   async function handleGoogleSignIn() {
-    setError('');
+    setError("");
     try {
       if (!auth.googleSignIn) {
-        throw new Error('Google authentication is not initialized. Please try again later.');
+        throw new Error(
+          "Google authentication is not initialized. Please try again later."
+        );
       }
-      
+
       setLoading(true);
       await auth.googleSignIn();
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error("Google sign-in error:", error);
       setError(`Failed to sign in with Google: ${error.message}`);
       setLoading(false);
     }
   }
-  
+
   return (
     <AuthContainer>
       <Link href="/" passHref>
@@ -359,18 +380,24 @@ function Login() {
           <FaArrowLeft /> Back to Home
         </BackButton>
       </Link>
-      
+
       <FormCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+        <div
+          style={{
+            marginBottom: "2rem",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
           <CymasphereLogo size="40px" fontSize="1.8rem" />
         </div>
-        
+
         <Subtitle>Login to access your account</Subtitle>
-        
+
         {error && (
           <ErrorMessage
             initial={{ opacity: 0 }}
@@ -380,7 +407,7 @@ function Login() {
             {error}
           </ErrorMessage>
         )}
-        
+
         <Form onSubmit={handleSubmit}>
           <FormGroup>
             <Label htmlFor="email">Email</Label>
@@ -392,7 +419,7 @@ function Login() {
               required
             />
           </FormGroup>
-          
+
           <FormGroup>
             <Label htmlFor="password">Password</Label>
             <Input
@@ -403,32 +430,29 @@ function Login() {
               required
             />
           </FormGroup>
-          
+
           <ForgotPassword>
             <Link href="/reset-password">Forgot password?</Link>
           </ForgotPassword>
-          
-          <Button 
-            type="submit"
-            disabled={loading}
-          >
+
+          <Button type="submit" disabled={loading}>
             <ButtonContent>
               {loading ? (
                 <>
                   <SpinnerIcon /> Logging in...
                 </>
               ) : (
-                'Log In'
+                "Log In"
               )}
             </ButtonContent>
           </Button>
         </Form>
-        
+
         <OrDivider>
           <span>or</span>
         </OrDivider>
-        
-        <GoogleButton 
+
+        <GoogleButton
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
@@ -445,7 +469,7 @@ function Login() {
             )}
           </ButtonContent>
         </GoogleButton>
-        
+
         <LinkText>
           Don't have an account? <Link href="/signup">Sign up</Link>
         </LinkText>
@@ -454,4 +478,4 @@ function Login() {
   );
 }
 
-export default Login; 
+export default Login;
