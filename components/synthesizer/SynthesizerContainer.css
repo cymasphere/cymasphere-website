@@ -1,0 +1,649 @@
+.synthesizer-container {
+  position: relative;
+  min-height: 600px;
+  padding: 40px 0;
+  overflow: visible;
+  margin-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  z-index: 1;
+  background: transparent !important;
+}
+
+.synthesizer-container::before {
+  display: none;
+}
+
+.synthesizer-content {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 1200px;
+  background: transparent;
+}
+
+.synthesizer-content h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #6C63FF, #4ECDC4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+  z-index: 10;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: transparent;
+}
+
+.synthesizer-content p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+}
+
+.synth-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 20px 0;
+  padding: 20px;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+}
+
+.chord-bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 15px;
+  width: 100%;
+  position: relative;
+  z-index: 15;
+  background: transparent;
+}
+
+.parameter-toggle-btn {
+  background: rgba(108, 99, 255, 0.2);
+  border: 1px solid rgba(108, 99, 255, 0.4);
+  color: #333;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 10px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.parameter-toggle-btn:hover {
+  background: rgba(108, 99, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+  color: white;
+}
+
+.chord-bank-item {
+  padding: 12px 18px;
+  margin: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 15;
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  color: #333;
+  font-weight: 500;
+}
+
+.chord-bank-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(108, 99, 255, 0.2);
+  background: rgba(108, 99, 255, 0.25);
+}
+
+.chord-bank-item.active {
+  background: rgba(108, 99, 255, 0.4);
+  box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+  color: white;
+}
+
+.stop-button {
+  background: rgba(255, 99, 99, 0.2);
+  border: 1px solid rgba(255, 99, 99, 0.4);
+  color: #333;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin: 20px auto 10px;
+  position: relative;
+  z-index: 15;
+  font-weight: 600;
+}
+
+.stop-button:hover {
+  background: rgba(255, 99, 99, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 99, 99, 0.3);
+  color: white;
+}
+
+/* Selector containers for MIDI and Synth dropdowns */
+.selector-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 15px 0;
+  width: 100%;
+  position: relative;
+  z-index: 15;
+}
+
+.selector-container select {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 5px;
+  margin: 5px;
+  font-size: 0.95rem;
+}
+
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 30px;
+  align-items: center;
+}
+
+/* Make sure synth controls panel has no background */
+#synth-params-panel, #effects-panel {
+  background: transparent !important;
+  border: none;
+  box-shadow: none;
+}
+
+.tabs, .tab-content {
+  background: transparent !important;
+}
+
+@media (max-width: 768px) {
+  .synthesizer-container {
+    padding: 30px 15px;
+    min-height: 500px;
+  }
+  
+  .synthesizer-content h2 {
+    font-size: 2rem;
+  }
+  
+  .synthesizer-content p {
+    font-size: 1rem;
+  }
+}
+
+/* Ensure "How It Works" heading is white with gradient underline */
+#how-it-works h2.sc-incsXD,
+#how-it-works .sc-gIivzS > h2,
+#how-it-works h2,
+#how-it-works .wizard-container h2,
+.section-title {
+  color: white !important;
+  position: relative;
+  display: inline-block;
+  font-size: 2.5rem !important;
+  margin-bottom: 20px !important;
+  font-weight: bold !important;
+}
+
+#how-it-works h2::after,
+#how-it-works .wizard-container h2::after,
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary)) !important;
+}
+
+/* Adjust spacing to account for removed heading */
+#how-it-works .synthesizer-container {
+  margin-top: 0;
+  padding-top: 40px;
+}
+
+/* Hide synth parameters panel and controls that should be simplified */
+.parameter-toggle-btn,
+#synth-params-panel, 
+.tabs, 
+.tab-content,
+.sc-fEOKFM,  /* Parameters container */
+.selector-container > div:first-child, /* MIDI/Synth buttons container */
+.selector-container select /* Preset selector */ {
+  display: none !important;
+}
+
+/* Add more spacing between chord bank and stop button for cleaner look */
+.controls-container {
+  margin-top: 25px;
+}
+
+/* Wizard Mode Styles */
+.wizard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+}
+
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.wizard-step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(108, 99, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+  border: 2px solid rgba(108, 99, 255, 0.5);
+}
+
+.step-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.wizard-step-indicator.active .step-number {
+  background-color: #6C63FF;
+  box-shadow: 0 0 15px rgba(108, 99, 255, 0.8);
+}
+
+.wizard-step-indicator.active .step-label {
+  color: white;
+  font-weight: bold;
+}
+
+.wizard-step-indicator.completed .step-number {
+  background-color: #4ECDC4;
+  border-color: #4ECDC4;
+}
+
+.progress-line {
+  height: 3px;
+  background: linear-gradient(90deg, #6C63FF, #4ECDC4);
+  width: 100px;
+  margin: 0 15px;
+  margin-bottom: 8px;
+}
+
+.wizard-step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wizard-step-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.wizard-step-header h3 {
+  font-size: 1.5rem;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.wizard-step-header p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 600px;
+}
+
+.wizard-navigation {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.wizard-next-button, .wizard-prev-button {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.wizard-next-button {
+  background: linear-gradient(90deg, #6C63FF, #4ECDC4);
+  color: white;
+}
+
+.wizard-next-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(108, 99, 255, 0.3);
+}
+
+.wizard-prev-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  margin-right: 15px;
+}
+
+.wizard-next-button:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
+}
+
+.wizard-prev-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.progression-reminder {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 750px;
+}
+
+.reminder-header {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.reminder-chords {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.reminder-chord {
+  background: rgba(108, 99, 255, 0.2);
+  border: 1px solid rgba(108, 99, 255, 0.5);
+  border-radius: 4px;
+  padding: 8px 15px;
+  flex: 1;
+  text-align: center;
+  color: white;
+  font-weight: bold;
+}
+
+.play-reminder-button {
+  background: rgba(108, 99, 255, 0.2);
+  border: 1px solid rgba(108, 99, 255, 0.5);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.play-reminder-button:hover {
+  background: rgba(108, 99, 255, 0.3);
+}
+
+/* Form styles for wizard steps */
+.wizard-form {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 30px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6C63FF;
+  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.form-hint {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.form-illustration {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(108, 99, 255, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid rgba(108, 99, 255, 0.5);
+}
+
+.illustration-icon {
+  font-size: 2.5rem;
+  margin-right: 15px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.illustration-text {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.wizard-instructions {
+  margin: 15px 0;
+  text-align: center;
+  width: 100%;
+}
+
+.instruction-title {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.instruction-detail {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+.wizard-finish-button {
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #4ECDC4, #2ecc71);
+  color: white;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.wizard-finish-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(78, 205, 196, 0.3);
+}
+
+/* Update the progress line for 4 steps */
+@media (max-width: 768px) {
+  .progress-line {
+    width: 40px;
+  }
+  
+  .wizard-progress {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  
+  .step-label {
+    font-size: 0.8rem;
+  }
+  
+  .step-number {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .wizard-navigation {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .wizard-prev-button, 
+  .wizard-next-button,
+  .wizard-finish-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .wizard-prev-button {
+    margin-right: 0;
+  }
+}
+
+.wizard-step-indicator.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.wizard-step-indicator.clickable:hover .step-number {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(108, 99, 255, 0.6);
+}
+
+.wizard-step-indicator.clickable:hover .step-label {
+  color: white;
+}
+
+.wizard-step-indicator.completed.clickable:hover .step-number {
+  background-color: #6C63FF;
+}
+
+.input-with-button {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.input-with-button input {
+  flex: 1;
+  padding-right: 45px; /* Make room for the button */
+}
+
+.generate-name-button {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, #FF8E53, #FE6B8B);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.generate-name-button:hover {
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.generate-name-button span {
+  font-size: 1.2rem;
+} 

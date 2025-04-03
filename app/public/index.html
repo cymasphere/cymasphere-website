@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="CYMASPHERE - Advanced audio processing application"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>Cymasphere</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <!-- Fix for ResizeObserver errors -->
+    <script>
+      // This script patches the ResizeObserver to prevent loop errors from appearing in console
+      (function() {
+        // Store the original ResizeObserver
+        const originalResizeObserver = window.ResizeObserver;
+        
+        if (originalResizeObserver) {
+          // Create a patched version that catches the error
+          window.ResizeObserver = function(...args) {
+            const observer = new originalResizeObserver(...args);
+            
+            // Override the observe method
+            const originalObserve = observer.observe;
+            observer.observe = function(...observeArgs) {
+              try {
+                return originalObserve.apply(this, observeArgs);
+              } catch (e) {
+                // Silently ignore any errors
+                console.log('Prevented ResizeObserver error');
+                return null;
+              }
+            };
+            
+            return observer;
+          };
+          
+          // Copy prototype and static properties
+          window.ResizeObserver.prototype = originalResizeObserver.prototype;
+          Object.keys(originalResizeObserver).forEach(key => {
+            window.ResizeObserver[key] = originalResizeObserver[key];
+          });
+        }
+        
+        // Also prevent errors from being logged to console
+        const originalError = console.error;
+        console.error = function(...args) {
+          if (args[0] && typeof args[0] === 'string' && args[0].includes('ResizeObserver loop')) {
+            // Skip logging this error
+            return;
+          }
+          return originalError.apply(this, args);
+        };
+        
+        // Capture any errors that might still make it through
+        window.addEventListener('error', function(e) {
+          if (e && e.message && typeof e.message === 'string' && e.message.includes('ResizeObserver loop')) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return true;
+          }
+        }, true);
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>

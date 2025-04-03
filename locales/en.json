@@ -1,0 +1,149 @@
+{
+  "common": {
+    "play": "Play",
+    "stop": "Stop",
+    "generate": "Generate",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "learnMore": "Learn More"
+  },
+  "header": {
+    "home": "Home",
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "testimonials": "Testimonials",
+    "demo": "Demo",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "download": "Download",
+    "tryDemo": "Try Demo"
+  },
+  "hero": {
+    "title": "Generate Music With AI",
+    "titlePartA": "Intelligent",
+    "titlePartB": "Creation",
+    "subtitle": "Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.",
+    "cta": "Try It Now",
+    "titleWords": {
+      "music": "Music",
+      "song": "Song",
+      "chord": "Chord",
+      "pattern": "Pattern",
+      "progression": "Progression",
+      "voicing": "Voicing",
+      "harmony": "Harmony"
+    },
+    "chords": {
+      "cMajor": "C Major",
+      "fMajor": "F Major",
+      "bDiminished": "B Diminished",
+      "eMinor": "E Minor",
+      "aMinor": "A Minor",
+      "dMinor": "D Minor",
+      "gMajor": "G Major"
+    },
+    "tooltips": {
+      "playNote": "Click to play this note",
+      "playChord": "Click to play the chord"
+    }
+  },
+  "features": {
+    "title": "Features",
+    "subtitle": "Discover what Cymasphere can do for you",
+    "aiComposition": "AI Composition",
+    "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
+    "livePerformance": "Live Performance",
+    "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
+    "customSounds": "Custom Sounds",
+    "customSoundsDesc": "Create and save your own custom sound presets"
+  },
+  "synth": {
+    "title": "Intelligent Chord Voicing Generator",
+    "description": "Create lush, beautiful chords with the press of a button.",
+    "chordSequence": "Chord Sequence",
+    "generateMelody": "Generate Melody",
+    "playChordSequence": "Play Chord Sequence",
+    "stopAll": "Stop",
+    "playBoth": "Play Both",
+    "generateRandomProgression": "Random Progression",
+    "generateRandomSongName": "Random Name",
+    "synthesizerTitle": "Synthesizer",
+    "synthesizerDesc": "Create and play musical patterns",
+    "songName": "Song Name",
+    "trackName": "Track Name",
+    "trackNamePlaceholder": "e.g., Piano, Melody, Bassline",
+    "trackNameHint": "Each track represents a different instrument or sound in your song",
+    "trackIllustration": "Think of tracks like layers in your musical arrangement - they'll play together to create your full song.",
+    "chords": {
+      "cMajor": "Cmaj7",
+      "dMinor": "Dmin7",
+      "eMinor": "Emin7",
+      "fMajor": "Fmaj7",
+      "g7sus4": "G7",
+      "aMinor": "Amin7",
+      "bm7b5": "Bm7b5"
+    },
+    "wizard": {
+      "step1": {
+        "title": "Step 1: Song Creation",
+        "description": "Start your creative journey by naming your musical piece.",
+        "namePlaceholder": "Enter a name for your song",
+        "nameHint": "This will be the title of your musical creation",
+        "illustration": "Every great piece of music starts with a name. What will you call yours?"
+      },
+      "step2": {
+        "title": "Step 2: Chord Progression",
+        "description": "Create the harmonic foundation for your song \"{songName}\".",
+        "chordSequence": "Chord Sequence",
+        "instruction": "Choose chords from the bank below and add them to your progression."
+      },
+      "step3": {
+        "title": "Step 3: Track Creation",
+        "description": "Name your first instrument track within \"{songName}\".",
+        "progression": "Your Progression:"
+      },
+      "step4": {
+        "title": "Step 4: Pattern Creation",
+        "description": "Create a melody pattern for your \"{trackName}\" track in \"{songName}\"."
+      },
+      "nextToProgression": "Continue to Chord Progression",
+      "nextToTrack": "Continue to Track Creation",
+      "nextToPattern": "Continue to Pattern Creation",
+      "backToSong": "Back to Song Creation",
+      "backToProgression": "Back to Chord Progression",
+      "backToTrack": "Back to Track Creation",
+      "finish": "Finish",
+      "congratsMessage": "Congratulations! You've just scratched the surface of Cymasphere's powerful music creation capabilities. Your song \"{songName}\" with the \"{trackName}\" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality."
+    },
+    "notes": {
+      "C": "C",
+      "D": "D",
+      "E": "E",
+      "F": "F",
+      "G": "G",
+      "A": "A",
+      "B": "B"
+    },
+    "chordTypes": {
+      "major": "Major",
+      "minor": "Minor",
+      "diminished": "Diminished",
+      "augmented": "Augmented",
+      "seventh": "Seventh"
+    }
+  },
+  "footer": {
+    "copyright": "© 2023 Cymasphere. All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "ja": "日本語"
+  }
+} 
