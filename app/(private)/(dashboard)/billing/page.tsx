@@ -178,7 +178,11 @@ const InvoiceAmount = styled.div`
   color: var(--text);
 `;
 
-const InvoiceStatus = styled.div`
+interface InvoiceStatusProps {
+  status: "paid" | "unpaid";
+}
+
+const InvoiceStatus = styled.div<InvoiceStatusProps>`
   font-size: 0.8rem;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -263,12 +267,16 @@ const ModalBody = styled.div`
   padding: 1.5rem;
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanGrid = styled.div`
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanCard = styled.div`
   background-color: rgba(30, 30, 46, 0.5);
   border: 2px solid var(--primary);
@@ -283,6 +291,8 @@ const PlanCard = styled.div`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanHeader = styled.div`
   text-align: center;
   margin-bottom: 1rem;
@@ -290,12 +300,16 @@ const PlanHeader = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanNameStyled = styled.h3`
   font-size: 1.2rem;
   margin: 0 0 0.5rem 0;
   color: var(--text);
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanPriceStyled = styled.div`
   font-size: 2rem;
   font-weight: 700;
@@ -309,6 +323,8 @@ const PlanPriceStyled = styled.div`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanFeatures = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -320,6 +336,8 @@ const PlanFeatures = styled.div`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanFeature = styled.div`
   display: flex;
   align-items: center;
@@ -334,6 +352,8 @@ const PlanFeature = styled.div`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanButton = styled(Button)`
   margin-top: 1.5rem;
   width: 100%;
@@ -346,6 +366,8 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const YearlyInfo = styled.div`
   display: flex;
   align-items: center;
@@ -362,6 +384,8 @@ const YearlyInfo = styled.div`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanChangeInfo = styled.div`
   display: flex;
   align-items: flex-start;
@@ -388,6 +412,8 @@ const PlanChangeInfo = styled.div`
 `;
 
 // Styled components for the billing toggle from PricingSection
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BillingToggleContainer = styled.div`
   display: flex;
   align-items: center;
@@ -395,7 +421,13 @@ const BillingToggleContainer = styled.div`
   margin-bottom: 30px;
 `;
 
-const BillingToggleButton = styled.button`
+interface BillingToggleButtonProps {
+  $active: boolean;
+}
+
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const BillingToggleButton = styled.button<BillingToggleButtonProps>`
   background: ${(props) =>
     props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
@@ -420,6 +452,8 @@ const BillingToggleButton = styled.button`
   }
 `;
 
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SaveLabel = styled.span`
   background: linear-gradient(135deg, var(--accent), var(--primary));
   color: white;
@@ -431,6 +465,8 @@ const SaveLabel = styled.span`
 `;
 
 // Add a current plan indicator
+// Unused in the current implementation but kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CurrentPlanIndicator = styled.div`
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
@@ -567,6 +603,61 @@ const AlertBanner = styled.div`
   }
 `;
 
+interface UserSubscription {
+  interval: "monthly" | "yearly" | "lifetime" | null;
+  endDate: Date;
+  isLifetime: boolean;
+  purchaseDate: Date;
+  yearlyExpiryDate: null;
+  subscriptionFailed: boolean;
+  inTrial: boolean;
+  trialEndDate: Date;
+}
+
+interface PaymentMethod {
+  id: string;
+  last4: string;
+  brand: string;
+  expMonth: number;
+  expYear: number;
+}
+
+interface CardFormData {
+  cardNumber: string;
+  cardName: string;
+  expiryDate: string;
+  cvv: string;
+}
+
+interface FormErrors {
+  cardNumber?: string;
+  cardName?: string;
+  expiryDate?: string;
+  cvv?: string;
+  [key: string]: string | undefined;
+}
+
+interface PlanOption {
+  name: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  lifetimePrice?: number;
+  description: string;
+  trialDays?: number;
+  features: string[];
+}
+
+interface ProPlanOption extends PlanOption {
+  lifetimePrice: number;
+  trialDays: number;
+}
+
+interface PlanOptions {
+  basic: PlanOption;
+  pro: ProPlanOption;
+  team: PlanOption;
+}
+
 export default function BillingPage() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -576,7 +667,7 @@ export default function BillingPage() {
   const [confirmationTitle, setConfirmationTitle] = useState("");
 
   // Mock user subscription data - in a real app, this would come from context/API
-  const [userSubscription, setUserSubscription] = useState({
+  const [userSubscription, setUserSubscription] = useState<UserSubscription>({
     interval: "monthly", // 'monthly', 'yearly', 'lifetime', null (for no plan)
     endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
     isLifetime: false,
@@ -589,7 +680,7 @@ export default function BillingPage() {
   });
 
   // Mock payment methods
-  const [paymentMethods, setPaymentMethods] = useState([
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
     {
       id: "pm_1234567890",
       last4: "4242",
@@ -600,10 +691,11 @@ export default function BillingPage() {
   ]);
 
   // Payment method to remove
-  const [paymentMethodToRemove, setPaymentMethodToRemove] = useState(null);
+  const [paymentMethodToRemove, setPaymentMethodToRemove] =
+    useState<PaymentMethod | null>(null);
 
   // Form state for credit card
-  const [cardForm, setCardForm] = useState({
+  const [cardForm, setCardForm] = useState<CardFormData>({
     cardNumber: "",
     cardName: "",
     expiryDate: "",
@@ -611,10 +703,10 @@ export default function BillingPage() {
   });
 
   // Form validation errors
-  const [formErrors, setFormErrors] = useState({});
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // Define the plan details for Pro tier
-  const planOptions = {
+  const planOptions: PlanOptions = {
     basic: {
       name: "Cymasphere Basic",
       monthlyPrice: 0,
@@ -672,7 +764,9 @@ export default function BillingPage() {
     setShowPlanModal(true);
   };
 
-  const handleBillingPeriodChange = (interval) => {
+  const handleBillingPeriodChange = (
+    interval: "monthly" | "yearly" | "lifetime"
+  ) => {
     if (interval === "lifetime" && !userSubscription.isLifetime) {
       // When switching to lifetime, set isLifetime to true
       setUserSubscription((prev) => ({
@@ -695,9 +789,9 @@ export default function BillingPage() {
     // If user is changing to a more expensive plan (monthly -> yearly -> lifetime)
     const shouldRedirectToCheckout =
       (userSubscription.interval === "monthly" &&
-        (userSubscription.interval === "yearly" ||
-          userSubscription.interval === "lifetime")) ||
+        userSubscription.interval !== "monthly") ||
       (userSubscription.interval === "yearly" &&
+        userSubscription.interval !== "yearly" &&
         userSubscription.interval === "lifetime");
 
     if (shouldRedirectToCheckout) {
@@ -745,7 +839,7 @@ export default function BillingPage() {
   };
 
   // Format the date for display
-  const formatDate = (date) => {
+  const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -762,6 +856,7 @@ export default function BillingPage() {
   };
 
   // Get the name of the current subscription plan
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCurrentPlanName = () => {
     if (userSubscription.isLifetime) return "Lifetime Pro";
     return userSubscription.interval === "monthly"
@@ -773,7 +868,7 @@ export default function BillingPage() {
     setShowPaymentModal(true);
   };
 
-  const formatCardNumber = (value) => {
+  const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
     const matches = v.match(/\d{4,16}/g);
     const match = (matches && matches[0]) || "";
@@ -790,7 +885,7 @@ export default function BillingPage() {
     }
   };
 
-  const formatExpiryDate = (value) => {
+  const formatExpiryDate = (value: string) => {
     const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
 
     if (v.length > 2) {
@@ -800,7 +895,7 @@ export default function BillingPage() {
     return v;
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
@@ -821,13 +916,13 @@ export default function BillingPage() {
     if (formErrors[name]) {
       setFormErrors((prevErrors) => ({
         ...prevErrors,
-        [name]: null,
+        [name]: undefined,
       }));
     }
   };
 
   const validateCardForm = () => {
-    const errors = {};
+    const errors: FormErrors = {};
 
     if (!cardForm.cardNumber.trim()) {
       errors.cardNumber = "Card number is required";
@@ -881,26 +976,29 @@ export default function BillingPage() {
     });
   };
 
-  const handleRemovePaymentMethod = (paymentMethod) => {
+  const handleRemovePaymentMethod = (paymentMethod: PaymentMethod) => {
     setPaymentMethodToRemove(paymentMethod);
     setShowRemoveConfirmModal(true);
   };
 
   const confirmRemovePaymentMethod = () => {
     // In a real app, you would call an API to remove the payment method
-    setPaymentMethods((prevMethods) =>
-      prevMethods.filter((method) => method.id !== paymentMethodToRemove.id)
-    );
+    if (paymentMethodToRemove) {
+      setPaymentMethods((prevMethods) =>
+        prevMethods.filter((method) => method.id !== paymentMethodToRemove.id)
+      );
 
-    setShowRemoveConfirmModal(false);
-    setConfirmationTitle("Payment Method Removed");
-    setConfirmationMessage(
-      "Your payment method has been successfully removed."
-    );
-    setShowConfirmationModal(true);
+      setShowRemoveConfirmModal(false);
+      setConfirmationTitle("Payment Method Removed");
+      setConfirmationMessage(
+        "Your payment method has been successfully removed."
+      );
+      setShowConfirmationModal(true);
+    }
   };
 
   // Toggle subscription failed state (for demo purposes)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const toggleSubscriptionFailed = () => {
     setUserSubscription((prev) => ({
       ...prev,
@@ -923,7 +1021,7 @@ export default function BillingPage() {
     if (!userSubscription.inTrial) return 0;
     const today = new Date();
     const trialEnd = new Date(userSubscription.trialEndDate);
-    const diffTime = Math.abs(trialEnd - today);
+    const diffTime = Math.abs(trialEnd.getTime() - today.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -942,8 +1040,8 @@ export default function BillingPage() {
         >
           <FaGift />
           <p>
-            You're currently on a <strong>14-day free trial</strong> with full
-            access to all premium features.
+            You&apos;re currently on a <strong>14-day free trial</strong> with
+            full access to all premium features.
             {getDaysLeftInTrial()} days remaining. Your first payment of $
             {getCurrentPrice()} will be on{" "}
             {formatDate(userSubscription.trialEndDate)}.
@@ -1191,7 +1289,7 @@ export default function BillingPage() {
                     placeholder="1234 5678 9012 3456"
                     value={cardForm.cardNumber}
                     onChange={handleInputChange}
-                    maxLength="19"
+                    maxLength={19}
                     autoComplete="cc-number"
                   />
                   {formErrors.cardNumber && (
@@ -1226,7 +1324,7 @@ export default function BillingPage() {
                       placeholder="MM/YY"
                       value={cardForm.expiryDate}
                       onChange={handleInputChange}
-                      maxLength="5"
+                      maxLength={5}
                       autoComplete="cc-exp"
                     />
                     {formErrors.expiryDate && (
@@ -1244,7 +1342,7 @@ export default function BillingPage() {
                       placeholder="123"
                       value={cardForm.cvv}
                       onChange={handleInputChange}
-                      maxLength="4"
+                      maxLength={4}
                       autoComplete="cc-csc"
                     />
                     {formErrors.cvv && (
@@ -1283,7 +1381,7 @@ export default function BillingPage() {
 
       {/* Remove Payment Method Confirmation Modal */}
       <AnimatePresence>
-        {showRemoveConfirmModal && (
+        {showRemoveConfirmModal && paymentMethodToRemove && (
           <ModalOverlay
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
