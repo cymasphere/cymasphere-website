@@ -236,31 +236,6 @@ const LinkText = styled.div`
   }
 `;
 
-const PasswordStrengthIndicator = styled.div<{ $strength: number }>`
-  height: 4px;
-  margin-top: 8px;
-  border-radius: 2px;
-  background: ${(props) => {
-    if (props.$strength === 0) return 'transparent';
-    if (props.$strength === 1) return 'var(--danger)';
-    if (props.$strength === 2) return 'var(--warning)';
-    return 'var(--success)';
-  }};
-  width: ${(props) => `${props.$strength * 33.33}%`};
-  transition: all 0.3s ease;
-`;
-
-const PasswordStrengthText = styled.div<{ $strength: number }>`
-  margin-top: 4px;
-  font-size: 0.8rem;
-  color: ${(props) => {
-    if (props.$strength === 0) return 'transparent';
-    if (props.$strength === 1) return 'var(--danger)';
-    if (props.$strength === 2) return 'var(--warning)';
-    return 'var(--success)';
-  }};
-`;
-
 const buttonVariants = {
   hover: {
     scale: 1.03,
@@ -327,7 +302,6 @@ function CreatePassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { supabase } = useAuth();
@@ -344,27 +318,6 @@ function CreatePassword() {
       setHashToken(token);
     }
   }, []);
-  
-  // Check password strength
-  const checkPasswordStrength = (password: string) => {
-    if (!password) return 0;
-    
-    let score = 0;
-    
-    // Length check
-    if (password.length >= 8) score += 1;
-    
-    // Complexity checks
-    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
-    if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score += 1;
-    
-    return score;
-  };
-  
-  // Update password strength when password changes
-  useEffect(() => {
-    setPasswordStrength(checkPasswordStrength(password));
-  }, [password]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -373,21 +326,13 @@ function CreatePassword() {
     setError("");
     setMessage("");
     
-    // Validate passwords
+    // Only validate that passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
     
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-    
-    if (passwordStrength < 2) {
-      setError("Please choose a stronger password");
-      return;
-    }
+    // Remove password strength and length validation
     
     setLoading(true);
     
@@ -419,13 +364,6 @@ function CreatePassword() {
     } finally {
       setLoading(false);
     }
-  };
-  
-  const getPasswordStrengthText = () => {
-    if (passwordStrength === 0) return "";
-    if (passwordStrength === 1) return "Weak";
-    if (passwordStrength === 2) return "Medium";
-    return "Strong";
   };
 
   return (
@@ -517,10 +455,6 @@ function CreatePassword() {
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </PasswordToggle>
-              <PasswordStrengthIndicator $strength={passwordStrength} />
-              <PasswordStrengthText $strength={passwordStrength}>
-                {getPasswordStrengthText()}
-              </PasswordStrengthText>
             </FormGroup>
 
             <FormGroup>
