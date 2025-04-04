@@ -364,9 +364,29 @@ const SuccessText = styled.div`
   font-size: 16px;
 `;
 
+// Add styled component for name fields container
+const NameFieldsContainer = styled.div`
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Adjust the FormGroup inside NameFieldsContainer to have no bottom margin */
+  & > ${FormGroup} {
+    flex: 1;
+    margin-bottom: 0;
+  }
+`;
+
 function SignUp() {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -432,8 +452,10 @@ function SignUp() {
 
     try {
       setLoading(true);
+      // Combine first and last name for the API call
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const result = await auth.signUp(
-        formData.name,
+        fullName,
         formData.email,
         formData.password
       );
@@ -505,7 +527,7 @@ function SignUp() {
             <SuccessTitle>Account Created Successfully!</SuccessTitle>
             <SuccessText>
               <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
-                A verification email has been sent to {formData.email}.
+                Hi {formData.firstName}! A verification email has been sent to {formData.email}.
               </strong>
               <br />
               <br />
@@ -532,17 +554,33 @@ function SignUp() {
         )}
 
         <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+          <NameFieldsContainer>
+            <FormGroup>
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+                placeholder="First Name"
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+                placeholder="Last Name"
+              />
+            </FormGroup>
+          </NameFieldsContainer>
 
           <FormGroup>
             <Label htmlFor="email">Email</Label>
@@ -554,6 +592,7 @@ function SignUp() {
               onChange={handleChange}
               required
               readOnly={isCheckoutComplete}
+              placeholder="Enter your email address"
               style={
                 isCheckoutComplete
                   ? {
@@ -585,6 +624,7 @@ function SignUp() {
               value={formData.password}
               onChange={handleChange}
               required
+              placeholder="Create a secure password"
             />
           </FormGroup>
 
@@ -597,6 +637,7 @@ function SignUp() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              placeholder="Confirm your password"
             />
           </FormGroup>
 
