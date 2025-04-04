@@ -17,7 +17,7 @@ export default function RootLayout({
     }
   }, [auth.user, router, auth.loading]);
 
-  if (auth.loading) {
+  if (!auth.user || auth.loading) {
     return <div>Loading...</div>;
   }
 
