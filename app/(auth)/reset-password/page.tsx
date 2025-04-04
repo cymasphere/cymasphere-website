@@ -254,7 +254,7 @@ function ResetPassword() {
       await resetPassword(email);
 
       // Display success message
-      setMessage("Check your email for instructions to reset your password");
+      setMessage("If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.");
     } catch (err: unknown) {
       console.error("Password reset error:", err);
 
