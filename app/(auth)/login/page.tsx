@@ -316,7 +316,7 @@ function Login() {
   const auth = useAuth() || {};
   const router = useRouter();
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     // Reset any previous errors
@@ -324,26 +324,37 @@ function Login() {
 
     try {
       setLoading(true);
-      await auth.signIn(email, password);
-      console.log("User logged in successfully");
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
+      // Call signIn and get the result
+      const result = await auth.signIn(email, password);
 
-      // Handle specific error codes
-      if (error.code === "auth/user-not-found") {
-        setError("No account found with this email. Please sign up first.");
-      } else if (error.code === "auth/wrong-password") {
-        setError("Incorrect password. Please try again.");
-      } else if (error.code === "auth/invalid-email") {
-        setError("Invalid email format.");
-      } else if (error.code === "auth/too-many-requests") {
-        setError(
-          "Too many failed login attempts. Please try again later or reset your password."
-        );
+      if (result.error) {
+        console.error("Login error:", result.error);
+
+        // Handle specific error codes
+        if (result.error.code === "user_not_found") {
+          setError("No account found with this email. Please sign up first.");
+        } else if (result.error.code === "invalid_credentials") {
+          setError("Incorrect password. Please try again.");
+        } else if (result.error.code === "email_address_invalid") {
+          setError("Invalid email format.");
+        } else if (result.error.code === "over_request_rate_limit") {
+          setError(
+            "Too many failed login attempts. Please try again later or reset your password."
+          );
+        } else {
+          setError(`Failed to log in: ${result.error.message}`);
+        }
       } else {
-        setError(`Failed to log in: ${error.message}`);
+        console.log("User logged in successfully");
+        router.push("/dashboard");
       }
+    } catch (error: unknown) {
+      console.error("Login error:", error);
+      setError(
+        `Failed to log in: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -383,7 +394,13 @@ function Login() {
             justifyContent: "center",
           }}
         >
-          <CymasphereLogo size="40px" fontSize="1.8rem" />
+          <CymasphereLogo
+            size="40px"
+            fontSize="1.8rem"
+            href=""
+            onClick={() => {}}
+            className=""
+          />
         </div>
 
         <Subtitle>Login to access your account</Subtitle>
@@ -439,7 +456,7 @@ function Login() {
         </Form>
 
         <LinkText>
-          Don't have an account? <Link href="/signup">Sign up</Link>
+          Don&apos;t have an account? <Link href="/signup">Sign up</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>
