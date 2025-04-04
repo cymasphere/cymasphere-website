@@ -42,7 +42,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.div`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -105,44 +105,6 @@ const LogoContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 2rem;
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.8rem;
-
-  &:hover {
-    text-decoration: none;
-  }
-`;
-
-const LogoImage = styled.img`
-  height: 40px;
-  width: 40px;
-  margin-right: 10px;
-  transition: transform 0.3s ease;
-
-  ${Logo}:hover & {
-    transform: rotate(20deg);
-  }
-`;
-
-const LogoText = styled.div`
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-
-  span {
-    font-family: "Montserrat", sans-serif;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
 `;
 
 const Title = styled(motion.h2)`
@@ -258,21 +220,6 @@ const LinkText = styled.div`
   }
 `;
 
-const formVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
-
 const buttonVariants = {
   hover: {
     scale: 1.03,
@@ -295,7 +242,7 @@ function ResetPassword() {
   const auth = useAuth() || {};
   const { resetPassword } = auth;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
@@ -308,14 +255,18 @@ function ResetPassword() {
 
       // Display success message
       setMessage("Check your email for instructions to reset your password");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Password reset error:", err);
 
       // Handle specific errors
-      if (err.code === "auth/user-not-found") {
-        setError("No user found with this email address");
-      } else if (err.code === "auth/invalid-email") {
-        setError("Invalid email address");
+      if (err && typeof err === "object" && "code" in err) {
+        if (err.code === "auth/user-not-found") {
+          setError("No user found with this email address");
+        } else if (err.code === "auth/invalid-email") {
+          setError("Invalid email address");
+        } else {
+          setError("Failed to send password reset email. Please try again.");
+        }
       } else {
         setError("Failed to send password reset email. Please try again.");
       }
@@ -338,9 +289,13 @@ function ResetPassword() {
         transition={{ duration: 0.5 }}
       >
         <LogoContainer>
-          <Link href="/" passHref>
-            <CymasphereLogo size="48px" />
-          </Link>
+          <CymasphereLogo
+            size="48px"
+            showText={false}
+            href="/"
+            onClick={() => {}}
+            className=""
+          />
         </LogoContainer>
 
         <Title
@@ -356,8 +311,8 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          Enter your email address and we'll send you instructions to reset your
-          password.
+          Enter your email address and we&apos;ll send you instructions to reset
+          your password.
         </Description>
 
         {error && (
