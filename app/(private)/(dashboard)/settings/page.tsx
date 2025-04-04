@@ -32,7 +32,7 @@ const SectionTitle = styled.h2`
   color: var(--text);
 `;
 
-const SettingsCard = styled.div`
+const SettingsCard = styled(motion.div)`
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
@@ -208,7 +208,11 @@ const DeviceLimit = styled.div`
   color: var(--text-secondary);
 `;
 
-const DeviceCounter = styled.div`
+interface DeviceCounterProps {
+  warning: boolean;
+}
+
+const DeviceCounter = styled.div<DeviceCounterProps>`
   background-color: ${(props) =>
     props.warning ? "rgba(255, 87, 51, 0.2)" : "rgba(108, 99, 255, 0.1)"};
   border-radius: 20px;
@@ -285,13 +289,30 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
+interface SettingsState {
+  language: string;
+  audioQuality: string;
+}
+
+interface ProfileState {
+  deleteConfirmation: string;
+}
+
+interface Device {
+  id: number;
+  name: string;
+  type: "mobile" | "tablet" | "desktop";
+  location: string;
+  lastActive: string;
+}
+
 function Settings() {
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<SettingsState>({
     language: "en",
     audioQuality: "high",
   });
 
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<ProfileState>({
     deleteConfirmation: "",
   });
 
@@ -299,13 +320,15 @@ function Settings() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeviceLogoutModal, setShowDeviceLogoutModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [deviceToLogout, setDeviceToLogout] = useState(null);
+  const [deviceToLogout, setDeviceToLogout] = useState<Device | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [confirmationTitle, setConfirmationTitle] = useState("");
-  const [confirmationIcon, setConfirmationIcon] = useState("success");
+  const [confirmationIcon, setConfirmationIcon] = useState<
+    "success" | "warning" | "info"
+  >("success");
 
   // Mock data for active devices
-  const [activeDevices, setActiveDevices] = useState([
+  const [activeDevices, setActiveDevices] = useState<Device[]>([
     {
       id: 1,
       name: "MacBook Pro",
@@ -329,14 +352,20 @@ function Settings() {
     },
   ]);
 
-  const handleSelectChange = (e, key) => {
+  const handleSelectChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    key: keyof SettingsState
+  ) => {
     setSettings((prevSettings) => ({
       ...prevSettings,
       [key]: e.target.value,
     }));
   };
 
-  const handleProfileChange = (e, key) => {
+  const handleProfileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    key: keyof ProfileState
+  ) => {
     setProfile((prevProfile) => ({
       ...prevProfile,
       [key]: e.target.value,
@@ -363,7 +392,7 @@ function Settings() {
     // navigate('/login');
   };
 
-  const handleLogoutDevice = (device) => {
+  const handleLogoutDevice = (device: Device) => {
     setDeviceToLogout(device);
     setShowDeviceLogoutModal(true);
   };
@@ -387,14 +416,14 @@ function Settings() {
     setShowConfirmationModal(true);
   };
 
-  const handleDeleteAccount = (e) => {
+  const handleDeleteAccount = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle account deletion logic here
 
     if (profile.deleteConfirmation !== "DELETE") {
       setConfirmationTitle("Confirmation Required");
       setConfirmationMessage(
-        'Please type "DELETE" to confirm account deletion.'
+        "Please type &quot;DELETE&quot; to confirm account deletion."
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -417,7 +446,7 @@ function Settings() {
   };
 
   // Function to render the appropriate device icon
-  const renderDeviceIcon = (type) => {
+  const renderDeviceIcon = (type: "mobile" | "tablet" | "desktop") => {
     switch (type) {
       case "mobile":
         return <FaMobileAlt />;
@@ -571,7 +600,7 @@ function Settings() {
 
           <Form onSubmit={handleDeleteAccount}>
             <FormGroup>
-              <Label>Type "DELETE" to confirm account deletion</Label>
+              <Label>Type &quot;DELETE&quot; to confirm account deletion</Label>
               <Input
                 type="text"
                 value={profile.deleteConfirmation}
@@ -633,7 +662,7 @@ function Settings() {
 
       {/* Device Logout Confirmation Modal */}
       <AnimatePresence>
-        {showDeviceLogoutModal && (
+        {showDeviceLogoutModal && deviceToLogout && (
           <ModalOverlay
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
