@@ -288,7 +288,7 @@ function ResetPassword() {
         <LogoContainer>
           <CymasphereLogo
             size="48px"
-            showText={false}
+            showText={true}
             href="/"
             onClick={() => {}}
             className=""
