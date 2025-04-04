@@ -710,7 +710,43 @@ const NextHeader = () => {
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
         <HeaderContent $isScrolled={isScrolled}>
           <Link href="/" passHref legacyBehavior>
-            <a onClick={playSound} style={{ textDecoration: "none" }}>
+            <a 
+              onClick={playSound} 
+              style={{ 
+                textDecoration: "none",
+                position: "relative"
+              }}
+              onMouseDown={(e) => {
+                // Create ripple element at the body level rather than within the logo
+                const circle = document.createElement("span");
+                // Reduce the diameter to make the ripple smaller
+                const diameter = Math.max(window.innerWidth, window.innerHeight) * 0.6;
+                
+                // Get the click position relative to the viewport
+                const logoRect = e.currentTarget.getBoundingClientRect();
+                const clickX = logoRect.left + (logoRect.width / 2);
+                const clickY = logoRect.top + (logoRect.height / 2);
+
+                // Position the ripple absolutely on the page
+                circle.style.position = "fixed";
+                circle.style.top = `${clickY - diameter / 2}px`;
+                circle.style.left = `${clickX - diameter / 2}px`;
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.background = "rgba(108, 99, 255, 0.05)";
+                circle.style.borderRadius = "50%";
+                circle.style.transform = "scale(0)";
+                circle.style.animation = "ripple 1.2s ease-out forwards";
+                circle.style.zIndex = "2000"; // Below header (3000) but above other content
+                circle.style.pointerEvents = "none"; // Make sure it doesn't block clicks
+
+                // Append to body instead of logo element for full-page effect
+                document.body.appendChild(circle);
+
+                setTimeout(() => {
+                  circle.remove();
+                }, 1200);
+              }}
+            >
               <LogoText>
                 <EnergyBall size="32px" marginRight="8px" />
                 <span className="cyma">CYMA</span><span className="sphere">SPHERE</span>
