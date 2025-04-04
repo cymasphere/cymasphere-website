@@ -30,17 +30,12 @@ const LogoText = styled.div`
   font-size: ${(props) => props.$fontSize || "1.8rem"};
   font-weight: 700;
   margin-left: 6px;
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   .cyma {
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-  }
-
-  .sphere {
-    color: white;
-    -webkit-text-fill-color: white; /* Force white color even with gradient */
   }
 `;
 
@@ -58,7 +53,7 @@ const CymasphereLogo = ({
       {showText && (
         <LogoText $fontSize={fontSize}>
           <span className="cyma">CYMA</span>
-          <span className="sphere">SPHERE</span>
+          SPHERE
         </LogoText>
       )}
     </LogoWrapper>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
-import CymasphereLogo from "@/components/common/CymasphereLogo";
+import EnergyBall from "@/components/common/EnergyBall";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -234,6 +234,50 @@ const buttonVariants = {
   },
 };
 
+const customStyles = `
+  /* Override any possible styling for the SPHERE text */
+  .sphere, span:contains("SPHERE"), [class*="sphere"] {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    background: none !important;
+    background-clip: unset !important;
+    -webkit-background-clip: unset !important;
+    text-fill-color: #FFFFFF !important;
+    opacity: 1 !important;
+    font-weight: 700 !important;
+  }
+`;
+
+// Custom logo component specifically for the reset password page
+const CustomLogo = () => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ marginRight: '10px' }}>
+        <EnergyBall size="48px" />
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        textTransform: 'uppercase',
+        letterSpacing: '2.5px',
+        fontSize: '1.8rem',
+        fontWeight: 700,
+        fontFamily: 'var(--font-montserrat), sans-serif'
+      }}>
+        <span style={{
+          background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>CYMA</span>
+        <span style={{
+          color: '#FFFFFF',
+          WebkitTextFillColor: '#FFFFFF'
+        }}>SPHERE</span>
+      </div>
+    </div>
+  );
+};
+
 function ResetPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -274,6 +318,7 @@ function ResetPassword() {
 
   return (
     <AuthContainer>
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       <Link href="/login" passHref>
         <BackButton>
           <FaArrowLeft /> Back to Login
@@ -286,13 +331,9 @@ function ResetPassword() {
         transition={{ duration: 0.5 }}
       >
         <LogoContainer>
-          <CymasphereLogo
-            size="48px"
-            showText={true}
-            href="/"
-            onClick={() => {}}
-            className=""
-          />
+          <Link href="/">
+            <CustomLogo />
+          </Link>
         </LogoContainer>
 
         <Title

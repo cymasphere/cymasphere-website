@@ -92,7 +92,7 @@ const Core = styled.div`
   box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.7);
 `;
 
-const EnergyBall = ({ size, marginRight }) => {
+const EnergyBall = ({ size, marginRight = '10px' }) => {
   return (
     <Container $size={size} $marginRight={marginRight}>
       <Ball>

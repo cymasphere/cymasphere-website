@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Basic Reset */
 html,
@@ -23,6 +25,24 @@ a {
 
 * {
   box-sizing: border-box;
+}
+
+/* Logo Text Styling - HIGHEST PRIORITY */
+.cyma, span.cyma {
+  font-family: var(--font-montserrat), sans-serif !important;
+  background: linear-gradient(90deg, var(--primary), var(--accent)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Extra important styles for SPHERE text */
+.sphere, span.sphere {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  font-weight: 700 !important;
+  background: none !important;
+  background-image: none !important;
 }
 
 /* Define custom properties for theming */
@@ -95,18 +115,6 @@ p {
     transform: scale(2);
     opacity: 0;
   }
-}
-
-:root {
-  --background: #0f0e17;
-  --background-alt: #151422;
-  --text: #fffffe;
-  --text-secondary: #a7a9be;
-  --primary: #6c63ff;
-  --accent: #4ecdc4;
-  --card-bg: #1f1e28;
-  --danger: #ff6b6b;
-  --success: #2ed573;
 }
 
 * {

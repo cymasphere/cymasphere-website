@@ -99,11 +99,17 @@ const LogoText = styled.div`
   font-size: 1.8rem;
   font-weight: 700;
 
-  span {
+  span.cyma {
     font-family: "Montserrat", sans-serif;
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  span.sphere {
+    color: white;
+    font-family: "Montserrat", sans-serif;
   }
 
   /* Add glow effect */
@@ -707,7 +713,7 @@ const NextHeader = () => {
             <a onClick={playSound} style={{ textDecoration: "none" }}>
               <LogoText>
                 <EnergyBall size="32px" marginRight="8px" />
-                <span>CYMA</span>SPHERE
+                <span className="cyma">CYMA</span><span className="sphere">SPHERE</span>
               </LogoText>
             </a>
           </Link>
