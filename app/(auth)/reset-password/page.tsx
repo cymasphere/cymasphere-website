@@ -239,40 +239,37 @@ function ResetPassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const auth = useAuth() || {};
-  const { resetPassword } = auth;
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
 
-    try {
-      setError("");
-      setMessage("");
-      setLoading(true);
+    // Send password reset email
+    const result = await resetPassword(email);
 
-      // Send password reset email
-      await resetPassword(email);
-
-      // Display success message
-      setMessage("If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.");
-    } catch (err: unknown) {
-      console.error("Password reset error:", err);
+    // Check if there was an error
+    if (result.error) {
+      console.error("Password reset error:", result.error);
 
       // Handle specific errors
-      if (err && typeof err === "object" && "code" in err) {
-        if (err.code === "auth/user-not-found") {
-          setError("No user found with this email address");
-        } else if (err.code === "auth/invalid-email") {
-          setError("Invalid email address");
-        } else {
-          setError("Failed to send password reset email. Please try again.");
-        }
+      if (result.error.code === "user_not_found") {
+        setError("No user found with this email address");
+      } else if (result.error.code === "email_address_invalid") {
+        setError("Invalid email address");
       } else {
         setError("Failed to send password reset email. Please try again.");
       }
-    } finally {
-      setLoading(false);
+    } else {
+      // Success - no error returned
+      setMessage(
+        "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder."
+      );
     }
+
+    setLoading(false);
   };
 
   return (
