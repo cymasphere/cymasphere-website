@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 const AuthContainer = styled.div`
@@ -432,31 +432,28 @@ function SignUp() {
 
     try {
       setLoading(true);
+      const result = await auth.signUp(
+        formData.name,
+        formData.email,
+        formData.password
+      );
 
-      await auth.signUp(formData.email, formData.password, formData.name);
-
-      // Show success message
-      setSuccess(true);
-
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+      if (result.error) {
+        console.error("Sign up error:", result.error.message);
+        setError(result.error.message);
+      } else {
+        // Show success message
+        setSuccess(true);
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      }
     } catch (err: unknown) {
       console.error("Sign up error:", err);
-
       // Handle specific errors
       const errorMessage = err instanceof Error ? err.message : String(err);
-
-      if (errorMessage.includes("Email already in use")) {
-        setError("Email is already in use");
-      } else if (errorMessage.includes("invalid email")) {
-        setError("Invalid email address");
-      } else if (errorMessage.includes("weak password")) {
-        setError("Password is too weak. Please use a stronger password.");
-      } else {
-        setError(`Failed to create an account: ${errorMessage}`);
-      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
