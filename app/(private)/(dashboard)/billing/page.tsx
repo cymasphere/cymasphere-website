@@ -84,7 +84,7 @@ const PlanPrice = styled.div`
 
 const PlanDescription = styled.p`
   color: var(--text-secondary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 `;
 
 const Button = styled.button`
@@ -484,6 +484,7 @@ const BillingInfo = styled.div`
   display: flex;
   align-items: center;
   margin-top: 0.5rem;
+  margin-bottom: 1rem;
   padding: 0.75rem;
   background-color: rgba(108, 99, 255, 0.1);
   border-radius: 6px;
@@ -1116,24 +1117,24 @@ export default function BillingPage() {
                 <PlanDescription>
                   Complete solution for music producers with full access to all
                   features.
-                  {isInTrialPeriod() ? (
-                    <BillingInfo>
-                      <FaInfoCircle /> Trial ends:{" "}
-                      {formatDate(userSubscription.trialEndDate)} (
-                      {getDaysLeftInTrial()} days left)
-                    </BillingInfo>
-                  ) : userSubscription.isLifetime ? (
-                    <BillingInfo>
-                      <FaInfoCircle /> Purchase date:{" "}
-                      {formatDate(userSubscription.purchaseDate)}
-                    </BillingInfo>
-                  ) : (
-                    <BillingInfo>
-                      <FaInfoCircle /> Next billing date:{" "}
-                      {formatDate(userSubscription.endDate)}
-                    </BillingInfo>
-                  )}
                 </PlanDescription>
+                {isInTrialPeriod() ? (
+                  <BillingInfo>
+                    <FaInfoCircle /> Trial ends:{" "}
+                    {formatDate(userSubscription.trialEndDate)} (
+                    {getDaysLeftInTrial()} days left)
+                  </BillingInfo>
+                ) : userSubscription.isLifetime ? (
+                  <BillingInfo>
+                    <FaInfoCircle /> Purchase date:{" "}
+                    {formatDate(userSubscription.purchaseDate)}
+                  </BillingInfo>
+                ) : (
+                  <BillingInfo>
+                    <FaInfoCircle /> Next billing date:{" "}
+                    {formatDate(userSubscription.endDate)}
+                  </BillingInfo>
+                )}
                 {!userSubscription.isLifetime && (
                   <Button onClick={handlePlanChange}>
                     {isInTrialPeriod() ? "Choose Plan" : "Change Plan"}
