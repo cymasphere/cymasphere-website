@@ -135,6 +135,8 @@ const Button = styled.button`
   }
 `;
 
+// Kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DangerButton = styled(Button)`
   background: linear-gradient(135deg, #ff5733, #c70039);
 
@@ -153,7 +155,12 @@ const TwoColumnGrid = styled.div`
   }
 `;
 
-const Message = styled.div`
+interface MessageProps {
+  type: "error" | "success";
+  children: React.ReactNode;
+}
+
+const Message = styled.div<MessageProps>`
   padding: 1rem;
   border-radius: 6px;
   margin: 1rem 0;
@@ -187,7 +194,7 @@ const cardVariants = {
     opacity: 0,
     y: 20,
   },
-  visible: (custom) => ({
+  visible: (custom: number) => ({
     opacity: 1,
     y: 0,
     transition: {
@@ -211,8 +218,22 @@ const buttonVariants = {
   },
 };
 
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface MessageData {
+  text: string;
+  type: "error" | "success" | "";
+}
+
 function Profile() {
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<ProfileData>({
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@example.com",
@@ -221,7 +242,7 @@ function Profile() {
     confirmPassword: "",
   });
 
-  const [message, setMessage] = useState({ text: "", type: "" });
+  const [message, setMessage] = useState<MessageData>({ text: "", type: "" });
   const [isMounted, setIsMounted] = useState(false);
 
   // Set isMounted to true after component has mounted to prevent state updates during unmounting
@@ -233,20 +254,23 @@ function Profile() {
   }, []);
 
   // Use this function to safely update state only if the component is still mounted
-  const safeSetMessage = (messageData) => {
+  const safeSetMessage = (messageData: MessageData) => {
     if (isMounted) {
       setMessage(messageData);
     }
   };
 
-  const handleProfileChange = (e, key) => {
+  const handleProfileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    key: keyof ProfileData
+  ) => {
     setProfile((prevProfile) => ({
       ...prevProfile,
       [key]: e.target.value,
     }));
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle profile update logic here
     console.log("Profile updated:", profile);
@@ -264,7 +288,7 @@ function Profile() {
     return () => clearTimeout(timer);
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (profile.newPassword !== profile.confirmPassword) {
@@ -310,7 +334,7 @@ function Profile() {
       <SectionTitle>My Profile</SectionTitle>
 
       {message.text && (
-        <Message type={message.type}>
+        <Message type={message.type as "error" | "success"}>
           {message.type === "error" ? <FaTimesCircle /> : <FaUser />}
           {message.text}
         </Message>
