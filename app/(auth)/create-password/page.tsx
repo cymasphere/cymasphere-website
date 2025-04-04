@@ -171,7 +171,7 @@ const PasswordToggle = styled.button`
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  
+
   &:hover {
     color: var(--text);
   }
@@ -267,28 +267,38 @@ const customStyles = `
 // Custom logo component specifically for the create password page
 const CustomLogo = () => {
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ marginRight: '10px' }}>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ marginRight: "10px" }}>
         <EnergyBall size="48px" />
       </div>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center',
-        textTransform: 'uppercase',
-        letterSpacing: '2.5px',
-        fontSize: '1.8rem',
-        fontWeight: 700,
-        fontFamily: 'var(--font-montserrat), sans-serif'
-      }}>
-        <span style={{
-          background: 'linear-gradient(90deg, var(--primary), var(--accent))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>CYMA</span>
-        <span style={{
-          color: '#FFFFFF',
-          WebkitTextFillColor: '#FFFFFF'
-        }}>SPHERE</span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          textTransform: "uppercase",
+          letterSpacing: "2.5px",
+          fontSize: "1.8rem",
+          fontWeight: 700,
+          fontFamily: "var(--font-montserrat), sans-serif",
+        }}
+      >
+        <span
+          style={{
+            background: "linear-gradient(90deg, var(--primary), var(--accent))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          CYMA
+        </span>
+        <span
+          style={{
+            color: "#FFFFFF",
+            WebkitTextFillColor: "#FFFFFF",
+          }}
+        >
+          SPHERE
+        </span>
       </div>
     </div>
   );
@@ -302,52 +312,42 @@ function CreatePassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { supabase } = useAuth();
-
-  // Get hash token from URL
-  const [hashToken, setHashToken] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Extract hash token from URL
-    const hash = window.location.hash;
-    if (hash && hash.startsWith('#access_token=')) {
-      const tokenSegment = hash.split('&')[0];
-      const token = tokenSegment.replace('#access_token=', '');
-      setHashToken(token);
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Reset state
     setError("");
     setMessage("");
-    
+
     // Only validate that passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-    
+
     // Remove password strength and length validation
-    
+
     setLoading(true);
-    
+
     try {
       // Use updateUser with the current session
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
-      
+
       if (updateError) {
         console.error("Password reset error:", updateError);
-        
+
         // Handle specific errors
-        if (updateError.message.includes("token") || updateError.message.includes("session")) {
-          setError("Invalid or expired session. Please request a new password reset.");
+        if (
+          updateError.message.includes("token") ||
+          updateError.message.includes("session")
+        ) {
+          setError(
+            "Invalid or expired session. Please request a new password reset."
+          );
         } else {
           setError("Failed to reset password. Please try again.");
         }
@@ -399,7 +399,8 @@ function CreatePassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          Create a new password for your account. For security, please choose a strong password that you don't use elsewhere.
+          {`Create a new password for your account. For security, please choose a
+          strong password that you don't use elsewhere.`}
         </Description>
 
         {error && (
@@ -419,14 +420,14 @@ function CreatePassword() {
             transition={{ duration: 0.3 }}
           >
             {message}
-            <div style={{ marginTop: '10px' }}>
+            <div style={{ marginTop: "10px" }}>
               <Link href="/login" passHref>
                 <Button
                   as="a"
-                  style={{ 
-                    display: 'inline-block', 
-                    textAlign: 'center',
-                    textDecoration: 'none'
+                  style={{
+                    display: "inline-block",
+                    textAlign: "center",
+                    textDecoration: "none",
                   }}
                 >
                   Proceed to Login
@@ -448,8 +449,8 @@ function CreatePassword() {
                 required
                 placeholder="Enter your new password"
               />
-              <PasswordToggle 
-                type="button" 
+              <PasswordToggle
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -467,10 +468,12 @@ function CreatePassword() {
                 required
                 placeholder="Confirm your new password"
               />
-              <PasswordToggle 
-                type="button" 
+              <PasswordToggle
+                type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </PasswordToggle>
@@ -498,4 +501,4 @@ function CreatePassword() {
   );
 }
 
-export default CreatePassword; 
+export default CreatePassword;
