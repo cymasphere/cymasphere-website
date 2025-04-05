@@ -379,7 +379,7 @@ function DashboardPage() {
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedBillingPeriod, setSelectedBillingPeriod] = useState(
-    user?.interval || "monthly"
+    user?.profile?.interval || "monthly"
   );
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
@@ -390,24 +390,25 @@ function DashboardPage() {
     message: "",
   });
 
-  // Mock data for demonstration, updated to match structure in Billing.js
-  const resolvedUserData = user || {
-    displayName: "Guest User",
-    email: "guest@example.com",
-  };
-
-  // Convert to useState to make it properly updatable
+  // Remove mock data and use actual subscription data from user
   const [userSubscription, setUserSubscription] = useState({
-    interval: "monthly", // 'monthly', 'yearly', 'lifetime', null (for no plan)
-    status: "active",
-    isLifetime: false,
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    purchaseDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // When lifetime license was purchased (60 days ago example)
-    // If user is on yearly plan, this would be the date the yearly subscription expires
-    yearlyExpiryDate: null,
-    subscriptionFailed: false,
-    inTrial: true, // Is the user in a trial period
-    trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+    interval: user?.profile?.interval || "monthly",
+    status: user?.profile?.is_pro || "inactive",
+    isLifetime: user?.profile?.is_lifetime || false,
+    endDate: user?.profile?.subscription_expiration
+      ? new Date(user.profile.subscription_expiration)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    purchaseDate: user?.profile?.purchaseDate
+      ? new Date(user.profile.purchaseDate)
+      : new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+    yearlyExpiryDate: user?.profile?.yearlyExpiryDate
+      ? new Date(user.profile.yearlyExpiryDate)
+      : null,
+    subscriptionFailed: user?.profile?.subscriptionFailed || false,
+    inTrial: user?.profile?.inTrial || false,
+    trialEndDate: user?.profile?.trialEndDate
+      ? new Date(user.profile.trialEndDate)
+      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
   });
 
   const planOptions = {
@@ -464,8 +465,8 @@ function DashboardPage() {
     },
   };
 
-  // Mock device data - in production this would come from your backend
-  const connectedDevices = [
+  // Use actual connected devices if available
+  const connectedDevices = user?.profile?.connectedDevices || [
     { id: 1, name: "MacBook Pro", lastUsed: "Last used 2 hours ago" },
     { id: 2, name: "Studio PC", lastUsed: "Last used yesterday" },
     { id: 3, name: "iPad Pro", lastUsed: "Last used 3 days ago" },
@@ -474,7 +475,7 @@ function DashboardPage() {
   const maxDevices = 5;
 
   // Helper functions
-  const formatDate = (date) => {
+  const formatDate = (date: Date | string | undefined) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -492,7 +493,7 @@ function DashboardPage() {
     if (!userSubscription.trialEndDate) return 0;
     const today = new Date();
     const trialEnd = new Date(userSubscription.trialEndDate);
-    const diffTime = trialEnd - today;
+    const diffTime = Number(trialEnd) - Number(today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
@@ -504,12 +505,12 @@ function DashboardPage() {
     setShowPlanModal(true);
   };
 
-  const handleBillingPeriodChange = (period) => {
+  const handleBillingPeriodChange = (period: string) => {
     console.log(`Setting billing period to: ${period}`);
     setSelectedBillingPeriod(period);
   };
 
-  const handleConfirmPlanChange = (plan) => {
+  const handleConfirmPlanChange = (plan: string) => {
     console.log(`Plan changed to: ${plan} (${selectedBillingPeriod})`);
 
     // Update the user subscription to reflect the new selection
@@ -548,7 +549,9 @@ function DashboardPage() {
     setShowConfirmationModal(false);
   };
 
-  const handleContactInputChange = (e) => {
+  const handleContactInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setContactForm({
       ...contactForm,
@@ -581,12 +584,12 @@ function DashboardPage() {
       <WelcomeSection>
         <WelcomeTitle>
           Welcome{user ? " back" : ""},{" "}
-          <span>{resolvedUserData?.displayName || "User"}</span>
+          <span>{user?.profile?.name || "User"}</span>
         </WelcomeTitle>
         <WelcomeSubtitle>
           {user
             ? "Here's an overview of your CYMASPHERE account"
-            : "This is a demo dashboard (no login required)"}
+            : "Please sign in to access your dashboard"}
         </WelcomeSubtitle>
       </WelcomeSection>
 
@@ -799,7 +802,7 @@ function DashboardPage() {
                   <FormLabel>Your Name</FormLabel>
                   <FormInput
                     type="text"
-                    value={resolvedUserData.displayName}
+                    value={user?.profile?.name || ""}
                     readOnly
                     style={{
                       backgroundColor: "rgba(40, 40, 60, 0.5)",
@@ -812,7 +815,7 @@ function DashboardPage() {
                   <FormLabel>Your Email</FormLabel>
                   <FormInput
                     type="email"
-                    value={resolvedUserData.email}
+                    value={user?.email || ""}
                     readOnly
                     style={{
                       backgroundColor: "rgba(40, 40, 60, 0.5)",
