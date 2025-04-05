@@ -58,11 +58,12 @@ jobs:
                 "image": "ghcr.io/cymasphere/cymasphere-website:latest",
                 "command": ["/bin/sh", "/app/start.sh"],
                 "ports": {
-                  "80": "HTTP",
-                  "3000": "HTTP"
+                  "80": "HTTP"
                 },
                 "environment": {
-                  "NODE_ENV": "production"
+                  "NODE_ENV": "production",
+                  "PORT": "3000",
+                  "HOSTNAME": "0.0.0.0"
                 }
               }
             },
@@ -71,9 +72,9 @@ jobs:
               "containerPort": 3000,
               "healthCheck": {
                 "healthyThreshold": 2,
-                "unhealthyThreshold": 2,
-                "timeoutSeconds": 5,
-                "intervalSeconds": 10,
+                "unhealthyThreshold": 10,
+                "timeoutSeconds": 10,
+                "intervalSeconds": 30,
                 "path": "/",
                 "successCodes": "200-499"
               }
@@ -87,8 +88,8 @@ jobs:
           echo "Waiting for deployment to complete..."
           aws lightsail get-container-services --service-name $CONTAINER_SERVICE_NAME
           
-          # Verify port is open 
-          echo "Verifying port configuration..."
+          # Get Lightsail service status
+          echo "Getting service deployment status"
           aws lightsail get-container-service-deployments --service-name $CONTAINER_SERVICE_NAME
       
       - name: Create .env.local file

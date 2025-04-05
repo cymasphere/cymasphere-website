@@ -206,6 +206,9 @@ jobs:
           RUN mkdir -p /app/.next/standalone/public || true
           RUN mkdir -p /app/.next/standalone/.next/static || true
           RUN cp -R /app/.next/static /app/.next/standalone/.next/ || true
+          
+          # Ensure fallback server is available
+          COPY app/server-fallback.js /app/.next/standalone/server-fallback.js
 
           # Production image, copy all the files and run next
           FROM base AS runner
@@ -225,6 +228,7 @@ jobs:
           RUN mkdir -p /tmp/standalone /tmp/static
           COPY --from=builder /app/.next/standalone/. /tmp/standalone/
           COPY --from=builder /app/.next/static/. /tmp/static/
+          COPY --from=builder /app/server-fallback.js /app/server-fallback.js
 
           # Copy files from temp directories using shell commands which support error handling
           RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
@@ -346,65 +350,43 @@ jobs:
 
           # Create a simple start script
           RUN echo '#!/bin/sh' > /app/start.sh && \
-              echo 'echo "Starting Next.js standalone server..."' >> /app/start.sh && \
+              echo 'echo "Starting Next.js server..."' >> /app/start.sh && \
               echo 'echo "Environment: NODE_ENV=$NODE_ENV"' >> /app/start.sh && \
-              echo 'echo "Working directory: $(pwd)"' >> /app/start.sh && \
-              echo 'echo "Directory contents:"' >> /app/start.sh && \
+              echo 'echo "Directory: $(pwd)"' >> /app/start.sh && \
               echo 'ls -la' >> /app/start.sh && \
-              echo 'echo "Node.js version: $(node -v)"' >> /app/start.sh && \
-              echo 'echo "Bun version: $(bun -v || echo not installed)"' >> /app/start.sh && \
-              echo 'echo ".next directory:"' >> /app/start.sh && \
-              echo 'ls -la .next || echo "No .next directory"' >> /app/start.sh && \
-              echo 'echo "Network interfaces:"' >> /app/start.sh && \
-              echo 'ip addr show || ifconfig || echo "Network tools not available"' >> /app/start.sh && \
               echo 'if [ -f "server.js" ]; then' >> /app/start.sh && \
-              echo '  echo "Starting Next.js server..."' >> /app/start.sh && \
-              echo '  # Ensure server binds to all interfaces' >> /app/start.sh && \
+              echo '  echo "Running server.js directly with node"' >> /app/start.sh && \
               echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
               echo '  export PORT=3000' >> /app/start.sh && \
               echo '  node server.js' >> /app/start.sh && \
+              echo 'elif [ -f "server-fallback.js" ]; then' >> /app/start.sh && \
+              echo '  echo "Running fallback server"' >> /app/start.sh && \
+              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
+              echo '  export PORT=3000' >> /app/start.sh && \
+              echo '  node server-fallback.js' >> /app/start.sh && \
+              echo 'elif [ -f "app/server-health.js" ]; then' >> /app/start.sh && \
+              echo '  echo "Running health check server"' >> /app/start.sh && \
+              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
+              echo '  export PORT=3000' >> /app/start.sh && \
+              echo '  node app/server-health.js' >> /app/start.sh && \
               echo 'else' >> /app/start.sh && \
-              echo '  echo "server.js not found, checking for health check server..."' >> /app/start.sh && \
-              echo '  if [ -f "app/server-health.js" ]; then' >> /app/start.sh && \
-              echo '    echo "Starting health check server..."' >> /app/start.sh && \
-              echo '    node app/server-health.js' >> /app/start.sh && \
-              echo '  else' >> /app/start.sh && \
-              echo '    echo "No servers found, starting emergency server..."' >> /app/start.sh && \
-              echo '    echo "const fs = require(\"fs\");" > /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "const http = require(\"http\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "const os = require(\"os\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "http.createServer((req, res) => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  res.writeHead(200, {\"Content-Type\": \"text/html\"});" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  res.end(`<html><body style=\\\"font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;\\\">" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <h1>Cymasphere Website - Emergency Server</h1>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <p>No server.js was found. This is an emergency fallback server.</p>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <h2>System Information</h2>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <pre>Hostname: ${os.hostname()}\\nPlatform: ${os.platform()}\\nMemory: ${Math.round(os.totalmem() / (1024 * 1024))} MB\\nServer Time: ${new Date().toISOString()}</pre>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <h2>Environment Variables</h2>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "    <pre>PORT: ${process.env.PORT || \"not set\"}\\nHOSTNAME: ${process.env.HOSTNAME || \"not set\"}\\nNODE_ENV: ${process.env.NODE_ENV || \"not set\"}</pre>" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  </body></html>`);" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "}).listen(3000, \"0.0.0.0\", () => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  console.log(\"Emergency server started on port 3000\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  console.log(\"Server Time: \" + new Date().toISOString());" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "  console.log(\"Hostname: \" + os.hostname());" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    echo "});" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '    node /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  fi' >> /app/start.sh && \
+              echo '  echo "No server found, creating emergency server"' >> /app/start.sh && \
+              echo '  node -e "const http=require(\"http\");http.createServer((req,res)=>{res.writeHead(200,{\"Content-Type\":\"text/html\"});res.end(\"<html><body><h1>Emergency Server</h1><p>No server.js found</p></body></html>\");}).listen(3000,\"0.0.0.0\",()=>console.log(\"Emergency server running on port 3000\"))"' >> /app/start.sh && \
               echo 'fi' >> /app/start.sh && \
               chmod +x /app/start.sh
 
           # Copy build logs to be accessible from the server (using guaranteed file)
           COPY --from=builder /tmp/build-logs-safe.txt /app/build-logs.txt
 
-          # Set proper environment variables to ensure server binds correctly
-          ENV PORT 3000
-          ENV HOSTNAME "0.0.0.0"
-          ENV NODE_ENV production
+          # Force container to work in production mode
+          ENV NODE_ENV=production
+          ENV PORT=3000
+          ENV HOSTNAME=0.0.0.0
           
           # Explicitly expose port 3000
           EXPOSE 3000
           
-          # Use node not bun to run the Next.js standalone server
+          # Use node directly to avoid bun issues
           CMD ["/bin/sh", "/app/start.sh"]
           DOCKERFILE_EOF
 
