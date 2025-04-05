@@ -1,10 +1,13 @@
 import { NextConfig } from 'next';
 
 /**
- * Final minimal configuration for Next.js 15.2.4
- * Designed to avoid all static generation issues
+ * Production-ready configuration for Next.js 15.2.4
+ * Optimized for Docker deployment with standalone output
  */
 const config: NextConfig = {
+  // Generate standalone output for Docker deployment
+  output: 'standalone',
+  
   // Enable React strict mode
   reactStrictMode: true,
   
@@ -21,18 +24,22 @@ const config: NextConfig = {
     styledComponents: true,
   },
   
-  // Disable image optimization
+  // Disable image optimization for simpler deployment
   images: {
     unoptimized: true
   },
   
   // Minimal experimental features
   experimental: {
+    // Optimize CSS
     optimizeCss: true,
+    
+    // List packages that should be treated as external in server components
+    serverComponentsExternalPackages: ['styled-components'],
   },
   
-  // Don't try to generate pages statically
-  output: "standalone"
+  // Add packages that need to be transpiled
+  transpilePackages: ['styled-components'],
 };
 
 export default config;

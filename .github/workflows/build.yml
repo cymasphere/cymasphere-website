@@ -37,41 +37,16 @@ jobs:
           echo "App directory contents:"
           ls -la app || echo "App directory not found"
       
-      - name: Create necessary directory structure
-        run: |
-          mkdir -p .next/server/pages
-          mkdir -p .next/export
-      
-      - name: Build
-        id: build
-        continue-on-error: true
-        run: |
-          NEXT_LINT=false NODE_OPTIONS="--max-old-space-size=4096" bun run next build
+      - name: Make build script executable
+        run: chmod +x ./build-local.sh
+        
+      - name: Run enhanced build script
+        run: ./build-local.sh
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
-      
-      - name: Fix 500.html issue (if build failed)
-        if: steps.build.outcome == 'failure'
-        run: |
-          echo "Build failed, attempting to fix the 500.html issue..."
-          if [ -d ".next/export" ] && [ -f ".next/export/500.html" ]; then
-            echo "Found 500.html in export directory, copying to server/pages..."
-            mkdir -p .next/server/pages
-            cp .next/export/500.html .next/server/pages/500.html
-          else
-            echo "Could not find 500.html to copy. Creating a placeholder..."
-            mkdir -p .next/server/pages
-            echo "<html><body><h1>Server Error (500)</h1></body></html>" > .next/server/pages/500.html
-          fi
-          
-          # Create prerender-manifest.json
-          echo "Creating prerender-manifest.json..."
-          echo "{}" > .next/prerender-manifest.json
-          
-          echo "Manual fix completed."
       
       - name: Final Build Check
         run: |

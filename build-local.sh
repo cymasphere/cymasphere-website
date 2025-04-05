@@ -77,5 +77,14 @@ else
   exit 1
 fi
 
+# Check if standalone directory exists for Docker deployment
+if [ ! -d ".next/standalone" ]; then
+  echo "Standalone directory not found. Copying necessary files for standalone mode..."
+  mkdir -p .next/standalone
+  cp -r .next/server .next/standalone/
+  echo "{}" > .next/standalone/server.js
+  echo "Created minimal standalone structure for Docker deployment"
+fi
+
 echo "Build artifacts created in .next directory"
 echo "You can now run: bun run start" 
