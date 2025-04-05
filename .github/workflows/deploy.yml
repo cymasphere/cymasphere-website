@@ -161,83 +161,11 @@ jobs:
           # Debug package.json
           RUN cat package.json
           
-          # Make sure next.config.js has output: 'standalone'
-          RUN echo 'module.exports = {' > next.config.js && \
-              echo '  output: "standalone",' >> next.config.js && \
-              echo '  experimental: {' >> next.config.js && \
-              echo '    optimizeCss: true' >> next.config.js && \
-              echo '  },' >> next.config.js && \
-              echo '  reactStrictMode: true,' >> next.config.js && \
-              echo '  swcMinify: true,' >> next.config.js && \
-              echo '  eslint: {' >> next.config.js && \
-              echo '    ignoreDuringBuilds: true,' >> next.config.js && \
-              echo '  },' >> next.config.js && \
-              echo '  typescript: {' >> next.config.js && \
-              echo '    ignoreBuildErrors: true,' >> next.config.js && \
-              echo '  }' >> next.config.js && \
-              echo '};' >> next.config.js && \
-              cat next.config.js
-          
-          # Create a .eslintrc.js file that disables problematic rules
-          RUN echo 'module.exports = {' > .eslintrc.js && \
-              echo '  extends: ["next/core-web-vitals"],' >> .eslintrc.js && \
-              echo '  rules: {' >> .eslintrc.js && \
-              echo '    "@typescript-eslint/no-unused-vars": "off",' >> .eslintrc.js && \
-              echo '    "react/no-unescaped-entities": "off",' >> .eslintrc.js && \
-              echo '    "@next/next/no-img-element": "off",' >> .eslintrc.js && \
-              echo '    "react-hooks/exhaustive-deps": "off"' >> .eslintrc.js && \
-              echo '  }' >> .eslintrc.js && \
-              echo '};' >> .eslintrc.js
-          
-          # Skip the regular build and directly create minimal standalone structure
-          RUN mkdir -p /app/.next/standalone/public && \
-              mkdir -p /app/.next/standalone/.next/static && \
-              mkdir -p /app/.next/static && \
-              cp -R /app/public /app/.next/standalone/ || echo "No public directory to copy" && \
-              # Create a minimal server.js file in the standalone directory
-              echo 'const http = require("http");' > /app/.next/standalone/server.js && \
-              echo 'const fs = require("fs");' >> /app/.next/standalone/server.js && \
-              echo 'const path = require("path");' >> /app/.next/standalone/server.js && \
-              echo 'const PORT = process.env.PORT || 3000;' >> /app/.next/standalone/server.js && \
-              echo 'const HOSTNAME = process.env.HOSTNAME || "0.0.0.0";' >> /app/.next/standalone/server.js && \
-              echo 'const HTML = `<!DOCTYPE html>' >> /app/.next/standalone/server.js && \
-              echo '<html lang="en">' >> /app/.next/standalone/server.js && \
-              echo '<head>' >> /app/.next/standalone/server.js && \
-              echo '  <meta charset="UTF-8">' >> /app/.next/standalone/server.js && \
-              echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> /app/.next/standalone/server.js && \
-              echo '  <title>Cymasphere</title>' >> /app/.next/standalone/server.js && \
-              echo '  <style>' >> /app/.next/standalone/server.js && \
-              echo '    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }' >> /app/.next/standalone/server.js && \
-              echo '    h1 { color: #0070f3; }' >> /app/.next/standalone/server.js && \
-              echo '    a { color: #0070f3; text-decoration: none; }' >> /app/.next/standalone/server.js && \
-              echo '    a:hover { text-decoration: underline; }' >> /app/.next/standalone/server.js && \
-              echo '    .card { border: 1px solid #ccc; border-radius: 5px; padding: 1.5rem; margin: 1rem 0; }' >> /app/.next/standalone/server.js && \
-              echo '  </style>' >> /app/.next/standalone/server.js && \
-              echo '</head>' >> /app/.next/standalone/server.js && \
-              echo '<body>' >> /app/.next/standalone/server.js && \
-              echo '  <h1>Cymasphere</h1>' >> /app/.next/standalone/server.js && \
-              echo '  <p>The application is currently in maintenance mode.</p>' >> /app/.next/standalone/server.js && \
-              echo '  <div class="card">' >> /app/.next/standalone/server.js && \
-              echo '    <h2>Status</h2>' >> /app/.next/standalone/server.js && \
-              echo '    <p>Website deployment successful, but full application build failed.</p>' >> /app/.next/standalone/server.js && \
-              echo '    <p>Please check the build logs and fix the ESLint/TypeScript errors to restore full functionality.</p>' >> /app/.next/standalone/server.js && \
-              echo '  </div>' >> /app/.next/standalone/server.js && \
-              echo '</body>' >> /app/.next/standalone/server.js && \
-              echo '</html>`;' >> /app/.next/standalone/server.js && \
-              echo 'const server = http.createServer((req, res) => {' >> /app/.next/standalone/server.js && \
-              echo '  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);' >> /app/.next/standalone/server.js && \
-              echo '  res.writeHead(200, {"Content-Type": "text/html"});' >> /app/.next/standalone/server.js && \
-              echo '  res.end(HTML);' >> /app/.next/standalone/server.js && \
-              echo '});' >> /app/.next/standalone/server.js && \
-              echo 'server.listen(PORT, HOSTNAME, () => {' >> /app/.next/standalone/server.js && \
-              echo '  console.log(`Server running at http://${HOSTNAME}:${PORT}/`);' >> /app/.next/standalone/server.js && \
-              echo '  console.log("Environment variables:", { NODE_ENV: process.env.NODE_ENV, HOSTNAME, PORT });' >> /app/.next/standalone/server.js && \
-              echo '});' >> /app/.next/standalone/server.js && \
-              echo "Created minimal standalone server.js file"
+          # Use the standard Next.js build with proper error handling
+          RUN bun run build || bunx next build
           
           # Create a complete standalone directory
           RUN mkdir -p /app/.next/standalone/public
-          RUN cp -R /app/public /app/.next/standalone/ || echo "No public directory to copy"
           RUN cp -R /app/.next/static /app/.next/standalone/.next/ || mkdir -p /app/.next/standalone/.next/static
 
           # Production image, copy all the files and run next
@@ -255,8 +183,6 @@ jobs:
           # Copy the standalone output
           COPY --from=builder /app/.next/standalone ./
           COPY --from=builder /app/.next/static ./.next/static
-          # The public directory might not exist, so don't try to copy it
-          # COPY --from=builder /app/public ./public
 
           # Create a simple start script
           RUN echo '#!/bin/sh' > /app/start.sh && \
