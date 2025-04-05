@@ -255,7 +255,8 @@ jobs:
           # Copy the standalone output
           COPY --from=builder /app/.next/standalone ./
           COPY --from=builder /app/.next/static ./.next/static
-          COPY --from=builder /app/public ./public
+          # The public directory might not exist, so don't try to copy it
+          # COPY --from=builder /app/public ./public
 
           # Create a simple start script
           RUN echo '#!/bin/sh' > /app/start.sh && \
