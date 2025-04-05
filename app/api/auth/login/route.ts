@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { Profile } from "@/utils/supabase/types";
-import { createServerClient } from "@supabase/ssr";
+import { createSafeServerClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 
 interface ProfileWithEmail extends Profile {
@@ -43,24 +43,23 @@ const err = (code: string, message: string): NextResponse<LoginResponse> => {
   });
 };
 
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      setAll(_cookiesToSet) {},
-    },
-  }
-);
+// Don't initialize Supabase at the module level, defer it to the request handler
 
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
   try {
+    // Initialize Supabase inside the request handler
+    const supabase = await createSafeServerClient();
+    
+    // Check if Supabase client is properly initialized
+    if (!supabase) {
+      return err(
+        "supabase_not_initialized",
+        "Authentication service is not available"
+      );
+    }
+
     const body = await request.formData();
 
     const email = body.get("email")?.toString();
