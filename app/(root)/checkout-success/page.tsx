@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -212,10 +212,18 @@ const ErrorMessage = styled.p`
   color: var(--text-secondary);
 `;
 
-export default function CheckoutSuccess() {
-  const [sessionData, setSessionData] = useState(null);
+// Define the type for session data
+interface SessionData {
+  id: string;
+  customerEmail: string;
+  isExistingUser: boolean;
+  // Add other properties as needed
+}
+
+function CheckoutSuccessContent() {
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -248,15 +256,15 @@ export default function CheckoutSuccess() {
       const userExists = false; // This would be replaced with an actual API call
 
       setSessionData({
-        id: sessionId,
-        status: "complete",
-        customerEmail: email,
+        id: sessionId || "",
+        customerEmail: email || "customer@example.com",
         isExistingUser: userExists,
+        // Add other properties as needed
       });
-
       setLoading(false);
-    } catch (error) {
-      setError("Failed to fetch session data");
+    } catch (err) {
+      console.error("Error fetching checkout session:", err);
+      setError("Failed to load checkout information");
       setLoading(false);
     }
   }
@@ -275,36 +283,22 @@ export default function CheckoutSuccess() {
 
   if (loading) {
     return (
-      <PageContainer>
-        <HeaderNav>
-          <HeaderContent>
-            <CymasphereLogo size="40px" fontSize="1.8rem" />
-          </HeaderContent>
-        </HeaderNav>
-        <LoadingContainer>
-          <LoadingSpinner />
-          <LoadingText>Processing your payment...</LoadingText>
-        </LoadingContainer>
-      </PageContainer>
+      <LoadingContainer>
+        <LoadingSpinner />
+        <LoadingText>Loading checkout information...</LoadingText>
+      </LoadingContainer>
     );
   }
 
   if (error) {
     return (
-      <PageContainer>
-        <HeaderNav>
-          <HeaderContent>
-            <CymasphereLogo size="40px" fontSize="1.8rem" />
-          </HeaderContent>
-        </HeaderNav>
-        <ErrorContainer>
-          <ErrorTitle>Oops! Something went wrong</ErrorTitle>
-          <ErrorMessage>{error}</ErrorMessage>
-          <BackButton onClick={() => router.push("/#pricing")}>
-            Return to Pricing
-          </BackButton>
-        </ErrorContainer>
-      </PageContainer>
+      <ErrorContainer>
+        <ErrorTitle>Oops! Something went wrong</ErrorTitle>
+        <ErrorMessage>{error}</ErrorMessage>
+        <BackButton onClick={() => router.push("/#pricing")}>
+          Return to Pricing
+        </BackButton>
+      </ErrorContainer>
     );
   }
 
@@ -354,5 +348,18 @@ export default function CheckoutSuccess() {
         </BackButton>
       </ContentContainer>
     </PageContainer>
+  );
+}
+
+export default function CheckoutSuccess() {
+  return (
+    <Suspense fallback={
+      <LoadingContainer>
+        <LoadingSpinner />
+        <LoadingText>Loading checkout information...</LoadingText>
+      </LoadingContainer>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

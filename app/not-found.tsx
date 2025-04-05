@@ -1,6 +1,5 @@
 "use client";
 
-import Head from "next/head";
 import Link from "next/link";
 import styled from "styled-components";
 
@@ -48,29 +47,18 @@ const HomeButton = styled.a`
   }
 `;
 
-export default function Custom404() {
+export default function NotFound() {
   return (
-    <>
-      <Head>
-        <title>Page Not Found - Cymasphere</title>
-        <meta
-          name="description"
-          content="The page you are looking for does not exist"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <NotFoundContainer>
-        <Title>404</Title>
-        <Subtitle>Page Not Found</Subtitle>
-        <Description>
-          Oops! The page you are looking for might have been removed, had its
-          name changed, or is temporarily unavailable.
-        </Description>
-        <Link href="/" passHref legacyBehavior>
-          <HomeButton>Return to Home</HomeButton>
-        </Link>
-      </NotFoundContainer>
-    </>
+    <NotFoundContainer>
+      <Title>404</Title>
+      <Subtitle>Page Not Found</Subtitle>
+      <Description>
+        Oops! The page you are looking for might have been removed, had its
+        name changed, or is temporarily unavailable.
+      </Description>
+      <Link href="/" passHref legacyBehavior>
+        <HomeButton>Return to Home</HomeButton>
+      </Link>
+    </NotFoundContainer>
   );
-}
+} 

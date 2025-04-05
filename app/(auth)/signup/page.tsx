@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -383,111 +383,62 @@ const NameFieldsContainer = styled.div`
   }
 `;
 
-function SignUp() {
+function SignupContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
+    email: "",
     firstName: "",
     lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    companyName: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const auth = useAuth() || {};
-
-  // Force reset loading state if component unmounts
-  useEffect(() => {
-    return () => {
-      if (loading) {
-        console.log("Component unmounting while loading, forcing reset");
-        setLoading(false);
-      }
-    };
-  }, [loading]);
-
-  // Handle email prefill from checkout
-  useEffect(() => {
-    const email = searchParams.get("email");
-    if (email) {
-      setFormData((prev) => ({
-        ...prev,
-        email,
-      }));
-    }
-  }, [searchParams]);
+  const returnTo = searchParams.get("returnTo") || "/dashboard";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Reset any previous errors
     setError("");
-
-    // Validate form
-    if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match");
-    }
-
-    if (formData.password.length < 6) {
-      return setError("Password must be at least 6 characters");
-    }
-
-    if (!agreeToTerms) {
-      return setError(
-        "You must agree to the Terms of Service and Privacy Policy"
-      );
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-      // Combine first and last name for the API call
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const result = await auth.signUp(
-        fullName,
-        formData.email,
-        formData.password
+      await signUp(
+        formData.email, 
+        `${formData.firstName} ${formData.lastName}`,
+        formData.companyName
       );
-
-      if (result.error) {
-        console.error("Sign up error:", result.error.message);
-        setError(result.error.message);
-      } else {
-        // Show success message
-        setSuccess(true);
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
-      }
-    } catch (err: unknown) {
-      console.error("Sign up error:", err);
-      // Handle specific errors
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
-    } finally {
+      router.push("/check-email");
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      setError(err.message || "Failed to create an account. Please try again.");
       setLoading(false);
     }
   };
 
-  const isCheckoutComplete = searchParams.get("checkout_complete") === "true";
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
+    } catch (err: any) {
+      console.error("Google sign in error:", err);
+      setError(err.message || "Failed to sign in with Google. Please try again.");
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthContainer>
-      <Link href="/" passHref legacyBehavior={false}>
-        <BackButton>
-          <FaArrowLeft /> Back to Home
+      <Link href="/" passHref legacyBehavior>
+        <BackButton as="a">
+          <FaArrowLeft />
+          Back to Home
         </BackButton>
       </Link>
 
@@ -496,57 +447,30 @@ function SignUp() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div
-          style={{
-            marginBottom: "2rem",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <CymasphereLogo
-            size="40px"
-            fontSize="1.8rem"
-            showText={true}
-            href={null}
-            onClick={null}
-            className={null}
+        <div className="logo-container flex justify-center mb-6">
+          <CymasphereLogo 
+            size="40px" 
+            showText={true} 
+            href={null} 
+            onClick={null} 
+            className={null} 
           />
         </div>
 
-        <Title>
-          Create an <span>account</span>
+        <Title
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          Create Your <span>Cymasphere</span> Account
         </Title>
 
-        {/* Display success message if signup was successful */}
-        {success && (
-          <SuccessMessage
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <SuccessTitle>Account Created Successfully!</SuccessTitle>
-            <SuccessText>
-              <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
-                Hi {formData.firstName}! A verification email has been sent to {formData.email}.
-              </strong>
-              <br />
-              <br />
-              Please check your inbox (and spam folder) and click the link to
-              verify your account.
-              <br />
-              <br />
-              <strong>
-                You must verify your email before accessing all features.
-              </strong>
-            </SuccessText>
-          </SuccessMessage>
-        )}
+        <Subtitle>Join our cybersecurity community and enhance your security posture.</Subtitle>
 
-        {/* Display error message if there was an error */}
         {error && (
           <ErrorMessage
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
             {error}
@@ -554,132 +478,118 @@ function SignUp() {
         )}
 
         <Form onSubmit={handleSubmit}>
-          <NameFieldsContainer>
-            <FormGroup>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                placeholder="First Name"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                placeholder="Last Name"
-              />
-            </FormGroup>
-          </NameFieldsContainer>
-
           <FormGroup>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email Address</Label>
             <Input
               type="email"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="your.email@company.com"
               required
-              readOnly={isCheckoutComplete}
-              placeholder="Enter your email address"
-              style={
-                isCheckoutComplete
-                  ? {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      cursor: "not-allowed",
-                    }
-                  : {}
-              }
-            />
-            {isCheckoutComplete && (
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  color: "var(--text-secondary)",
-                  marginTop: "0.5rem",
-                }}
-              >
-                This email is linked to your purchase and cannot be changed
-              </div>
-            )}
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Create a secure password"
             />
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
               onChange={handleChange}
+              placeholder="John"
               required
-              placeholder="Confirm your password"
             />
           </FormGroup>
 
-          <CheckboxContainer>
-            <Checkbox
-              type="checkbox"
-              id="terms"
-              checked={agreeToTerms}
-              onChange={() => setAgreeToTerms(!agreeToTerms)}
+          <FormGroup>
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Doe"
               required
             />
-            <CheckboxLabel htmlFor="terms">
-              I agree to the <Link href="/terms">Terms of Service</Link> and{" "}
-              <Link href="/privacy">Privacy Policy</Link>
-            </CheckboxLabel>
-          </CheckboxContainer>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="companyName">Company Name</Label>
+            <Input
+              type="text"
+              id="companyName"
+              name="companyName"
+              value={formData.companyName}
+              onChange={handleChange}
+              placeholder="Acme Inc."
+              required
+            />
+          </FormGroup>
 
           <Button
             type="submit"
             disabled={loading}
-            variants={buttonVariants}
-            whileHover="hover"
-            whileTap="tap"
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
           >
             <ButtonContent>
-              {loading ? (
-                <>
-                  <SpinnerIcon /> Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
+              {loading ? <FaSpinner className="animate-spin mr-2" /> : null}
+              {loading ? "Creating Account..." : "Create Account"}
             </ButtonContent>
           </Button>
         </Form>
 
-        <LinkText>
-          Already have an account? <Link href="/login">Log in</Link>
-        </LinkText>
+        <OrDivider>
+          <span>or</span>
+        </OrDivider>
+
+        <GoogleButton
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          whileHover={{ scale: loading ? 1 : 1.02 }}
+          whileTap={{ scale: loading ? 1 : 0.98 }}
+        >
+          <ButtonContent>
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"
+              />
+            </svg>
+            Continue with Google
+          </ButtonContent>
+        </GoogleButton>
+
+        <p className="text-center mt-6 text-sm text-gray-500">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:text-accent">
+            Log in
+          </Link>
+        </p>
+
+        <p className="text-center mt-4 text-xs text-gray-600">
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="text-primary hover:text-accent">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-primary hover:text-accent">
+            Privacy Policy
+          </Link>
+        </p>
       </FormCard>
     </AuthContainer>
   );
 }
 
-export default SignUp;
+export default function SignUp() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupContent />
+    </Suspense>
+  );
+}
