@@ -207,8 +207,35 @@ jobs:
           RUN mkdir -p /app/.next/standalone/.next/static || true
           RUN cp -R /app/.next/static /app/.next/standalone/.next/ || true
           
-          # Ensure fallback server is available
-          COPY app/server-fallback.js /app/.next/standalone/server-fallback.js
+          # Create fallback server directly in standalone directory
+          RUN cat > /app/.next/standalone/server-fallback.js << 'EOL'
+          const http = require('http');
+          
+          // Simple server that always works
+          const server = http.createServer((req, res) => {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Cymasphere - Fallback Server</title>
+                <style>
+                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                </style>
+              </head>
+              <body>
+                <h1>Cymasphere Website</h1>
+                <p>This is a fallback server running in emergency mode.</p>
+                <p>Server Time: ${new Date().toISOString()}</p>
+              </body>
+              </html>
+            `);
+          });
+          
+          server.listen(3000, '0.0.0.0', () => {
+            console.log('Fallback server running at http://0.0.0.0:3000/');
+          });
+          EOL
 
           # Production image, copy all the files and run next
           FROM base AS runner
@@ -228,7 +255,7 @@ jobs:
           RUN mkdir -p /tmp/standalone /tmp/static
           COPY --from=builder /app/.next/standalone/. /tmp/standalone/
           COPY --from=builder /app/.next/static/. /tmp/static/
-          COPY --from=builder /app/.next/standalone/server-fallback.js /app/server-fallback.js
+          # No need to copy server-fallback.js separately, it's already in /tmp/standalone
 
           # Copy files from temp directories using shell commands which support error handling
           RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
@@ -447,7 +474,10 @@ jobs:
           echo "Starting container..."
           docker run -d --restart unless-stopped --name cymasphere-container \
             -p 80:3000 \
+            -p 3000:3000 \
             -e NODE_ENV=production \
+            -e PORT=3000 \
+            -e HOSTNAME=0.0.0.0 \
             -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
