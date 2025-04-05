@@ -26,7 +26,8 @@ export const applyTonePatches = () => {
         let freq = note;
         if (typeof note !== 'number') {
           try {
-            freq = new Tone.Frequency(note).toFrequency();
+            // Fix for TS7009: Add type assertion to handle the constructor issue
+            freq = (new (Tone.Frequency as any)(note)).toFrequency();
           } catch (e) {
             console.warn("Could not convert note to frequency:", e);
             return this; // Exit if we can't get a valid frequency
@@ -90,7 +91,8 @@ export const applyTonePatches = () => {
           safeNotes = notes !== undefined && notes !== null ? [notes] : [];
         }
         
-        if (safeNotes.length === 0) {
+        // Fix for TS2339: Check if array before accessing length property
+        if (!Array.isArray(safeNotes) || safeNotes.length === 0) {
           console.warn("No valid notes to play, skipping triggerAttack");
           return this;
         }

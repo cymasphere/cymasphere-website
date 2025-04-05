@@ -3,12 +3,57 @@
  */
 import * as Tone from 'tone';
 
+// Define types for our synth modules
+interface ModulationComponents {
+  filter?: Tone.Filter;
+  autoFilter?: Tone.AutoFilter;
+  phaser?: Tone.Phaser;
+  vibrato?: Tone.Vibrato;
+  chorus?: Tone.Chorus;
+  freeverb?: Tone.Freeverb;
+  bitCrusher?: Tone.BitCrusher;
+  tremolo?: Tone.Tremolo;
+  autoPanner?: Tone.AutoPanner;
+  distortion?: Tone.Distortion;
+  modulationInterval?: NodeJS.Timeout;
+  dispose: () => void;
+}
+
+interface SynthWithModulation extends Tone.PolySynth {
+  modulation: ModulationComponents;
+}
+
+interface MultivoxSynth {
+  voices: {
+    voice1: Tone.PolySynth<Tone.Synth>;
+    voice2: Tone.PolySynth<Tone.Synth>;
+    voice3: Tone.PolySynth<Tone.Synth>;
+    voice4: Tone.PolySynth<Tone.Synth>;
+  };
+  modulation?: ModulationComponents;
+  triggerAttack: (notes: any, time: any, velocity: any) => void;
+  releaseAll: () => void;
+  dispose: () => void;
+}
+
+interface EffectsChain {
+  reverb: Tone.Reverb;
+  delay: Tone.FeedbackDelay;
+  chorus: Tone.Chorus;
+  stereoWidener: Tone.StereoWidener;
+  limiter: Tone.Limiter;
+  [key: string]: any;
+}
+
+// Define a minimal type for modulationInterval
+type ModulationIntervalType = ReturnType<typeof setInterval> | null;
+
 /**
  * Creates a polyphonic synthesizer with warm analog character
- * @param {Object} effectsChain - Master effects chain to connect to
- * @returns {Object} Synthesizer instance with modulation components
+ * @param {EffectsChain} effectsChain - Master effects chain to connect to
+ * @returns {SynthWithModulation} Synthesizer instance with modulation components
  */
-export const createPolySynth = (effectsChain) => {
+export const createPolySynth = (effectsChain: EffectsChain): SynthWithModulation => {
   // Create a modulation network for the polysynth
   
   // Chorus for richness
@@ -70,7 +115,7 @@ export const createPolySynth = (effectsChain) => {
       attackCurve: "sine",
       releaseCurve: "exponential"
     }
-  });
+  }) as SynthWithModulation;
   
   // Create a filter after the synth
   const filter = new Tone.Filter({
@@ -111,10 +156,10 @@ export const createPolySynth = (effectsChain) => {
 
 /**
  * Creates an FM synthesizer with complex modulation
- * @param {Object} effectsChain - Master effects chain to connect to
- * @returns {Object} Synthesizer instance with modulation components
+ * @param {EffectsChain} effectsChain - Master effects chain to connect to
+ * @returns {SynthWithModulation} Synthesizer instance with modulation components
  */
-export const createFMSynth = (effectsChain) => {
+export const createFMSynth = (effectsChain: EffectsChain): SynthWithModulation => {
   // Create a modulation network for the FM synth
   
   // Create a distinctive distortion for more edge
@@ -179,7 +224,7 @@ export const createFMSynth = (effectsChain) => {
       sustain: 0.5,
       release: 7
     }
-  });
+  }) as SynthWithModulation;
   
   // Create a freeverb for additional space
   const freeverb = new Tone.Freeverb({
@@ -190,7 +235,7 @@ export const createFMSynth = (effectsChain) => {
   
   // Use dynamic parameter changes instead of direct LFO connections
   // Set up modulation via interval for better compatibility
-  let modulationInterval = null;
+  let modulationInterval: ReturnType<typeof setInterval> | null = null;
   const setupModulation = () => {
     const startTime = Tone.now();
     
@@ -220,7 +265,7 @@ export const createFMSynth = (effectsChain) => {
   newSynth.connect(freeverb);
   
   // Store modulation components for cleanup
-  newSynth.modulation = {
+  (newSynth as any).modulation = {
     freeverb,
     bitCrusher,
     chorus,
@@ -255,10 +300,10 @@ export const createFMSynth = (effectsChain) => {
 
 /**
  * Creates a pad synthesizer with multiple voices for rich textures
- * @param {Object} effectsChain - Master effects chain to connect to
- * @returns {Object} Synthesizer instance with multiple voices and modulation
+ * @param {EffectsChain} effectsChain - Master effects chain to connect to
+ * @returns {MultivoxSynth} Multivox pad synthesizer instance
  */
-export const createPadSynth = (effectsChain) => {
+export const createPadSynth = (effectsChain: EffectsChain): MultivoxSynth => {
   // Create filter for padsynth
   const padFilter = new Tone.Filter({
     frequency: 1500,
@@ -439,10 +484,10 @@ export const createPadSynth = (effectsChain) => {
       autoFilter.dispose();
       padFilter.dispose();
     }
-  };
+  } as MultivoxSynth;
   
   // Store modulation components for cleanup
-  newSynth.modulation = {
+  (newSynth as any).modulation = {
     vibrato,
     phaser,
     autoPanner,
@@ -474,10 +519,10 @@ export const createPadSynth = (effectsChain) => {
 /**
  * Creates and configures a synth based on the specified type
  * @param {string} type - Type of synth to create ('polysynth')
- * @param {Object} effectsChain - Master effects chain to connect to
- * @returns {Object} Configured synthesizer instance
+ * @param {EffectsChain} effectsChain - Master effects chain to connect to
+ * @returns {SynthWithModulation | MultivoxSynth} Configured synthesizer instance
  */
-export const createSynth = (type, effectsChain) => {
+export const createSynth = (type: string, effectsChain: EffectsChain): SynthWithModulation | MultivoxSynth => {
   if (type === 'polysynth') {
     return createPolySynth(effectsChain);
   } else if (type === 'padsynth') {
@@ -490,10 +535,10 @@ export const createSynth = (type, effectsChain) => {
 };
 
 /**
- * Disposes of a synth instance and its modulation components
- * @param {Object} synth - Synth instance to dispose
+ * Safely disposes of a synthesizer and its resources
+ * @param {SynthWithModulation | MultivoxSynth} synth - The synthesizer to dispose
  */
-export const disposeSynth = (synth) => {
+export const disposeSynth = (synth: SynthWithModulation | MultivoxSynth): void => {
   if (!synth) {
     console.log("No synth to dispose");
     return;
@@ -502,13 +547,11 @@ export const disposeSynth = (synth) => {
   console.log("Disposing synth:", synth);
   
   // Define a helper function to safely handle operations that might fail
-  const safeExecute = (operation, description) => {
+  const safeExecute = (operation: () => void, description: string): void => {
     try {
       operation();
-      return true;
-    } catch (error) {
-      console.warn(`Error during ${description}:`, error.message);
-      return false;
+    } catch (error: unknown) {
+      console.error(`Error ${description}:`, error instanceof Error ? error.message : String(error));
     }
   };
   
@@ -684,7 +727,7 @@ export const disposeSynth = (synth) => {
  * @param {number} midiNote - MIDI note number (0-127)
  * @returns {number} - Frequency in Hz
  */
-export const midiToFreq = (midiNote) => {
+export const midiToFreq = (midiNote: number): number => {
   if (typeof midiNote !== 'number' || isNaN(midiNote)) {
     console.warn('Invalid MIDI note:', midiNote);
     return 440; // Default to A4 if invalid input
