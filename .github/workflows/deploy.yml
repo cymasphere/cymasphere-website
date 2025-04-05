@@ -63,6 +63,114 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create server.js file
+        run: |
+          cat > server.js << 'EOL'
+          // Enhanced Next.js server loader with better debugging
+          const fs = require('fs');
+          const path = require('path');
+          const http = require('http');
+
+          // Log environment for debugging
+          console.log('NODE_ENV:', process.env.NODE_ENV);
+          console.log('Working directory:', process.cwd());
+          console.log('Directory contents:', fs.readdirSync('.'));
+
+          // Check if key Next.js files exist
+          const checkPaths = [
+            './node_modules/next',
+            './.next',
+            './.next/server',
+            './.next/standalone',
+            './server.js',
+            './package.json'
+          ];
+
+          checkPaths.forEach(p => {
+            console.log(`Checking ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`);
+          });
+
+          // Various paths where Next.js server might be located
+          const possibleNextPaths = [
+            './node_modules/next/dist/server/next-server.js',
+            './.next/server/app/server.js',
+            './.next/standalone/server.js',
+            './server.js'
+          ];
+
+          // Try to load Next.js from various possible locations
+          let nextLoaded = false;
+          for (const nextPath of possibleNextPaths) {
+            try {
+              console.log(`Attempting to load Next.js from: ${nextPath}`);
+              if (fs.existsSync(nextPath)) {
+                // For the standalone mode specifically
+                if (nextPath === './.next/standalone/server.js') {
+                  console.log('Found standalone server.js, executing it directly');
+                  // Directly execute the standalone server code
+                  require('./.next/standalone/server.js');
+                } else {
+                  // For standard Next.js server modules
+                  require(nextPath);
+                }
+                console.log('Successfully loaded Next.js from:', nextPath);
+                nextLoaded = true;
+                break;
+              } else {
+                console.log(`Path ${nextPath} doesn't exist`);
+              }
+            } catch (e) {
+              console.error(`Error loading Next.js from ${nextPath}:`, e);
+            }
+          }
+
+          // If Next.js failed to load, start a simple HTTP server
+          if (!nextLoaded) {
+            console.log('Starting fallback HTTP server on port 3000');
+            http.createServer((req, res) => {
+              res.writeHead(200, {'Content-Type': 'text/html'});
+              res.end(`
+                <html>
+                  <head><title>Next.js App Unavailable</title>
+                  <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+                    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow: auto; }
+                    h1 { color: #d32f2f; }
+                    h2 { color: #333; margin-top: 30px; }
+                  </style>
+                  </head>
+                  <body>
+                    <h1>Server is running</h1>
+                    <h2>Next.js app is not available</h2>
+                    <p>The server is running but the Next.js application failed to load.</p>
+                    
+                    <h2>Debugging Information:</h2>
+                    <pre>
+          NODE_ENV: ${process.env.NODE_ENV}
+          Working Directory: ${process.cwd()}
+          Directory Contents: ${fs.readdirSync('.').join(', ')}
+
+          Checked Paths:
+          ${checkPaths.map(p => `${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`).join('\n')}
+
+          Attempted Next.js Paths:
+          ${possibleNextPaths.join('\n')}
+                    </pre>
+                    
+                    <h2>Possible Solutions:</h2>
+                    <ol>
+                      <li>Check if the Next.js build completed successfully</li>
+                      <li>Verify the output directory structure matches what the server expects</li>
+                      <li>Ensure all required environment variables are set</li>
+                      <li>Check the container logs for more detailed error information</li>
+                    </ol>
+                  </body>
+                </html>
+              `);
+            }).listen(3000, '0.0.0.0');
+          }
+          EOL
+
       - name: Create Dockerfile for Next.js
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
@@ -122,8 +230,10 @@ jobs:
           
           # Create default files for the server
           RUN echo "<html><body><h1>Server Error (500)</h1></body></html>" > /app/server/pages/500.html && \
-              echo "<html><body><h1>Not Found (404)</h1></body></html>" > /app/server/pages/404.html && \
-              echo "// Load the Next.js server, or fallback to a basic HTTP server if it fails\ntry {\n  console.log('Starting Next.js server on port 3000');\n  require('./node_modules/next/dist/server/next-server.js');\n} catch (e) {\n  console.error('Failed to start Next.js server:', e);\n  console.log('Starting fallback HTTP server on port 3000');\n  require('http').createServer((req, res) => {\n    res.writeHead(200, {'Content-Type': 'text/html'});\n    res.end('<h1>Next.js Server Running</h1><p>The application server is running but there might be configuration issues. Check container logs.</p>');\n  }).listen(3000, '0.0.0.0');\n}" > /app/server.js
+              echo "<html><body><h1>Not Found (404)</h1></body></html>" > /app/server/pages/404.html
+
+          # Copy the server.js file from the build context
+          COPY server.js /app/server.js
 
           # Create a script to safely copy files between stages
           # Copy server.js from builder if it exists (using shell copy instead of COPY)
@@ -208,6 +318,15 @@ jobs:
           # Run the new container
           docker run -d --restart unless-stopped --name cymasphere-container -p 80:3000 ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
+          # Copy the server.js into the container just in case
+          if [ -f ~/server.js ]; then
+            echo "Copying server.js into container..."
+            docker cp ~/server.js cymasphere-container:/app/server.js
+            docker exec cymasphere-container chmod +x /app/server.js
+            # Restart the container to use the new server.js
+            docker restart cymasphere-container
+          fi
+          
           # Clean up
           docker system prune -af
           EOL
@@ -216,6 +335,8 @@ jobs:
 
       - name: Deploy to Lightsail
         run: |
+          # Copy the server.js file to the server for debugging
+          scp server.js ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/server.js
           # Try SCP and SSH
           scp deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
           ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
