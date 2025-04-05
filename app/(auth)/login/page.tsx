@@ -324,6 +324,7 @@ function Login() {
 
     try {
       setLoading(true);
+
       // Call signIn and get the result
       const result = await auth.signIn(email, password);
 

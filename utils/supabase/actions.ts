@@ -59,6 +59,7 @@ export async function fetchProfile(
  * - Updates profile with appropriate status
  */
 export async function updateStripe(
+  email: string,
   profile: Profile
 ): Promise<{ success: boolean; profile?: Profile; error?: Error | unknown }> {
   try {
@@ -73,47 +74,55 @@ export async function updateStripe(
       return { success: true, profile };
     }
 
+    let updatedProfile: Profile = { ...profile };
     // If no customer ID, user has no Stripe purchases
-    if (!profile.customer_id) {
-      // Update profile to set is_pro and is_lifetime to false
-      const updatedProfile = await updateUserProfile(profile.id, false, false);
-      return { success: true, profile: updatedProfile };
+    if (!updatedProfile.customer_id) {
+      updatedProfile.customer_id = await findOrCreateCustomer(email);
     }
 
     // Use the stripe actions to check customer status
-    const customerStatus = await customerPurchasedPro(profile.customer_id);
+    const customerStatus = await customerPurchasedPro(
+      updatedProfile.customer_id
+    );
 
     if (!customerStatus.success) {
       return { success: false, error: customerStatus.error };
     }
 
-    // Update the profile based on the customer status
-    const updatedProfile = await updateUserProfile(
-      profile.id,
-      customerStatus.is_pro,
-      customerStatus.is_lifetime
-    );
+    updatedProfile.is_pro = customerStatus.is_pro;
+    updatedProfile.is_lifetime = customerStatus.is_lifetime;
+
+    if (
+      updatedProfile.customer_id != profile.customer_id ||
+      updatedProfile.is_pro != profile.is_pro ||
+      updatedProfile.is_lifetime != profile.is_lifetime
+    ) {
+      updatedProfile = await updateUserProfile(updatedProfile);
+    }
 
     return { success: true, profile: updatedProfile };
   } catch (error) {
-    console.error("Error updating Stripe status:", error);
     return { success: false, error };
   }
 }
 
 // Helper function to update the user profile
-async function updateUserProfile(
-  userId: string,
-  is_pro: boolean,
-  is_lifetime: boolean
-): Promise<Profile> {
-  const last_stripe_api_check = new Date().toISOString();
+async function updateUserProfile(profile: Profile): Promise<Profile> {
   const supabase = await createClient();
+  const { data: user, error: user_error } = await supabase.auth.getUser();
+
+  console.log("user", !!user);
+
+  if (user_error) {
+    console.log("Error getting user:", user_error);
+  }
+
+  const last_stripe_api_check = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({ is_pro, is_lifetime, last_stripe_api_check })
-    .eq("id", userId)
+    .update({ ...profile, last_stripe_api_check }, { count: "exact" })
+    .eq("id", profile.id)
     .select()
     .single();
 

@@ -99,6 +99,7 @@ export async function POST(
         // Check and update Stripe subscription status
         try {
           const { success, profile: updatedProfile } = await updateStripe(
+            user.email!,
             profile
           );
 

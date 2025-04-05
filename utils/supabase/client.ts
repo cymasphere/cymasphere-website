@@ -1,12 +1,13 @@
 "use client";
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/database.types";
+import { createBrowserClient } from "@supabase/ssr";
+import { SupabaseClient } from "@supabase/supabase-js";
 
-// Create a client-side supabase client for browser usage
-export const createBrowserClient = (): SupabaseClient<Database> => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-  return createClient<Database>(supabaseUrl, supabaseAnonKey);
-};
+export function createClient(): SupabaseClient<Database> {
+  // Create a supabase client on the browser with project's credentials
+  return createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}

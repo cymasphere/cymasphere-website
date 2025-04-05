@@ -11,10 +11,10 @@ import {
 import { Profile, UserProfile } from "@/utils/supabase/types";
 import {
   fetchProfile,
-  updateStripe,
   signUpWithStripe,
+  updateStripe,
 } from "@/utils/supabase/actions";
-import { createBrowserClient } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -42,7 +42,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const supabase = createBrowserClient();
+const supabase = createClient();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Check Stripe subscription status
             try {
               const { success, profile: updatedProfile } = await updateStripe(
+                session_user.email!,
                 profile
               );
               if (success && updatedProfile) {
