@@ -273,7 +273,7 @@ jobs:
             docker logs cymasphere-container
             
             # Create a debug script to run inside the container
-            cat > ~/debug.sh << 'EOF'
+            cat > ~/debug.sh << "EOFMARKER"
             #!/bin/sh
             echo "Container filesystem:"
             ls -la /app
@@ -281,7 +281,7 @@ jobs:
             ls -la /app/node_modules || echo "No node_modules directory"
             echo "Next.js output:"
             ls -la /app/.next || echo "No .next directory"
-            EOF
+            EOFMARKER
             
             # Try to run debug script in container - but don't fail if it doesn't work
             docker cp ~/debug.sh cymasphere-container:/app/debug.sh || echo "Failed to copy debug script"
