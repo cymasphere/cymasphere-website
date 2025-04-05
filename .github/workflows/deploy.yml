@@ -63,226 +63,43 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create server.js file
+      - name: Create server.js with diagnostic capabilities
         run: |
-          cat > server.js << 'EOL'
-          // Enhanced Next.js server loader with better debugging
-          const fs = require('fs');
-          const path = require('path');
-          const http = require('http');
-          const { execSync } = require('child_process');
-
+          # Create a simplified version of server.js
+          echo 'const fs = require("fs");
+          const http = require("http");
+          const path = require("path");
+          
+          console.log("Server starting, NODE_ENV:", process.env.NODE_ENV);
+          console.log("Working directory:", process.cwd());
+          console.log("Directory contents:", fs.readdirSync("."));
+          
           try {
-            // Log environment for debugging
-            console.log('NODE_ENV:', process.env.NODE_ENV);
-            console.log('Working directory:', process.cwd());
-            
-            try {
-              console.log('Directory contents:', fs.readdirSync('.'));
-            } catch (e) {
-              console.error('Failed to read directory contents:', e.message);
-            }
-
-            // Try to get system info
-            try {
-              console.log('System info:');
-              console.log(execSync('uname -a').toString());
-              console.log('Memory:', execSync('free -m').toString());
-              console.log('Disk space:', execSync('df -h').toString());
-            } catch (e) {
-              console.error('Error getting system info:', e.message);
-            }
-
-            // Check if key Next.js files exist
-            const checkPaths = [
-              './node_modules/next',
-              './.next',
-              './.next/server',
-              './.next/standalone',
-              './server.js',
-              './package.json'
-            ];
-
-            checkPaths.forEach(p => {
-              try {
-                console.log(`Checking ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`);
-                if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
-                  try {
-                    console.log(`  Contents of ${p}: ${fs.readdirSync(p).join(', ')}`);
-                  } catch (e) {
-                    console.error(`  Error reading contents of ${p}:`, e.message);
-                  }
-                }
-              } catch (e) {
-                console.error(`Error checking path ${p}:`, e.message);
-              }
-            });
-
-            // Various paths where Next.js server might be located
-            const possibleNextPaths = [
-              './node_modules/next/dist/server/next-server.js',
-              './.next/server/app/server.js',
-              './.next/standalone/server.js',
-              './server.js'
-            ];
-
-            // Try to load Next.js from various possible locations
-            let nextLoaded = false;
-            for (const nextPath of possibleNextPaths) {
-              try {
-                console.log(`Attempting to load Next.js from: ${nextPath}`);
-                if (fs.existsSync(nextPath)) {
-                  // For the standalone mode specifically
-                  if (nextPath === './.next/standalone/server.js') {
-                    console.log('Found standalone server.js, executing it directly');
-                    try {
-                      // Directly execute the standalone server code
-                      require('./.next/standalone/server.js');
-                      console.log('Successfully loaded standalone server.js');
-                      nextLoaded = true;
-                      break;
-                    } catch (e) {
-                      console.error(`Error executing standalone server.js: ${e.message}`);
-                      console.error(e.stack);
-                    }
-                  } else {
-                    // For standard Next.js server modules
-                    try {
-                      require(nextPath);
-                      console.log('Successfully loaded Next.js from:', nextPath);
-                      nextLoaded = true;
-                      break;
-                    } catch (e) {
-                      console.error(`Error requiring ${nextPath}: ${e.message}`);
-                      console.error(e.stack);
-                    }
-                  }
-                } else {
-                  console.log(`Path ${nextPath} doesn't exist`);
-                }
-              } catch (e) {
-                console.error(`Error loading Next.js from ${nextPath}:`, e.message);
-                console.error(e.stack);
-              }
-            }
-
-            // If Next.js failed to load, try to find any server.js alternative
-            if (!nextLoaded) {
-              try {
-                console.log('Searching for any server.js files in the filesystem...');
-                const findResults = execSync('find / -name "server.js" 2>/dev/null || true').toString();
-                console.log('Found server.js files:', findResults);
-              } catch (e) {
-                console.error('Error searching for server.js files:', e.message);
-              }
-              
-              // Try to see what's in node_modules
-              try {
-                if (fs.existsSync('./node_modules')) {
-                  console.log('Top level node_modules contents:', fs.readdirSync('./node_modules').join(', '));
-                  if (fs.existsSync('./node_modules/next')) {
-                    console.log('next module contents:', fs.readdirSync('./node_modules/next').join(', '));
-                    if (fs.existsSync('./node_modules/next/dist')) {
-                      console.log('next/dist contents:', fs.readdirSync('./node_modules/next/dist').join(', '));
-                    }
-                  }
-                }
-              } catch (e) {
-                console.error('Error exploring node_modules:', e.message);
-              }
-            }
-
-            // If Next.js failed to load, start a simple HTTP server
-            if (!nextLoaded) {
-              console.log('Starting fallback HTTP server on port 3000');
-              http.createServer((req, res) => {
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.end(`
-                  <html>
-                    <head><title>Next.js App Unavailable</title>
-                    <style>
-                      body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
-                      pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow: auto; }
-                      h1 { color: #d32f2f; }
-                      h2 { color: #333; margin-top: 30px; }
-                    </style>
-                    </head>
-                    <body>
-                      <h1>Server is running</h1>
-                      <h2>Next.js app is not available</h2>
-                      <p>The server is running but the Next.js application failed to load.</p>
-                      
-                      <h2>Debugging Information:</h2>
-                      <pre>
-NODE_ENV: ${process.env.NODE_ENV}
-Working Directory: ${process.cwd()}
-Directory Contents: ${
-  (() => {
-    try {
-      return fs.readdirSync('.').join(', ');
-    } catch (e) {
-      return 'Error reading directory: ' + e.message;
-    }
-  })()
-}
-
-Checked Paths:
-${
-  (() => {
-    try {
-      return checkPaths.map(p => {
-        try {
-          return `${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`;
-        } catch (e) {
-          return `${p}: ERROR - ${e.message}`;
-        }
-      }).join('\n');
-    } catch (e) {
-      return 'Error checking paths: ' + e.message;
-    }
-  })()
-}
-
-Attempted Next.js Paths:
-${possibleNextPaths.join('\n')}
-                      </pre>
-                      
-                      <h2>Possible Solutions:</h2>
-                      <ol>
-                        <li>Check if the Next.js build completed successfully</li>
-                        <li>Verify the output directory structure matches what the server expects</li>
-                        <li>Ensure all required environment variables are set</li>
-                        <li>Check the container logs for more detailed error information</li>
-                      </ol>
-                    </body>
-                  </html>
-                `);
-              }).listen(3000, '0.0.0.0');
+            // Try to load Next.js server
+            if (fs.existsSync("./.next/standalone/server.js")) {
+              console.log("Found standalone server, loading it");
+              require("./.next/standalone/server.js");
+            } else if (fs.existsSync("./node_modules/next/dist/server/next-server.js")) {
+              console.log("Found next-server.js, loading it");
+              require("./node_modules/next/dist/server/next-server.js");
+            } else {
+              throw new Error("Could not find Next.js server file");
             }
           } catch (e) {
-            console.error("CRITICAL ERROR IN SERVER.JS:", e);
+            console.error("Error loading Next.js:", e);
             
-            // Last resort emergency server
-            try {
-              http.createServer((req, res) => {
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.end(`
-                  <html>
-                    <head><title>Emergency Server</title></head>
-                    <body>
-                      <h1>Emergency Server Running</h1>
-                      <p>The main server script encountered a critical error.</p>
-                      <pre>${e.stack || e.toString()}</pre>
-                    </body>
-                  </html>
-                `);
-              }).listen(3000, '0.0.0.0');
-              console.log("Emergency server started on port 3000");
-            } catch (emergencyError) {
-              console.error("FAILED TO START EMERGENCY SERVER:", emergencyError);
-            }
-          }
-          EOL
+            // Start emergency HTTP server
+            http.createServer((req, res) => {
+              res.writeHead(200, {"Content-Type": "text/html"});
+              res.end(`<html><head><title>Next.js App Unavailable</title></head>
+                <body>
+                  <h1>Server is running but Next.js failed to load</h1>
+                  <p>Check container logs for details</p>
+                </body>
+              </html>`);
+            }).listen(3000, "0.0.0.0");
+            console.log("Emergency server started on port 3000");
+          }' > server.js
 
       - name: Create Dockerfile for Next.js
         run: |
