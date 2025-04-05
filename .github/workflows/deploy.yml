@@ -175,21 +175,28 @@ jobs:
               echo "module.exports = function() { return { customers: { retrieve: () => Promise.resolve({ id: 'mock-customer' }) } }; };" > /app/mocks/stripe.js && \
               echo "{ \"type\": \"commonjs\" }" > /app/mocks/package.json
           
-          # First try regular build, then try output: export if needed
-          RUN bun run build || \
-              (echo "Attempting fallback build with NODE_PATH..." && \
-               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling) || \
-              (echo "Attempting static export..." && \
+          # First try regular build, then try output: export if needed - save all logs
+          RUN set -x && \
+              (bun run build 2>&1 | tee /tmp/build-logs.txt) || \
+              (echo "\n\n=== FALLBACK BUILD ATTEMPT WITH NODE_PATH ===\n\n" >> /tmp/build-logs.txt && \
+               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling 2>&1 | tee -a /tmp/build-logs.txt) || \
+              (echo "\n\n=== STATIC EXPORT ATTEMPT ===\n\n" >> /tmp/build-logs.txt && \
                echo "const nextConfig = { output: 'export' }; module.exports = nextConfig;" > next.config.js && \
-               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling) || \
-              (echo "Creating emergency static folder..." && \
+               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling 2>&1 | tee -a /tmp/build-logs.txt) || \
+              (echo "\n\n=== EMERGENCY FALLBACK CREATION ===\n\n" >> /tmp/build-logs.txt && \
+               echo "All build attempts failed. Creating emergency fallback server." | tee -a /tmp/build-logs.txt && \
                mkdir -p /app/.next/standalone && \
-               mkdir -p /app/.next/static && \
-               echo "console.log('Emergency fallback server starting on port 3000');" > /app/.next/standalone/server.js && \
-               echo "require('http').createServer((req, res) => {" >> /app/.next/standalone/server.js && \
-               echo "  res.writeHead(200, {'Content-Type': 'text/html'});" >> /app/.next/standalone/server.js && \
-               echo "  res.end('<html><body><h1>Cymasphere Website</h1><p>This is an emergency fallback page. The main application failed to build.</p></body></html>');" >> /app/.next/standalone/server.js && \
-               echo "}).listen(3000, '0.0.0.0', () => console.log('Emergency server running on port 3000'));" >> /app/.next/standalone/server.js)
+               mkdir -p /app/.next/static)
+               
+          # Collect additional diagnostic information
+          RUN echo "\n\n=== ENVIRONMENT VARIABLES ===\n\n" >> /tmp/build-logs.txt && \
+              env | grep -v KEY | grep -v TOKEN | grep -v SECRET >> /tmp/build-logs.txt && \
+              echo "\n\n=== DIRECTORY STRUCTURE ===\n\n" >> /tmp/build-logs.txt && \
+              find /app -type d | sort >> /tmp/build-logs.txt && \
+              echo "\n\n=== NODE_MODULES ===\n\n" >> /tmp/build-logs.txt && \
+              ls -la /app/node_modules | head -20 >> /tmp/build-logs.txt && \
+              echo "\n\n=== NEXT CONFIG ===\n\n" >> /tmp/build-logs.txt && \
+              cat /app/next.config.js >> /tmp/build-logs.txt || echo "No next.config.js found" >> /tmp/build-logs.txt
           
           # Create a complete standalone directory even if build fails
           RUN mkdir -p /app/.next/standalone/public || true
@@ -219,13 +226,118 @@ jobs:
           RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
           RUN mkdir -p /app/.next && cp -R /tmp/static/. /app/.next/static/ 2>/dev/null || echo "No static files to copy"
 
-          # If standalone doesn't exist, create a basic server as fallback
+          # If standalone doesn't exist, create a basic server as fallback that displays logs
           RUN if [ ! -f "/app/server.js" ]; then \
-              echo "console.log('Fallback server starting on port 3000');" > /app/server.js && \
-              echo "require('http').createServer((req, res) => {" >> /app/server.js && \
+              echo "console.log('DETAILED DIAGNOSTIC SERVER STARTING - PORT 3000');" > /app/server.js && \
+              echo "const fs = require('fs');" >> /app/server.js && \
+              echo "const path = require('path');" >> /app/server.js && \
+              echo "const http = require('http');" >> /app/server.js && \
+              echo "const { execSync } = require('child_process');" >> /app/server.js && \
+              echo "" >> /app/server.js && \
+              echo "// Get build logs" >> /app/server.js && \
+              echo "let buildLogs = 'No build logs found';" >> /app/server.js && \
+              echo "try {" >> /app/server.js && \
+              echo "  if (fs.existsSync('/app/build-logs.txt')) {" >> /app/server.js && \
+              echo "    buildLogs = fs.readFileSync('/app/build-logs.txt', 'utf8');" >> /app/server.js && \
+              echo "  } else if (fs.existsSync('/tmp/build-logs.txt')) {" >> /app/server.js && \
+              echo "    buildLogs = fs.readFileSync('/tmp/build-logs.txt', 'utf8');" >> /app/server.js && \
+              echo "  } else {" >> /app/server.js && \
+              echo "    try {" >> /app/server.js && \
+              echo "      buildLogs = execSync('find / -name \"build-logs.txt\" 2>/dev/null || echo \"Not found\"').toString();" >> /app/server.js && \
+              echo "      if (buildLogs.includes('Not found')) {" >> /app/server.js && \
+              echo "        buildLogs = 'Build logs file not found in the container';" >> /app/server.js && \
+              echo "      } else {" >> /app/server.js && \
+              echo "        const logPath = buildLogs.trim();" >> /app/server.js && \
+              echo "        buildLogs = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : 'Found but could not read: ' + logPath;" >> /app/server.js && \
+              echo "      }" >> /app/server.js && \
+              echo "    } catch (e) {" >> /app/server.js && \
+              echo "      buildLogs = 'Error searching for logs: ' + e.message;" >> /app/server.js && \
+              echo "    }" >> /app/server.js && \
+              echo "  }" >> /app/server.js && \
+              echo "} catch (e) {" >> /app/server.js && \
+              echo "  buildLogs = 'Error reading logs: ' + e.message;" >> /app/server.js && \
+              echo "}" >> /app/server.js && \
+              echo "" >> /app/server.js && \
+              echo "// Get runtime info" >> /app/server.js && \
+              echo "let runtimeInfo = '';" >> /app/server.js && \
+              echo "try {" >> /app/server.js && \
+              echo "  runtimeInfo = execSync('echo \"OS: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME || echo Unknown)\" && " >> /app/server.js && \
+              echo "    echo \"\\nNode: $(node -v)\" && " >> /app/server.js && \
+              echo "    echo \"\\nDisk Space: $(df -h / | tail -1)\" && " >> /app/server.js && \
+              echo "    echo \"\\nMemory: $(free -h || echo Not available)\"').toString();" >> /app/server.js && \
+              echo "} catch (e) {" >> /app/server.js && \
+              echo "  runtimeInfo = 'Error getting runtime info: ' + e.message;" >> /app/server.js && \
+              echo "}" >> /app/server.js && \
+              echo "" >> /app/server.js && \
+              echo "// Get file structure" >> /app/server.js && \
+              echo "let fileStructure = '';" >> /app/server.js && \
+              echo "try {" >> /app/server.js && \
+              echo "  fileStructure = execSync('echo \"App directory:\" && ls -la /app && " >> /app/server.js && \
+              echo "    echo \"\\n\\nNext directory:\" && ls -la /app/.next 2>/dev/null || echo \"No .next directory\"').toString();" >> /app/server.js && \
+              echo "} catch (e) {" >> /app/server.js && \
+              echo "  fileStructure = 'Error getting file structure: ' + e.message;" >> /app/server.js && \
+              echo "}" >> /app/server.js && \
+              echo "" >> /app/server.js && \
+              echo "const server = http.createServer((req, res) => {" >> /app/server.js && \
               echo "  res.writeHead(200, {'Content-Type': 'text/html'});" >> /app/server.js && \
-              echo "  res.end('<html><body><h1>Cymasphere Website</h1><p>The application failed to build properly. Please check the container logs.</p></body></html>');" >> /app/server.js && \
-              echo "}).listen(3000, '0.0.0.0', () => console.log('Server running on port 3000'));" >> /app/server.js; \
+              echo "  res.end(\`" >> /app/server.js && \
+              echo "    <!DOCTYPE html>" >> /app/server.js && \
+              echo "    <html lang=\"en\">" >> /app/server.js && \
+              echo "    <head>" >> /app/server.js && \
+              echo "      <meta charset=\"UTF-8\">" >> /app/server.js && \
+              echo "      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" >> /app/server.js && \
+              echo "      <title>Cymasphere - Build Diagnostic</title>" >> /app/server.js && \
+              echo "      <style>" >> /app/server.js && \
+              echo "        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f8f9fa; }" >> /app/server.js && \
+              echo "        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }" >> /app/server.js && \
+              echo "        header { background: #343a40; color: white; padding: 1rem; margin-bottom: 2rem; }" >> /app/server.js && \
+              echo "        h1 { margin: 0; }" >> /app/server.js && \
+              echo "        .alert { background: #dc3545; color: white; padding: 1rem; border-radius: 4px; margin-bottom: 2rem; }" >> /app/server.js && \
+              echo "        pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow: auto; font-size: 14px; }" >> /app/server.js && \
+              echo "        .card { background: white; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 2rem; overflow: hidden; }" >> /app/server.js && \
+              echo "        .card-header { background: #17a2b8; color: white; padding: 10px 15px; font-weight: bold; }" >> /app/server.js && \
+              echo "        .card-body { padding: 15px; }" >> /app/server.js && \
+              echo "        .button { display: inline-block; background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-bottom: 1rem; }" >> /app/server.js && \
+              echo "      </style>" >> /app/server.js && \
+              echo "    </head>" >> /app/server.js && \
+              echo "    <body>" >> /app/server.js && \
+              echo "      <header>" >> /app/server.js && \
+              echo "        <div class=\"container\">" >> /app/server.js && \
+              echo "          <h1>Cymasphere Website - Build Failed</h1>" >> /app/server.js && \
+              echo "        </div>" >> /app/server.js && \
+              echo "      </header>" >> /app/server.js && \
+              echo "      <div class=\"container\">" >> /app/server.js && \
+              echo "        <div class=\"alert\">" >> /app/server.js && \
+              echo "          <strong>ERROR:</strong> The Next.js application failed to build properly. This is a diagnostic page to help troubleshoot the issue." >> /app/server.js && \
+              echo "        </div>" >> /app/server.js && \
+              echo "        <div class=\"card\">" >> /app/server.js && \
+              echo "          <div class=\"card-header\">Build Logs</div>" >> /app/server.js && \
+              echo "          <div class=\"card-body\">" >> /app/server.js && \
+              echo "            <pre>\${buildLogs}</pre>" >> /app/server.js && \
+              echo "          </div>" >> /app/server.js && \
+              echo "        </div>" >> /app/server.js && \
+              echo "        <div class=\"card\">" >> /app/server.js && \
+              echo "          <div class=\"card-header\">Runtime Information</div>" >> /app/server.js && \
+              echo "          <div class=\"card-body\">" >> /app/server.js && \
+              echo "            <pre>\${runtimeInfo}</pre>" >> /app/server.js && \
+              echo "          </div>" >> /app/server.js && \
+              echo "        </div>" >> /app/server.js && \
+              echo "        <div class=\"card\">" >> /app/server.js && \
+              echo "          <div class=\"card-header\">File Structure</div>" >> /app/server.js && \
+              echo "          <div class=\"card-body\">" >> /app/server.js && \
+              echo "            <pre>\${fileStructure}</pre>" >> /app/server.js && \
+              echo "          </div>" >> /app/server.js && \
+              echo "        </div>" >> /app/server.js && \
+              echo "      </div>" >> /app/server.js && \
+              echo "    </body>" >> /app/server.js && \
+              echo "    </html>" >> /app/server.js && \
+              echo "  \`);" >> /app/server.js && \
+              echo "});" >> /app/server.js && \
+              echo "" >> /app/server.js && \
+              echo "server.listen(3000, '0.0.0.0', () => {" >> /app/server.js && \
+              echo "  console.log('DIAGNOSTIC SERVER RUNNING AT http://0.0.0.0:3000');" >> /app/server.js && \
+              echo "  console.log('This server shows detailed build logs and diagnostic information');" >> /app/server.js && \
+              echo "});" >> /app/server.js; \
           fi
 
           # Create a simple start script
@@ -236,7 +348,7 @@ jobs:
               echo 'echo "Directory contents:"' >> /app/start.sh && \
               echo 'ls -la' >> /app/start.sh && \
               echo 'echo "Node.js version: $(node -v)"' >> /app/start.sh && \
-              echo 'echo "Bun version: $(bun -v)"' >> /app/start.sh && \
+              echo 'echo "Bun version: $(bun -v || echo not installed)"' >> /app/start.sh && \
               echo 'echo ".next directory:"' >> /app/start.sh && \
               echo 'ls -la .next || echo "No .next directory"' >> /app/start.sh && \
               echo 'if [ -f "server.js" ]; then' >> /app/start.sh && \
@@ -244,9 +356,18 @@ jobs:
               echo '  node server.js' >> /app/start.sh && \
               echo 'else' >> /app/start.sh && \
               echo '  echo "server.js not found, starting diagnostic server..."' >> /app/start.sh && \
-              echo '  node -e "require(\"http\").createServer((req, res) => { res.end(\"Next.js server.js not found\"); }).listen(3000)"' >> /app/start.sh && \
+              echo '  echo "const fs = require(\"fs\");" > /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "const http = require(\"http\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "http.createServer((req, res) => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "  res.writeHead(200, {\"Content-Type\": \"text/html\"});" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "  res.end(\"<html><body><h1>Cymasphere Website - Emergency Server</h1><p>No server.js was found.</p></body></html>\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "}).listen(3000, \"0.0.0.0\", () => console.log(\"Emergency server started on port 3000\"));" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  node /tmp/emergency-server.js' >> /app/start.sh && \
               echo 'fi' >> /app/start.sh && \
               chmod +x /app/start.sh
+
+          # Copy build logs to be accessible from the server
+          COPY --from=builder /tmp/build-logs.txt /app/build-logs.txt || true
 
           EXPOSE 3000
           ENV PORT 3000
