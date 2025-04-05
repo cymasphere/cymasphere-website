@@ -1248,7 +1248,7 @@ export default function BillingPage() {
           <PlanSelectionModal
             isOpen={showPlanModal}
             onClose={() => setShowPlanModal(false)}
-            currentSubscription={userSubscription}
+            profile={userSubscription}
             onIntervalChange={handleBillingPeriodChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}

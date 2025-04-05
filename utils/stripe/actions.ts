@@ -34,20 +34,25 @@ export interface PriceData {
 export async function initiateCheckout(
   planType: PlanType,
   email?: string,
+  customerId?: string,
   promotionCode?: string,
   collectPaymentMethod: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
-    let customerId: string | undefined;
+    let resolved_customer_id: string | undefined;
 
     // If email is provided, find or create customer
-    if (email) {
-      customerId = await findOrCreateCustomer(email);
+    if (!customerId && email) {
+      resolved_customer_id = await findOrCreateCustomer(email);
+    } else if (customerId) {
+      resolved_customer_id = customerId;
+    } else {
+      throw new Error("No customer ID or email provided");
     }
 
     // Create checkout session with or without customer ID
     return await createCheckoutSession(
-      customerId,
+      resolved_customer_id,
       planType,
       promotionCode,
       collectPaymentMethod

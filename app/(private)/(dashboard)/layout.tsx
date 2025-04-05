@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
@@ -342,16 +342,15 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user: currentUser, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
 
-  // Set isMounted to true after component has mounted to prevent hydration mismatch
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const user_display_name = useMemo(() => {
+    if (!user) return "";
+    return user.profile.first_name + " " + user.profile.last_name;
+  }, [user]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prevState) => !prevState);
@@ -384,7 +383,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [sidebarOpen]);
 
   // Return loading state if not mounted yet
-  if (!isMounted) {
+  if (!user) {
     return (
       <LayoutContainer>
         <Content
@@ -399,11 +398,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </LayoutContainer>
     );
   }
-
-  // Get the display name from the user profile or demo data
-  const getUserDisplayName = () => {
-    return currentUser?.profile?.name || "User";
-  };
 
   // Animation variants
   const fadeIn = {
@@ -541,8 +535,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <UserInfo>
           <UserName>
-            <h4>{getUserDisplayName()}</h4>
-            <p>{currentUser?.email}</p>
+            <h4>{user_display_name}</h4>
+            <p>{user.email}</p>
           </UserName>
           <LogoutButton onClick={handleLogout} title="Logout">
             <FaSignOutAlt />
@@ -672,8 +666,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <MobileUserInfo>
             <UserName>
-              <h4>{getUserDisplayName()}</h4>
-              <p>{currentUser?.email}</p>
+              <h4>{user_display_name}</h4>
+              <p>{user.email}</p>
             </UserName>
             <LogoutButton onClick={handleLogout} title="Logout">
               <FaSignOutAlt />

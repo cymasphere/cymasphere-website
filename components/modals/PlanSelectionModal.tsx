@@ -11,6 +11,7 @@ import {
   FaGift,
 } from "react-icons/fa";
 import CymasphereLogo from "../common/CymasphereLogo";
+import { Profile, SubscriptionType } from "@/utils/supabase/types";
 
 // Modal components
 const ModalOverlay = styled(motion.div)`
@@ -195,7 +196,11 @@ const BillingToggleContainer = styled.div`
   gap: 0.5rem;
 `;
 
-const BillingToggleButton = styled.button`
+interface BillingToggleButtonProps {
+  $active: boolean;
+}
+
+const BillingToggleButton = styled.button<BillingToggleButtonProps>`
   background: ${(props) =>
     props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
@@ -323,10 +328,37 @@ const PlanNameContainer = styled.div`
   }
 `;
 
+interface PlanOption {
+  name: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  lifetimePrice?: number;
+  description: string;
+  trialDays?: number;
+  features: string[];
+}
+
+interface PlanOptions {
+  basic?: PlanOption;
+  pro?: PlanOption;
+  team?: PlanOption;
+  [key: string]: PlanOption | undefined;
+}
+
+interface PlanSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: Profile;
+  onIntervalChange: (interval: SubscriptionType) => void;
+  onConfirm: (plan: string) => void;
+  formatDate?: (date: string | number | null | undefined) => string;
+  planOptions?: PlanOptions;
+}
+
 const PlanSelectionModal = ({
   isOpen,
   onClose,
-  currentSubscription,
+  profile,
   onIntervalChange,
   onConfirm,
   formatDate,
@@ -383,27 +415,29 @@ const PlanSelectionModal = ({
       ],
     },
   },
-}) => {
+}: PlanSelectionModalProps) => {
   // State for client-side rendering
   const [isMounted, setIsMounted] = useState(false);
 
   // Add local state to track the selected interval within the modal
-  const [selectedInterval, setSelectedInterval] = useState(
-    currentSubscription?.interval || "monthly"
+  const [selectedSubscription, setSelectedSubscription] = useState(
+    profile.subscription
   );
 
   // Update local state when the modal opens with the current subscription
   useEffect(() => {
-    if (isOpen && currentSubscription?.interval) {
-      setSelectedInterval(currentSubscription.interval);
+    if (isOpen && profile?.subscription) {
+      setSelectedSubscription(
+        profile.subscription === "none" ? "monthly" : profile.subscription
+      );
     }
-  }, [isOpen, currentSubscription?.interval]);
+  }, [isOpen, profile.subscription]);
 
   // Handle interval change locally and propagate to parent
-  const handleIntervalChange = (interval) => {
-    console.log(`Setting interval to: ${interval} (local modal state)`);
-    setSelectedInterval(interval);
-    onIntervalChange(interval);
+  const handleSubscriptionChange = (subscription: SubscriptionType) => {
+    console.log(`Setting subscription to: ${subscription} (local modal state)`);
+    setSelectedSubscription(subscription);
+    onIntervalChange(subscription);
   };
 
   // Improved body overflow management to prevent memory leaks
@@ -426,7 +460,7 @@ const PlanSelectionModal = ({
 
   // Helper function to format date
   const formatDateHelper = useCallback(
-    (date) => {
+    (date: string | number | null | undefined) => {
       if (!date) return "";
       return formatDate
         ? formatDate(date)
@@ -480,34 +514,34 @@ const PlanSelectionModal = ({
                 </PromotionSubtext>
               </PromotionBanner>
 
-              {currentSubscription?.interval === "yearly" && (
+              {profile.subscription === "annual" && (
                 <PlanChangeInfo>
                   <FaInfoCircle />
                   <p>
                     Your subscription is currently billed yearly. If you switch
                     to a monthly plan, the change will take effect after your
                     current billing period ends on{" "}
-                    {formatDateHelper(currentSubscription.endDate)}.
+                    {formatDateHelper(profile.subscription_expiration)}.
                   </p>
                 </PlanChangeInfo>
               )}
 
               <BillingToggleContainer>
                 <BillingToggleButton
-                  $active={selectedInterval === "monthly"}
+                  $active={selectedSubscription === "monthly"}
                   onClick={() => {
                     console.log("Monthly plan selected");
-                    handleIntervalChange("monthly");
+                    handleSubscriptionChange("monthly");
                   }}
                 >
                   Monthly
                 </BillingToggleButton>
 
                 <BillingToggleButton
-                  $active={selectedInterval === "yearly"}
+                  $active={selectedSubscription === "annual"}
                   onClick={() => {
                     console.log("Yearly plan selected");
-                    handleIntervalChange("yearly");
+                    handleSubscriptionChange("annual");
                   }}
                 >
                   Yearly
@@ -515,10 +549,10 @@ const PlanSelectionModal = ({
                 </BillingToggleButton>
 
                 <BillingToggleButton
-                  $active={selectedInterval === "lifetime"}
+                  $active={selectedSubscription === "lifetime"}
                   onClick={() => {
                     console.log("Lifetime plan selected");
-                    handleIntervalChange("lifetime");
+                    handleSubscriptionChange("lifetime");
                   }}
                 >
                   Lifetime
@@ -528,10 +562,7 @@ const PlanSelectionModal = ({
 
               <PlanGrid>
                 <PlanCard style={{ position: "relative" }}>
-                  {selectedInterval ===
-                    (currentSubscription?.isLifetime
-                      ? "lifetime"
-                      : selectedInterval) && (
+                  {selectedSubscription === profile.subscription && (
                     <CurrentPlanIndicator>
                       <FaCrown /> Current Plan
                     </CurrentPlanIndicator>
@@ -544,7 +575,11 @@ const PlanSelectionModal = ({
                             size="32px"
                             fontSize="1.4rem"
                             showText={true}
-                            onClick={(e) => e.preventDefault()}
+                            onClick={(e: React.MouseEvent) =>
+                              e.preventDefault()
+                            }
+                            href="#"
+                            className=""
                           />
                           <span className="pro-label">PRO</span>
                         </div>
@@ -554,7 +589,7 @@ const PlanSelectionModal = ({
                         {planOptions?.pro?.name || "Cymasphere Pro"}
                       </PlanNameStyled>
                     )}
-                    {selectedInterval === "monthly" && (
+                    {selectedSubscription === "monthly" && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.monthlyPrice || 8}{" "}
                         <span>/month</span>
@@ -575,17 +610,20 @@ const PlanSelectionModal = ({
                             color: "var(--text-secondary)",
                           }}
                         >
-                          {currentSubscription?.inTrial
+                          {profile.trial_expiration
                             ? `First payment: ${formatDateHelper(
-                                currentSubscription.trialEndDate
+                                profile.trial_expiration
                               )}`
                             : `Next billing: ${formatDateHelper(
-                                currentSubscription.endDate
+                                profile.subscription_expiration ||
+                                  new Date(
+                                    Date.now() + 1000 * 60 * 60 * 24 * 14
+                                  ).toISOString()
                               )}`}
                         </div>
                       </PlanPriceStyled>
                     )}
-                    {selectedInterval === "yearly" && (
+                    {selectedSubscription === "annual" && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.yearlyPrice || 69}{" "}
                         <span>/year</span>
@@ -609,23 +647,26 @@ const PlanSelectionModal = ({
                             color: "var(--text-secondary)",
                           }}
                         >
-                          {currentSubscription?.inTrial
+                          {profile.trial_expiration
                             ? `First payment: ${formatDateHelper(
-                                currentSubscription.trialEndDate
+                                profile.trial_expiration
                               )}`
                             : `Next billing: ${formatDateHelper(
-                                currentSubscription.endDate
+                                profile.subscription_expiration ||
+                                  new Date(
+                                    Date.now() + 1000 * 60 * 60 * 24 * 14
+                                  ).toISOString()
                               )}`}
                         </div>
                       </PlanPriceStyled>
                     )}
-                    {selectedInterval === "lifetime" && (
+                    {selectedSubscription === "lifetime" && (
                       <PlanPriceStyled>
                         ${planOptions?.pro?.lifetimePrice || 199}
                         <div style={{ fontSize: "1rem", marginTop: "5px" }}>
                           one-time purchase
                         </div>
-                        {currentSubscription?.isLifetime && (
+                        {profile.subscription === "lifetime" && (
                           <div
                             style={{
                               fontSize: "0.9rem",
@@ -633,8 +674,7 @@ const PlanSelectionModal = ({
                               color: "var(--text-secondary)",
                             }}
                           >
-                            Purchased:{" "}
-                            {formatDateHelper(currentSubscription.purchaseDate)}
+                            Purchased: {formatDateHelper(profile.purchaseDate)}
                           </div>
                         )}
                       </PlanPriceStyled>
@@ -669,6 +709,7 @@ const PlanSelectionModal = ({
                 Cancel
               </Button>
               <Button
+                disabled={profile.subscription === selectedSubscription}
                 onClick={() => {
                   console.log("Confirming plan: pro");
                   onConfirm("pro");
@@ -702,9 +743,9 @@ const PlanSelectionModal = ({
                   }, 600);
                 }}
               >
-                {currentSubscription?.inTrial && selectedInterval !== "lifetime"
+                {profile.trial_expiration && selectedSubscription !== "lifetime"
                   ? "Choose Plan"
-                  : selectedInterval === "lifetime"
+                  : selectedSubscription === "lifetime"
                   ? "Purchase Lifetime License"
                   : "Confirm Change"}
               </Button>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 // import EmailVerification from "@/components/EmailVerification";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
+import { Profile, SubscriptionType } from "@/utils/supabase/types";
+import { capitalize } from "@/utils/stringUtils";
+import { initiateCheckout } from "@/utils/stripe/actions";
+import { useRouter } from "next/navigation";
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -316,10 +320,12 @@ const FormTextarea = styled.textarea`
   }
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceList = styled.div`
   margin-top: 15px;
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceItem = styled.div`
   display: flex;
   align-items: center;
@@ -332,6 +338,7 @@ const DeviceItem = styled.div`
   }
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceInfo = styled.div`
   display: flex;
   align-items: center;
@@ -342,20 +349,24 @@ const DeviceInfo = styled.div`
   }
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceDetails = styled.div`
   display: flex;
   flex-direction: column;
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceName = styled.span`
   font-weight: 500;
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceLastUsed = styled.span`
   font-size: 0.8rem;
   color: var(--text-secondary);
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DeviceCount = styled.div`
   display: flex;
   align-items: center;
@@ -374,12 +385,15 @@ const DeviceCount = styled.div`
 `;
 
 function DashboardPage() {
-  const auth = useAuth() || {};
-  const { user } = auth;
+  const { user: userAuth } = useAuth();
+
+  const user = userAuth!;
+
+  const router = useRouter();
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedBillingPeriod, setSelectedBillingPeriod] = useState(
-    user?.profile?.interval || "monthly"
+    user.profile.subscription
   );
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
@@ -391,25 +405,9 @@ function DashboardPage() {
   });
 
   // Remove mock data and use actual subscription data from user
-  const [userSubscription, setUserSubscription] = useState({
-    interval: user?.profile?.interval || "monthly",
-    status: user?.profile?.is_pro || "inactive",
-    isLifetime: user?.profile?.is_lifetime || false,
-    endDate: user?.profile?.subscription_expiration
-      ? new Date(user.profile.subscription_expiration)
-      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    purchaseDate: user?.profile?.purchaseDate
-      ? new Date(user.profile.purchaseDate)
-      : new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-    yearlyExpiryDate: user?.profile?.yearlyExpiryDate
-      ? new Date(user.profile.yearlyExpiryDate)
-      : null,
-    subscriptionFailed: user?.profile?.subscriptionFailed || false,
-    inTrial: user?.profile?.inTrial || false,
-    trialEndDate: user?.profile?.trialEndDate
-      ? new Date(user.profile.trialEndDate)
-      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-  });
+  const [userSubscription, setUserSubscription] = useState<Profile>(
+    user.profile
+  );
 
   const planOptions = {
     basic: {
@@ -466,7 +464,8 @@ function DashboardPage() {
   };
 
   // Use actual connected devices if available
-  const connectedDevices = user?.profile?.connectedDevices || [
+  // const connectedDevices = user.profile.connectedDevices || [
+  const connectedDevices = [
     { id: 1, name: "MacBook Pro", lastUsed: "Last used 2 hours ago" },
     { id: 2, name: "Studio PC", lastUsed: "Last used yesterday" },
     { id: 3, name: "iPad Pro", lastUsed: "Last used 3 days ago" },
@@ -475,7 +474,7 @@ function DashboardPage() {
   const maxDevices = 5;
 
   // Helper functions
-  const formatDate = (date: Date | string | undefined) => {
+  const formatDate = (date: string | number | null | undefined) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -485,14 +484,14 @@ function DashboardPage() {
   };
 
   const isInTrialPeriod = () => {
-    if (!userSubscription.trialEndDate) return false;
-    return new Date() < new Date(userSubscription.trialEndDate);
+    if (!userSubscription.trial_expiration) return false;
+    return new Date() < new Date(userSubscription.trial_expiration);
   };
 
   const getDaysLeftInTrial = () => {
-    if (!userSubscription.trialEndDate) return 0;
+    if (!userSubscription.trial_expiration) return 0;
     const today = new Date();
-    const trialEnd = new Date(userSubscription.trialEndDate);
+    const trialEnd = new Date(userSubscription.trial_expiration);
     const diffTime = Number(trialEnd) - Number(today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
@@ -501,11 +500,15 @@ function DashboardPage() {
   // Event handlers
   const handlePlanChange = () => {
     // Reset to current interval when opening modal
-    setSelectedBillingPeriod(userSubscription.interval);
+    setSelectedBillingPeriod(
+      userSubscription.subscription === "none"
+        ? "monthly"
+        : userSubscription.subscription
+    );
     setShowPlanModal(true);
   };
 
-  const handleBillingPeriodChange = (period: string) => {
+  const handleBillingPeriodChange = (period: SubscriptionType) => {
     console.log(`Setting billing period to: ${period}`);
     setSelectedBillingPeriod(period);
   };
@@ -515,10 +518,17 @@ function DashboardPage() {
 
     // Update the user subscription to reflect the new selection
     // This would normally be done via an API call to update the subscription
-    const updatedSubscription = {
+    const updatedSubscription: Profile = {
       ...userSubscription,
-      interval: selectedBillingPeriod,
-      isLifetime: selectedBillingPeriod === "lifetime",
+      subscription: selectedBillingPeriod,
+      subscription_expiration:
+        selectedBillingPeriod === "lifetime"
+          ? null
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      trial_expiration:
+        selectedBillingPeriod === "lifetime"
+          ? null
+          : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
     // Set the state properly
@@ -528,7 +538,8 @@ function DashboardPage() {
 
     // Show confirmation message similar to Billing component
     if (
-      selectedBillingPeriod === "yearly" ||
+      user.profile.subscription === "none" ||
+      selectedBillingPeriod === "annual" ||
       selectedBillingPeriod === "lifetime"
     ) {
       setConfirmationTitle("Upgrading Your Plan");
@@ -545,8 +556,22 @@ function DashboardPage() {
     setShowConfirmationModal(true);
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
     setShowConfirmationModal(false);
+    if (selectedBillingPeriod !== "none") {
+      const { url, error } = await initiateCheckout(
+        selectedBillingPeriod,
+        user.email,
+        user.profile.customer_id || undefined,
+        undefined,
+        true
+      );
+      if (url) {
+        router.push(url);
+      } else {
+        console.error("Error initiating checkout:", error);
+      }
+    }
   };
 
   const handleContactInputChange = (
@@ -579,12 +604,16 @@ function DashboardPage() {
     setShowConfirmationModal(true);
   };
 
+  useEffect(() => {
+    console.log("userSubscription", userSubscription.subscription);
+    console.log("user.profile.subscription", user.profile.subscription);
+  }, [userSubscription, user]);
   return (
     <DashboardContainer>
       <WelcomeSection>
         <WelcomeTitle>
-          Welcome{user ? " back" : ""},{" "}
-          <span>{user?.profile?.name || "User"}</span>
+          Welcome back{" "}
+          <span>{user.profile.first_name + " " + user.profile.last_name}</span>
         </WelcomeTitle>
         <WelcomeSubtitle>
           {user
@@ -598,16 +627,15 @@ function DashboardPage() {
 
       <StatsGrid>
         <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <StatHeader>
-            <StatTitle>Current Plan</StatTitle>
-            <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
-              <FaCreditCard />
-            </StatIcon>
-          </StatHeader>
-          <StatValue>
-            {userSubscription.interval.charAt(0).toUpperCase() +
-              userSubscription.interval.slice(1)}
-          </StatValue>
+          {user.profile.subscription === selectedBillingPeriod && (
+            <StatHeader>
+              <StatTitle>Current Plan</StatTitle>
+              <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
+                <FaCreditCard />
+              </StatIcon>
+            </StatHeader>
+          )}
+          <StatValue>{capitalize(userSubscription.subscription)}</StatValue>
           <StatDescription>
             {isInTrialPeriod()
               ? `${getDaysLeftInTrial()} days left in your free trial`
@@ -649,10 +677,7 @@ function DashboardPage() {
           <CardContent>
             <SubscriptionInfo>
               <InfoLabel>Current Plan</InfoLabel>
-              <InfoValue>
-                {userSubscription.interval.charAt(0).toUpperCase() +
-                  userSubscription.interval.slice(1)}
-              </InfoValue>
+              <InfoValue>{capitalize(userSubscription.subscription)}</InfoValue>
             </SubscriptionInfo>
             {isInTrialPeriod() && (
               <SubscriptionInfo>
@@ -664,9 +689,9 @@ function DashboardPage() {
               <InfoLabel>Renewal Date</InfoLabel>
               <InfoValue>
                 {isInTrialPeriod()
-                  ? formatDate(userSubscription.trialEndDate)
-                  : userSubscription.endDate
-                  ? formatDate(userSubscription.endDate)
+                  ? formatDate(userSubscription.trial_expiration)
+                  : userSubscription.subscription_expiration
+                  ? formatDate(userSubscription.subscription_expiration)
                   : "N/A"}
               </InfoValue>
             </SubscriptionInfo>
@@ -675,7 +700,7 @@ function DashboardPage() {
               <InfoValue>
                 {isInTrialPeriod()
                   ? `$${planOptions.pro.monthlyPrice}.00 on ${formatDate(
-                      userSubscription.trialEndDate
+                      userSubscription.trial_expiration
                     )}`
                   : "$0.00"}
               </InfoValue>
@@ -714,7 +739,7 @@ function DashboardPage() {
           <PlanSelectionModal
             isOpen={showPlanModal}
             onClose={() => setShowPlanModal(false)}
-            currentSubscription={userSubscription}
+            profile={userSubscription}
             onIntervalChange={handleBillingPeriodChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
@@ -802,7 +827,9 @@ function DashboardPage() {
                   <FormLabel>Your Name</FormLabel>
                   <FormInput
                     type="text"
-                    value={user?.profile?.name || ""}
+                    value={
+                      user.profile.first_name + " " + user.profile.last_name
+                    }
                     readOnly
                     style={{
                       backgroundColor: "rgba(40, 40, 60, 0.5)",
@@ -815,7 +842,7 @@ function DashboardPage() {
                   <FormLabel>Your Email</FormLabel>
                   <FormInput
                     type="email"
-                    value={user?.email || ""}
+                    value={user.email}
                     readOnly
                     style={{
                       backgroundColor: "rgba(40, 40, 60, 0.5)",
