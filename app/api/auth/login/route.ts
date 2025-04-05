@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Profile } from "@/utils/supabase/types";
 import { createSafeServerClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
+import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
 interface ProfileWithEmail extends Profile {
   email: string;
@@ -48,6 +49,18 @@ const err = (code: string, message: string): NextResponse<LoginResponse> => {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
+  // If in build mode, return mock response
+  if (isBuildTime) {
+    // Cast to expected type
+    return NextResponse.json({
+      user: buildAuthResponse.user as unknown as ProfileWithEmail,
+      access_token: buildAuthResponse.access_token,
+      refresh_token: buildAuthResponse.refresh_token,
+      expires_at: buildAuthResponse.expires_at,
+      error: null
+    });
+  }
+
   try {
     // Initialize Supabase inside the request handler
     const supabase = await createSafeServerClient();
