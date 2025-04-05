@@ -1,8 +1,9 @@
 name: Build and Deploy
 
 on:
-  push:
-    branches: [ main ]
+  # Comment out push to main - we'll use deploy.yml for that
+  # push:
+  #   branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:

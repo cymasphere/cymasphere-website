@@ -29,19 +29,11 @@ const config: NextConfig = {
     unoptimized: true
   },
   
-  // List packages that should be treated as external in server components
-  // This is renamed from experimental.serverComponentsExternalPackages in Next.js 15
-  serverExternalPackages: ['styled-components'],
-  
   // Minimal experimental features
   experimental: {
     // Optimize CSS
     optimizeCss: true,
   },
-  
-  // Note: we can't use both transpilePackages and serverExternalPackages 
-  // for the same package, as they would conflict
-  // transpilePackages: ['styled-components'],
 };
 
 export default config;
