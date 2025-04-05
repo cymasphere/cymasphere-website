@@ -340,6 +340,25 @@ const useWindowSize = () => {
   return windowSize;
 };
 
+// Client-only component to ensure proper measurement
+const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  if (!isMounted) {
+    // Return a simple placeholder during SSR
+    return <div style={{ minHeight: "260px" }}></div>;
+  }
+  
+  return <>{children}</>;
+};
+
+// Use dynamic import with ssr: false to completely prevent server-side rendering
+const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), { ssr: false });
+
 const HeroSection = () => {
   const { t, i18n } = useTranslation();
 
@@ -389,39 +408,37 @@ const HeroSection = () => {
     if (typeof window === "undefined") return;
 
     if (wordMeasureRef.current) {
-      const widths = wordWidths;
+      const widths = {};
 
-      if (!initialWidthsMeasured) {
-        const tempDiv = wordMeasureRef.current;
-        const baseStyle = {
-          visibility: "hidden",
-          position: "absolute",
-          fontSize: "4rem",
-          whiteSpace: "nowrap",
-          padding: "0 10px",
-        };
+      const tempDiv = wordMeasureRef.current;
+      const baseStyle = {
+        visibility: "hidden",
+        position: "absolute",
+        fontSize: "4rem",
+        whiteSpace: "nowrap",
+        padding: "0 10px",
+      };
 
-        // Apply base style to the measurement div
-        Object.assign(tempDiv.style, baseStyle);
-        document.body.appendChild(tempDiv);
+      // Apply base style to the measurement div
+      Object.assign(tempDiv.style, baseStyle);
+      document.body.appendChild(tempDiv);
 
-        // Measure each word
-        titleWords.forEach((word, index) => {
-          tempDiv.textContent = word;
-          widths[index] = tempDiv.offsetWidth;
-        });
+      // Measure each word
+      titleWords.forEach((word, index) => {
+        tempDiv.textContent = word;
+        widths[index] = tempDiv.offsetWidth;
+      });
 
-        // Clean up
-        document.body.removeChild(tempDiv);
-        setWordWidths(widths);
-        setInitialWidthsMeasured(true);
-      }
+      // Clean up
+      document.body.removeChild(tempDiv);
+      setWordWidths(widths);
+      setInitialWidthsMeasured(true);
 
-      console.log("widths", widths);
       // Set initial width for the current word
       setCenterWordWidth(widths[currentWordIndex] || 120);
+      console.log("Measured widths:", widths);
     }
-  }, []);
+  }, [titleWords, i18n.language]); // Re-measure when language changes
 
   // ROBUST WORD CYCLING IMPLEMENTATION
   useEffect(() => {
@@ -449,13 +466,16 @@ const HeroSection = () => {
     };
   }, [titleWords.length]); // Only depend on the length of titleWords, not the array itself
 
-  // Update center word width whenever the word changes
+  // Update center word width whenever the word changes - make this more robust
   useEffect(() => {
-    if (currentWordIndex !== null && initialWidthsMeasured) {
+    if (typeof window === "undefined") return;
+    
+    if (wordWidths && Object.keys(wordWidths).length > 0) {
       const newWidth = wordWidths[currentWordIndex] || 120;
+      console.log(`Updating center word width for word index ${currentWordIndex} to ${newWidth}px`);
       setCenterWordWidth(newWidth);
     }
-  }, [currentWordIndex, initialWidthsMeasured, wordWidths]);
+  }, [currentWordIndex, wordWidths]);
 
   // Function to get color for each title word
   const getWordColor = useCallback((index) => {
@@ -508,24 +528,36 @@ const HeroSection = () => {
     { x: 0, y: 0, delay: 1.5 }, // Third position offset - delay by 1.5s
   ]);
 
-  // Add this state to track outer word positions
-  // const [outerWordsOffsets, setOuterWordsOffsets] = useState({
-  //   left: 0,
-  //   right: 0,
-  // });
+  // Add a specific effect to force re-measurement after client-side mounting
+  useEffect(() => {
+    // This effect will run after the component has mounted on the client side
+    if (typeof window !== "undefined" && wordMeasureRef.current) {
+      // Force re-measurement by triggering a measurement cycle
+      const widths = {};
+      
+      const tempDiv = wordMeasureRef.current;
+      const baseStyle = {
+        visibility: "hidden",
+        position: "absolute",
+        fontSize: "4rem",
+        whiteSpace: "nowrap",
+        padding: "0 10px",
+      };
 
-  // // Measure word widths and update offsets when words change
-  // useEffect(() => {
-  //   // Get approximate width based on the length of the word
-  //   const newWidth = (currentWord) => Math.max(100, currentWord.length * 22);
-  //   const currentWordWidth = newWidth(titleWords[currentWordIndex]);
+      Object.assign(tempDiv.style, baseStyle);
+      document.body.appendChild(tempDiv);
 
-  //   // Calculate new offsets
-  //   setOuterWordsOffsets({
-  //     left: -(currentWordWidth / 2) - 20, // Add some padding
-  //     right: currentWordWidth / 2 + 20, // Add some padding
-  //   });
-  // }, [currentWordIndex, titleWords]);
+      titleWords.forEach((word, index) => {
+        tempDiv.textContent = word;
+        widths[index] = tempDiv.offsetWidth;
+      });
+
+      document.body.removeChild(tempDiv);
+      setWordWidths(widths);
+      setCenterWordWidth(widths[currentWordIndex] || 120);
+      console.log("Client-side re-measurement complete:", widths);
+    }
+  }, []); // Empty deps array means this runs once after mount
 
   // Use the synth in a way consistent with the Try Me section
   useEffect(() => {
@@ -937,114 +969,117 @@ const HeroSection = () => {
           }}
         />
 
-        <HeroTitle
-          style={{
-            position: "relative",
-            minHeight: isMobile ? "260px" : "100px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          {/* Title container */}
-          <div
+        <ClientOnly>
+          <HeroTitle
             style={{
               position: "relative",
-              display: "inline-block",
-              textAlign: "center",
-              width: "100%",
+              minHeight: isMobile ? "260px" : "100px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
-            className="title-container"
           >
-            {/* Left word - Intelligent */}
-            <motion.span
-              animate={{
-                x: !isMobile ? -(centerWordWidth / 2) - 24 : 0,
-                opacity: 1,
-              }}
-              transition={{
-                type: "tween",
-                ease: "easeInOut",
-                duration: 0.5,
-              }}
-              style={{
-                position: !isMobile ? "absolute" : "relative",
-                right: !isMobile ? "50%" : "auto",
-                color: "white",
-                whiteSpace: "nowrap",
-                fontSize: !isMobile ? "4rem" : "3rem",
-                display: !isMobile ? "inline-block" : "block",
-                textAlign: !isMobile ? "right" : "center",
-                marginBottom: !isMobile ? "0" : "1.5rem",
-                lineHeight: isMobile ? "1.2" : "inherit",
-                fontWeight: "bold",
-              }}
-            >
-              {t("hero.titlePartA", "Intelligent")}
-            </motion.span>
-
-            {/* Center changing word - using a simpler approach */}
+            {/* Title container */}
             <div
               style={{
+                position: "relative",
                 display: "inline-block",
-                position: !isMobile ? "relative" : "static",
-                minWidth: "120px",
-                padding: "0 10px",
                 textAlign: "center",
-                marginBottom: !isMobile ? "0" : "1.5rem",
-                width: !isMobile ? "auto" : "100%",
+                width: "100%",
               }}
+              className="title-container"
             >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={currentWordIndex}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    duration: 0.4,
-                    ease: "easeInOut",
-                  }}
-                  style={{
-                    display: "inline-block",
-                    color: getWordColor(currentWordIndex),
-                    fontSize: !isMobile ? "4rem" : "3rem",
-                    lineHeight: isMobile ? "1.2" : "inherit",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {currentWord}
-                </motion.span>
-              </AnimatePresence>
-            </div>
+              {/* Left word - Intelligent */}
+              <motion.span
+                animate={{
+                  x: !isMobile ? -(centerWordWidth / 2) - 24 : 0,
+                  opacity: 1,
+                }}
+                transition={{
+                  type: "tween",
+                  ease: "easeInOut",
+                  duration: 0.5,
+                }}
+                style={{
+                  position: !isMobile ? "absolute" : "relative",
+                  right: !isMobile ? "50%" : "auto",
+                  color: "white",
+                  whiteSpace: "nowrap",
+                  fontSize: !isMobile ? "4rem" : "3rem",
+                  display: !isMobile ? "inline-block" : "block",
+                  textAlign: !isMobile ? "right" : "center",
+                  marginBottom: !isMobile ? "0" : "1.5rem",
+                  lineHeight: isMobile ? "1.2" : "inherit",
+                  fontWeight: "bold",
+                }}
+              >
+                {t("hero.titlePartA", "Intelligent")}
+              </motion.span>
 
-            {/* Right word - Creation */}
-            <motion.span
-              animate={{
-                x: !isMobile ? centerWordWidth / 2 + 24 : 0,
-                opacity: 1,
-              }}
-              transition={{
-                type: "tween",
-                ease: "easeInOut",
-                duration: 0.5,
-              }}
-              style={{
-                position: !isMobile ? "absolute" : "relative",
-                left: !isMobile ? "50%" : "auto",
-                color: "white",
-                whiteSpace: "nowrap",
-                fontSize: !isMobile ? "4rem" : "3rem",
-                display: !isMobile ? "inline-block" : "block",
-                textAlign: !isMobile ? "left" : "center",
-                lineHeight: isMobile ? "1.2" : "inherit",
-                fontWeight: "bold",
-              }}
-            >
-              {t("hero.titlePartB", "Creation")}
-            </motion.span>
-          </div>
-        </HeroTitle>
+              {/* Center changing word - using a simpler approach */}
+              <div
+                style={{
+                  display: "inline-block",
+                  position: !isMobile ? "relative" : "static",
+                  minWidth: "120px",
+                  padding: "0 10px",
+                  textAlign: "center",
+                  marginBottom: !isMobile ? "0" : "1.5rem",
+                  width: !isMobile ? "auto" : "100%",
+                }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={currentWordIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{
+                      duration: 0.4,
+                      ease: "easeInOut",
+                    }}
+                    style={{
+                      display: "inline-block",
+                      color: getWordColor(currentWordIndex),
+                      fontSize: !isMobile ? "4rem" : "3rem",
+                      lineHeight: isMobile ? "1.2" : "inherit",
+                      fontWeight: "bold",
+                    }}
+                    ref={centerWordRef}
+                  >
+                    {currentWord}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+
+              {/* Right word - Creation */}
+              <motion.span
+                animate={{
+                  x: !isMobile ? centerWordWidth / 2 + 24 : 0,
+                  opacity: 1,
+                }}
+                transition={{
+                  type: "tween",
+                  ease: "easeInOut",
+                  duration: 0.5,
+                }}
+                style={{
+                  position: !isMobile ? "absolute" : "relative",
+                  left: !isMobile ? "50%" : "auto",
+                  color: "white",
+                  whiteSpace: "nowrap",
+                  fontSize: !isMobile ? "4rem" : "3rem",
+                  display: !isMobile ? "inline-block" : "block",
+                  textAlign: !isMobile ? "left" : "center",
+                  lineHeight: isMobile ? "1.2" : "inherit",
+                  fontWeight: "bold",
+                }}
+              >
+                {t("hero.titlePartB", "Creation")}
+              </motion.span>
+            </div>
+          </HeroTitle>
+        </ClientOnly>
 
         <HeroSubtitle
           initial={{ opacity: 0 }}
