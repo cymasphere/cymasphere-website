@@ -584,55 +584,54 @@ jobs:
           if ! curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
             echo "WEBSITE NOT ACCESSIBLE! Forcing emergency server deployment..."
             
-            # Create the emergency server content first
-            cat > emergency.js << 'EOFSERVER'
-            const http = require('http');
-            const server = http.createServer((req, res) => {
-              res.writeHead(200, {'Content-Type': 'text/html'});
-              res.end(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <title>Cymasphere - Direct Emergency Server</title>
-                  <style>
-                    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                    .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-                  </style>
-                </head>
-                <body>
-                  <h1>Cymasphere Website</h1>
-                  <div class="alert">
-                    <p><strong>Direct Emergency Mode:</strong> The site is running on a direct emergency server.</p>
-                    <p>Server time: \${new Date().toISOString()}</p>
-                  </div>
-                  <p>Our team has been notified and is working to restore full functionality.</p>
-                </body>
-                </html>
-              `);
-            });
-            server.listen(3000, '0.0.0.0', () => {
-              console.log('DIRECT EMERGENCY SERVER running at http://0.0.0.0:3000');
-            });
-            EOFSERVER
+            # Create emergency server file line by line with echo
+            echo "const http = require('http');" > emergency.js
+            echo "const server = http.createServer((req, res) => {" >> emergency.js
+            echo "  res.writeHead(200, {'Content-Type': 'text/html'});" >> emergency.js
+            echo "  res.end(\`" >> emergency.js
+            echo "    <!DOCTYPE html>" >> emergency.js
+            echo "    <html>" >> emergency.js
+            echo "    <head>" >> emergency.js
+            echo "      <title>Cymasphere - Direct Emergency Server</title>" >> emergency.js
+            echo "      <style>" >> emergency.js
+            echo "        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }" >> emergency.js
+            echo "        .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }" >> emergency.js
+            echo "      </style>" >> emergency.js
+            echo "    </head>" >> emergency.js
+            echo "    <body>" >> emergency.js
+            echo "      <h1>Cymasphere Website</h1>" >> emergency.js
+            echo "      <div class=\"alert\">" >> emergency.js
+            echo "        <p><strong>Direct Emergency Mode:</strong> The site is running on a direct emergency server.</p>" >> emergency.js
+            echo "        <p>Server time: \${new Date().toISOString()}</p>" >> emergency.js
+            echo "      </div>" >> emergency.js
+            echo "      <p>Our team has been notified and is working to restore full functionality.</p>" >> emergency.js
+            echo "    </body>" >> emergency.js
+            echo "    </html>" >> emergency.js
+            echo "  \`);" >> emergency.js
+            echo "});" >> emergency.js
+            echo "" >> emergency.js
+            echo "server.listen(3000, '0.0.0.0', () => {" >> emergency.js
+            echo "  console.log('DIRECT EMERGENCY SERVER running at http://0.0.0.0:3000');" >> emergency.js
+            echo "});" >> emergency.js
             
             # Copy the emergency server to the remote machine
             scp emergency.js ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/emergency.js
             
-            # Run commands on the remote machine without heredoc nesting
-            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "
+            # Run commands on the remote machine without heredoc
+            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "\
               # Stop any existing containers
-              sudo docker stop cymasphere-container || true
-              sudo docker rm cymasphere-container || true
+              sudo docker stop cymasphere-container || true; \
+              sudo docker rm cymasphere-container || true; \
               
               # Run with node directly
-              sudo docker run -d --restart always --name cymasphere-container \\
-                -p 80:3000 \\
-                -v \$(pwd)/emergency.js:/app/server.js \\
-                node:slim node /app/server.js
+              sudo docker run -d --restart always --name cymasphere-container \
+                -p 80:3000 \
+                -v \$(pwd)/emergency.js:/app/server.js \
+                node:slim node /app/server.js; \
                 
               # Verify it's running
-              sudo docker ps -a
-              sudo docker logs cymasphere-container
+              sudo docker ps -a; \
+              sudo docker logs cymasphere-container; \
             "
             
             echo "Direct emergency server deployed."
