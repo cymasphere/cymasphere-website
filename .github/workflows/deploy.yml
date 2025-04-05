@@ -65,7 +65,7 @@ jobs:
 
       - name: Create Dockerfile for Next.js
         run: |
-          cat > Dockerfile << EOL
+          cat > Dockerfile << 'DOCKERFILE_EOF'
           FROM oven/bun:1 as base
 
           # Install dependencies only when needed
@@ -93,12 +93,12 @@ jobs:
           RUN ./build-local.sh
 
           # Create a simple script to check and list files
-          RUN echo "#!/bin/sh" > /app/list_files.sh && \\
-              echo "echo 'Files in public:' && ls -la /app/public/ || echo 'No public directory'" >> /app/list_files.sh && \\
-              echo "echo 'Files in .next:' && ls -la /app/.next/ || echo 'No .next directory'" >> /app/list_files.sh && \\
-              echo "echo 'Files in .next/standalone:' && ls -la /app/.next/standalone/ || echo 'No standalone directory'" >> /app/list_files.sh && \\
-              echo "echo 'Files in .next/static:' && ls -la /app/.next/static/ || echo 'No static directory'" >> /app/list_files.sh && \\
-              echo "echo 'Files in .next/server/pages:' && ls -la /app/.next/server/pages/ || echo 'No pages directory'" >> /app/list_files.sh && \\
+          RUN echo '#!/bin/sh' > /app/list_files.sh && \
+              echo 'echo "Files in public:" && ls -la /app/public/ || echo "No public directory"' >> /app/list_files.sh && \
+              echo 'echo "Files in .next:" && ls -la /app/.next/ || echo "No .next directory"' >> /app/list_files.sh && \
+              echo 'echo "Files in .next/standalone:" && ls -la /app/.next/standalone/ || echo "No standalone directory"' >> /app/list_files.sh && \
+              echo 'echo "Files in .next/static:" && ls -la /app/.next/static/ || echo "No static directory"' >> /app/list_files.sh && \
+              echo 'echo "Files in .next/server/pages:" && ls -la /app/.next/server/pages/ || echo "No pages directory"' >> /app/list_files.sh && \
               chmod +x /app/list_files.sh
 
           # Run it to debug what files actually exist
@@ -115,27 +115,27 @@ jobs:
           RUN adduser --system --uid 1001 nextjs
 
           # Create all required directories
-          RUN mkdir -p /app/.next/static && \\
-              mkdir -p /app/.next/server/pages && \\
-              mkdir -p /app/public && \\
+          RUN mkdir -p /app/.next/static && \
+              mkdir -p /app/.next/server/pages && \
+              mkdir -p /app/public && \
               mkdir -p /app/server/pages
           
           # Create default files for the server
-          RUN echo "<html><body><h1>Server Error (500)</h1></body></html>" > /app/server/pages/500.html && \\
-              echo "<html><body><h1>Not Found (404)</h1></body></html>" > /app/server/pages/404.html && \\
-              echo "// Load the Next.js server, or fallback to a basic HTTP server if it fails\ntry {\n  console.log('Starting Next.js server on port 3000');\n  require('./server/app-server.js');\n} catch (e) {\n  console.error('Failed to start Next.js server:', e);\n  console.log('Starting fallback HTTP server on port 3000');\n  require('http').createServer((req, res) => {\n    res.writeHead(200, {'Content-Type': 'text/html'});\n    res.end('<h1>Next.js Server Running</h1><p>The application server is running but there might be configuration issues. Check container logs.</p>');\n  }).listen(3000, '0.0.0.0');\n}" > /app/server.js
+          RUN echo "<html><body><h1>Server Error (500)</h1></body></html>" > /app/server/pages/500.html && \
+              echo "<html><body><h1>Not Found (404)</h1></body></html>" > /app/server/pages/404.html && \
+              echo "// Load the Next.js server, or fallback to a basic HTTP server if it fails\ntry {\n  console.log('Starting Next.js server on port 3000');\n  require('./node_modules/next/dist/server/next-server.js');\n} catch (e) {\n  console.error('Failed to start Next.js server:', e);\n  console.log('Starting fallback HTTP server on port 3000');\n  require('http').createServer((req, res) => {\n    res.writeHead(200, {'Content-Type': 'text/html'});\n    res.end('<h1>Next.js Server Running</h1><p>The application server is running but there might be configuration issues. Check container logs.</p>');\n  }).listen(3000, '0.0.0.0');\n}" > /app/server.js
 
           # Create a script to safely copy files between stages
           # Copy server.js from builder if it exists (using shell copy instead of COPY)
-          RUN echo "#!/bin/sh" > /tmp/copy_files.sh && \\
-              echo "echo 'Copying files from builder to runner...'" >> /tmp/copy_files.sh && \\
-              echo "[ -d '/builder/app/public' ] && cp -r /builder/app/public/* /app/public/ || echo 'No public directory to copy'" >> /tmp/copy_files.sh && \\
-              echo "[ -d '/builder/app/.next/standalone' ] && cp -r /builder/app/.next/standalone/* /app/ || echo 'No standalone directory to copy'" >> /tmp/copy_files.sh && \\
-              echo "[ -d '/builder/app/.next/static' ] && mkdir -p /app/.next/static && cp -r /builder/app/.next/static/* /app/.next/static/ || echo 'No static directory to copy'" >> /tmp/copy_files.sh && \\
-              echo "[ -f '/builder/app/.next/server/pages/500.html' ] && cp /builder/app/.next/server/pages/500.html /app/server/pages/500.html || echo 'No 500.html to copy'" >> /tmp/copy_files.sh && \\
-              echo "[ -f '/builder/app/.next/server/pages/404.html' ] && cp /builder/app/.next/server/pages/404.html /app/server/pages/404.html || echo 'No 404.html to copy'" >> /tmp/copy_files.sh && \\
-              echo "[ -f '/builder/app/server.js' ] && cp /builder/app/server.js /app/server.js || echo 'No server.js to copy'" >> /tmp/copy_files.sh && \\
-              echo "echo 'Files successfully copied!'" >> /tmp/copy_files.sh && \\
+          RUN echo '#!/bin/sh' > /tmp/copy_files.sh && \
+              echo 'echo "Copying files from builder to runner..."' >> /tmp/copy_files.sh && \
+              echo '[ -d "/builder/app/public" ] && cp -r /builder/app/public/* /app/public/ || echo "No public directory to copy"' >> /tmp/copy_files.sh && \
+              echo '[ -d "/builder/app/.next/standalone" ] && cp -r /builder/app/.next/standalone/* /app/ || echo "No standalone directory to copy"' >> /tmp/copy_files.sh && \
+              echo '[ -d "/builder/app/.next/static" ] && mkdir -p /app/.next/static && cp -r /builder/app/.next/static/* /app/.next/static/ || echo "No static directory to copy"' >> /tmp/copy_files.sh && \
+              echo '[ -f "/builder/app/.next/server/pages/500.html" ] && cp /builder/app/.next/server/pages/500.html /app/server/pages/500.html || echo "No 500.html to copy"' >> /tmp/copy_files.sh && \
+              echo '[ -f "/builder/app/.next/server/pages/404.html" ] && cp /builder/app/.next/server/pages/404.html /app/server/pages/404.html || echo "No 404.html to copy"' >> /tmp/copy_files.sh && \
+              echo '[ -f "/builder/app/server.js" ] && cp /builder/app/server.js /app/server.js || echo "No server.js to copy"' >> /tmp/copy_files.sh && \
+              echo 'echo "Files successfully copied!"' >> /tmp/copy_files.sh && \
               chmod +x /tmp/copy_files.sh
 
           # Use a helper container to copy files
@@ -150,7 +150,7 @@ jobs:
           ENV HOSTNAME "0.0.0.0"
 
           CMD ["bun", "server.js"]
-          EOL
+          DOCKERFILE_EOF
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
