@@ -23,6 +23,12 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+        
+      - name: Type check
+        run: bun run tsc --noEmit
+      
+      - name: Lint
+        run: bun run lint -- --fix
 
       - name: Build Next.js application
         run: bun run build
@@ -60,6 +66,11 @@ jobs:
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
+          
+          # Setup environment variables for build
+          ENV NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          
           RUN bun run build
 
           # Production image, copy all the files and run next
@@ -93,6 +104,15 @@ jobs:
 
           const config: NextConfig = {
             output: 'standalone',
+            // Preserve existing configuration while adding standalone output
+            experimental: {
+              optimizeCss: true,
+              serverComponentsExternalPackages: ['styled-components'],
+            },
+            transpilePackages: ['styled-components'],
+            compiler: {
+              styledComponents: true,
+            }
           };
 
           export default config;
