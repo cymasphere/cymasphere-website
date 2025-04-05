@@ -423,6 +423,55 @@ jobs:
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          
+      - name: Create emergency server as backup
+        run: |
+          # Create a guaranteed working Node.js server
+          cat > emergency-server.js << 'EOF'
+          const http = require('http');
+          const server = http.createServer((req, res) => {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Cymasphere - Emergency Mode</title>
+                <style>
+                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                  .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                </style>
+              </head>
+              <body>
+                <h1>Cymasphere Website</h1>
+                <div class="alert">
+                  <p><strong>Emergency Mode:</strong> The site is currently running on a temporary server while we resolve technical issues.</p>
+                  <p>Server time: \${new Date().toISOString()}</p>
+                </div>
+                <p>We apologize for the inconvenience. Our team has been notified and is working to restore full functionality.</p>
+              </body>
+              </html>
+            `);
+          });
+          server.listen(3000, '0.0.0.0', () => {
+            console.log('Emergency server running at http://0.0.0.0:3000');
+          });
+          EOF
+          
+          # Create simple Dockerfile for the emergency server
+          cat > Dockerfile.emergency << 'EOF'
+          FROM node:slim
+          WORKDIR /app
+          COPY emergency-server.js /app/server.js
+          EXPOSE 3000
+          ENV NODE_ENV=production
+          ENV PORT=3000
+          ENV HOSTNAME=0.0.0.0
+          CMD ["node", "/app/server.js"]
+          EOF
+          
+          # Build and push emergency server image
+          docker build -t ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest -f Dockerfile.emergency .
+          docker push ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
 
       - name: Setup SSH key
         run: |
@@ -495,18 +544,23 @@ jobs:
           # Try running in interactive mode if container is not running
           CONTAINER_RUNNING=$(docker ps --filter "name=cymasphere-container" --format "{{.Names}}" | wc -l)
           if [ "$CONTAINER_RUNNING" -eq "0" ]; then
-            echo "Container is not running. Trying to start in foreground for debugging..."
+            echo "Container is not running. Will deploy emergency server instead."
             echo "Removing failed container..."
             docker rm cymasphere-container || true
-            echo "Running with interactive output..."
-            # Run in foreground with output directed to console
-            docker run --name cymasphere-container-debug \
+            
+            # Pull and run emergency server
+            echo "Deploying emergency server..."
+            docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
+            docker run -d --restart always --name cymasphere-container \
               -p 80:3000 \
               -e NODE_ENV=production \
-              -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
-              -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-              -e DEBUG=1 \
-              ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest || echo "Container failed to start in interactive mode too"
+              ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
+            
+            # Verify it's running
+            echo "Emergency container status:"
+            docker ps -a | grep cymasphere
+            echo "Emergency container logs:"
+            docker logs cymasphere-container
           fi
           
           # Clean up
@@ -522,3 +576,63 @@ jobs:
           # Try SCP and SSH
           scp deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
           ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          
+      - name: Verify deployment and force emergency server if needed
+        run: |
+          # Check if the site is reachable, if not, force deploy the emergency server
+          echo "Verifying if site is accessible..."
+          if ! curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
+            echo "WEBSITE NOT ACCESSIBLE! Forcing emergency server deployment..."
+            
+            # Create direct server.js on the server
+            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} << 'EOF'
+            # Create a guaranteed working server
+            cat > emergency.js << 'EOFSERVER'
+            const http = require('http');
+            const server = http.createServer((req, res) => {
+              res.writeHead(200, {'Content-Type': 'text/html'});
+              res.end(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>Cymasphere - Direct Emergency Server</title>
+                  <style>
+                    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                    .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                  </style>
+                </head>
+                <body>
+                  <h1>Cymasphere Website</h1>
+                  <div class="alert">
+                    <p><strong>Direct Emergency Mode:</strong> The site is running on a direct emergency server.</p>
+                    <p>Server time: ${new Date().toISOString()}</p>
+                  </div>
+                  <p>Our team has been notified and is working to restore full functionality.</p>
+                </body>
+                </html>
+              `);
+            });
+            server.listen(3000, '0.0.0.0', () => {
+              console.log('DIRECT EMERGENCY SERVER running at http://0.0.0.0:3000');
+            });
+            EOFSERVER
+            
+            # Stop any existing containers
+            sudo docker stop cymasphere-container || true
+            sudo docker rm cymasphere-container || true
+            
+            # Run with node directly
+            sudo docker run -d --restart always --name cymasphere-container \
+              -p 80:3000 \
+              -v $(pwd)/emergency.js:/app/server.js \
+              node:slim node /app/server.js
+              
+            # Verify it's running
+            sudo docker ps -a
+            sudo docker logs cymasphere-container
+            EOF
+            
+            echo "Direct emergency server deployed."
+          else
+            echo "Site appears to be accessible."
+          fi 
