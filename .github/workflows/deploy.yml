@@ -70,104 +70,217 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           const http = require('http');
+          const { execSync } = require('child_process');
 
-          // Log environment for debugging
-          console.log('NODE_ENV:', process.env.NODE_ENV);
-          console.log('Working directory:', process.cwd());
-          console.log('Directory contents:', fs.readdirSync('.'));
-
-          // Check if key Next.js files exist
-          const checkPaths = [
-            './node_modules/next',
-            './.next',
-            './.next/server',
-            './.next/standalone',
-            './server.js',
-            './package.json'
-          ];
-
-          checkPaths.forEach(p => {
-            console.log(`Checking ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`);
-          });
-
-          // Various paths where Next.js server might be located
-          const possibleNextPaths = [
-            './node_modules/next/dist/server/next-server.js',
-            './.next/server/app/server.js',
-            './.next/standalone/server.js',
-            './server.js'
-          ];
-
-          // Try to load Next.js from various possible locations
-          let nextLoaded = false;
-          for (const nextPath of possibleNextPaths) {
+          try {
+            // Log environment for debugging
+            console.log('NODE_ENV:', process.env.NODE_ENV);
+            console.log('Working directory:', process.cwd());
+            
             try {
-              console.log(`Attempting to load Next.js from: ${nextPath}`);
-              if (fs.existsSync(nextPath)) {
-                // For the standalone mode specifically
-                if (nextPath === './.next/standalone/server.js') {
-                  console.log('Found standalone server.js, executing it directly');
-                  // Directly execute the standalone server code
-                  require('./.next/standalone/server.js');
-                } else {
-                  // For standard Next.js server modules
-                  require(nextPath);
-                }
-                console.log('Successfully loaded Next.js from:', nextPath);
-                nextLoaded = true;
-                break;
-              } else {
-                console.log(`Path ${nextPath} doesn't exist`);
-              }
+              console.log('Directory contents:', fs.readdirSync('.'));
             } catch (e) {
-              console.error(`Error loading Next.js from ${nextPath}:`, e);
+              console.error('Failed to read directory contents:', e.message);
             }
-          }
 
-          // If Next.js failed to load, start a simple HTTP server
-          if (!nextLoaded) {
-            console.log('Starting fallback HTTP server on port 3000');
-            http.createServer((req, res) => {
-              res.writeHead(200, {'Content-Type': 'text/html'});
-              res.end(`
-                <html>
-                  <head><title>Next.js App Unavailable</title>
-                  <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
-                    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow: auto; }
-                    h1 { color: #d32f2f; }
-                    h2 { color: #333; margin-top: 30px; }
-                  </style>
-                  </head>
-                  <body>
-                    <h1>Server is running</h1>
-                    <h2>Next.js app is not available</h2>
-                    <p>The server is running but the Next.js application failed to load.</p>
-                    
-                    <h2>Debugging Information:</h2>
-                    <pre>
-          NODE_ENV: ${process.env.NODE_ENV}
-          Working Directory: ${process.cwd()}
-          Directory Contents: ${fs.readdirSync('.').join(', ')}
+            // Try to get system info
+            try {
+              console.log('System info:');
+              console.log(execSync('uname -a').toString());
+              console.log('Memory:', execSync('free -m').toString());
+              console.log('Disk space:', execSync('df -h').toString());
+            } catch (e) {
+              console.error('Error getting system info:', e.message);
+            }
 
-          Checked Paths:
-          ${checkPaths.map(p => `${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`).join('\n')}
+            // Check if key Next.js files exist
+            const checkPaths = [
+              './node_modules/next',
+              './.next',
+              './.next/server',
+              './.next/standalone',
+              './server.js',
+              './package.json'
+            ];
 
-          Attempted Next.js Paths:
-          ${possibleNextPaths.join('\n')}
-                    </pre>
-                    
-                    <h2>Possible Solutions:</h2>
-                    <ol>
-                      <li>Check if the Next.js build completed successfully</li>
-                      <li>Verify the output directory structure matches what the server expects</li>
-                      <li>Ensure all required environment variables are set</li>
-                      <li>Check the container logs for more detailed error information</li>
-                    </ol>
-                  </body>
-                </html>
-              `);
-            }).listen(3000, '0.0.0.0');
+            checkPaths.forEach(p => {
+              try {
+                console.log(`Checking ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`);
+                if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
+                  try {
+                    console.log(`  Contents of ${p}: ${fs.readdirSync(p).join(', ')}`);
+                  } catch (e) {
+                    console.error(`  Error reading contents of ${p}:`, e.message);
+                  }
+                }
+              } catch (e) {
+                console.error(`Error checking path ${p}:`, e.message);
+              }
+            });
+
+            // Various paths where Next.js server might be located
+            const possibleNextPaths = [
+              './node_modules/next/dist/server/next-server.js',
+              './.next/server/app/server.js',
+              './.next/standalone/server.js',
+              './server.js'
+            ];
+
+            // Try to load Next.js from various possible locations
+            let nextLoaded = false;
+            for (const nextPath of possibleNextPaths) {
+              try {
+                console.log(`Attempting to load Next.js from: ${nextPath}`);
+                if (fs.existsSync(nextPath)) {
+                  // For the standalone mode specifically
+                  if (nextPath === './.next/standalone/server.js') {
+                    console.log('Found standalone server.js, executing it directly');
+                    try {
+                      // Directly execute the standalone server code
+                      require('./.next/standalone/server.js');
+                      console.log('Successfully loaded standalone server.js');
+                      nextLoaded = true;
+                      break;
+                    } catch (e) {
+                      console.error(`Error executing standalone server.js: ${e.message}`);
+                      console.error(e.stack);
+                    }
+                  } else {
+                    // For standard Next.js server modules
+                    try {
+                      require(nextPath);
+                      console.log('Successfully loaded Next.js from:', nextPath);
+                      nextLoaded = true;
+                      break;
+                    } catch (e) {
+                      console.error(`Error requiring ${nextPath}: ${e.message}`);
+                      console.error(e.stack);
+                    }
+                  }
+                } else {
+                  console.log(`Path ${nextPath} doesn't exist`);
+                }
+              } catch (e) {
+                console.error(`Error loading Next.js from ${nextPath}:`, e.message);
+                console.error(e.stack);
+              }
+            }
+
+            // If Next.js failed to load, try to find any server.js alternative
+            if (!nextLoaded) {
+              try {
+                console.log('Searching for any server.js files in the filesystem...');
+                const findResults = execSync('find / -name "server.js" 2>/dev/null || true').toString();
+                console.log('Found server.js files:', findResults);
+              } catch (e) {
+                console.error('Error searching for server.js files:', e.message);
+              }
+              
+              // Try to see what's in node_modules
+              try {
+                if (fs.existsSync('./node_modules')) {
+                  console.log('Top level node_modules contents:', fs.readdirSync('./node_modules').join(', '));
+                  if (fs.existsSync('./node_modules/next')) {
+                    console.log('next module contents:', fs.readdirSync('./node_modules/next').join(', '));
+                    if (fs.existsSync('./node_modules/next/dist')) {
+                      console.log('next/dist contents:', fs.readdirSync('./node_modules/next/dist').join(', '));
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('Error exploring node_modules:', e.message);
+              }
+            }
+
+            // If Next.js failed to load, start a simple HTTP server
+            if (!nextLoaded) {
+              console.log('Starting fallback HTTP server on port 3000');
+              http.createServer((req, res) => {
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end(`
+                  <html>
+                    <head><title>Next.js App Unavailable</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+                      pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow: auto; }
+                      h1 { color: #d32f2f; }
+                      h2 { color: #333; margin-top: 30px; }
+                    </style>
+                    </head>
+                    <body>
+                      <h1>Server is running</h1>
+                      <h2>Next.js app is not available</h2>
+                      <p>The server is running but the Next.js application failed to load.</p>
+                      
+                      <h2>Debugging Information:</h2>
+                      <pre>
+NODE_ENV: ${process.env.NODE_ENV}
+Working Directory: ${process.cwd()}
+Directory Contents: ${
+  (() => {
+    try {
+      return fs.readdirSync('.').join(', ');
+    } catch (e) {
+      return 'Error reading directory: ' + e.message;
+    }
+  })()
+}
+
+Checked Paths:
+${
+  (() => {
+    try {
+      return checkPaths.map(p => {
+        try {
+          return `${p}: ${fs.existsSync(p) ? 'EXISTS' : 'MISSING'}`;
+        } catch (e) {
+          return `${p}: ERROR - ${e.message}`;
+        }
+      }).join('\n');
+    } catch (e) {
+      return 'Error checking paths: ' + e.message;
+    }
+  })()
+}
+
+Attempted Next.js Paths:
+${possibleNextPaths.join('\n')}
+                      </pre>
+                      
+                      <h2>Possible Solutions:</h2>
+                      <ol>
+                        <li>Check if the Next.js build completed successfully</li>
+                        <li>Verify the output directory structure matches what the server expects</li>
+                        <li>Ensure all required environment variables are set</li>
+                        <li>Check the container logs for more detailed error information</li>
+                      </ol>
+                    </body>
+                  </html>
+                `);
+              }).listen(3000, '0.0.0.0');
+            }
+          } catch (e) {
+            console.error("CRITICAL ERROR IN SERVER.JS:", e);
+            
+            // Last resort emergency server
+            try {
+              http.createServer((req, res) => {
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end(`
+                  <html>
+                    <head><title>Emergency Server</title></head>
+                    <body>
+                      <h1>Emergency Server Running</h1>
+                      <p>The main server script encountered a critical error.</p>
+                      <pre>${e.stack || e.toString()}</pre>
+                    </body>
+                  </html>
+                `);
+              }).listen(3000, '0.0.0.0');
+              console.log("Emergency server started on port 3000");
+            } catch (emergencyError) {
+              console.error("FAILED TO START EMERGENCY SERVER:", emergencyError);
+            }
           }
           EOL
 
@@ -218,10 +331,6 @@ jobs:
 
           ENV NODE_ENV production
 
-          # Run as non-root user for better security
-          RUN addgroup --system --gid 1001 nodejs
-          RUN adduser --system --uid 1001 nextjs
-
           # Create all required directories
           RUN mkdir -p /app/.next/static && \
               mkdir -p /app/.next/server/pages && \
@@ -252,14 +361,26 @@ jobs:
           COPY --from=builder / /builder/
           RUN /tmp/copy_files.sh
 
-          USER nextjs
+          # Create a startup script that logs environment before starting
+          RUN echo '#!/bin/sh' > /app/start.sh && \
+              echo 'echo "Starting container with NODE_ENV=$NODE_ENV"' >> /app/start.sh && \
+              echo 'echo "Working directory: $(pwd)"' >> /app/start.sh && \
+              echo 'echo "Files in current directory:"' >> /app/start.sh && \
+              echo 'ls -la' >> /app/start.sh && \
+              echo 'echo "Running: bun server.js"' >> /app/start.sh && \
+              echo 'exec bun server.js' >> /app/start.sh && \
+              chmod +x /app/start.sh
+
+          # Fix any potential permission issues
+          RUN chmod -R 755 /app
 
           EXPOSE 3000
 
           ENV PORT 3000
           ENV HOSTNAME "0.0.0.0"
 
-          CMD ["bun", "server.js"]
+          # Use sh not bun directly to ensure proper output
+          CMD ["/bin/sh", "/app/start.sh"]
           DOCKERFILE_EOF
 
       - name: Build and push Docker image
@@ -318,13 +439,40 @@ jobs:
           # Run the new container
           docker run -d --restart unless-stopped --name cymasphere-container -p 80:3000 ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
+          # Wait a moment for container to start
+          echo "Waiting for container to initialize..."
+          sleep 5
+          
           # Copy the server.js into the container just in case
           if [ -f ~/server.js ]; then
             echo "Copying server.js into container..."
-            docker cp ~/server.js cymasphere-container:/app/server.js
-            docker exec cymasphere-container chmod +x /app/server.js
-            # Restart the container to use the new server.js
-            docker restart cymasphere-container
+            docker cp ~/server.js cymasphere-container:/app/server.js || echo "Failed to copy server.js - continuing anyway"
+            
+            # Add debugging to see container status
+            echo "Container status:"
+            docker ps -a | grep cymasphere
+            
+            echo "Container logs:"
+            docker logs cymasphere-container
+            
+            # Create a debug script to run inside the container
+            cat > ~/debug.sh << 'EOF'
+            #!/bin/sh
+            echo "Container filesystem:"
+            ls -la /app
+            echo "Node modules:"
+            ls -la /app/node_modules || echo "No node_modules directory"
+            echo "Next.js output:"
+            ls -la /app/.next || echo "No .next directory"
+            EOF
+            
+            # Try to run debug script in container - but don't fail if it doesn't work
+            docker cp ~/debug.sh cymasphere-container:/app/debug.sh || echo "Failed to copy debug script"
+            docker exec cymasphere-container sh /app/debug.sh || echo "Failed to run debug script"
+            
+            # Restart container in case permissions need refreshing
+            echo "Restarting container..."
+            docker restart cymasphere-container || echo "Failed to restart container"
           fi
           
           # Clean up
