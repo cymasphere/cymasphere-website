@@ -103,7 +103,7 @@ jobs:
           COPY --from=builder /app/server.js ./server.js
           
           # Handle Edge cases with a tiny script if needed
-          RUN echo '// Create fallback pages if needed\nconst fs = require("fs");\nconst path = require("path");\n\nconst dirs = [\n  "./public",\n  "./.next",\n  "./.next/static",\n  "./server",\n  "./server/pages"\n];\n\n// Create required directories\ndirs.forEach(dir => {\n  if (!fs.existsSync(dir)) {\n    console.log(`Creating directory: ${dir}`);\n    fs.mkdirSync(dir, { recursive: true });\n  }\n});\n\n// Create fallback files if they don't exist\nconst fallbacks = [\n  { path: "./server/pages/500.html", content: "<html><body><h1>Server Error (500)</h1></body></html>" },\n  { path: "./server/pages/404.html", content: "<html><body><h1>Not Found (404)</h1></body></html>" },\n  { path: "./public/favicon.ico", content: Buffer.from("00000100010010100000010018006803000016000000280000001000000020000000010018000000000000000000000000000000000000000000000000000000", "hex") }\n];\n\nfallbacks.forEach(file => {\n  if (!fs.existsSync(file.path)) {\n    console.log(`Creating fallback file: ${file.path}`);\n    fs.writeFileSync(file.path, file.content);\n  }\n});\n\n// Try to start the Next.js app\ntry {\n  console.log("Starting Next.js server...");\n  require("./server.js");\n} catch (error) {\n  console.error("Failed to start Next.js server:", error);\n  require("http").createServer((req, res) => {\n    res.writeHead(200, {"Content-Type": "text/html"});\n    res.end(`<html><body><h1>Next.js Startup Error</h1><pre>${error.stack}</pre></body></html>`);\n  }).listen(3000, "0.0.0.0");\n}' > ./server-wrapper.js
+          RUN echo '// Create fallback pages if needed\nconst fs = require("fs");\nconst path = require("path");\n\nconst dirs = [\n  "./public",\n  "./.next",\n  "./.next/static",\n  "./server",\n  "./server/pages"\n];\n\n// Create required directories\ndirs.forEach(dir => {\n  if (!fs.existsSync(dir)) {\n    console.log(`Creating directory: \${dir}`);\n    fs.mkdirSync(dir, { recursive: true });\n  }\n});\n\n// Create fallback files if they don't exist\nconst fallbacks = [\n  { path: "./server/pages/500.html", content: "<html><body><h1>Server Error (500)</h1></body></html>" },\n  { path: "./server/pages/404.html", content: "<html><body><h1>Not Found (404)</h1></body></html>" },\n  { path: "./public/favicon.ico", content: Buffer.from("00000100010010100000010018006803000016000000280000001000000020000000010018000000000000000000000000000000000000000000000000000000", "hex") }\n];\n\nfallbacks.forEach(file => {\n  if (!fs.existsSync(file.path)) {\n    console.log(`Creating fallback file: \${file.path}`);\n    fs.writeFileSync(file.path, file.content);\n  }\n});\n\n// Try to start the Next.js app\ntry {\n  console.log("Starting Next.js server...");\n  require("./server.js");\n} catch (error) {\n  console.error("Failed to start Next.js server:", error);\n  require("http").createServer((req, res) => {\n    res.writeHead(200, {"Content-Type": "text/html"});\n    res.end(`<html><body><h1>Next.js Startup Error</h1><pre>\${error.stack}</pre></body></html>`);\n  }).listen(3000, "0.0.0.0");\n}' > ./server-wrapper.js
           
           # Expose port and set environment variables
           ENV PORT=3000
@@ -111,7 +111,7 @@ jobs:
           ENV HOSTNAME="0.0.0.0"
           
           # Start the server
-          CMD ["bun", "server.js"]
+          CMD ["bun", "server-wrapper.js"]
           EOL
 
       - name: Build and push Docker image
