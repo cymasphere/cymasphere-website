@@ -1,16 +1,9 @@
 "use server";
 
 import Stripe from "stripe";
+import { SubscriptionType } from "@/utils/supabase/types";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-export type CustomerPurchasedProResponse = {
-  success: boolean;
-  is_pro: boolean;
-  is_lifetime: boolean;
-  subscription_expires_at?: number; // Unix timestamp when subscription expires
-  error?: Error | unknown;
-};
 
 export type PlanType = "monthly" | "annual" | "lifetime";
 
@@ -331,6 +324,14 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
   }
 }
 
+export type CustomerPurchasedProResponse = {
+  success: boolean;
+  subscription: SubscriptionType;
+  trial_end_date?: Date; // Unix timestamp when trial ends
+  subscription_expiration?: Date; // Unix timestamp when subscription expires
+  error?: Error | unknown;
+};
+
 export async function customerPurchasedPro(
   customer_id: string
 ): Promise<CustomerPurchasedProResponse> {
@@ -361,7 +362,10 @@ export async function customerPurchasedPro(
     }
 
     if (oneTimePurchase) {
-      return { success: true, is_pro: true, is_lifetime: true };
+      return {
+        success: true,
+        subscription: "lifetime",
+      };
     }
 
     // Check for subscription purchases
@@ -371,33 +375,36 @@ export async function customerPurchasedPro(
     });
 
     // Find if any subscription contains either of the subscription products
-    let hasActiveSubscription = false;
-    let expirationTimestamp: number | undefined;
+    let subscriptionType: SubscriptionType = "none";
+    let current_period_end: Date | undefined;
+    let trial_end_date: Date | undefined;
 
     for (const subscription of subscriptions.data) {
       // Check if this subscription contains one of our products
       for (const item of subscription.items.data) {
         const priceId = item.price.id;
         if (priceId === monthlyPriceId || priceId === annualPriceId) {
-          hasActiveSubscription = true;
-          expirationTimestamp = subscription.current_period_end;
-          break;
+          subscriptionType = priceId === monthlyPriceId ? "monthly" : "annual";
+          current_period_end = new Date(subscription.current_period_end * 1000);
+          // Capture trial end date if exists
+          if (subscription.trial_end) {
+            trial_end_date = new Date(subscription.trial_end * 1000);
+          }
         }
       }
-      if (hasActiveSubscription) break;
+      if (subscriptionType !== "none") break;
     }
 
     return {
       success: true,
-      is_pro: hasActiveSubscription,
-      is_lifetime: false,
-      subscription_expires_at: expirationTimestamp,
+      subscription: subscriptionType,
+      trial_end_date,
+      subscription_expiration: current_period_end,
     };
   } catch (error) {
     return {
       success: false,
-      is_pro: false,
-      is_lifetime: false,
+      subscription: "none",
       error,
     };
   }

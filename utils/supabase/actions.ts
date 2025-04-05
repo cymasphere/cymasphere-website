@@ -65,7 +65,7 @@ export async function updateStripe(
   try {
     // Check if we need to query Stripe
     const shouldCheckStripe =
-      !profile.is_pro ||
+      profile.subscription === "none" ||
       !profile.last_stripe_api_check ||
       new Date(profile.last_stripe_api_check).getTime() <
         Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -89,13 +89,18 @@ export async function updateStripe(
       return { success: false, error: customerStatus.error };
     }
 
-    updatedProfile.is_pro = customerStatus.is_pro;
-    updatedProfile.is_lifetime = customerStatus.is_lifetime;
+    updatedProfile.subscription = customerStatus.subscription;
+    updatedProfile.subscription_expiration =
+      customerStatus.subscription_expiration?.toISOString() || null;
+    updatedProfile.trial_expiration =
+      customerStatus.trial_end_date?.toISOString() || null;
 
     if (
       updatedProfile.customer_id != profile.customer_id ||
-      updatedProfile.is_pro != profile.is_pro ||
-      updatedProfile.is_lifetime != profile.is_lifetime
+      updatedProfile.subscription != profile.subscription ||
+      updatedProfile.subscription_expiration !=
+        profile.subscription_expiration ||
+      updatedProfile.trial_expiration != profile.trial_expiration
     ) {
       updatedProfile = await updateUserProfile(updatedProfile);
     }
@@ -111,7 +116,7 @@ async function updateUserProfile(profile: Profile): Promise<Profile> {
   const supabase = await createClient();
   const { data: user, error: user_error } = await supabase.auth.getUser();
 
-  console.log("user", !!user);
+  console.log("updating user", !!user);
 
   if (user_error) {
     console.log("Error getting user:", user_error);

@@ -13,38 +13,38 @@ export type Database = {
         Row: {
           avatar_url: string | null
           customer_id: string | null
+          first_name: string | null
           id: string
-          is_lifetime: boolean
-          is_pro: boolean
+          last_name: string | null
           last_stripe_api_check: string | null
-          name: string | null
+          subscription: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration: string | null
+          trial_expiration: string | null
           updated_at: string | null
-          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           customer_id?: string | null
+          first_name?: string | null
           id: string
-          is_lifetime?: boolean
-          is_pro?: boolean
+          last_name?: string | null
           last_stripe_api_check?: string | null
-          name?: string | null
+          subscription?: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration?: string | null
+          trial_expiration?: string | null
           updated_at?: string | null
-          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           customer_id?: string | null
+          first_name?: string | null
           id?: string
-          is_lifetime?: boolean
-          is_pro?: boolean
+          last_name?: string | null
           last_stripe_api_check?: string | null
-          name?: string | null
+          subscription?: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration?: string | null
+          trial_expiration?: string | null
           updated_at?: string | null
-          username?: string | null
         }
         Relationships: []
       }
@@ -56,7 +56,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      subscription_type: "none" | "monthly" | "annual" | "lifetime"
     }
     CompositeTypes: {
       [_ in never]: never
