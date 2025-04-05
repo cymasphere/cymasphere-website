@@ -65,8 +65,8 @@ jobs:
 
       - name: Create server.js with diagnostic capabilities
         run: |
-          # Create a simplified version of server.js
-          echo 'try {
+          cat > server.js << 'EOFJS'
+          try {
             const fs = require("fs");
             const http = require("http");
             const path = require("path");
@@ -74,127 +74,56 @@ jobs:
             console.log("Server starting, NODE_ENV:", process.env.NODE_ENV);
             console.log("Working directory:", process.cwd());
             
-            // Basic HTTP server that will run regardless of Next.js status
+            // Start a basic HTTP server that will always work
             const server = http.createServer((req, res) => {
               res.writeHead(200, {"Content-Type": "text/html"});
-              res.end(`<html><head><title>Next.js Server</title>
-              <style>
-                body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
-                h1 { color: #0070f3; }
-                h2 { color: #d32f2f; }
-                pre { background: #f7fafc; padding: 15px; border-radius: 5px; white-space: pre-wrap; }
-                code { font-family: monospace; }
-                .success { color: green; }
-                .error { color: red; }
-              </style>
-              </head>
-              <body>
-                <h1>Next.js Server Status</h1>
-                <div id="status">Loading server status...</div>
-                
-                <script>
-                  // Client-side code to check server status
-                  fetch("/api/health")
-                    .then(response => response.json())
-                    .then(data => {
-                      document.getElementById("status").innerHTML = 
-                        data.running 
-                          ? "<h2 class=\\"success\\">Next.js is running!</h2>" 
-                          : "<h2 class=\\"error\\">Next.js failed to start</h2><pre>" + data.error + "</pre>";
-                    })
-                    .catch(e => {
-                      document.getElementById("status").innerHTML = 
-                        "<h2 class=\\"error\\">Error checking Next.js status</h2><pre>" + e + "</pre>";
-                    });
-                </script>
-              </body>
-              </html>`);
+              res.end(`
+                <html>
+                  <head>
+                    <title>Next.js Server</title>
+                    <style>
+                      body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+                      h1 { color: #0070f3; }
+                      pre { background: #f7fafc; padding: 15px; border-radius: 5px; overflow: auto; }
+                    </style>
+                  </head>
+                  <body>
+                    <h1>Next.js Diagnostic Server</h1>
+                    <p>Basic server is running. Checking Next.js status...</p>
+                    <pre id="status">Checking server status...</pre>
+                    
+                    <script>
+                      // Wait 3 seconds to allow server to initialize
+                      setTimeout(() => {
+                        document.getElementById("status").textContent = 
+                          "Full diagnostic information available in container logs. " +
+                          "Run: docker logs cymasphere-container";
+                      }, 3000);
+                    </script>
+                  </body>
+                </html>
+              `);
             });
             
-            // Start the server immediately so something is available
             server.listen(3000, "0.0.0.0", () => {
               console.log("Basic HTTP server started on port 3000");
             });
             
-            // Track Next.js status
-            let nextRunning = false;
-            let nextError = "Next.js has not been initialized yet";
+            // Try to check directory contents
+            try {
+              console.log("Directory contents:", fs.readdirSync("."));
+            } catch (e) {
+              console.error("Error reading directory:", e);
+            }
             
-            // Add a health endpoint to check status
-            server.on("request", (req, res) => {
-              if (req.url === "/api/health") {
-                res.writeHead(200, {"Content-Type": "application/json"});
-                res.end(JSON.stringify({
-                  running: nextRunning,
-                  error: nextError
-                }));
-              }
-            });
-            
-            // Now try to start Next.js in the background
-            setTimeout(() => {
-              try {
-                console.log("Directory contents:", fs.readdirSync(".").join(", "));
-                
-                // Detailed investigation of key directories
-                console.log("\n--- Detailed Directory Structure ---");
-                [".next", ".next/standalone", ".next/static", ".next/server", "node_modules", "node_modules/next"].forEach(dir => {
-                  try {
-                    if (fs.existsSync(dir)) {
-                      console.log(`Contents of ${dir}/: ${fs.readdirSync(dir).join(", ")}`);
-                    } else {
-                      console.log(`${dir}/ directory does not exist`);
-                    }
-                  } catch (e) {
-                    console.error(`Error examining ${dir}/: ${e.message}`);
-                  }
-                });
-                
-                // Try to load Next.js
-                console.log("\n--- Attempting to Load Next.js ---");
-                
-                if (fs.existsSync("./.next/standalone/server.js")) {
-                  console.log("Found standalone server, loading it");
-                  try {
-                    // Wrap in try-catch but don\'t actually load it to avoid crashes
-                    console.log("Would load ./.next/standalone/server.js here, but skipping for now");
-                    // require("./.next/standalone/server.js");
-                    nextRunning = true;
-                    nextError = null;
-                  } catch (e) {
-                    console.error("Error loading standalone server:", e);
-                    nextError = e.toString();
-                  }
-                } else if (fs.existsSync("./node_modules/next/dist/server/next-server.js")) {
-                  console.log("Found next-server.js, loading it");
-                  try {
-                    // Wrap in try-catch but don\'t actually load it to avoid crashes
-                    console.log("Would load ./node_modules/next/dist/server/next-server.js here, but skipping for now");
-                    // require("./node_modules/next/dist/server/next-server.js");
-                    nextRunning = true;
-                    nextError = null;
-                  } catch (e) {
-                    console.error("Error loading next-server.js:", e);
-                    nextError = e.toString();
-                  }
-                } else {
-                  console.log("Could not find Next.js server file");
-                  nextError = "Could not find any Next.js server files";
-                }
-              } catch (e) {
-                console.error("Error in Next.js initialization:", e);
-                nextError = e.toString();
-              }
-            }, 1000);
           } catch (e) {
             console.error("CRITICAL SERVER ERROR:", e);
-            
-            // Last resort emergency HTTP server
             require("http").createServer((req, res) => {
               res.writeHead(200, {"Content-Type": "text/html"});
-              res.end(`<html><body><h1>Emergency Server Running</h1><p>Critical error: ${e.toString()}</p></body></html>`);
+              res.end("<html><body><h1>Emergency Server</h1><p>Error: " + e.message + "</p></body></html>");
             }).listen(3000, "0.0.0.0");
-          }' > server.js
+          }
+          EOFJS
 
       - name: Create Dockerfile for Next.js
         run: |
