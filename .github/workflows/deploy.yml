@@ -228,7 +228,7 @@ jobs:
           RUN mkdir -p /tmp/standalone /tmp/static
           COPY --from=builder /app/.next/standalone/. /tmp/standalone/
           COPY --from=builder /app/.next/static/. /tmp/static/
-          COPY --from=builder /app/server-fallback.js /app/server-fallback.js
+          COPY --from=builder /app/.next/standalone/server-fallback.js /app/server-fallback.js
 
           # Copy files from temp directories using shell commands which support error handling
           RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
