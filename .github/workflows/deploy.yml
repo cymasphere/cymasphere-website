@@ -126,8 +126,6 @@ jobs:
               echo "console.log('Server running on port 3000'); require('http').createServer((req, res) => { res.writeHead(200, {'Content-Type': 'text/html'}); res.end('<h1>Server Running</h1>'); }).listen(3000, '0.0.0.0');" > /app/server.js
 
           # Create a script to safely copy files between stages
-          COPY --from=builder /app/server.js /app/server.js || true
-          
           # Copy server.js from builder if it exists (using shell copy instead of COPY)
           RUN echo "#!/bin/sh" > /tmp/copy_files.sh && \\
               echo "[ -d '/builder/app/public' ] && cp -r /builder/app/public/* /app/public/ || true" >> /tmp/copy_files.sh && \\
