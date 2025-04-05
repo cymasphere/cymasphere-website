@@ -208,7 +208,7 @@ jobs:
           RUN cp -R /app/.next/static /app/.next/standalone/.next/ || true
           
           # Create fallback server directly in standalone directory
-          RUN cat > /app/.next/standalone/server-fallback.js << 'EOL'
+          RUN cat > /app/.next/standalone/server-fallback.js << 'EOLSERVER'
           const http = require('http');
           
           // Simple server that always works
@@ -235,7 +235,7 @@ jobs:
           server.listen(3000, '0.0.0.0', () => {
             console.log('Fallback server running at http://0.0.0.0:3000/');
           });
-          EOL
+          EOLSERVER
 
           # Production image, copy all the files and run next
           FROM base AS runner
