@@ -112,13 +112,13 @@ jobs:
           RUN echo "<html><body><h1>Not Found (404)</h1></body></html>" > /app/server/pages/404.html
           RUN echo "console.log('Server running on port 3000'); require('http').createServer((req, res) => { res.writeHead(200, {'Content-Type': 'text/html'}); res.end('<h1>Server Running</h1>'); }).listen(3000, '0.0.0.0');" > /app/server.js
           
-          # Try to copy files that might exist from the builder stage
-          COPY --from=builder /app/public/. ./public/ 2>/dev/null || true
-          COPY --from=builder /app/.next/standalone/. ./ 2>/dev/null || true
-          COPY --from=builder /app/.next/static/. ./.next/static/ 2>/dev/null || true
-          COPY --from=builder /app/.next/server/pages/500.html ./server/pages/500.html 2>/dev/null || true
-          COPY --from=builder /app/.next/server/pages/404.html ./server/pages/404.html 2>/dev/null || true
-          COPY --from=builder /app/server.js ./server.js 2>/dev/null || true
+          # Try to copy files from the builder stage - no conditional operators
+          COPY --from=builder /app/public/. ./public/ 
+          COPY --from=builder /app/.next/standalone/. ./ 
+          COPY --from=builder /app/.next/static/. ./.next/static/ 
+          COPY --from=builder /app/.next/server/pages/500.html ./server/pages/500.html 
+          COPY --from=builder /app/.next/server/pages/404.html ./server/pages/404.html 
+          COPY --from=builder /app/server.js ./server.js 
 
           USER nextjs
 
