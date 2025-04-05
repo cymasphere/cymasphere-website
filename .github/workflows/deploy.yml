@@ -355,28 +355,55 @@ jobs:
               echo 'echo "Bun version: $(bun -v || echo not installed)"' >> /app/start.sh && \
               echo 'echo ".next directory:"' >> /app/start.sh && \
               echo 'ls -la .next || echo "No .next directory"' >> /app/start.sh && \
+              echo 'echo "Network interfaces:"' >> /app/start.sh && \
+              echo 'ip addr show || ifconfig || echo "Network tools not available"' >> /app/start.sh && \
               echo 'if [ -f "server.js" ]; then' >> /app/start.sh && \
               echo '  echo "Starting Next.js server..."' >> /app/start.sh && \
+              echo '  # Ensure server binds to all interfaces' >> /app/start.sh && \
+              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
+              echo '  export PORT=3000' >> /app/start.sh && \
               echo '  node server.js' >> /app/start.sh && \
               echo 'else' >> /app/start.sh && \
-              echo '  echo "server.js not found, starting diagnostic server..."' >> /app/start.sh && \
-              echo '  echo "const fs = require(\"fs\");" > /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  echo "const http = require(\"http\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  echo "http.createServer((req, res) => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  echo "  res.writeHead(200, {\"Content-Type\": \"text/html\"});" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  echo "  res.end(\"<html><body><h1>Cymasphere Website - Emergency Server</h1><p>No server.js was found.</p></body></html>\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  echo "}).listen(3000, \"0.0.0.0\", () => console.log(\"Emergency server started on port 3000\"));" >> /tmp/emergency-server.js' >> /app/start.sh && \
-              echo '  node /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  echo "server.js not found, checking for health check server..."' >> /app/start.sh && \
+              echo '  if [ -f "app/server-health.js" ]; then' >> /app/start.sh && \
+              echo '    echo "Starting health check server..."' >> /app/start.sh && \
+              echo '    node app/server-health.js' >> /app/start.sh && \
+              echo '  else' >> /app/start.sh && \
+              echo '    echo "No servers found, starting emergency server..."' >> /app/start.sh && \
+              echo '    echo "const fs = require(\"fs\");" > /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "const http = require(\"http\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "const os = require(\"os\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "http.createServer((req, res) => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  res.writeHead(200, {\"Content-Type\": \"text/html\"});" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  res.end(`<html><body style=\\\"font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;\\\">" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <h1>Cymasphere Website - Emergency Server</h1>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <p>No server.js was found. This is an emergency fallback server.</p>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <h2>System Information</h2>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <pre>Hostname: ${os.hostname()}\\nPlatform: ${os.platform()}\\nMemory: ${Math.round(os.totalmem() / (1024 * 1024))} MB\\nServer Time: ${new Date().toISOString()}</pre>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <h2>Environment Variables</h2>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "    <pre>PORT: ${process.env.PORT || \"not set\"}\\nHOSTNAME: ${process.env.HOSTNAME || \"not set\"}\\nNODE_ENV: ${process.env.NODE_ENV || \"not set\"}</pre>" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  </body></html>`);" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "}).listen(3000, \"0.0.0.0\", () => {" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  console.log(\"Emergency server started on port 3000\");" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  console.log(\"Server Time: \" + new Date().toISOString());" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "  console.log(\"Hostname: \" + os.hostname());" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    echo "});" >> /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '    node /tmp/emergency-server.js' >> /app/start.sh && \
+              echo '  fi' >> /app/start.sh && \
               echo 'fi' >> /app/start.sh && \
               chmod +x /app/start.sh
 
           # Copy build logs to be accessible from the server (using guaranteed file)
           COPY --from=builder /tmp/build-logs-safe.txt /app/build-logs.txt
 
-          EXPOSE 3000
+          # Set proper environment variables to ensure server binds correctly
           ENV PORT 3000
           ENV HOSTNAME "0.0.0.0"
-
+          ENV NODE_ENV production
+          
+          # Explicitly expose port 3000
+          EXPOSE 3000
+          
           # Use node not bun to run the Next.js standalone server
           CMD ["/bin/sh", "/app/start.sh"]
           DOCKERFILE_EOF

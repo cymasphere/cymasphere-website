@@ -10,12 +10,19 @@ on:
 
 jobs:
   build:
+    name: Build and deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
     
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
-      
+        
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -23,6 +30,66 @@ jobs:
       
       - name: Install dependencies
         run: bun install
+      
+      - name: Build Next.js project
+        run: bun run build
+      
+      - name: Install AWS CLI
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          
+      - name: Configure AWS
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region ${{ secrets.AWS_REGION }}
+          
+      - name: Deploy to AWS Lightsail
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          # Publish image to Lightsail container service
+          CONTAINER_SERVICE_NAME="cymasphere-web"
+          
+          # Create container deployment JSON
+          echo '{
+            "containers": {
+              "app": {
+                "image": "ghcr.io/cymasphere/cymasphere-website:latest",
+                "command": ["/bin/sh", "/app/start.sh"],
+                "ports": {
+                  "80": "HTTP",
+                  "3000": "HTTP"
+                },
+                "environment": {
+                  "NODE_ENV": "production"
+                }
+              }
+            },
+            "publicEndpoint": {
+              "containerName": "app",
+              "containerPort": 3000,
+              "healthCheck": {
+                "healthyThreshold": 2,
+                "unhealthyThreshold": 2,
+                "timeoutSeconds": 5,
+                "intervalSeconds": 10,
+                "path": "/",
+                "successCodes": "200-499"
+              }
+            }
+          }' > container.json
+          
+          # Deploy the container
+          aws lightsail create-container-service-deployment --service-name $CONTAINER_SERVICE_NAME --cli-input-json file://container.json || aws lightsail update-container-service --service-name $CONTAINER_SERVICE_NAME --power small --scale 1
+          
+          # Wait for deployment to complete and get status
+          echo "Waiting for deployment to complete..."
+          aws lightsail get-container-services --service-name $CONTAINER_SERVICE_NAME
+          
+          # Verify port is open 
+          echo "Verifying port configuration..."
+          aws lightsail get-container-service-deployments --service-name $CONTAINER_SERVICE_NAME
       
       - name: Create .env.local file
         run: |
