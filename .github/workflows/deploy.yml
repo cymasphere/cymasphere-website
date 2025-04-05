@@ -208,34 +208,32 @@ jobs:
           RUN cp -R /app/.next/static /app/.next/standalone/.next/ || true
           
           # Create fallback server directly in standalone directory
-          RUN cat > /app/.next/standalone/server-fallback.js << 'EOLSERVER'
-          const http = require('http');
-          
-          // Simple server that always works
-          const server = http.createServer((req, res) => {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end(`
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <title>Cymasphere - Fallback Server</title>
-                <style>
-                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                </style>
-              </head>
-              <body>
-                <h1>Cymasphere Website</h1>
-                <p>This is a fallback server running in emergency mode.</p>
-                <p>Server Time: ${new Date().toISOString()}</p>
-              </body>
-              </html>
-            `);
-          });
-          
-          server.listen(3000, '0.0.0.0', () => {
-            console.log('Fallback server running at http://0.0.0.0:3000/');
-          });
-          EOLSERVER
+          RUN echo 'const http = require("http");' > /app/.next/standalone/server-fallback.js && \
+              echo '' >> /app/.next/standalone/server-fallback.js && \
+              echo '// Simple server that always works' >> /app/.next/standalone/server-fallback.js && \
+              echo 'const server = http.createServer((req, res) => {' >> /app/.next/standalone/server-fallback.js && \
+              echo '  res.writeHead(200, {"Content-Type": "text/html"});' >> /app/.next/standalone/server-fallback.js && \
+              echo '  res.end(`' >> /app/.next/standalone/server-fallback.js && \
+              echo '    <!DOCTYPE html>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    <html>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    <head>' >> /app/.next/standalone/server-fallback.js && \
+              echo '      <title>Cymasphere - Fallback Server</title>' >> /app/.next/standalone/server-fallback.js && \
+              echo '      <style>' >> /app/.next/standalone/server-fallback.js && \
+              echo '        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }' >> /app/.next/standalone/server-fallback.js && \
+              echo '      </style>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    </head>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    <body>' >> /app/.next/standalone/server-fallback.js && \
+              echo '      <h1>Cymasphere Website</h1>' >> /app/.next/standalone/server-fallback.js && \
+              echo '      <p>This is a fallback server running in emergency mode.</p>' >> /app/.next/standalone/server-fallback.js && \
+              echo '      <p>Server Time: ${new Date().toISOString()}</p>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    </body>' >> /app/.next/standalone/server-fallback.js && \
+              echo '    </html>' >> /app/.next/standalone/server-fallback.js && \
+              echo '  `);' >> /app/.next/standalone/server-fallback.js && \
+              echo '});' >> /app/.next/standalone/server-fallback.js && \
+              echo '' >> /app/.next/standalone/server-fallback.js && \
+              echo 'server.listen(3000, "0.0.0.0", () => {' >> /app/.next/standalone/server-fallback.js && \
+              echo '  console.log("Fallback server running at http://0.0.0.0:3000/");' >> /app/.next/standalone/server-fallback.js && \
+              echo '});' >> /app/.next/standalone/server-fallback.js
 
           # Production image, copy all the files and run next
           FROM base AS runner
