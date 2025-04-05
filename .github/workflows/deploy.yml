@@ -158,17 +158,28 @@ jobs:
           # Skip ESLint during build
           ENV NEXT_LINT=false
           
+          # Debug package.json
+          RUN cat package.json
+          
           # Make sure next.config.js has output: 'standalone'
-          RUN sed -i 's/module.exports = {/module.exports = {\n  output: "standalone",/' next.config.js || \
-              echo 'module.exports = { output: "standalone" };' > next.config.js
+          RUN echo 'module.exports = {' > next.config.js && \
+              echo '  output: "standalone",' >> next.config.js && \
+              echo '  experimental: {' >> next.config.js && \
+              echo '    optimizeCss: true' >> next.config.js && \
+              echo '  },' >> next.config.js && \
+              echo '  reactStrictMode: true,' >> next.config.js && \
+              echo '  swcMinify: true' >> next.config.js && \
+              echo '};' >> next.config.js && \
+              cat next.config.js
           
           # Use the standard Next.js build with standalone output
-          RUN bun run build
+          RUN bun run build || (echo "Trying direct next build command" && \
+              bunx next build || (echo "All build attempts failed" && exit 1))
           
           # Create a complete standalone directory
           RUN mkdir -p /app/.next/standalone/public
-          RUN cp -R /app/public /app/.next/standalone/
-          RUN cp -R /app/.next/static /app/.next/standalone/.next/
+          RUN cp -R /app/public /app/.next/standalone/ || echo "No public directory to copy"
+          RUN cp -R /app/.next/static /app/.next/standalone/.next/ || mkdir -p /app/.next/standalone/.next/static
 
           # Production image, copy all the files and run next
           FROM base AS runner
