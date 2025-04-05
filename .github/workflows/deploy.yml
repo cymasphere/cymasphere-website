@@ -584,9 +584,7 @@ jobs:
           if ! curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
             echo "WEBSITE NOT ACCESSIBLE! Forcing emergency server deployment..."
             
-            # Create direct server.js on the server
-            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} << 'EOF'
-            # Create a guaranteed working server
+            # Create the emergency server content first
             cat > emergency.js << 'EOFSERVER'
             const http = require('http');
             const server = http.createServer((req, res) => {
@@ -605,7 +603,7 @@ jobs:
                   <h1>Cymasphere Website</h1>
                   <div class="alert">
                     <p><strong>Direct Emergency Mode:</strong> The site is running on a direct emergency server.</p>
-                    <p>Server time: ${new Date().toISOString()}</p>
+                    <p>Server time: \${new Date().toISOString()}</p>
                   </div>
                   <p>Our team has been notified and is working to restore full functionality.</p>
                 </body>
@@ -617,20 +615,25 @@ jobs:
             });
             EOFSERVER
             
-            # Stop any existing containers
-            sudo docker stop cymasphere-container || true
-            sudo docker rm cymasphere-container || true
+            # Copy the emergency server to the remote machine
+            scp emergency.js ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/emergency.js
             
-            # Run with node directly
-            sudo docker run -d --restart always --name cymasphere-container \
-              -p 80:3000 \
-              -v $(pwd)/emergency.js:/app/server.js \
-              node:slim node /app/server.js
+            # Run commands on the remote machine without heredoc nesting
+            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "
+              # Stop any existing containers
+              sudo docker stop cymasphere-container || true
+              sudo docker rm cymasphere-container || true
               
-            # Verify it's running
-            sudo docker ps -a
-            sudo docker logs cymasphere-container
-            EOF
+              # Run with node directly
+              sudo docker run -d --restart always --name cymasphere-container \\
+                -p 80:3000 \\
+                -v \$(pwd)/emergency.js:/app/server.js \\
+                node:slim node /app/server.js
+                
+              # Verify it's running
+              sudo docker ps -a
+              sudo docker logs cymasphere-container
+            "
             
             echo "Direct emergency server deployed."
           else
