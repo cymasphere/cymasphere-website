@@ -209,13 +209,15 @@ jobs:
           RUN mkdir -p /app/public
           RUN mkdir -p /app/.next/static
           
-          # Use script to safely copy files between stages
-          COPY --from=builder /app/.next/standalone /tmp/standalone/ 2>/dev/null || true
-          COPY --from=builder /app/.next/static /tmp/static/ 2>/dev/null || true
+          # Use alternative approach that doesn't rely on shell features in COPY
+          # First attempt to copy files, ignoring errors with separate RUN commands
+          RUN mkdir -p /tmp/standalone /tmp/static
+          COPY --from=builder /app/.next/standalone/. /tmp/standalone/
+          COPY --from=builder /app/.next/static/. /tmp/static/
 
-          # Copy files from temp directories if they exist
-          RUN if [ -d "/tmp/standalone" ]; then cp -R /tmp/standalone/* /app/ || true; fi
-          RUN if [ -d "/tmp/static" ]; then mkdir -p /app/.next && cp -R /tmp/static /app/.next/ || true; fi
+          # Copy files from temp directories using shell commands which support error handling
+          RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
+          RUN mkdir -p /app/.next && cp -R /tmp/static/. /app/.next/static/ 2>/dev/null || echo "No static files to copy"
 
           # If standalone doesn't exist, create a basic server as fallback
           RUN if [ ! -f "/app/server.js" ]; then \
