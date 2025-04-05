@@ -341,23 +341,27 @@ const useWindowSize = () => {
 };
 
 // Client-only component to ensure proper measurement
-const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ClientOnlyHeroTitle: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   if (!isMounted) {
     // Return a simple placeholder during SSR
     return <div style={{ minHeight: "260px" }}></div>;
   }
-  
+
   return <>{children}</>;
 };
 
 // Use dynamic import with ssr: false to completely prevent server-side rendering
-const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), { ssr: false });
+const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
+  ssr: false,
+});
 
 const HeroSection = () => {
   const { t, i18n } = useTranslation();
@@ -438,7 +442,7 @@ const HeroSection = () => {
       setCenterWordWidth(widths[currentWordIndex] || 120);
       console.log("Measured widths:", widths);
     }
-  }, [titleWords, i18n.language]); // Re-measure when language changes
+  }, []); // Re-measure when language changes
 
   // ROBUST WORD CYCLING IMPLEMENTATION
   useEffect(() => {
@@ -469,10 +473,12 @@ const HeroSection = () => {
   // Update center word width whenever the word changes - make this more robust
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     if (wordWidths && Object.keys(wordWidths).length > 0) {
       const newWidth = wordWidths[currentWordIndex] || 120;
-      console.log(`Updating center word width for word index ${currentWordIndex} to ${newWidth}px`);
+      // console.log(
+      //   `Updating center word width for word index ${currentWordIndex} to ${newWidth}px`
+      // );
       setCenterWordWidth(newWidth);
     }
   }, [currentWordIndex, wordWidths]);
@@ -534,7 +540,7 @@ const HeroSection = () => {
     if (typeof window !== "undefined" && wordMeasureRef.current) {
       // Force re-measurement by triggering a measurement cycle
       const widths = {};
-      
+
       const tempDiv = wordMeasureRef.current;
       const baseStyle = {
         visibility: "hidden",
