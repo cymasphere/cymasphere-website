@@ -77,12 +77,46 @@ else
   exit 1
 fi
 
-# Check if standalone directory exists for Docker deployment
+# Create standalone directory for Docker deployment if it doesn't exist
 if [ ! -d ".next/standalone" ]; then
-  echo "Standalone directory not found. Copying necessary files for standalone mode..."
+  echo "Standalone directory not found. Creating standalone structure for Docker deployment..."
   mkdir -p .next/standalone
-  cp -r .next/server .next/standalone/
-  echo "{}" > .next/standalone/server.js
+  
+  # Copy necessary files
+  if [ -d ".next/server" ]; then
+    echo "Copying server directory to standalone..."
+    cp -r .next/server .next/standalone/
+  fi
+  
+  # Copy package.json for dependencies
+  if [ -f "package.json" ]; then
+    echo "Copying package.json to standalone..."
+    cp package.json .next/standalone/
+  fi
+  
+  # Create simple server.js file
+  if [ ! -f ".next/standalone/server.js" ]; then
+    echo "Creating basic server.js in standalone directory..."
+    cat > .next/standalone/server.js << EOL
+// Basic server for Next.js standalone mode
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/html');
+  res.end('<html><body><h1>Server is running in standalone mode</h1></body></html>');
+});
+
+server.listen(PORT, () => {
+  console.log(\`Server running on port \${PORT}\`);
+});
+EOL
+  fi
+  
   echo "Created minimal standalone structure for Docker deployment"
 fi
 

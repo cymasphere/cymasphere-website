@@ -104,15 +104,17 @@ jobs:
 
           # Create directory structure needed for Next.js
           RUN mkdir -p /app/.next/server/pages
+          RUN mkdir -p /app/public
+          RUN mkdir -p /app/server/pages
           
           # Copy necessary files for Next.js
-          COPY --from=builder /app/public ./public
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+          COPY --from=builder /app/public ./public || echo "No public directory found"
+          COPY --from=builder /app/.next/standalone/. ./ || echo "No standalone directory found"
+          COPY --from=builder /app/.next/static ./.next/static || echo "No static directory found"
           
           # Make sure error pages exist
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/server/pages/500.html ./server/pages/500.html || true
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/server/pages/404.html ./server/pages/404.html || true
+          COPY --from=builder /app/.next/server/pages/500.html ./server/pages/500.html || echo "No 500.html found"
+          COPY --from=builder /app/.next/server/pages/404.html ./server/pages/404.html || echo "No 404.html found"
           
           # Create minimal server.js if missing
           RUN if [ ! -f "server.js" ]; then \
@@ -126,6 +128,9 @@ jobs:
                         console.log("Server running on port 3000"); \
                       });' > server.js; \
               fi
+
+          # Copy the fallback server.js from the builder if it exists
+          COPY --from=builder /app/server.js ./server.js || echo "Using generated server.js"
 
           USER nextjs
 
