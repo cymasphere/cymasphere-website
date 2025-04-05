@@ -188,7 +188,7 @@ jobs:
                mkdir -p /app/.next/standalone && \
                mkdir -p /app/.next/static)
                
-          # Collect additional diagnostic information
+          # Create additional diagnostic information
           RUN echo "\n\n=== ENVIRONMENT VARIABLES ===\n\n" >> /tmp/build-logs.txt && \
               env | grep -v KEY | grep -v TOKEN | grep -v SECRET >> /tmp/build-logs.txt && \
               echo "\n\n=== DIRECTORY STRUCTURE ===\n\n" >> /tmp/build-logs.txt && \
@@ -197,6 +197,10 @@ jobs:
               ls -la /app/node_modules | head -20 >> /tmp/build-logs.txt && \
               echo "\n\n=== NEXT CONFIG ===\n\n" >> /tmp/build-logs.txt && \
               cat /app/next.config.js >> /tmp/build-logs.txt || echo "No next.config.js found" >> /tmp/build-logs.txt
+              
+          # Create a guaranteed-to-exist file for the logs
+          RUN touch /tmp/build-logs-safe.txt && \
+              cat /tmp/build-logs.txt > /tmp/build-logs-safe.txt 2>/dev/null || echo "Build logs not available" > /tmp/build-logs-safe.txt
           
           # Create a complete standalone directory even if build fails
           RUN mkdir -p /app/.next/standalone/public || true
@@ -366,8 +370,8 @@ jobs:
               echo 'fi' >> /app/start.sh && \
               chmod +x /app/start.sh
 
-          # Copy build logs to be accessible from the server
-          COPY --from=builder /tmp/build-logs.txt /app/build-logs.txt || true
+          # Copy build logs to be accessible from the server (using guaranteed file)
+          COPY --from=builder /tmp/build-logs-safe.txt /app/build-logs.txt
 
           EXPOSE 3000
           ENV PORT 3000
