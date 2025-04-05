@@ -272,22 +272,15 @@ jobs:
             echo "Container logs:"
             docker logs cymasphere-container
             
-            # Create a debug script to run inside the container
-            cat > ~/debug.sh << "EOFMARKER"
-            #!/bin/sh
-            echo "Container filesystem:"
-            ls -la /app
-            echo "Node modules:"
-            ls -la /app/node_modules || echo "No node_modules directory"
-            echo "Next.js output:"
-            ls -la /app/.next || echo "No .next directory"
-            EOFMARKER
+            # Debug container filesystem directly
+            echo "Checking container filesystem directly:"
+            docker exec cymasphere-container ls -la /app || echo "Failed to list app directory"
+            echo "Checking container Node modules directory:"
+            docker exec cymasphere-container ls -la /app/node_modules || echo "No node_modules directory"
+            echo "Checking Next.js output directory:"
+            docker exec cymasphere-container ls -la /app/.next || echo "No .next directory"
             
-            # Try to run debug script in container - but don't fail if it doesn't work
-            docker cp ~/debug.sh cymasphere-container:/app/debug.sh || echo "Failed to copy debug script"
-            docker exec cymasphere-container sh /app/debug.sh || echo "Failed to run debug script"
-            
-            # Restart container in case permissions need refreshing
+            # Restart container to apply changes
             echo "Restarting container..."
             docker restart cymasphere-container || echo "Failed to restart container"
           fi
