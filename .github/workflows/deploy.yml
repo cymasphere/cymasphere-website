@@ -16,17 +16,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: '19'
-          cache: 'npm'
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       - name: Build Next.js application
-        run: npm run build
+        run: bun run build
         env:
           # Add any required environment variables for build
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -48,21 +47,20 @@ jobs:
       - name: Create Dockerfile for Next.js
         run: |
           cat > Dockerfile << EOL
-          FROM node:19-alpine AS base
+          FROM oven/bun:1 as base
 
           # Install dependencies only when needed
           FROM base AS deps
-          RUN apk add --no-cache libc6-compat
           WORKDIR /app
-          COPY package.json package-lock.json* ./
-          RUN npm ci
+          COPY package.json bun.lock ./
+          RUN bun install --frozen-lockfile
 
           # Rebuild the source code only when needed
           FROM base AS builder
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
-          RUN npm run build
+          RUN bun run build
 
           # Production image, copy all the files and run next
           FROM base AS runner
@@ -70,6 +68,7 @@ jobs:
 
           ENV NODE_ENV production
 
+          # Run as non-root user for better security
           RUN addgroup --system --gid 1001 nodejs
           RUN adduser --system --uid 1001 nextjs
 
@@ -84,7 +83,7 @@ jobs:
           ENV PORT 3000
           ENV HOSTNAME "0.0.0.0"
 
-          CMD ["node", "server.js"]
+          CMD ["bun", "server.js"]
           EOL
 
       - name: Update next.config.ts for standalone output
