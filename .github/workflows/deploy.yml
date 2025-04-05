@@ -72,18 +72,93 @@ jobs:
           
           console.log("Server starting, NODE_ENV:", process.env.NODE_ENV);
           console.log("Working directory:", process.cwd());
-          console.log("Directory contents:", fs.readdirSync("."));
           
           try {
-            // Try to load Next.js server
+            console.log("Directory contents:", fs.readdirSync(".").join(", "));
+          } catch (e) {
+            console.error("Failed to read directory:", e);
+          }
+          
+          // Detailed investigation of key directories
+          console.log("\n--- Detailed Directory Structure ---");
+          [".next", ".next/standalone", ".next/static", ".next/server", "node_modules", "node_modules/next"].forEach(dir => {
+            try {
+              if (fs.existsSync(dir)) {
+                console.log(`Contents of ${dir}/: ${fs.readdirSync(dir).join(", ")}`);
+              } else {
+                console.log(`${dir}/ directory does not exist`);
+              }
+            } catch (e) {
+              console.error(`Error examining ${dir}/: ${e.message}`);
+            }
+          });
+          
+          // Check for package.json content
+          try {
+            if (fs.existsSync("./package.json")) {
+              console.log("\n--- Package.json Content ---");
+              console.log(fs.readFileSync("./package.json", "utf8"));
+            }
+          } catch (e) {
+            console.error("Error reading package.json:", e);
+          }
+          
+          try {
+            // Try to load Next.js server with detailed error reporting
+            console.log("\n--- Attempting to Load Next.js ---");
+            
             if (fs.existsSync("./.next/standalone/server.js")) {
               console.log("Found standalone server, loading it");
-              require("./.next/standalone/server.js");
+              try {
+                require("./.next/standalone/server.js");
+                console.log("Successfully loaded standalone server");
+              } catch (e) {
+                console.error("Error loading standalone server:", e);
+                throw e;
+              }
             } else if (fs.existsSync("./node_modules/next/dist/server/next-server.js")) {
               console.log("Found next-server.js, loading it");
-              require("./node_modules/next/dist/server/next-server.js");
+              try {
+                require("./node_modules/next/dist/server/next-server.js");
+                console.log("Successfully loaded next-server.js");
+              } catch (e) {
+                console.error("Error loading next-server.js:", e);
+                throw e;
+              }
             } else {
-              throw new Error("Could not find Next.js server file");
+              console.log("Searching for any server.js files in key directories...");
+              let serverFiles = [];
+              [".next", ".next/standalone", ".next/server", "."].forEach(dir => {
+                try {
+                  if (fs.existsSync(dir)) {
+                    const files = fs.readdirSync(dir).filter(f => f.includes("server"));
+                    if (files.length > 0) {
+                      serverFiles.push(...files.map(f => `${dir}/${f}`));
+                    }
+                  }
+                } catch (e) {}
+              });
+              
+              if (serverFiles.length > 0) {
+                console.log("Found potential server files:", serverFiles);
+                let loaded = false;
+                for (const file of serverFiles) {
+                  try {
+                    console.log(`Attempting to load ${file}...`);
+                    require(file);
+                    console.log(`Successfully loaded ${file}`);
+                    loaded = true;
+                    break;
+                  } catch (e) {
+                    console.error(`Error loading ${file}:`, e);
+                  }
+                }
+                if (!loaded) {
+                  throw new Error("Could not load any found server files");
+                }
+              } else {
+                throw new Error("Could not find any Next.js server files");
+              }
             }
           } catch (e) {
             console.error("Error loading Next.js:", e);
@@ -91,11 +166,29 @@ jobs:
             // Start emergency HTTP server
             http.createServer((req, res) => {
               res.writeHead(200, {"Content-Type": "text/html"});
-              res.end(`<html><head><title>Next.js App Unavailable</title></head>
-                <body>
-                  <h1>Server is running but Next.js failed to load</h1>
-                  <p>Check container logs for details</p>
-                </body>
+              res.end(`<html><head><title>Next.js App Unavailable</title>
+              <style>
+                body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+                h1 { color: #e53e3e; }
+                pre { background: #f7fafc; padding: 15px; border-radius: 5px; white-space: pre-wrap; }
+                code { font-family: monospace; }
+              </style>
+              </head>
+              <body>
+                <h1>Server is running but Next.js failed to load</h1>
+                <p>The server is running but had trouble starting the Next.js application.</p>
+                
+                <h2>Error Details</h2>
+                <pre><code>${e.stack || e.toString()}</code></pre>
+                
+                <h2>Troubleshooting</h2>
+                <ul>
+                  <li>Check that all Node.js dependencies are properly installed</li>
+                  <li>Verify Next.js configuration in next.config.ts</li>
+                  <li>Check for required environment variables</li>
+                  <li>Review container logs for more detailed error information</li>
+                </ul>
+              </body>
               </html>`);
             }).listen(3000, "0.0.0.0");
             console.log("Emergency server started on port 3000");
@@ -195,6 +288,8 @@ jobs:
 
           ENV PORT 3000
           ENV HOSTNAME "0.0.0.0"
+          ENV NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
           # Use sh not bun directly to ensure proper output
           CMD ["/bin/sh", "/app/start.sh"]
