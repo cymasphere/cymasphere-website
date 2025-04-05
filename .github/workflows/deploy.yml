@@ -16,6 +16,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '19'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          # Add any required environment variables for build
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -28,6 +44,60 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Dockerfile for Next.js
+        run: |
+          cat > Dockerfile << EOL
+          FROM node:19-alpine AS base
+
+          # Install dependencies only when needed
+          FROM base AS deps
+          RUN apk add --no-cache libc6-compat
+          WORKDIR /app
+          COPY package.json package-lock.json* ./
+          RUN npm ci
+
+          # Rebuild the source code only when needed
+          FROM base AS builder
+          WORKDIR /app
+          COPY --from=deps /app/node_modules ./node_modules
+          COPY . .
+          RUN npm run build
+
+          # Production image, copy all the files and run next
+          FROM base AS runner
+          WORKDIR /app
+
+          ENV NODE_ENV production
+
+          RUN addgroup --system --gid 1001 nodejs
+          RUN adduser --system --uid 1001 nextjs
+
+          COPY --from=builder /app/public ./public
+          COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+          COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+          USER nextjs
+
+          EXPOSE 3000
+
+          ENV PORT 3000
+          ENV HOSTNAME "0.0.0.0"
+
+          CMD ["node", "server.js"]
+          EOL
+
+      - name: Update next.config.ts for standalone output
+        run: |
+          cat > next.config.ts << EOL
+          import { NextConfig } from 'next';
+
+          const config: NextConfig = {
+            output: 'standalone',
+          };
+
+          export default config;
+          EOL
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -47,12 +117,6 @@ jobs:
           # Create config file to disable strict host checking
           echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > ~/.ssh/config
           chmod 600 ~/.ssh/config
-          
-          # List files in ~/.ssh for debugging
-          ls -la ~/.ssh/
-          
-          # Try to show SSH key info (first line only)
-          echo "SSH key first line: $(head -n 1 ~/.ssh/id_rsa)"
           
           # Create deploy script
           cat > deploy.sh << EOL
@@ -97,14 +161,8 @@ jobs:
           
           chmod +x deploy.sh
 
-      - name: Debug SSH connection 
-        run: |
-          # Debug SSH details
-          echo "Testing SSH connection..."
-          ssh -vvv ubuntu@${{ secrets.LIGHTSAIL_IP }} "echo Connection test successful"
-
       - name: Deploy to Lightsail
         run: |
           # Try SCP and SSH
-          scp -vvv deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
-          ssh -vvv ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          scp deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
+          ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
