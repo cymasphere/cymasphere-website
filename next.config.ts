@@ -1,39 +1,26 @@
-import { NextConfig } from 'next';
-
-/**
- * Production-ready configuration for Next.js 15.2.4
- * Optimized for Docker deployment with standalone output
- */
-const config: NextConfig = {
-  // Generate standalone output for Docker deployment
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   output: 'standalone',
   
-  // Enable React strict mode
+  // Completely disable static page generation
+  staticPageGenerationTimeout: 0,
+  
   reactStrictMode: true,
+  swcMinify: true,
   
-  // Disable validation for faster builds
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  // Enable styled-components
-  compiler: {
-    styledComponents: true,
-  },
-  
-  // Disable image optimization for simpler deployment
-  images: {
-    unoptimized: true
-  },
-  
-  // Minimal experimental features
+  // Add experimental flags needed for Next.js 15
   experimental: {
-    // Optimize CSS
-    optimizeCss: true,
+    // Force dynamic rendering for all routes
+    appDocumentPreloading: false,
+    optimizeCss: true
   },
-};
 
-export default config;
+  // Force dynamic rendering for everything
+  env: {
+    NEXT_DISABLE_PRERENDER: 'true',
+  },
+
+  // Remove any references to serverComponentsExternalPackages
+}
+
+export default nextConfig;
