@@ -67,6 +67,41 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create simplified server.js file
+        run: |
+          echo 'const http = require("http");' > simple-server.js
+          echo 'const fs = require("fs");' >> simple-server.js
+          echo 'const path = require("path");' >> simple-server.js
+          echo '' >> simple-server.js
+          echo 'http.createServer((req, res) => {' >> simple-server.js
+          echo '  res.writeHead(200, {"Content-Type": "text/html"});' >> simple-server.js
+          echo '  res.end(`<!DOCTYPE html>' >> simple-server.js
+          echo '  <html lang="en">' >> simple-server.js
+          echo '    <head>' >> simple-server.js
+          echo '      <meta charset="UTF-8">' >> simple-server.js
+          echo '      <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> simple-server.js
+          echo '      <title>Cymasphere</title>' >> simple-server.js
+          echo '      <style>' >> simple-server.js
+          echo '        body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }' >> simple-server.js
+          echo '        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }' >> simple-server.js
+          echo '        .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }' >> simple-server.js
+          echo '        .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }' >> simple-server.js
+          echo '        h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }' >> simple-server.js
+          echo '      </style>' >> simple-server.js
+          echo '    </head>' >> simple-server.js
+          echo '    <body>' >> simple-server.js
+          echo '      <div class="container">' >> simple-server.js
+          echo '        <div class="logo"><span class="logo-text">CYMA</span></div>' >> simple-server.js
+          echo '        <h1>Cymasphere</h1>' >> simple-server.js
+          echo '        <h2>Website under maintenance</h2>' >> simple-server.js
+          echo '        <p>We are currently updating our platform. Please check back soon.</p>' >> simple-server.js
+          echo '      </div>' >> simple-server.js
+          echo '    </body>' >> simple-server.js
+          echo '  </html>`);' >> simple-server.js
+          echo '}).listen(3000, "0.0.0.0", () => {' >> simple-server.js
+          echo '  console.log("> Server ready on http://0.0.0.0:3000");' >> simple-server.js
+          echo '});' >> simple-server.js
+
       - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
@@ -97,89 +132,6 @@ jobs:
           
           # Ensure all needed directories exist
           RUN mkdir -p /app/.next/static /app/public
-          
-          # Create a custom server.js
-          RUN echo 'const http = require("http");' > /app/server.js && \
-              echo 'const fs = require("fs");' >> /app/server.js && \
-              echo 'const path = require("path");' >> /app/server.js && \
-              echo 'const nextDir = path.join(__dirname, ".next");' >> /app/server.js && \
-              echo 'const nextJsAvailable = fs.existsSync(nextDir);' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'if (nextJsAvailable) {' >> /app/server.js && \
-              echo '  try {' >> /app/server.js && \
-              echo '    console.log("Starting Next.js application with Bun runtime...");' >> /app/server.js && \
-              echo '    const next = require("next");' >> /app/server.js && \
-              echo '    const app = next({ dev: false, dir: __dirname });' >> /app/server.js && \
-              echo '    const handler = app.getRequestHandler();' >> /app/server.js && \
-              echo '    app.prepare().then(() => {' >> /app/server.js && \
-              echo '      http.createServer((req, res) => {' >> /app/server.js && \
-              echo '        handler(req, res);' >> /app/server.js && \
-              echo '      }).listen(3000, "0.0.0.0", () => {' >> /app/server.js && \
-              echo '        console.log("> Ready on http://0.0.0.0:3000");' >> /app/server.js && \
-              echo '      });' >> /app/server.js && \
-              echo '    });' >> /app/server.js && \
-              echo '  } catch (error) {' >> /app/server.js && \
-              echo '    console.error("Failed to start Next.js:", error);' >> /app/server.js && \
-              echo '    serveProductionPage();' >> /app/server.js && \
-              echo '  }' >> /app/server.js && \
-              echo '} else {' >> /app/server.js && \
-              echo '  console.log("Next.js build not found, using production page");' >> /app/server.js && \
-              echo '  serveProductionPage();' >> /app/server.js && \
-              echo '}' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'function serveProductionPage() {' >> /app/server.js && \
-              echo '  http.createServer((req, res) => {' >> /app/server.js && \
-              echo '    res.writeHead(200, {"Content-Type": "text/html"});' >> /app/server.js && \
-              echo '    res.end(`<!DOCTYPE html>' >> /app/server.js && \
-              echo '      <html lang="en">' >> /app/server.js && \
-              echo '        <head>' >> /app/server.js && \
-              echo '          <meta charset="UTF-8">' >> /app/server.js && \
-              echo '          <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> /app/server.js && \
-              echo '          <title>Cymasphere</title>' >> /app/server.js && \
-              echo '          <style>' >> /app/server.js && \
-              echo '            body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }' >> /app/server.js && \
-              echo '            .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }' >> /app/server.js && \
-              echo '            .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }' >> /app/server.js && \
-              echo '            .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }' >> /app/server.js && \
-              echo '            h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }' >> /app/server.js && \
-              echo '            .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }' >> /app/server.js && \
-              echo '            p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }' >> /app/server.js && \
-              echo '            .feature { display: flex; align-items: center; margin-bottom: 15px; }' >> /app/server.js && \
-              echo '            .feature-icon { width: 40px; height: 40px; border-radius: 50%; background: #4f46e5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }' >> /app/server.js && \
-              echo '            .feature-text { flex: 1; }' >> /app/server.js && \
-              echo '            .feature-icon span { color: white; font-weight: bold; }' >> /app/server.js && \
-              echo '            button { background: #4f46e5; color: white; border: none; padding: 15px 25px; border-radius: 5px; font-size: 1rem; font-weight: 600; cursor: pointer; display: block; margin: 30px auto 0; transition: background 0.3s; }' >> /app/server.js && \
-              echo '            button:hover { background: #4338ca; }' >> /app/server.js && \
-              echo '          </style>' >> /app/server.js && \
-              echo '        </head>' >> /app/server.js && \
-              echo '        <body>' >> /app/server.js && \
-              echo '          <div class="container">' >> /app/server.js && \
-              echo '            <div class="logo"><span class="logo-text">CYMA</span></div>' >> /app/server.js && \
-              echo '            <h1>Cymasphere</h1>' >> /app/server.js && \
-              echo '            <div class="card">' >> /app/server.js && \
-              echo '              <h2>Visual Sound Experience</h2>' >> /app/server.js && \
-              echo '              <p>Welcome to the Cymasphere platform - where sound meets visualization. We\'re currently enhancing our platform with new immersive features.</p>' >> /app/server.js && \
-              echo '              <div class="feature">' >> /app/server.js && \
-              echo '                <div class="feature-icon"><span>✓</span></div>' >> /app/server.js && \
-              echo '                <div class="feature-text">Sound visualization and analysis</div>' >> /app/server.js && \
-              echo '              </div>' >> /app/server.js && \
-              echo '              <div class="feature">' >> /app/server.js && \
-              echo '                <div class="feature-icon"><span>✓</span></div>' >> /app/server.js && \
-              echo '                <div class="feature-text">Interactive music exploration</div>' >> /app/server.js && \
-              echo '              </div>' >> /app/server.js && \
-              echo '              <div class="feature">' >> /app/server.js && \
-              echo '                <div class="feature-icon"><span>✓</span></div>' >> /app/server.js && \
-              echo '                <div class="feature-text">Cymatic pattern generation</div>' >> /app/server.js && \
-              echo '              </div>' >> /app/server.js && \
-              echo '              <button onclick="window.location.reload();">Refresh Page</button>' >> /app/server.js && \
-              echo '            </div>' >> /app/server.js && \
-              echo '          </div>' >> /app/server.js && \
-              echo '        </body>' >> /app/server.js && \
-              echo '      </html>`);' >> /app/server.js && \
-              echo '  }).listen(3000, "0.0.0.0", () => {' >> /app/server.js && \
-              echo '    console.log("> Production page ready on http://0.0.0.0:3000");' >> /app/server.js && \
-              echo '  });' >> /app/server.js && \
-              echo '}' >> /app/server.js
 
           # Production image
           FROM base AS runner
@@ -196,7 +148,7 @@ jobs:
           COPY --from=builder /app/node_modules ./node_modules
           COPY --from=builder /app/.next ./.next
           COPY --from=builder /app/public ./public
-          COPY --from=builder /app/server.js ./server.js
+          COPY simple-server.js ./server.js
 
           # Command to run with Bun
           CMD ["bun", "server.js"]
