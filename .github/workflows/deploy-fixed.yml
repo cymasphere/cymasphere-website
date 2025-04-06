@@ -135,6 +135,10 @@ jobs:
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache: true
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           
       # Install SSH key using a more reliable approach
       - name: Install SSH Key
