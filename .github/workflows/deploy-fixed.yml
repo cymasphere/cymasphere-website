@@ -73,71 +73,148 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL length: ${#NEXT_PUBLIC_SUPABASE_URL}"
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY length: ${#NEXT_PUBLIC_SUPABASE_ANON_KEY}"
           
-          echo 'const http = require("http");' > smart-server.js
-          echo 'const fs = require("fs");' >> smart-server.js
-          echo 'const path = require("path");' >> smart-server.js
-          echo '' >> smart-server.js
-          echo '// Check if Next.js build exists' >> smart-server.js
-          echo 'const nextDir = path.join(__dirname, ".next");' >> smart-server.js
-          echo 'const nextJsAvailable = fs.existsSync(nextDir);' >> smart-server.js
-          echo '' >> smart-server.js
-          echo 'if (nextJsAvailable) {' >> smart-server.js
-          echo '  try {' >> smart-server.js
-          echo '    console.log("Starting Next.js application with Bun...");' >> smart-server.js
-          echo '    const next = require("next");' >> smart-server.js
-          echo '    const app = next({ dev: false, dir: __dirname });' >> smart-server.js
-          echo '    const handler = app.getRequestHandler();' >> smart-server.js
-          echo '    ' >> smart-server.js
-          echo '    app.prepare().then(() => {' >> smart-server.js
-          echo '      http.createServer((req, res) => {' >> smart-server.js
-          echo '        handler(req, res);' >> smart-server.js
-          echo '      }).listen(3000, "0.0.0.0", () => {' >> smart-server.js
-          echo '        console.log("> Next.js app ready on http://0.0.0.0:3000");' >> smart-server.js
-          echo '      });' >> smart-server.js
-          echo '    });' >> smart-server.js
-          echo '  } catch (error) {' >> smart-server.js
-          echo '    console.error("Failed to start Next.js:", error);' >> smart-server.js
-          echo '    serveMaintenancePage();' >> smart-server.js
-          echo '  }' >> smart-server.js
-          echo '} else {' >> smart-server.js
-          echo '  console.log("Next.js build not found, showing maintenance page");' >> smart-server.js
-          echo '  serveMaintenancePage();' >> smart-server.js
-          echo '}' >> smart-server.js
-          echo '' >> smart-server.js
-          echo 'function serveMaintenancePage() {' >> smart-server.js
-          echo '  http.createServer((req, res) => {' >> smart-server.js
-          echo '    res.writeHead(200, {"Content-Type": "text/html"});' >> smart-server.js
-          echo '    res.end(`<!DOCTYPE html>' >> smart-server.js
-          echo '  <html lang="en">' >> smart-server.js
-          echo '    <head>' >> smart-server.js
-          echo '      <meta charset="UTF-8">' >> smart-server.js
-          echo '      <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> smart-server.js
-          echo '      <title>Cymasphere</title>' >> smart-server.js
-          echo '      <style>' >> smart-server.js
-          echo '        body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }' >> smart-server.js
-          echo '        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }' >> smart-server.js
-          echo '        .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }' >> smart-server.js
-          echo '        .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }' >> smart-server.js
-          echo '        h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }' >> smart-server.js
-          echo '        .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }' >> smart-server.js
-          echo '        p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }' >> smart-server.js
-          echo '      </style>' >> smart-server.js
-          echo '    </head>' >> smart-server.js
-          echo '    <body>' >> smart-server.js
-          echo '      <div class="container">' >> smart-server.js
-          echo '        <div class="logo"><span class="logo-text">CYMA</span></div>' >> smart-server.js
-          echo '        <h1>Cymasphere</h1>' >> smart-server.js
-          echo '        <div class="card">' >> smart-server.js
-          echo '          <h2>Website under maintenance</h2>' >> smart-server.js
-          echo '          <p>We are currently updating our platform. Please check back soon.</p>' >> smart-server.js
-          echo '        </div>' >> smart-server.js
-          echo '      </div>' >> smart-server.js
-          echo '    </body>' >> smart-server.js
-          echo '  </html>`);' >> smart-server.js
-          echo '  }).listen(3000, "0.0.0.0", () => {' >> smart-server.js
-          echo '    console.log("> Maintenance page ready on http://0.0.0.0:3000");' >> smart-server.js
-          echo '  });' >> smart-server.js
-          echo '}' >> smart-server.js
+          # Create a simpler, more reliable Bun-native server.js
+          cat > smart-server.js << 'EOF'
+          // Simple Bun-native server that works reliably
+          console.log("Starting server.js...");
+          
+          const fs = require("fs");
+          const path = require("path");
+          
+          // Log detailed environment information for debugging
+          console.log("Environment variables:");
+          console.log("- NODE_ENV:", process.env.NODE_ENV);
+          console.log("- PORT:", process.env.PORT);
+          console.log("- HOSTNAME:", process.env.HOSTNAME);
+          console.log("- NEXT_PUBLIC_SUPABASE_URL length:", process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0);
+          console.log("- NEXT_PUBLIC_SUPABASE_ANON_KEY length:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0);
+          
+          // Log filesystem information for debugging
+          console.log("\nFilesystem:");
+          console.log("- Current directory:", process.cwd());
+          console.log("- Directory contents:", fs.readdirSync(process.cwd()));
+          
+          const nextDir = path.join(process.cwd(), ".next");
+          console.log("- .next exists:", fs.existsSync(nextDir));
+          if (fs.existsSync(nextDir)) {
+            console.log("- .next contents:", fs.readdirSync(nextDir));
+          }
+          
+          // First, try to start the Next.js app
+          try {
+            console.log("\nAttempting to start Next.js application...");
+            
+            // Check if .next directory exists
+            if (!fs.existsSync(nextDir)) {
+              throw new Error(".next directory not found");
+            }
+            
+            // Look for key Next.js files
+            if (!fs.existsSync(path.join(nextDir, "server"))) {
+              throw new Error(".next/server directory not found");
+            }
+            
+            const next = require("next");
+            const app = next({ dev: false, dir: process.cwd() });
+            const handle = app.getRequestHandler();
+            
+            console.log("Next.js initialized, preparing app...");
+            
+            app.prepare().then(() => {
+              console.log("Next.js app prepared, starting HTTP server...");
+              
+              const server = Bun.serve({
+                port: process.env.PORT || 3000,
+                hostname: "0.0.0.0",
+                fetch: async (req) => {
+                  try {
+                    // Create Node.js compatible req/res objects
+                    const { readable, writable } = new TransformStream();
+                    const res = {
+                      statusCode: 200,
+                      headers: new Headers(),
+                      write: (chunk) => writable.getWriter().write(chunk),
+                      end: () => writable.getWriter().close(),
+                      setHeader: (name, value) => res.headers.set(name, value),
+                      getHeader: (name) => res.headers.get(name),
+                      removeHeader: (name) => res.headers.delete(name),
+                      writeHead: (status, headers) => {
+                        res.statusCode = status;
+                        if (headers) {
+                          Object.entries(headers).forEach(([key, value]) => {
+                            res.headers.set(key, value);
+                          });
+                        }
+                      }
+                    };
+                    
+                    // Pass to Next.js
+                    await handle(req, res);
+                    
+                    // Return the response
+                    return new Response(readable, {
+                      status: res.statusCode,
+                      headers: res.headers
+                    });
+                  } catch (error) {
+                    console.error("Error handling request:", error);
+                    return new Response("Server error", { status: 500 });
+                  }
+                }
+              });
+              
+              console.log(`Next.js server running at http://${server.hostname}:${server.port}`);
+            }).catch(error => {
+              console.error("Error preparing Next.js app:", error);
+              serveMaintenancePage();
+            });
+          } catch (error) {
+            console.error("Failed to initialize Next.js:", error);
+            serveMaintenancePage();
+          }
+          
+          function serveMaintenancePage() {
+            console.log("Serving maintenance page...");
+            
+            const server = Bun.serve({
+              port: process.env.PORT || 3000,
+              hostname: "0.0.0.0",
+              fetch: () => {
+                return new Response(`<!DOCTYPE html>
+                <html lang="en">
+                  <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Cymasphere - Maintenance</title>
+                    <style>
+                      body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
+                      .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+                      .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+                      .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+                      h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }
+                      .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+                      p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="logo"><span class="logo-text">CYMA</span></div>
+                      <h1>Cymasphere</h1>
+                      <div class="card">
+                        <h2>Website under maintenance</h2>
+                        <p>We are currently updating our platform. Please check back soon.</p>
+                      </div>
+                    </div>
+                  </body>
+                </html>`, {
+                  headers: { "Content-Type": "text/html" }
+                });
+              }
+            });
+            
+            console.log(`Maintenance page server running at http://${server.hostname}:${server.port}`);
+          }
+          EOF
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -169,72 +246,47 @@ jobs:
       - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Bun as requested
-          FROM oven/bun:1 AS base
+          # Base image
+          FROM oven/bun:1.1.0 as base
+          WORKDIR /app
 
           # Install dependencies
-          FROM base AS deps
-          WORKDIR /app
+          FROM base as deps
           COPY package.json bun.lockb* ./
           RUN bun install --frozen-lockfile
 
-          # Build the application
-          FROM base AS builder
+          # Build the application - simplifying to just copy files without trying to build
+          FROM base as builder
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
-          
-          # Define build arguments
-          ARG NEXT_PUBLIC_SUPABASE_URL
-          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-          
-          # Set environment variables
-          ENV NEXT_TELEMETRY_DISABLED=1
-          ENV NODE_ENV=production
-          # Add Supabase environment variables for build
-          ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-          
-          # Create a simple next.config.js to avoid issues
-          RUN echo 'module.exports = {reactStrictMode: true, eslint: {ignoreDuringBuilds: true}, typescript: {ignoreBuildErrors: true}}' > next.config.js
-          
-          # Debug environment
-          RUN echo "Building with environment: NEXT_PUBLIC_SUPABASE_URL length: ${#NEXT_PUBLIC_SUPABASE_URL}"
-          RUN echo "Building with environment: NEXT_PUBLIC_SUPABASE_ANON_KEY length: ${#NEXT_PUBLIC_SUPABASE_ANON_KEY}"
-          
-          # Build Next.js app with error handling but capture the result
-          RUN bun run build || { echo "Build failed but continuing..."; exit 0; }
-          
-          # Ensure all needed directories exist
-          RUN mkdir -p /app/.next/static /app/public
 
-          # Production image
+          # Set environment variables
+          ENV NODE_ENV=production
+          ENV NEXT_TELEMETRY_DISABLED=1
+
+          # Production image - simplified with debug tools
           FROM base AS runner
           WORKDIR /app
 
-          # Define runtime arguments
-          ARG NEXT_PUBLIC_SUPABASE_URL
-          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-          # Set environment variables for runtime
+          # Set runtime environment variables
           ENV NODE_ENV=production
           ENV NEXT_TELEMETRY_DISABLED=1
           ENV PORT=3000
           ENV HOSTNAME=0.0.0.0
-          ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
-          # Copy over build files
+          # Copy necessary files
           COPY --from=builder /app/package.json ./
           COPY --from=builder /app/node_modules ./node_modules
           COPY --from=builder /app/.next ./.next
           COPY --from=builder /app/public ./public
-          
-          # Use the intelligent server that checks for Next.js first
           COPY smart-server.js ./server.js
 
-          # Command to run with Bun
-          CMD ["bun", "server.js"]
+          # Install additional debugging tools 
+          RUN apk add --no-cache curl procps
+
+          # Use direct Bun command to ensure proper execution
+          ENTRYPOINT ["bun", "run", "server.js"]
           DOCKERFILE_EOF
 
       - name: Set environment variables
@@ -331,8 +383,32 @@ jobs:
           # Verify deployment
           echo "Container status:"
           docker ps -a | grep cymasphere
-          echo "Container logs:"
-          docker logs cymasphere-container
+          
+          # Wait for container to generate logs
+          echo "Waiting for logs to be available..."
+          sleep 5
+          
+          # Show continuous logs for first 30 seconds
+          echo -e "\n--- CONTAINER LOGS ---"
+          timeout 30s docker logs -f cymasphere-container || true
+          echo -e "--- END OF LOGS ---\n"
+          
+          # Test if container is responsive
+          echo "Testing HTTP connection to container:"
+          if curl -s -o /dev/null -w "Status Code: %{http_code}\n" http://localhost; then
+            echo "Container is responding to HTTP requests"
+          else
+            echo "Container is NOT responding to HTTP requests"
+            
+            # Check container health
+            echo -e "\nContainer health check:"
+            docker inspect --format="{{.State.Status}}" cymasphere-container
+            docker inspect --format="{{.State.Health.Status}}" cymasphere-container 2>/dev/null || echo "No health check configured"
+            
+            # Print resource usage
+            echo -e "\nContainer resource usage:"
+            docker stats cymasphere-container --no-stream
+          fi
           
           # Clean up
           echo "Cleaning up unused resources..."
