@@ -276,17 +276,23 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
           docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
-          # Run the new container with net=host for simplicity
-          echo "=== STARTING CONTAINER ==="
+          # Create a debug directory for container logs and files
+          mkdir -p ~/cyma-debug
+          
+          # Run the new container with debugging enabled
+          echo "=== STARTING DEBUG CONTAINER ==="
           docker run -d --restart unless-stopped --name cymasphere-container \
-            --net=host \
+            -p 80:80 \
+            -p 9229:9229 \
+            -v ~/cyma-debug:/app/debug \
             -e NODE_ENV=production \
             -e PORT=80 \
             -e DEBUG=* \
             -e VERBOSE=true \
+            -e NEXT_TELEMETRY_DEBUG=1 \
             -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            --memory=1g \
+            --memory=2g \
             --cpus=1 \
             ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
@@ -294,34 +300,58 @@ jobs:
           echo "=== CONTAINER STATUS ==="
           docker ps -a 
           
+          # Get container info
+          echo "=== CONTAINER INFO ==="
+          docker inspect cymasphere-container | grep -E 'Id|Name|Image|State|Platform|RestartCount'
+          
           # Wait for container to generate logs
           echo "=== WAITING FOR LOGS ==="
-          sleep 10
+          sleep 15
           
           # Show continuous logs
-          echo -e "\n=== CONTAINER LOGS (60s) ==="
-          timeout 60s docker logs -f cymasphere-container || true
+          echo -e "\n=== CONTAINER LOGS (120s) ==="
+          timeout 120s docker logs -f cymasphere-container || true
           echo -e "=== END OF LOGS ===\n"
           
-          # Test if container is responsive
-          echo "=== TESTING CONNECTION ==="
-          for i in {1..10}; do
-            echo "Attempt $i:"
-            curl -v http://localhost || echo "Failed"
-            sleep 2
-          done
+          # Test if container is responsive - more comprehensive test
+          echo "=== COMPREHENSIVE CONNECTION TESTING ==="
+          # Dump HTTP headers
+          echo "Testing HTTP headers:"
+          curl -v -s -o /dev/null http://localhost/ 2>&1 | grep -E '^< '
           
-          # Check for port listeners
-          echo "=== PORT LISTENERS ==="
-          netstat -tulpn | grep LISTEN
+          # Get actual response content
+          echo -e "\nTesting page content:"
+          curl -s http://localhost/ | head -n 20
           
-          # Check container health
-          echo "=== CONTAINER HEALTH ==="
-          docker inspect cymasphere-container
+          # Try key debug endpoints
+          echo -e "\nTesting debug logs endpoint:"
+          curl -s http://localhost/logs | head -n 20
           
-          # Print resource usage
+          echo -e "\nTesting files endpoint:"
+          curl -s http://localhost/files | head -n 20
+          
+          # Check JavaScript debugger port
+          echo -e "\nTesting debugger port:"
+          (echo > /dev/tcp/localhost/9229) >/dev/null 2>&1 && echo "Debugger port open!" || echo "Debugger port closed"
+          
+          # Get resource usage after startup
           echo "=== RESOURCE USAGE ==="
           docker stats cymasphere-container --no-stream
+          
+          # Copy logs to local debug directory
+          echo "=== SAVING DEBUG FILES ==="
+          docker cp cymasphere-container:/app/error.log ~/cyma-debug/error.log 2>/dev/null || echo "No error.log file found"
+          docker exec cymasphere-container ls -la / > ~/cyma-debug/root-dir.txt 2>/dev/null || echo "Could not list root directory"
+          docker exec cymasphere-container ls -la /app > ~/cyma-debug/app-dir.txt 2>/dev/null || echo "Could not list app directory"
+          docker exec cymasphere-container ls -la /app/.next > ~/cyma-debug/next-dir.txt 2>/dev/null || echo "Could not list .next directory"
+          
+          # Print instructions for further debugging
+          echo -e "\n=== DEBUG INSTRUCTIONS ==="
+          echo "You can view the debug logs at: http://${{ secrets.LIGHTSAIL_IP }}/logs"
+          echo "You can view the filesystem at: http://${{ secrets.LIGHTSAIL_IP }}/files"
+          echo "Local debug files are in: ~/cyma-debug/"
+          echo "To see container logs: docker logs cymasphere-container"
+          echo "To attach to container: docker exec -it cymasphere-container bash"
           
           # Don't clean up - leave everything for debugging
           echo "=== DEPLOYMENT COMPLETE ==="
@@ -353,3 +383,355 @@ jobs:
             # Let's not fail the workflow even if verification fails
             echo "Continuing anyway as the container might still be starting up..."
           fi 
+
+      - name: Create debugging server.js file
+        run: |
+          cat > debugging-server.js << 'EOF'
+          // Advanced debug server that attempts to run Next.js with detailed error reporting
+          const fs = require('fs');
+          const path = require('path');
+          const http = require('http');
+          
+          // Enable detailed debugging
+          process.env.NODE_DEBUG = 'http,net,stream,module,timers';
+          process.env.DEBUG = '*';
+          
+          // Global error catching
+          process.on('uncaughtException', (err) => {
+            console.error('🔴 UNCAUGHT EXCEPTION:', err);
+            fs.appendFileSync('error.log', `${new Date().toISOString()} - Uncaught Exception: ${err.stack}\n`);
+          });
+          
+          process.on('unhandledRejection', (reason, promise) => {
+            console.error('🔴 UNHANDLED REJECTION:', reason);
+            fs.appendFileSync('error.log', `${new Date().toISOString()} - Unhandled Rejection: ${reason}\n`);
+          });
+          
+          // Initialize with basic diagnostics
+          console.log('🟢 STARTUP: Diagnostic debug server starting');
+          console.log('🟢 ENVIRONMENT:', {
+            nodeEnv: process.env.NODE_ENV,
+            port: process.env.PORT,
+            nodeVersion: process.version,
+            workingDir: process.cwd(),
+            platform: process.platform,
+            arch: process.arch,
+            memory: process.memoryUsage(),
+          });
+          
+          // Filesystem diagnostics
+          console.log('🟢 FILES: Directory structure');
+          function listDir(dir, indent = '') {
+            try {
+              const items = fs.readdirSync(dir);
+              console.log(`${indent}📁 ${dir}`);
+              items.forEach(item => {
+                const fullPath = path.join(dir, item);
+                const stats = fs.statSync(fullPath);
+                if (stats.isDirectory()) {
+                  if (item !== 'node_modules' && !item.startsWith('.')) {
+                    listDir(fullPath, indent + '  ');
+                  } else {
+                    console.log(`${indent}  📁 ${item} (skipped)`);
+                  }
+                } else {
+                  console.log(`${indent}  📄 ${item} (${stats.size} bytes)`);
+                }
+              });
+            } catch (err) {
+              console.error(`⚠️ Cannot read directory ${dir}:`, err.message);
+            }
+          }
+          
+          listDir(process.cwd());
+          
+          // Check for Next.js files
+          const nextDir = path.join(process.cwd(), '.next');
+          const nextExists = fs.existsSync(nextDir);
+          console.log(`🟢 NEXT.JS: .next directory exists: ${nextExists}`);
+          
+          if (nextExists) {
+            try {
+              const nextFiles = fs.readdirSync(nextDir);
+              console.log('🟢 NEXT.JS: .next files:', nextFiles);
+              
+              // Check for key directories
+              ['server', 'static'].forEach(dir => {
+                const fullPath = path.join(nextDir, dir);
+                if (fs.existsSync(fullPath)) {
+                  console.log(`🟢 NEXT.JS: .next/${dir} exists with files:`, fs.readdirSync(fullPath).slice(0, 5), '...');
+                } else {
+                  console.error(`🔴 NEXT.JS: Missing critical directory .next/${dir}`);
+                }
+              });
+              
+              // Check for server build
+              const serverDir = path.join(nextDir, 'server');
+              if (fs.existsSync(serverDir)) {
+                const serverFiles = fs.readdirSync(serverDir);
+                console.log(`🟢 NEXT.JS: Server files: ${serverFiles.slice(0, 10).join(', ')}${serverFiles.length > 10 ? '...' : ''}`);
+              }
+            } catch (err) {
+              console.error('🔴 NEXT.JS: Error reading .next directory:', err);
+            }
+          }
+          
+          // Create a dual-purpose server that attempts to run Next.js but falls back to maintenance
+          async function startServer() {
+            // First try loading Next.js
+            if (nextExists) {
+              try {
+                console.log('🟢 SERVER: Attempting to load Next.js...');
+                // Force verbose logging in Next.js
+                process.env.NEXT_TELEMETRY_DEBUG = '1';
+                
+                // Try to load Next.js packages
+                let next;
+                try {
+                  next = require('next');
+                  console.log('🟢 NEXT.JS: Successfully imported Next.js package');
+                } catch (err) {
+                  console.error('🔴 NEXT.JS: Failed to import Next.js package:', err);
+                  throw err;
+                }
+                
+                // Try to initialize Next.js app
+                let app;
+                try {
+                  app = next({ dev: false, dir: process.cwd() });
+                  console.log('🟢 NEXT.JS: Created Next.js app instance');
+                } catch (err) {
+                  console.error('🔴 NEXT.JS: Failed to create Next.js app:', err);
+                  throw err;
+                }
+                
+                // Try to get request handler
+                let handle;
+                try {
+                  handle = app.getRequestHandler();
+                  console.log('🟢 NEXT.JS: Got request handler');
+                } catch (err) {
+                  console.error('🔴 NEXT.JS: Failed to get request handler:', err);
+                  throw err;
+                }
+                
+                // Try to prepare app
+                try {
+                  console.log('🟢 NEXT.JS: Preparing app (this might take a moment)...');
+                  await app.prepare();
+                  console.log('🟢 NEXT.JS: App prepared successfully');
+                } catch (err) {
+                  console.error('🔴 NEXT.JS: Error preparing app:', err);
+                  throw err;
+                }
+                
+                // Set up HTTP server for Next.js
+                console.log('🟢 SERVER: Creating HTTP server for Next.js');
+                const server = http.createServer((req, res) => {
+                  try {
+                    console.log(`🟢 REQUEST: ${req.method} ${req.url}`);
+                    
+                    // Set a timeout to catch hanging requests
+                    const timeout = setTimeout(() => {
+                      console.error(`🔴 REQUEST: Timeout for ${req.method} ${req.url}`);
+                      if (!res.writableEnded) {
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('Request timed out');
+                      }
+                    }, 30000);
+                    
+                    // Track response completion
+                    res.on('finish', () => {
+                      clearTimeout(timeout);
+                      console.log(`🟢 RESPONSE: ${res.statusCode} for ${req.method} ${req.url}`);
+                    });
+                    
+                    // Handle with Next.js
+                    handle(req, res).catch(err => {
+                      console.error(`🔴 HANDLER ERROR: ${req.method} ${req.url}:`, err);
+                      if (!res.writableEnded) {
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end(`Error handling request: ${err.message}`);
+                      }
+                    });
+                  } catch (err) {
+                    console.error(`🔴 REQUEST ERROR: ${req.method} ${req.url}:`, err);
+                    if (!res.writableEnded) {
+                      res.writeHead(500, { 'Content-Type': 'text/plain' });
+                      res.end(`Server error: ${err.message}`);
+                    }
+                  }
+                });
+                
+                // Add error handler to the server
+                server.on('error', (err) => {
+                  console.error('🔴 SERVER ERROR:', err);
+                  fs.appendFileSync('error.log', `${new Date().toISOString()} - Server Error: ${err.stack}\n`);
+                });
+                
+                // Start the server
+                const PORT = process.env.PORT || 3000;
+                server.listen(PORT, '0.0.0.0', () => {
+                  console.log(`🟢 SERVER: Next.js running on http://0.0.0.0:${PORT}`);
+                });
+                
+                return; // Successfully started Next.js server
+              } catch (err) {
+                console.error('🔴 SERVER: Failed to start Next.js, falling back to maintenance page:', err);
+                fs.appendFileSync('error.log', `${new Date().toISOString()} - Next.js Startup Error: ${err.stack}\n`);
+              }
+            } else {
+              console.log('🟢 SERVER: No Next.js build found, using maintenance page');
+            }
+            
+            // If we got here, Next.js failed to start or wasn't found
+            // Start a simple debug server with maintenance page
+            const maintenanceServer = http.createServer((req, res) => {
+              console.log(`🟡 MAINTENANCE: Request for ${req.url}`);
+              
+              // Expose error logs via /logs endpoint
+              if (req.url === '/logs') {
+                try {
+                  res.writeHead(200, { 'Content-Type': 'text/plain' });
+                  if (fs.existsSync('error.log')) {
+                    res.end(fs.readFileSync('error.log', 'utf8'));
+                  } else {
+                    res.end('No error logs found');
+                  }
+                } catch (err) {
+                  res.writeHead(500, { 'Content-Type': 'text/plain' });
+                  res.end(`Error reading logs: ${err.message}`);
+                }
+                return;
+              }
+              
+              // Expose directory listing via /files endpoint
+              if (req.url === '/files') {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                let fileList = '<html><body><h1>Directory Listing</h1><pre>';
+                
+                function addDir(dir, indent = '') {
+                  try {
+                    const items = fs.readdirSync(dir);
+                    fileList += `${indent}📁 ${dir}\n`;
+                    items.forEach(item => {
+                      const fullPath = path.join(dir, item);
+                      const stats = fs.statSync(fullPath);
+                      if (stats.isDirectory()) {
+                        if (item !== 'node_modules' && !item.startsWith('.')) {
+                          addDir(fullPath, indent + '  ');
+                        } else {
+                          fileList += `${indent}  📁 ${item} (skipped)\n`;
+                        }
+                      } else {
+                        fileList += `${indent}  📄 ${item} (${stats.size} bytes)\n`;
+                      }
+                    });
+                  } catch (err) {
+                    fileList += `${indent}Error reading ${dir}: ${err.message}\n`;
+                  }
+                }
+                
+                addDir(process.cwd());
+                fileList += '</pre></body></html>';
+                res.end(fileList);
+                return;
+              }
+              
+              // Default maintenance page
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(`<!DOCTYPE html>
+              <html lang="en">
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Cymasphere - Debugging Mode</title>
+                  <style>
+                    body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
+                    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+                    .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+                    .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+                    h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }
+                    .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+                    p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }
+                    .debug-links { margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px; }
+                    .debug-links a { display: block; padding: 10px; margin: 5px 0; background: #e0e0e0; text-decoration: none; color: #333; border-radius: 3px; font-weight: bold; }
+                    .debug-links a:hover { background: #d0d0d0; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="logo"><span class="logo-text">CYMA</span></div>
+                    <h1>Cymasphere</h1>
+                    <div class="card">
+                      <h2>Website in Debug Mode</h2>
+                      <p>We're currently diagnosing issues with the main application.</p>
+                      <p><em>The debug server is running and collecting detailed error information.</em></p>
+                      
+                      <div class="debug-links">
+                        <h3>Debug Tools:</h3>
+                        <a href="/logs">View Error Logs</a>
+                        <a href="/files">View File System</a>
+                      </div>
+                    </div>
+                  </div>
+                </body>
+              </html>`);
+            });
+            
+            const PORT = process.env.PORT || 3000;
+            maintenanceServer.listen(PORT, '0.0.0.0', () => {
+              console.log(`🟡 MAINTENANCE: Server running on http://0.0.0.0:${PORT}`);
+            });
+            
+            maintenanceServer.on('error', (err) => {
+              console.error('🔴 MAINTENANCE SERVER ERROR:', err);
+              fs.appendFileSync('error.log', `${new Date().toISOString()} - Maintenance Server Error: ${err.stack}\n`);
+            });
+          }
+          
+          // Start the server
+          startServer().catch(err => {
+            console.error('🔴 FATAL ERROR:', err);
+            fs.appendFileSync('error.log', `${new Date().toISOString()} - Fatal Error: ${err.stack}\n`);
+          });
+          EOF
+          
+      - name: Create optimized debugging Dockerfile
+        run: |
+          cat > Dockerfile << 'DOCKERFILE_EOF'
+          # Use Node.js LTS for maximum compatibility
+          FROM node:18-alpine AS base
+          
+          # Install build tools and debugging utilities
+          RUN apk add --no-cache curl procps htop vim net-tools bash
+          
+          WORKDIR /app
+          
+          # Copy package files
+          COPY package.json ./
+          
+          # Install dependencies
+          RUN npm install
+          
+          # Copy the Next.js source/build and other files
+          COPY . .
+          COPY debugging-server.js /app/server.js
+          
+          # Check the existence of key directories
+          RUN ls -la && \
+              echo "Checking .next directory:" && \
+              ls -la .next 2>/dev/null || echo ".next directory not found"
+              
+          # Environment variables
+          ENV NODE_ENV=production
+          ENV PORT=80
+          ENV DEBUG=*
+          ENV NODE_OPTIONS="--max-old-space-size=1024 --trace-warnings"
+          
+          # Expose port
+          EXPOSE 80
+          
+          # Start with increased debugging
+          CMD ["node", "--inspect=0.0.0.0:9229", "server.js"]
+          DOCKERFILE_EOF 
