@@ -140,18 +140,21 @@ jobs:
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           
+      # Generate known_hosts for the target server
+      - name: Generate known_hosts
+        id: known_hosts
+        run: |
+          KNOWN_HOSTS=$(ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }})
+          echo "content=$KNOWN_HOSTS" >> $GITHUB_OUTPUT
+          
       # Install SSH key using a more reliable approach
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          known_hosts: ""
+          known_hosts: ${{ steps.known_hosts.outputs.content }}
           name: id_rsa
           if_key_exists: replace
-
-      # Add the Lightsail IP to known hosts
-      - name: Adding Known Hosts
-        run: ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
 
       - name: Create deployment script
         run: |
