@@ -171,6 +171,9 @@ jobs:
           # Make sure .next directory exists even if build fails
           RUN mkdir -p .next/standalone .next/static
           
+          # Ensure public directory exists
+          RUN mkdir -p public
+          
           # Create a proper server.js that uses the actual Next.js app
           RUN echo 'const { createServer } = require("http"); \
               const { parse } = require("url"); \
