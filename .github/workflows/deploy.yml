@@ -114,7 +114,7 @@ jobs:
           FROM base AS deps
           COPY package.json package-lock.json* ./
           RUN npm ci
-          
+
           # Create a separate stage for building the application
           FROM base AS builder
           WORKDIR /app
@@ -144,7 +144,7 @@ jobs:
           # Create production image
           FROM base AS runner
           WORKDIR /app
-          
+
           # Set environment variables
           ENV NODE_ENV=production
           ENV NEXT_TELEMETRY_DISABLED=1
@@ -323,7 +323,7 @@ jobs:
           echo "Container status:"
           docker ps -a | grep cymasphere
           echo "Container logs:"
-          docker logs cymasphere-container
+            docker logs cymasphere-container
           
           # Clean up
           docker system prune -af --volumes
