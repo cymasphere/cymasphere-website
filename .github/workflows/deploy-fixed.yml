@@ -165,29 +165,57 @@ jobs:
       - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Node.js for maximum reliability
+          # Use Node.js LTS for maximum compatibility
           FROM node:18-alpine AS base
+
+          # Install essential build tools
+          RUN apk add --no-cache curl git python3 make g++
+
           WORKDIR /app
 
-          # Copy only what's needed
-          COPY package.json ./
-          COPY smart-server.js ./server.js
+          # Copy package files
+          COPY package.json package-lock.json* ./
+
+          # Install ALL dependencies including dev dependencies
+          RUN npm ci
+
+          # Copy the entire application code
+          COPY . .
           
-          # Install minimal dependencies
-          RUN npm install --only=production http fs path
-          
+          # Create a .env.local file with environment variables
+          RUN echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" > .env.local && \
+              echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" >> .env.local
+              
           # Set environment variables
           ENV NODE_ENV=production
-          ENV PORT=3000
+          ENV PORT=80
           
-          # Install useful debugging tools
-          RUN apk add --no-cache curl htop procps
+          # Build the Next.js app with detailed output
+          RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+          
+          # Copy our debug server.js as a fallback only
+          COPY debugging-server.js /app/debugging-server.js
+          
+          # Create a wrapper script that tries Next.js first, falls back to debugging server
+          RUN echo '#!/bin/sh' > /app/start.sh && \
+              echo 'echo "Attempting to start Next.js application..."' >> /app/start.sh && \
+              echo 'if [ -d "/app/.next" ]; then' >> /app/start.sh && \
+              echo '  echo "Next.js build found, starting with npm start"' >> /app/start.sh && \
+              echo '  npm start || node /app/debugging-server.js' >> /app/start.sh && \
+              echo 'else' >> /app/start.sh && \
+              echo '  echo "No Next.js build found, starting debugging server"' >> /app/start.sh && \
+              echo '  node /app/debugging-server.js' >> /app/start.sh && \
+              echo 'fi' >> /app/start.sh && \
+              chmod +x /app/start.sh
+
+          # Install debugging tools
+          RUN apk add --no-cache bash htop vim procps
 
           # Expose port
-          EXPOSE 3000
-          
-          # Simple command to run the server
-          CMD ["node", "server.js"]
+          EXPOSE 80 9229
+
+          # Start with our wrapper script
+          CMD ["/app/start.sh"]
           DOCKERFILE_EOF
 
       - name: Set environment variables
@@ -211,8 +239,8 @@ jobs:
           cache-to: type=gha,mode=max
           no-cache: true
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_KEY }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           
       # Generate known_hosts for the target server
       - name: Generate known_hosts
@@ -813,36 +841,53 @@ jobs:
           cat > Dockerfile << 'DOCKERFILE_EOF'
           # Use Node.js LTS for maximum compatibility
           FROM node:18-alpine AS base
-          
-          # Install build tools and debugging utilities
-          RUN apk add --no-cache curl procps htop vim net-tools bash
-          
+
+          # Install essential build tools
+          RUN apk add --no-cache curl git python3 make g++
+
           WORKDIR /app
-          
+
           # Copy package files
-          COPY package.json ./
-          
-          # Install dependencies
-          RUN npm install
-          
-          # Copy the Next.js source/build and other files
+          COPY package.json package-lock.json* ./
+
+          # Install ALL dependencies including dev dependencies
+          RUN npm ci
+
+          # Copy the entire application code
           COPY . .
-          COPY debugging-server.js /app/server.js
           
-          # Check the existence of key directories
-          RUN ls -la && \
-              echo "Checking .next directory:" && \
-              ls -la .next 2>/dev/null || echo ".next directory not found"
+          # Create a .env.local file with environment variables
+          RUN echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" > .env.local && \
+              echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" >> .env.local
               
-          # Environment variables
+          # Set environment variables
           ENV NODE_ENV=production
           ENV PORT=80
-          ENV DEBUG=*
-          ENV NODE_OPTIONS="--max-old-space-size=1024 --trace-warnings"
           
+          # Build the Next.js app with detailed output
+          RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+          
+          # Copy our debug server.js as a fallback only
+          COPY debugging-server.js /app/debugging-server.js
+          
+          # Create a wrapper script that tries Next.js first, falls back to debugging server
+          RUN echo '#!/bin/sh' > /app/start.sh && \
+              echo 'echo "Attempting to start Next.js application..."' >> /app/start.sh && \
+              echo 'if [ -d "/app/.next" ]; then' >> /app/start.sh && \
+              echo '  echo "Next.js build found, starting with npm start"' >> /app/start.sh && \
+              echo '  npm start || node /app/debugging-server.js' >> /app/start.sh && \
+              echo 'else' >> /app/start.sh && \
+              echo '  echo "No Next.js build found, starting debugging server"' >> /app/start.sh && \
+              echo '  node /app/debugging-server.js' >> /app/start.sh && \
+              echo 'fi' >> /app/start.sh && \
+              chmod +x /app/start.sh
+
+          # Install debugging tools
+          RUN apk add --no-cache bash htop vim procps
+
           # Expose port
-          EXPOSE 80
-          
-          # Start with increased debugging
-          CMD ["node", "--inspect=0.0.0.0:9229", "server.js"]
+          EXPOSE 80 9229
+
+          # Start with our wrapper script
+          CMD ["/app/start.sh"]
           DOCKERFILE_EOF 
