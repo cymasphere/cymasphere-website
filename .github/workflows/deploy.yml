@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: 'false'
 
 permissions:
   contents: read
@@ -37,15 +43,13 @@ jobs:
           ls -la app || echo "App directory not found!"
 
       - name: Make build script executable
-        run: chmod +x ./build-local.sh
+        run: chmod +x ./build-no-errors.sh
         
       - name: Run enhanced build script
-        run: ./build-local.sh
+        run: ./build-no-errors.sh
         env:
-          # Add any required environment variables for build
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Skip TypeScript errors during build
           NEXT_SKIP_TYPECHECKING: true
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
@@ -63,356 +67,61 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create server.js with diagnostic capabilities
-        run: |
-          cat > server.js << 'EOFJS'
-          try {
-            const fs = require("fs");
-            const http = require("http");
-            const path = require("path");
-            
-            console.log("Server starting, NODE_ENV:", process.env.NODE_ENV);
-            console.log("Working directory:", process.cwd());
-            
-            // Start a basic HTTP server that will always work
-            const server = http.createServer((req, res) => {
-              res.writeHead(200, {"Content-Type": "text/html"});
-              res.end(`
-                <html>
-                  <head>
-                    <title>Next.js Server</title>
-                    <style>
-                      body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
-                      h1 { color: #0070f3; }
-                      pre { background: #f7fafc; padding: 15px; border-radius: 5px; overflow: auto; }
-                    </style>
-                  </head>
-                  <body>
-                    <h1>Next.js Diagnostic Server</h1>
-                    <p>Basic server is running. Checking Next.js status...</p>
-                    <pre id="status">Checking server status...</pre>
-                    
-                    <script>
-                      // Wait 3 seconds to allow server to initialize
-                      setTimeout(() => {
-                        document.getElementById("status").textContent = 
-                          "Full diagnostic information available in container logs. " +
-                          "Run: docker logs cymasphere-container";
-                      }, 3000);
-                    </script>
-                  </body>
-                </html>
-              `);
-            });
-            
-            server.listen(3000, "0.0.0.0", () => {
-              console.log("Basic HTTP server started on port 3000");
-            });
-            
-            // Try to check directory contents
-            try {
-              console.log("Directory contents:", fs.readdirSync("."));
-            } catch (e) {
-              console.error("Error reading directory:", e);
-            }
-            
-          } catch (e) {
-            console.error("CRITICAL SERVER ERROR:", e);
-            require("http").createServer((req, res) => {
-              res.writeHead(200, {"Content-Type": "text/html"});
-              res.end("<html><body><h1>Emergency Server</h1><p>Error: " + e.message + "</p></body></html>");
-            }).listen(3000, "0.0.0.0");
-          }
-          EOFJS
-
-      - name: Create .dockerignore to ensure our diagnostic server.js isn't used
-        run: |
-          cat > .dockerignore << 'EOFDI'
-          # Ignore our diagnostic server.js
-          /server.js
-          EOFDI
-
-      - name: Create Dockerfile for Next.js
+      - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
           FROM oven/bun:1 as base
 
-          # Install dependencies only when needed
+          # Install dependencies
           FROM base AS deps
           WORKDIR /app
           COPY package.json bun.lock ./
           RUN bun install --frozen-lockfile
 
-          # Rebuild the source code only when needed
+          # Build the application
           FROM base AS builder
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
           
-          # Setup environment variables for build
+          # Environment variables for build
           ENV NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Mark as production build to enable mock client
-          ENV NODE_ENV=production 
-          # Skip TypeScript errors during build
+          ENV NODE_ENV=production
           ENV NEXT_SKIP_TYPECHECKING=true
           ENV NEXT_TELEMETRY_DISABLED=1
-          # Skip ESLint during build
           ENV NEXT_LINT=false
-          # Skip route validation to prevent auth errors during build
-          ENV NEXT_BUILD_SKIP_VALIDATION=true
           
-          # Debug package.json
-          RUN cat package.json
+          # Run the build with error handling
+          RUN chmod +x ./build-no-errors.sh && ./build-no-errors.sh
           
-          # Create a dummy .env.local file to ensure the mock client is used
-          RUN echo "NODE_ENV=production" > .env.local && \
-              echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" >> .env.local && \
-              echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" >> .env.local
-          
-          # Create a mocked version of Stripe module to prevent errors during build
-          RUN mkdir -p /app/mocks && \
-              echo "module.exports = function() { return { customers: { retrieve: () => Promise.resolve({ id: 'mock-customer' }) } }; };" > /app/mocks/stripe.js && \
-              echo "{ \"type\": \"commonjs\" }" > /app/mocks/package.json
-          
-          # First try regular build, then try output: export if needed - save all logs
-          RUN set -x && \
-              (bun run build 2>&1 | tee /tmp/build-logs.txt) || \
-              (echo "\n\n=== FALLBACK BUILD ATTEMPT WITH NODE_PATH ===\n\n" >> /tmp/build-logs.txt && \
-               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling 2>&1 | tee -a /tmp/build-logs.txt) || \
-              (echo "\n\n=== STATIC EXPORT ATTEMPT ===\n\n" >> /tmp/build-logs.txt && \
-               echo "const nextConfig = { output: 'export' }; module.exports = nextConfig;" > next.config.js && \
-               NODE_PATH=/app/mocks bunx next build --no-lint --no-mangling 2>&1 | tee -a /tmp/build-logs.txt) || \
-              (echo "\n\n=== EMERGENCY FALLBACK CREATION ===\n\n" >> /tmp/build-logs.txt && \
-               echo "All build attempts failed. Creating emergency fallback server." | tee -a /tmp/build-logs.txt && \
-               mkdir -p /app/.next/standalone && \
-               mkdir -p /app/.next/static)
-               
-          # Create additional diagnostic information
-          RUN echo "\n\n=== ENVIRONMENT VARIABLES ===\n\n" >> /tmp/build-logs.txt && \
-              env | grep -v KEY | grep -v TOKEN | grep -v SECRET >> /tmp/build-logs.txt && \
-              echo "\n\n=== DIRECTORY STRUCTURE ===\n\n" >> /tmp/build-logs.txt && \
-              find /app -type d | sort >> /tmp/build-logs.txt && \
-              echo "\n\n=== NODE_MODULES ===\n\n" >> /tmp/build-logs.txt && \
-              ls -la /app/node_modules | head -20 >> /tmp/build-logs.txt && \
-              echo "\n\n=== NEXT CONFIG ===\n\n" >> /tmp/build-logs.txt && \
-              cat /app/next.config.js >> /tmp/build-logs.txt || echo "No next.config.js found" >> /tmp/build-logs.txt
-              
-          # Create a guaranteed-to-exist file for the logs
-          RUN touch /tmp/build-logs-safe.txt && \
-              cat /tmp/build-logs.txt > /tmp/build-logs-safe.txt 2>/dev/null || echo "Build logs not available" > /tmp/build-logs-safe.txt
-          
-          # Create a complete standalone directory even if build fails
-          RUN mkdir -p /app/.next/standalone/public || true
-          RUN mkdir -p /app/.next/standalone/.next/static || true
-          RUN cp -R /app/.next/static /app/.next/standalone/.next/ || true
-          
-          # Create fallback server directly in standalone directory
-          RUN echo 'const http = require("http");' > /app/.next/standalone/server-fallback.js && \
-              echo '' >> /app/.next/standalone/server-fallback.js && \
-              echo '// Simple server that always works' >> /app/.next/standalone/server-fallback.js && \
-              echo 'const server = http.createServer((req, res) => {' >> /app/.next/standalone/server-fallback.js && \
-              echo '  res.writeHead(200, {"Content-Type": "text/html"});' >> /app/.next/standalone/server-fallback.js && \
-              echo '  res.end(`' >> /app/.next/standalone/server-fallback.js && \
-              echo '    <!DOCTYPE html>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    <html>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    <head>' >> /app/.next/standalone/server-fallback.js && \
-              echo '      <title>Cymasphere - Fallback Server</title>' >> /app/.next/standalone/server-fallback.js && \
-              echo '      <style>' >> /app/.next/standalone/server-fallback.js && \
-              echo '        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }' >> /app/.next/standalone/server-fallback.js && \
-              echo '      </style>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    </head>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    <body>' >> /app/.next/standalone/server-fallback.js && \
-              echo '      <h1>Cymasphere Website</h1>' >> /app/.next/standalone/server-fallback.js && \
-              echo '      <p>This is a fallback server running in emergency mode.</p>' >> /app/.next/standalone/server-fallback.js && \
-              echo '      <p>Server Time: ${new Date().toISOString()}</p>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    </body>' >> /app/.next/standalone/server-fallback.js && \
-              echo '    </html>' >> /app/.next/standalone/server-fallback.js && \
-              echo '  `);' >> /app/.next/standalone/server-fallback.js && \
-              echo '});' >> /app/.next/standalone/server-fallback.js && \
-              echo '' >> /app/.next/standalone/server-fallback.js && \
-              echo 'server.listen(3000, "0.0.0.0", () => {' >> /app/.next/standalone/server-fallback.js && \
-              echo '  console.log("Fallback server running at http://0.0.0.0:3000/");' >> /app/.next/standalone/server-fallback.js && \
-              echo '});' >> /app/.next/standalone/server-fallback.js
-
-          # Production image, copy all the files and run next
+          # Production image
           FROM base AS runner
           WORKDIR /app
 
-          ENV NODE_ENV production
+          ENV NODE_ENV=production
           ENV NEXT_TELEMETRY_DISABLED=1
-          ENV NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          ENV PORT=3000
+          ENV HOSTNAME=0.0.0.0
 
-          # Create all required directories
-          RUN mkdir -p /app/public
-          RUN mkdir -p /app/.next/static
-          
-          # Use alternative approach that doesn't rely on shell features in COPY
-          # First attempt to copy files, ignoring errors with separate RUN commands
-          RUN mkdir -p /tmp/standalone /tmp/static
-          COPY --from=builder /app/.next/standalone/. /tmp/standalone/
-          COPY --from=builder /app/.next/static/. /tmp/static/
-          # No need to copy server-fallback.js separately, it's already in /tmp/standalone
+          # Copy necessary files
+          COPY --from=builder /app/.next/standalone ./
+          COPY --from=builder /app/.next/static ./.next/static
+          COPY --from=builder /app/public ./public
 
-          # Copy files from temp directories using shell commands which support error handling
-          RUN cp -R /tmp/standalone/. /app/ 2>/dev/null || echo "No standalone files to copy"
-          RUN mkdir -p /app/.next && cp -R /tmp/static/. /app/.next/static/ 2>/dev/null || echo "No static files to copy"
-
-          # If standalone doesn't exist, create a basic server as fallback that displays logs
-          RUN if [ ! -f "/app/server.js" ]; then \
-              echo "console.log('DETAILED DIAGNOSTIC SERVER STARTING - PORT 3000');" > /app/server.js && \
-              echo "const fs = require('fs');" >> /app/server.js && \
-              echo "const path = require('path');" >> /app/server.js && \
-              echo "const http = require('http');" >> /app/server.js && \
-              echo "const { execSync } = require('child_process');" >> /app/server.js && \
-              echo "" >> /app/server.js && \
-              echo "// Get build logs" >> /app/server.js && \
-              echo "let buildLogs = 'No build logs found';" >> /app/server.js && \
-              echo "try {" >> /app/server.js && \
-              echo "  if (fs.existsSync('/app/build-logs.txt')) {" >> /app/server.js && \
-              echo "    buildLogs = fs.readFileSync('/app/build-logs.txt', 'utf8');" >> /app/server.js && \
-              echo "  } else if (fs.existsSync('/tmp/build-logs.txt')) {" >> /app/server.js && \
-              echo "    buildLogs = fs.readFileSync('/tmp/build-logs.txt', 'utf8');" >> /app/server.js && \
-              echo "  } else {" >> /app/server.js && \
-              echo "    try {" >> /app/server.js && \
-              echo "      buildLogs = execSync('find / -name \"build-logs.txt\" 2>/dev/null || echo \"Not found\"').toString();" >> /app/server.js && \
-              echo "      if (buildLogs.includes('Not found')) {" >> /app/server.js && \
-              echo "        buildLogs = 'Build logs file not found in the container';" >> /app/server.js && \
-              echo "      } else {" >> /app/server.js && \
-              echo "        const logPath = buildLogs.trim();" >> /app/server.js && \
-              echo "        buildLogs = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : 'Found but could not read: ' + logPath;" >> /app/server.js && \
-              echo "      }" >> /app/server.js && \
-              echo "    } catch (e) {" >> /app/server.js && \
-              echo "      buildLogs = 'Error searching for logs: ' + e.message;" >> /app/server.js && \
-              echo "    }" >> /app/server.js && \
-              echo "  }" >> /app/server.js && \
-              echo "} catch (e) {" >> /app/server.js && \
-              echo "  buildLogs = 'Error reading logs: ' + e.message;" >> /app/server.js && \
-              echo "}" >> /app/server.js && \
-              echo "" >> /app/server.js && \
-              echo "// Get runtime info" >> /app/server.js && \
-              echo "let runtimeInfo = '';" >> /app/server.js && \
-              echo "try {" >> /app/server.js && \
-              echo "  runtimeInfo = execSync('echo \"OS: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME || echo Unknown)\" && " >> /app/server.js && \
-              echo "    echo \"\\nNode: $(node -v)\" && " >> /app/server.js && \
-              echo "    echo \"\\nDisk Space: $(df -h / | tail -1)\" && " >> /app/server.js && \
-              echo "    echo \"\\nMemory: $(free -h || echo Not available)\"').toString();" >> /app/server.js && \
-              echo "} catch (e) {" >> /app/server.js && \
-              echo "  runtimeInfo = 'Error getting runtime info: ' + e.message;" >> /app/server.js && \
-              echo "}" >> /app/server.js && \
-              echo "" >> /app/server.js && \
-              echo "// Get file structure" >> /app/server.js && \
-              echo "let fileStructure = '';" >> /app/server.js && \
-              echo "try {" >> /app/server.js && \
-              echo "  fileStructure = execSync('echo \"App directory:\" && ls -la /app && " >> /app/server.js && \
-              echo "    echo \"\\n\\nNext directory:\" && ls -la /app/.next 2>/dev/null || echo \"No .next directory\"').toString();" >> /app/server.js && \
-              echo "} catch (e) {" >> /app/server.js && \
-              echo "  fileStructure = 'Error getting file structure: ' + e.message;" >> /app/server.js && \
-              echo "}" >> /app/server.js && \
-              echo "" >> /app/server.js && \
-              echo "const server = http.createServer((req, res) => {" >> /app/server.js && \
-              echo "  res.writeHead(200, {'Content-Type': 'text/html'});" >> /app/server.js && \
-              echo "  res.end(\`" >> /app/server.js && \
-              echo "    <!DOCTYPE html>" >> /app/server.js && \
-              echo "    <html lang=\"en\">" >> /app/server.js && \
-              echo "    <head>" >> /app/server.js && \
-              echo "      <meta charset=\"UTF-8\">" >> /app/server.js && \
-              echo "      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" >> /app/server.js && \
-              echo "      <title>Cymasphere - Build Diagnostic</title>" >> /app/server.js && \
-              echo "      <style>" >> /app/server.js && \
-              echo "        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f8f9fa; }" >> /app/server.js && \
-              echo "        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }" >> /app/server.js && \
-              echo "        header { background: #343a40; color: white; padding: 1rem; margin-bottom: 2rem; }" >> /app/server.js && \
-              echo "        h1 { margin: 0; }" >> /app/server.js && \
-              echo "        .alert { background: #dc3545; color: white; padding: 1rem; border-radius: 4px; margin-bottom: 2rem; }" >> /app/server.js && \
-              echo "        pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow: auto; font-size: 14px; }" >> /app/server.js && \
-              echo "        .card { background: white; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 2rem; overflow: hidden; }" >> /app/server.js && \
-              echo "        .card-header { background: #17a2b8; color: white; padding: 10px 15px; font-weight: bold; }" >> /app/server.js && \
-              echo "        .card-body { padding: 15px; }" >> /app/server.js && \
-              echo "        .button { display: inline-block; background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-bottom: 1rem; }" >> /app/server.js && \
-              echo "      </style>" >> /app/server.js && \
-              echo "    </head>" >> /app/server.js && \
-              echo "    <body>" >> /app/server.js && \
-              echo "      <header>" >> /app/server.js && \
-              echo "        <div class=\"container\">" >> /app/server.js && \
-              echo "          <h1>Cymasphere Website - Build Failed</h1>" >> /app/server.js && \
-              echo "        </div>" >> /app/server.js && \
-              echo "      </header>" >> /app/server.js && \
-              echo "      <div class=\"container\">" >> /app/server.js && \
-              echo "        <div class=\"alert\">" >> /app/server.js && \
-              echo "          <strong>ERROR:</strong> The Next.js application failed to build properly. This is a diagnostic page to help troubleshoot the issue." >> /app/server.js && \
-              echo "        </div>" >> /app/server.js && \
-              echo "        <div class=\"card\">" >> /app/server.js && \
-              echo "          <div class=\"card-header\">Build Logs</div>" >> /app/server.js && \
-              echo "          <div class=\"card-body\">" >> /app/server.js && \
-              echo "            <pre>\${buildLogs}</pre>" >> /app/server.js && \
-              echo "          </div>" >> /app/server.js && \
-              echo "        </div>" >> /app/server.js && \
-              echo "        <div class=\"card\">" >> /app/server.js && \
-              echo "          <div class=\"card-header\">Runtime Information</div>" >> /app/server.js && \
-              echo "          <div class=\"card-body\">" >> /app/server.js && \
-              echo "            <pre>\${runtimeInfo}</pre>" >> /app/server.js && \
-              echo "          </div>" >> /app/server.js && \
-              echo "        </div>" >> /app/server.js && \
-              echo "        <div class=\"card\">" >> /app/server.js && \
-              echo "          <div class=\"card-header\">File Structure</div>" >> /app/server.js && \
-              echo "          <div class=\"card-body\">" >> /app/server.js && \
-              echo "            <pre>\${fileStructure}</pre>" >> /app/server.js && \
-              echo "          </div>" >> /app/server.js && \
-              echo "        </div>" >> /app/server.js && \
-              echo "      </div>" >> /app/server.js && \
-              echo "    </body>" >> /app/server.js && \
-              echo "    </html>" >> /app/server.js && \
-              echo "  \`);" >> /app/server.js && \
-              echo "});" >> /app/server.js && \
-              echo "" >> /app/server.js && \
-              echo "server.listen(3000, '0.0.0.0', () => {" >> /app/server.js && \
-              echo "  console.log('DIAGNOSTIC SERVER RUNNING AT http://0.0.0.0:3000');" >> /app/server.js && \
-              echo "  console.log('This server shows detailed build logs and diagnostic information');" >> /app/server.js && \
-              echo "});" >> /app/server.js; \
-          fi
-
-          # Create a simple start script
+          # Create a startup script
           RUN echo '#!/bin/sh' > /app/start.sh && \
-              echo 'echo "Starting Next.js server..."' >> /app/start.sh && \
-              echo 'echo "Environment: NODE_ENV=$NODE_ENV"' >> /app/start.sh && \
-              echo 'echo "Directory: $(pwd)"' >> /app/start.sh && \
-              echo 'ls -la' >> /app/start.sh && \
+              echo 'echo "Starting server on port 3000..."' >> /app/start.sh && \
               echo 'if [ -f "server.js" ]; then' >> /app/start.sh && \
-              echo '  echo "Running server.js directly with node"' >> /app/start.sh && \
-              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
-              echo '  export PORT=3000' >> /app/start.sh && \
               echo '  node server.js' >> /app/start.sh && \
-              echo 'elif [ -f "server-fallback.js" ]; then' >> /app/start.sh && \
-              echo '  echo "Running fallback server"' >> /app/start.sh && \
-              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
-              echo '  export PORT=3000' >> /app/start.sh && \
-              echo '  node server-fallback.js' >> /app/start.sh && \
-              echo 'elif [ -f "app/server-health.js" ]; then' >> /app/start.sh && \
-              echo '  echo "Running health check server"' >> /app/start.sh && \
-              echo '  export HOSTNAME="0.0.0.0"' >> /app/start.sh && \
-              echo '  export PORT=3000' >> /app/start.sh && \
-              echo '  node app/server-health.js' >> /app/start.sh && \
               echo 'else' >> /app/start.sh && \
-              echo '  echo "No server found, creating emergency server"' >> /app/start.sh && \
-              echo '  node -e "const http=require(\"http\");http.createServer((req,res)=>{res.writeHead(200,{\"Content-Type\":\"text/html\"});res.end(\"<html><body><h1>Emergency Server</h1><p>No server.js found</p></body></html>\");}).listen(3000,\"0.0.0.0\",()=>console.log(\"Emergency server running on port 3000\"))"' >> /app/start.sh && \
+              echo '  echo "Server.js not found, starting emergency server"' >> /app/start.sh && \
+              echo '  node -e "require(\"http\").createServer((req,res)=>{res.writeHead(200,{\"Content-Type\":\"text/html\"});res.end(\"<html><body><h1>Cymasphere Website</h1><p>Maintenance mode active. Please check back shortly.</p></body></html>\");}).listen(3000,\"0.0.0.0\")"' >> /app/start.sh && \
               echo 'fi' >> /app/start.sh && \
               chmod +x /app/start.sh
 
-          # Copy build logs to be accessible from the server (using guaranteed file)
-          COPY --from=builder /tmp/build-logs-safe.txt /app/build-logs.txt
-
-          # Force container to work in production mode
-          ENV NODE_ENV=production
-          ENV PORT=3000
-          ENV HOSTNAME=0.0.0.0
-          
-          # Explicitly expose port 3000
-          EXPOSE 3000
-          
-          # Use node directly to avoid bun issues
-          CMD ["/bin/sh", "/app/start.sh"]
+          # Set the command to run
+          CMD ["/app/start.sh"]
           DOCKERFILE_EOF
 
       - name: Build and push Docker image
@@ -424,86 +133,35 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           
-      - name: Create emergency server as backup
-        run: |
-          # Create a guaranteed working Node.js server
-          cat > emergency-server.js << 'EOF'
-          const http = require('http');
-          const server = http.createServer((req, res) => {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end(`
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <title>Cymasphere - Emergency Mode</title>
-                <style>
-                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                  .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-                </style>
-              </head>
-              <body>
-                <h1>Cymasphere Website</h1>
-                <div class="alert">
-                  <p><strong>Emergency Mode:</strong> The site is currently running on a temporary server while we resolve technical issues.</p>
-                  <p>Server time: \${new Date().toISOString()}</p>
-                </div>
-                <p>We apologize for the inconvenience. Our team has been notified and is working to restore full functionality.</p>
-              </body>
-              </html>
-            `);
-          });
-          server.listen(3000, '0.0.0.0', () => {
-            console.log('Emergency server running at http://0.0.0.0:3000');
-          });
-          EOF
-          
-          # Create simple Dockerfile for the emergency server
-          cat > Dockerfile.emergency << 'EOF'
-          FROM node:slim
-          WORKDIR /app
-          COPY emergency-server.js /app/server.js
-          EXPOSE 3000
-          ENV NODE_ENV=production
-          ENV PORT=3000
-          ENV HOSTNAME=0.0.0.0
-          CMD ["node", "/app/server.js"]
-          EOF
-          
-          # Build and push emergency server image
-          docker build -t ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest -f Dockerfile.emergency .
-          docker push ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
-
-      - name: Setup SSH key
+      - name: Create SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Create config file to disable strict host checking
-          echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-          
-          # Create deploy script
-          cat > deploy.sh << EOL
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment script
+        run: |
+          cat > deploy_remote.sh << 'EOL'
           #!/bin/bash
           
-          # Install Docker if not already installed
+          # Setup Docker if not already installed
           if ! command -v docker &> /dev/null; then
-            echo "Docker not found. Installing Docker..."
+            echo "Docker not found, installing..."
             sudo apt-get update
             sudo apt-get install -y ca-certificates curl gnupg
             sudo install -m 0755 -d /etc/apt/keyrings
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
             sudo chmod a+r /etc/apt/keyrings/docker.gpg
-            echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(. /etc/os-release && echo \$VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
             sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
             sudo usermod -aG docker ubuntu
             sudo systemctl enable docker
             sudo systemctl start docker
           fi
           
-          # Ensure the ubuntu user is in the docker group and permissions are correct
+          # Ensure proper permissions
           sudo usermod -aG docker ubuntu
           sudo chmod 666 /var/run/docker.sock
           
@@ -521,7 +179,6 @@ jobs:
           echo "Starting container..."
           docker run -d --restart unless-stopped --name cymasphere-container \
             -p 80:3000 \
-            -p 3000:3000 \
             -e NODE_ENV=production \
             -e PORT=3000 \
             -e HOSTNAME=0.0.0.0 \
@@ -529,112 +186,30 @@ jobs:
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
-          # Wait a moment for container to start
-          echo "Waiting for container to initialize..."
-          sleep 5
-          
-          # Check container status regardless of server.js file existence
+          # Verify deployment
           echo "Container status:"
           docker ps -a | grep cymasphere
-          
-          # Check container logs even if it fails
           echo "Container logs:"
-          docker logs cymasphere-container || echo "Failed to get container logs"
-          
-          # Try running in interactive mode if container is not running
-          CONTAINER_RUNNING=$(docker ps --filter "name=cymasphere-container" --format "{{.Names}}" | wc -l)
-          if [ "$CONTAINER_RUNNING" -eq "0" ]; then
-            echo "Container is not running. Will deploy emergency server instead."
-            echo "Removing failed container..."
-            docker rm cymasphere-container || true
-            
-            # Pull and run emergency server
-            echo "Deploying emergency server..."
-            docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
-            docker run -d --restart always --name cymasphere-container \
-              -p 80:3000 \
-              -e NODE_ENV=production \
-              ghcr.io/${{ env.REPO_OWNER_LC }}/emergency-server:latest
-            
-            # Verify it's running
-            echo "Emergency container status:"
-            docker ps -a | grep cymasphere
-            echo "Emergency container logs:"
-            docker logs cymasphere-container
-          fi
+          docker logs cymasphere-container
           
           # Clean up
-          docker system prune -af
+          docker system prune -af --volumes
           EOL
           
-          chmod +x deploy.sh
+          chmod +x deploy_remote.sh
 
       - name: Deploy to Lightsail
         run: |
-          # Copy the server.js file to the server for debugging
-          scp server.js ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/server.js
-          # Try SCP and SSH
-          scp deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
-          ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          scp deploy_remote.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
+          ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh"
           
-      - name: Verify deployment and force emergency server if needed
+      - name: Verify deployment
         run: |
-          # Check if the site is reachable, if not, force deploy the emergency server
+          # Check if the site is reachable
           echo "Verifying if site is accessible..."
-          if ! curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
-            echo "WEBSITE NOT ACCESSIBLE! Forcing emergency server deployment..."
-            
-            # Create emergency server file line by line with echo
-            echo "const http = require('http');" > emergency.js
-            echo "const server = http.createServer((req, res) => {" >> emergency.js
-            echo "  res.writeHead(200, {'Content-Type': 'text/html'});" >> emergency.js
-            echo "  res.end(\`" >> emergency.js
-            echo "    <!DOCTYPE html>" >> emergency.js
-            echo "    <html>" >> emergency.js
-            echo "    <head>" >> emergency.js
-            echo "      <title>Cymasphere - Direct Emergency Server</title>" >> emergency.js
-            echo "      <style>" >> emergency.js
-            echo "        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }" >> emergency.js
-            echo "        .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }" >> emergency.js
-            echo "      </style>" >> emergency.js
-            echo "    </head>" >> emergency.js
-            echo "    <body>" >> emergency.js
-            echo "      <h1>Cymasphere Website</h1>" >> emergency.js
-            echo "      <div class=\"alert\">" >> emergency.js
-            echo "        <p><strong>Direct Emergency Mode:</strong> The site is running on a direct emergency server.</p>" >> emergency.js
-            echo "        <p>Server time: \${new Date().toISOString()}</p>" >> emergency.js
-            echo "      </div>" >> emergency.js
-            echo "      <p>Our team has been notified and is working to restore full functionality.</p>" >> emergency.js
-            echo "    </body>" >> emergency.js
-            echo "    </html>" >> emergency.js
-            echo "  \`);" >> emergency.js
-            echo "});" >> emergency.js
-            echo "" >> emergency.js
-            echo "server.listen(3000, '0.0.0.0', () => {" >> emergency.js
-            echo "  console.log('DIRECT EMERGENCY SERVER running at http://0.0.0.0:3000');" >> emergency.js
-            echo "});" >> emergency.js
-            
-            # Copy the emergency server to the remote machine
-            scp emergency.js ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/emergency.js
-            
-            # Run commands on the remote machine without heredoc
-            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "\
-              # Stop any existing containers
-              sudo docker stop cymasphere-container || true; \
-              sudo docker rm cymasphere-container || true; \
-              
-              # Run with node directly
-              sudo docker run -d --restart always --name cymasphere-container \
-                -p 80:3000 \
-                -v \$(pwd)/emergency.js:/app/server.js \
-                node:slim node /app/server.js; \
-                
-              # Verify it's running
-              sudo docker ps -a; \
-              sudo docker logs cymasphere-container; \
-            "
-            
-            echo "Direct emergency server deployed."
+          if curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
+            echo "Site is accessible. Deployment successful!"
           else
-            echo "Site appears to be accessible."
+            echo "Site is not accessible. Please check the server logs."
+            exit 1
           fi 
