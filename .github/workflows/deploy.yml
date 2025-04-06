@@ -95,6 +95,9 @@ jobs:
           # Run the build with error handling
           RUN chmod +x ./build-no-errors.sh && ./build-no-errors.sh
           
+          # Make sure public directory exists
+          RUN mkdir -p /app/public
+          
           # Production image
           FROM base AS runner
           WORKDIR /app
