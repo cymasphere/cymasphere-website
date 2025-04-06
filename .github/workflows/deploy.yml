@@ -45,6 +45,22 @@ jobs:
       - name: Make build script executable
         run: chmod +x ./build-no-errors.sh
         
+      - name: Update Next.js configuration for production
+        run: |
+          cat > next.config.js << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'standalone',
+            reactStrictMode: true,
+            experimental: {
+              serverComponentsExternalPackages: ['sharp'],
+            },
+            // Remove swcMinify option
+          };
+          
+          module.exports = nextConfig;
+          EOF
+        
       - name: Run enhanced build script
         run: ./build-no-errors.sh
         env:
@@ -97,6 +113,14 @@ jobs:
           
           # Make sure public directory exists
           RUN mkdir -p /app/public
+          
+          # Verify standalone output and create fallback if needed
+          RUN if [ ! -f /app/.next/standalone/server.js ]; then \
+              echo "Standalone server.js not found. Creating direct Next.js output..."; \
+              mkdir -p /app/.next/standalone; \
+              cp -r /app/.next/* /app/.next/standalone/ 2>/dev/null || true; \
+              echo 'const { createServer } = require("http"); const { parse } = require("url"); const next = require("next"); const app = next({ dev: false }); const handle = app.getRequestHandler(); app.prepare().then(() => { createServer((req, res) => { const parsedUrl = parse(req.url, true); handle(req, res, parsedUrl); }).listen(3000, "0.0.0.0", () => { console.log("Ready on http://0.0.0.0:3000"); }); });' > /app/.next/standalone/server.js; \
+          fi
           
           # Production image
           FROM base AS runner
@@ -254,7 +278,7 @@ jobs:
           docker stop cymasphere-container || true
           docker rm cymasphere-container || true
           
-          # Run the new container
+          # Run the new container with proper environment variables
           echo "Starting container..."
           docker run -d --restart unless-stopped --name cymasphere-container \
             -p 80:3000 \
@@ -265,11 +289,19 @@ jobs:
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
-          # Verify deployment
+          # Display container status and logs
           echo "Container status:"
           docker ps -a | grep cymasphere
           echo "Container logs:"
           docker logs cymasphere-container
+          
+          # Check if the server.js file exists in the container
+          echo "Checking if server.js exists:"
+          docker exec cymasphere-container ls -la /app/server.js || echo "server.js not found!"
+          
+          # Display container environment variables
+          echo "Container environment variables:"
+          docker exec cymasphere-container env
           
           # Clean up
           docker system prune -af --volumes
