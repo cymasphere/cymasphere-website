@@ -145,7 +145,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS || '' }}
+          known_hosts: ""
           name: id_rsa
           if_key_exists: replace
 
