@@ -67,40 +67,73 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create simplified server.js file
+      - name: Create intelligent server.js file
         run: |
-          echo 'const http = require("http");' > simple-server.js
-          echo 'const fs = require("fs");' >> simple-server.js
-          echo 'const path = require("path");' >> simple-server.js
-          echo '' >> simple-server.js
-          echo 'http.createServer((req, res) => {' >> simple-server.js
-          echo '  res.writeHead(200, {"Content-Type": "text/html"});' >> simple-server.js
-          echo '  res.end(`<!DOCTYPE html>' >> simple-server.js
-          echo '  <html lang="en">' >> simple-server.js
-          echo '    <head>' >> simple-server.js
-          echo '      <meta charset="UTF-8">' >> simple-server.js
-          echo '      <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> simple-server.js
-          echo '      <title>Cymasphere</title>' >> simple-server.js
-          echo '      <style>' >> simple-server.js
-          echo '        body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }' >> simple-server.js
-          echo '        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }' >> simple-server.js
-          echo '        .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }' >> simple-server.js
-          echo '        .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }' >> simple-server.js
-          echo '        h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }' >> simple-server.js
-          echo '      </style>' >> simple-server.js
-          echo '    </head>' >> simple-server.js
-          echo '    <body>' >> simple-server.js
-          echo '      <div class="container">' >> simple-server.js
-          echo '        <div class="logo"><span class="logo-text">CYMA</span></div>' >> simple-server.js
-          echo '        <h1>Cymasphere</h1>' >> simple-server.js
-          echo '        <h2>Website under maintenance</h2>' >> simple-server.js
-          echo '        <p>We are currently updating our platform. Please check back soon.</p>' >> simple-server.js
-          echo '      </div>' >> simple-server.js
-          echo '    </body>' >> simple-server.js
-          echo '  </html>`);' >> simple-server.js
-          echo '}).listen(3000, "0.0.0.0", () => {' >> simple-server.js
-          echo '  console.log("> Server ready on http://0.0.0.0:3000");' >> simple-server.js
-          echo '});' >> simple-server.js
+          echo 'const http = require("http");' > smart-server.js
+          echo 'const fs = require("fs");' >> smart-server.js
+          echo 'const path = require("path");' >> smart-server.js
+          echo '' >> smart-server.js
+          echo '// Check if Next.js build exists' >> smart-server.js
+          echo 'const nextDir = path.join(__dirname, ".next");' >> smart-server.js
+          echo 'const nextJsAvailable = fs.existsSync(nextDir);' >> smart-server.js
+          echo '' >> smart-server.js
+          echo 'if (nextJsAvailable) {' >> smart-server.js
+          echo '  try {' >> smart-server.js
+          echo '    console.log("Starting Next.js application with Bun...");' >> smart-server.js
+          echo '    const next = require("next");' >> smart-server.js
+          echo '    const app = next({ dev: false, dir: __dirname });' >> smart-server.js
+          echo '    const handler = app.getRequestHandler();' >> smart-server.js
+          echo '    ' >> smart-server.js
+          echo '    app.prepare().then(() => {' >> smart-server.js
+          echo '      http.createServer((req, res) => {' >> smart-server.js
+          echo '        handler(req, res);' >> smart-server.js
+          echo '      }).listen(3000, "0.0.0.0", () => {' >> smart-server.js
+          echo '        console.log("> Next.js app ready on http://0.0.0.0:3000");' >> smart-server.js
+          echo '      });' >> smart-server.js
+          echo '    });' >> smart-server.js
+          echo '  } catch (error) {' >> smart-server.js
+          echo '    console.error("Failed to start Next.js:", error);' >> smart-server.js
+          echo '    serveMaintenancePage();' >> smart-server.js
+          echo '  }' >> smart-server.js
+          echo '} else {' >> smart-server.js
+          echo '  console.log("Next.js build not found, showing maintenance page");' >> smart-server.js
+          echo '  serveMaintenancePage();' >> smart-server.js
+          echo '}' >> smart-server.js
+          echo '' >> smart-server.js
+          echo 'function serveMaintenancePage() {' >> smart-server.js
+          echo '  http.createServer((req, res) => {' >> smart-server.js
+          echo '    res.writeHead(200, {"Content-Type": "text/html"});' >> smart-server.js
+          echo '    res.end(`<!DOCTYPE html>' >> smart-server.js
+          echo '  <html lang="en">' >> smart-server.js
+          echo '    <head>' >> smart-server.js
+          echo '      <meta charset="UTF-8">' >> smart-server.js
+          echo '      <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> smart-server.js
+          echo '      <title>Cymasphere</title>' >> smart-server.js
+          echo '      <style>' >> smart-server.js
+          echo '        body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }' >> smart-server.js
+          echo '        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }' >> smart-server.js
+          echo '        .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }' >> smart-server.js
+          echo '        .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }' >> smart-server.js
+          echo '        h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }' >> smart-server.js
+          echo '        .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }' >> smart-server.js
+          echo '        p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }' >> smart-server.js
+          echo '      </style>' >> smart-server.js
+          echo '    </head>' >> smart-server.js
+          echo '    <body>' >> smart-server.js
+          echo '      <div class="container">' >> smart-server.js
+          echo '        <div class="logo"><span class="logo-text">CYMA</span></div>' >> smart-server.js
+          echo '        <h1>Cymasphere</h1>' >> smart-server.js
+          echo '        <div class="card">' >> smart-server.js
+          echo '          <h2>Website under maintenance</h2>' >> smart-server.js
+          echo '          <p>We are currently updating our platform. Please check back soon.</p>' >> smart-server.js
+          echo '        </div>' >> smart-server.js
+          echo '      </div>' >> smart-server.js
+          echo '    </body>' >> smart-server.js
+          echo '  </html>`);' >> smart-server.js
+          echo '  }).listen(3000, "0.0.0.0", () => {' >> smart-server.js
+          echo '    console.log("> Maintenance page ready on http://0.0.0.0:3000");' >> smart-server.js
+          echo '  });' >> smart-server.js
+          echo '}' >> smart-server.js
 
       - name: Create optimized Dockerfile
         run: |
@@ -120,15 +153,25 @@ jobs:
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
           
+          # Define build arguments
+          ARG NEXT_PUBLIC_SUPABASE_URL
+          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+          
           # Set environment variables
           ENV NEXT_TELEMETRY_DISABLED=1
           ENV NODE_ENV=production
+          # Add Supabase environment variables for build
+          ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
           
           # Create a simple next.config.js to avoid issues
           RUN echo 'module.exports = {reactStrictMode: true, eslint: {ignoreDuringBuilds: true}, typescript: {ignoreBuildErrors: true}}' > next.config.js
           
-          # Build Next.js app with error handling
-          RUN bun run build || true
+          # Debug environment
+          RUN echo "Building with environment: NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
+          
+          # Build Next.js app with error handling but capture the result
+          RUN bun run build
           
           # Ensure all needed directories exist
           RUN mkdir -p /app/.next/static /app/public
@@ -137,18 +180,26 @@ jobs:
           FROM base AS runner
           WORKDIR /app
 
+          # Define runtime arguments
+          ARG NEXT_PUBLIC_SUPABASE_URL
+          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
           # Set environment variables for runtime
           ENV NODE_ENV=production
           ENV NEXT_TELEMETRY_DISABLED=1
           ENV PORT=3000
           ENV HOSTNAME=0.0.0.0
+          ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
           # Copy over build files
           COPY --from=builder /app/package.json ./
           COPY --from=builder /app/node_modules ./node_modules
           COPY --from=builder /app/.next ./.next
           COPY --from=builder /app/public ./public
-          COPY simple-server.js ./server.js
+          
+          # Use the intelligent server that checks for Next.js first
+          COPY smart-server.js ./server.js
 
           # Command to run with Bun
           CMD ["bun", "server.js"]
