@@ -144,26 +144,80 @@ jobs:
             echo "SSH_PRIVATE_KEY is defined"
           else
             echo "SSH_PRIVATE_KEY is NOT defined"
+            exit 1
           fi
           
           if [ -n "${{ secrets.LIGHTSAIL_IP }}" ]; then
             echo "LIGHTSAIL_IP is defined as: ${{ secrets.LIGHTSAIL_IP }}"
           else
             echo "LIGHTSAIL_IP is NOT defined"
+            exit 1
           fi
           
-          # Setup SSH
+          # Setup SSH directory
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          
+          # Create a script to properly format the key
+          cat > /tmp/format_key.sh << 'EOF'
+          #!/bin/bash
+          
+          # Take the key content from stdin
+          key=$(cat)
+          
+          # Check if the key starts with a recognized format
+          if [[ "$key" == "-----BEGIN"* ]]; then
+            # It's already in a standard format, output as is
+            echo "$key"
+          else
+            # Try to format as an OpenSSH key
+            echo "-----BEGIN OPENSSH PRIVATE KEY-----"
+            echo "$key" | fold -w 70
+            echo "-----END OPENSSH PRIVATE KEY-----"
+          fi
+          EOF
+          
+          chmod +x /tmp/format_key.sh
+          
+          # Format and save the key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | /tmp/format_key.sh > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Add host key
           ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
           
           # Debug SSH key
           echo "SSH key file permissions:"
           ls -la ~/.ssh/
-          echo "First and last line of SSH key file (for format check):"
+          echo "First and last lines of SSH key file (for format check):"
           head -n 1 ~/.ssh/id_rsa
           tail -n 1 ~/.ssh/id_rsa
+          
+          # Test key format with ssh-keygen
+          echo "Testing key format:"
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Key format check failed - will try to fix"
+          
+          # If the key format check failed, try more aggressive fixes
+          if ! ssh-keygen -l -f ~/.ssh/id_rsa &>/dev/null; then
+            echo "Attempting to fix key format..."
+            
+            # Try to determine if it's base64 encoded
+            if [[ $(echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d 2>/dev/null | head -c 20) == "-----BEGIN"* ]]; then
+              echo "Key appears to be base64 encoded, decoding..."
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
+            else
+              # Try to wrap the key in RSA format
+              echo "Trying RSA format..."
+              echo "-----BEGIN RSA PRIVATE KEY-----" > ~/.ssh/id_rsa
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" | grep -v "BEGIN\|END" | fold -w 64 >> ~/.ssh/id_rsa
+              echo "-----END RSA PRIVATE KEY-----" >> ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
+            fi
+            
+            # Check if the fix worked
+            ssh-keygen -l -f ~/.ssh/id_rsa || echo "Key format still problematic"
+          fi
 
       - name: Create deployment script
         run: |
