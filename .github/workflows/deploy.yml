@@ -100,7 +100,7 @@ jobs:
 
       - name: Create optimized Dockerfile
         run: |
-          cat > Dockerfile << "DOCKERFILE_EOF"
+          cat > Dockerfile << 'DOCKERFILE_EOF'
           # Base image with Node.js for both build and production
           FROM node:20-slim AS base
           
@@ -125,11 +125,15 @@ jobs:
           # Copy source code
           COPY . .
           
+          # Define build arguments for environment variables
+          ARG NEXT_PUBLIC_SUPABASE_URL
+          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+          
           # Set environment variables for build
-          ENV NEXT_TELEMETRY_DISABLED 1
-          ENV NODE_ENV production
-          ENV NEXT_PUBLIC_SUPABASE_URL ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          ENV NEXT_TELEMETRY_DISABLED=1
+          ENV NODE_ENV=production
+          ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
           
           # Create simplified next.config.js
           RUN echo 'module.exports = {reactStrictMode: true, eslint: {ignoreDuringBuilds: true}, typescript: {ignoreBuildErrors: true}};' > next.config.js
@@ -142,8 +146,8 @@ jobs:
           WORKDIR /app
           
           # Set environment variables
-          ENV NODE_ENV production
-          ENV NEXT_TELEMETRY_DISABLED 1
+          ENV NODE_ENV=production
+          ENV NEXT_TELEMETRY_DISABLED=1
           
           # Create user and set permissions
           RUN addgroup --system --gid 1001 nodejs && \
@@ -164,8 +168,8 @@ jobs:
           EXPOSE 3000
           
           # Set environment variables for production
-          ENV PORT 3000
-          ENV HOSTNAME 0.0.0.0
+          ENV PORT=3000
+          ENV HOSTNAME=0.0.0.0
           
           # Start the application
           CMD ["npm", "start"]
@@ -179,6 +183,9 @@ jobs:
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           
       # Manual SSH key setup
       - name: Setup SSH key manually
