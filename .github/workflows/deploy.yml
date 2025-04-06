@@ -101,255 +101,74 @@ jobs:
       - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          FROM oven/bun:1 as base
-
-          # Install dependencies
-          FROM base AS deps
+          # Base image with Node.js for both build and production
+          FROM node:20-slim AS base
+          
+          # Install build dependencies
+          RUN apt-get update && apt-get install -y build-essential python3
+          
+          # Set working directory
           WORKDIR /app
-          COPY package.json bun.lock ./
-          RUN bun install --frozen-lockfile
-
-          # Build the application
+          
+          # Create a separate stage for installing dependencies
+          FROM base AS deps
+          COPY package.json package-lock.json* ./
+          RUN npm ci
+          
+          # Create a separate stage for building the application
           FROM base AS builder
           WORKDIR /app
+          
+          # Copy dependencies from deps stage
           COPY --from=deps /app/node_modules ./node_modules
+          
+          # Copy source code
           COPY . .
           
-          # Environment variables for build
-          ENV NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          ENV NODE_ENV=production
-          ENV NEXT_SKIP_TYPECHECKING=true
-          ENV NEXT_TELEMETRY_DISABLED=1
-          ENV NEXT_LINT=false
-          ENV NEXT_SKIP_TYPE_CHECK=1
-          ENV NEXT_TYPESCRIPT_COMPILER_OPTIONS='{"skipLibCheck":true}'
+          # Set environment variables for build
+          ENV NEXT_TELEMETRY_DISABLED 1
+          ENV NODE_ENV production
+          ENV NEXT_PUBLIC_SUPABASE_URL ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           
-          # Fix next.config.js to remove incompatible options
-          RUN echo 'const nextConfig = { output: "standalone", reactStrictMode: true, typescript: { ignoreBuildErrors: true } }; module.exports = nextConfig;' > next.config.js
+          # Create simplified next.config.js
+          RUN echo 'module.exports = {reactStrictMode: true, eslint: {ignoreDuringBuilds: true}, typescript: {ignoreBuildErrors: true}};' > next.config.js
           
-          # Create a tsconfig.json that ignores type errors
-          RUN echo '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["*"]},"target":"es5","lib":["dom","dom.iterable","esnext"],"allowJs":true,"skipLibCheck":true,"strict":false,"forceConsistentCasingInFileNames":true,"noEmit":true,"incremental":true,"esModuleInterop":true,"module":"esnext","moduleResolution":"node","resolveJsonModule":true,"isolatedModules":true,"jsx":"preserve","plugins":[{"name":"next"}]},"include":["next-env.d.ts","**/*.ts","**/*.tsx",".next/types/**/*.ts"],"exclude":["node_modules"]}' > tsconfig.json
+          # Build the application
+          RUN npm run build
           
-          # Fix nested path issue
-          RUN echo '#!/bin/bash\nfind ./app -type f -name "*.ts" -o -name "*.tsx" | while read file; do\n  dir=$(dirname "$file")\n  mkdir -p "/tmp/fixed/$dir"\n  cp "$file" "/tmp/fixed/$dir/"\ndone\nls -la /tmp/fixed/app || echo "No files found"\nmv /tmp/fixed/app/* ./app/ 2>/dev/null || echo "Nothing to move"\n' > fix-paths.sh && \
-              chmod +x fix-paths.sh && \
-              ./fix-paths.sh
-              
-          # Directly fix the problematic file
-          RUN if [ -f "app/app/api/auth/register/route.ts" ]; then \
-                mkdir -p app/api/auth/register && \
-                cp app/app/api/auth/register/route.ts app/api/auth/register/ && \
-                echo "Fixed duplicate app path issue"; \
-              elif [ -f "app/api/auth/register/route.ts" ]; then \
-                echo "File already in correct location"; \
-              else \
-                echo "Creating empty route file to bypass type error"; \
-                mkdir -p app/api/auth/register && \
-                echo 'export async function POST() { return new Response(JSON.stringify({ message: "Registration endpoint" }), { status: 200 }); }' > app/api/auth/register/route.ts; \
-              fi
-          
-          # Create missing components for import resolution
-          RUN mkdir -p components/common contexts && \
-              echo 'import React from "react"; export default function CymasphereLogo() { return <div>Logo</div>; }' > components/common/CymasphereLogo.tsx && \
-              echo 'import React from "react"; export default function EnergyBall() { return <div>Energy Ball</div>; }' > components/common/EnergyBall.tsx && \
-              echo 'import React, { createContext, useContext, useState } from "react"; const AuthContext = createContext({}); export function AuthProvider({ children }) { return <AuthContext.Provider value={{}}>{children}</AuthContext.Provider>; } export function useAuth() { return useContext(AuthContext); }' > contexts/AuthContext.tsx
-              
-          # Create placeholder API routes to bypass Supabase auth errors
-          RUN mkdir -p app/api/auth/login && \
-              echo 'export async function POST(request) { return new Response(JSON.stringify({ message: "Mock login endpoint" }), { status: 200 }); }' > app/api/auth/login/route.ts && \
-              mkdir -p app/api/auth/logout && \
-              echo 'export async function POST() { return new Response(JSON.stringify({ message: "Mock logout endpoint" }), { status: 200 }); }' > app/api/auth/logout/route.ts && \
-              mkdir -p app/api/auth/register && \
-              echo 'export async function POST() { return new Response(JSON.stringify({ message: "Mock register endpoint" }), { status: 200 }); }' > app/api/auth/register/route.ts && \
-              mkdir -p app/api/auth/reset-password && \
-              echo 'export async function POST() { return new Response(JSON.stringify({ message: "Mock reset password endpoint" }), { status: 200 }); }' > app/api/auth/reset-password/route.ts
-              
-          # Run build command directly with all type checking disabled
-          RUN NEXT_LINT=false NEXT_SKIP_TYPE_CHECK=1 NEXT_WEBPACK_IGNORE_MODULES=true NEXT_IGNORE_MISSING_DEPENDENCIES=1 NEXT_SKIP_API_ROUTES=1 NODE_OPTIONS="--max_old_space_size=4096" bun run next build --no-lint || true
-          
-          # Make sure .next directory exists even if build fails
-          RUN mkdir -p .next/standalone .next/static
-          
-          # Ensure public directory exists
-          RUN mkdir -p public
-          
-          # Create a proper server.js that uses the actual Next.js app
-          RUN echo 'const { createServer } = require("http"); \
-              const { parse } = require("url"); \
-              const fs = require("fs"); \
-              const path = require("path"); \
-              \
-              const nextJsAvailable = fs.existsSync(path.join(__dirname, ".next/server")); \
-              \
-              function serveStaticPage() { \
-                console.log("Starting static page server..."); \
-                return createServer((req, res) => { \
-                  const pathname = parse(req.url).pathname; \
-                  \
-                  // Serve static files if they exist in public directory \
-                  if (pathname !== "/" && fs.existsSync(path.join(__dirname, "public", pathname))) { \
-                    const contentType = { \
-                      ".html": "text/html", \
-                      ".css": "text/css", \
-                      ".js": "text/javascript", \
-                      ".json": "application/json", \
-                      ".png": "image/png", \
-                      ".jpg": "image/jpeg", \
-                      ".gif": "image/gif", \
-                      ".svg": "image/svg+xml", \
-                      ".ico": "image/x-icon" \
-                    }[path.extname(pathname)] || "text/plain"; \
-                    \
-                    res.setHeader("Content-Type", contentType); \
-                    res.end(fs.readFileSync(path.join(__dirname, "public", pathname))); \
-                    return; \
-                  } \
-                  \
-                  // Serve the static HTML for other routes \
-                  res.setHeader("Content-Type", "text/html"); \
-                  res.end(`<!DOCTYPE html> \
-                  <html> \
-                    <head> \
-                      <title>Cymasphere</title> \
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0"> \
-                      <style> \
-                        body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; } \
-                        .container { max-width: 800px; margin: 0 auto; padding: 2rem; } \
-                        header { display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem; padding: 2rem; } \
-                        .logo { width: 120px; height: 120px; background: linear-gradient(45deg, #6366f1, #2563eb); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; } \
-                        .logo span { color: white; font-size: 1.2rem; font-weight: bold; } \
-                        h1 { color: #333; font-size: 2rem; margin-bottom: 0.5rem; text-align: center; } \
-                        p { color: #666; line-height: 1.6; } \
-                        .card { background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; } \
-                      </style> \
-                    </head> \
-                    <body> \
-                      <header> \
-                        <div class="logo"><span>CYMA</span></div> \
-                        <h1>Welcome to Cymasphere</h1> \
-                      </header> \
-                      <div class="container"> \
-                        <div class="card"> \
-                          <h2>Cymatic Innovations</h2> \
-                          <p>Cymasphere is a cutting-edge platform for sound exploration and visualization. We transform audio into beautiful visual experiences.</p> \
-                        </div> \
-                        <div class="card"> \
-                          <h2>Our Services</h2> \
-                          <p>Explore sound visualization, audio pattern analysis, and interactive music experiences. Our tools help you see sound in a whole new way.</p> \
-                        </div> \
-                      </div> \
-                    </body> \
-                  </html>`); \
-                }).listen(3000, "0.0.0.0", () => { \
-                  console.log("> Static page server ready on http://0.0.0.0:3000"); \
-                }); \
-              } \
-              \
-              if (!nextJsAvailable) { \
-                console.log("Next.js build not available, serving static page"); \
-                serveStaticPage(); \
-              } else { \
-                try { \
-                  const next = require("next"); \
-                  const app = next({ dev: false }); \
-                  const handle = app.getRequestHandler(); \
-                  \
-                  app.prepare().then(() => { \
-                    createServer((req, res) => { \
-                      try { \
-                        const parsedUrl = parse(req.url, true); \
-                        handle(req, res, parsedUrl); \
-                      } catch (err) { \
-                        console.error("Error occurred handling", req.url, err); \
-                        res.statusCode = 500; \
-                        res.end("Internal Server Error"); \
-                      } \
-                    }).listen(3000, "0.0.0.0", () => { \
-                      console.log("> Next.js server ready on http://0.0.0.0:3000"); \
-                    }); \
-                  }).catch(err => { \
-                    console.error("Error preparing Next.js app:", err); \
-                    serveStaticPage(); \
-                  }); \
-                } catch (err) { \
-                  console.error("Error loading Next.js:", err); \
-                  serveStaticPage(); \
-                } \
-              }' > .next/standalone/server.js
-          
-          # Create a simpler fallback server.js file to deal with truncation issues
-          RUN echo 'const http = require("http"); \
-              console.log("Starting simple server..."); \
-              http.createServer(function(req, res) { \
-                res.writeHead(200, {"Content-Type": "text/html"}); \
-                res.end(`<!DOCTYPE html> \
-                <html> \
-                  <head> \
-                    <title>Cymasphere</title> \
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0"> \
-                    <style> \
-                      body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; } \
-                      .container { max-width: 800px; margin: 0 auto; padding: 2rem; } \
-                      .logo { width: 120px; height: 120px; margin: 2rem auto; background: linear-gradient(45deg, #6366f1, #2563eb); border-radius: 50%; display: flex; align-items: center; justify-content: center; } \
-                      .logo span { color: white; font-size: 1.2rem; font-weight: bold; } \
-                      h1 { color: #333; font-size: 2rem; margin: 1rem 0; text-align: center; } \
-                      p { color: #666; line-height: 1.6; } \
-                      .card { background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; } \
-                    </style> \
-                  </head> \
-                  <body> \
-                    <div class="container"> \
-                      <div class="logo"><span>CYMA</span></div> \
-                      <h1>Welcome to Cymasphere</h1> \
-                      <div class="card"> \
-                        <h2>Cymatic Innovations</h2> \
-                        <p>Our website is currently being optimized for better performance. Please check back soon for our full experience.</p> \
-                      </div> \
-                      <div class="card"> \
-                        <h2>Our Mission</h2> \
-                        <p>Cymasphere is dedicated to creating innovative solutions for audio visualization and sound exploration.</p> \
-                      </div> \
-                    </div> \
-                  </body> \
-                </html>`); \
-              }).listen(3000, "0.0.0.0"); \
-              console.log("Server running at http://0.0.0.0:3000/");' > /tmp/fallback-server.js
-          
-          # Production image
+          # Create production image
           FROM base AS runner
           WORKDIR /app
-
-          ENV NODE_ENV=production
-          ENV NEXT_TELEMETRY_DISABLED=1
-          ENV PORT=3000
-          ENV HOSTNAME=0.0.0.0
-
-          # Copy entire next folder and node_modules
-          COPY --from=builder /app/.next /app/.next
-          COPY --from=builder /app/node_modules /app/node_modules
-          COPY --from=builder /app/package.json /app/package.json
           
-          # Create public directory instead of copying (prevents errors if it doesn't exist)
-          RUN mkdir -p /app/public
+          # Set environment variables
+          ENV NODE_ENV production
+          ENV NEXT_TELEMETRY_DISABLED 1
           
-          COPY --from=builder /app/next.config.js /app/next.config.js
-          COPY --from=builder /app/.next/standalone/server.js /app/server.js
-          COPY --from=builder /tmp/fallback-server.js /app/fallback-server.js
-
-          # Create a direct startup script
-          RUN echo '#!/bin/sh' > /app/start.sh && \
-              echo 'echo "Starting Next.js server on port 3000..."' >> /app/start.sh && \
-              echo 'if [ -f "/app/server.js" ]; then' >> /app/start.sh && \
-              echo '  node /app/server.js || node /app/fallback-server.js' >> /app/start.sh && \
-              echo 'else' >> /app/start.sh && \
-              echo '  echo "Server.js not found, using fallback server"' >> /app/start.sh && \
-              echo '  node /app/fallback-server.js' >> /app/start.sh && \
-              echo 'fi' >> /app/start.sh && \
-              chmod +x /app/start.sh
-
-          # Set the command to run
-          CMD ["/app/start.sh"]
+          # Create user and set permissions
+          RUN addgroup --system --gid 1001 nodejs && \
+              adduser --system --uid 1001 nextjs && \
+              mkdir -p /app/.next/cache && \
+              chown -R nextjs:nodejs /app
+          
+          # Copy needed files
+          COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
+          COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+          COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+          COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+          
+          # Switch to non-root user
+          USER nextjs
+          
+          # Expose port
+          EXPOSE 3000
+          
+          # Set environment variables for production
+          ENV PORT 3000
+          ENV HOSTNAME 0.0.0.0
+          
+          # Start the application
+          CMD ["npm", "start"]
           DOCKERFILE_EOF
 
       - name: Build and push Docker image
@@ -498,29 +317,6 @@ jobs:
           docker ps -a | grep cymasphere
           echo "Container logs:"
           docker logs cymasphere-container
-          
-          # Check content of the container
-          echo "Files in container:"
-          docker exec cymasphere-container ls -la /app
-          echo "Next.js files:"
-          docker exec cymasphere-container ls -la /app/.next || echo "No .next directory!"
-          echo "Checking for start.sh:"
-          docker exec cymasphere-container cat /app/start.sh || echo "No start.sh file!"
-          
-          # Verify the container is running correctly
-          if ! curl -s http://localhost:80 | grep -q "maintenance"; then
-            echo "Website appears to be working correctly!"
-          else
-            echo "Maintenance page detected! Attempting to fix..."
-            # Try restarting the container
-            docker restart cymasphere-container
-            sleep 5
-            # If still showing maintenance page, try running Next.js directly
-            if curl -s http://localhost:80 | grep -q "maintenance"; then
-              echo "Still showing maintenance page. Trying to run Next.js directly..."
-              docker exec -d cymasphere-container bash -c "cd /app && bun run next start -p 3000"
-            fi
-          fi
           
           # Clean up
           docker system prune -af --volumes
