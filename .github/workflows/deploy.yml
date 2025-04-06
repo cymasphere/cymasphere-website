@@ -136,18 +136,34 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           
-      # Use a dedicated action for SSH key setup
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS || '' }}
-          name: id_rsa
-          if_key_exists: replace
-
-      # Add the Lightsail IP to known hosts
-      - name: Adding Known Hosts
-        run: ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+      # Manual SSH key setup
+      - name: Setup SSH key manually
+        run: |
+          # Debug - check if secrets are available (masked in logs)
+          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "SSH_PRIVATE_KEY is defined"
+          else
+            echo "SSH_PRIVATE_KEY is NOT defined"
+          fi
+          
+          if [ -n "${{ secrets.LIGHTSAIL_IP }}" ]; then
+            echo "LIGHTSAIL_IP is defined as: ${{ secrets.LIGHTSAIL_IP }}"
+          else
+            echo "LIGHTSAIL_IP is NOT defined"
+          fi
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+          
+          # Debug SSH key
+          echo "SSH key file permissions:"
+          ls -la ~/.ssh/
+          echo "First and last line of SSH key file (for format check):"
+          head -n 1 ~/.ssh/id_rsa
+          tail -n 1 ~/.ssh/id_rsa
 
       - name: Create deployment script
         run: |
