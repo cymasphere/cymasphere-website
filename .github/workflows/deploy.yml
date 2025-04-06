@@ -108,19 +108,11 @@ jobs:
           ENV NEXT_TELEMETRY_DISABLED=1
           ENV NEXT_LINT=false
           
-          # Run the build with error handling
-          RUN chmod +x ./build-no-errors.sh && ./build-no-errors.sh
+          # Fix next.config.js to remove incompatible options
+          RUN echo 'const nextConfig = { output: "standalone", reactStrictMode: true }; module.exports = nextConfig;' > next.config.js
           
-          # Make sure public directory exists
-          RUN mkdir -p /app/public
-          
-          # Verify standalone output and create fallback if needed
-          RUN if [ ! -f /app/.next/standalone/server.js ]; then \
-              echo "Standalone server.js not found. Creating direct Next.js output..."; \
-              mkdir -p /app/.next/standalone; \
-              cp -r /app/.next/* /app/.next/standalone/ 2>/dev/null || true; \
-              echo 'const { createServer } = require("http"); const { parse } = require("url"); const next = require("next"); const app = next({ dev: false }); const handle = app.getRequestHandler(); app.prepare().then(() => { createServer((req, res) => { const parsedUrl = parse(req.url, true); handle(req, res, parsedUrl); }).listen(3000, "0.0.0.0", () => { console.log("Ready on http://0.0.0.0:3000"); }); });' > /app/.next/standalone/server.js; \
-          fi
+          # Run build command directly
+          RUN bun run next build
           
           # Production image
           FROM base AS runner
@@ -131,20 +123,17 @@ jobs:
           ENV PORT=3000
           ENV HOSTNAME=0.0.0.0
 
-          # Copy necessary files
-          COPY --from=builder /app/.next/standalone ./
-          COPY --from=builder /app/.next/static ./.next/static
-          COPY --from=builder /app/public ./public
+          # Copy entire next folder and node_modules
+          COPY --from=builder /app/.next /app/.next
+          COPY --from=builder /app/node_modules /app/node_modules
+          COPY --from=builder /app/package.json /app/package.json
+          COPY --from=builder /app/public /app/public
+          COPY --from=builder /app/next.config.js /app/next.config.js
 
-          # Create a startup script
+          # Create a direct startup script
           RUN echo '#!/bin/sh' > /app/start.sh && \
-              echo 'echo "Starting server on port 3000..."' >> /app/start.sh && \
-              echo 'if [ -f "server.js" ]; then' >> /app/start.sh && \
-              echo '  node server.js' >> /app/start.sh && \
-              echo 'else' >> /app/start.sh && \
-              echo '  echo "Server.js not found, starting emergency server"' >> /app/start.sh && \
-              echo '  node -e "require(\"http\").createServer((req,res)=>{res.writeHead(200,{\"Content-Type\":\"text/html\"});res.end(\"<html><body><h1>Cymasphere Website</h1><p>Maintenance mode active. Please check back shortly.</p></body></html>\");}).listen(3000,\"0.0.0.0\")"' >> /app/start.sh && \
-              echo 'fi' >> /app/start.sh && \
+              echo 'echo "Starting Next.js server on port 3000..."' >> /app/start.sh && \
+              echo 'bun run next start -p 3000' >> /app/start.sh && \
               chmod +x /app/start.sh
 
           # Set the command to run
@@ -289,19 +278,37 @@ jobs:
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
           
+          # Wait a moment for container to start
+          sleep 5
+          
           # Display container status and logs
           echo "Container status:"
           docker ps -a | grep cymasphere
           echo "Container logs:"
           docker logs cymasphere-container
           
-          # Check if the server.js file exists in the container
-          echo "Checking if server.js exists:"
-          docker exec cymasphere-container ls -la /app/server.js || echo "server.js not found!"
+          # Check content of the container
+          echo "Files in container:"
+          docker exec cymasphere-container ls -la /app
+          echo "Next.js files:"
+          docker exec cymasphere-container ls -la /app/.next || echo "No .next directory!"
+          echo "Checking for start.sh:"
+          docker exec cymasphere-container cat /app/start.sh || echo "No start.sh file!"
           
-          # Display container environment variables
-          echo "Container environment variables:"
-          docker exec cymasphere-container env
+          # Verify the container is running correctly
+          if ! curl -s http://localhost:80 | grep -q "maintenance"; then
+            echo "Website appears to be working correctly!"
+          else
+            echo "Maintenance page detected! Attempting to fix..."
+            # Try restarting the container
+            docker restart cymasphere-container
+            sleep 5
+            # If still showing maintenance page, try running Next.js directly
+            if curl -s http://localhost:80 | grep -q "maintenance"; then
+              echo "Still showing maintenance page. Trying to run Next.js directly..."
+              docker exec -d cymasphere-container bash -c "cd /app && bun run next start -p 3000"
+            fi
+          fi
           
           # Clean up
           docker system prune -af --volumes
