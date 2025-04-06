@@ -100,7 +100,7 @@ jobs:
 
       - name: Create optimized Dockerfile
         run: |
-          cat > Dockerfile << 'DOCKERFILE_EOF'
+          cat > Dockerfile << "DOCKERFILE_EOF"
           # Base image with Node.js for both build and production
           FROM node:20-slim AS base
           
