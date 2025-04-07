@@ -5,6 +5,11 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Explicitly grant permissions to push packages to GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 env:
   IMAGE_NAME: cymasphere-website
   AWS_REGION: us-east-1
