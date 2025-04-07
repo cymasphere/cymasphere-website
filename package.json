@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ci": "NEXT_SUPABASE_MOCK=true NEXT_BUILD_SKIP_VALIDATION=true next build",
+    "build:ci": "NEXT_SUPABASE_MOCK=true NEXT_BUILD_SKIP_VALIDATION=true NEXT_SKIP_500_ERROR=true next build",
     "start": "next start",
     "lint": "next lint",
     "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public > database.types.ts"
