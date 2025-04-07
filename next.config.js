@@ -32,6 +32,7 @@ const nextConfig = {
   // Fix for 500.html build issues
   experimental: {
     disableOptimizedLoading: true,
+    runtime: 'nodejs'
   },
 
   // Consistent build ID

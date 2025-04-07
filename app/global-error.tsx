@@ -12,36 +12,23 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: '1rem',
-          textAlign: 'center',
-          backgroundColor: '#111827',
-          color: 'white',
-        }}>
-          <div style={{ maxWidth: '500px' }}>
-            <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-              Application Error
-            </h1>
-            <p style={{ marginBottom: '2rem' }}>
-              We're sorry, but something went wrong.
-            </p>
+        <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
+          <h1 className="text-4xl font-bold mb-4">Something went wrong!</h1>
+          <p className="text-lg mb-6">
+            {error?.message || 'An unexpected error occurred. Please try again.'}
+          </p>
+          <div className="flex gap-4">
             <button
-              onClick={() => reset()}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#3B82F6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-              }}
+              onClick={reset}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Try again
+            </button>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-6 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+            >
+              Go home
             </button>
           </div>
         </div>

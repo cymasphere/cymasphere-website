@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function Error({
   error,
@@ -10,24 +10,30 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error('Application error:', error);
+  }, [error]);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-16 text-center bg-gray-900 text-white">
-      <div className="max-w-md mx-auto">
-        <h1 className="text-5xl font-bold mb-6">Something went wrong</h1>
-        <p className="mb-8 text-lg">
-          An error occurred while processing your request.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={() => reset()}
-            className="px-6 py-3 bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Try again
-          </button>
-          <Link href="/" className="px-6 py-3 bg-gray-600 rounded-md hover:bg-gray-700 transition-colors">
-            Return Home
-          </Link>
-        </div>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
+      <h1 className="text-4xl font-bold mb-4">Something went wrong!</h1>
+      <p className="text-lg mb-6">
+        {error?.message || 'An unexpected error occurred. Please try again.'}
+      </p>
+      <div className="flex gap-4">
+        <button
+          onClick={reset}
+          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Try again
+        </button>
+        <button
+          onClick={() => window.location.href = '/'}
+          className="px-6 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+        >
+          Go home
+        </button>
       </div>
     </div>
   );
