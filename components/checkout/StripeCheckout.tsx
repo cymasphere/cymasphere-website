@@ -41,12 +41,24 @@ const CheckoutButton = styled.button`
   }
 `;
 
-const StatusMessage = styled.div`
+interface StatusMessageProps {
+  isError?: boolean;
+}
+
+const StatusMessage = styled.div<StatusMessageProps>`
   margin-top: 10px;
   text-align: center;
-  color: ${(props) => (props.$error ? "var(--error)" : "var(--success)")};
+  color: ${(props) => (props.isError ? "var(--error)" : "var(--success)")};
   font-size: 0.9rem;
 `;
+
+interface StripeCheckoutProps {
+  priceId: string;
+  buttonText: string;
+  billingPeriod: string;
+  price: string;
+  trialDays?: number;
+}
 
 /**
  * StripeCheckout component for handling Stripe checkout sessions
@@ -56,12 +68,13 @@ const StatusMessage = styled.div`
  * @param {string} props.billingPeriod - The selected billing period (monthly, yearly, or lifetime)
  * @param {string} props.price - The price of the plan to display
  */
-const StripeCheckout = ({
+const StripeCheckout: React.FC<StripeCheckoutProps> = ({
   priceId,
   buttonText,
   billingPeriod,
   price,
-  trialDays,
+  // trialDays is defined but not used, so we'll comment it out
+  // trialDays,
 }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -123,26 +136,31 @@ const StripeCheckout = ({
           );
         }
 
-        const session = await response.json();
+        // The session data would be used with Stripe, but since that's commented out,
+        // we'll just log it for now
+        await response.json();
+        // When Stripe is re-enabled, uncomment:
+        // const session = await response.json();
+        // const result = await stripe.redirectToCheckout({
+        //   sessionId: session.id,
+        // });
 
         // Redirect to Stripe Checkout
         // const result = await stripe.redirectToCheckout({
         //   sessionId: session.id,
         // });
-
-        // if (result.error) {
-        //   throw new Error(result.error.message);
-        // }
       } catch (fetchError) {
         console.error("Error fetching checkout session:", fetchError);
         throw new Error(
           "Unable to connect to the payment server. Please try again later."
         );
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error during checkout:", error);
       setErrorMessage(
-        error.message || "Something went wrong. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
       );
       setIsLoading(false);
     }
@@ -154,7 +172,7 @@ const StripeCheckout = ({
         {isLoading ? "Processing..." : buttonText}
       </CheckoutButton>
 
-      {errorMessage && <StatusMessage $error>{errorMessage}</StatusMessage>}
+      {errorMessage && <StatusMessage isError>{errorMessage}</StatusMessage>}
     </>
   );
 };
