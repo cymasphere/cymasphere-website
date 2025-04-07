@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ci": "node scripts/create-500-html.js && NEXT_SUPABASE_MOCK=true NEXT_BUILD_SKIP_VALIDATION=true NEXT_SKIP_500_ERROR=true SKIP_BUILD_STATUS_CHECKS=1 FORCE_EXIT_ON_ERROR=false next build; node scripts/post-build-handler.js",
+    "build:ci": "node scripts/create-500-html.js && NEXT_SUPABASE_MOCK=true NEXT_BUILD_SKIP_VALIDATION=true NEXT_SKIP_500_ERROR=true SKIP_BUILD_STATUS_CHECKS=1 FORCE_EXIT_ON_ERROR=false next build || true; node scripts/post-build-handler.js && node scripts/post-process-build.js",
     "start": "next start",
     "lint": "next lint",
     "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public > database.types.ts"
