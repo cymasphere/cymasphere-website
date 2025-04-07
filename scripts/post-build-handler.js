@@ -36,7 +36,7 @@ const exportDir = path.join(nextDir, 'export');
 const standalonePagesDir = path.join(nextDir, 'standalone', 'server', 'pages');
 
 // Ensure all directories exist
-[serverPagesDir, exportDir, path.dirname(standalonePagesDir)].forEach(dir => {
+[serverPagesDir, exportDir, standalonePagesDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     try {
       fs.mkdirSync(dir, { recursive: true });
@@ -47,19 +47,16 @@ const standalonePagesDir = path.join(nextDir, 'standalone', 'server', 'pages');
   }
 });
 
-// Write the 500.html file to all locations
+// Write the 500.html file to all locations (write directly rather than trying to rename/copy)
 const targetPaths = [
   path.join(serverPagesDir, '500.html'),
-  path.join(exportDir, '500.html')
+  path.join(exportDir, '500.html'),
+  path.join(standalonePagesDir, '500.html')
 ];
-
-// Also try the standalone directory if it exists
-if (fs.existsSync(path.dirname(standalonePagesDir))) {
-  targetPaths.push(path.join(standalonePagesDir, '500.html'));
-}
 
 targetPaths.forEach(filePath => {
   try {
+    // Write directly to each location instead of trying to rename/copy
     fs.writeFileSync(filePath, content);
     console.log(`Successfully created: ${filePath}`);
   } catch (err) {
@@ -69,10 +66,5 @@ targetPaths.forEach(filePath => {
 
 console.log('Post-build handling completed');
 
-// If we encountered an error during the build, this won't fix it retrospectively
-// But it will ensure the files are in the right place for the next build
-try {
-  process.exit(0);
-} catch (e) {
-  // Ignore any errors during exit
-} 
+// Always exit with success to prevent build failures due to this step
+process.exit(0); 
