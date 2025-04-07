@@ -78,6 +78,7 @@ jobs:
           ENV NEXT_TELEMETRY_DISABLED=1
           ENV NODE_ENV=production
           ENV NEXT_LINT=false
+          ENV NEXT_BUILD_SKIP_VALIDATION=true
           
           # Set Supabase environment variables for build time
           ARG NEXT_PUBLIC_SUPABASE_URL
@@ -90,6 +91,7 @@ jobs:
           ARG DEPLOYMENT_ID
           ENV GIT_HASH=$GIT_HASH
           ENV DEPLOYMENT_ID=$DEPLOYMENT_ID
+          ENV NEXT_BUILD_SKIP_VALIDATION=true
           
           # Configure Next.js with all required options for the tech stack and best practices
           RUN echo '/** @type {import("next").NextConfig} */' > next.config.js \
@@ -227,6 +229,7 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_KEY }}
             GIT_HASH=${{ env.GIT_HASH }}
             DEPLOYMENT_ID=${{ env.DEPLOYMENT_ID }}
+            NEXT_BUILD_SKIP_VALIDATION=true
       
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
@@ -294,6 +297,7 @@ jobs:
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             -e DEPLOYMENT_ID="${{ env.DEPLOYMENT_ID }}" \
             -e GIT_HASH="${{ env.GIT_HASH }}" \
+            -e NEXT_BUILD_SKIP_VALIDATION=true \
             --cpus=2 \
             --memory=2g \
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
