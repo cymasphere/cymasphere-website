@@ -1,5 +1,3 @@
-"use server";
-
 import { NextResponse, type NextRequest } from "next/server";
 
 import { Profile } from "@/utils/supabase/types";
@@ -7,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
-// Next.js route configuration - export objects instead of function properties
+// Next.js route configuration - this is allowed in Route Handlers (not in "use server")
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const fetchCache = 'force-no-store';
