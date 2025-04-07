@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import Link from 'next/link';
-import { FaXTwitter, FaInstagram, FaFacebook, FaYoutube, FaDiscord } from 'react-icons/fa6';
-import LegalModal from '../modals/LegalModal';
-import AboutUsModal from '../modals/AboutUsModal';
-import EnergyBall from '../common/EnergyBall';
-import { playLydianMaj7Chord } from '../../utils/audioUtils';
-import { useRouter } from 'next/router';
+import React, { useState } from "react";
+import styled from "styled-components";
+import Link from "next/link";
+import {
+  FaXTwitter,
+  FaInstagram,
+  FaFacebook,
+  FaYoutube,
+  FaDiscord,
+} from "react-icons/fa6";
+import LegalModal from "../modals/LegalModal";
+import AboutUsModal from "../modals/AboutUsModal";
+import EnergyBall from "../common/EnergyBall";
+import { playLydianMaj7Chord } from "../../utils/audioUtils";
+import { useRouter } from "next/router";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);
@@ -21,12 +27,12 @@ const FooterContent = styled.div`
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 3rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
   }
-  
+
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
     gap: 2rem;
@@ -36,11 +42,11 @@ const FooterContent = styled.div`
 const FooterColumn = styled.div`
   display: flex;
   flex-direction: column;
-  
+
   &:first-child {
     margin-right: 1rem;
   }
-  
+
   &:not(:first-child) {
     padding-left: 1rem;
   }
@@ -55,7 +61,7 @@ const FooterLogoLink = styled.a`
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
   cursor: pointer;
-  
+
   &:hover {
     text-decoration: none;
   }
@@ -66,9 +72,9 @@ const LogoText = styled.div`
   align-items: center;
   text-transform: uppercase;
   letter-spacing: 2.5px;
-  
+
   span {
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
     background: linear-gradient(90deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -82,7 +88,7 @@ const BrandCredit = styled.a`
   font-style: italic;
   text-decoration: none;
   transition: color 0.2s ease;
-  
+
   &:hover {
     color: var(--primary);
   }
@@ -118,7 +124,7 @@ const FooterLink = styled.a`
   font-family: inherit;
   text-align: left;
   width: 100%;
-  
+
   &:hover {
     color: var(--primary);
     text-decoration: none;
@@ -135,7 +141,7 @@ const SocialIcon = styled.a`
   color: var(--text-secondary);
   font-size: 1.25rem;
   transition: color 0.2s ease, transform 0.2s ease;
-  
+
   &:hover {
     color: var(--primary);
     transform: translateY(-2px);
@@ -149,17 +155,17 @@ const Copyright = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
   font-size: 0.85rem;
-  
+
   p {
     margin: 0;
-    
+
     span {
       margin-left: 0.5rem;
       font-style: italic;
       opacity: 0.8;
     }
   }
-  
+
   @media (max-width: 480px) {
     span {
       display: block;
@@ -174,25 +180,25 @@ const NextFooter = () => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const router = useRouter();
-  
+
   const handleLogoClick = (e) => {
-    if (router.pathname === '/') {
+    if (router.pathname === "/") {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
     try {
       playLydianMaj7Chord();
-    } catch (err) {
-      console.log('Audio not available');
+    } catch {
+      console.log("Audio not available");
     }
   };
-  
+
   return (
     <FooterContainer>
       <FooterContent>
         <FooterColumn>
           <Link href="/" passHref>
-            <FooterLogoLink 
+            <FooterLogoLink
               onClick={handleLogoClick}
               title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
             >
@@ -204,97 +210,131 @@ const NextFooter = () => {
           </Link>
           <BrandCredit href="https://nnaud.io">by NNAudio</BrandCredit>
           <FooterDescription>
-            Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.
+            Cymasphere is an interactive music compositional tool for producers,
+            composers, performing musicians, educators, and students.
           </FooterDescription>
           <SocialLinks>
-            <SocialIcon href="https://x.com/cymasphere" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+            <SocialIcon
+              href="https://x.com/cymasphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X (Twitter)"
+            >
               <FaXTwitter />
             </SocialIcon>
-            <SocialIcon href="https://instagram.com/cymasphere" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <SocialIcon
+              href="https://instagram.com/cymasphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
               <FaInstagram />
             </SocialIcon>
-            <SocialIcon href="https://facebook.com/cymasphere" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <SocialIcon
+              href="https://facebook.com/cymasphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+            >
               <FaFacebook />
             </SocialIcon>
-            <SocialIcon href="https://youtube.com/@cymasphere" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <SocialIcon
+              href="https://youtube.com/@cymasphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+            >
               <FaYoutube />
             </SocialIcon>
-            <SocialIcon href="https://discord.gg/cymasphere" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+            <SocialIcon
+              href="https://discord.gg/cymasphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord"
+            >
               <FaDiscord />
             </SocialIcon>
           </SocialLinks>
         </FooterColumn>
-        
+
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
           <Link href="/" passHref legacyBehavior>
             <FooterLink>Home</FooterLink>
           </Link>
-          <FooterLink as="a" href="#features">Features</FooterLink>
-          <FooterLink as="a" href="#how-it-works">How It Works</FooterLink>
-          <FooterLink as="a" href="#pricing">Pricing</FooterLink>
-          <FooterLink as="a" href="#faq">FAQ</FooterLink>
+          <FooterLink as="a" href="#features">
+            Features
+          </FooterLink>
+          <FooterLink as="a" href="#how-it-works">
+            How It Works
+          </FooterLink>
+          <FooterLink as="a" href="#pricing">
+            Pricing
+          </FooterLink>
+          <FooterLink as="a" href="#faq">
+            FAQ
+          </FooterLink>
         </FooterColumn>
-        
+
         <FooterColumn>
           <FooterHeading>Account</FooterHeading>
-          <FooterLink 
+          <FooterLink
             as="a"
             href="/login"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = '/login';
+              window.location.href = "/login";
             }}
           >
             Login
           </FooterLink>
-          <FooterLink 
+          <FooterLink
             as="a"
             href="/signup"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = '/signup';
+              window.location.href = "/signup";
             }}
           >
             Sign Up
           </FooterLink>
-          <FooterLink 
+          <FooterLink
             as="a"
             href="/dashboard"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = '/dashboard';
+              window.location.href = "/dashboard";
             }}
           >
             Dashboard
           </FooterLink>
-          <FooterLink 
+          <FooterLink
             as="a"
             href="/profile"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = '/profile';
+              window.location.href = "/profile";
             }}
           >
             Profile
           </FooterLink>
-          <FooterLink 
+          <FooterLink
             as="a"
             href="/settings"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = '/settings';
+              window.location.href = "/settings";
             }}
           >
             Settings
           </FooterLink>
         </FooterColumn>
-        
+
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
-          <FooterLink 
-            as="a" 
-            href="#" 
+          <FooterLink
+            as="a"
+            href="#"
             onClick={(e) => {
               e.preventDefault();
               setShowAboutModal(true);
@@ -305,9 +345,9 @@ const NextFooter = () => {
           <Link href="/contact" passHref legacyBehavior>
             <FooterLink>Contact</FooterLink>
           </Link>
-          <FooterLink 
-            as="a" 
-            href="#" 
+          <FooterLink
+            as="a"
+            href="#"
             onClick={(e) => {
               e.preventDefault();
               setShowTermsModal(true);
@@ -315,9 +355,9 @@ const NextFooter = () => {
           >
             Terms of Service
           </FooterLink>
-          <FooterLink 
-            as="a" 
-            href="#" 
+          <FooterLink
+            as="a"
+            href="#"
             onClick={(e) => {
               e.preventDefault();
               setShowPrivacyModal(true);
@@ -327,32 +367,33 @@ const NextFooter = () => {
           </FooterLink>
         </FooterColumn>
       </FooterContent>
-      
+
       <Copyright>
         <p>
-          &copy; {new Date().getFullYear()} CYMASPHERE <span>All rights reserved</span>
+          &copy; {new Date().getFullYear()} CYMASPHERE{" "}
+          <span>All rights reserved</span>
         </p>
       </Copyright>
-      
+
       {showTermsModal && (
-        <LegalModal 
-          isOpen={showTermsModal} 
-          onClose={() => setShowTermsModal(false)} 
+        <LegalModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
           type="terms"
         />
       )}
-      
+
       {showPrivacyModal && (
-        <LegalModal 
-          isOpen={showPrivacyModal} 
-          onClose={() => setShowPrivacyModal(false)} 
+        <LegalModal
+          isOpen={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
           type="privacy"
         />
       )}
-      
+
       {showAboutModal && (
-        <AboutUsModal 
-          isOpen={showAboutModal} 
+        <AboutUsModal
+          isOpen={showAboutModal}
           onClose={() => setShowAboutModal(false)}
         />
       )}
@@ -360,4 +401,4 @@ const NextFooter = () => {
   );
 };
 
-export default NextFooter; 
+export default NextFooter;

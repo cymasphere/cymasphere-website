@@ -302,6 +302,7 @@ const HeroSection = () => {
       setWordWidths(widths);
       console.log("Measured widths:", widths);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ROBUST WORD CYCLING IMPLEMENTATION
@@ -436,7 +437,7 @@ const HeroSection = () => {
       // setCenterWordWidth(widths[currentWordIndex] || 120);
       console.log("Client-side re-measurement complete:", widths);
     }
-  }, []); // Empty deps array means this runs once after mount
+  }, [titleWords]);
 
   // Use the synth in a way consistent with the Try Me section
   useEffect(() => {

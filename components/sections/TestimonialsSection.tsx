@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaQuoteLeft, FaStar } from "react-icons/fa";
+import Image from "next/image";
 
 const TestimonialsContainer = styled.section`
   padding: 100px 20px;
@@ -258,10 +259,17 @@ const TestimonialsSection = () => {
                 <QuoteIcon>
                   <FaQuoteLeft />
                 </QuoteIcon>
-                <TestimonialText>"{testimonial.text}"</TestimonialText>
+                <TestimonialText>
+                  &quot;{testimonial.text}&quot;
+                </TestimonialText>
                 <AuthorInfo>
                   <AuthorImage>
-                    <img src={testimonial.image} alt={testimonial.author} />
+                    <Image
+                      src={testimonial.image}
+                      alt={testimonial.author}
+                      width={50}
+                      height={50}
+                    />
                   </AuthorImage>
                   <AuthorName>{testimonial.author}</AuthorName>
                   <AuthorTitle>{testimonial.title}</AuthorTitle>

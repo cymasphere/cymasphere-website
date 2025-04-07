@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import { withNoSSR } from '../utils/dynamicImports';
+import React from "react";
+import styled from "styled-components";
+import { withNoSSR } from "../utils/dynamicImports";
 
 const ErrorContainer = styled.div`
   display: flex;
@@ -42,7 +42,7 @@ const RetryButton = styled.button`
   margin-top: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: #5852e3;
     transform: translateY(-2px);
@@ -62,18 +62,18 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     // Log the error to an error reporting service
-    console.error('ErrorBoundary caught an error', error, errorInfo);
+    console.error("ErrorBoundary caught an error", error, errorInfo);
     this.setState({ errorInfo });
-    
+
     // You can also log the error to an error reporting service
     // logErrorToMyService(error, errorInfo);
   }
-  
+
   handleRetry = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
     // You could also add logic to reload data here
     window.location.reload();
-  }
+  };
 
   render() {
     if (this.state.hasError) {
@@ -81,7 +81,7 @@ class ErrorBoundary extends React.Component {
       return (
         <ErrorContainer>
           <ErrorTitle>Something went wrong</ErrorTitle>
-          <p>We've encountered an error and are working to fix it.</p>
+          <p>We&apos;ve encountered an error and are working to fix it.</p>
           {this.state.error && (
             <ErrorMessage>
               {this.state.error.toString()}
@@ -89,16 +89,14 @@ class ErrorBoundary extends React.Component {
               {this.state.errorInfo && this.state.errorInfo.componentStack}
             </ErrorMessage>
           )}
-          <RetryButton onClick={this.handleRetry}>
-            Retry / Refresh
-          </RetryButton>
+          <RetryButton onClick={this.handleRetry}>Retry / Refresh</RetryButton>
         </ErrorContainer>
       );
     }
 
-    return this.props.children; 
+    return this.props.children;
   }
 }
 
 // Use withNoSSR to prevent SSR issues with error boundary
-export default withNoSSR(ErrorBoundary); 
+export default withNoSSR(ErrorBoundary);

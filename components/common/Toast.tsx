@@ -29,8 +29,18 @@ const slideOut = keyframes`
   }
 `;
 
+// Define interfaces for styled component props
+interface ToastContainerProps {
+  $type: string;
+  $closing: boolean;
+}
+
+interface IconContainerProps {
+  $type: string;
+}
+
 // Toast container
-const ToastContainer = styled.div`
+const ToastContainer = styled.div<ToastContainerProps>`
   position: fixed;
   top: 50%;
   left: 50%;
@@ -74,7 +84,7 @@ const ToastContainer = styled.div`
   }
 `;
 
-const IconContainer = styled.div`
+const IconContainer = styled.div<IconContainerProps>`
   margin-right: 12px;
   display: flex;
   font-size: 20px;
@@ -127,21 +137,19 @@ const Toast = ({
 }) => {
   const [isClosing, setIsClosing] = React.useState(false);
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 300); // Match the animation duration
-  };
+  const handleClose = () => {};
 
   // Auto close after duration
   useEffect(() => {
     const timer = setTimeout(() => {
-      handleClose();
+      setIsClosing(true);
+      setTimeout(() => {
+        onClose();
+      }, 300); // Match the animation duration
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]);
+  }, [duration, onClose]);
 
   // Get the appropriate icon based on type
   const getIcon = () => {

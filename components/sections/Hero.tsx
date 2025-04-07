@@ -217,7 +217,7 @@ function Hero() {
 
     // Clean up
     return () => clearInterval(id);
-  }, []);
+  }, [words.length]);
 
   // Initialize tsParticles
   const particlesInit = async (main) => {

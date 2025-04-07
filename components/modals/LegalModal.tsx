@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 
@@ -301,9 +301,10 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
           <section>
             <h3>8. Disclaimer of Warranties</h3>
             <p>
-              Our services are provided on an "as is" and "as available" basis.
-              We make no warranties, expressed or implied, regarding the
-              reliability, availability, or accuracy of our services.
+              Our services are provided on an &quot;as is&quot; and &quot;as
+              available&quot; basis. We make no warranties, expressed or
+              implied, regarding the reliability, availability, or accuracy of
+              our services.
             </p>
           </section>
 
@@ -420,7 +421,7 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
           </section>
 
           <section>
-            <h3>8. Children's Privacy</h3>
+            <h3>8. Children&apos;s Privacy</h3>
             <p>
               Our services are not intended for children under 13. We do not
               knowingly collect information from children under 13. If we learn
@@ -434,7 +435,7 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
             <p>
               We may update this Privacy Policy from time to time. We will
               notify you of any changes by posting the new policy on this page
-              and updating the "Last Updated" date.
+              and updating the &quot;Last Updated&quot; date.
             </p>
           </section>
 

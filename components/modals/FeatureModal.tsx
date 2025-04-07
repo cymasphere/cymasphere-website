@@ -1013,7 +1013,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     }
   };
 
-  const handleTouchEnd = useCallback(() => {
+  const handleSwipe = useCallback(() => {
     if (!touchStart || !touchEnd) return;
 
     const distance = touchStart - touchEnd;
@@ -1028,7 +1028,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
 
     setTouchStart(null);
     setTouchEnd(null);
-  }, [touchStart, touchEnd, features.length]);
+  }, [touchStart, touchEnd, features.length, handleNext, handlePrevious]);
 
   // Preload images for better mobile experience
   const preloadNextImages = useCallback(() => {
@@ -1180,7 +1180,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
               ref={containerRef}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              onTouchEnd={handleSwipe}
             >
               {/* Add these swipe indicators */}
               <SwipeIndicator

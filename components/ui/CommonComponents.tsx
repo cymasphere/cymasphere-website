@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
 export const Container = styled.div`
   width: 100%;
@@ -15,17 +15,19 @@ export const Button = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
-  
+
   &:hover {
     transform: translateY(-2px);
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
 `;
 
-export default {
+const CommonComponents = {
   Container,
-  Button
-}; 
+  Button,
+};
+
+export default CommonComponents;

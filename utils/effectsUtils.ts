@@ -2,6 +2,7 @@
  * Utility functions for audio effects management
  */
 import * as Tone from "tone";
+import { DisposableSynth } from "./synthUtils";
 
 // Define the type for the effects chain object
 export interface EffectsChain {
@@ -21,10 +22,12 @@ export interface EffectsChain {
 /**
  * Initializes a complete effects chain for audio processing
  * @param {typeof Tone | null} toneLib - The Tone.js library object instance
+ * @param {DisposableSynth} synth - Optional synth to connect to the effects chain
  * @returns {Promise<EffectsChain>} Promise resolving to the effects chain object
  */
 export const initializeEffectsChain = async (
-  toneLib: typeof Tone | null = null
+  toneLib: typeof Tone | null = null,
+  synth: DisposableSynth = null
 ): Promise<EffectsChain> => {
   // Use imported Tone library instance or throw an error if not provided
   if (!toneLib) {
@@ -83,6 +86,29 @@ export const initializeEffectsChain = async (
 
   // Wait for reverb to generate its impulse response
   await sharedReverb.generate();
+
+  // Connect synth to the effects chain if provided
+  if (synth) {
+    // Type guard to ensure synth has connect method
+    if (
+      typeof synth === "object" &&
+      synth !== null &&
+      "connect" in synth &&
+      typeof synth.connect === "function"
+    ) {
+      // Check for disposed state
+      const isDisposed =
+        "_disposed" in synth
+          ? synth._disposed
+          : "disposed" in synth
+          ? synth.disposed
+          : false;
+
+      if (!isDisposed) {
+        synth.connect(stereoWidener);
+      }
+    }
+  }
 
   // Return the effects chain
   const chain: EffectsChain = {

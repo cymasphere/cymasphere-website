@@ -1,8 +1,4 @@
-import React from "react";
-import { useRouter } from "next/router";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingComponent from "@/components/common/LoadingComponent";
-import EmailVerification from "@/components/EmailVerification";
+import { ReactNode } from "react";
 
 /**
  * PrivateRoute component that protects routes requiring authentication
@@ -11,10 +7,7 @@ import EmailVerification from "@/components/EmailVerification";
  *
  * NOTE: Authentication check is temporarily disabled - will always show dashboard
  */
-function PrivateRoute({ children, requireVerification = true }) {
-  const { currentUser, loading } = useAuth();
-  const router = useRouter();
-
+function PrivateRoute({ children }: { children: ReactNode }) {
   // TEMPORARILY DISABLED - Always render children without authentication
   return children;
 
