@@ -514,65 +514,53 @@ jobs:
           }
           EOF
 
-      - name: Create optimized debugging Dockerfile
+      - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use a base image with bun preinstalled
-          FROM oven/bun:1.0-slim
-          
+          FROM node:slim
+
+          # Install bun for building
+          RUN apt-get update && apt-get install -y curl unzip
+          RUN curl -fsSL https://bun.sh/install | bash
+          ENV PATH="/root/.bun/bin:${PATH}"
+
           # Set working directory
           WORKDIR /app
-          
-          # Install minimal dependencies with verbose output
-          RUN bun init -y && \
-              echo 'Updating package.json with build script...' && \
-              sed -i 's/"scripts": {/"scripts": {"build": "next build",/g' package.json && \
-              cat package.json && \
-              echo 'Installing Next.js dependencies...' && \
-              bun add next@latest react react-dom
-          
-          # Create a guaranteed working pages structure
-          RUN mkdir -p pages && \
-              echo 'export default function Home() { return <h1>Cymasphere</h1>; }' > pages/index.js && \
-              echo 'module.exports = {}' > next.config.js && \
-              mkdir -p public
-          
-          # Build the app with error logging
-          RUN echo 'Starting Next.js build...' && \
-              bun --version && \
-              cat package.json && \
-              echo 'Scripts defined:' && \
-              bun -i 'console.log(JSON.parse(require("fs").readFileSync("package.json")).scripts)' && \
-              echo 'Running build command...' && \
-              bun run build || (echo 'Build failed. Creating static fallback...' && \
-              mkdir -p .next/server/pages && \
-              echo '<html><head><title>Cymasphere</title></head><body><h1>Cymasphere</h1></body></html>' > .next/server/pages/index.html)
-          
-          # Create a simple static file server that doesn't require Next.js at all
-          RUN echo 'const http = require("http");' > server.js && \
-              echo 'const fs = require("fs");' >> server.js && \
-              echo 'const path = require("path");' >> server.js && \
-              echo '' >> server.js && \
-              echo 'const server = http.createServer((req, res) => {' >> server.js && \
-              echo '  console.log(`Request: ${req.url}`);' >> server.js && \
-              echo '  res.writeHead(200, { "Content-Type": "text/html" });' >> server.js && \
-              echo '  res.end("<html><head><title>Cymasphere</title></head><body><h1>Cymasphere</h1><p>Static server running</p></body></html>");' >> server.js && \
-              echo '});' >> server.js && \
-              echo '' >> server.js && \
-              echo 'const port = process.env.PORT || 80;' >> server.js && \
-              echo 'server.listen(port, () => {' >> server.js && \
-              echo '  console.log(`Server running on port ${port}`);' >> server.js && \
-              echo '});' >> server.js
-          
-          # Set environment variables
+
+          # Copy package files first for better caching
+          COPY package.json bun.lock ./
+
+          # Install dependencies with bun
+          RUN bun install
+
+          # Copy source files
+          COPY . .
+
+          # Set environment variables for production build
+          ENV NEXT_LINT=false
+          ENV NODE_OPTIONS="--max-old-space-size=4096"
           ENV NODE_ENV=production
-          ENV PORT=80
-          
-          # Expose port
+          ENV NEXT_TELEMETRY_DISABLED=1
+
+          # Pass build arguments for Supabase credentials
+          ARG NEXT_PUBLIC_SUPABASE_URL
+          ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+          ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+          ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+          # Run our custom build script that handles errors
+          RUN chmod +x build-no-errors.sh
+          RUN ./build-no-errors.sh
+
+          # Set the working directory to the standalone directory
+          WORKDIR /app/.next/standalone
+
+          # Expose port 80
           EXPOSE 80
-          
-          # Start the server (using Bun to run the server.js file)
-          CMD ["bun", "run", "server.js"]
+          ENV PORT=80
+
+          # Start the server
+          CMD ["node", "server.js"]
           DOCKERFILE_EOF
 
       - name: Set environment variables
