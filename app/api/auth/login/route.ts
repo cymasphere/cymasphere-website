@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-
-import { Profile } from "@/utils/supabase/types";
-import { createClient } from "@/utils/supabase/server";
-import { updateStripe } from "@/utils/supabase/actions";
-import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
+import { isBuildTime } from "@/utils/build-time-skip";
+import type { Profile } from "@/utils/supabase/types";
 
 // Next.js route configuration - this is allowed in Route Handlers (not in "use server")
 export const dynamic = 'force-dynamic';
@@ -81,6 +78,10 @@ export async function POST(
   }
 
   try {
+    // Only import Supabase modules at runtime, not during build
+    const { createClient } = await import("@/utils/supabase/server");
+    const { updateStripe } = await import("@/utils/supabase/actions");
+    
     // Initialize Supabase inside the request handler (only at runtime)
     const supabase = await createClient();
     
