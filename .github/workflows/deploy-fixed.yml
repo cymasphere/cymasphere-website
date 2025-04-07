@@ -557,9 +557,18 @@ jobs:
               echo 'cd /app' >> /app/install-next.sh && \
               echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
               echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
-              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
-              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
-              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
+              echo 'if [ -d /app/app ]; then' >> /app/install-next.sh && \
+              echo '  # App Router detected, create fallback in app directory' >> /app/install-next.sh && \
+              echo '  mkdir -p /app/app/page' >> /app/install-next.sh && \
+              echo '  if [ ! -f /app/app/page.tsx ] && [ ! -f /app/app/page.js ]; then' >> /app/install-next.sh && \
+              echo '    echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/app/page.tsx' >> /app/install-next.sh && \
+              echo '  fi' >> /app/install-next.sh && \
+              echo 'else' >> /app/install-next.sh && \
+              echo '  # No app directory, use Pages Router' >> /app/install-next.sh && \
+              echo '  mkdir -p /app/pages' >> /app/install-next.sh && \
+              echo '  if [ ! -f /app/pages/index.js ] && [ ! -f /app/pages/index.tsx ]; then' >> /app/install-next.sh && \
+              echo '    echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
+              echo '  fi' >> /app/install-next.sh && \
               echo 'fi' >> /app/install-next.sh && \
               echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
               echo 'npx next build' >> /app/install-next.sh && \
@@ -866,3 +875,46 @@ jobs:
             # Let's not fail the workflow even if verification fails
             echo "Continuing anyway as the container might still be starting up..."
           fi 
+          
+      - name: Fix routing conflict
+        run: |
+          # Create fix script
+          cat > fix-routing-conflict.sh << 'EOL'
+          #!/bin/bash
+          
+          echo "Fixing Next.js routing conflict..."
+          
+          # Connect to the container and remove the conflicting pages/index.js file
+          docker exec cymasphere-container sh -c '
+            if [ -f /app/pages/index.js ] && [ -d /app/app ]; then
+              echo "Found conflict: pages/index.js conflicts with app router"
+              rm /app/pages/index.js
+              echo "Removed conflicting pages/index.js file"
+              
+              # Rebuild the Next.js application
+              cd /app
+              echo "Rebuilding Next.js application..."
+              npx next build
+              echo "Rebuild completed"
+            else
+              echo "No conflict found or app router not detected"
+            fi
+          '
+          
+          # Restart the container
+          echo "Restarting container..."
+          docker restart cymasphere-container
+          
+          echo "Waiting for container to start up..."
+          sleep 10
+          
+          # Check container logs
+          echo "Container logs:"
+          docker logs --tail 20 cymasphere-container
+          
+          echo "Fix completed. Please check if the site is now accessible."
+          EOL
+          
+          # Copy and run fix script on the server
+          scp -o StrictHostKeyChecking=no fix-routing-conflict.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/fix-routing-conflict.sh
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/fix-routing-conflict.sh && ~/fix-routing-conflict.sh" 
