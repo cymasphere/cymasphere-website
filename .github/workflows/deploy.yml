@@ -130,8 +130,8 @@ jobs:
           
           # Build the application
           RUN echo "Creating mock Supabase client for build" && \
-              export NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL && \
-              export NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY && \
+              export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}" && \
+              export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-mock-key}" && \
               export NEXT_BUILD_SKIP_VALIDATION=true && \
               export NEXT_SKIP_TYPE_CHECK=true && \
               export NEXT_TELEMETRY_DISABLED=1 && \

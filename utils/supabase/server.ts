@@ -40,8 +40,9 @@ const createMockClient = () => {
 };
 
 export async function createClient() {
-  // If building, use mock client
-  if (isBuildTime) {
+  // Check if we're in a build process
+  if (isBuildTime || process.env.NODE_ENV === 'test' || process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('Supabase: Using mock client during build/test process');
     return createMockClient();
   }
 
@@ -50,29 +51,41 @@ export async function createClient() {
     console.error('Missing Supabase credentials - ensure environment variables are set correctly');
     return createMockClient(); // Return mock client as fallback
   }
-
+  
   try {
     // Create a Supabase client with cookie handling
-    // Using a workaround for TypeScript errors with cookies()
     return createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
-          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
-          get(name) {
-            const cookieStore = cookies();
-            return cookieStore.get(name)?.value;
+          // @ts-ignore - Next.js 14/15 cookies() typing issue
+          async get(name) {
+            try {
+              const cookieStore = await cookies();
+              return cookieStore.get(name)?.value;
+            } catch (e) {
+              console.warn('Error accessing cookies:', e);
+              return undefined;
+            }
           },
-          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
-          set(name, value, options) {
-            const cookieStore = cookies();
-            cookieStore.set({ name, value, ...options });
+          // @ts-ignore - Next.js 14/15 cookies() typing issue
+          async set(name, value, options) {
+            try {
+              const cookieStore = await cookies();
+              cookieStore.set({ name, value, ...options });
+            } catch (e) {
+              console.warn('Error setting cookie:', e);
+            }
           },
-          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
-          remove(name, options) {
-            const cookieStore = cookies();
-            cookieStore.set({ name, value: "", ...options });
+          // @ts-ignore - Next.js 14/15 cookies() typing issue
+          async remove(name, options) {
+            try {
+              const cookieStore = await cookies();
+              cookieStore.set({ name, value: "", ...options });
+            } catch (e) {
+              console.warn('Error removing cookie:', e);
+            }
           },
         },
       }
