@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { Profile } from "@/utils/supabase/types";
-import { createSafeServerClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
@@ -63,7 +63,7 @@ export async function POST(
 
   try {
     // Initialize Supabase inside the request handler
-    const supabase = await createSafeServerClient();
+    const supabase = await createClient();
     
     // Check if Supabase client is properly initialized
     if (!supabase) {
