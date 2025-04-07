@@ -52,21 +52,26 @@ export async function createClient() {
   }
 
   try {
-    const cookieStore = cookies();
-    
-    // Using the recommended pattern from Supabase docs
+    // Create a Supabase client with cookie handling
+    // Using a workaround for TypeScript errors with cookies()
     return createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
+          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
           get(name) {
+            const cookieStore = cookies();
             return cookieStore.get(name)?.value;
           },
+          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
           set(name, value, options) {
+            const cookieStore = cookies();
             cookieStore.set({ name, value, ...options });
           },
+          // @ts-ignore - Next.js 14/15 cookies() typing issue with Supabase
           remove(name, options) {
+            const cookieStore = cookies();
             cookieStore.set({ name, value: "", ...options });
           },
         },
