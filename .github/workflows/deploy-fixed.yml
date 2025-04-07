@@ -517,132 +517,51 @@ jobs:
       - name: Create optimized debugging Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Node.js LTS for maximum compatibility
-          FROM node:18-alpine AS base
-          
-          # Install build tools and debugging utilities
-          RUN apk add --no-cache curl bash git
+          # Start with a clean Node.js Alpine image
+          FROM node:18-alpine
           
           # Set working directory
           WORKDIR /app
           
-          # Create a guaranteed working Next.js app first
-          RUN echo "Setting up guaranteed working Next.js app..." && \
-              # Initialize a minimal npm project
-              npm init -y && \
-              # Install Next.js dependencies
-              npm install next@latest react react-dom && \
-              # Create minimal pages directory (will be overwritten later if not needed)
-              mkdir -p pages && \
-              echo "export default function Home() { return <h1>Cymasphere</h1>; }" > pages/index.js && \
-              # Create minimal next.config.js
-              echo "module.exports = { output: \"standalone\" };" > next.config.js && \
-              # Build the minimal app to ensure Next.js is working
-              npx next build
+          # Install minimal dependencies first
+          RUN npm init -y && \
+              npm install next@latest react react-dom
           
-          # Now copy the actual application files
-          COPY . .
+          # Create a guaranteed working pages structure
+          RUN mkdir -p pages && \
+              echo 'export default function Home() { return <h1>Cymasphere</h1>; }' > pages/index.js && \
+              echo 'module.exports = {}' > next.config.js && \
+              mkdir -p public
+              
+          # Build the minimal app first to ensure Next.js works
+          RUN npm run build
           
-          # Handle routing conflicts
-          RUN if [ -f "pages/index.js" ] && [ -d "app" ]; then \
-              echo "Detected routing conflict, removing pages/index.js" && \
-              rm pages/index.js; \
-            fi
-          
-          # Build our actual application, but fallback to the minimal app if it fails
-          RUN echo "Building the application..." && \
-              export NODE_ENV=production && \
-              export NEXT_TELEMETRY_DISABLED=1 && \
-              npx next build || \
-              echo "Main app build failed, will use minimal app"
-            
-          # Create a self-healing server script
-          RUN echo '#!/bin/node' > /app/server.js && \
-              echo 'const fs = require("fs");' >> /app/server.js && \
-              echo 'const path = require("path");' >> /app/server.js && \
-              echo 'const http = require("http");' >> /app/server.js && \
-              echo 'const { execSync } = require("child_process");' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'console.log("🟢 Starting Cymasphere server");' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'const nextBuildExists = fs.existsSync(path.join(process.cwd(), ".next", "BUILD_ID"));' >> /app/server.js && \
-              echo 'if (!nextBuildExists) {' >> /app/server.js && \
-              echo '  console.log("🟠 No valid Next.js build found, starting minimal app");' >> /app/server.js && \
-              echo '  // Create minimal pages directory if needed' >> /app/server.js && \
-              echo '  if (!fs.existsSync("pages")) {' >> /app/server.js && \
-              echo '    fs.mkdirSync("pages", { recursive: true });' >> /app/server.js && \
-              echo '  }' >> /app/server.js && \
-              echo '  if (!fs.existsSync("pages/index.js")) {' >> /app/server.js && \
-              echo '    fs.writeFileSync("pages/index.js", "export default function Home() { return <h1>Cymasphere - Minimal App</h1>; }");' >> /app/server.js && \
-              echo '  }' >> /app/server.js && \
-              echo '  // Create minimal next.config.js if needed' >> /app/server.js && \
-              echo '  if (!fs.existsSync("next.config.js")) {' >> /app/server.js && \
-              echo '    fs.writeFileSync("next.config.js", "module.exports = { output: \"standalone\" };");' >> /app/server.js && \
-              echo '  }' >> /app/server.js && \
-              echo '  // Build minimal app' >> /app/server.js && \
-              echo '  try {' >> /app/server.js && \
-              echo '    console.log("🟠 Building minimal Next.js app");' >> /app/server.js && \
-              echo '    execSync("npx next build", { stdio: "inherit" });' >> /app/server.js && \
-              echo '    console.log("🟢 Minimal app built successfully");' >> /app/server.js && \
-              echo '  } catch (err) {' >> /app/server.js && \
-              echo '    console.error("🔴 Failed to build minimal app:", err);' >> /app/server.js && \
-              echo '    startFallbackServer();' >> /app/server.js && \
-              echo '    return;' >> /app/server.js && \
-              echo '  }' >> /app/server.js && \
-              echo '}' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'function startFallbackServer() {' >> /app/server.js && \
-              echo '  const server = http.createServer((req, res) => {' >> /app/server.js && \
-              echo '    res.writeHead(200, { "Content-Type": "text/html" });' >> /app/server.js && \
-              echo '    res.end(`<!DOCTYPE html>' >> /app/server.js && \
-              echo '    <html>' >> /app/server.js && \
-              echo '      <head><title>Cymasphere - Maintenance</title></head>' >> /app/server.js && \
-              echo '      <body style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem;">' >> /app/server.js && \
-              echo '        <h1>Cymasphere</h1>' >> /app/server.js && \
-              echo '        <p>The application is in maintenance mode.</p>' >> /app/server.js && \
-              echo '      </body>' >> /app/server.js && \
-              echo '    </html>`);' >> /app/server.js && \
-              echo '  });' >> /app/server.js && \
-              echo '  server.listen(process.env.PORT || 80);' >> /app/server.js && \
-              echo '  console.log(`🟠 Fallback server running on port ${process.env.PORT || 80}`);' >> /app/server.js && \
-              echo '}' >> /app/server.js && \
-              echo '' >> /app/server.js && \
-              echo 'try {' >> /app/server.js && \
-              echo '  console.log("🟢 Starting Next.js server");' >> /app/server.js && \
-              echo '  // Use require only when we need it to avoid early errors' >> /app/server.js && \
-              echo '  const next = require("next");' >> /app/server.js && \
-              echo '  const app = next({ dev: false });' >> /app/server.js && \
-              echo '  const handleRequest = app.getRequestHandler();' >> /app/server.js && \
-              echo '  ' >> /app/server.js && \
-              echo '  app.prepare().then(() => {' >> /app/server.js && \
-              echo '    const server = http.createServer((req, res) => {' >> /app/server.js && \
-              echo '      handleRequest(req, res).catch(err => {' >> /app/server.js && \
-              echo '        console.error("🔴 Request error:", err);' >> /app/server.js && \
-              echo '        res.writeHead(500, { "Content-Type": "text/plain" });' >> /app/server.js && \
-              echo '        res.end("Internal server error");' >> /app/server.js && \
-              echo '      });' >> /app/server.js && \
-              echo '    });' >> /app/server.js && \
-              echo '    server.listen(process.env.PORT || 80);' >> /app/server.js && \
-              echo '    console.log(`🟢 Next.js server running on port ${process.env.PORT || 80}`);' >> /app/server.js && \
-              echo '  }).catch(err => {' >> /app/server.js && \
-              echo '    console.error("🔴 Next.js preparation error:", err);' >> /app/server.js && \
-              echo '    startFallbackServer();' >> /app/server.js && \
-              echo '  });' >> /app/server.js && \
-              echo '} catch (err) {' >> /app/server.js && \
-              echo '  console.error("🔴 Next.js server error:", err);' >> /app/server.js && \
-              echo '  startFallbackServer();' >> /app/server.js && \
-              echo '}' >> /app/server.js && \
-              chmod +x /app/server.js
+          # Simple server script
+          RUN echo '#!/usr/bin/env node' > server.js && \
+              echo 'const { createServer } = require("http");' >> server.js && \
+              echo 'const { parse } = require("url");' >> server.js && \
+              echo 'const next = require("next");' >> server.js && \
+              echo 'const app = next({ dev: false });' >> server.js && \
+              echo 'const handle = app.getRequestHandler();' >> server.js && \
+              echo 'const port = process.env.PORT || 80;' >> server.js && \
+              echo 'app.prepare().then(() => {' >> server.js && \
+              echo '  createServer((req, res) => {' >> server.js && \
+              echo '    handle(req, res, parse(req.url, true));' >> server.js && \
+              echo '  }).listen(port, (err) => {' >> server.js && \
+              echo '    if (err) throw err;' >> server.js && \
+              echo '    console.log(`> Ready on http://localhost:${port}`);' >> server.js && \
+              echo '  });' >> server.js && \
+              echo '});' >> server.js && \
+              chmod +x server.js
           
           # Set environment variables
           ENV NODE_ENV=production
           ENV PORT=80
-          ENV NEXT_TELEMETRY_DISABLED=1
           
-          # Expose port 80
+          # Expose port
           EXPOSE 80
           
-          # Start the server with self-healing capabilities
+          # Start the Next.js server
           CMD ["node", "server.js"]
           DOCKERFILE_EOF
 
