@@ -3,6 +3,8 @@
 import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import LoadingComponent from "@/components/common/LoadingComponent";
+
 export default function RootLayout({
   children,
 }: {
@@ -18,7 +20,7 @@ export default function RootLayout({
   }, [auth.user, router, auth.loading]);
 
   if (!auth.user || auth.loading) {
-    return <div>Loading...</div>;
+    return <LoadingComponent fullScreen text="Loading..." />;
   }
 
   return <>{children}</>;

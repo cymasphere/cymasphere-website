@@ -11,6 +11,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
+import LoadingComponent from "../common/LoadingComponent";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -893,56 +894,6 @@ const getImagePath = (title) => {
   return imagePath;
 };
 
-// Add a Loading indicator component with proper styling
-const LoadingIndicator = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-
-  @media (max-width: 480px) {
-    gap: 10px;
-  }
-`;
-
-const LoadingText = styled.div`
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-
-  @media (max-width: 480px) {
-    font-size: 14px;
-  }
-`;
-
-// Improved spinner for better mobile visibility
-const loadingSpinAnimation = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid var(--primary);
-  border-radius: 50%;
-  animation: ${loadingSpinAnimation} 1s linear infinite;
-
-  @media (max-width: 480px) {
-    width: 30px;
-    height: 30px;
-    border-width: 2px;
-  }
-`;
-
 // Add a visual feedback indicator for swipe actions on mobile
 const SwipeIndicator = styled.div`
   position: absolute;
@@ -974,6 +925,14 @@ const SwipeIndicator = styled.div`
     height: 40px;
     font-size: 20px;
   }
+`;
+
+// Add this styled component to properly position the LoadingComponent
+const LoadingWrapper = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
@@ -1300,15 +1259,17 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                       </ImageDebug>
                     )}
                     {imagePath && !isImageLoaded && !hasImageError && (
-                      <LoadingIndicator>
-                        <LoadingSpinner />
-                        <LoadingText>Loading image...</LoadingText>
-                      </LoadingIndicator>
+                      <LoadingWrapper>
+                        <LoadingComponent size="40px" text="Loading image..." />
+                      </LoadingWrapper>
                     )}
                     {hasImageError && (
-                      <LoadingIndicator>
-                        <LoadingText>Failed to load image</LoadingText>
-                      </LoadingIndicator>
+                      <LoadingWrapper>
+                        <LoadingComponent
+                          size="40px"
+                          text="Failed to load image"
+                        />
+                      </LoadingWrapper>
                     )}
                     <FeatureImage
                       imgSrc={isImageLoaded ? imagePath : null}

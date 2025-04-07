@@ -1,14 +1,14 @@
-import React from 'react';
-import { useRouter } from 'next/router';
-import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './common/LoadingSpinner';
-import EmailVerification from './EmailVerification';
+import React from "react";
+import { useRouter } from "next/router";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingComponent from "./common/LoadingComponent";
+import EmailVerification from "./EmailVerification";
 
 /**
  * PrivateRoute component that protects routes requiring authentication
  * If user is not logged in, they are redirected to the login page
  * If user is not verified, they see a verification required page
- * 
+ *
  * NOTE: Authentication check is temporarily disabled - will always show dashboard
  */
 function PrivateRoute({ children, requireVerification = true }) {
@@ -21,13 +21,13 @@ function PrivateRoute({ children, requireVerification = true }) {
   /* Original authentication logic (commented out)
   // Show loading state while checking authentication
   if (loading) {
-    return <LoadingSpinner fullScreen={true} text="Authenticating..." />;
+    return <LoadingComponent fullScreen text="Authenticating..." />;
   }
   
   // Redirect to login if not authenticated
   if (!currentUser) {
     router.push('/login');
-    return <LoadingSpinner fullScreen={true} text="Redirecting..." />;
+    return <LoadingComponent fullScreen text="Redirecting..." />;
   }
   
   // Check email verification if required
@@ -40,4 +40,4 @@ function PrivateRoute({ children, requireVerification = true }) {
   */
 }
 
-export default PrivateRoute; 
+export default PrivateRoute;

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -240,20 +241,6 @@ const CheckboxLabel = styled.label`
 
     &:hover {
       text-decoration: underline;
-    }
-  }
-`;
-
-const SpinnerIcon = styled(FaSpinner)`
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
     }
   }
 `;
@@ -596,7 +583,10 @@ function SignUp() {
             <ButtonContent>
               {loading ? (
                 <>
-                  <SpinnerIcon /> Creating Account...
+                  <div style={{ marginRight: "10px" }}>
+                    <LoadingComponent size="20px" />
+                  </div>
+                  Creating Account...
                 </>
               ) : (
                 "Create Account"

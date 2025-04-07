@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingComponent from "../../../components/common/LoadingComponent";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -393,7 +394,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             alignItems: "center",
           }}
         >
-          Loading...
+          <LoadingComponent text="Loading dashboard..." />
         </Content>
       </LayoutContainer>
     );

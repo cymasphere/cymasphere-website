@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -154,38 +155,6 @@ const BackButton = styled.button`
   }
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-`;
-
-const LoadingSpinner = styled.div`
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  border-top: 4px solid var(--primary);
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const LoadingText = styled.p`
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-`;
-
 const ErrorContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -297,10 +266,16 @@ export default function CheckoutSuccess() {
             />
           </HeaderContent>
         </HeaderNav>
-        <LoadingContainer>
-          <LoadingSpinner />
-          <LoadingText>Processing your payment...</LoadingText>
-        </LoadingContainer>
+        <div
+          style={{
+            height: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <LoadingComponent fullScreen text="Processing your payment..." />
+        </div>
       </PageContainer>
     );
   }

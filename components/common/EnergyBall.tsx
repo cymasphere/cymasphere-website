@@ -1,5 +1,5 @@
-import React from 'react';
-import styled, { keyframes } from 'styled-components';
+import React from "react";
+import styled, { keyframes } from "styled-components";
 
 const pulse = keyframes`
   0% {
@@ -36,11 +36,16 @@ const shimmer = keyframes`
   }
 `;
 
-const Container = styled.div`
+interface ContainerProps {
+  $size?: string;
+  $marginRight?: string;
+}
+
+const Container = styled.div<ContainerProps>`
   position: relative;
-  width: ${props => props.$size || '40px'};
-  height: ${props => props.$size || '40px'};
-  margin-right: ${props => props.$marginRight || '10px'};
+  width: ${(props) => props.$size || "40px"};
+  height: ${(props) => props.$size || "40px"};
+  margin-right: ${(props) => props.$marginRight || "10px"};
 `;
 
 const Ball = styled.div`
@@ -54,7 +59,7 @@ const Ball = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1;
-  
+
   &::before {
     content: "";
     position: absolute;
@@ -62,7 +67,12 @@ const Ball = styled.div`
     left: -5%;
     right: -5%;
     bottom: -5%;
-    background: linear-gradient(45deg, rgba(108, 99, 255, 0.8), rgba(78, 205, 196, 0.8), rgba(108, 99, 255, 0.8));
+    background: linear-gradient(
+      45deg,
+      rgba(108, 99, 255, 0.8),
+      rgba(78, 205, 196, 0.8),
+      rgba(108, 99, 255, 0.8)
+    );
     background-size: 200% 200%;
     animation: ${shimmer} 3s linear infinite;
     border-radius: 50%;
@@ -92,7 +102,15 @@ const Core = styled.div`
   box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.7);
 `;
 
-const EnergyBall = ({ size, marginRight = '10px' }) => {
+interface EnergyBallProps {
+  size?: string;
+  marginRight?: string;
+}
+
+const EnergyBall: React.FC<EnergyBallProps> = ({
+  size,
+  marginRight = "10px",
+}) => {
   return (
     <Container $size={size} $marginRight={marginRight}>
       <Ball>
@@ -103,4 +121,4 @@ const EnergyBall = ({ size, marginRight = '10px' }) => {
   );
 };
 
-export default EnergyBall; 
+export default EnergyBall;

@@ -16,6 +16,7 @@ import { Profile, SubscriptionType } from "@/utils/supabase/types";
 import { capitalize } from "@/utils/stringUtils";
 import { initiateCheckout, getPrices } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -784,11 +785,13 @@ function DashboardPage() {
             </p>
           </CardContent>
           <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
-            {isLoadingPrices
-              ? "Loading..."
-              : isInTrialPeriod()
-              ? "Choose Plan"
-              : "Change Plan"}
+            {isLoadingPrices ? (
+              <LoadingComponent size="20px" text="" />
+            ) : isInTrialPeriod() ? (
+              "Choose Plan"
+            ) : (
+              "Change Plan"
+            )}
           </Button>
         </Card>
 

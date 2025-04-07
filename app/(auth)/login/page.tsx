@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -216,19 +217,6 @@ const ButtonContent = styled.div`
   gap: 8px;
 `;
 
-const SpinnerIcon = styled(FaSpinner)`
-  animation: rotate 1s linear infinite;
-
-  @keyframes rotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -368,7 +356,10 @@ function Login() {
             <ButtonContent>
               {loading ? (
                 <>
-                  <SpinnerIcon /> Logging in...
+                  <div style={{ marginRight: "10px" }}>
+                    <LoadingComponent size="20px" />
+                  </div>
+                  Logging in...
                 </>
               ) : (
                 "Log In"
