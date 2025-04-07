@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -214,7 +214,7 @@ const ErrorMessage = styled.p`
 type SessionData = {
   id: string;
   status: string;
-  customerEmail: string;
+  customerEmail: string | null;
   isExistingUser: boolean;
 };
 export default function CheckoutSuccess() {
@@ -224,11 +224,7 @@ export default function CheckoutSuccess() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    fetchCheckoutSession();
-  }, [searchParams]);
-
-  async function fetchCheckoutSession() {
+  const fetchCheckoutSession = useCallback(async () => {
     try {
       // Get the session ID and error from the URL query parameters
       const sessionId = searchParams.get("session_id");
@@ -255,16 +251,24 @@ export default function CheckoutSuccess() {
       setSessionData({
         id: sessionId,
         status: "complete",
-        customerEmail: email,
+        customerEmail: email || null,
         isExistingUser: userExists,
       });
 
       setLoading(false);
     } catch (error) {
-      setError("Failed to fetch session data");
+      setError(
+        `Failed to fetch session data: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       setLoading(false);
     }
-  }
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchCheckoutSession();
+  }, [fetchCheckoutSession]);
 
   const handleContinue = () => {
     if (sessionData?.isExistingUser) {
@@ -272,7 +276,7 @@ export default function CheckoutSuccess() {
     } else {
       router.push(
         `/signup?email=${encodeURIComponent(
-          sessionData?.customerEmail
+          sessionData?.customerEmail || ""
         )}&checkout_complete=true`
       );
     }
@@ -283,7 +287,14 @@ export default function CheckoutSuccess() {
       <PageContainer>
         <HeaderNav>
           <HeaderContent>
-            <CymasphereLogo size="40px" fontSize="1.8rem" />
+            <CymasphereLogo
+              size="40px"
+              fontSize="1.8rem"
+              href="/"
+              onClick={() => {}}
+              className=""
+              showText={true}
+            />
           </HeaderContent>
         </HeaderNav>
         <LoadingContainer>
@@ -299,7 +310,14 @@ export default function CheckoutSuccess() {
       <PageContainer>
         <HeaderNav>
           <HeaderContent>
-            <CymasphereLogo size="40px" fontSize="1.8rem" />
+            <CymasphereLogo
+              size="40px"
+              fontSize="1.8rem"
+              href="/"
+              onClick={() => {}}
+              className=""
+              showText={true}
+            />
           </HeaderContent>
         </HeaderNav>
         <ErrorContainer>
@@ -317,7 +335,14 @@ export default function CheckoutSuccess() {
     <PageContainer>
       <HeaderNav>
         <HeaderContent>
-          <CymasphereLogo size="40px" fontSize="1.8rem" />
+          <CymasphereLogo
+            size="40px"
+            fontSize="1.8rem"
+            href="/"
+            onClick={() => {}}
+            className=""
+            showText={true}
+          />
         </HeaderContent>
       </HeaderNav>
 

@@ -14,6 +14,7 @@ import {
   FaGift,
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
+import { Profile } from "@/utils/supabase/types";
 
 const BillingContainer = styled.div`
   width: 100%;
@@ -604,17 +605,6 @@ const AlertBanner = styled.div`
   }
 `;
 
-interface UserSubscription {
-  interval: "monthly" | "yearly" | "lifetime" | null;
-  endDate: Date;
-  isLifetime: boolean;
-  purchaseDate: Date;
-  yearlyExpiryDate: null;
-  subscriptionFailed: boolean;
-  inTrial: boolean;
-  trialEndDate: Date;
-}
-
 interface PaymentMethod {
   id: string;
   last4: string;
@@ -668,16 +658,17 @@ export default function BillingPage() {
   const [confirmationTitle, setConfirmationTitle] = useState("");
 
   // Mock user subscription data - in a real app, this would come from context/API
-  const [userSubscription, setUserSubscription] = useState<UserSubscription>({
-    interval: "monthly", // 'monthly', 'yearly', 'lifetime', null (for no plan)
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    isLifetime: false,
-    purchaseDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // When lifetime license was purchased (60 days ago example)
-    // If user is on yearly plan, this would be the date the yearly subscription expires
-    yearlyExpiryDate: null,
-    subscriptionFailed: false,
-    inTrial: true, // Is the user in a trial period
-    trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+  const [userSubscription, setUserSubscription] = useState<Profile>({
+    avatar_url: null,
+    customer_id: null,
+    first_name: null,
+    id: "",
+    last_name: null,
+    last_stripe_api_check: null,
+    subscription: "none",
+    subscription_expiration: null,
+    trial_expiration: null,
+    updated_at: null,
   });
 
   // Mock payment methods
@@ -766,59 +757,47 @@ export default function BillingPage() {
   };
 
   const handleBillingPeriodChange = (
-    interval: "monthly" | "yearly" | "lifetime"
+    interval: "none" | "monthly" | "annual" | "lifetime"
   ) => {
-    if (interval === "lifetime" && !userSubscription.isLifetime) {
-      // When switching to lifetime, set isLifetime to true
-      setUserSubscription((prev) => ({
-        ...prev,
-        interval,
-        isLifetime: true,
-        purchaseDate: new Date(), // In a real app, this would only be set after purchase
-      }));
-    } else {
-      // For non-lifetime plans
-      setUserSubscription((prev) => ({
-        ...prev,
-        interval,
-        isLifetime: false,
-      }));
-    }
+    setUserSubscription((prev) => ({
+      ...prev,
+      subscription: interval,
+    }));
   };
 
   const handleConfirmPlanChange = () => {
     // If user is changing to a more expensive plan (monthly -> yearly -> lifetime)
     const shouldRedirectToCheckout =
-      (userSubscription.interval === "monthly" &&
-        userSubscription.interval !== "monthly") ||
-      (userSubscription.interval === "yearly" &&
-        userSubscription.interval !== "yearly" &&
-        userSubscription.interval === "lifetime");
+      (userSubscription.subscription === "monthly" &&
+        userSubscription.subscription !== "monthly") ||
+      (userSubscription.subscription === "annual" &&
+        userSubscription.subscription !== "annual" &&
+        userSubscription.subscription === "lifetime");
 
     if (shouldRedirectToCheckout) {
       // Show confirmation modal instead of alert
       setConfirmationTitle("Upgrading Your Plan");
       setConfirmationMessage(
-        `You're upgrading to the ${userSubscription.interval} plan. You'll be redirected to checkout to complete your purchase.`
+        `You're upgrading to the ${userSubscription.subscription} plan. You'll be redirected to checkout to complete your purchase.`
       );
       setShowConfirmationModal(true);
       setShowPlanModal(false);
       return;
     }
 
-    // If downgrading from yearly to monthly
-    if (userSubscription.interval === "yearly") {
+    // If downgrading from annual to monthly
+    if (userSubscription.subscription === "annual") {
       setConfirmationTitle("Plan Change Scheduled");
       setConfirmationMessage(
         `Your plan will be changed to monthly at the end of your current billing period on ${formatDate(
-          userSubscription.endDate
+          userSubscription.subscription_expiration
         )}.`
       );
       setShowConfirmationModal(true);
     } else {
       setConfirmationTitle("Plan Updated");
       setConfirmationMessage(
-        `Your plan has been changed to ${userSubscription.interval}.`
+        `Your plan has been changed to ${userSubscription.subscription}.`
       );
       setShowConfirmationModal(true);
     }
@@ -833,14 +812,15 @@ export default function BillingPage() {
     if (confirmationTitle === "Upgrading Your Plan") {
       // In a real app, you would navigate to checkout
       console.log(
-        `Redirecting to checkout for upgrade to ${userSubscription.interval}`
+        `Redirecting to checkout for upgrade to ${userSubscription.subscription}`
       );
-      // router.push('/checkout', { state: { interval: userSubscription.interval, upgrading: true } });
+      // router.push('/checkout', { state: { interval: userSubscription.subscription, upgrading: true } });
     }
   };
 
   // Format the date for display
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | number | null | undefined) => {
+    if (!date) return "";
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -850,19 +830,9 @@ export default function BillingPage() {
 
   // Get the price for the current subscription
   const getCurrentPrice = () => {
-    if (userSubscription.isLifetime) return planOptions.pro.lifetimePrice;
-    return userSubscription.interval === "monthly"
+    return userSubscription.subscription === "monthly"
       ? planOptions.pro.monthlyPrice
       : planOptions.pro.yearlyPrice;
-  };
-
-  // Get the name of the current subscription plan
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getCurrentPlanName = () => {
-    if (userSubscription.isLifetime) return "Lifetime Pro";
-    return userSubscription.interval === "monthly"
-      ? "Monthly Pro"
-      : "Yearly Pro";
   };
 
   const handleAddPaymentMethod = () => {
@@ -998,30 +968,19 @@ export default function BillingPage() {
     }
   };
 
-  // Toggle subscription failed state (for demo purposes)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const toggleSubscriptionFailed = () => {
-    setUserSubscription((prev) => ({
-      ...prev,
-      subscriptionFailed: !prev.subscriptionFailed,
-      interval: prev.subscriptionFailed ? "monthly" : null,
-    }));
-  };
-
   // Add function to check if user is in trial period
   const isInTrialPeriod = () => {
     return (
-      userSubscription.inTrial &&
-      new Date() < new Date(userSubscription.trialEndDate) &&
-      !userSubscription.isLifetime
+      userSubscription.trial_expiration &&
+      new Date() < new Date(userSubscription.trial_expiration)
     );
   };
 
   // Add function to get days left in trial
   const getDaysLeftInTrial = () => {
-    if (!userSubscription.inTrial) return 0;
+    if (!userSubscription.trial_expiration) return 0;
     const today = new Date();
-    const trialEnd = new Date(userSubscription.trialEndDate);
+    const trialEnd = new Date(userSubscription.trial_expiration);
     const diffTime = Math.abs(trialEnd.getTime() - today.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -1045,12 +1004,12 @@ export default function BillingPage() {
             full access to all premium features.
             {getDaysLeftInTrial()} days remaining. Your first payment of $
             {getCurrentPrice()} will be on{" "}
-            {formatDate(userSubscription.trialEndDate)}.
+            {formatDate(userSubscription.trial_expiration)}.
           </p>
         </AlertBanner>
       )}
 
-      {userSubscription.subscriptionFailed && (
+      {userSubscription.subscription === "none" && (
         <AlertBanner>
           <FaTimes />
           <p>
@@ -1071,8 +1030,7 @@ export default function BillingPage() {
         </CardTitle>
         <CardContent>
           <PlanDetails>
-            {userSubscription.subscriptionFailed ||
-            userSubscription.interval === null ? (
+            {userSubscription.subscription === "none" ? (
               <>
                 <PlanName>No Active Plan</PlanName>
                 <PlanDescription>
@@ -1085,10 +1043,8 @@ export default function BillingPage() {
               <>
                 <PlanName>
                   Cymasphere Pro -{" "}
-                  {userSubscription.isLifetime
-                    ? "Lifetime"
-                    : userSubscription.interval.charAt(0).toUpperCase() +
-                      userSubscription.interval.slice(1)}
+                  {userSubscription.subscription.charAt(0).toUpperCase() +
+                    userSubscription.subscription.slice(1)}
                   {isInTrialPeriod() && (
                     <span
                       style={{
@@ -1106,13 +1062,8 @@ export default function BillingPage() {
                   )}
                 </PlanName>
                 <PlanPrice>
-                  {userSubscription.isLifetime
-                    ? "$199"
-                    : `$${getCurrentPrice()} `}
-                  {!userSubscription.isLifetime && (
-                    <span>/ {userSubscription.interval}</span>
-                  )}
-                  {userSubscription.isLifetime && <span>Lifetime License</span>}
+                  ${getCurrentPrice()}{" "}
+                  <span>/ {userSubscription.subscription}</span>
                 </PlanPrice>
                 <PlanDescription>
                   Complete solution for music producers with full access to all
@@ -1121,37 +1072,18 @@ export default function BillingPage() {
                 {isInTrialPeriod() ? (
                   <BillingInfo>
                     <FaInfoCircle /> Trial ends:{" "}
-                    {formatDate(userSubscription.trialEndDate)} (
+                    {formatDate(userSubscription.trial_expiration)} (
                     {getDaysLeftInTrial()} days left)
-                  </BillingInfo>
-                ) : userSubscription.isLifetime ? (
-                  <BillingInfo>
-                    <FaInfoCircle /> Purchase date:{" "}
-                    {formatDate(userSubscription.purchaseDate)}
                   </BillingInfo>
                 ) : (
                   <BillingInfo>
                     <FaInfoCircle /> Next billing date:{" "}
-                    {formatDate(userSubscription.endDate)}
+                    {formatDate(userSubscription.subscription_expiration)}
                   </BillingInfo>
                 )}
-                {!userSubscription.isLifetime && (
-                  <Button onClick={handlePlanChange}>
-                    {isInTrialPeriod() ? "Choose Plan" : "Change Plan"}
-                  </Button>
-                )}
-                {userSubscription.isLifetime && (
-                  <Button
-                    disabled
-                    style={{
-                      opacity: 0.5,
-                      cursor: "not-allowed",
-                      background: "rgba(108, 99, 255, 0.3)",
-                    }}
-                  >
-                    Lifetime License Active
-                  </Button>
-                )}
+                <Button onClick={handlePlanChange}>
+                  {isInTrialPeriod() ? "Choose Plan" : "Change Plan"}
+                </Button>
               </>
             )}
           </PlanDetails>
@@ -1252,7 +1184,17 @@ export default function BillingPage() {
             onIntervalChange={handleBillingPeriodChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
-            planOptions={planOptions}
+            planName="Cymasphere Pro"
+            monthlyPrice={planOptions.pro.monthlyPrice}
+            yearlyPrice={planOptions.pro.yearlyPrice}
+            lifetimePrice={planOptions.pro.lifetimePrice || 199}
+            planDescription={planOptions.pro.description}
+            trialDays={planOptions.pro.trialDays || 14}
+            planFeatures={planOptions.pro.features}
+            monthlyDiscount={undefined}
+            yearlyDiscount={undefined}
+            lifetimeDiscount={undefined}
+            onCardToggleChange={undefined}
           />
         )}
       </AnimatePresence>
@@ -1423,8 +1365,7 @@ export default function BillingPage() {
                   </PaymentMethod>
                 )}
                 {paymentMethods.length === 1 &&
-                  !userSubscription.isLifetime &&
-                  userSubscription.interval !== null && (
+                  userSubscription.subscription !== "none" && (
                     <AlertBanner style={{ marginBottom: "0" }}>
                       <FaInfoCircle />
                       <p>

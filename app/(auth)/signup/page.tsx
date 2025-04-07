@@ -121,13 +121,6 @@ const Title = styled(motion.h2)`
   }
 `;
 
-const Subtitle = styled.p`
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-`;
-
 const Form = styled.form`
   width: 100%;
 `;
@@ -206,54 +199,6 @@ const ErrorMessage = styled(motion.div)`
   font-size: 0.9rem;
 `;
 
-const OrDivider = styled.div`
-  display: flex;
-  align-items: center;
-  margin: 1.5rem 0;
-
-  &:before,
-  &:after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  span {
-    margin: 0 1rem;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-`;
-
-const GoogleButton = styled(motion.button)`
-  width: 100%;
-  padding: 0.9rem;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.25);
-  }
-
-  svg {
-    margin-right: 10px;
-    color: #db4437;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-`;
-
 const LinkText = styled.div`
   text-align: center;
   margin-top: 1.5rem;
@@ -313,21 +258,6 @@ const SpinnerIcon = styled(FaSpinner)`
   }
 `;
 
-const formVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
-
 const buttonVariants = {
   hover: {
     scale: 1.03,
@@ -370,12 +300,12 @@ const NameFieldsContainer = styled.div`
   gap: 16px;
   width: 100%;
   margin-bottom: 1.5rem;
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   /* Adjust the FormGroup inside NameFieldsContainer to have no bottom margin */
   & > ${FormGroup} {
     flex: 1;
@@ -527,7 +457,8 @@ function SignUp() {
             <SuccessTitle>Account Created Successfully!</SuccessTitle>
             <SuccessText>
               <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
-                Hi {formData.firstName}! A verification email has been sent to {formData.email}.
+                Hi {formData.firstName}! A verification email has been sent to{" "}
+                {formData.email}.
               </strong>
               <br />
               <br />

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 const AuthContainer = styled.div`
@@ -102,19 +102,6 @@ const FormCard = styled(motion.div)`
   }
 `;
 
-const Title = styled(motion.h2)`
-  text-align: center;
-  margin-bottom: 2rem;
-  color: var(--text);
-  font-size: 2rem;
-
-  span {
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-`;
-
 const Subtitle = styled.p`
   color: var(--text-secondary);
   font-size: 1rem;
@@ -189,43 +176,6 @@ const ErrorMessage = styled(motion.div)`
   border: 1px solid rgba(255, 107, 107, 0.2);
 `;
 
-const GoogleButton = styled(Button)`
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 1rem auto 0;
-  gap: 0.5rem;
-  max-width: 250px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
-  }
-`;
-
-const OrDivider = styled.div`
-  display: flex;
-  align-items: center;
-  margin: 1.5rem 0;
-
-  &:before,
-  &:after {
-    content: "";
-    flex-grow: 1;
-    background-color: rgba(255, 255, 255, 0.1);
-    height: 1px;
-  }
-
-  span {
-    margin: 0 10px;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-`;
-
 const LinkText = styled.div`
   text-align: center;
   margin-top: 1.5rem;
@@ -278,35 +228,6 @@ const SpinnerIcon = styled(FaSpinner)`
     }
   }
 `;
-
-const formVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
-
-const buttonVariants = {
-  hover: {
-    scale: 1.03,
-    boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
-    transition: {
-      duration: 0.3,
-      ease: "easeInOut",
-    },
-  },
-  tap: {
-    scale: 0.98,
-  },
-};
 
 function Login() {
   const [email, setEmail] = useState("");

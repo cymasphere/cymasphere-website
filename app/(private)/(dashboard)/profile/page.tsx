@@ -1,11 +1,13 @@
 "use client";
 import React from "react";
 import NextSEO from "@/components/NextSEO";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaUser, FaLock, FaTimesCircle, FaSave } from "react-icons/fa";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Profile } from "@/utils/supabase/types";
 
 const ProfileContainer = styled.div`
   width: 100%;
@@ -218,116 +220,114 @@ const buttonVariants = {
   },
 };
 
-interface ProfileData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
 interface MessageData {
   text: string;
   type: "error" | "success" | "";
 }
 
 function Profile() {
-  const [profile, setProfile] = useState<ProfileData>({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+  const { user, updateProfile, resetPassword } = useAuth();
+  const [message, setMessage] = useState<MessageData>({ text: "", type: "" });
+  const [profileData, setProfileData] = useState({
+    first_name: user?.profile?.first_name || "",
+    last_name: user?.profile?.last_name || "",
   });
 
-  const [message, setMessage] = useState<MessageData>({ text: "", type: "" });
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Set isMounted to true after component has mounted to prevent state updates during unmounting
-  useEffect(() => {
-    setIsMounted(true);
-    return () => {
-      setIsMounted(false);
-    };
-  }, []);
-
-  // Use this function to safely update state only if the component is still mounted
-  const safeSetMessage = (messageData: MessageData) => {
-    if (isMounted) {
-      setMessage(messageData);
+  // Update profile data when user changes
+  React.useEffect(() => {
+    if (user?.profile) {
+      setProfileData({
+        first_name: user.profile.first_name || "",
+        last_name: user.profile.last_name || "",
+      });
     }
-  };
+  }, [user]);
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof ProfileData
+    key: keyof typeof profileData
   ) => {
-    setProfile((prevProfile) => ({
-      ...prevProfile,
+    setProfileData((prev) => ({
+      ...prev,
       [key]: e.target.value,
     }));
   };
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle profile update logic here
-    console.log("Profile updated:", profile);
-    safeSetMessage({
-      text: "Profile information updated successfully!",
-      type: "success",
-    });
+    if (!user?.profile) return;
+
+    const updatedProfile = {
+      ...user.profile,
+      ...profileData,
+    };
+
+    try {
+      const { error } = await updateProfile(updatedProfile);
+      if (error) {
+        setMessage({
+          text: `Error updating profile: ${error}`,
+          type: "error",
+        });
+      } else {
+        setMessage({
+          text: "Profile information updated successfully!",
+          type: "success",
+        });
+      }
+    } catch (error) {
+      setMessage({
+        text: `An unexpected error occurred: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        type: "error",
+      });
+    }
 
     // Clear message after 3 seconds
-    const timer = setTimeout(() => {
-      safeSetMessage({ text: "", type: "" });
+    setTimeout(() => {
+      setMessage({ text: "", type: "" });
     }, 3000);
-
-    // Clear timeout if component unmounts
-    return () => clearTimeout(timer);
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (profile.newPassword !== profile.confirmPassword) {
-      safeSetMessage({
-        text: "New passwords do not match!",
+  const handleResetPassword = async () => {
+    if (!user?.email) {
+      setMessage({
+        text: "No email address found for password reset",
         type: "error",
       });
       return;
     }
 
-    if (!profile.currentPassword) {
-      safeSetMessage({
-        text: "Current password is required!",
+    try {
+      const { error } = await resetPassword(user.email);
+      if (error) {
+        setMessage({
+          text: `Error sending reset email: ${error.message}`,
+          type: "error",
+        });
+      } else {
+        setMessage({
+          text: "Password reset email sent! Please check your inbox.",
+          type: "success",
+        });
+      }
+    } catch (error) {
+      setMessage({
+        text: `An unexpected error occurred: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         type: "error",
       });
-      return;
     }
 
-    // Reset password fields
-    setProfile((prev) => ({
-      ...prev,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    }));
-
-    safeSetMessage({
-      text: "Password changed successfully!",
-      type: "success",
-    });
-
-    // Clear message after 3 seconds with proper cleanup
-    const timer = setTimeout(() => {
-      safeSetMessage({ text: "", type: "" });
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setMessage({ text: "", type: "" });
     }, 3000);
-
-    // Clear timeout if component unmounts
-    return () => clearTimeout(timer);
   };
+
+  if (!user) return null;
 
   return (
     <ProfileContainer>
@@ -350,14 +350,14 @@ function Profile() {
           <FaUser /> Personal Information
         </CardTitle>
         <CardContent>
-          <Form onSubmit={handleUpdateProfile}>
+          <Form onSubmit={handleSaveProfile}>
             <TwoColumnGrid>
               <FormGroup>
                 <Label>First Name</Label>
                 <Input
                   type="text"
-                  value={profile.firstName}
-                  onChange={(e) => handleProfileChange(e, "firstName")}
+                  value={profileData.first_name}
+                  onChange={(e) => handleProfileChange(e, "first_name")}
                   required
                 />
               </FormGroup>
@@ -366,22 +366,12 @@ function Profile() {
                 <Label>Last Name</Label>
                 <Input
                   type="text"
-                  value={profile.lastName}
-                  onChange={(e) => handleProfileChange(e, "lastName")}
+                  value={profileData.last_name}
+                  onChange={(e) => handleProfileChange(e, "last_name")}
                   required
                 />
               </FormGroup>
             </TwoColumnGrid>
-
-            <FormGroup>
-              <Label>Email Address</Label>
-              <Input
-                type="email"
-                value={profile.email}
-                onChange={(e) => handleProfileChange(e, "email")}
-                required
-              />
-            </FormGroup>
 
             <Button
               type="submit"
@@ -406,47 +396,15 @@ function Profile() {
           <FaLock /> Change Password
         </CardTitle>
         <CardContent>
-          <Form onSubmit={handleChangePassword}>
-            <FormGroup>
-              <Label>Current Password</Label>
-              <Input
-                type="password"
-                value={profile.currentPassword}
-                onChange={(e) => handleProfileChange(e, "currentPassword")}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>New Password</Label>
-              <Input
-                type="password"
-                value={profile.newPassword}
-                onChange={(e) => handleProfileChange(e, "newPassword")}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Confirm New Password</Label>
-              <Input
-                type="password"
-                value={profile.confirmPassword}
-                onChange={(e) => handleProfileChange(e, "confirmPassword")}
-                required
-              />
-            </FormGroup>
-
-            <Button
-              type="submit"
-              as={motion.button}
-              whileHover="hover"
-              whileTap="tap"
-              variants={buttonVariants}
-            >
-              <FaLock /> Update Password
-            </Button>
-          </Form>
+          <Button
+            onClick={handleResetPassword}
+            as={motion.button}
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+          >
+            <FaLock /> Send Password Reset Email
+          </Button>
         </CardContent>
       </ProfileCard>
     </ProfileContainer>
