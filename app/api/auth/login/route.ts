@@ -7,20 +7,10 @@ import { createClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
-// Next.js configuration options - using export const as allowed in Route Handlers
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
-// Handle static export for build process
-export async function GET(): Promise<NextResponse> {
-  return NextResponse.json({
-    user: null,
-    access_token: null,
-    refresh_token: null,
-    expires_at: null,
-    error: { code: "build_mock", message: "Static export for build process" }
-  });
-}
+// Next.js route configuration - export objects instead of function properties
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
 interface ProfileWithEmail extends Profile {
   email: string;
@@ -68,6 +58,17 @@ function getMockResponse(): NextResponse<LoginResponse> {
     refresh_token: null,
     expires_at: null,
     error: { code: "mock_build", message: "This is a mock response during build" }
+  });
+}
+
+// The GET handler
+export async function GET(): Promise<NextResponse> {
+  return NextResponse.json({
+    user: null,
+    access_token: null,
+    refresh_token: null,
+    expires_at: null,
+    error: { code: "build_mock", message: "Static export for build process" }
   });
 }
 
