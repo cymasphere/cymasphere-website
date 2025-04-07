@@ -882,23 +882,73 @@ jobs:
           cat > fix-routing-conflict.sh << 'EOL'
           #!/bin/bash
           
-          echo "Fixing Next.js routing conflict..."
+          echo "Fixing Next.js routing conflict and build issues..."
           
-          # Connect to the container and remove the conflicting pages/index.js file
+          # Connect to the container and fix the build issues
           docker exec cymasphere-container sh -c '
+            echo "====== DEBUG INFO ======"
+            echo "Current directory structure:"
+            ls -la /app
+            echo ".next directory content:"
+            ls -la /app/.next 2>/dev/null || echo ".next directory not found"
+            
+            echo "====== CLEANUP ======"
+            # Remove conflicting pages file if it exists
             if [ -f /app/pages/index.js ] && [ -d /app/app ]; then
               echo "Found conflict: pages/index.js conflicts with app router"
               rm /app/pages/index.js
               echo "Removed conflicting pages/index.js file"
-              
-              # Rebuild the Next.js application
-              cd /app
-              echo "Rebuilding Next.js application..."
-              npx next build
-              echo "Rebuild completed"
-            else
-              echo "No conflict found or app router not detected"
             fi
+            
+            # Remove existing .next directory to ensure clean build
+            echo "Removing existing .next directory..."
+            rm -rf /app/.next
+            
+            # Clean npm cache
+            echo "Cleaning npm cache..."
+            npm cache clean --force
+            
+            echo "====== BUILD PROCESS ======"
+            cd /app
+            
+            # Ensure NODE_ENV is set to production
+            export NODE_ENV=production
+            
+            # Make sure we have the latest Next.js
+            echo "Reinstalling Next.js..."
+            npm install next@latest react react-dom --save
+            
+            # Ensure proper environment variables are set
+            export NEXT_TELEMETRY_DEBUG=1
+            export DEBUG=*
+            
+            # Run the build with verbose output
+            echo "Starting Next.js build..."
+            npx next build --debug
+            
+            # Check build result
+            if [ -d "/app/.next" ]; then
+              echo "Build directory exists"
+              find /app/.next -type f | head -n 10
+            else
+              echo "ERROR: Build directory does not exist after build"
+            fi
+            
+            # Check for specific build artifacts
+            if [ -f "/app/.next/BUILD_ID" ]; then
+              echo "BUILD_ID exists: $(cat /app/.next/BUILD_ID)"
+            else
+              echo "ERROR: BUILD_ID file is missing"
+            fi
+            
+            # Ensure we have a pages directory in the build
+            if [ -d "/app/.next/server/pages" ] || [ -d "/app/.next/server/app" ]; then
+              echo "Server pages or app directory exists"
+            else
+              echo "WARNING: No server pages or app directory found"
+            fi
+            
+            echo -e "\n==== BUILD COMPLETED ======"
           '
           
           # Restart the container
@@ -906,11 +956,11 @@ jobs:
           docker restart cymasphere-container
           
           echo "Waiting for container to start up..."
-          sleep 10
+          sleep 15
           
           # Check container logs
           echo "Container logs:"
-          docker logs --tail 20 cymasphere-container
+          docker logs --tail 30 cymasphere-container
           
           echo "Fix completed. Please check if the site is now accessible."
           EOL
