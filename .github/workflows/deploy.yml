@@ -221,7 +221,7 @@ jobs:
           ENTRYPOINT ["/usr/bin/tini", "--"]
           
           # Start the server with graceful shutdown
-          CMD ["node", "/app/graceful-server.js"]
+          CMD ["node", "server.js"]
           EOF
 
       - name: Build and push Docker image
