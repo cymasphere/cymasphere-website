@@ -1,9 +1,10 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
-import CymasphereLogo from "../common/CymasphereLogo";
+import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -210,10 +211,16 @@ const ErrorMessage = styled.p`
   color: var(--text-secondary);
 `;
 
+type SessionData = {
+  id: string;
+  status: string;
+  customerEmail: string;
+  isExistingUser: boolean;
+};
 export default function CheckoutSuccess() {
-  const [sessionData, setSessionData] = useState(null);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 

@@ -11,11 +11,10 @@ import {
   FaLaptop,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-// import EmailVerification from "@/components/EmailVerification";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { Profile, SubscriptionType } from "@/utils/supabase/types";
 import { capitalize } from "@/utils/stringUtils";
-import { initiateCheckout } from "@/utils/stripe/actions";
+import { initiateCheckout, getPrices } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 
 const DashboardContainer = styled.div`
@@ -409,59 +408,94 @@ function DashboardPage() {
     user.profile
   );
 
-  const planOptions = {
-    basic: {
-      name: "Cymasphere Basic",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      description: "Basic features for casual users",
-      features: [
-        "Simple Harmony Interface",
-        "Basic Voice Leading",
-        "Limited Saved Progressions",
-        "Standard Sound Library",
-        "Community Support",
-      ],
-    },
-    pro: {
-      name: "Cymasphere Pro",
-      monthlyPrice: 8,
-      yearlyPrice: 69,
-      lifetimePrice: 199,
-      description: "Complete solution for music producers",
-      trialDays: 14,
-      features: [
-        "Interactive Harmony Palette",
-        "Advanced Voice Leading Control",
-        "Unlimited Saved Progressions",
-        "Premium Sound Libraries",
-        "MIDI Export & Import",
-        "Dynamic Pattern Editor",
-        "Song Builder Tool",
-        "Cloud Storage & Backup",
-        "Priority Email Support",
-        "Free Updates",
-      ],
-    },
-    team: {
-      name: "Cymasphere Team",
-      monthlyPrice: 20,
-      yearlyPrice: 190,
-      description: "Collaborative features for teams",
-      features: [
-        "All Pro Features",
-        "Team Collaboration Tools",
-        "Project Sharing",
-        "User Management",
-        "Team Workspaces",
-        "Advanced Analytics",
-        "Dedicated Support",
-        "Custom Onboarding",
-        "API Access",
-        "Volume Discounts",
-      ],
-    },
-  };
+  // Add state for Stripe prices
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
+  // Add state for discounts
+  const [monthlyDiscount, setMonthlyDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  const [yearlyDiscount, setYearlyDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  const [lifetimeDiscount, setLifetimeDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  // Replace hardcoded variables with state
+  const [planName] = useState("Cymasphere Pro");
+  const [monthlyPrice, setMonthlyPrice] = useState(8);
+  const [yearlyPrice, setYearlyPrice] = useState(69);
+  const [lifetimePrice, setLifetimePrice] = useState(199);
+  const [planDescription] = useState("Complete solution for music producers");
+  const [trialDays] = useState(14);
+
+  const planFeatures = [
+    "Interactive Harmony Palette",
+    "Advanced Voice Leading Control",
+    "Unlimited Saved Progressions",
+    "Premium Sound Libraries",
+    "MIDI Export & Import",
+    "Dynamic Pattern Editor",
+    "Song Builder Tool",
+    "Cloud Storage & Backup",
+    "Priority Email Support",
+    "Free Updates",
+  ];
+
+  // Change default value to false (off)
+  const [willProvideCard, setWillProvideCard] = useState(false);
+
+  // Fetch prices from Stripe when component mounts
+  useEffect(() => {
+    async function fetchPrices() {
+      try {
+        setIsLoadingPrices(true);
+        setPriceError(null);
+
+        const { prices, error } = await getPrices();
+
+        if (error) {
+          setPriceError(error);
+          return;
+        }
+
+        // Update state with fetched prices
+        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+        setYearlyPrice(Math.round(prices.annual.amount / 100));
+        setLifetimePrice(Math.round(prices.lifetime.amount / 100));
+
+        // Store discount information if available
+        if (prices.monthly.discount) {
+          setMonthlyDiscount(prices.monthly.discount);
+        }
+
+        if (prices.annual.discount) {
+          setYearlyDiscount(prices.annual.discount);
+        }
+
+        if (prices.lifetime.discount) {
+          setLifetimeDiscount(prices.lifetime.discount);
+        }
+      } catch (err) {
+        console.error("Error fetching prices:", err);
+        setPriceError("Failed to load pricing information");
+      } finally {
+        setIsLoadingPrices(false);
+      }
+    }
+
+    fetchPrices();
+  }, []);
 
   // Use actual connected devices if available
   // const connectedDevices = user.profile.connectedDevices || [
@@ -528,7 +562,9 @@ function DashboardPage() {
       trial_expiration:
         selectedBillingPeriod === "lifetime"
           ? null
-          : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          : new Date(
+              Date.now() + trialDays * 24 * 60 * 60 * 1000
+            ).toISOString(),
     };
 
     // Set the state properly
@@ -544,12 +580,12 @@ function DashboardPage() {
     ) {
       setConfirmationTitle("Upgrading Your Plan");
       setConfirmationMessage(
-        `You're upgrading to the ${plan} ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`
+        `You're upgrading to the ${planName} ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`
       );
     } else {
       setConfirmationTitle("Plan Updated");
       setConfirmationMessage(
-        `You have successfully updated to the ${plan} plan. Your subscription will be billed ${selectedBillingPeriod}.`
+        `You have successfully updated to the ${planName} plan. Your subscription will be billed ${selectedBillingPeriod}.`
       );
     }
 
@@ -559,19 +595,44 @@ function DashboardPage() {
   const handleModalClose = async () => {
     setShowConfirmationModal(false);
     if (selectedBillingPeriod !== "none") {
+      // Get the appropriate promotion code based on the selected billing period
+      let promotionCode: string | undefined;
+
+      if (
+        selectedBillingPeriod === "monthly" &&
+        monthlyDiscount?.promotion_code
+      ) {
+        promotionCode = monthlyDiscount.promotion_code;
+      } else if (
+        selectedBillingPeriod === "annual" &&
+        yearlyDiscount?.promotion_code
+      ) {
+        promotionCode = yearlyDiscount.promotion_code;
+      } else if (
+        selectedBillingPeriod === "lifetime" &&
+        lifetimeDiscount?.promotion_code
+      ) {
+        promotionCode = lifetimeDiscount.promotion_code;
+      }
+
       const { url, error } = await initiateCheckout(
         selectedBillingPeriod,
         user.email,
         user.profile.customer_id || undefined,
-        undefined,
-        true
+        promotionCode,
+        willProvideCard
       );
+
       if (url) {
         router.push(url);
       } else {
         console.error("Error initiating checkout:", error);
       }
     }
+  };
+
+  const handleCardToggleChange = (newValue: boolean) => {
+    setWillProvideCard(newValue);
   };
 
   const handleContactInputChange = (
@@ -622,9 +683,6 @@ function DashboardPage() {
         </WelcomeSubtitle>
       </WelcomeSection>
 
-      {/* Show email verification banner only for real users */}
-      {/* {user && <EmailVerification />} */}
-
       <StatsGrid>
         <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
           {user.profile.subscription === selectedBillingPeriod && (
@@ -670,11 +728,25 @@ function DashboardPage() {
 
       <CardGrid>
         <Card whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          {isInTrialPeriod() && <TrialBadge>14-Day Free Trial</TrialBadge>}
+          {isInTrialPeriod() && (
+            <TrialBadge>{trialDays}-Day Free Trial</TrialBadge>
+          )}
           <CardTitle>
             <FaCreditCard /> Subscription
           </CardTitle>
           <CardContent>
+            {/* Show price error if there is one */}
+            {priceError && (
+              <div
+                style={{
+                  color: "var(--error)",
+                  marginBottom: "10px",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {priceError} Showing default prices.
+              </div>
+            )}
             <SubscriptionInfo>
               <InfoLabel>Current Plan</InfoLabel>
               <InfoValue>{capitalize(userSubscription.subscription)}</InfoValue>
@@ -699,20 +771,24 @@ function DashboardPage() {
               <InfoLabel>Next Payment</InfoLabel>
               <InfoValue>
                 {isInTrialPeriod()
-                  ? `$${planOptions.pro.monthlyPrice}.00 on ${formatDate(
-                      userSubscription.trial_expiration
-                    )}`
+                  ? `$${
+                      isLoadingPrices ? "..." : monthlyPrice
+                    }.00 on ${formatDate(userSubscription.trial_expiration)}`
                   : "$0.00"}
               </InfoValue>
             </SubscriptionInfo>
             <p>
               {isInTrialPeriod()
-                ? "You're currently on a 14-day free trial with full access to all premium features. No payment until your trial ends."
+                ? `You're currently on a ${trialDays}-day free trial with full access to all premium features. No payment until your trial ends.`
                 : "Upgrade to unlock premium features and advanced audio processing capabilities."}
             </p>
           </CardContent>
-          <Button onClick={handlePlanChange}>
-            {isInTrialPeriod() ? "Choose Plan" : "Change Plan"}
+          <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
+            {isLoadingPrices
+              ? "Loading..."
+              : isInTrialPeriod()
+              ? "Choose Plan"
+              : "Change Plan"}
           </Button>
         </Card>
 
@@ -743,7 +819,17 @@ function DashboardPage() {
             onIntervalChange={handleBillingPeriodChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
-            planOptions={planOptions}
+            planName={planName}
+            monthlyPrice={monthlyPrice}
+            yearlyPrice={yearlyPrice}
+            lifetimePrice={lifetimePrice}
+            planDescription={planDescription}
+            trialDays={trialDays}
+            planFeatures={planFeatures}
+            monthlyDiscount={monthlyDiscount || undefined}
+            yearlyDiscount={yearlyDiscount || undefined}
+            lifetimeDiscount={lifetimeDiscount || undefined}
+            onCardToggleChange={handleCardToggleChange}
           />
         )}
       </AnimatePresence>

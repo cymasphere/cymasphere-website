@@ -21,6 +21,7 @@ export interface PriceData {
     name: string;
     id: string;
     promotion_code?: string; // Promotion code ID to apply in checkout
+    promotion_display?: string; // Promotion display name to show to the user
   };
 }
 
@@ -128,6 +129,7 @@ export async function getPrices(): Promise<{
         amount_off: bestPromotion.coupon.amount_off || undefined,
         currency: bestPromotion.coupon.currency || undefined,
         promotion_code: bestPromotion.id, // Save promotion code ID
+        promotion_display: bestPromotion.coupon.name || "Special Offer",
       };
     };
 
@@ -176,21 +178,21 @@ export async function getPrices(): Promise<{
         monthly: {
           id: "",
           type: "monthly",
-          amount: 999,
+          amount: 8,
           currency: "usd",
           name: "Monthly",
         },
         annual: {
           id: "",
           type: "annual",
-          amount: 9999,
+          amount: 69,
           currency: "usd",
           name: "Annual",
         },
         lifetime: {
           id: "",
           type: "lifetime",
-          amount: 29999,
+          amount: 150,
           currency: "usd",
           name: "Lifetime",
         },
@@ -263,12 +265,12 @@ export async function createCheckoutSession(
       sessionConfig.discounts = [{ promotion_code: promotionCode }];
     }
 
+    // Set up trial configuration with different durations
+    const basicTrialDays = 7; // 7-day trial when not collecting payment info
+    const extendedTrialDays = 14; // 14-day trial when collecting payment info
+
     // Add trial period for subscription plans (not applicable to lifetime purchases)
     if (mode === "subscription") {
-      // Set up trial configuration
-      const basicTrialDays = 14; // 14-day trial by default
-      const extendedTrialDays = 21; // 21-day trial with payment method
-
       if (collectPaymentMethod) {
         // If collecting payment method, provide extended trial
         sessionConfig.subscription_data = {

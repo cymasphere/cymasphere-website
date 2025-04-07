@@ -1,8 +1,12 @@
-// "use server";
+"use server";
 
-// import { NextResponse, NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 // import Stripe from "stripe";
 // import { createClient } from "@/utils/supabase/server";
+
+export async function POST(request: NextRequest) {
+  return NextResponse.json({ message: request.body });
+}
 
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

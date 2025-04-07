@@ -328,22 +328,65 @@ const PlanNameContainer = styled.div`
   }
 `;
 
-interface PlanOption {
-  name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice?: number;
-  description: string;
-  trialDays?: number;
-  features: string[];
-}
+const OriginalPrice = styled.span`
+  text-decoration: line-through;
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-right: 8px;
+`;
 
-interface PlanOptions {
-  basic?: PlanOption;
-  pro?: PlanOption;
-  team?: PlanOption;
-  [key: string]: PlanOption | undefined;
-}
+// Add a styled component for the toggle control
+const CardInfoToggleContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+`;
+
+const ToggleLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+`;
+
+const ToggleSwitch = styled.div<{ $checked: boolean }>`
+  position: relative;
+  width: 42px;
+  height: 22px;
+  background: ${(props) =>
+    props.$checked
+      ? "linear-gradient(90deg, var(--primary), var(--accent))"
+      : "rgba(255, 255, 255, 0.2)"};
+  border-radius: 34px;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    transition: 0.3s;
+    transform: translateX(${(props) => (props.$checked ? "20px" : "0")});
+  }
+`;
+
+const TrialInfoText = styled.span`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-left: 5px;
+`;
 
 interface PlanSelectionModalProps {
   isOpen: boolean;
@@ -352,7 +395,29 @@ interface PlanSelectionModalProps {
   onIntervalChange: (interval: SubscriptionType) => void;
   onConfirm: (plan: string) => void;
   formatDate?: (date: string | number | null | undefined) => string;
-  planOptions?: PlanOptions;
+  planName: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  lifetimePrice: number;
+  planDescription: string;
+  trialDays: number;
+  planFeatures: string[];
+  monthlyDiscount?: {
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  };
+  yearlyDiscount?: {
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  };
+  lifetimeDiscount?: {
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  };
+  onCardToggleChange?: (willProvideCard: boolean) => void;
 }
 
 const PlanSelectionModal = ({
@@ -362,59 +427,28 @@ const PlanSelectionModal = ({
   onIntervalChange,
   onConfirm,
   formatDate,
-  planOptions = {
-    basic: {
-      name: "Cymasphere Basic",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      description: "Basic features for casual users",
-      features: [
-        "Simple Harmony Interface",
-        "Basic Voice Leading",
-        "Limited Saved Progressions",
-        "Standard Sound Library",
-        "Community Support",
-      ],
-    },
-    pro: {
-      name: "Cymasphere Pro",
-      monthlyPrice: 8,
-      yearlyPrice: 69,
-      lifetimePrice: 199,
-      description: "Complete solution for music producers",
-      trialDays: 14,
-      features: [
-        "Interactive Harmony Palette",
-        "Advanced Voice Leading Control",
-        "Unlimited Saved Progressions",
-        "Premium Sound Libraries",
-        "MIDI Export & Import",
-        "Dynamic Pattern Editor",
-        "Song Builder Tool",
-        "Cloud Storage & Backup",
-        "Priority Email Support",
-        "Free Updates",
-      ],
-    },
-    team: {
-      name: "Cymasphere Team",
-      monthlyPrice: 20,
-      yearlyPrice: 190,
-      description: "Collaborative features for teams",
-      features: [
-        "All Pro Features",
-        "Team Collaboration Tools",
-        "Project Sharing",
-        "User Management",
-        "Team Workspaces",
-        "Advanced Analytics",
-        "Dedicated Support",
-        "Custom Onboarding",
-        "API Access",
-        "Volume Discounts",
-      ],
-    },
-  },
+  planName = "Cymasphere Pro",
+  monthlyPrice = 8,
+  yearlyPrice = 69,
+  lifetimePrice = 199,
+  planDescription = "Complete solution for music producers",
+  trialDays = 14,
+  planFeatures = [
+    "Interactive Harmony Palette",
+    "Advanced Voice Leading Control",
+    "Unlimited Saved Progressions",
+    "Premium Sound Libraries",
+    "MIDI Export & Import",
+    "Dynamic Pattern Editor",
+    "Song Builder Tool",
+    "Cloud Storage & Backup",
+    "Priority Email Support",
+    "Free Updates",
+  ],
+  monthlyDiscount,
+  yearlyDiscount,
+  lifetimeDiscount,
+  onCardToggleChange,
 }: PlanSelectionModalProps) => {
   // State for client-side rendering
   const [isMounted, setIsMounted] = useState(false);
@@ -423,6 +457,11 @@ const PlanSelectionModal = ({
   const [selectedSubscription, setSelectedSubscription] = useState(
     profile.subscription
   );
+
+  const [willProvideCard, setWillProvideCard] = useState(true);
+
+  // Actual trial days based on toggle state
+  const effectiveTrialDays = willProvideCard ? trialDays : 7;
 
   // Update local state when the modal opens with the current subscription
   useEffect(() => {
@@ -438,6 +477,15 @@ const PlanSelectionModal = ({
     console.log(`Setting subscription to: ${subscription} (local modal state)`);
     setSelectedSubscription(subscription);
     onIntervalChange(subscription);
+  };
+
+  // Handle toggle change
+  const handleCardToggleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    setWillProvideCard(newValue);
+    if (onCardToggleChange) {
+      onCardToggleChange(newValue);
+    }
   };
 
   // Improved body overflow management to prevent memory leaks
@@ -506,7 +554,8 @@ const PlanSelectionModal = ({
                   <FaGift /> Limited Time Offer
                 </TrialBadge>
                 <PromotionText>
-                  Start with a <span>14-day FREE trial</span> on any plan!
+                  Start with a <span>{effectiveTrialDays}-day FREE trial</span>{" "}
+                  on any plan!
                 </PromotionText>
                 <PromotionSubtext>
                   Experience all premium features without commitment. No credit
@@ -560,6 +609,28 @@ const PlanSelectionModal = ({
                 </BillingToggleButton>
               </BillingToggleContainer>
 
+              {/* Add card toggle control if not lifetime plan */}
+              {selectedSubscription !== "lifetime" && (
+                <CardInfoToggleContainer>
+                  <ToggleLabel>
+                    <span>Enter card info now:</span>
+                    <ToggleSwitch $checked={willProvideCard}>
+                      <input
+                        type="checkbox"
+                        checked={willProvideCard}
+                        onChange={handleCardToggleChange}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                      />
+                    </ToggleSwitch>
+                    <TrialInfoText>
+                      {willProvideCard
+                        ? `Get ${effectiveTrialDays}-day trial (card required)`
+                        : `Get ${effectiveTrialDays}-day trial (no card required)`}
+                    </TrialInfoText>
+                  </ToggleLabel>
+                </CardInfoToggleContainer>
+              )}
+
               <PlanGrid>
                 <PlanCard style={{ position: "relative" }}>
                   {selectedSubscription === profile.subscription && (
@@ -568,7 +639,7 @@ const PlanSelectionModal = ({
                     </CurrentPlanIndicator>
                   )}
                   <PlanHeader>
-                    {planOptions?.pro?.name === "Cymasphere Pro" ? (
+                    {planName === "Cymasphere Pro" ? (
                       <PlanNameContainer>
                         <div className="logo-container">
                           <CymasphereLogo
@@ -585,13 +656,31 @@ const PlanSelectionModal = ({
                         </div>
                       </PlanNameContainer>
                     ) : (
-                      <PlanNameStyled>
-                        {planOptions?.pro?.name || "Cymasphere Pro"}
-                      </PlanNameStyled>
+                      <PlanNameStyled>{planName}</PlanNameStyled>
                     )}
                     {selectedSubscription === "monthly" && (
                       <PlanPriceStyled>
-                        ${planOptions?.pro?.monthlyPrice || 8}{" "}
+                        {monthlyDiscount &&
+                        (monthlyDiscount.percent_off ||
+                          monthlyDiscount.amount_off) ? (
+                          <>
+                            <OriginalPrice>${monthlyPrice}</OriginalPrice>$
+                            {monthlyDiscount.percent_off
+                              ? Math.round(
+                                  monthlyPrice *
+                                    (1 - monthlyDiscount.percent_off / 100)
+                                )
+                              : monthlyDiscount.amount_off
+                              ? Math.max(
+                                  0,
+                                  monthlyPrice -
+                                    Math.round(monthlyDiscount.amount_off / 100)
+                                )
+                              : monthlyPrice}
+                          </>
+                        ) : (
+                          `$${monthlyPrice}`
+                        )}{" "}
                         <span>/month</span>
                         <div
                           style={{
@@ -601,8 +690,26 @@ const PlanSelectionModal = ({
                             fontWeight: "bold",
                           }}
                         >
-                          After your 14-day free trial
+                          After your {effectiveTrialDays}-day free trial
                         </div>
+                        {monthlyDiscount &&
+                          (monthlyDiscount.percent_off ||
+                            monthlyDiscount.amount_off) && (
+                            <div
+                              style={{
+                                fontSize: "0.9rem",
+                                marginTop: "5px",
+                                color: "#f96e46",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {monthlyDiscount.percent_off
+                                ? `${monthlyDiscount.percent_off}% discount applied!`
+                                : `$${Math.round(
+                                    monthlyDiscount.amount_off! / 100
+                                  )} off!`}
+                            </div>
+                          )}
                         <div
                           style={{
                             fontSize: "0.9rem",
@@ -617,7 +724,8 @@ const PlanSelectionModal = ({
                             : `Next billing: ${formatDateHelper(
                                 profile.subscription_expiration ||
                                   new Date(
-                                    Date.now() + 1000 * 60 * 60 * 24 * 14
+                                    Date.now() +
+                                      1000 * 60 * 60 * 24 * effectiveTrialDays
                                   ).toISOString()
                               )}`}
                         </div>
@@ -625,10 +733,56 @@ const PlanSelectionModal = ({
                     )}
                     {selectedSubscription === "annual" && (
                       <PlanPriceStyled>
-                        ${planOptions?.pro?.yearlyPrice || 69}{" "}
+                        {yearlyDiscount &&
+                        (yearlyDiscount.percent_off ||
+                          yearlyDiscount.amount_off) ? (
+                          <>
+                            <OriginalPrice>${yearlyPrice}</OriginalPrice>$
+                            {yearlyDiscount.percent_off
+                              ? Math.round(
+                                  yearlyPrice *
+                                    (1 - yearlyDiscount.percent_off / 100)
+                                )
+                              : yearlyDiscount.amount_off
+                              ? Math.max(
+                                  0,
+                                  yearlyPrice -
+                                    Math.round(yearlyDiscount.amount_off / 100)
+                                )
+                              : yearlyPrice}
+                          </>
+                        ) : (
+                          `$${yearlyPrice}`
+                        )}{" "}
                         <span>/year</span>
                         <div style={{ fontSize: "1rem", marginTop: "5px" }}>
-                          $5.75/month billed annually
+                          $
+                          {(() => {
+                            // Calculate the actual monthly price based on annual price
+                            let effectiveYearlyPrice = yearlyPrice;
+
+                            // Apply discount if available
+                            if (
+                              yearlyDiscount &&
+                              (yearlyDiscount.percent_off ||
+                                yearlyDiscount.amount_off)
+                            ) {
+                              if (yearlyDiscount.percent_off) {
+                                effectiveYearlyPrice =
+                                  yearlyPrice *
+                                  (1 - yearlyDiscount.percent_off / 100);
+                              } else if (yearlyDiscount.amount_off) {
+                                effectiveYearlyPrice = Math.max(
+                                  0,
+                                  yearlyPrice - yearlyDiscount.amount_off / 100
+                                );
+                              }
+                            }
+
+                            // Convert to monthly and format
+                            return (effectiveYearlyPrice / 12).toFixed(2);
+                          })()}
+                          /month billed annually
                         </div>
                         <div
                           style={{
@@ -638,8 +792,26 @@ const PlanSelectionModal = ({
                             fontWeight: "bold",
                           }}
                         >
-                          After your 14-day free trial
+                          After your {effectiveTrialDays}-day free trial
                         </div>
+                        {yearlyDiscount &&
+                          (yearlyDiscount.percent_off ||
+                            yearlyDiscount.amount_off) && (
+                            <div
+                              style={{
+                                fontSize: "0.9rem",
+                                marginTop: "5px",
+                                color: "#f96e46",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {yearlyDiscount.percent_off
+                                ? `${yearlyDiscount.percent_off}% discount applied!`
+                                : `$${Math.round(
+                                    yearlyDiscount.amount_off! / 100
+                                  )} off!`}
+                            </div>
+                          )}
                         <div
                           style={{
                             fontSize: "0.9rem",
@@ -654,7 +826,8 @@ const PlanSelectionModal = ({
                             : `Next billing: ${formatDateHelper(
                                 profile.subscription_expiration ||
                                   new Date(
-                                    Date.now() + 1000 * 60 * 60 * 24 * 14
+                                    Date.now() +
+                                      1000 * 60 * 60 * 24 * effectiveTrialDays
                                   ).toISOString()
                               )}`}
                         </div>
@@ -662,10 +835,50 @@ const PlanSelectionModal = ({
                     )}
                     {selectedSubscription === "lifetime" && (
                       <PlanPriceStyled>
-                        ${planOptions?.pro?.lifetimePrice || 199}
+                        {lifetimeDiscount &&
+                        (lifetimeDiscount.percent_off ||
+                          lifetimeDiscount.amount_off) ? (
+                          <>
+                            <OriginalPrice>${lifetimePrice}</OriginalPrice>$
+                            {lifetimeDiscount.percent_off
+                              ? Math.round(
+                                  lifetimePrice *
+                                    (1 - lifetimeDiscount.percent_off / 100)
+                                )
+                              : lifetimeDiscount.amount_off
+                              ? Math.max(
+                                  0,
+                                  lifetimePrice -
+                                    Math.round(
+                                      lifetimeDiscount.amount_off / 100
+                                    )
+                                )
+                              : lifetimePrice}
+                          </>
+                        ) : (
+                          `$${lifetimePrice}`
+                        )}
                         <div style={{ fontSize: "1rem", marginTop: "5px" }}>
                           one-time purchase
                         </div>
+                        {lifetimeDiscount &&
+                          (lifetimeDiscount.percent_off ||
+                            lifetimeDiscount.amount_off) && (
+                            <div
+                              style={{
+                                fontSize: "0.9rem",
+                                marginTop: "5px",
+                                color: "#f96e46",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {lifetimeDiscount.percent_off
+                                ? `${lifetimeDiscount.percent_off}% discount applied!`
+                                : `$${Math.round(
+                                    lifetimeDiscount.amount_off! / 100
+                                  )} off!`}
+                            </div>
+                          )}
                         {profile.subscription === "lifetime" && (
                           <div
                             style={{
@@ -674,22 +887,20 @@ const PlanSelectionModal = ({
                               color: "var(--text-secondary)",
                             }}
                           >
-                            Purchased: {formatDateHelper(profile.purchaseDate)}
+                            Purchased:{" "}
+                            {formatDateHelper(profile.subscription_expiration)}
                           </div>
                         )}
                       </PlanPriceStyled>
                     )}
-                    <PlanDescription>
-                      {planOptions?.pro?.description ||
-                        "Complete solution for music producers"}
-                    </PlanDescription>
+                    <PlanDescription>{planDescription}</PlanDescription>
                   </PlanHeader>
 
                   <h4 style={{ marginBottom: "0.5rem", color: "var(--text)" }}>
                     All Plans Include:
                   </h4>
                   <PlanFeatures>
-                    {planOptions?.pro?.features?.map((feature, index) => (
+                    {planFeatures.map((feature, index) => (
                       <PlanFeature key={index}>
                         <FaCheck /> {feature}
                       </PlanFeature>
