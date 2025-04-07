@@ -7,12 +7,12 @@ import { createClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
-// Export a fixed response for build time to avoid initializing Supabase
+// Next.js configuration options - using export const as allowed in Route Handlers
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 // Handle static export for build process
-export const GET = () => {
+export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     user: null,
     access_token: null,
@@ -20,7 +20,7 @@ export const GET = () => {
     expires_at: null,
     error: { code: "build_mock", message: "Static export for build process" }
   });
-};
+}
 
 interface ProfileWithEmail extends Profile {
   email: string;
