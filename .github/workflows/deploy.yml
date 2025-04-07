@@ -81,6 +81,7 @@ jobs:
           ENV NODE_ENV=production
           ENV NEXT_LINT=false
           ENV NEXT_BUILD_SKIP_VALIDATION=true
+          ENV NEXT_SUPABASE_MOCK=true
           
           # Set Supabase environment variables for build time
           ARG NEXT_PUBLIC_SUPABASE_URL

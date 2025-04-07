@@ -7,6 +7,21 @@ import { createClient } from "@/utils/supabase/server";
 import { updateStripe } from "@/utils/supabase/actions";
 import { isBuildTime, buildAuthResponse } from "@/utils/build-time-skip";
 
+// Export a fixed response for build time to avoid initializing Supabase
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
+// Handle static export for build process
+export const GET = () => {
+  return NextResponse.json({
+    user: null,
+    access_token: null,
+    refresh_token: null,
+    expires_at: null,
+    error: { code: "build_mock", message: "Static export for build process" }
+  });
+};
+
 interface ProfileWithEmail extends Profile {
   email: string;
 }
@@ -61,7 +76,8 @@ export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
   // If in build mode, return mock response without initializing Supabase
-  if (isBuildTime) {
+  if (isBuildTime || process.env.NEXT_SUPABASE_MOCK === 'true') {
+    console.log('Login API: Build time detected, returning mock response');
     return getMockResponse();
   }
 
