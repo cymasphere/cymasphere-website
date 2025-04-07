@@ -44,25 +44,29 @@ const err = (code: string, message: string): NextResponse<LoginResponse> => {
   });
 };
 
-// Don't initialize Supabase at the module level, defer it to the request handler
+// Function to return a mock response for build time
+function getMockResponse(): NextResponse<LoginResponse> {
+  console.log('Login API: Using mock response for build');
+  return NextResponse.json({
+    user: null,
+    access_token: null,
+    refresh_token: null,
+    expires_at: null,
+    error: { code: "mock_build", message: "This is a mock response during build" }
+  });
+}
 
+// The main POST handler function
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
-  // If in build mode, return mock response
+  // If in build mode, return mock response without initializing Supabase
   if (isBuildTime) {
-    console.log('Login API: Using mock response for build');
-    return NextResponse.json({
-      user: buildAuthResponse.user as unknown as ProfileWithEmail,
-      access_token: buildAuthResponse.access_token,
-      refresh_token: buildAuthResponse.refresh_token,
-      expires_at: buildAuthResponse.expires_at,
-      error: null
-    });
+    return getMockResponse();
   }
 
   try {
-    // Initialize Supabase inside the request handler
+    // Initialize Supabase inside the request handler (only at runtime)
     const supabase = await createClient();
     
     // Check if Supabase client is properly initialized
