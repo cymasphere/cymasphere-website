@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { Database } from "@/database.types";
+import { isBuildTime } from "../build-time-skip";
 
 // Create a mock client with all methods that return empty data
 const createMockClient = () => {
@@ -37,48 +39,44 @@ const createMockClient = () => {
   };
 };
 
-// Detect if we're in a build/SSG context
-const isBuildProcess = process.env.NODE_ENV === 'production' && 
-                      (!process.env.VERCEL_ENV || process.env.NEXT_BUILD_SKIP_VALIDATION === 'true') && 
-                      (typeof process.env.NEXT_PUBLIC_SUPABASE_URL === 'undefined' || process.env.NEXT_BUILD_SKIP_VALIDATION === 'true');
-
-// Export createClient for use in app routes
-export const createClient = async () => {
-  // During build time, return a mock client
-  if (isBuildProcess || process.env.NEXT_BUILD_SKIP_VALIDATION === 'true') {
+export async function createClient() {
+  // If building, use mock client
+  if (isBuildTime) {
     return createMockClient();
   }
 
+  // Check for required environment variables
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('Missing Supabase credentials - ensure environment variables are set correctly');
+    return createMockClient(); // Return mock client as fallback
+  }
+
   try {
-    // Note: TypeScript issues with cookies() are suppressed temporarily
-    // This is a known issue with the typing for cookies() in Next.js
     const cookieStore = cookies();
     
-    return createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    // Using the recommended pattern from Supabase docs
+    return createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           get(name) {
-            // @ts-ignore - TypeScript doesn't recognize cookies() result correctly
             return cookieStore.get(name)?.value;
           },
           set(name, value, options) {
-            // @ts-ignore - TypeScript doesn't recognize cookies() result correctly
-            cookieStore.set(name, value, options);
+            cookieStore.set({ name, value, ...options });
           },
           remove(name, options) {
-            // @ts-ignore - TypeScript doesn't recognize cookies() result correctly
-            cookieStore.set(name, '', { ...options, maxAge: 0 });
+            cookieStore.set({ name, value: "", ...options });
           },
         },
       }
     );
-  } catch (e) {
-    console.error('Error creating Supabase client:', e);
-    return createMockClient();
+  } catch (error) {
+    console.error('Error creating Supabase client:', error);
+    return createMockClient(); // Return mock client on error
   }
-};
+}
 
 // For backwards compatibility with existing code
 export const createSafeServerClient = createClient;

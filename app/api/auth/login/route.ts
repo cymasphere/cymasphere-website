@@ -51,7 +51,7 @@ export async function POST(
 ): Promise<NextResponse<LoginResponse>> {
   // If in build mode, return mock response
   if (isBuildTime) {
-    // Cast to expected type
+    console.log('Login API: Using mock response for build');
     return NextResponse.json({
       user: buildAuthResponse.user as unknown as ProfileWithEmail,
       access_token: buildAuthResponse.access_token,
@@ -140,7 +140,7 @@ export async function POST(
 
     return err("unexpected_failure", "An unexpected error occured");
   } catch (error) {
-    console.log(error);
+    console.error('Login error:', error);
     return err("unexpected_failure", "An unexpected error occured");
   }
 }
