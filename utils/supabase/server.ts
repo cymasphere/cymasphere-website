@@ -71,3 +71,6 @@ export function createSafeServerClient() {
     }
   );
 }
+
+// Export as createClient to match imports in actions.ts
+export const createClient = createSafeServerClient;

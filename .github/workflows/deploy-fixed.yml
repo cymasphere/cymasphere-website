@@ -102,11 +102,6 @@ jobs:
               && echo '  eslint: { ignoreDuringBuilds: true },' >> next.config.js \
               && echo '  // Consistent build ID generation' >> next.config.js \
               && echo '  generateBuildId: () => process.env.GIT_HASH || "development",' >> next.config.js \
-              && echo '  // Version skew protection' >> next.config.js \
-              && echo '  experimental: {' >> next.config.js \
-              && echo '    serverExternalPackages: ["tone"],' >> next.config.js \
-              && echo '    deploymentId: process.env.DEPLOYMENT_ID' >> next.config.js \
-              && echo '  },' >> next.config.js \
               && echo '  // Caching strategy' >> next.config.js \
               && echo '  async headers() {' >> next.config.js \
               && echo '    return [' >> next.config.js \
