@@ -2,22 +2,32 @@
  * Utility functions for synthesizer creation and management
  */
 import * as Tone from "tone";
-import type { ToneAudioNode, Frequency } from "tone"; // Keep ToneAudioNode import
+import type { Frequency } from "tone";
 import { EffectsChain } from "../utils/effectsUtils";
 
-// Define interface for the custom modulation object added to synths
+// Define a more specific type for modulation components
 interface SynthModulation {
   dispose: () => void;
-  [key: string]: any; // Allow other modulation components
+  [key: string]: unknown; // Replace any with unknown for modulation components
+}
+
+// Declare augmented types for Tone.js with voices property for type checking
+// Note: We're using type assertions to bypass TypeScript's type checking for Tone.js internal structure
+interface ToneVoiceInternals {
+  voices?: Array<Tone.Synth | Tone.FMSynth | Tone.AMSynth>;
+  maxPolyphony?: number;
 }
 
 // Define extended Tone.js types with the custom modulation property
-type PolySynthWithModulation = Tone.PolySynth & {
-  modulation?: SynthModulation;
-};
-type FMSynthWithModulation = Tone.PolySynth & {
-  modulation?: SynthModulation & { modulationInterval?: number | null };
-};
+type PolySynthWithModulation = Tone.PolySynth &
+  ToneVoiceInternals & {
+    modulation?: SynthModulation;
+  };
+
+type FMSynthWithModulation = Tone.PolySynth &
+  ToneVoiceInternals & {
+    modulation?: SynthModulation & { modulationInterval?: number | null };
+  };
 
 // Define interface for the custom Pad Synth structure
 interface PadSynthType {
@@ -31,10 +41,11 @@ interface PadSynthType {
   ) => void;
   releaseAll: () => void;
   dispose: () => void;
+  disconnect: () => void;
   modulation?: SynthModulation;
   _disposed?: boolean;
-  // Allow any other properties
-  [key: string]: any;
+  // Replace any with unknown for other properties
+  [key: string]: unknown;
 }
 
 // Type alias for synths handled by disposeSynth - export it
@@ -46,11 +57,11 @@ export type DisposableSynth =
   | undefined;
 
 // Type guard to check if a synth is our custom PadSynthType
-function isPadSynth(synth: any): synth is PadSynthType {
+function isPadSynth(synth: unknown): synth is PadSynthType {
   return (
-    synth &&
+    synth !== null &&
     typeof synth === "object" &&
-    synth.voices &&
+    "voices" in synth &&
     !(synth instanceof Tone.PolySynth)
   );
 }
@@ -107,34 +118,52 @@ export const createPolySynth = (
     .start()
     .connect(phaser);
 
-  // Correct structure: voice options nested under 'voice'
-  const polySynthOptions: Partial<Tone.PolySynthOptions<Tone.Synth>> = {
-    maxPolyphony: 16,
-    voice: {
-      volume: -12,
-      oscillator: {
-        type: "fatcustom" as any,
-        partials: [1, 0.6, 0.3, 0.15, 0.075],
-        count: 3,
-        spread: 40,
-      },
-      envelope: {
-        attack: 0.15,
-        decay: 0.5,
-        sustain: 0.8,
-        release: 3.5,
-        attackCurve: "sine",
-        decayCurve: "exponential",
-        releaseCurve: "exponential",
-      },
-    },
-  };
+  // Create the synth with constructor then cast to our custom type that includes voices
+  const polySynth = new Tone.PolySynth(Tone.Synth);
+  const newSynth = polySynth as unknown as PolySynthWithModulation;
 
-  // Pass constructor directly, options as second arg
-  const newSynth = new Tone.PolySynth(
-    Tone.Synth,
-    polySynthOptions
-  ) as PolySynthWithModulation;
+  // Set parameters after creation
+  newSynth.volume.value = -12;
+
+  // Attempt to configure voices if accessible
+  // This is implementation-dependent and may not work in all Tone.js versions
+  try {
+    // Access voices array if available in this version of Tone.js
+    if (newSynth.voices && Array.isArray(newSynth.voices)) {
+      for (let i = 0; i < newSynth.voices.length; i++) {
+        try {
+          const voice = newSynth.voices[i] as Tone.Synth;
+          // Set oscillator parameters
+          voice.oscillator.type = "fatsawtooth";
+
+          if (typeof voice.oscillator.set === "function") {
+            voice.oscillator.set({
+              partials: [1, 0.6, 0.3, 0.15, 0.075],
+              count: 3,
+              spread: 40,
+            });
+          }
+
+          // Set envelope parameters
+          if (typeof voice.envelope.set === "function") {
+            voice.envelope.set({
+              attack: 0.15,
+              decay: 0.5,
+              sustain: 0.8,
+              release: 3.5,
+              attackCurve: "sine",
+              decayCurve: "exponential",
+              releaseCurve: "exponential",
+            });
+          }
+        } catch (err) {
+          console.warn(`Error configuring voice ${i}:`, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not access synth voices:", err);
+  }
 
   // Create a filter after the synth
   const filter = new Tone.Filter({
@@ -225,45 +254,67 @@ export const createFMSynth = (
   bitCrusher.wet.value = 0.15;
   bitCrusher.connect(chorus);
 
-  // Correct structure: voice options nested under 'voice'
-  const fmSynthOptions: Partial<Tone.PolySynthOptions<Tone.FMSynth>> = {
-    maxPolyphony: 12,
-    voice: {
-      volume: -14,
-      harmonicity: 2.5,
-      modulationIndex: 3.5,
-      oscillator: {
-        type: "custom",
-        partials: [1, 0.5, 0.3, 0],
-      },
-      envelope: {
-        attack: 0.1,
-        decay: 0.2,
-        sustain: 0.9,
-        release: 5,
-        attackCurve: "linear",
-        decayCurve: "exponential",
-        releaseCurve: "exponential",
-      },
-      modulation: {
-        type: "square",
-      },
-      modulationEnvelope: {
-        attack: 0.5,
-        decay: 0.5,
-        sustain: 0.5,
-        release: 7,
-        attackCurve: "linear",
-        decayCurve: "exponential",
-        releaseCurve: "exponential",
-      },
-    },
-  };
+  // Create the FM synth with constructor then cast to our custom type
+  const fmPolySynth = new Tone.PolySynth(Tone.FMSynth);
+  const newSynth = fmPolySynth as unknown as FMSynthWithModulation;
 
-  const newSynth = new Tone.PolySynth(
-    Tone.FMSynth,
-    fmSynthOptions
-  ) as FMSynthWithModulation;
+  // Set parameters after creation
+  newSynth.volume.value = -14;
+
+  // Attempt to configure voices if accessible
+  try {
+    // Access voices array if available in this Tone.js version
+    if (newSynth.voices && Array.isArray(newSynth.voices)) {
+      for (let i = 0; i < newSynth.voices.length; i++) {
+        try {
+          const voice = newSynth.voices[i] as Tone.FMSynth;
+
+          // Set FM specific parameters
+          voice.harmonicity.value = 2.5;
+          voice.modulationIndex.value = 3.5;
+
+          // Configure oscillator
+          voice.oscillator.type = "custom";
+          if (typeof voice.oscillator.set === "function") {
+            voice.oscillator.set({
+              partials: [1, 0.5, 0.3, 0],
+            });
+          }
+
+          // Configure envelopes
+          if (typeof voice.envelope.set === "function") {
+            voice.envelope.set({
+              attack: 0.1,
+              decay: 0.2,
+              sustain: 0.9,
+              release: 5,
+              attackCurve: "linear",
+              decayCurve: "exponential",
+              releaseCurve: "exponential",
+            });
+          }
+
+          voice.modulation.type = "square";
+
+          if (typeof voice.modulationEnvelope.set === "function") {
+            voice.modulationEnvelope.set({
+              attack: 0.5,
+              decay: 0.5,
+              sustain: 0.5,
+              release: 7,
+              attackCurve: "linear",
+              decayCurve: "exponential",
+              releaseCurve: "exponential",
+            });
+          }
+        } catch (err) {
+          console.warn(`Error configuring FM voice ${i}:`, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not access FM synth voices:", err);
+  }
 
   // Create a freeverb for additional space
   const freeverb = new Tone.Freeverb({
@@ -274,17 +325,12 @@ export const createFMSynth = (
 
   let modulationInterval: number | null = null;
   const setupModulation = () => {
-    const startTime = Tone.now();
+    // Remove unused startTime variable
     if (modulationInterval) {
       clearInterval(modulationInterval);
     }
     modulationInterval = setInterval(() => {
       // Removed dynamic setting of harmonicity and modulationIndex to fix type errors
-      // const now = Tone.now() - startTime;
-      // const harmonicityValue = Math.max(0.1, 1 + Math.sin(now * 0.15 * Math.PI * 2) * 1.5);
-      // try { /* attempt setting harmonicity */ } catch(e) { /* ignore */ }
-      // const modIndexValue = Math.max(0.1, 2 + Math.sin(now * 0.2 * Math.PI * 2) * 4);
-      // try { /* attempt setting modIndex */ } catch(e) { /* ignore */ }
     }, 50) as unknown as number;
   };
   setupModulation();
@@ -385,101 +431,191 @@ export const createPadSynth = (effectsChain: EffectsChain): PadSynthType => {
     type: "sine",
   }).connect(phaser);
 
-  // Use correct PolySynth structure for voices
-  const voice1Options: Partial<Tone.PolySynthOptions<Tone.Synth>> = {
-    maxPolyphony: 8,
-    voice: {
-      volume: -18,
-      oscillator: { type: "fatsawtooth", spread: 60, count: 3 },
-      envelope: {
-        attack: 1.5,
-        decay: 2.5,
-        sustain: 0.9,
-        release: 8.0,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-    },
-  };
-  const voice1 = new Tone.PolySynth(Tone.Synth, voice1Options).connect(vibrato);
+  // Helper to safely create a PolySynth
+  const createSafePolySynth = (
+    constructor: typeof Tone.Synth | typeof Tone.AMSynth | typeof Tone.FMSynth,
+    options: { maxPolyphony?: number; volume?: number } = {}
+  ): Tone.PolySynth => {
+    // Create a basic PolySynth with the provided constructor
+    // Using 'unknown' as an intermediate step is safer than 'any'
+    const synth = new Tone.PolySynth(
+      constructor as unknown as typeof Tone.Synth
+    );
 
-  const voice2Options: Partial<Tone.PolySynthOptions<Tone.Synth>> = {
-    maxPolyphony: 8,
-    voice: {
-      volume: -22,
-      oscillator: { type: "fatsine", spread: 80, count: 4 },
-      envelope: {
-        attack: 2.0,
-        decay: 3.0,
-        sustain: 0.8,
-        release: 9.0,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-    },
-  };
-  const voice2 = new Tone.PolySynth(Tone.Synth, voice2Options).connect(vibrato);
+    // Set options if provided
+    if (options.maxPolyphony !== undefined) {
+      (synth as { maxPolyphony?: number }).maxPolyphony = options.maxPolyphony;
+    }
+    if (options.volume !== undefined) {
+      synth.volume.value = options.volume;
+    }
 
-  const voice3Options: Partial<Tone.PolySynthOptions<Tone.AMSynth>> = {
+    return synth;
+  };
+
+  // Create individual voices for the pad synth
+  const voice1 = createSafePolySynth(Tone.Synth, {
+    maxPolyphony: 8,
+    volume: -18,
+  });
+  const voice2 = createSafePolySynth(Tone.Synth, {
+    maxPolyphony: 8,
+    volume: -22,
+  });
+  const voice3 = createSafePolySynth(Tone.AMSynth, {
     maxPolyphony: 4,
-    voice: {
-      volume: -20,
-      harmonicity: 1.5,
-      envelope: {
-        attack: 2.5,
-        decay: 4.0,
-        sustain: 0.7,
-        release: 10.0,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-      modulationEnvelope: {
-        attack: 3.0,
-        decay: 1.0,
-        sustain: 1.0,
-        release: 6.0,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-    },
-  };
-  const voice3 = new Tone.PolySynth(Tone.AMSynth, voice3Options).connect(
-    vibrato
-  );
-
-  const voice4Options: Partial<Tone.PolySynthOptions<Tone.FMSynth>> = {
+    volume: -20,
+  });
+  const voice4 = createSafePolySynth(Tone.FMSynth, {
     maxPolyphony: 6,
-    voice: {
-      volume: -24,
-      harmonicity: 3.0,
-      modulationIndex: 5,
-      envelope: {
-        attack: 1.8,
-        decay: 3.5,
-        sustain: 0.85,
-        release: 9.5,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-      modulationEnvelope: {
-        attack: 2.2,
-        decay: 1.5,
-        sustain: 0.9,
-        release: 7.0,
-        decayCurve: "exponential",
-        attackCurve: "linear",
-        releaseCurve: "exponential",
-      },
-    },
+    volume: -24,
+  });
+
+  // Configure voices with specific settings
+  // Try to access internal voice array if available
+  try {
+    type ToneVoice = Tone.Synth | Tone.AMSynth | Tone.FMSynth;
+
+    const configureVoice = <T extends ToneVoice>(
+      synth: Tone.PolySynth,
+      configFn: (voice: T) => void
+    ): void => {
+      // Cast to access potential internal voices array
+      const voicesObj = synth as unknown as { voices?: T[] };
+      if (voicesObj.voices && Array.isArray(voicesObj.voices)) {
+        for (let i = 0; i < voicesObj.voices.length; i++) {
+          try {
+            configFn(voicesObj.voices[i]);
+          } catch (err) {
+            console.warn(`Error configuring pad voice:`, err);
+          }
+        }
+      }
+    };
+
+    // Configure voice1 (basic sawtooth)
+    configureVoice<Tone.Synth>(voice1, (v) => {
+      v.oscillator.type = "fatsawtooth";
+      if (typeof v.oscillator.set === "function") {
+        v.oscillator.set({ spread: 60, count: 3 });
+      }
+      if (typeof v.envelope.set === "function") {
+        v.envelope.set({
+          attack: 1.5,
+          decay: 2.5,
+          sustain: 0.9,
+          release: 8.0,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+    });
+
+    // Configure voice2 (sine texture)
+    configureVoice<Tone.Synth>(voice2, (v) => {
+      v.oscillator.type = "fatsine";
+      if (typeof v.oscillator.set === "function") {
+        v.oscillator.set({ spread: 80, count: 4 });
+      }
+      if (typeof v.envelope.set === "function") {
+        v.envelope.set({
+          attack: 2.0,
+          decay: 3.0,
+          sustain: 0.8,
+          release: 9.0,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+    });
+
+    // Configure voice3 (AM bass)
+    configureVoice<Tone.AMSynth>(voice3, (v) => {
+      v.harmonicity.value = 1.5;
+
+      if (typeof v.envelope.set === "function") {
+        v.envelope.set({
+          attack: 2.5,
+          decay: 4.0,
+          sustain: 0.7,
+          release: 10.0,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+
+      if (typeof v.modulationEnvelope.set === "function") {
+        v.modulationEnvelope.set({
+          attack: 3.0,
+          decay: 1.0,
+          sustain: 1.0,
+          release: 6.0,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+    });
+
+    // Configure voice4 (FM texture)
+    configureVoice<Tone.FMSynth>(voice4, (v) => {
+      v.harmonicity.value = 3.0;
+      v.modulationIndex.value = 5;
+
+      if (typeof v.envelope.set === "function") {
+        v.envelope.set({
+          attack: 1.8,
+          decay: 3.5,
+          sustain: 0.85,
+          release: 9.5,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+
+      if (typeof v.modulationEnvelope.set === "function") {
+        v.modulationEnvelope.set({
+          attack: 2.2,
+          decay: 1.5,
+          sustain: 0.9,
+          release: 7.0,
+          decayCurve: "exponential",
+          attackCurve: "linear",
+          releaseCurve: "exponential",
+        });
+      }
+    });
+  } catch (err) {
+    console.warn("Error configuring pad voices:", err);
+  }
+
+  // Connect voices to the effects chain
+  voice1.connect(vibrato);
+  voice2.connect(vibrato);
+  voice3.connect(vibrato);
+  voice4.connect(vibrato);
+
+  // Define type for voices to ensure .releaseAll() exists
+  type VoiceWithReleaseAll = {
+    releaseAll: () => void;
+    triggerAttack: (
+      notes: Array<number>,
+      time?: Tone.Unit.Time,
+      velocity?: number
+    ) => void;
+    dispose: () => void;
+    disconnect: () => void;
   };
-  const voice4 = new Tone.PolySynth(Tone.FMSynth, voice4Options).connect(
-    vibrato
-  );
+
+  // Cast voices to the correct type
+  const typedVoice1 = voice1 as unknown as VoiceWithReleaseAll;
+  const typedVoice2 = voice2 as unknown as VoiceWithReleaseAll;
+  const typedVoice3 = voice3 as unknown as VoiceWithReleaseAll;
+  const typedVoice4 = voice4 as unknown as VoiceWithReleaseAll;
 
   const newSynth: PadSynthType = {
     voices: { voice1, voice2, voice3, voice4 },
@@ -503,7 +639,7 @@ export const createPadSynth = (effectsChain: EffectsChain): PadSynthType => {
       if (safeFreqNumbers.length === 0) return;
 
       // Pass frequency numbers (number[]) to triggerAttack
-      voice1.triggerAttack(safeFreqNumbers, timeValue, velocity * 0.95);
+      typedVoice1.triggerAttack(safeFreqNumbers, timeValue, velocity * 0.95);
       const notesUp = safeFreqNumbers
         .map((freq) => {
           try {
@@ -513,7 +649,7 @@ export const createPadSynth = (effectsChain: EffectsChain): PadSynthType => {
           }
         })
         .filter((f) => typeof f === "number") as number[];
-      voice2.triggerAttack(notesUp, timeValue, velocity * 0.7);
+      typedVoice2.triggerAttack(notesUp, timeValue, velocity * 0.7);
       const rootFreq = safeFreqNumbers[0];
       if (rootFreq) {
         try {
@@ -522,22 +658,29 @@ export const createPadSynth = (effectsChain: EffectsChain): PadSynthType => {
             .toFrequency();
           // Ensure rootFreqDown is valid number before passing
           if (typeof rootFreqDown === "number") {
-            voice3.triggerAttack([rootFreqDown], timeValue, velocity * 0.8);
+            typedVoice3.triggerAttack(
+              [rootFreqDown],
+              timeValue,
+              velocity * 0.8
+            );
           }
         } catch (e) {
           console.warn("Error transposing root note down:", e);
         }
       }
-      voice4.triggerAttack(safeFreqNumbers, timeValue, velocity * 0.6);
+      typedVoice4.triggerAttack(safeFreqNumbers, timeValue, velocity * 0.6);
     },
     releaseAll: () => {
-      voice1.releaseAll();
-      voice2.releaseAll();
-      voice3.releaseAll();
-      voice4.releaseAll();
+      typedVoice1.releaseAll();
+      typedVoice2.releaseAll();
+      typedVoice3.releaseAll();
+      typedVoice4.releaseAll();
     },
     dispose: () => {
-      Object.values(newSynth.voices).forEach((voice) => voice?.dispose());
+      typedVoice1.dispose();
+      typedVoice2.dispose();
+      typedVoice3.dispose();
+      typedVoice4.dispose();
       vibrato.dispose();
       phaser.dispose();
       autoPanner.dispose();
@@ -545,6 +688,12 @@ export const createPadSynth = (effectsChain: EffectsChain): PadSynthType => {
       autoFilter.dispose();
       padFilter.dispose();
       newSynth._disposed = true;
+    },
+    disconnect: () => {
+      typedVoice1.disconnect();
+      typedVoice2.disconnect();
+      typedVoice3.disconnect();
+      typedVoice4.disconnect();
     },
     modulation: {
       vibrato,
@@ -638,8 +787,10 @@ export const disposeSynth = (synth: DisposableSynth) => {
   const fmSynth = synth as FMSynthWithModulation;
   if (fmSynth.modulation && fmSynth.modulation.modulationInterval) {
     safeExecute(() => {
-      clearInterval(fmSynth.modulation.modulationInterval as number);
-      fmSynth.modulation.modulationInterval = null;
+      if (fmSynth.modulation) {
+        clearInterval(fmSynth.modulation.modulationInterval as number);
+        fmSynth.modulation.modulationInterval = null;
+      }
     }, "clearing modulation interval");
   }
 
@@ -649,25 +800,48 @@ export const disposeSynth = (synth: DisposableSynth) => {
   }
 
   // Step 3: Dispose Pad Synth voices
-  const padSynth = synth as PadSynthType;
   if (isPadSynth(synth)) {
+    const padSynth = synth as PadSynthType;
     console.log("Disposing padsynth voices");
+
+    // Use type assertion to handle voice methods
     Object.entries(padSynth.voices).forEach(([voiceName, voice]) => {
-      if (voice && typeof voice.releaseAll === "function")
-        safeExecute(() => voice.releaseAll(), `releasing ${voiceName} notes`);
-      if (voice && typeof voice.disconnect === "function")
-        safeExecute(() => voice.disconnect(), `disconnecting ${voiceName}`);
-    });
-    Object.entries(padSynth.voices).forEach(([voiceName, voice]) => {
-      if (voice && typeof voice.dispose === "function") {
-        safeExecute(() => voice.dispose(), `disposing ${voiceName}`);
-        try {
-          padSynth.voices[voiceName] = null;
-        } catch (err) {
-          console.warn(
-            `Could not null out ${voiceName}:`,
-            (err as Error).message
+      if (voice) {
+        // Type assertion to handle potential property access
+        const typedVoice = voice as unknown as {
+          releaseAll?: () => void;
+          disconnect?: () => void;
+          dispose?: () => void;
+        };
+
+        if (typedVoice.releaseAll) {
+          safeExecute(
+            () => typedVoice.releaseAll?.(),
+            `releasing ${voiceName} notes`
           );
+        }
+        if (typedVoice.disconnect) {
+          safeExecute(
+            () => typedVoice.disconnect?.(),
+            `disconnecting ${voiceName}`
+          );
+        }
+      }
+    });
+
+    Object.entries(padSynth.voices).forEach(([voiceName, voice]) => {
+      if (voice) {
+        const typedVoice = voice as unknown as { dispose?: () => void };
+        if (typedVoice.dispose) {
+          safeExecute(() => typedVoice.dispose?.(), `disposing ${voiceName}`);
+          try {
+            padSynth.voices[voiceName] = null;
+          } catch (err) {
+            console.warn(
+              `Could not null out ${voiceName}:`,
+              (err as Error).message
+            );
+          }
         }
       }
     });
@@ -675,12 +849,14 @@ export const disposeSynth = (synth: DisposableSynth) => {
 
   // Step 4: Dispose modulation
   if (synth.modulation && typeof synth.modulation.dispose === "function") {
-    safeExecute(
-      () => synth.modulation.dispose(),
-      "disposing modulation components"
-    );
+    safeExecute(() => {
+      if (synth.modulation) {
+        synth.modulation.dispose();
+      }
+    }, "disposing modulation components");
     try {
-      (synth as any).modulation = null;
+      // Use a more specific type for setting modulation to null
+      (synth as { modulation?: SynthModulation }).modulation = undefined;
     } catch (err) {
       console.warn("Could not null out modulation:", (err as Error).message);
     }
@@ -688,7 +864,11 @@ export const disposeSynth = (synth: DisposableSynth) => {
 
   // Step 5: Disconnect main synth
   if (typeof synth.disconnect === "function") {
-    safeExecute(() => synth.disconnect(), "disconnecting synth");
+    safeExecute(() => {
+      // Cast to a known type with disconnect method
+      const disconnectable = synth as { disconnect: () => void };
+      disconnectable.disconnect();
+    }, "disconnecting synth");
   }
 
   // Step 6: Dispose main synth (if not already handled by checks above)
@@ -714,13 +894,22 @@ export const disposeSynth = (synth: DisposableSynth) => {
     for (const prop of props) {
       const descriptor = Object.getOwnPropertyDescriptor(synth, prop);
       if (descriptor && !descriptor.configurable) continue;
+
+      // Use proper typing for property access
+      type SynthWithProps = {
+        [key: string]: unknown;
+        _disposed?: boolean;
+      };
+
+      const typedSynth = synth as SynthWithProps;
+
       if (
         prop !== "_disposed" &&
-        typeof (synth as any)[prop] === "object" &&
-        (synth as any)[prop] !== null
+        typeof typedSynth[prop] === "object" &&
+        typedSynth[prop] !== null
       ) {
         try {
-          (synth as any)[prop] = null; // Use type assertion
+          typedSynth[prop] = null;
         } catch (err) {
           console.warn(
             `Could not null out property ${prop} during final cleanup:`,
@@ -744,7 +933,7 @@ export const disposeSynth = (synth: DisposableSynth) => {
  * @param {number} midiNote - MIDI note number (0-127)
  * @returns {number} - Frequency in Hz
  */
-export const midiToFreq = (midiNote) => {
+export const midiToFreq = (midiNote: number): number => {
   if (typeof midiNote !== "number" || isNaN(midiNote)) {
     console.warn("Invalid MIDI note:", midiNote);
     return 440; // Default to A4 if invalid input

@@ -11,9 +11,9 @@ import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
-import { getPresetById } from "../../utils/presets";
-import { createSynth, disposeSynth } from "../../utils/synthUtils";
-import useEffectsChain from "../../hooks/useEffectsChain";
+import { getPresetById } from "@/utils/presets";
+import { createSynth, disposeSynth, DisposableSynth } from "@/utils/synthUtils";
+import useEffectsChain from "@/hooks/useEffectsChain";
 import dynamic from "next/dynamic";
 
 const HeroContainer = styled.section`
@@ -385,23 +385,22 @@ const HeroSection = () => {
   const [previousChord, setPreviousChord] = useState<ChordType | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
-  // Add these state variables for synth functionality
-  // Define a proper type for the synth with the necessary properties
-  interface SynthType {
-    triggerAttackRelease: (notes: string | string[], duration: string) => void;
-    set: (params: any) => void;
-    _disposed?: boolean;
-  }
+  // Define allowed effect types for the effectsChain.getEffect method
+  type EffectType =
+    | "delay"
+    | "reverb"
+    | "compressor"
+    | "limiter"
+    | "chorus"
+    | "stereoWidener"
+    | "softClipper"
+    | "masterVolume";
 
-  const [synth, setSynth] = useState<SynthType | null>(null);
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const effectsChain = useEffectsChain();
-  const synthRef = useRef<SynthType | null>(null);
+  const synthRef = useRef<DisposableSynth>(null);
 
-  // Add animationProgress state variable
-  const [animationProgress, setAnimationProgress] = useState(0);
-
-  // Create fixed animation offsets for each position - these will persist across chord changes
+  // Create fixed animation offsets for each position
   const positionAnimationOffsets = useRef([
     { x: 0, y: 0, delay: 0 }, // First position offset - start immediately
     { x: 0, y: 0, delay: 0.8 }, // Second position offset - delay by 0.8s
@@ -434,14 +433,14 @@ const HeroSection = () => {
 
       document.body.removeChild(tempDiv);
       setWordWidths(widths);
-      setCenterWordWidth(widths[currentWordIndex] || 120);
+      // setCenterWordWidth(widths[currentWordIndex] || 120);
       console.log("Client-side re-measurement complete:", widths);
     }
   }, []); // Empty deps array means this runs once after mount
 
   // Use the synth in a way consistent with the Try Me section
   useEffect(() => {
-    let localSynth: SynthType | null = null;
+    let localSynth: DisposableSynth = null;
 
     const initializeSynth = async () => {
       if (!effectsChain) return;
@@ -456,8 +455,7 @@ const HeroSection = () => {
         // Create a new synth using the same approach as Try Me section
         const newSynth = createSynth("polysynth", effectsChain);
 
-        // Store in state and ref
-        setSynth(newSynth);
+        // Store in ref
         synthRef.current = newSynth;
         localSynth = newSynth;
 
@@ -473,26 +471,34 @@ const HeroSection = () => {
             if (preset.synthParams) {
               Object.entries(preset.synthParams).forEach(
                 ([paramKey, paramValue]) => {
-                  if (typeof paramValue === "object") {
+                  if (typeof paramValue === "object" && paramValue !== null) {
                     // Handle nested objects like oscillator.type
-                    Object.entries(paramValue).forEach(
-                      ([nestedKey, nestedValue]) => {
-                        try {
-                          newSynth.set({
-                            [paramKey]: { [nestedKey]: nestedValue },
-                          });
-                        } catch (paramError) {
-                          console.warn(
-                            `Error setting nested param ${paramKey}.${nestedKey}:`,
-                            paramError
-                          );
-                        }
+                    Object.entries(
+                      paramValue as Record<string, unknown>
+                    ).forEach(([nestedKey, nestedValue]) => {
+                      try {
+                        // Use type assertion
+                        const typedSynth = newSynth as unknown as {
+                          set: (params: Record<string, unknown>) => void;
+                        };
+                        typedSynth.set({
+                          [paramKey]: { [nestedKey]: nestedValue },
+                        });
+                      } catch (paramError) {
+                        console.warn(
+                          `Error setting nested param ${paramKey}.${nestedKey}:`,
+                          paramError
+                        );
                       }
-                    );
+                    });
                   } else {
                     // Handle direct parameters
                     try {
-                      newSynth.set({ [paramKey]: paramValue });
+                      // Use type assertion
+                      const typedSynth = newSynth as unknown as {
+                        set: (params: Record<string, unknown>) => void;
+                      };
+                      typedSynth.set({ [paramKey]: paramValue });
                     } catch (paramError) {
                       console.warn(
                         `Error setting param ${paramKey}:`,
@@ -508,20 +514,23 @@ const HeroSection = () => {
             if (preset.effects && effectsChain) {
               Object.entries(preset.effects).forEach(
                 ([effectType, effectParams]) => {
-                  const effect = effectsChain.getEffect(effectType);
+                  // Type assertion for effect type
+                  const effect = effectsChain.getEffect(
+                    effectType as EffectType
+                  );
                   if (effect) {
-                    Object.entries(effectParams).forEach(
-                      ([paramKey, paramValue]) => {
-                        try {
-                          effect.set({ [paramKey]: paramValue });
-                        } catch (effectError) {
-                          console.warn(
-                            `Error setting effect param ${effectType}.${paramKey}:`,
-                            effectError
-                          );
-                        }
+                    Object.entries(
+                      effectParams as Record<string, unknown>
+                    ).forEach(([paramKey, paramValue]) => {
+                      try {
+                        effect.set({ [paramKey]: paramValue });
+                      } catch (effectError) {
+                        console.warn(
+                          `Error setting effect param ${effectType}.${paramKey}:`,
+                          effectError
+                        );
                       }
-                    );
+                    });
                   }
                 }
               );
@@ -575,9 +584,19 @@ const HeroSection = () => {
       console.log(`Playing note ${noteWithOctave} with atmospheric preset`);
 
       // Exactly follow the pattern from SynthesizerContainer.js for playing notes
-      if (synthRef.current && !synthRef.current._disposed) {
-        // Use the proper note with octave for correct pitch
-        synthRef.current.triggerAttackRelease(noteWithOctave, "0.5s");
+      if (synthRef.current) {
+        // Check for _disposed property to avoid playing disposed synths
+        const synth = synthRef.current as unknown as {
+          _disposed?: boolean;
+          triggerAttackRelease: (
+            notes: string | string[],
+            duration: string
+          ) => void;
+        };
+        if (!synth._disposed) {
+          // Use the proper note with octave for correct pitch
+          synth.triggerAttackRelease(noteWithOctave, "0.5s");
+        }
       }
     } catch (error) {
       console.error("Error playing note:", error, noteName);
@@ -598,51 +617,66 @@ const HeroSection = () => {
       console.log(`Playing chord ${currentChord.name}`);
 
       // Play each note in the chord with proper octave assignment
-      if (synthRef.current && !synthRef.current._disposed) {
-        const notesWithOctaves = currentChord.notes.map((note) => {
-          // Add octave information to the note if it doesn't have one
-          if (!note.match(/\d/)) {
-            // Default octave is 4 for middle register
-            // Adjust octave based on note position in the scale for better spread
-            if (["A", "A#", "Bb", "B"].includes(note)) {
-              return `${note}3`; // Lower octave for A, Bb, B
-            } else if (["C", "C#", "Db", "D", "D#", "Eb"].includes(note)) {
-              return `${note}4`; // Middle octave for C through E
+      if (synthRef.current) {
+        // Check for _disposed property to avoid playing disposed synths
+        const synth = synthRef.current as unknown as {
+          _disposed?: boolean;
+          triggerAttackRelease: (
+            notes: string | string[],
+            duration: string
+          ) => void;
+        };
+        if (!synth._disposed) {
+          const notesWithOctaves = currentChord.notes.map((note) => {
+            // Add octave information to the note if it doesn't have one
+            if (!note.match(/\d/)) {
+              // Default octave is 4 for middle register
+              // Adjust octave based on note position in the scale for better spread
+              if (["A", "A#", "Bb", "B"].includes(note)) {
+                return `${note}3`; // Lower octave for A, Bb, B
+              } else if (["C", "C#", "Db", "D", "D#", "Eb"].includes(note)) {
+                return `${note}4`; // Middle octave for C through E
+              } else {
+                return `${note}4`; // Middle octave for F through G#
+              }
+            }
+            return note;
+          });
+
+          // Add a bass note (root of the chord) 2 octaves lower
+          const rootNote = currentChord.notes[0]; // The first note is the root
+          let bassNote;
+
+          // Determine the correct octave for the bass note (2 octaves lower than normal)
+          if (!rootNote.match(/\d/)) {
+            if (["A", "A#", "Bb", "B"].includes(rootNote)) {
+              bassNote = `${rootNote}1`; // 2 octaves below A3, B3, etc.
             } else {
-              return `${note}4`; // Middle octave for F through G#
+              bassNote = `${rootNote}2`; // 2 octaves below C4, D4, etc.
+            }
+          } else {
+            // If the note already has an octave number, subtract 2
+            const noteWithoutOctave = rootNote.replace(/\d/, "");
+            const matchResult = rootNote.match(/\d/);
+            if (matchResult) {
+              const octave = parseInt(matchResult[0]);
+              bassNote = `${noteWithoutOctave}${octave - 2}`;
+            } else {
+              bassNote = `${noteWithoutOctave}2`; // Fallback if no match
             }
           }
-          return note;
-        });
 
-        // Add a bass note (root of the chord) 2 octaves lower
-        const rootNote = currentChord.notes[0]; // The first note is the root
-        let bassNote;
+          // Add the bass note to the array of notes to play
+          const allNotes = [...notesWithOctaves, bassNote];
+          console.log(
+            `Playing chord with notes: ${notesWithOctaves.join(
+              ", "
+            )} and bass note: ${bassNote}`
+          );
 
-        // Determine the correct octave for the bass note (2 octaves lower than normal)
-        if (!rootNote.match(/\d/)) {
-          if (["A", "A#", "Bb", "B"].includes(rootNote)) {
-            bassNote = `${rootNote}1`; // 2 octaves below A3, B3, etc.
-          } else {
-            bassNote = `${rootNote}2`; // 2 octaves below C4, D4, etc.
-          }
-        } else {
-          // If the note already has an octave number, subtract 2
-          const noteWithoutOctave = rootNote.replace(/\d/, "");
-          const octave = parseInt(rootNote.match(/\d/)[0]);
-          bassNote = `${noteWithoutOctave}${octave - 2}`;
+          // Play all notes simultaneously
+          synth.triggerAttackRelease(allNotes, "0.8s");
         }
-
-        // Add the bass note to the array of notes to play
-        const allNotes = [...notesWithOctaves, bassNote];
-        console.log(
-          `Playing chord with notes: ${notesWithOctaves.join(
-            ", "
-          )} and bass note: ${bassNote}`
-        );
-
-        // Play all notes simultaneously
-        synthRef.current.triggerAttackRelease(allNotes, "0.8s");
       }
     } catch (error) {
       console.error("Error playing chord:", error);
@@ -744,7 +778,6 @@ const HeroSection = () => {
   // Add animation progress tracker in useEffect - add this after the chord transition interval effect
   useEffect(() => {
     if (!transitioning) {
-      setAnimationProgress(0);
       return;
     }
 
@@ -756,8 +789,6 @@ const HeroSection = () => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
-
-      setAnimationProgress(progress);
 
       if (progress < 1) {
         // Continue animation
