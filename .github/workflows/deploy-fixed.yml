@@ -165,28 +165,55 @@ jobs:
       - name: Create optimized Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Node.js for maximum reliability
+          # Use Node.js LTS for maximum compatibility
           FROM node:18-alpine AS base
+          
+          # Install build tools and debugging utilities
+          RUN apk add --no-cache curl bash git
+          
           WORKDIR /app
-
-          # Copy only what's needed
-          COPY package.json ./
-          COPY smart-server.js ./server.js
           
-          # Install minimal dependencies
-          RUN npm install --only=production http fs path
+          # Copy package files
+          COPY package.json package*.json ./
           
-          # Set environment variables
+          # Install dependencies with explicit Next.js installation
+          RUN npm ci && \
+              npm install next@latest react react-dom && \
+              echo "Installed dependencies including Next.js"
+          
+          # Copy the Next.js source/build and other files
+          COPY . .
+          
+          # Attempt to build Next.js
+          RUN npm run build || echo "Next.js build failed, will attempt to rebuild at runtime" 
+          
+          # Environment variables
           ENV NODE_ENV=production
-          ENV PORT=3000
+          ENV PORT=80
+          ENV DEBUG=*
           
-          # Install useful debugging tools
-          RUN apk add --no-cache curl htop procps
+          # Copy our debugging server that can handle missing Next.js
+          COPY debugging-server.js /app/server.js
+          
+          # Create a script to install Next.js if missing
+          RUN echo '#!/bin/bash' > /app/install-next.sh && \
+              echo 'echo "Attempting to install Next.js..."' >> /app/install-next.sh && \
+              echo 'cd /app' >> /app/install-next.sh && \
+              echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
+              echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
+              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
+              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
+              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
+              echo 'fi' >> /app/install-next.sh && \
+              echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
+              echo 'npx next build' >> /app/install-next.sh && \
+              echo 'echo "Next.js installation complete"' >> /app/install-next.sh && \
+              chmod +x /app/install-next.sh
 
           # Expose port
-          EXPOSE 3000
+          EXPOSE 80
           
-          # Simple command to run the server
+          # Start with our debug server
           CMD ["node", "server.js"]
           DOCKERFILE_EOF
 
@@ -386,13 +413,6 @@ jobs:
           echo "Running comprehensive diagnostics - this will take a minute..."
           ~/cyma-debug/run-diagnostics.sh
           
-          # Move diagnostics log to a known location
-          if [ -f ~/cyma-debug/diagnostics-*.log ]; then
-            latest_diag=$(ls -t ~/cyma-debug/diagnostics-*.log | head -1)
-            cp "$latest_diag" ~/cyma-debug/latest-diagnostics.log
-            echo "Latest diagnostics saved to: ~/cyma-debug/latest-diagnostics.log"
-          fi
-          
           # Create a simple HTML viewer for the diagnostics
           cat > ~/cyma-debug/view-diagnostics.html << 'HTML_EOF'
           <!DOCTYPE html>
@@ -448,24 +468,19 @@ jobs:
           </html>
           HTML_EOF
           
-          # Save the HTML viewer to the web server directory
-          docker cp ~/cyma-debug/view-diagnostics.html cymasphere-container:/app/public/diagnostics.html 2>/dev/null || echo "Could not copy diagnostics viewer to container"
-          
-          # Copy the latest diagnostics to the web server directory
-          if [ -f ~/cyma-debug/latest-diagnostics.log ]; then
-            docker cp ~/cyma-debug/latest-diagnostics.log cymasphere-container:/app/public/latest-diagnostics.log 2>/dev/null || echo "Could not copy diagnostics log to container"
-          fi
-          
           # Print instructions
           echo -e "\n=== DEPLOYMENT COMPLETE ==="
-          echo -e "\nDiagnostics have been run automatically. You can:"
-          echo "1. View diagnostics at: http://${{ secrets.LIGHTSAIL_IP }}/diagnostics.html"
-          echo "2. View raw diagnostics log at: http://${{ secrets.LIGHTSAIL_IP }}/latest-diagnostics.log"
-          echo "3. View application logs at: http://${{ secrets.LIGHTSAIL_IP }}/logs"
-          echo "4. View the filesystem at: http://${{ secrets.LIGHTSAIL_IP }}/files"
-          echo "5. Check the local diagnostics file at: ~/cyma-debug/latest-diagnostics.log"
+          echo -e "\nThe deployment is complete! If you're seeing a maintenance page:"
           echo ""
-          echo "To run diagnostics again, execute: ~/cyma-debug/run-diagnostics.sh"
+          echo "1. Visit http://${{ secrets.LIGHTSAIL_IP }}/install-next to install Next.js"
+          echo "2. After installation, restart the container: docker restart cymasphere-container"
+          echo ""
+          echo "Debug resources available at:"
+          echo "- View diagnostics at: http://${{ secrets.LIGHTSAIL_IP }}/diagnostics.html"
+          echo "- View error logs at: http://${{ secrets.LIGHTSAIL_IP }}/logs"
+          echo "- View filesystem at: http://${{ secrets.LIGHTSAIL_IP }}/files"
+          echo ""
+          echo "You can run diagnostics again at any time with: ~/cyma-debug/run-diagnostics.sh"
           EOL
           
           chmod +x deploy_remote.sh
@@ -502,6 +517,7 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           const http = require('http');
+          const { execSync, exec } = require('child_process');
           
           // Enable detailed debugging
           process.env.NODE_DEBUG = 'http,net,stream,module,timers';
@@ -559,140 +575,137 @@ jobs:
           // Check for Next.js files
           const nextDir = path.join(process.cwd(), '.next');
           const nextExists = fs.existsSync(nextDir);
-          console.log(`🟢 NEXT.JS: .next directory exists: ${nextExists}`);
+          const nextPackagePath = path.join(process.cwd(), 'node_modules', 'next');
+          const nextPackageExists = fs.existsSync(nextPackagePath);
           
-          if (nextExists) {
-            try {
-              const nextFiles = fs.readdirSync(nextDir);
-              console.log('🟢 NEXT.JS: .next files:', nextFiles);
-              
-              // Check for key directories
-              ['server', 'static'].forEach(dir => {
-                const fullPath = path.join(nextDir, dir);
-                if (fs.existsSync(fullPath)) {
-                  console.log(`🟢 NEXT.JS: .next/${dir} exists with files:`, fs.readdirSync(fullPath).slice(0, 5), '...');
-                } else {
-                  console.error(`🔴 NEXT.JS: Missing critical directory .next/${dir}`);
-                }
-              });
-              
-              // Check for server build
-              const serverDir = path.join(nextDir, 'server');
-              if (fs.existsSync(serverDir)) {
-                const serverFiles = fs.readdirSync(serverDir);
-                console.log(`🟢 NEXT.JS: Server files: ${serverFiles.slice(0, 10).join(', ')}${serverFiles.length > 10 ? '...' : ''}`);
-              }
-            } catch (err) {
-              console.error('🔴 NEXT.JS: Error reading .next directory:', err);
-            }
-          }
+          console.log(`🟢 NEXT.JS: .next directory exists: ${nextExists}`);
+          console.log(`🟢 NEXT.JS: next package exists: ${nextPackageExists}`);
           
           // Create a dual-purpose server that attempts to run Next.js but falls back to maintenance
           async function startServer() {
-            // First try loading Next.js
-            if (nextExists) {
+            // Check if Next.js needs to be installed
+            if (!nextPackageExists) {
+              console.log('🟡 NEXT.JS: Next.js package not found, attempting to install...');
               try {
-                console.log('🟢 SERVER: Attempting to load Next.js...');
-                // Force verbose logging in Next.js
-                process.env.NEXT_TELEMETRY_DEBUG = '1';
+                // Run the install script
+                execSync('/app/install-next.sh', { stdio: 'inherit' });
+                console.log('🟢 NEXT.JS: Installation completed, checking if it worked...');
                 
-                // Try to load Next.js packages
-                let next;
-                try {
-                  next = require('next');
-                  console.log('🟢 NEXT.JS: Successfully imported Next.js package');
-                } catch (err) {
-                  console.error('🔴 NEXT.JS: Failed to import Next.js package:', err);
-                  throw err;
+                // Check if installation succeeded
+                if (fs.existsSync(path.join(process.cwd(), 'node_modules', 'next'))) {
+                  console.log('🟢 NEXT.JS: Next.js successfully installed');
+                } else {
+                  console.error('🔴 NEXT.JS: Next.js installation failed');
+                  fs.appendFileSync('error.log', `${new Date().toISOString()} - Next.js installation failed\n`);
+                  throw new Error('Next.js installation failed');
                 }
-                
-                // Try to initialize Next.js app
-                let app;
+              } catch (err) {
+                console.error('🔴 NEXT.JS: Failed to install Next.js:', err);
+                fs.appendFileSync('error.log', `${new Date().toISOString()} - Next.js Install Error: ${err.stack || err}\n`);
+                throw err;
+              }
+            }
+            
+            // First try loading Next.js
+            try {
+              console.log('🟢 SERVER: Attempting to load Next.js...');
+              // Force verbose logging in Next.js
+              process.env.NEXT_TELEMETRY_DEBUG = '1';
+              
+              // Try to load Next.js packages
+              let next;
+              try {
+                next = require('next');
+                console.log('🟢 NEXT.JS: Successfully imported Next.js package');
+              } catch (err) {
+                console.error('🔴 NEXT.JS: Failed to import Next.js package:', err);
+                throw err;
+              }
+              
+              // Try to initialize Next.js app
+              let app;
+              try {
+                app = next({ dev: false, dir: process.cwd() });
+                console.log('🟢 NEXT.JS: Created Next.js app instance');
+              } catch (err) {
+                console.error('🔴 NEXT.JS: Failed to create Next.js app:', err);
+                throw err;
+              }
+              
+              // Try to get request handler
+              let handle;
+              try {
+                handle = app.getRequestHandler();
+                console.log('🟢 NEXT.JS: Got request handler');
+              } catch (err) {
+                console.error('🔴 NEXT.JS: Failed to get request handler:', err);
+                throw err;
+              }
+              
+              // Try to prepare app
+              try {
+                console.log('🟢 NEXT.JS: Preparing app (this might take a moment)...');
+                await app.prepare();
+                console.log('🟢 NEXT.JS: App prepared successfully');
+              } catch (err) {
+                console.error('🔴 NEXT.JS: Error preparing app:', err);
+                throw err;
+              }
+              
+              // Set up HTTP server for Next.js
+              console.log('🟢 SERVER: Creating HTTP server for Next.js');
+              const server = http.createServer((req, res) => {
                 try {
-                  app = next({ dev: false, dir: process.cwd() });
-                  console.log('🟢 NEXT.JS: Created Next.js app instance');
-                } catch (err) {
-                  console.error('🔴 NEXT.JS: Failed to create Next.js app:', err);
-                  throw err;
-                }
-                
-                // Try to get request handler
-                let handle;
-                try {
-                  handle = app.getRequestHandler();
-                  console.log('🟢 NEXT.JS: Got request handler');
-                } catch (err) {
-                  console.error('🔴 NEXT.JS: Failed to get request handler:', err);
-                  throw err;
-                }
-                
-                // Try to prepare app
-                try {
-                  console.log('🟢 NEXT.JS: Preparing app (this might take a moment)...');
-                  await app.prepare();
-                  console.log('🟢 NEXT.JS: App prepared successfully');
-                } catch (err) {
-                  console.error('🔴 NEXT.JS: Error preparing app:', err);
-                  throw err;
-                }
-                
-                // Set up HTTP server for Next.js
-                console.log('🟢 SERVER: Creating HTTP server for Next.js');
-                const server = http.createServer((req, res) => {
-                  try {
-                    console.log(`🟢 REQUEST: ${req.method} ${req.url}`);
-                    
-                    // Set a timeout to catch hanging requests
-                    const timeout = setTimeout(() => {
-                      console.error(`🔴 REQUEST: Timeout for ${req.method} ${req.url}`);
-                      if (!res.writableEnded) {
-                        res.writeHead(500, { 'Content-Type': 'text/plain' });
-                        res.end('Request timed out');
-                      }
-                    }, 30000);
-                    
-                    // Track response completion
-                    res.on('finish', () => {
-                      clearTimeout(timeout);
-                      console.log(`🟢 RESPONSE: ${res.statusCode} for ${req.method} ${req.url}`);
-                    });
-                    
-                    // Handle with Next.js
-                    handle(req, res).catch(err => {
-                      console.error(`🔴 HANDLER ERROR: ${req.method} ${req.url}:`, err);
-                      if (!res.writableEnded) {
-                        res.writeHead(500, { 'Content-Type': 'text/plain' });
-                        res.end(`Error handling request: ${err.message}`);
-                      }
-                    });
-                  } catch (err) {
-                    console.error(`🔴 REQUEST ERROR: ${req.method} ${req.url}:`, err);
+                  console.log(`🟢 REQUEST: ${req.method} ${req.url}`);
+                  
+                  // Set a timeout to catch hanging requests
+                  const timeout = setTimeout(() => {
+                    console.error(`🔴 REQUEST: Timeout for ${req.method} ${req.url}`);
                     if (!res.writableEnded) {
                       res.writeHead(500, { 'Content-Type': 'text/plain' });
-                      res.end(`Server error: ${err.message}`);
+                      res.end('Request timed out');
                     }
+                  }, 30000);
+                  
+                  // Track response completion
+                  res.on('finish', () => {
+                    clearTimeout(timeout);
+                    console.log(`🟢 RESPONSE: ${res.statusCode} for ${req.method} ${req.url}`);
+                  });
+                  
+                  // Handle with Next.js
+                  handle(req, res).catch(err => {
+                    console.error(`🔴 HANDLER ERROR: ${req.method} ${req.url}:`, err);
+                    if (!res.writableEnded) {
+                      res.writeHead(500, { 'Content-Type': 'text/plain' });
+                      res.end(`Error handling request: ${err.message}`);
+                    }
+                  });
+                } catch (err) {
+                  console.error(`🔴 REQUEST ERROR: ${req.method} ${req.url}:`, err);
+                  if (!res.writableEnded) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end(`Server error: ${err.message}`);
                   }
-                });
-                
-                // Add error handler to the server
-                server.on('error', (err) => {
-                  console.error('🔴 SERVER ERROR:', err);
-                  fs.appendFileSync('error.log', `${new Date().toISOString()} - Server Error: ${err.stack}\n`);
-                });
-                
-                // Start the server
-                const PORT = process.env.PORT || 3000;
-                server.listen(PORT, '0.0.0.0', () => {
-                  console.log(`🟢 SERVER: Next.js running on http://0.0.0.0:${PORT}`);
-                });
-                
-                return; // Successfully started Next.js server
-              } catch (err) {
-                console.error('🔴 SERVER: Failed to start Next.js, falling back to maintenance page:', err);
-                fs.appendFileSync('error.log', `${new Date().toISOString()} - Next.js Startup Error: ${err.stack}\n`);
-              }
-            } else {
-              console.log('🟢 SERVER: No Next.js build found, using maintenance page');
+                }
+              });
+              
+              // Add error handler to the server
+              server.on('error', (err) => {
+                console.error('🔴 SERVER ERROR:', err);
+                fs.appendFileSync('error.log', `${new Date().toISOString()} - Server Error: ${err.stack}\n`);
+              });
+              
+              // Start the server
+              const PORT = process.env.PORT || 3000;
+              server.listen(PORT, '0.0.0.0', () => {
+                console.log(`🟢 SERVER: Next.js running on http://0.0.0.0:${PORT}`);
+              });
+              
+              return; // Successfully started Next.js server
+            } catch (err) {
+              console.error('🔴 SERVER: Failed to start Next.js, falling back to maintenance page:', err);
+              fs.appendFileSync('error.log', `${new Date().toISOString()} - Next.js Startup Error: ${err.stack}\n`);
             }
             
             // If we got here, Next.js failed to start or wasn't found
@@ -713,6 +726,44 @@ jobs:
                   res.writeHead(500, { 'Content-Type': 'text/plain' });
                   res.end(`Error reading logs: ${err.message}`);
                 }
+                return;
+              }
+              
+              // Allow user to trigger Next.js installation
+              if (req.url === '/install-next') {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(`<!DOCTYPE html>
+                <html lang="en">
+                  <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Installing Next.js...</title>
+                    <style>
+                      body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
+                      .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+                      h1 { font-size: 2rem; margin-bottom: 20px; color: #0066cc; }
+                      pre { background: #f0f0f0; padding: 15px; border-radius: 5px; white-space: pre-wrap; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <h1>Installing Next.js...</h1>
+                      <p>The installation has started in the background. This may take several minutes.</p>
+                      <p>Check the <a href="/logs">logs</a> to see progress.</p>
+                      <p>Return to <a href="/">home page</a>.</p>
+                    </div>
+                  </body>
+                </html>`);
+                
+                // Run the installation in the background
+                exec('/app/install-next.sh >> error.log 2>&1', (error) => {
+                  if (error) {
+                    fs.appendFileSync('error.log', `${new Date().toISOString()} - Installation Error: ${error}\n`);
+                  } else {
+                    fs.appendFileSync('error.log', `${new Date().toISOString()} - Installation completed. Please restart the container.\n`);
+                  }
+                });
+                
                 return;
               }
               
@@ -756,7 +807,7 @@ jobs:
                 <head>
                   <meta charset="UTF-8">
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <title>Cymasphere - Debugging Mode</title>
+                  <title>Cymasphere - Next.js Not Available</title>
                   <style>
                     body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
                     .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
@@ -768,6 +819,8 @@ jobs:
                     .debug-links { margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px; }
                     .debug-links a { display: block; padding: 10px; margin: 5px 0; background: #e0e0e0; text-decoration: none; color: #333; border-radius: 3px; font-weight: bold; }
                     .debug-links a:hover { background: #d0d0d0; }
+                    .button { display: inline-block; background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+                    .button:hover { background: #0055aa; }
                   </style>
                 </head>
                 <body>
@@ -775,14 +828,18 @@ jobs:
                     <div class="logo"><span class="logo-text">CYMA</span></div>
                     <h1>Cymasphere</h1>
                     <div class="card">
-                      <h2>Website in Debug Mode</h2>
-                      <p>We're currently diagnosing issues with the main application.</p>
-                      <p><em>The debug server is running and collecting detailed error information.</em></p>
+                      <h2>Next.js Not Available</h2>
+                      <p>The Next.js application is currently not available because:</p>
+                      <ul>
+                        <li>Next.js package is ${nextPackageExists ? 'installed' : 'not installed'}</li>
+                        <li>.next build directory is ${nextExists ? 'present' : 'missing'}</li>
+                      </ul>
                       
                       <div class="debug-links">
                         <h3>Debug Tools:</h3>
                         <a href="/logs">View Error Logs</a>
                         <a href="/files">View File System</a>
+                        <a href="/install-next">Install Next.js</a>
                       </div>
                     </div>
                   </div>
@@ -815,34 +872,50 @@ jobs:
           FROM node:18-alpine AS base
           
           # Install build tools and debugging utilities
-          RUN apk add --no-cache curl procps htop vim net-tools bash
+          RUN apk add --no-cache curl bash git
           
           WORKDIR /app
           
           # Copy package files
-          COPY package.json ./
+          COPY package.json package*.json ./
           
-          # Install dependencies
-          RUN npm install
+          # Install dependencies with explicit Next.js installation
+          RUN npm ci && \
+              npm install next@latest react react-dom && \
+              echo "Installed dependencies including Next.js"
           
           # Copy the Next.js source/build and other files
           COPY . .
-          COPY debugging-server.js /app/server.js
           
-          # Check the existence of key directories
-          RUN ls -la && \
-              echo "Checking .next directory:" && \
-              ls -la .next 2>/dev/null || echo ".next directory not found"
-              
+          # Attempt to build Next.js
+          RUN npm run build || echo "Next.js build failed, will attempt to rebuild at runtime" 
+          
           # Environment variables
           ENV NODE_ENV=production
           ENV PORT=80
           ENV DEBUG=*
-          ENV NODE_OPTIONS="--max-old-space-size=1024 --trace-warnings"
           
+          # Copy our debugging server that can handle missing Next.js
+          COPY debugging-server.js /app/server.js
+          
+          # Create a script to install Next.js if missing
+          RUN echo '#!/bin/bash' > /app/install-next.sh && \
+              echo 'echo "Attempting to install Next.js..."' >> /app/install-next.sh && \
+              echo 'cd /app' >> /app/install-next.sh && \
+              echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
+              echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
+              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
+              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
+              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
+              echo 'fi' >> /app/install-next.sh && \
+              echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
+              echo 'npx next build' >> /app/install-next.sh && \
+              echo 'echo "Next.js installation complete"' >> /app/install-next.sh && \
+              chmod +x /app/install-next.sh
+
           # Expose port
           EXPOSE 80
           
-          # Start with increased debugging
-          CMD ["node", "--inspect=0.0.0.0:9229", "server.js"]
+          # Start with our debug server
+          CMD ["node", "server.js"]
           DOCKERFILE_EOF 
