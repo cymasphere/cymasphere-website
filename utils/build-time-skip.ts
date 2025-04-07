@@ -3,7 +3,7 @@
  */
 
 // Detect if we're in build process
-export const isBuildTime = process.env.NEXT_BUILD_SKIP_VALIDATION === 'true';
+export const isBuildTime = process.env.NEXT_BUILD_SKIP_VALIDATION === 'true' || process.env.NEXT_SUPABASE_MOCK === 'true' || process.env.NEXT_PHASE === 'phase-production-build';
 
 // Standard response for auth endpoints during build
 export const buildAuthResponse = {

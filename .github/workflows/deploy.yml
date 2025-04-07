@@ -137,7 +137,8 @@ jobs:
               export NEXT_TELEMETRY_DISABLED=1 && \
               export NODE_ENV=production && \
               export NEXT_LINT=false && \
-              bun run build
+              export NEXT_SUPABASE_MOCK=true && \
+              bun run build:ci
           
           # === Production Stage ===
           FROM node:18-slim AS runner

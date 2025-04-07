@@ -7,33 +7,48 @@ import { isBuildTime } from "../build-time-skip";
 const createMockClient = () => {
   console.log('Using mock Supabase client for build process');
   
+  // Define a secure mock authentication response
+  const mockAuthResponse = { 
+    data: { 
+      user: null, 
+      session: null 
+    }, 
+    error: null 
+  };
+  
+  // Define a secure mock database response
+  const mockDbResponse = { 
+    data: null, 
+    error: null 
+  };
+  
   return {
     auth: {
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
-      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      getSession: () => Promise.resolve(mockAuthResponse),
+      getUser: () => Promise.resolve(mockAuthResponse),
+      signInWithPassword: () => Promise.resolve(mockAuthResponse),
+      signUp: () => Promise.resolve(mockAuthResponse),
       signOut: () => Promise.resolve({ error: null }),
-      verifyOtp: () => Promise.resolve({ data: { session: null, user: null }, error: null }),
+      verifyOtp: () => Promise.resolve(mockAuthResponse),
     },
     from: () => ({ 
       select: () => ({ 
-        eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+        eq: () => ({ single: () => Promise.resolve(mockDbResponse) }),
         order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }),
         match: () => Promise.resolve({ data: [], error: null }),
         is: () => Promise.resolve({ data: [], error: null }),
         in: () => Promise.resolve({ data: [], error: null }),
         limit: () => Promise.resolve({ data: [], error: null }),
-        single: () => Promise.resolve({ data: null, error: null }),
+        single: () => Promise.resolve(mockDbResponse),
       }),
-      insert: () => Promise.resolve({ data: null, error: null }),
+      insert: () => Promise.resolve(mockDbResponse),
       update: () => ({ 
-        eq: () => Promise.resolve({ data: null, error: null }),
-        match: () => Promise.resolve({ data: null, error: null }),
+        eq: () => Promise.resolve(mockDbResponse),
+        match: () => Promise.resolve(mockDbResponse),
       }),
       delete: () => ({ 
-        eq: () => Promise.resolve({ data: null, error: null }),
-        match: () => Promise.resolve({ data: null, error: null }),
+        eq: () => Promise.resolve(mockDbResponse),
+        match: () => Promise.resolve(mockDbResponse),
       }),
     }),
   };
