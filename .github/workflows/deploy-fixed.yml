@@ -54,462 +54,6 @@ jobs:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set lowercase repo owner
-        run: echo "REPO_OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create intelligent server.js file
-        run: |
-          # Print environment variable lengths to debug (without exposing values)
-          echo "NEXT_PUBLIC_SUPABASE_URL length: ${#NEXT_PUBLIC_SUPABASE_URL}"
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY length: ${#NEXT_PUBLIC_SUPABASE_ANON_KEY}"
-          
-          # Create a much simpler HTTP-based server that avoids Bun-specific APIs
-          cat > smart-server.js << 'EOF'
-          // Extremely simple server that's compatible with both Node.js and Bun
-          console.log("Starting ultra-reliable server.js...");
-          
-          const http = require('http');
-          const fs = require('fs');
-          const path = require('path');
-          
-          // Log basic system info
-          console.log(`Node version: ${process.version}`);
-          console.log(`Working directory: ${process.cwd()}`);
-          console.log(`Directory contents: ${fs.readdirSync(process.cwd()).join(', ')}`);
-          
-          // Create a very simple HTTP server that just returns a static page
-          const server = http.createServer((req, res) => {
-            console.log(`Received request for ${req.url}`);
-            
-            // Always return a maintenance page
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(`<!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Cymasphere - Maintenance</title>
-                <style>
-                  body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
-                  .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-                  .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-                  .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
-                  h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }
-                  .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-                  p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="logo"><span class="logo-text">CYMA</span></div>
-                  <h1>Cymasphere</h1>
-                  <div class="card">
-                    <h2>Website under maintenance</h2>
-                    <p>We are currently upgrading our platform. Please check back soon.</p>
-                    <p><em>Server is running, but displaying maintenance mode page.</em></p>
-                  </div>
-                </div>
-              </body>
-            </html>`);
-          });
-          
-          const PORT = process.env.PORT || 3000;
-          
-          server.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server running at http://0.0.0.0:${PORT}/`);
-          });
-          
-          // Log any server errors
-          server.on('error', (err) => {
-            console.error('Server error:', err);
-          });
-          EOF
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Create auth API placeholder
-        run: |
-          mkdir -p app/api/auth/login
-          cat > app/api/auth/login/route.js << 'EOF'
-          // Placeholder that doesn't require Supabase during build
-          export async function POST(request) {
-            return new Response(JSON.stringify({ error: "Auth API not available in production build" }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' },
-            });
-          }
-          EOF
-
-          mkdir -p app/api/auth/callback
-          cat > app/api/auth/callback/route.js << 'EOF'
-          // Placeholder that doesn't require Supabase during build
-          export async function GET(request) {
-            return new Response(JSON.stringify({ error: "Auth API not available in production build" }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' },
-            });
-          }
-          EOF
-
-      - name: Create optimized Dockerfile
-        run: |
-          cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Node.js LTS for maximum compatibility
-          FROM node:18-alpine AS base
-          
-          # Install build tools and debugging utilities
-          RUN apk add --no-cache curl bash git
-          
-          WORKDIR /app
-          
-          # Copy package files
-          COPY package.json package*.json ./
-          
-          # Install dependencies with explicit Next.js installation
-          RUN npm ci && \
-              npm install next@latest react react-dom && \
-              echo "Installed dependencies including Next.js"
-          
-          # Copy the Next.js source/build and other files
-          COPY . .
-          
-          # Attempt to build Next.js
-          RUN npm run build || echo "Next.js build failed, will attempt to rebuild at runtime" 
-          
-          # Environment variables
-          ENV NODE_ENV=production
-          ENV PORT=80
-          ENV DEBUG=*
-          
-          # Copy our debugging server that can handle missing Next.js
-          COPY debugging-server.js /app/server.js
-          
-          # Create a script to install Next.js if missing
-          RUN echo '#!/bin/bash' > /app/install-next.sh && \
-              echo 'echo "Attempting to install Next.js..."' >> /app/install-next.sh && \
-              echo 'cd /app' >> /app/install-next.sh && \
-              echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
-              echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
-              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
-              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
-              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
-              echo 'fi' >> /app/install-next.sh && \
-              echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
-              echo 'npx next build' >> /app/install-next.sh && \
-              echo 'echo "Next.js installation complete"' >> /app/install-next.sh && \
-              chmod +x /app/install-next.sh
-
-          # Expose port
-          EXPOSE 80
-          
-          # Start with our debug server
-          CMD ["node", "server.js"]
-          DOCKERFILE_EOF
-
-      - name: Set environment variables
-        run: |
-          echo "SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
-          echo "SUPABASE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
-          # Print lengths to debug without exposing values
-          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
-          echo "SUPABASE_KEY length: ${#SUPABASE_KEY}"
-        env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          no-cache: true
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_KEY }}
-          
-      # Generate known_hosts for the target server
-      - name: Generate known_hosts
-        id: known_hosts
-        run: |
-          KNOWN_HOSTS=$(ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }})
-          echo "content=$KNOWN_HOSTS" >> $GITHUB_OUTPUT
-          
-      # Install SSH key using a more reliable approach
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          known_hosts: ${{ steps.known_hosts.outputs.content }}
-          name: id_rsa
-          if_key_exists: replace
-
-      - name: Create deployment script
-        run: |
-          cat > deploy_remote.sh << 'EOL'
-          #!/bin/bash
-          
-          # Setup Docker if not already installed
-          if ! command -v docker &> /dev/null; then
-            echo "Docker not found, installing..."
-            sudo apt-get update
-            sudo apt-get install -y ca-certificates curl gnupg
-            sudo install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            sudo chmod a+r /etc/apt/keyrings/docker.gpg
-            echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-            sudo usermod -aG docker ubuntu
-            sudo systemctl enable docker
-            sudo systemctl start docker
-          fi
-          
-          # Ensure proper permissions
-          sudo usermod -aG docker ubuntu
-          sudo chmod 666 /var/run/docker.sock
-          
-          # Create debug directory
-          mkdir -p ~/cyma-debug
-          
-          # Clean up existing containers
-          echo "=== CLEANING UP ==="
-          docker stop cymasphere-container || true
-          docker rm cymasphere-container || true
-          docker rmi ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest || true
-          
-          # Login to GitHub Container Registry
-          echo "=== PULLING IMAGE ==="
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
-          docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          
-          # Run the new container with debugging enabled
-          echo "=== STARTING DEBUG CONTAINER ==="
-          docker run -d --restart unless-stopped --name cymasphere-container \
-            -p 80:80 \
-            -p 9229:9229 \
-            -v ~/cyma-debug:/app/debug \
-            -e NODE_ENV=production \
-            -e PORT=80 \
-            -e DEBUG=* \
-            -e VERBOSE=true \
-            -e NEXT_TELEMETRY_DEBUG=1 \
-            -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
-            -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            --memory=2g \
-            --cpus=1 \
-            ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          
-          # Wait a bit for container to start up
-          echo "=== WAITING FOR CONTAINER STARTUP ==="
-          sleep 10
-          
-          # Show initial container logs
-          echo "=== INITIAL CONTAINER LOGS ==="
-          docker logs cymasphere-container
-          
-          # Run comprehensive diagnostics
-          echo -e "\n=== COMPREHENSIVE DIAGNOSTICS ==="
-          
-          # Create diagnostics script
-          cat > ~/cyma-debug/run-diagnostics.sh << 'DIAG_EOF'
-          #!/bin/bash
-          
-          # Save this script's output to a file
-          exec > ~/cyma-debug/diagnostics-$(date +%Y%m%d-%H%M%S).log 2>&1
-          
-          echo "==== DIAGNOSTICS STARTED: $(date) ===="
-          
-          echo -e "\n==== SYSTEM INFO ===="
-          uname -a
-          free -h
-          df -h
-          
-          echo -e "\n==== CONTAINER STATUS ===="
-          docker ps -a | grep cymasphere
-          
-          echo -e "\n==== CONTAINER INFO ===="
-          docker inspect cymasphere-container | grep -E 'Id|Name|Image|State|Platform|RestartCount'
-          
-          echo -e "\n==== RESOURCE USAGE ===="
-          docker stats cymasphere-container --no-stream
-          
-          echo -e "\n==== CONTAINER LOGS (Most recent) ===="
-          docker logs --tail 100 cymasphere-container
-          
-          echo -e "\n==== NEXT.JS FAILURE LOGS ===="
-          docker logs cymasphere-container | grep -A 20 "Failed to start Next.js" || echo "No specific Next.js failure found in logs"
-          
-          echo -e "\n==== ERROR LOG FILE ===="
-          docker exec -it cymasphere-container cat /app/error.log 2>/dev/null || echo "No error.log file found"
-          
-          echo -e "\n==== DIRECTORY STRUCTURE ===="
-          echo "ROOT DIRECTORY:"
-          docker exec -it cymasphere-container ls -la / || echo "Could not list root directory"
-          
-          echo -e "\nAPP DIRECTORY:"
-          docker exec -it cymasphere-container ls -la /app || echo "Could not list app directory"
-          
-          echo -e "\nNEXT.JS DIRECTORY:"
-          docker exec -it cymasphere-container ls -la /app/.next 2>/dev/null || echo ".next directory not found"
-          
-          if docker exec -it cymasphere-container ls -la /app/.next &>/dev/null; then
-            echo -e "\nNEXT.JS SERVER DIRECTORY:"
-            docker exec -it cymasphere-container ls -la /app/.next/server 2>/dev/null || echo ".next/server directory not found"
-            
-            echo -e "\nNEXT.JS STATIC DIRECTORY:"
-            docker exec -it cymasphere-container ls -la /app/.next/static 2>/dev/null || echo ".next/static directory not found"
-          fi
-          
-          echo -e "\nNODE_MODULES DIRECTORY:"
-          docker exec -it cymasphere-container ls -la /app/node_modules/next 2>/dev/null || echo "next module not found"
-          
-          echo -e "\n==== PROCESS INFO ===="
-          docker exec -it cymasphere-container ps aux || echo "ps command not available"
-          
-          echo -e "\n==== NEXT.JS RESOLUTION ===="
-          docker exec -it cymasphere-container node -e "try { console.log(require.resolve('next')); } catch(e) { console.error('Next.js not found:', e.message); }" || echo "Could not run Node.js"
-          
-          echo -e "\n==== SERVER.JS FILE ===="
-          docker exec -it cymasphere-container cat /app/server.js | head -n 30 || echo "server.js not found"
-          
-          echo -e "\n==== PACKAGE.JSON ===="
-          docker exec -it cymasphere-container cat /app/package.json || echo "package.json not found"
-          
-          echo -e "\n==== CHECKING FOR API ENDPOINTS ===="
-          if docker exec -it cymasphere-container test -d /app/app/api; then
-            echo "API directories found:"
-            docker exec -it cymasphere-container find /app/app/api -type d || echo "Could not search for API directories"
-          else
-            echo "No API directory found at /app/app/api"
-          fi
-          
-          echo -e "\n==== CHECKING ENVIRONMENT VARIABLES ===="
-          docker exec -it cymasphere-container bash -c "env | grep -v KEY | grep -v SECRET" || echo "Could not check environment variables"
-          
-          echo -e "\n==== WEB ACCESS TEST ===="
-          curl -v http://localhost 2>&1 | head -n 20
-          
-          echo -e "\n==== DIAGNOSTICS COMPLETED: $(date) ===="
-          DIAG_EOF
-          
-          # Make the diagnostics script executable
-          chmod +x ~/cyma-debug/run-diagnostics.sh
-          
-          # Run the diagnostics script
-          echo "Running comprehensive diagnostics - this will take a minute..."
-          ~/cyma-debug/run-diagnostics.sh
-          
-          # Create a simple HTML viewer for the diagnostics
-          cat > ~/cyma-debug/view-diagnostics.html << 'HTML_EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Cymasphere Diagnostics</title>
-            <style>
-              body { font-family: monospace; background: #f0f0f0; padding: 20px; }
-              .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              h1 { color: #333; }
-              pre { background: #f5f5f5; padding: 15px; border-radius: 3px; overflow-x: auto; }
-              .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-              .section h2 { color: #0066cc; }
-              button { background: #0066cc; color: white; border: none; padding: 10px 15px; border-radius: 3px; cursor: pointer; }
-              button:hover { background: #0055aa; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Cymasphere Deployment Diagnostics</h1>
-              <div id="content">Loading diagnostics...</div>
-              <button onclick="window.location.reload();">Refresh</button>
-            </div>
-            <script>
-              fetch('/latest-diagnostics.log')
-                .then(response => response.text())
-                .then(text => {
-                  const sections = text.split(/==== .+ ====/g);
-                  const headers = text.match(/==== .+ ====/g);
-                  
-                  let html = '';
-                  if (headers) {
-                    for (let i = 0; i < headers.length; i++) {
-                      html += '<div class="section">';
-                      html += '<h2>' + headers[i].replace(/====/g, '').trim() + '</h2>';
-                      if (sections[i+1]) {
-                        html += '<pre>' + sections[i+1].trim() + '</pre>';
-                      }
-                      html += '</div>';
-                    }
-                  } else {
-                    html = '<pre>' + text + '</pre>';
-                  }
-                  document.getElementById('content').innerHTML = html;
-                })
-                .catch(error => {
-                  document.getElementById('content').innerHTML = '<p>Error loading diagnostics: ' + error.message + '</p>';
-                });
-            </script>
-          </body>
-          </html>
-          HTML_EOF
-          
-          # Print instructions
-          echo -e "\n=== DEPLOYMENT COMPLETE ==="
-          echo -e "\nThe deployment is complete! If you're seeing a maintenance page:"
-          echo ""
-          echo "1. Visit http://${{ secrets.LIGHTSAIL_IP }}/install-next to install Next.js"
-          echo "2. After installation, restart the container: docker restart cymasphere-container"
-          echo ""
-          echo "Debug resources available at:"
-          echo "- View diagnostics at: http://${{ secrets.LIGHTSAIL_IP }}/diagnostics.html"
-          echo "- View error logs at: http://${{ secrets.LIGHTSAIL_IP }}/logs"
-          echo "- View filesystem at: http://${{ secrets.LIGHTSAIL_IP }}/files"
-          echo ""
-          echo "You can run diagnostics again at any time with: ~/cyma-debug/run-diagnostics.sh"
-          EOL
-          
-          chmod +x deploy_remote.sh
-
-      - name: Deploy to Lightsail
-        run: |
-          # Test SSH connection first
-          ssh -o StrictHostKeyChecking=no -vT ubuntu@${{ secrets.LIGHTSAIL_IP }} "echo SSH Connection Successful"
-          
-          # Then attempt to copy and run deploy script
-          scp -o StrictHostKeyChecking=no deploy_remote.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh"
-          
-      - name: Verify deployment
-        run: |
-          # Wait for the container to start and the app to be ready
-          echo "Waiting 30 seconds for the application to start..."
-          sleep 30
-          
-          # Check if the site is reachable
-          echo "Verifying if site is accessible..."
-          if curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
-            echo "Site is accessible. Deployment successful!"
-          else
-            echo "Site is not accessible. Please check the server logs."
-            # Let's not fail the workflow even if verification fails
-            echo "Continuing anyway as the container might still be starting up..."
-          fi 
-
       - name: Create debugging server.js file
         run: |
           cat > debugging-server.js << 'EOF'
@@ -864,7 +408,461 @@ jobs:
             fs.appendFileSync('error.log', `${new Date().toISOString()} - Fatal Error: ${err.stack}\n`);
           });
           EOF
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create intelligent server.js file
+        run: |
+          # Print environment variable lengths to debug (without exposing values)
+          echo "NEXT_PUBLIC_SUPABASE_URL length: ${#NEXT_PUBLIC_SUPABASE_URL}"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY length: ${#NEXT_PUBLIC_SUPABASE_ANON_KEY}"
           
+          # Create a much simpler HTTP-based server that avoids Bun-specific APIs
+          cat > smart-server.js << 'EOF'
+          // Extremely simple server that's compatible with both Node.js and Bun
+          console.log("Starting ultra-reliable server.js...");
+          
+          const http = require('http');
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Log basic system info
+          console.log(`Node version: ${process.version}`);
+          console.log(`Working directory: ${process.cwd()}`);
+          console.log(`Directory contents: ${fs.readdirSync(process.cwd()).join(', ')}`);
+          
+          // Create a very simple HTTP server that just returns a static page
+          const server = http.createServer((req, res) => {
+            console.log(`Received request for ${req.url}`);
+            
+            // Always return a maintenance page
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`<!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Cymasphere - Maintenance</title>
+                <style>
+                  body { font-family: sans-serif; margin: 0; padding: 0; color: #333; background: #f7f7f7; }
+                  .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+                  .logo { width: 150px; height: 150px; margin: 0 auto 30px; background: linear-gradient(45deg, #6366f1, #4f46e5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+                  .logo-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+                  h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; color: #1f2937; }
+                  .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+                  p { font-size: 1.1rem; line-height: 1.6; color: #4b5563; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="logo"><span class="logo-text">CYMA</span></div>
+                  <h1>Cymasphere</h1>
+                  <div class="card">
+                    <h2>Website under maintenance</h2>
+                    <p>We are currently upgrading our platform. Please check back soon.</p>
+                    <p><em>Server is running, but displaying maintenance mode page.</em></p>
+                  </div>
+                </div>
+              </body>
+            </html>`);
+          });
+          
+          const PORT = process.env.PORT || 3000;
+          
+          server.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server running at http://0.0.0.0:${PORT}/`);
+          });
+          
+          // Log any server errors
+          server.on('error', (err) => {
+            console.error('Server error:', err);
+          });
+          EOF
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Create auth API placeholder
+        run: |
+          mkdir -p app/api/auth/login
+          cat > app/api/auth/login/route.js << 'EOF'
+          // Placeholder that doesn't require Supabase during build
+          export async function POST(request) {
+            return new Response(JSON.stringify({ error: "Auth API not available in production build" }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+          EOF
+
+          mkdir -p app/api/auth/callback
+          cat > app/api/auth/callback/route.js << 'EOF'
+          // Placeholder that doesn't require Supabase during build
+          export async function GET(request) {
+            return new Response(JSON.stringify({ error: "Auth API not available in production build" }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+          EOF
+
+      - name: Create optimized Dockerfile
+        run: |
+          cat > Dockerfile << 'DOCKERFILE_EOF'
+          # Use Node.js LTS for maximum compatibility
+          FROM node:18-alpine AS base
+          
+          # Install build tools and debugging utilities
+          RUN apk add --no-cache curl bash git
+          
+          WORKDIR /app
+          
+          # Copy package files
+          COPY package.json package*.json ./
+          
+          # Install dependencies with explicit Next.js installation
+          RUN npm ci && \
+              npm install next@latest react react-dom && \
+              echo "Installed dependencies including Next.js"
+          
+          # Copy the Next.js source/build and other files
+          COPY . .
+          
+          # Attempt to build Next.js
+          RUN npm run build || echo "Next.js build failed, will attempt to rebuild at runtime" 
+          
+          # Environment variables
+          ENV NODE_ENV=production
+          ENV PORT=80
+          ENV DEBUG=*
+          
+          # Copy our debugging server that can handle missing Next.js
+          COPY debugging-server.js /app/server.js
+          
+          # Create a script to install Next.js if missing
+          RUN echo '#!/bin/bash' > /app/install-next.sh && \
+              echo 'echo "Attempting to install Next.js..."' >> /app/install-next.sh && \
+              echo 'cd /app' >> /app/install-next.sh && \
+              echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
+              echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
+              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
+              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
+              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
+              echo 'fi' >> /app/install-next.sh && \
+              echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
+              echo 'npx next build' >> /app/install-next.sh && \
+              echo 'echo "Next.js installation complete"' >> /app/install-next.sh && \
+              chmod +x /app/install-next.sh
+
+          # Expose port
+          EXPOSE 80
+          
+          # Start with our debug server
+          CMD ["node", "server.js"]
+          DOCKERFILE_EOF
+
+      - name: Set environment variables
+        run: |
+          echo "SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "SUPABASE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          # Print lengths to debug without exposing values
+          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
+          echo "SUPABASE_KEY length: ${#SUPABASE_KEY}"
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Build and push Docker image
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: true
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_KEY }}
+          
+      # Generate known_hosts for the target server
+      - name: Generate known_hosts
+        id: known_hosts
+        run: |
+          KNOWN_HOSTS=$(ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }})
+          echo "content=$KNOWN_HOSTS" >> $GITHUB_OUTPUT
+          
+      # Install SSH key using a more reliable approach
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          known_hosts: ${{ steps.known_hosts.outputs.content }}
+          name: id_rsa
+          if_key_exists: replace
+
+      - name: Create deployment script
+        run: |
+          cat > deploy_remote.sh << 'EOL'
+          #!/bin/bash
+          
+          # Setup Docker if not already installed
+          if ! command -v docker &> /dev/null; then
+            echo "Docker not found, installing..."
+            sudo apt-get update
+            sudo apt-get install -y ca-certificates curl gnupg
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+            echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            sudo usermod -aG docker ubuntu
+            sudo systemctl enable docker
+            sudo systemctl start docker
+          fi
+          
+          # Ensure proper permissions
+          sudo usermod -aG docker ubuntu
+          sudo chmod 666 /var/run/docker.sock
+          
+          # Create debug directory
+          mkdir -p ~/cyma-debug
+          
+          # Clean up existing containers
+          echo "=== CLEANING UP ==="
+          docker stop cymasphere-container || true
+          docker rm cymasphere-container || true
+          docker rmi ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest || true
+          
+          # Login to GitHub Container Registry
+          echo "=== PULLING IMAGE ==="
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+          docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+          
+          # Run the new container with debugging enabled
+          echo "=== STARTING DEBUG CONTAINER ==="
+          docker run -d --restart unless-stopped --name cymasphere-container \
+            -p 80:80 \
+            -p 9229:9229 \
+            -v ~/cyma-debug:/app/debug \
+            -e NODE_ENV=production \
+            -e PORT=80 \
+            -e DEBUG=* \
+            -e VERBOSE=true \
+            -e NEXT_TELEMETRY_DEBUG=1 \
+            -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --memory=2g \
+            --cpus=1 \
+            ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+          
+          # Wait a bit for container to start up
+          echo "=== WAITING FOR CONTAINER STARTUP ==="
+          sleep 10
+          
+          # Show initial container logs
+          echo "=== INITIAL CONTAINER LOGS ==="
+          docker logs cymasphere-container
+          
+          # Run comprehensive diagnostics
+          echo -e "\n=== COMPREHENSIVE DIAGNOSTICS ==="
+          
+          # Create diagnostics script
+          cat > ~/cyma-debug/run-diagnostics.sh << 'DIAG_EOF'
+          #!/bin/bash
+          
+          # Save this script's output to a file
+          exec > ~/cyma-debug/diagnostics-$(date +%Y%m%d-%H%M%S).log 2>&1
+          
+          echo "==== DIAGNOSTICS STARTED: $(date) ===="
+          
+          echo -e "\n==== SYSTEM INFO ===="
+          uname -a
+          free -h
+          df -h
+          
+          echo -e "\n==== CONTAINER STATUS ===="
+          docker ps -a | grep cymasphere
+          
+          echo -e "\n==== CONTAINER INFO ===="
+          docker inspect cymasphere-container | grep -E 'Id|Name|Image|State|Platform|RestartCount'
+          
+          echo -e "\n==== RESOURCE USAGE ===="
+          docker stats cymasphere-container --no-stream
+          
+          echo -e "\n==== CONTAINER LOGS (Most recent) ===="
+          docker logs --tail 100 cymasphere-container
+          
+          echo -e "\n==== NEXT.JS FAILURE LOGS ===="
+          docker logs cymasphere-container | grep -A 20 "Failed to start Next.js" || echo "No specific Next.js failure found in logs"
+          
+          echo -e "\n==== ERROR LOG FILE ===="
+          docker exec -it cymasphere-container cat /app/error.log 2>/dev/null || echo "No error.log file found"
+          
+          echo -e "\n==== DIRECTORY STRUCTURE ===="
+          echo "ROOT DIRECTORY:"
+          docker exec -it cymasphere-container ls -la / || echo "Could not list root directory"
+          
+          echo -e "\nAPP DIRECTORY:"
+          docker exec -it cymasphere-container ls -la /app || echo "Could not list app directory"
+          
+          echo -e "\nNEXT.JS DIRECTORY:"
+          docker exec -it cymasphere-container ls -la /app/.next 2>/dev/null || echo ".next directory not found"
+          
+          if docker exec -it cymasphere-container ls -la /app/.next &>/dev/null; then
+            echo -e "\nNEXT.JS SERVER DIRECTORY:"
+            docker exec -it cymasphere-container ls -la /app/.next/server 2>/dev/null || echo ".next/server directory not found"
+            
+            echo -e "\nNEXT.JS STATIC DIRECTORY:"
+            docker exec -it cymasphere-container ls -la /app/.next/static 2>/dev/null || echo ".next/static directory not found"
+          fi
+          
+          echo -e "\nNODE_MODULES DIRECTORY:"
+          docker exec -it cymasphere-container ls -la /app/node_modules/next 2>/dev/null || echo "next module not found"
+          
+          echo -e "\n==== PROCESS INFO ===="
+          docker exec -it cymasphere-container ps aux || echo "ps command not available"
+          
+          echo -e "\n==== NEXT.JS RESOLUTION ===="
+          docker exec -it cymasphere-container node -e "try { console.log(require.resolve('next')); } catch(e) { console.error('Next.js not found:', e.message); }" || echo "Could not run Node.js"
+          
+          echo -e "\n==== SERVER.JS FILE ===="
+          docker exec -it cymasphere-container cat /app/server.js | head -n 30 || echo "server.js not found"
+          
+          echo -e "\n==== PACKAGE.JSON ===="
+          docker exec -it cymasphere-container cat /app/package.json || echo "package.json not found"
+          
+          echo -e "\n==== CHECKING FOR API ENDPOINTS ===="
+          if docker exec -it cymasphere-container test -d /app/app/api; then
+            echo "API directories found:"
+            docker exec -it cymasphere-container find /app/app/api -type d || echo "Could not search for API directories"
+          else
+            echo "No API directory found at /app/app/api"
+          fi
+          
+          echo -e "\n==== CHECKING ENVIRONMENT VARIABLES ===="
+          docker exec -it cymasphere-container bash -c "env | grep -v KEY | grep -v SECRET" || echo "Could not check environment variables"
+          
+          echo -e "\n==== WEB ACCESS TEST ===="
+          curl -v http://localhost 2>&1 | head -n 20
+          
+          echo -e "\n==== DIAGNOSTICS COMPLETED: $(date) ===="
+          DIAG_EOF
+          
+          # Make the diagnostics script executable
+          chmod +x ~/cyma-debug/run-diagnostics.sh
+          
+          # Run the diagnostics script
+          echo "Running comprehensive diagnostics - this will take a minute..."
+          ~/cyma-debug/run-diagnostics.sh
+          
+          # Create a simple HTML viewer for the diagnostics
+          cat > ~/cyma-debug/view-diagnostics.html << 'HTML_EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Cymasphere Diagnostics</title>
+            <style>
+              body { font-family: monospace; background: #f0f0f0; padding: 20px; }
+              .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              h1 { color: #333; }
+              pre { background: #f5f5f5; padding: 15px; border-radius: 3px; overflow-x: auto; }
+              .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+              .section h2 { color: #0066cc; }
+              button { background: #0066cc; color: white; border: none; padding: 10px 15px; border-radius: 3px; cursor: pointer; }
+              button:hover { background: #0055aa; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Cymasphere Deployment Diagnostics</h1>
+              <div id="content">Loading diagnostics...</div>
+              <button onclick="window.location.reload();">Refresh</button>
+            </div>
+            <script>
+              fetch('/latest-diagnostics.log')
+                .then(response => response.text())
+                .then(text => {
+                  const sections = text.split(/==== .+ ====/g);
+                  const headers = text.match(/==== .+ ====/g);
+                  
+                  let html = '';
+                  if (headers) {
+                    for (let i = 0; i < headers.length; i++) {
+                      html += '<div class="section">';
+                      html += '<h2>' + headers[i].replace(/====/g, '').trim() + '</h2>';
+                      if (sections[i+1]) {
+                        html += '<pre>' + sections[i+1].trim() + '</pre>';
+                      }
+                      html += '</div>';
+                    }
+                  } else {
+                    html = '<pre>' + text + '</pre>';
+                  }
+                  document.getElementById('content').innerHTML = html;
+                })
+                .catch(error => {
+                  document.getElementById('content').innerHTML = '<p>Error loading diagnostics: ' + error.message + '</p>';
+                });
+            </script>
+          </body>
+          </html>
+          HTML_EOF
+          
+          # Print instructions
+          echo -e "\n=== DEPLOYMENT COMPLETE ==="
+          echo -e "\nThe deployment is complete! If you're seeing a maintenance page:"
+          echo ""
+          echo "1. Visit http://${{ secrets.LIGHTSAIL_IP }}/install-next to install Next.js"
+          echo "2. After installation, restart the container: docker restart cymasphere-container"
+          echo ""
+          echo "Debug resources available at:"
+          echo "- View diagnostics at: http://${{ secrets.LIGHTSAIL_IP }}/diagnostics.html"
+          echo "- View error logs at: http://${{ secrets.LIGHTSAIL_IP }}/logs"
+          echo "- View filesystem at: http://${{ secrets.LIGHTSAIL_IP }}/files"
+          echo ""
+          echo "You can run diagnostics again at any time with: ~/cyma-debug/run-diagnostics.sh"
+          EOL
+          
+          chmod +x deploy_remote.sh
+
+      - name: Deploy to Lightsail
+        run: |
+          # Test SSH connection first
+          ssh -o StrictHostKeyChecking=no -vT ubuntu@${{ secrets.LIGHTSAIL_IP }} "echo SSH Connection Successful"
+          
+          # Then attempt to copy and run deploy script
+          scp -o StrictHostKeyChecking=no deploy_remote.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh"
+          
+      - name: Verify deployment
+        run: |
+          # Wait for the container to start and the app to be ready
+          echo "Waiting 30 seconds for the application to start..."
+          sleep 30
+          
+          # Check if the site is reachable
+          echo "Verifying if site is accessible..."
+          if curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}; then
+            echo "Site is accessible. Deployment successful!"
+          else
+            echo "Site is not accessible. Please check the server logs."
+            # Let's not fail the workflow even if verification fails
+            echo "Continuing anyway as the container might still be starting up..."
+          fi 
+
       - name: Create optimized debugging Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
