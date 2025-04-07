@@ -10,112 +10,61 @@ const isBuildProcess = process.env.NODE_ENV === 'production' &&
 
 // Create a mock client with all methods that return empty data
 const createMockClient = () => {
-  if (process.env.NEXT_BUILD_SKIP_VALIDATION === 'true') {
-    console.log("NEXT_BUILD_SKIP_VALIDATION is enabled, using enhanced mock client");
-  }
-  
   return {
     auth: {
-      signInWithPassword: async () => ({ 
-        data: { user: { email: 'build@example.com', id: 'mock-user-id' }, session: { access_token: 'mock-token', refresh_token: 'mock-refresh', expires_at: 9999999999 } }, 
-        error: null
-      }),
-      getUser: async () => ({
-        data: { user: { email: 'build@example.com', id: 'mock-user-id' } },
-        error: null
-      }),
-      // Add other auth methods as needed
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
     },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: async () => ({ 
-            data: { 
-              id: 'mock-profile-id',
-              username: 'mock-user',
-              subscription_status: 'active',
-              subscription_id: 'mock-sub-id',
-              customer_id: 'mock-customer-id',
-              full_name: 'Mock User',
-              email: 'build@example.com'
-            }, 
-            error: null 
-          })
-        })
-      })
+    from: () => ({ 
+      select: () => ({ 
+        eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+        order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }),
+        match: () => Promise.resolve({ data: [], error: null }),
+        is: () => Promise.resolve({ data: [], error: null }),
+        in: () => Promise.resolve({ data: [], error: null }),
+        limit: () => Promise.resolve({ data: [], error: null }),
+        single: () => Promise.resolve({ data: null, error: null }),
+      }),
+      insert: () => Promise.resolve({ data: null, error: null }),
+      update: () => ({ 
+        eq: () => Promise.resolve({ data: null, error: null }),
+        match: () => Promise.resolve({ data: null, error: null }),
+      }),
+      delete: () => ({ 
+        eq: () => Promise.resolve({ data: null, error: null }),
+        match: () => Promise.resolve({ data: null, error: null }),
+      }),
     }),
-    // Add other Supabase methods as needed
   };
 };
 
-export async function createClient() {
-  // Return mock client during build
+// Create a Supabase client for server components - safe for build time
+export const createSafeServerClient = () => {
   if (isBuildProcess) {
-    console.log("Build process detected, returning mock Supabase client");
+    console.log('Using mock Supabase client for build process');
     return createMockClient();
   }
 
-  const cookieStore = await cookies();
-
+  const cookieStore = cookies();
+  
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
+        get(name) {
+          return cookieStore.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
+        set(name, value, options) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name, options) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 });
         },
       },
     }
   );
-}
-
-/**
- * Create a Supabase server client that safely handles missing environment variables 
- * during build time to prevent build errors
- */
-export async function createSafeServerClient() {
-  // Return mock client during build
-  if (isBuildProcess) {
-    console.log("Build process detected, returning mock Supabase client");
-    return createMockClient();
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Return null if environment variables are missing (during runtime)
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-
-  try {
-    return createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          getAll() {
-            return [];
-          },
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          setAll(_cookiesToSet) {},
-        },
-      }
-    );
-  } catch (error) {
-    console.error("Error creating Supabase client:", error);
-    return null;
-  }
-}
+};
