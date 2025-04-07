@@ -514,7 +514,7 @@ jobs:
           }
           EOF
 
-      - name: Create optimized Dockerfile
+      - name: Create optimized debugging Dockerfile
         run: |
           cat > Dockerfile << 'DOCKERFILE_EOF'
           # Use Node.js LTS for maximum compatibility
@@ -528,8 +528,12 @@ jobs:
           # Copy package files
           COPY package.json package*.json ./
           
-          # Install dependencies with explicit Next.js installation
-          RUN npm ci && \
+          # Install dependencies with fallback options
+          RUN if [ -f package-lock.json ]; then \
+                npm ci || npm install; \
+              else \
+                npm install; \
+              fi && \
               npm install next@latest react react-dom && \
               echo "Installed dependencies including Next.js"
           
@@ -862,58 +866,3 @@ jobs:
             # Let's not fail the workflow even if verification fails
             echo "Continuing anyway as the container might still be starting up..."
           fi 
-
-      - name: Create optimized debugging Dockerfile
-        run: |
-          cat > Dockerfile << 'DOCKERFILE_EOF'
-          # Use Node.js LTS for maximum compatibility
-          FROM node:18-alpine AS base
-          
-          # Install build tools and debugging utilities
-          RUN apk add --no-cache curl bash git
-          
-          WORKDIR /app
-          
-          # Copy package files
-          COPY package.json package*.json ./
-          
-          # Install dependencies with explicit Next.js installation
-          RUN npm ci && \
-              npm install next@latest react react-dom && \
-              echo "Installed dependencies including Next.js"
-          
-          # Copy the Next.js source/build and other files
-          COPY . .
-          
-          # Attempt to build Next.js
-          RUN npm run build || echo "Next.js build failed, will attempt to rebuild at runtime" 
-          
-          # Environment variables
-          ENV NODE_ENV=production
-          ENV PORT=80
-          ENV DEBUG=*
-          
-          # Copy our debugging server that can handle missing Next.js
-          COPY debugging-server.js /app/server.js
-          
-          # Create a script to install Next.js if missing
-          RUN echo '#!/bin/bash' > /app/install-next.sh && \
-              echo 'echo "Attempting to install Next.js..."' >> /app/install-next.sh && \
-              echo 'cd /app' >> /app/install-next.sh && \
-              echo 'npm install next@latest react react-dom --save' >> /app/install-next.sh && \
-              echo 'echo "Creating minimal Next.js app if needed"' >> /app/install-next.sh && \
-              echo 'mkdir -p /app/pages' >> /app/install-next.sh && \
-              echo 'if [ ! -f /app/pages/index.js ]; then' >> /app/install-next.sh && \
-              echo '  echo "export default function Home() { return <h1>Cymasphere</h1>; }" > /app/pages/index.js' >> /app/install-next.sh && \
-              echo 'fi' >> /app/install-next.sh && \
-              echo 'echo "Attempting to build Next.js..."' >> /app/install-next.sh && \
-              echo 'npx next build' >> /app/install-next.sh && \
-              echo 'echo "Next.js installation complete"' >> /app/install-next.sh && \
-              chmod +x /app/install-next.sh
-
-          # Expose port
-          EXPOSE 80
-          
-          # Start with our debug server
-          CMD ["node", "server.js"]
-          DOCKERFILE_EOF 
