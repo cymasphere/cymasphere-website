@@ -27,6 +27,28 @@ const nextConfig = {
   // Force dynamic rendering
   env: {
     NEXT_DISABLE_PRERENDER: 'true',
+  },
+
+  // Fix for 500.html build issues
+  experimental: {
+    disableOptimizedLoading: true,
+  },
+
+  // Consistent build ID
+  generateBuildId: () => process.env.GIT_HASH || 'development',
+
+  // Caching strategy
+  async headers() {
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+      },
+      {
+        source: '/static/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+      }
+    ];
   }
 }
 
