@@ -42,7 +42,7 @@ const createMockClient = () => {
 };
 
 // Create a Supabase client for server components - safe for build time
-export const createSafeServerClient = () => {
+export async function createSafeServerClient() {
   if (isBuildProcess) {
     console.log('Using mock Supabase client for build process');
     return createMockClient();
