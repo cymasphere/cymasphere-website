@@ -42,21 +42,36 @@ function create500Html() {
   const serverPagesDir = path.join(nextDir, 'server', 'pages');
   const exportDir = path.join(nextDir, 'export');
 
-  if (!fs.existsSync(serverPagesDir)) {
-    fs.mkdirSync(serverPagesDir, { recursive: true });
-  }
+  // Create all needed directories recursively
+  const directories = [
+    serverPagesDir,
+    exportDir,
+    path.join(serverPagesDir, '_next'),
+    path.join(exportDir, '_next')
+  ];
 
-  if (!fs.existsSync(exportDir)) {
-    fs.mkdirSync(exportDir, { recursive: true });
-  }
+  directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
 
   // Create the 500.html file in both locations
-  fs.writeFileSync(path.join(serverPagesDir, '500.html'), content);
-  fs.writeFileSync(path.join(exportDir, '500.html'), content);
+  const filesToCreate = [
+    path.join(serverPagesDir, '500.html'),
+    path.join(exportDir, '500.html')
+  ];
+
+  filesToCreate.forEach(file => {
+    try {
+      fs.writeFileSync(file, content);
+      console.log(`Created 500.html in ${file}`);
+    } catch (err) {
+      console.error(`Error creating ${file}:`, err);
+    }
+  });
   
-  console.log('Successfully created 500.html files in:');
-  console.log(`- ${path.join(serverPagesDir, '500.html')}`);
-  console.log(`- ${path.join(exportDir, '500.html')}`);
+  console.log('Successfully created 500.html files');
 }
 
 // Execute the function

@@ -64,8 +64,14 @@ const nextConfig = {
   experimental: {
     // Disable static optimization for error pages
     disableOptimizedLoading: true,
+    // Skip trailing slash redirect to avoid conflicts
+    skipTrailingSlashRedirect: true,
+    // Skip middleware URL normalization
+    skipMiddlewareUrlNormalize: true,
     // Enable runtime JS for error pages
-    runtime: 'nodejs'
+    runtime: 'nodejs',
+    // Set a long timeout for static page generation
+    staticPageGenerationTimeout: 1000
   },
   // Caching strategy
   async headers() {
