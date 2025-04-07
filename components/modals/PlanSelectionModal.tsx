@@ -10,7 +10,7 @@ import {
   FaCrown,
   FaGift,
 } from "react-icons/fa";
-import CymasphereLogo from "../common/CymasphereLogo";
+import CymasphereLogo from "@/components/common/CymasphereLogo";
 import { Profile, SubscriptionType } from "@/utils/supabase/types";
 
 // Modal components

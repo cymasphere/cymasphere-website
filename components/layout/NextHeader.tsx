@@ -15,10 +15,10 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import EnergyBall from "../common/EnergyBall";
+import EnergyBall from "@/components/common/EnergyBall";
 
 // Dynamically import components with browser-only APIs
 const DynamicLanguageSelector = dynamic(

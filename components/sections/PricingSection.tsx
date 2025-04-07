@@ -10,7 +10,7 @@ import React, {
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheck, FaGift } from "react-icons/fa";
-import StripeCheckout from "../checkout/StripeCheckout";
+import StripeCheckout from "@/components/checkout/StripeCheckout";
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
 import dynamic from "next/dynamic";

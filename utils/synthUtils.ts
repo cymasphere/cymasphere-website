@@ -3,7 +3,7 @@
  */
 import * as Tone from "tone";
 import type { Frequency } from "tone";
-import { EffectsChain } from "../utils/effectsUtils";
+import { EffectsChain } from "@/utils/effectsUtils";
 
 // Define a more specific type for modulation components
 interface SynthModulation {

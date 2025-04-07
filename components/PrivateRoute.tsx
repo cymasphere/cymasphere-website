@@ -1,8 +1,8 @@
 import React from "react";
 import { useRouter } from "next/router";
-import { useAuth } from "../contexts/AuthContext";
-import LoadingComponent from "./common/LoadingComponent";
-import EmailVerification from "./EmailVerification";
+import { useAuth } from "@/contexts/AuthContext";
+import LoadingComponent from "@/components/common/LoadingComponent";
+import EmailVerification from "@/components/EmailVerification";
 
 /**
  * PrivateRoute component that protects routes requiring authentication

@@ -1,9 +1,12 @@
 "use server";
 
 import { PostgrestError } from "@supabase/supabase-js";
-import { createClient } from "./server";
-import { Profile } from "./types";
-import { customerPurchasedPro, findOrCreateCustomer } from "../stripe/actions";
+import { createClient } from "@/utils/supabase/server";
+import { Profile } from "@/utils/supabase/types";
+import {
+  customerPurchasedPro,
+  findOrCreateCustomer,
+} from "@/utils/stripe/actions";
 
 export async function signUpWithStripe(
   name: string,

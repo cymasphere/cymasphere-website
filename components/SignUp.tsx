@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../contexts/NextAuthContext";
+import { useAuth } from "@/contexts/NextAuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaGoogle, FaArrowLeft, FaSpinner } from "react-icons/fa";
-import CymasphereLogo from "./common/CymasphereLogo";
+import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 const AuthContainer = styled.div`
   min-height: 100vh;

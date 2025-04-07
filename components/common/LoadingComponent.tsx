@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import EnergyBall from "./EnergyBall";
+import EnergyBall from "@/components/common/EnergyBall";
 
 interface LoadingContainerProps {
   fullScreen?: boolean;

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import styled from "styled-components";
-import EnergyBall from "./EnergyBall";
+import EnergyBall from "@/components/common/EnergyBall";
 
 interface LogoWrapperProps {
   $clickable?: boolean;

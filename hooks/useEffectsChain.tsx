@@ -6,7 +6,7 @@ import {
   initializeEffectsChain,
   disposeEffectsChain,
   EffectsChain,
-} from "../utils/effectsUtils";
+} from "@/utils/effectsUtils";
 
 /**
  * Custom hook for initializing and managing the effects chain

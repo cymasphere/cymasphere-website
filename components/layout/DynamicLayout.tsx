@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-import LoadingComponent from "../common/LoadingComponent";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 // A simple loading component for layout
 const LoadingLayout = () => (

@@ -8,10 +8,10 @@ import {
   FaYoutube,
   FaDiscord,
 } from "react-icons/fa6";
-import LegalModal from "../modals/LegalModal";
-import AboutUsModal from "../modals/AboutUsModal";
-import EnergyBall from "../common/EnergyBall";
-import { playLydianMaj7Chord } from "../../utils/audioUtils";
+import LegalModal from "@/components/modals/LegalModal";
+import AboutUsModal from "@/components/modals/AboutUsModal";
+import EnergyBall from "@/components/common/EnergyBall";
+import { playLydianMaj7Chord } from "@/utils/audioUtils";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);

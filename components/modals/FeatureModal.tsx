@@ -10,7 +10,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
-import LoadingComponent from "../common/LoadingComponent";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 // Interfaces for styled-component props
 interface FeatureImageProps {

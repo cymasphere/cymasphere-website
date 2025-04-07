@@ -18,7 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingComponent from "../../../components/common/LoadingComponent";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const LayoutContainer = styled.div`
   display: flex;
