@@ -586,7 +586,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+          tags: ghcr.io/${{ github.actor }}/cymasphere-website:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true
@@ -642,12 +642,12 @@ jobs:
           echo "=== CLEANING UP ==="
           docker stop cymasphere-container || true
           docker rm cymasphere-container || true
-          docker rmi ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest || true
+          docker rmi ghcr.io/${{ github.actor }}/cymasphere-website:latest || true
           
           # Login to GitHub Container Registry
           echo "=== PULLING IMAGE ==="
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
-          docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+          docker pull ghcr.io/${{ github.actor }}/cymasphere-website:latest
           
           # Run the new container with debugging enabled
           echo "=== STARTING DEBUG CONTAINER ==="
@@ -664,7 +664,7 @@ jobs:
             -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             --memory=2g \
             --cpus=1 \
-            ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
+            ghcr.io/${{ github.actor }}/cymasphere-website:latest
           
           # Wait a bit for container to start up
           echo "=== WAITING FOR CONTAINER STARTUP ==="
