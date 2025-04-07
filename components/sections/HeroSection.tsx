@@ -9,12 +9,11 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
-import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
-import SYNTH_PRESETS, { getPresetById } from "../../utils/presets";
+import { getPresetById } from "../../utils/presets";
 import { createSynth, disposeSynth } from "../../utils/synthUtils";
 import useEffectsChain from "../../hooks/useEffectsChain";
-import { Container, Button } from "../ui/CommonComponents";
 import dynamic from "next/dynamic";
 
 const HeroContainer = styled.section`
@@ -121,43 +120,6 @@ const SecondaryButton = styled(motion.a)`
   }
 `;
 
-const FloatingNote = styled(motion.div)`
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.5rem;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2),
-    inset 0 4px 10px rgba(255, 255, 255, 0.3),
-    inset 0 -4px 10px rgba(0, 0, 0, 0.2);
-  z-index: 2;
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
-  pointer-events: none;
-  filter: blur(0); /* Force GPU rendering */
-
-  &:after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.8),
-      transparent 70%
-    );
-    opacity: 0.2;
-    pointer-events: none;
-  }
-`;
-
 const NoteShadow = styled(motion.div)`
   position: absolute;
   width: 60px;
@@ -173,21 +135,8 @@ const NoteShadow = styled(motion.div)`
   filter: blur(4px) drop-shadow(0 0 1px rgba(0, 0, 0, 0.1)); /* Force GPU rendering */
 `;
 
-const VoiceLeadingLine = styled(motion.div)`
-  position: absolute;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(108, 99, 255, 0.5),
-    rgba(78, 205, 196, 0.5)
-  );
-  border-radius: 4px;
-  opacity: 0;
-  z-index: 1;
-`;
-
 // Color mapping for all 12 chromatic pitches
-const pitchColors = {
+const pitchColors: Record<string, string> = {
   C: "#F44336", // Red
   "C#": "#E91E63", // Pink
   Db: "#E91E63", // Pink (enharmonic with C#)
@@ -208,8 +157,8 @@ const pitchColors = {
 };
 
 // Function to calculate semitone distance between two notes
-const getSemitoneDistance = (note1, note2) => {
-  const noteValues = {
+const getSemitoneDistance = (note1: string, note2: string): number => {
+  const noteValues: Record<string, number> = {
     C: 0,
     "C#": 1,
     D: 2,
@@ -234,86 +183,6 @@ const getSemitoneDistance = (note1, note2) => {
   }
 
   return distance;
-};
-
-// Convert note name to frequency
-const noteToFreq = (noteName) => {
-  const noteValues = {
-    C: 0,
-    "C#": 1,
-    D: 2,
-    "D#": 3,
-    E: 4,
-    F: 5,
-    "F#": 6,
-    G: 7,
-    "G#": 8,
-    A: 9,
-    "A#": 10,
-    B: 11,
-  };
-
-  // Middle C (C4) is MIDI note 60
-  const value = noteValues[noteName];
-  if (value === undefined) return null;
-
-  // Calculate MIDI note number (C4 = 60)
-  const midiNote = 60 + value;
-
-  // Convert MIDI note to frequency (A4 = 69 = 440Hz)
-  return 440 * Math.pow(2, (midiNote - 69) / 12);
-};
-
-// Color interpolation utility function
-const interpolateColor = (startColor, endColor, progress) => {
-  // Add safety checks for undefined or invalid colors
-  if (!startColor || !endColor) {
-    // Default to a purple color if either color is missing
-    return "#6C63FF";
-  }
-
-  const hexToRgb = (hex) => {
-    // Add safety check for undefined or invalid hex values
-    if (!hex || typeof hex !== "string" || !hex.startsWith("#")) {
-      // Return a default purple color
-      return { r: 108, g: 99, b: 255 };
-    }
-
-    // Remove the # and handle different hex formats (3 or 6 digits)
-    const sanitizedHex = hex.slice(1);
-    let r, g, b;
-
-    if (sanitizedHex.length === 3) {
-      r = parseInt(sanitizedHex[0] + sanitizedHex[0], 16);
-      g = parseInt(sanitizedHex[1] + sanitizedHex[1], 16);
-      b = parseInt(sanitizedHex[2] + sanitizedHex[2], 16);
-    } else if (sanitizedHex.length === 6) {
-      r = parseInt(sanitizedHex.slice(0, 2), 16);
-      g = parseInt(sanitizedHex.slice(2, 4), 16);
-      b = parseInt(sanitizedHex.slice(4, 6), 16);
-    } else {
-      // Invalid hex format, return default
-      return { r: 108, g: 99, b: 255 };
-    }
-
-    return { r, g, b };
-  };
-
-  const rgbToHex = (r, g, b) => {
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  };
-
-  // Get RGB values
-  const rgbStart = hexToRgb(startColor);
-  const rgbEnd = hexToRgb(endColor);
-
-  // Interpolate
-  const r = Math.round(rgbStart.r + (rgbEnd.r - rgbStart.r) * progress);
-  const g = Math.round(rgbStart.g + (rgbEnd.g - rgbStart.g) * progress);
-  const b = Math.round(rgbStart.b + (rgbEnd.b - rgbStart.b) * progress);
-
-  // Convert back to hex
-  return rgbToHex(r, g, b);
 };
 
 // Add a custom hook for window size
@@ -364,7 +233,7 @@ const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
 });
 
 const HeroSection = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // Diatonic chords in the key of C in descending 5ths
   const chordProgression = [
@@ -394,17 +263,12 @@ const HeroSection = () => {
     [t]
   ); // Only recreate when translation function or language changes
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isAnimatingWord, setIsAnimatingWord] = useState(false);
   const [centerWordWidth, setCenterWordWidth] = useState(120); // Default width
-  const centerWordRef = useRef(null);
+  const centerWordRef = useRef<HTMLSpanElement>(null);
 
   // Pre-measure word widths to avoid mixing them up during transitions
-  const [wordWidths, setWordWidths] = useState({});
-  const [initialWidthsMeasured, setInitialWidthsMeasured] = useState(false);
-  const wordMeasureRef = useRef(null);
-
-  // ONLY SIMPLE OPTIMIZATION: For debugging purposes, to track if cycling is happening
-  const cycleCountRef = useRef(0);
+  const [wordWidths, setWordWidths] = useState<Record<number, number>>({});
+  const wordMeasureRef = useRef<HTMLDivElement>(null);
 
   // Measure all word widths once on first render and when language changes
   useEffect(() => {
@@ -412,7 +276,7 @@ const HeroSection = () => {
     if (typeof window === "undefined") return;
 
     if (wordMeasureRef.current) {
-      const widths = {};
+      const widths: Record<number, number> = {};
 
       const tempDiv = wordMeasureRef.current;
       const baseStyle = {
@@ -436,13 +300,9 @@ const HeroSection = () => {
       // Clean up
       document.body.removeChild(tempDiv);
       setWordWidths(widths);
-      setInitialWidthsMeasured(true);
-
-      // Set initial width for the current word
-      setCenterWordWidth(widths[currentWordIndex] || 120);
       console.log("Measured widths:", widths);
     }
-  }, []); // Re-measure when language changes
+  }, []);
 
   // ROBUST WORD CYCLING IMPLEMENTATION
   useEffect(() => {
@@ -484,7 +344,7 @@ const HeroSection = () => {
   }, [currentWordIndex, wordWidths]);
 
   // Function to get color for each title word
-  const getWordColor = useCallback((index) => {
+  const getWordColor = useCallback((index: number): string => {
     const colors = [
       "#E74C3C", // Red - Music
       "#FF5E5B", // Coral - Song
@@ -508,21 +368,35 @@ const HeroSection = () => {
     { bottom: "15%", left: "15%" },
   ];
 
+  // Define the chord type for better type safety
+  interface ChordType {
+    notes: string[];
+    positions: typeof initialPositions;
+    index: number;
+  }
+
   // Voice leading state
-  const [displayedChord, setDisplayedChord] = useState({
+  const [displayedChord, setDisplayedChord] = useState<ChordType>({
     notes: chordProgression[0].notes,
     positions: initialPositions,
     index: 0,
   });
 
-  const [previousChord, setPreviousChord] = useState(null);
+  const [previousChord, setPreviousChord] = useState<ChordType | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
   // Add these state variables for synth functionality
-  const [synth, setSynth] = useState(null);
+  // Define a proper type for the synth with the necessary properties
+  interface SynthType {
+    triggerAttackRelease: (notes: string | string[], duration: string) => void;
+    set: (params: any) => void;
+    _disposed?: boolean;
+  }
+
+  const [synth, setSynth] = useState<SynthType | null>(null);
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const effectsChain = useEffectsChain();
-  const synthRef = useRef(null);
+  const synthRef = useRef<SynthType | null>(null);
 
   // Add animationProgress state variable
   const [animationProgress, setAnimationProgress] = useState(0);
@@ -539,7 +413,7 @@ const HeroSection = () => {
     // This effect will run after the component has mounted on the client side
     if (typeof window !== "undefined" && wordMeasureRef.current) {
       // Force re-measurement by triggering a measurement cycle
-      const widths = {};
+      const widths: Record<number, number> = {};
 
       const tempDiv = wordMeasureRef.current;
       const baseStyle = {
@@ -567,7 +441,7 @@ const HeroSection = () => {
 
   // Use the synth in a way consistent with the Try Me section
   useEffect(() => {
-    let localSynth = null;
+    let localSynth: SynthType | null = null;
 
     const initializeSynth = async () => {
       if (!effectsChain) return;
@@ -676,7 +550,7 @@ const HeroSection = () => {
   }, [effectsChain]);
 
   // Update the playNote function to assign proper octaves
-  const playNote = async (noteName) => {
+  const playNote = async (noteName: string): Promise<void> => {
     try {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {
@@ -776,7 +650,7 @@ const HeroSection = () => {
   };
 
   // Handle voice leading transitions between chords
-  const moveToNextChord = () => {
+  const moveToNextChord = (): void => {
     // Save the current chord as the previous chord for voice leading
     setPreviousChord({
       notes: [...displayedChord.notes],
@@ -794,8 +668,8 @@ const HeroSection = () => {
     const nextNotes = chordProgression[nextIndex].notes;
 
     // Voice leading assignment
-    const assignedNextNotes = [...currentNotes];
-    const assignedNextChordNotes = new Set();
+    const assignedNextNotes: (string | null)[] = [...currentNotes];
+    const assignedNextChordNotes = new Set<string>();
 
     // First pass: Keep notes that are the same
     currentNotes.forEach((note, i) => {
@@ -836,13 +710,18 @@ const HeroSection = () => {
     );
     for (let i = 0; i < assignedNextNotes.length; i++) {
       if (assignedNextNotes[i] === null && remainingNotes.length > 0) {
-        assignedNextNotes[i] = remainingNotes.pop();
+        const nextNote = remainingNotes.pop();
+        if (nextNote !== undefined) {
+          assignedNextNotes[i] = nextNote;
+        }
       }
     }
 
     // Update the displayed chord with the new notes but keep positions the same
     setDisplayedChord({
-      notes: assignedNextNotes,
+      notes: assignedNextNotes.filter(
+        (note): note is string => note !== null
+      ) as string[],
       positions: [...displayedChord.positions], // Use same positions to avoid jumping
       index: nextIndex,
     });
@@ -869,11 +748,11 @@ const HeroSection = () => {
       return;
     }
 
-    let startTime = null;
+    let startTime: number | null = null;
     const duration = 1500; // 1.5 seconds for the transition
 
     // Animation frame to track progress
-    const updateProgress = (timestamp) => {
+    const updateProgress = (timestamp: number): void => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -900,45 +779,6 @@ const HeroSection = () => {
     };
   }, [transitioning]);
 
-  // Add the getCurrentColors function to return the current color for each note
-  const getCurrentColors = () => {
-    const colors = {};
-
-    // If we're transitioning between chords, interpolate colors
-    if (transitioning && previousChord) {
-      Object.entries(displayedChord.positions).forEach(([note, position]) => {
-        // Make sure pitchColors has the note color, otherwise use a default
-        if (!pitchColors[note]) {
-          colors[note] = "#6C63FF"; // Default purple if note not found
-          return;
-        }
-
-        const prevNote = Object.keys(previousChord.positions).find(
-          (prevNote) => previousChord.positions[prevNote].id === position.id
-        );
-
-        if (prevNote && prevNote !== note && pitchColors[prevNote]) {
-          // Interpolate color during transition only if both colors exist
-          colors[note] = interpolateColor(
-            pitchColors[prevNote],
-            pitchColors[note],
-            animationProgress
-          );
-        } else {
-          // Use current color if no transition or same note
-          colors[note] = pitchColors[note];
-        }
-      });
-    } else {
-      // Not transitioning, just use current colors
-      Object.keys(displayedChord.positions).forEach((note) => {
-        colors[note] = pitchColors[note] || "#6C63FF"; // Default if not found
-      });
-    }
-
-    return colors;
-  };
-
   const { width: windowWidth, height: windowHeight } = useWindowSize();
   const isMobile = windowWidth <= 768;
 
@@ -946,22 +786,6 @@ const HeroSection = () => {
   const renderContent = useCallback(() => {
     // Get the current word from titleWords array
     const currentWord = titleWords[currentWordIndex];
-
-    // Local handlePlay function inside renderContent to avoid dependency issues
-    const handlePlay = async () => {
-      try {
-        await Tone.start();
-        setAudioContextStarted(true);
-        console.log("Audio context started successfully");
-
-        // Play a gentle intro chord to indicate audio is working
-        if (synthRef.current) {
-          playChord();
-        }
-      } catch (error) {
-        console.error("Error starting audio context:", error);
-      }
-    };
 
     return (
       <HeroContent>
@@ -1147,25 +971,29 @@ const HeroSection = () => {
       const startX = prevPos.left
         ? (parseInt(prevPos.left.replace("%", "")) * windowWidth) / 100 + 30
         : windowWidth -
-          (parseInt(prevPos.right.replace("%", "")) * windowWidth) / 100 -
+          (parseInt((prevPos.right || "0").replace("%", "")) * windowWidth) /
+            100 -
           30;
 
       const startY = prevPos.top
         ? (parseInt(prevPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -
-          (parseInt(prevPos.bottom.replace("%", "")) * windowHeight) / 100 -
+          (parseInt((prevPos.bottom || "0").replace("%", "")) * windowHeight) /
+            100 -
           30;
 
       const endX = currPos.left
         ? (parseInt(currPos.left.replace("%", "")) * windowWidth) / 100 + 30
         : windowWidth -
-          (parseInt(currPos.right.replace("%", "")) * windowWidth) / 100 -
+          (parseInt((currPos.right || "0").replace("%", "")) * windowWidth) /
+            100 -
           30;
 
       const endY = currPos.top
         ? (parseInt(currPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -
-          (parseInt(currPos.bottom.replace("%", "")) * windowHeight) / 100 -
+          (parseInt((currPos.bottom || "0").replace("%", "")) * windowHeight) /
+            100 -
           30;
 
       // Calculate line length and angle
@@ -1175,8 +1003,8 @@ const HeroSection = () => {
       const angle = (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
 
       // Get the source and target colors
-      const sourceColor = pitchColors[prevNote];
-      const targetColor = pitchColors[displayedChord.notes[index]];
+      const sourceColor = pitchColors[prevNote] || "#6C63FF";
+      const targetColor = pitchColors[displayedChord.notes[index]] || "#6C63FF";
 
       return (
         <motion.div

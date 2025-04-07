@@ -16,11 +16,8 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
-import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import styles from "./MobileLanguageStyle.module.css";
-import CymasphereLogo from "../common/CymasphereLogo";
 import EnergyBall from "../common/EnergyBall";
 
 // Dynamically import components with browser-only APIs
@@ -106,7 +103,7 @@ const LogoText = styled.div`
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   span.sphere {
     color: white;
     font-family: "Montserrat", sans-serif;
@@ -587,7 +584,6 @@ const NextHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
-  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -709,50 +705,51 @@ const NextHeader = () => {
     <>
       <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
         <HeaderContent $isScrolled={isScrolled}>
-          <Link href="/" passHref legacyBehavior>
-            <a 
-              onClick={playSound} 
-              style={{ 
-                textDecoration: "none",
-                position: "relative"
-              }}
-              onMouseDown={(e) => {
-                // Create ripple element at the body level rather than within the logo
-                const circle = document.createElement("span");
-                // Reduce the diameter to make the ripple smaller
-                const diameter = Math.max(window.innerWidth, window.innerHeight) * 0.6;
-                
-                // Get the click position relative to the viewport
-                const logoRect = e.currentTarget.getBoundingClientRect();
-                const clickX = logoRect.left + (logoRect.width / 2);
-                const clickY = logoRect.top + (logoRect.height / 2);
+          <span
+            onClick={playSound}
+            style={{
+              textDecoration: "none",
+              position: "relative",
+              cursor: "pointer",
+            }}
+            onMouseDown={(e) => {
+              // Create ripple element at the body level rather than within the logo
+              const circle = document.createElement("span");
+              // Reduce the diameter to make the ripple smaller
+              const diameter =
+                Math.max(window.innerWidth, window.innerHeight) * 0.6;
 
-                // Position the ripple absolutely on the page
-                circle.style.position = "fixed";
-                circle.style.top = `${clickY - diameter / 2}px`;
-                circle.style.left = `${clickX - diameter / 2}px`;
-                circle.style.width = circle.style.height = `${diameter}px`;
-                circle.style.background = "rgba(108, 99, 255, 0.05)";
-                circle.style.borderRadius = "50%";
-                circle.style.transform = "scale(0)";
-                circle.style.animation = "ripple 1.2s ease-out forwards";
-                circle.style.zIndex = "2000"; // Below header (3000) but above other content
-                circle.style.pointerEvents = "none"; // Make sure it doesn't block clicks
+              // Get the click position relative to the viewport
+              const logoRect = e.currentTarget.getBoundingClientRect();
+              const clickX = logoRect.left + logoRect.width / 2;
+              const clickY = logoRect.top + logoRect.height / 2;
 
-                // Append to body instead of logo element for full-page effect
-                document.body.appendChild(circle);
+              // Position the ripple absolutely on the page
+              circle.style.position = "fixed";
+              circle.style.top = `${clickY - diameter / 2}px`;
+              circle.style.left = `${clickX - diameter / 2}px`;
+              circle.style.width = circle.style.height = `${diameter}px`;
+              circle.style.background = "rgba(108, 99, 255, 0.05)";
+              circle.style.borderRadius = "50%";
+              circle.style.transform = "scale(0)";
+              circle.style.animation = "ripple 1.2s ease-out forwards";
+              circle.style.zIndex = "2000"; // Below header (3000) but above other content
+              circle.style.pointerEvents = "none"; // Make sure it doesn't block clicks
 
-                setTimeout(() => {
-                  circle.remove();
-                }, 1200);
-              }}
-            >
-              <LogoText>
-                <EnergyBall size="32px" marginRight="8px" />
-                <span className="cyma">CYMA</span><span className="sphere">SPHERE</span>
-              </LogoText>
-            </a>
-          </Link>
+              // Append to body instead of logo element for full-page effect
+              document.body.appendChild(circle);
+
+              setTimeout(() => {
+                circle.remove();
+              }, 1200);
+            }}
+          >
+            <LogoText>
+              <EnergyBall size="32px" marginRight="8px" />
+              <span className="cyma">CYMA</span>
+              <span className="sphere">SPHERE</span>
+            </LogoText>
+          </span>
 
           <Nav>
             {navItems.map((item) => (

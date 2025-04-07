@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
