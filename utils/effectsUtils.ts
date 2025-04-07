@@ -3,27 +3,41 @@
  */
 import * as Tone from "tone";
 
+// Define the type for the effects chain object
+export interface EffectsChain {
+  reverb: Tone.Reverb;
+  compressor: Tone.Compressor;
+  limiter: Tone.Limiter;
+  chorus: Tone.Chorus;
+  delay: Tone.PingPongDelay;
+  stereoWidener: Tone.StereoWidener;
+  softClipper: Tone.Distortion;
+  masterVolume: Tone.Volume;
+  getEffect: (
+    name: keyof Omit<EffectsChain, "getEffect">
+  ) => Tone.ToneAudioNode | undefined;
+}
+
 /**
  * Initializes a complete effects chain for audio processing
- * @param {Object} effects - Optional effects configuration
- * @param {Object} Tone - The Tone.js library object
- * @returns {Promise<Object>} Promise resolving to the effects chain object
+ * @param {typeof Tone | null} toneLib - The Tone.js library object instance
+ * @returns {Promise<EffectsChain>} Promise resolving to the effects chain object
  */
-export const initializeEffectsChain = async (effects = {}, Tone = null) => {
+export const initializeEffectsChain = async (
+  toneLib: typeof Tone | null = null
+): Promise<EffectsChain> => {
   // Use imported Tone library instance or throw an error if not provided
-  if (!Tone) {
+  if (!toneLib) {
     throw new Error("Tone library must be passed as a parameter");
   }
 
-  const ToneLib = Tone;
-
   // Create a master volume control at the end of the chain
-  const masterVolume = new ToneLib.Volume(-6).toDestination();
+  const masterVolume = new toneLib.Volume(-6).toDestination();
 
   // Master effects chain with stronger limiting to prevent distortion
-  const masterLimiter = new ToneLib.Limiter(-4).connect(masterVolume);
+  const masterLimiter = new toneLib.Limiter(-4).connect(masterVolume);
 
-  const masterCompressor = new ToneLib.Compressor({
+  const masterCompressor = new toneLib.Compressor({
     ratio: 4, // Less aggressive ratio
     threshold: -24,
     release: 0.25,
@@ -32,28 +46,28 @@ export const initializeEffectsChain = async (effects = {}, Tone = null) => {
   }).connect(masterLimiter);
 
   // Add a soft clipper before the compressor for smoother saturation instead of hard clipping
-  const softClipper = new ToneLib.Distortion({
+  const softClipper = new toneLib.Distortion({
     distortion: 0.1, // Reduced distortion
     wet: 0.2, // Less wet signal
     oversample: "4x",
   }).connect(masterCompressor);
 
   // Create a shared reverb that will be used by all synths
-  const sharedReverb = new ToneLib.Reverb({
+  const sharedReverb = new toneLib.Reverb({
     decay: 10,
     preDelay: 0.1,
     wet: 0.6,
   }).connect(softClipper);
 
   // Create a shared delay effect
-  const sharedDelay = new ToneLib.PingPongDelay({
+  const sharedDelay = new toneLib.PingPongDelay({
     delayTime: "8n",
     feedback: 0.4,
     wet: 0.3,
   }).connect(sharedReverb);
 
   // Create a shared chorus effect
-  const sharedChorus = new ToneLib.Chorus({
+  const sharedChorus = new toneLib.Chorus({
     frequency: 1.5,
     delayTime: 3.5,
     depth: 0.7,
@@ -65,13 +79,13 @@ export const initializeEffectsChain = async (effects = {}, Tone = null) => {
     .connect(sharedDelay);
 
   // Create a shared stereo widener
-  const stereoWidener = new ToneLib.StereoWidener(0.7).connect(sharedChorus);
+  const stereoWidener = new toneLib.StereoWidener(0.7).connect(sharedChorus);
 
   // Wait for reverb to generate its impulse response
   await sharedReverb.generate();
 
   // Return the effects chain
-  return {
+  const chain: EffectsChain = {
     reverb: sharedReverb,
     compressor: masterCompressor,
     limiter: masterLimiter,
@@ -82,26 +96,38 @@ export const initializeEffectsChain = async (effects = {}, Tone = null) => {
     masterVolume: masterVolume, // Add master volume to the chain
 
     // Method to get a specific effect
-    getEffect: function (name) {
-      return this[name];
+    getEffect: function (
+      name: keyof Omit<EffectsChain, "getEffect">
+    ): Tone.ToneAudioNode | undefined {
+      // Type assertion needed because Object.values loses type info
+      const effect = (this as EffectsChain)[name] as Tone.ToneAudioNode;
+      return effect;
     },
   };
+  return chain;
 };
 
 /**
  * Disposes of an effects chain and its components
- * @param {Object} effectsChain - Effects chain to dispose
+ * @param {EffectsChain | null | undefined} effectsChain - Effects chain to dispose
  */
-export const disposeEffectsChain = (effectsChain) => {
+export const disposeEffectsChain = (
+  effectsChain: EffectsChain | null | undefined
+) => {
   if (!effectsChain) return;
 
-  // Clean up effects
-  Object.values(effectsChain).forEach((effect) => {
-    if (effect && typeof effect === "object" && effect.dispose) {
+  // Clean up effects - Iterate over known keys to preserve type safety
+  const effectKeys = Object.keys(effectsChain).filter(
+    (key) => key !== "getEffect"
+  ) as Array<keyof Omit<EffectsChain, "getEffect">>;
+
+  effectKeys.forEach((key) => {
+    const effect = effectsChain[key];
+    if (effect && typeof effect.dispose === "function") {
       try {
         effect.dispose();
       } catch (e) {
-        console.warn("Error disposing effect:", e);
+        console.warn(`Error disposing effect '${key}':`, e);
       }
     }
   });

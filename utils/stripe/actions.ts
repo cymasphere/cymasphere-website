@@ -96,7 +96,7 @@ export async function getPrices(): Promise<{
       expand: ["data.coupon"],
     });
 
-    console.log(JSON.stringify(promotions));
+    // console.log(JSON.stringify(promotions));
 
     // Find the best applicable discount
     // Get the first active promotion with the highest percent_off or amount_off

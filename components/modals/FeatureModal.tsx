@@ -7,11 +7,31 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
-  FaCheck,
   FaInfoCircle,
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
 import LoadingComponent from "../common/LoadingComponent";
+
+// Interfaces for styled-component props
+interface FeatureImageProps {
+  imgSrc?: string | null;
+}
+
+interface InfoFeatureImageProps {
+  imgSrc?: string | null;
+}
+
+interface ContentOverlayProps {
+  $visible: boolean;
+}
+
+interface IndicatorDotProps {
+  $active: boolean;
+}
+
+interface SwipeIndicatorProps {
+  $visible: boolean;
+}
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -311,7 +331,7 @@ const ImageContainer = styled.div`
   }
 `;
 
-const FeatureImage = styled.div`
+const FeatureImage = styled.div<FeatureImageProps>`
   width: 100%;
   height: 100%;
   background-color: transparent;
@@ -344,7 +364,7 @@ const FeatureImage = styled.div`
   `}
 `;
 
-const ContentOverlay = styled.div`
+const ContentOverlay = styled.div<ContentOverlayProps>`
   position: absolute;
   top: 0;
   left: 0;
@@ -455,7 +475,7 @@ const InfoImageContainer = styled.div`
   }
 `;
 
-const InfoFeatureImage = styled.div`
+const InfoFeatureImage = styled.div<InfoFeatureImageProps>`
   width: 100%;
   height: 100%;
   background-color: transparent;
@@ -704,7 +724,7 @@ const ProgressIndicator = styled.div`
   }
 `;
 
-const IndicatorDot = styled.button`
+const IndicatorDot = styled.button<IndicatorDotProps>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -729,7 +749,9 @@ const IndicatorDot = styled.button`
 `;
 
 // Helper function to safely parse HTML content
-const parseHtml = (htmlContent) => {
+const parseHtml = (
+  htmlContent: string | React.ReactElement
+): React.ReactNode => {
   // If the content is already a React element, return it
   if (React.isValidElement(htmlContent)) {
     return htmlContent;
@@ -783,42 +805,6 @@ const parseHtml = (htmlContent) => {
   return "";
 };
 
-// Helper function to extract key features
-const extractKeyFeatures = (detailedDescription) => {
-  if (!detailedDescription) return [];
-
-  // If there's a ul element, extract its contents
-  if (detailedDescription?.props?.children) {
-    const ulElement = Array.isArray(detailedDescription.props.children)
-      ? detailedDescription.props.children.find((child) => child.type === "ul")
-      : null;
-
-    if (ulElement && ulElement.props && ulElement.props.children) {
-      return Array.isArray(ulElement.props.children)
-        ? ulElement.props.children.map((li) =>
-            typeof li.props.children === "string"
-              ? li.props.children
-              : Array.isArray(li.props.children)
-              ? li.props.children
-                  .map((child) => (typeof child === "string" ? child : ""))
-                  .join("")
-              : ""
-          )
-        : [ulElement.props.children];
-    }
-  }
-
-  // If no ul element found, create some default features from the description
-  if (typeof detailedDescription === "string") {
-    const sentences = detailedDescription.split(".");
-    return sentences
-      .filter((s) => s.trim().length > 20 && s.trim().length < 100)
-      .slice(0, 3);
-  }
-
-  return [];
-};
-
 // Add this new component for better image debugging
 const ImageDebug = styled.div`
   position: absolute;
@@ -833,23 +819,8 @@ const ImageDebug = styled.div`
   opacity: 0.7;
 `;
 
-// Feature descriptions object for detailed content
-const featureDescriptions = {
-  "Advanced Voice Handling": `<h3>Advanced Voice Handling</h3>
-    <p>Take complete control over your chord voicings with our sophisticated voice leading system, designed to give you both precise control and intelligent automation.</p>
-    <ul>
-      <li><strong>Intelligent Voice Leading</strong> - Automatically generate smooth transitions between chords that follow proper voice leading principles.</li>
-      <li><strong>Custom Voice Assignments</strong> - Manually assign specific notes to each voice for complete control over your harmonic expression.</li>
-      <li><strong>Voice Range Controls</strong> - Define upper and lower limits for each voice to ensure playability and optimal sound for your target instruments.</li>
-      <li><strong>Voice Motion Rules</strong> - Apply classical voice leading rules like avoiding parallel fifths or controlling voice crossing between parts.</li>
-      <li><strong>Multi-Instrument Voicing</strong> - Distribute voices across different instrument groups with intelligent orchestration suggestions.</li>
-      <li><strong>Style-Based Voicing Templates</strong> - Apply genre-specific voicing patterns like jazz, classical, or pop with a single click.</li>
-    </ul>
-    <p>Perfect for composers and songwriters looking for both intuitive control and professional results without requiring extensive music theory knowledge.</p>`,
-};
-
 // Function to get image path based on feature title
-const getImagePath = (title) => {
+const getImagePath = (title: string): string | null => {
   if (!title) return null;
 
   // Explicitly use absolute paths with the public URL
@@ -876,13 +847,13 @@ const getImagePath = (title) => {
     `${publicUrl}/images/voicing_view.png`,
   ];
 
-  let imagePath = titleToImage[title];
+  let imagePath = titleToImage[title as keyof typeof titleToImage]; // Add type assertion
 
   // If no specific image is found, use a fallback based on the title's hash
   if (!imagePath) {
     const hash = title
       .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0); // Add types for reduce
     imagePath = fallbackImages[hash % fallbackImages.length];
     console.log(
       `No specific image for "${title}", using fallback: ${imagePath}`
@@ -895,7 +866,7 @@ const getImagePath = (title) => {
 };
 
 // Add a visual feedback indicator for swipe actions on mobile
-const SwipeIndicator = styled.div`
+const SwipeIndicator = styled.div<SwipeIndicatorProps>`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -935,9 +906,30 @@ const LoadingWrapper = styled.div`
   transform: translate(-50%, -50%);
 `;
 
-const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
+// Define Feature interface
+interface Feature {
+  title: string;
+  detailedDescription?: string | React.ReactElement;
+  image?: string;
+  // Add any other properties a feature might have
+}
+
+// Define props for FeatureModal
+interface FeatureModalProps {
+  features: Feature[];
+  initialIndex?: number;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const FeatureModal: React.FC<FeatureModalProps> = ({
+  features,
+  initialIndex = 0,
+  isOpen,
+  onClose,
+}) => {
   // Find the Advanced Voice Handling feature and update its description before rendering
-  const updatedFeatures = features.map((feature) => {
+  const updatedFeatures: Feature[] = features.map((feature: Feature) => {
     if (feature.title === "Advanced Voice Handling") {
       return {
         ...feature,
@@ -963,18 +955,16 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-  const [imagesLoaded, setImagesLoaded] = useState({});
-  const [imageErrors, setImageErrors] = useState({});
+  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({}); // Typed state
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({}); // Typed state
   const [debugMode, setDebugMode] = useState(false);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const [swipeDirection, setSwipeDirection] = useState(null);
-  const modalRef = useRef(null);
-  const containerRef = useRef(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null); // Typed state
+  const [touchEnd, setTouchEnd] = useState<number | null>(null); // Typed state
+  const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(
+    null
+  ); // Typed state
+  const modalRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
@@ -998,30 +988,20 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   // Enhanced touch handlers with visual feedback
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Typed event
     setTouchStart(e.targetTouches[0].clientX);
     setSwipeDirection(null);
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Typed event
     const currentTouch = e.targetTouches[0].clientX;
     setTouchEnd(currentTouch);
 
-    if (touchStart && currentTouch) {
+    if (touchStart !== null && currentTouch !== null) {
+      // Check for null
       const diff = touchStart - currentTouch;
       if (diff > 30) {
         setSwipeDirection("left");
@@ -1086,7 +1066,8 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
 
   // Toggle debug mode with Shift + D
   useEffect(() => {
-    const handleDebugToggle = (e) => {
+    const handleDebugToggle = (e: KeyboardEvent) => {
+      // Typed event
       if (e.shiftKey && e.key === "D") {
         setDebugMode((prev) => !prev);
       }
@@ -1124,7 +1105,7 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
   }, [direction, currentIndex]);
 
   const handleKeyDown = useCallback(
-    (e) => {
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "ArrowRight") {
         handleNext();
       } else if (e.key === "ArrowLeft") {
@@ -1136,21 +1117,13 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
     [handleNext, handlePrevious, onClose]
   );
 
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    }
-  }, [isOpen, handleKeyDown]);
-
-  const handleDotClick = (index) => {
+  const handleDotClick = (index: number) => {
     setDirection(index > currentIndex ? 1 : -1);
     setCurrentIndex(index);
   };
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Typed event
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -1162,26 +1135,11 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
 
   const currentFeature = updatedFeatures[currentIndex] || {};
   const { title, detailedDescription, image: featureImage } = currentFeature;
-  const keyFeatures = extractKeyFeatures(detailedDescription || "");
 
   // Use the provided image or get one based on title
   const imagePath = featureImage || getImagePath(title);
   const isImageLoaded = imagesLoaded[title] || false;
   const hasImageError = imageErrors[title] || false;
-
-  // We'll keep this function but won't use it for the FeatureImage background
-
-  const getFeatureColor = (index) => {
-    const colors = [
-      "#4A90E2", // Song Builder - Blue
-      "#50E3C2", // Harmony Palette - Teal
-      "#F5A623", // Pattern Editor - Orange
-      "#D0021B", // Voicing Generator - Red
-      "#9013FE", // Progression Timeline - Purple
-      "#7ED321", // Voice Handling - Green
-    ];
-    return colors[index % colors.length];
-  };
 
   return (
     <AnimatePresence>
@@ -1272,12 +1230,15 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                       </LoadingWrapper>
                     )}
                     <FeatureImage
-                      imgSrc={isImageLoaded ? imagePath : null}
+                      imgSrc={isImageLoaded ? imagePath : undefined} // Pass undefined instead of null if needed, or handle in styled-component
                       onClick={toggleInfo}
                       style={{ cursor: "pointer" }}
                     >
-                      {(!imagePath || hasImageError) &&
-                        features[currentIndex].title}
+                      {
+                        (!imagePath || hasImageError) &&
+                          features[currentIndex]
+                            ?.title /* Add optional chaining */
+                      }
                     </FeatureImage>
                   </ImageContainer>
 
@@ -1285,11 +1246,14 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
                     <ContentContainer>
                       <InfoImageContainer>
                         <InfoFeatureImage
-                          imgSrc={isImageLoaded ? imagePath : null}
+                          imgSrc={isImageLoaded ? imagePath : undefined} // Pass undefined instead of null if needed
                           onClick={toggleInfo}
                         >
-                          {(!imagePath || hasImageError) &&
-                            features[currentIndex].title}
+                          {
+                            (!imagePath || hasImageError) &&
+                              features[currentIndex]
+                                ?.title /* Add optional chaining */
+                          }
                         </InfoFeatureImage>
                       </InfoImageContainer>
 
@@ -1316,14 +1280,19 @@ const FeatureModal = ({ features, initialIndex = 0, isOpen, onClose }) => {
               </ControlButton>
 
               <ProgressIndicator>
-                {features.map((_, index) => (
-                  <IndicatorDot
-                    key={index}
-                    $active={index === currentIndex}
-                    onClick={() => handleDotClick(index)}
-                    aria-label={`Go to feature ${index + 1}`}
-                  />
-                ))}
+                {features.map(
+                  (
+                    _,
+                    index: number // Typed index
+                  ) => (
+                    <IndicatorDot
+                      key={index}
+                      $active={index === currentIndex}
+                      onClick={() => handleDotClick(index)}
+                      aria-label={`Go to feature ${index + 1}`}
+                    />
+                  )
+                )}
               </ProgressIndicator>
 
               <ControlButton

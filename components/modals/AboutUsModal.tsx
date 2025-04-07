@@ -256,17 +256,15 @@ const AboutUsContentSection = memo(() => (
   <AboutUsContent>
     <h3>Our Mission</h3>
     <p>
-      Cymasphere's mission is to bridge the gap between music theory and musical
-      creativity. We believe that theory should enhance and guide the creative
-      process, not constrain it. Our tools are designed to provide both guidance
-      and freedom, striking the perfect balance between inspiration and
-      compositional integrity.
+      {
+        "Cymasphere's mission is to bridge the gap between music theory and musical creativity. We believe that theory should enhance and guide the creative process, not constrain it. Our tools are designed to provide both guidance and freedom, striking the perfect balance between inspiration and compositional integrity."
+      }
     </p>
 
     <CompanyHighlight>
-      We're committed to empowering musicians of all skill levels by making
-      music theory intuitive, interactive, and inspiring. Our goal is to see
-      your creative vision flourish through better compositional tools.
+      {
+        "We're committed to empowering musicians of all skill levels by making music theory intuitive, interactive, and inspiring. Our goal is to see your creative vision flourish through better compositional tools."
+      }
     </CompanyHighlight>
 
     <h3>Our Story</h3>
@@ -320,8 +318,9 @@ const AboutUsContentSection = memo(() => (
 
     <h3>Our Values</h3>
     <p>
-      At Cymasphere, we're guided by a set of core values that shape everything
-      we do:
+      {
+        "At Cymasphere, we're guided by a set of core values that shape everything we do:"
+      }
     </p>
 
     <ul>
@@ -362,17 +361,16 @@ const AboutUsContentSection = memo(() => (
     </ol>
 
     <p>
-      We're constantly refining our approach based on user feedback and the
-      latest developments in music technology. We believe in creating tools that
-      grow with you and adapt to your evolving creative needs.
+      {
+        "We're constantly refining our approach based on user feedback and the latest developments in music technology. We believe in creating tools that grow with you and adapt to your evolving creative needs."
+      }
     </p>
 
     <h3>Looking Forward</h3>
     <p>
-      As we continue to develop Cymasphere, we're excited about the future of
-      music creation. Our roadmap includes advanced integration with major DAWs,
-      expanded harmonic palettes, deeper AI-assisted composition features, and
-      much more.
+      {
+        "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more."
+      }
     </p>
 
     <p>
@@ -382,7 +380,15 @@ const AboutUsContentSection = memo(() => (
   </AboutUsContent>
 ));
 
-const AboutUsModal = ({ isOpen, onClose }) => {
+// Add display name to memoized component
+AboutUsContentSection.displayName = "AboutUsContentSection";
+
+interface AboutUsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -398,7 +404,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
