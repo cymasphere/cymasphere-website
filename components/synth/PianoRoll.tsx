@@ -277,7 +277,13 @@ const PianoRoll: React.FC<PianoRollProps> = ({
 
   // Render the playhead with improved animations
   const renderPlayhead = () => {
-    if (!(playbackPosition >= 0 || externalPlaybackPosition >= 0)) return null;
+    if (
+      !(
+        playbackPosition >= 0 ||
+        (externalPlaybackPosition !== null && externalPlaybackPosition >= 0)
+      )
+    )
+      return null;
 
     return (
       <div style={playheadStyle}>

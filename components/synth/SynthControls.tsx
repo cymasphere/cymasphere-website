@@ -17,7 +17,11 @@ const ControlTabs = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
-const TabButton = styled.button`
+interface TabButtonProps {
+  $active?: boolean;
+}
+
+const TabButton = styled.button<TabButtonProps>`
   padding: 10px 20px;
   background-color: transparent;
   color: var(--text);
@@ -92,7 +96,17 @@ const tabVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-const SynthControls = ({
+interface SynthControlsProps {
+  selectedSynth: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  synth: any; // Would ideally be a more specific type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  effectsChain: any; // Would ideally be a more specific type
+  updateSynthParam: (synth: string, param: string, value: number) => void;
+  updateEffectParam: (effect: string, param: string, value: number) => void;
+}
+
+const SynthControls: React.FC<SynthControlsProps> = ({
   selectedSynth,
   synth,
   effectsChain,
@@ -146,15 +160,19 @@ const SynthControls = ({
   });
 
   // Update local state when a synth parameter changes
-  const handleSynthParamChange = (param, value) => {
+  const handleSynthParamChange = (param: string, value: number) => {
     setSynthParams((prev) => ({ ...prev, [param]: value }));
     if (updateSynthParam) {
-      updateSynthParam(selectedSynth, param, parseFloat(value));
+      updateSynthParam(selectedSynth, param, parseFloat(value.toString()));
     }
   };
 
   // Update local state when an effect parameter changes
-  const handleEffectParamChange = (effect, param, value) => {
+  const handleEffectParamChange = (
+    effect: string,
+    param: string,
+    value: number
+  ) => {
     setEffectParams((prev) => ({
       ...prev,
       [param]: value,
@@ -265,7 +283,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.polyVolume}
                   onChange={(e) =>
-                    handleSynthParamChange("polyVolume", e.target.value)
+                    handleSynthParamChange(
+                      "polyVolume",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -281,7 +302,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.polyDetune}
                   onChange={(e) =>
-                    handleSynthParamChange("polyDetune", e.target.value)
+                    handleSynthParamChange(
+                      "polyDetune",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -297,7 +321,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.polyAttack}
                   onChange={(e) =>
-                    handleSynthParamChange("polyAttack", e.target.value)
+                    handleSynthParamChange(
+                      "polyAttack",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -313,7 +340,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.polyDecay}
                   onChange={(e) =>
-                    handleSynthParamChange("polyDecay", e.target.value)
+                    handleSynthParamChange(
+                      "polyDecay",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -329,7 +359,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.polySustain}
                   onChange={(e) =>
-                    handleSynthParamChange("polySustain", e.target.value)
+                    handleSynthParamChange(
+                      "polySustain",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -345,7 +378,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.polyRelease}
                   onChange={(e) =>
-                    handleSynthParamChange("polyRelease", e.target.value)
+                    handleSynthParamChange(
+                      "polyRelease",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -366,7 +402,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.fmVolume}
                   onChange={(e) =>
-                    handleSynthParamChange("fmVolume", e.target.value)
+                    handleSynthParamChange(
+                      "fmVolume",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -382,7 +421,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.fmModulationIndex}
                   onChange={(e) =>
-                    handleSynthParamChange("fmModulationIndex", e.target.value)
+                    handleSynthParamChange(
+                      "fmModulationIndex",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -398,7 +440,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.fmHarmonicity}
                   onChange={(e) =>
-                    handleSynthParamChange("fmHarmonicity", e.target.value)
+                    handleSynthParamChange(
+                      "fmHarmonicity",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -414,7 +459,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.fmAttack}
                   onChange={(e) =>
-                    handleSynthParamChange("fmAttack", e.target.value)
+                    handleSynthParamChange(
+                      "fmAttack",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -430,7 +478,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.fmDecay}
                   onChange={(e) =>
-                    handleSynthParamChange("fmDecay", e.target.value)
+                    handleSynthParamChange(
+                      "fmDecay",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -446,7 +497,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.fmSustain}
                   onChange={(e) =>
-                    handleSynthParamChange("fmSustain", e.target.value)
+                    handleSynthParamChange(
+                      "fmSustain",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -462,7 +516,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.fmRelease}
                   onChange={(e) =>
-                    handleSynthParamChange("fmRelease", e.target.value)
+                    handleSynthParamChange(
+                      "fmRelease",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -483,7 +540,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.padVolume}
                   onChange={(e) =>
-                    handleSynthParamChange("padVolume", e.target.value)
+                    handleSynthParamChange(
+                      "padVolume",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -499,7 +559,10 @@ const SynthControls = ({
                   step="1"
                   value={synthParams.padDetune}
                   onChange={(e) =>
-                    handleSynthParamChange("padDetune", e.target.value)
+                    handleSynthParamChange(
+                      "padDetune",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -515,7 +578,10 @@ const SynthControls = ({
                   step="100"
                   value={synthParams.padFilterFreq}
                   onChange={(e) =>
-                    handleSynthParamChange("padFilterFreq", e.target.value)
+                    handleSynthParamChange(
+                      "padFilterFreq",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -531,7 +597,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.padAttack}
                   onChange={(e) =>
-                    handleSynthParamChange("padAttack", e.target.value)
+                    handleSynthParamChange(
+                      "padAttack",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -547,7 +616,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.padDecay}
                   onChange={(e) =>
-                    handleSynthParamChange("padDecay", e.target.value)
+                    handleSynthParamChange(
+                      "padDecay",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -563,7 +635,10 @@ const SynthControls = ({
                   step="0.01"
                   value={synthParams.padSustain}
                   onChange={(e) =>
-                    handleSynthParamChange("padSustain", e.target.value)
+                    handleSynthParamChange(
+                      "padSustain",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -579,7 +654,10 @@ const SynthControls = ({
                   step="0.1"
                   value={synthParams.padRelease}
                   onChange={(e) =>
-                    handleSynthParamChange("padRelease", e.target.value)
+                    handleSynthParamChange(
+                      "padRelease",
+                      parseFloat(e.target.value)
+                    )
                   }
                 />
               </ControlGroup>
@@ -610,7 +688,7 @@ const SynthControls = ({
                 handleEffectParamChange(
                   "masterVolume",
                   "volume",
-                  e.target.value
+                  parseFloat(e.target.value)
                 )
               }
             />
@@ -628,7 +706,11 @@ const SynthControls = ({
               step="0.5"
               value={effectParams.reverbDecay}
               onChange={(e) =>
-                handleEffectParamChange("reverb", "Decay", e.target.value)
+                handleEffectParamChange(
+                  "reverb",
+                  "Decay",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -644,7 +726,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.reverbPreDelay}
               onChange={(e) =>
-                handleEffectParamChange("reverb", "PreDelay", e.target.value)
+                handleEffectParamChange(
+                  "reverb",
+                  "PreDelay",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -661,7 +747,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.reverbWet}
               onChange={(e) =>
-                handleEffectParamChange("reverb", "Wet", e.target.value)
+                handleEffectParamChange(
+                  "reverb",
+                  "Wet",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -678,7 +768,11 @@ const SynthControls = ({
               step="0.05"
               value={effectParams.delayTime}
               onChange={(e) =>
-                handleEffectParamChange("delay", "Time", e.target.value)
+                handleEffectParamChange(
+                  "delay",
+                  "Time",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -695,7 +789,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.delayFeedback}
               onChange={(e) =>
-                handleEffectParamChange("delay", "Feedback", e.target.value)
+                handleEffectParamChange(
+                  "delay",
+                  "Feedback",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -711,7 +809,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.delayWet}
               onChange={(e) =>
-                handleEffectParamChange("delay", "Wet", e.target.value)
+                handleEffectParamChange(
+                  "delay",
+                  "Wet",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -728,7 +830,11 @@ const SynthControls = ({
               step="0.1"
               value={effectParams.chorusFrequency}
               onChange={(e) =>
-                handleEffectParamChange("chorus", "Frequency", e.target.value)
+                handleEffectParamChange(
+                  "chorus",
+                  "Frequency",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -745,7 +851,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.chorusDepth}
               onChange={(e) =>
-                handleEffectParamChange("chorus", "Depth", e.target.value)
+                handleEffectParamChange(
+                  "chorus",
+                  "Depth",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -762,7 +872,11 @@ const SynthControls = ({
               step="0.01"
               value={effectParams.chorusWet}
               onChange={(e) =>
-                handleEffectParamChange("chorus", "Wet", e.target.value)
+                handleEffectParamChange(
+                  "chorus",
+                  "Wet",
+                  parseFloat(e.target.value)
+                )
               }
             />
           </ControlGroup>
@@ -783,7 +897,7 @@ const SynthControls = ({
                 handleEffectParamChange(
                   "stereoWidener",
                   "Width",
-                  e.target.value
+                  parseFloat(e.target.value)
                 )
               }
             />

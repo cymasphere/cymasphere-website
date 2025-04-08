@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -300,7 +300,41 @@ const NameFieldsContainer = styled.div`
   }
 `;
 
+// Create a separate client component for handling search params
+function SearchParamsHandler({
+  setRedirectAfterLogin,
+  setIsCheckoutComplete,
+}: {
+  setRedirectAfterLogin: (url: string) => void;
+  setIsCheckoutComplete: (value: boolean) => void;
+}) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const redirect = searchParams?.get("redirect");
+    if (redirect) {
+      setRedirectAfterLogin(redirect);
+    }
+
+    // Handle checkout complete param
+    if (searchParams?.get("checkout_complete") === "true") {
+      setIsCheckoutComplete(true);
+    }
+
+    // Handle email prefill from checkout
+    const email = searchParams?.get("email");
+    if (email) {
+      // We'll handle this in the parent component
+      window.sessionStorage.setItem("prefilled_email", email);
+    }
+  }, [searchParams, setRedirectAfterLogin, setIsCheckoutComplete]);
+
+  return null;
+}
+
 function SignUp() {
+  const { signUp, user } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -309,34 +343,36 @@ function SignUp() {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingState, setLoadingState] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState("");
+  const [isCheckoutComplete, setIsCheckoutComplete] = useState(false);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const auth = useAuth() || {};
-
-  // Force reset loading state if component unmounts
+  // Check if user is already logged in
   useEffect(() => {
-    return () => {
-      if (loading) {
-        console.log("Component unmounting while loading, forcing reset");
-        setLoading(false);
+    if (user) {
+      // Redirect to dashboard or home
+      if (redirectAfterLogin) {
+        router.push(redirectAfterLogin);
+      } else {
+        router.push("/dashboard");
       }
-    };
-  }, [loading]);
+    }
+  }, [user, router, redirectAfterLogin]);
 
-  // Handle email prefill from checkout
+  // Handle email prefill from checkout (stored in sessionStorage by SearchParamsHandler)
   useEffect(() => {
-    const email = searchParams.get("email");
+    const email = window.sessionStorage.getItem("prefilled_email");
     if (email) {
       setFormData((prev) => ({
         ...prev,
         email,
       }));
+      // Clear it after use
+      window.sessionStorage.removeItem("prefilled_email");
     }
-  }, [searchParams]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -368,14 +404,10 @@ function SignUp() {
     }
 
     try {
-      setLoading(true);
+      setLoadingState(true);
       // Combine first and last name for the API call
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const result = await auth.signUp(
-        fullName,
-        formData.email,
-        formData.password
-      );
+      const result = await signUp(fullName, formData.email, formData.password);
 
       if (result.error) {
         console.error("Sign up error:", result.error.message);
@@ -394,14 +426,19 @@ function SignUp() {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      setLoadingState(false);
     }
   };
 
-  const isCheckoutComplete = searchParams.get("checkout_complete") === "true";
-
   return (
     <AuthContainer>
+      <Suspense fallback={null}>
+        <SearchParamsHandler
+          setRedirectAfterLogin={setRedirectAfterLogin}
+          setIsCheckoutComplete={setIsCheckoutComplete}
+        />
+      </Suspense>
+
       <Link href="/" passHref legacyBehavior={false}>
         <BackButton>
           <FaArrowLeft /> Back to Home
@@ -575,13 +612,13 @@ function SignUp() {
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loadingState}
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
           >
             <ButtonContent>
-              {loading ? (
+              {loadingState ? (
                 <>
                   <div style={{ marginRight: "10px" }}>
                     <LoadingComponent size="20px" />
