@@ -285,8 +285,6 @@ export async function createCheckoutSession(
       }
     }
 
-    console.log(JSON.stringify(sessionConfig));
-
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return { url: session.url };
@@ -438,6 +436,8 @@ export async function customerPurchasedPro(
       }
     }
 
+    console.log("charges", JSON.stringify(charges, null, 2));
+
     if (oneTimePurchase) {
       return {
         success: true,
@@ -448,8 +448,10 @@ export async function customerPurchasedPro(
     // Check for subscription purchases
     const subscriptions = await stripe.subscriptions.list({
       customer: customer_id,
-      status: "active",
+      status: "all",
     });
+
+    console.log("subscriptions", JSON.stringify(subscriptions, null, 2));
 
     // Find if any subscription contains either of the subscription products
     let subscriptionType: SubscriptionType = "none";

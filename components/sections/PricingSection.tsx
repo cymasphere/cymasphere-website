@@ -20,6 +20,10 @@ import {
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
 import dynamic from "next/dynamic";
+// Import useAuth hook
+import { useAuth } from "@/contexts/AuthContext";
+// Import useRouter from next/navigation
+import { useRouter } from "next/navigation";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1562,6 +1566,10 @@ const TrialIcon = styled.span`
 `;
 
 const PricingSection = () => {
+  const router = useRouter();
+  // Get authentication context
+  const { user } = useAuth();
+
   // State to track the selected billing period
   const [billingPeriod, setBillingPeriod] = useState<PlanType>("monthly");
   const [checkoutLoading, setCheckoutLoading] = useState<
@@ -1612,15 +1620,26 @@ const PricingSection = () => {
   const handleCheckout = async (collectPaymentMethod: boolean) => {
     if (!prices) return;
 
+    console.log("user", JSON.stringify(user, null, 2));
+    // If user is logged in and has Pro, redirect to dashboard instead of checkout
+    if (user && user.profile && user.profile.subscription !== "none") {
+      router.push("/dashboard");
+      return;
+    }
+
     setCheckoutLoading(collectPaymentMethod ? "long" : "short");
 
     try {
       const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
+      // Ensure customerId is a string or undefined, not null
+      const customerId = user?.profile?.customer_id || undefined;
+      // Make sure email is a string or undefined, not null
+      const userEmail = user?.email || undefined;
 
       const result = await initiateCheckout(
         billingPeriod,
-        undefined,
-        undefined,
+        userEmail,
+        customerId,
         promotionCode,
         collectPaymentMethod
       );
