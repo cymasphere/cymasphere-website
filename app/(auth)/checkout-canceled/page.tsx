@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -157,7 +157,8 @@ const getErrorMessage = (
   }
 };
 
-export default function CheckoutCanceled() {
+// Component that uses useSearchParams
+function CheckoutCanceledContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -196,7 +197,7 @@ export default function CheckoutCanceled() {
       >
         <CancelIcon />
         <Title>Payment Not Completed</Title>
-        <Subtitle>We couldn't process your payment</Subtitle>
+        <Subtitle>We couldn&apos;t process your payment</Subtitle>
         <Message>
           Your payment was not completed successfully. This could be due to a
           cancellation or an error during processing.
@@ -213,5 +214,25 @@ export default function CheckoutCanceled() {
         <BackButton onClick={handleTryAgain}>Try Again</BackButton>
       </ContentContainer>
     </PageContainer>
+  );
+}
+
+// Loading fallback
+const LoadingFallback = () => {
+  return (
+    <PageContainer>
+      <ContentContainer>
+        <Title>Loading...</Title>
+      </ContentContainer>
+    </PageContainer>
+  );
+};
+
+// Main export with Suspense boundary
+export default function CheckoutCanceled() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CheckoutCanceledContent />
+    </Suspense>
   );
 }

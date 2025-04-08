@@ -1,11 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingComponent from "@/components/common/LoadingComponent";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -102,41 +101,6 @@ const Message = styled.p`
   color: var(--text-secondary);
 `;
 
-const DetailsList = styled.div`
-  background: rgba(30, 30, 30, 0.5);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2rem;
-  margin-bottom: 2rem;
-  width: 100%;
-  max-width: 600px;
-`;
-
-const DetailsItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-  &:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-`;
-
-const ItemLabel = styled.span`
-  font-weight: 600;
-  color: var(--text-secondary);
-`;
-
-const ItemValue = styled.span`
-  font-weight: 400;
-  color: var(--text);
-`;
-
 const BackButton = styled.button`
   padding: 12px 24px;
   background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -155,138 +119,18 @@ const BackButton = styled.button`
   }
 `;
 
-const ErrorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  padding: 0 2rem;
-  text-align: center;
-`;
-
-const ErrorTitle = styled.h1`
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: var(--error);
-`;
-
-const ErrorMessage = styled.p`
-  font-size: 1.2rem;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-  max-width: 800px;
-  color: var(--text-secondary);
-`;
-
-type SessionData = {
-  id: string;
-  customerEmail: string | null;
-  customerId: string | null;
-  isExistingUser: boolean;
-};
-
-export default function CheckoutSuccess() {
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Extract data from URL parameters
-    const sessionId = searchParams?.get("session_id");
-    const userExists = searchParams?.get("user_exists") === "true";
-    const email = searchParams?.get("email");
-    const customerId = searchParams?.get("customer_id");
-
-    if (!sessionId) {
-      setError("Missing session ID. Please check your URL.");
-      setLoading(false);
-      return;
-    }
-
-    // Set session data from URL parameters
-    setSessionData({
-      id: sessionId,
-      customerEmail: email,
-      customerId: customerId,
-      isExistingUser: userExists,
-    });
-
-    setLoading(false);
-  }, [searchParams]);
+  const isSignedUp = searchParams.get("isSignedUp") === "true";
 
   const handleContinue = () => {
-    if (sessionData?.isExistingUser) {
-      router.push("/dashboard");
+    if (isSignedUp) {
+      router.push("/downloads");
     } else {
-      // Include customer ID in the URL for easier signup association
-      router.push(
-        `/signup?email=${encodeURIComponent(
-          sessionData?.customerEmail || ""
-        )}&customer_id=${encodeURIComponent(
-          sessionData?.customerId || ""
-        )}&checkout_complete=true`
-      );
+      router.push("/signup");
     }
   };
-
-  if (loading) {
-    return (
-      <PageContainer>
-        <HeaderNav>
-          <HeaderContent>
-            <CymasphereLogo
-              size="40px"
-              fontSize="1.8rem"
-              href="/"
-              onClick={() => {}}
-              className=""
-              showText={true}
-            />
-          </HeaderContent>
-        </HeaderNav>
-        <div
-          style={{
-            height: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <LoadingComponent fullScreen text="Processing your payment..." />
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <PageContainer>
-        <HeaderNav>
-          <HeaderContent>
-            <CymasphereLogo
-              size="40px"
-              fontSize="1.8rem"
-              href="/"
-              onClick={() => {}}
-              className=""
-              showText={true}
-            />
-          </HeaderContent>
-        </HeaderNav>
-        <ErrorContainer>
-          <ErrorTitle>Oops! Something went wrong</ErrorTitle>
-          <ErrorMessage>{error}</ErrorMessage>
-          <BackButton onClick={() => router.push("/#pricing")}>
-            Return to Pricing
-          </BackButton>
-        </ErrorContainer>
-      </PageContainer>
-    );
-  }
 
   return (
     <PageContainer>
@@ -312,40 +156,23 @@ export default function CheckoutSuccess() {
         <Title>Payment Successful!</Title>
         <Subtitle>Thank you for your purchase</Subtitle>
         <Message>
-          {sessionData?.isExistingUser
-            ? "Your payment has been processed successfully. Click below to access your dashboard and start using Cymasphere Pro!"
-            : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account. Click below to set up your account with your purchase email."}
+          {isSignedUp
+            ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
+            : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
         </Message>
 
-        <DetailsList>
-          <DetailsItem>
-            <ItemLabel>Order ID:</ItemLabel>
-            <ItemValue>{sessionData?.id || "Processing..."}</ItemValue>
-          </DetailsItem>
-          <DetailsItem>
-            <ItemLabel>Status:</ItemLabel>
-            <ItemValue>Complete</ItemValue>
-          </DetailsItem>
-          <DetailsItem>
-            <ItemLabel>Email:</ItemLabel>
-            <ItemValue>
-              {sessionData?.customerEmail || "Not available"}
-            </ItemValue>
-          </DetailsItem>
-          {sessionData?.customerId && (
-            <DetailsItem>
-              <ItemLabel>Customer ID:</ItemLabel>
-              <ItemValue>{sessionData.customerId}</ItemValue>
-            </DetailsItem>
-          )}
-        </DetailsList>
-
-        <BackButton onClick={handleContinue} style={{ marginTop: "2rem" }}>
-          {sessionData?.isExistingUser
-            ? "Go to Dashboard"
-            : "Create Your Account"}
+        <BackButton onClick={handleContinue}>
+          {isSignedUp ? "Go to Downloads" : "Create Your Account"}
         </BackButton>
       </ContentContainer>
     </PageContainer>
+  );
+}
+
+export default function CheckoutSuccess() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

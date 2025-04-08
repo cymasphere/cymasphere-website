@@ -1,9 +1,9 @@
 "use server";
 
 import { type NextRequest } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -39,37 +39,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user exists with this customer ID in Supabase
-    let userExists = false;
-
+    // Check if a user exists with this customer ID
+    let isSignedUp = false;
     if (sessionResult.customerId) {
-      // Create supabase client
-      const supabase = await createClient();
+      try {
+        const supabase = await createClient();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select()
+          .eq("customer_id", sessionResult.customerId)
+          .maybeSingle();
 
-      // Query Supabase to check if a user profile exists with this customer ID
-      const { data, error: supabaseError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("customer_id", sessionResult.customerId)
-        .maybeSingle();
-
-      if (supabaseError) {
-        console.error("Supabase query error:", supabaseError);
-      } else if (data) {
-        userExists = true;
+        // If a profile was found, the user is signed up
+        isSignedUp = !!profile;
+      } catch (error) {
+        console.error("Error checking user profile:", error);
+        // Continue with isSignedUp = false on error
       }
     }
 
-    // Redirect to success page with all needed information
-    const successUrl = `/checkout-success?session_id=${sessionId}&user_exists=${userExists}`;
-
-    if (sessionResult.customerEmail) {
-      return redirect(
-        `${successUrl}&email=${encodeURIComponent(sessionResult.customerEmail)}`
-      );
-    }
-
-    return redirect(successUrl);
+    // Payment successful, redirect to success page with appropriate parameter
+    return redirect(`/checkout-success?isSignedUp=${isSignedUp}`);
   } catch (error) {
     console.error("Error processing checkout:", error);
     return redirect("/checkout-canceled?error=server_error");
