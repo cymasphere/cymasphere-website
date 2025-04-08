@@ -1,11 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { isBuildTime } from "@/utils/build-time-skip";
-import type { Profile } from "@/utils/supabase/types";
+"use server";
 
-// Next.js route configuration - this is allowed in Route Handlers (not in "use server")
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const fetchCache = 'force-no-store';
+import { NextResponse, type NextRequest } from "next/server";
+
+import { Profile } from "@/utils/supabase/types";
+import { createServerClient } from "@supabase/ssr";
+import { updateStripe } from "@/utils/supabase/actions";
 
 interface ProfileWithEmail extends Profile {
   email: string;
@@ -44,55 +43,24 @@ const err = (code: string, message: string): NextResponse<LoginResponse> => {
   });
 };
 
-// Function to return a mock response for build time
-function getMockResponse(): NextResponse<LoginResponse> {
-  console.log('Login API: Using mock response for build');
-  return NextResponse.json({
-    user: null,
-    access_token: null,
-    refresh_token: null,
-    expires_at: null,
-    error: { code: "mock_build", message: "This is a mock response during build" }
-  });
-}
+const supabase = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    cookies: {
+      getAll() {
+        return [];
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setAll(_cookiesToSet) {},
+    },
+  }
+);
 
-// The GET handler
-export async function GET(): Promise<NextResponse> {
-  return NextResponse.json({
-    user: null,
-    access_token: null,
-    refresh_token: null,
-    expires_at: null,
-    error: { code: "build_mock", message: "Static export for build process" }
-  });
-}
-
-// The main POST handler function
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
-  // If in build mode, return mock response without initializing Supabase
-  if (isBuildTime || process.env.NEXT_SUPABASE_MOCK === 'true') {
-    console.log('Login API: Build time detected, returning mock response');
-    return getMockResponse();
-  }
-
   try {
-    // Only import Supabase modules at runtime, not during build
-    const { createClient } = await import("@/utils/supabase/server");
-    const { updateStripe } = await import("@/utils/supabase/actions");
-    
-    // Initialize Supabase inside the request handler (only at runtime)
-    const supabase = await createClient();
-    
-    // Check if Supabase client is properly initialized
-    if (!supabase) {
-      return err(
-        "supabase_not_initialized",
-        "Authentication service is not available"
-      );
-    }
-
     const body = await request.formData();
 
     const email = body.get("email")?.toString();
@@ -160,7 +128,7 @@ export async function POST(
 
     return err("unexpected_failure", "An unexpected error occured");
   } catch (error) {
-    console.error('Login error:', error);
+    console.log(error);
     return err("unexpected_failure", "An unexpected error occured");
   }
 }
