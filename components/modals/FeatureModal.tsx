@@ -1013,6 +1013,23 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     }
   };
 
+  // Define these functions with useCallback before using them in useEffect
+  const handleNext = useCallback(() => {
+    // Prevent rapid multiple clicks
+    if (direction !== 0) return;
+
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % features.length);
+  }, [features.length, direction]);
+
+  const handlePrevious = useCallback(() => {
+    // Prevent rapid multiple clicks
+    if (direction !== 0) return;
+
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
+  }, [features.length, direction]);
+
   const handleSwipe = useCallback(() => {
     if (!touchStart || !touchEnd) return;
 
@@ -1076,23 +1093,6 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     window.addEventListener("keydown", handleDebugToggle);
     return () => window.removeEventListener("keydown", handleDebugToggle);
   }, []);
-
-  // Define these functions with useCallback before using them in useEffect
-  const handleNext = useCallback(() => {
-    // Prevent rapid multiple clicks
-    if (direction !== 0) return;
-
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % features.length);
-  }, [features.length, direction]);
-
-  const handlePrevious = useCallback(() => {
-    // Prevent rapid multiple clicks
-    if (direction !== 0) return;
-
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
-  }, [features.length, direction]);
 
   // Reset direction after animation completes
   useEffect(() => {

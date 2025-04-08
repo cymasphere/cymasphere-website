@@ -151,7 +151,11 @@ const ButtonContainer = styled.div`
   margin-top: 10px;
 `;
 
-const Button = styled.button`
+interface ButtonProps {
+  $primary?: boolean;
+}
+
+const Button = styled.button<ButtonProps>`
   padding: 12px 24px;
   background: ${(props) =>
     props.$primary
@@ -181,8 +185,26 @@ const MusicIcon = styled(FaMusic)`
   font-size: 1.1rem;
 `;
 
-const FinishModal = ({ isOpen, onClose, songName, trackName, t }) => {
-  const handleBackdropClick = (e) => {
+interface FinishModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  songName: string;
+  trackName: string;
+  t?: (
+    key: string,
+    fallback: string,
+    options?: Record<string, string>
+  ) => string;
+}
+
+const FinishModal: React.FC<FinishModalProps> = ({
+  isOpen,
+  onClose,
+  songName,
+  trackName,
+  t,
+}) => {
+  const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }

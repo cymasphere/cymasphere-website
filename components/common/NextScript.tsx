@@ -1,16 +1,26 @@
-import Script from 'next/script';
+import Script, { ScriptProps } from "next/script";
 
 /**
  * NextScript - A wrapper for Next.js Script component with default settings
  * Helps to optimize third-party script loading
  */
-const NextScript = ({ 
-  src, 
+interface NextScriptProps extends Omit<ScriptProps, "src" | "id" | "strategy"> {
+  src?: string;
+  id: string;
+  strategy?: "beforeInteractive" | "afterInteractive" | "lazyOnload" | "worker";
+  onLoad?: () => void;
+  onError?: () => void;
+  dangerouslySetInnerHTML?: { __html: string };
+  children?: React.ReactNode;
+}
+
+const NextScript: React.FC<NextScriptProps> = ({
+  src,
   id,
-  strategy = 'afterInteractive', // Options: beforeInteractive, afterInteractive, lazyOnload, worker
+  strategy = "afterInteractive", // Options: beforeInteractive, afterInteractive, lazyOnload, worker
   onLoad,
   onError,
-  ...props 
+  ...props
 }) => {
   return (
     <Script
@@ -24,8 +34,12 @@ const NextScript = ({
   );
 };
 
+interface GoogleAnalyticsProps {
+  id: string;
+}
+
 // Predefined script for Google Analytics
-export const GoogleAnalytics = ({ id }) => (
+export const GoogleAnalytics = ({ id }: GoogleAnalyticsProps) => (
   <>
     <NextScript
       id="ga-script-1"
@@ -47,8 +61,12 @@ export const GoogleAnalytics = ({ id }) => (
   </>
 );
 
+interface IntercomProps {
+  appId: string;
+}
+
 // Predefined script for Intercom
-export const Intercom = ({ appId }) => (
+export const Intercom = ({ appId }: IntercomProps) => (
   <NextScript
     id="intercom-script"
     strategy="lazyOnload"
@@ -63,4 +81,4 @@ export const Intercom = ({ appId }) => (
   />
 );
 
-export default NextScript; 
+export default NextScript;

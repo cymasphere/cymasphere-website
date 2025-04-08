@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { withNoSSR } from "../utils/dynamicImports";
+import { withNoSSR } from "@/utils/dynamicImports";
 
 const ErrorContainer = styled.div`
   display: flex;
@@ -49,33 +49,46 @@ const RetryButton = styled.button`
   }
 `;
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
+}
+
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log the error to an error reporting service
     console.error("ErrorBoundary caught an error", error, errorInfo);
     this.setState({ errorInfo });
 
-    // You can also log the error to an error reporting service
+    // You could also log the error to an error reporting service
     // logErrorToMyService(error, errorInfo);
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState({ hasError: false, error: null, errorInfo: null });
     // You could also add logic to reload data here
     window.location.reload();
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       // Render fallback UI
       return (

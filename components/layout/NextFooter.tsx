@@ -181,7 +181,7 @@ const NextFooter = () => {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const router = useRouter();
 
-  const handleLogoClick = (e) => {
+  const handleLogoClick = (e: React.MouseEvent) => {
     if (router.pathname === "/") {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -281,7 +281,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="/login"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               window.location.href = "/login";
             }}
@@ -291,7 +291,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="/signup"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               window.location.href = "/signup";
             }}
@@ -301,7 +301,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="/dashboard"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               window.location.href = "/dashboard";
             }}
@@ -311,7 +311,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="/profile"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               window.location.href = "/profile";
             }}
@@ -321,7 +321,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="/settings"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               window.location.href = "/settings";
             }}
@@ -335,7 +335,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="#"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               setShowAboutModal(true);
             }}
@@ -348,7 +348,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="#"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               setShowTermsModal(true);
             }}
@@ -358,7 +358,7 @@ const NextFooter = () => {
           <FooterLink
             as="a"
             href="#"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
               setShowPrivacyModal(true);
             }}
@@ -379,7 +379,7 @@ const NextFooter = () => {
         <LegalModal
           isOpen={showTermsModal}
           onClose={() => setShowTermsModal(false)}
-          type="terms"
+          modalType="terms"
         />
       )}
 
@@ -387,7 +387,7 @@ const NextFooter = () => {
         <LegalModal
           isOpen={showPrivacyModal}
           onClose={() => setShowPrivacyModal(false)}
-          type="privacy"
+          modalType="privacy"
         />
       )}
 

@@ -1,6 +1,6 @@
-import React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
+import React from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 /**
  * A wrapper around Next.js Link component that:
@@ -8,7 +8,23 @@ import { useRouter } from 'next/router';
  * 2. Prevents cancellation errors by properly handling navigation
  * 3. Provides consistent styling and behavior
  */
-const NextLink = ({
+interface NextLinkProps {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  passHref?: boolean;
+  scroll?: boolean;
+  target?: string;
+  rel?: string;
+  title?: string;
+  id?: string;
+  style?: React.CSSProperties;
+  shallow?: boolean;
+  prefetch?: boolean;
+}
+
+const NextLink: React.FC<NextLinkProps> = ({
   href,
   children,
   className,
@@ -18,10 +34,14 @@ const NextLink = ({
   ...props
 }) => {
   const router = useRouter();
-  const isExternal = href && (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:'));
+  const isExternal =
+    href &&
+    (href.startsWith("http") ||
+      href.startsWith("mailto:") ||
+      href.startsWith("tel:"));
 
   // Handle link clicks to avoid navigation cancellation issues
-  const handleClick = (e) => {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     // Allow the parent onClick to run first if it exists
     if (onClick) {
       onClick(e);
@@ -35,10 +55,10 @@ const NextLink = ({
     // For internal links, handle navigation via the router
     if (!isExternal && href) {
       e.preventDefault();
-      
+
       // Close any open mobile menus or other UI elements
       // This helps prevent rendering cancellations
-      
+
       // Use router.push for client-side navigation
       router.push(href);
     }
@@ -63,7 +83,13 @@ const NextLink = ({
 
   // Use Next's Link component for internal navigation
   return (
-    <Link href={href} passHref={passHref} scroll={scroll} legacyBehavior {...props}>
+    <Link
+      href={href}
+      passHref={passHref}
+      scroll={scroll}
+      legacyBehavior
+      {...props}
+    >
       <a className={className} onClick={handleClick}>
         {children}
       </a>
@@ -71,4 +97,4 @@ const NextLink = ({
   );
 };
 
-export default NextLink; 
+export default NextLink;

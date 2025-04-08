@@ -1,11 +1,11 @@
-import React from 'react';
-import dynamic from 'next/dynamic';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import Head from 'next/head';
-import NextFooter from './NextFooter';
+import React from "react";
+import dynamic from "next/dynamic";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import Head from "next/head";
+import NextFooter from "./NextFooter";
 
-const DynamicHeader = dynamic(() => import('./NextHeader'), { ssr: false });
+const DynamicHeader = dynamic(() => import("./NextHeader"), { ssr: false });
 
 const Main = styled.main`
   min-height: calc(100vh - 60px); // Adjust for footer height
@@ -28,29 +28,47 @@ const pageVariants = {
     transition: {
       duration: 0.4,
       ease: "easeInOut",
-    }
+    },
   },
   out: {
     opacity: 0,
     transition: {
       duration: 0.3,
       ease: "easeInOut",
-    }
-  }
+    },
+  },
 };
 
-const NextLayout = ({ children, title = 'CYMASPHERE - Sound Therapy & Brainwave Entertainment', showHeader = true, showFooter = true }) => {
+interface NextLayoutProps {
+  children: React.ReactNode;
+  title?: string;
+  showHeader?: boolean;
+  showFooter?: boolean;
+}
+
+const NextLayout: React.FC<NextLayoutProps> = ({
+  children,
+  title = "CYMASPHERE - Sound Therapy & Brainwave Entertainment",
+  showHeader = true,
+  showFooter = true,
+}) => {
   return (
     <>
       <Head>
         <title>{title}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <meta name="description" content="CYMASPHERE offers sound therapy and brainwave entertainment through advanced frequency technology. Experience immersive soundscapes designed to enhance meditation, focus, creativity, and relaxation." />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1"
+        />
+        <meta
+          name="description"
+          content="CYMASPHERE offers sound therapy and brainwave entertainment through advanced frequency technology. Experience immersive soundscapes designed to enhance meditation, focus, creativity, and relaxation."
+        />
       </Head>
-      
+
       <Main>
         {showHeader && <DynamicHeader />}
-        
+
         <ContentWrapper
           initial="initial"
           animate="in"
@@ -59,11 +77,11 @@ const NextLayout = ({ children, title = 'CYMASPHERE - Sound Therapy & Brainwave 
         >
           {children}
         </ContentWrapper>
-        
+
         {showFooter && <NextFooter />}
       </Main>
     </>
   );
 };
 
-export default NextLayout; 
+export default NextLayout;

@@ -192,7 +192,17 @@ const LegalContent = styled.div`
   }
 `;
 
-const LegalModal = ({ isOpen, onClose, modalType }) => {
+interface LegalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  modalType: "terms" | "privacy";
+}
+
+const LegalModal: React.FC<LegalModalProps> = ({
+  isOpen,
+  onClose,
+  modalType,
+}) => {
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -208,7 +218,7 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
     };
   }, [isOpen]);
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -236,7 +246,7 @@ const LegalModal = ({ isOpen, onClose, modalType }) => {
           <section>
             <h3>1. Acceptance of Terms</h3>
             <p>
-              By accessing or using Cymasphere's services, website, or
+              By accessing or using Cymasphere&apos;s services, website, or
               applications, you agree to be bound by these Terms of Service. If
               you do not agree to these terms, please do not use our services.
             </p>

@@ -119,13 +119,6 @@ const Title = styled(motion.h2)`
   }
 `;
 
-const Subtitle = styled.p`
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-`;
-
 const Form = styled.form`
   width: 100%;
 `;
@@ -310,21 +303,6 @@ const SpinnerIcon = styled(FaSpinner)`
     }
   }
 `;
-
-const formVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
 
 const buttonVariants = {
   hover: {

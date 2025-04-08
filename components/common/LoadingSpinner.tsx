@@ -1,19 +1,18 @@
 import React from "react";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import EnergyBall from "./EnergyBall";
 import CymasphereLogo from "./CymasphereLogo";
 
-// Pulse animation for the text
-const textPulse = keyframes`
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-`;
+// Define interfaces for styled-components props
+interface ContainerProps {
+  $fullScreen?: boolean;
+}
 
-const Container = styled.div`
+interface LoadingTextProps {
+  $size?: string;
+}
+
+const Container = styled.div<ContainerProps>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -34,7 +33,7 @@ const EnergyBallContainer = styled.div`
   margin-bottom: 30px;
 `;
 
-const LoadingText = styled.div`
+const LoadingText = styled.div<LoadingTextProps>`
   margin-top: 20px;
   color: var(--text-secondary);
   font-size: ${(props) =>
@@ -45,14 +44,17 @@ const LoadingText = styled.div`
       : "1.2rem"};
 `;
 
+// Define interface for component props
+interface LoadingSpinnerProps {
+  size?: "small" | "medium" | "large";
+  fullScreen?: boolean;
+  text?: string;
+}
+
 /**
  * Simplified loading spinner for the Cymasphere app
- * @param {Object} props - Component props
- * @param {string} props.size - Size of the spinner ('small', 'medium', 'large')
- * @param {boolean} props.fullScreen - Whether the spinner should take the full screen height
- * @param {string} props.text - Optional text to display below the spinner
  */
-const LoadingSpinner = ({
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "medium",
   fullScreen = false,
   text = "Loading...",

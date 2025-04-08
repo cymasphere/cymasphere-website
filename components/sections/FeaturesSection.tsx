@@ -8,7 +8,6 @@ import {
   FaWaveSquare,
   FaPuzzlePiece,
   FaLayerGroup,
-  FaRobot,
   FaVolumeUp,
   FaClock,
 } from "react-icons/fa";
@@ -190,7 +189,7 @@ const FeatureCard = styled(motion.div)`
 
 const cardVariants = {
   hidden: { opacity: 0, y: 50 },
-  visible: (i) => ({
+  visible: (i: number) => ({
     opacity: 1,
     y: 0,
     transition: {
@@ -337,7 +336,7 @@ const FeaturesSection = () => {
     []
   );
 
-  const openModal = (index) => {
+  const openModal = (index: number) => {
     setSelectedFeature(index);
     setModalOpen(true);
   };

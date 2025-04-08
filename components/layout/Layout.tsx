@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
-import dynamic from 'next/dynamic';
-import Footer from './Footer';
-import { motion } from 'framer-motion';
+import React from "react";
+import styled from "styled-components";
+import dynamic from "next/dynamic";
+import Footer from "./Footer";
+import { motion } from "framer-motion";
 
-const DynamicHeader = dynamic(() => import('./NextHeader'), { ssr: false });
+const DynamicHeader = dynamic(() => import("./NextHeader"), { ssr: false });
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -18,7 +18,7 @@ const Main = styled(motion.main)`
   display: flex;
   flex-direction: column;
   width: 100%;
-  
+
   /* Content within can set their own max-width if needed */
   > * {
     margin: 0 auto;
@@ -30,36 +30,35 @@ const Main = styled(motion.main)`
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 20
+    y: 20,
   },
   in: {
     opacity: 1,
     y: 0,
     transition: {
       duration: 0.4,
-      ease: [0.43, 0.13, 0.23, 0.96]
-    }
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
   },
   exit: {
     opacity: 0,
     y: -20,
     transition: {
       duration: 0.3,
-      ease: [0.43, 0.13, 0.23, 0.96]
-    }
-  }
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
+  },
 };
 
-const Layout = ({ children }) => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <LayoutWrapper>
       <DynamicHeader />
-      <Main
-        initial="initial"
-        animate="in"
-        exit="exit"
-        variants={pageVariants}
-      >
+      <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
         {children}
       </Main>
       <Footer />
@@ -67,4 +66,4 @@ const Layout = ({ children }) => {
   );
 };
 
-export default Layout; 
+export default Layout;

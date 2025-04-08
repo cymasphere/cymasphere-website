@@ -156,35 +156,6 @@ const pitchColors: Record<string, string> = {
   B: "#FFEB3B", // Yellow
 };
 
-// Function to calculate semitone distance between two notes
-const getSemitoneDistance = (note1: string, note2: string): number => {
-  const noteValues: Record<string, number> = {
-    C: 0,
-    "C#": 1,
-    D: 2,
-    "D#": 3,
-    E: 4,
-    F: 5,
-    "F#": 6,
-    G: 7,
-    "G#": 8,
-    A: 9,
-    "A#": 10,
-    B: 11,
-  };
-
-  const value1 = noteValues[note1];
-  const value2 = noteValues[note2];
-
-  // Calculate distance - smaller value is better for voice leading
-  let distance = Math.abs(value1 - value2);
-  if (distance > 6) {
-    distance = 12 - distance; // Take the shorter route around the octave
-  }
-
-  return distance;
-};
-
 // Add a custom hook for window size
 const useWindowSize = () => {
   const [windowSize, setWindowSize] = useState({
@@ -236,32 +207,47 @@ const HeroSection = () => {
   const { t } = useTranslation();
 
   // Diatonic chords in the key of C in descending 5ths
-  const chordProgression = [
-    { name: t("hero.chords.cMajor", "C Major"), notes: ["C", "E", "G"] },
-    { name: t("hero.chords.fMajor", "F Major"), notes: ["F", "A", "C"] },
-    {
-      name: t("hero.chords.bDiminished", "B Diminished"),
-      notes: ["B", "D", "F"],
-    },
-    { name: t("hero.chords.eMinor", "E Minor"), notes: ["E", "G", "B"] },
-    { name: t("hero.chords.aMinor", "A Minor"), notes: ["A", "C", "E"] },
-    { name: t("hero.chords.dMinor", "D Minor"), notes: ["D", "F", "A"] },
-    { name: t("hero.chords.gMajor", "G Major"), notes: ["G", "B", "D"] },
-  ];
-
-  // Words to cycle through in the hero title - WRAPPED IN USEMEMO TO PREVENT RECREATION
-  const titleWords = useMemo(
+  const chordProgression = useMemo(
     () => [
-      t("hero.titleWords.music", "Music"),
-      t("hero.titleWords.song", "Song"),
-      t("hero.titleWords.chord", "Chord"),
-      t("hero.titleWords.pattern", "Pattern"),
-      t("hero.titleWords.progression", "Progression"),
-      t("hero.titleWords.voicing", "Voicing"),
-      t("hero.titleWords.harmony", "Harmony"),
+      { name: t("hero.chords.cMajor", "C Major"), notes: ["C", "E", "G"] },
+      { name: t("hero.chords.fMajor", "F Major"), notes: ["F", "A", "C"] },
+      {
+        name: t("hero.chords.bDiminished", "B Diminished"),
+        notes: ["B", "D", "F"],
+      },
+      { name: t("hero.chords.eMinor", "E Minor"), notes: ["E", "G", "B"] },
+      { name: t("hero.chords.aMinor", "A Minor"), notes: ["A", "C", "E"] },
+      { name: t("hero.chords.dMinor", "D Minor"), notes: ["D", "F", "A"] },
+      { name: t("hero.chords.gMajor", "G Major"), notes: ["G", "B", "D"] },
     ],
     [t]
-  ); // Only recreate when translation function or language changes
+  );
+
+  // Words to cycle through in the hero title - WRAPPED IN USEMEMO TO PREVENT RECREATION
+  // const titleWords = useMemo(
+  //   () => [
+  //     t("hero.titleWords.music", "Music"),
+  //     t("hero.titleWords.song", "Song"),
+  //     t("hero.titleWords.chord", "Chord"),
+  //     t("hero.titleWords.pattern", "Pattern"),
+  //     t("hero.titleWords.progression", "Progression"),
+  //     t("hero.titleWords.voicing", "Voicing"),
+  //     t("hero.titleWords.harmony", "Harmony"),
+  //   ],
+  //   [t]
+  // ); // Only recreate when translation function or language changes
+  const titleWords = useMemo(
+    () => [
+      "Music",
+      "Song",
+      "Chord",
+      "Pattern",
+      "Progression",
+      "Voicing",
+      "Harmony",
+    ],
+    []
+  );
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [centerWordWidth, setCenterWordWidth] = useState(120); // Default width
   const centerWordRef = useRef<HTMLSpanElement>(null);
@@ -363,11 +349,14 @@ const HeroSection = () => {
 
   // State for the positions of the notes
   // We'll use fixed positions to avoid any jumpiness
-  const initialPositions = [
-    { top: "15%", left: "10%" },
-    { top: "25%", right: "12%" },
-    { bottom: "15%", left: "15%" },
-  ];
+  const initialPositions = useMemo(
+    () => [
+      { top: "15%", left: "10%" },
+      { top: "25%", right: "12%" },
+      { bottom: "15%", left: "15%" },
+    ],
+    []
+  );
 
   // Define the chord type for better type safety
   interface ChordType {
@@ -434,7 +423,6 @@ const HeroSection = () => {
 
       document.body.removeChild(tempDiv);
       setWordWidths(widths);
-      // setCenterWordWidth(widths[currentWordIndex] || 120);
       console.log("Client-side re-measurement complete:", widths);
     }
   }, [titleWords]);
@@ -605,7 +593,7 @@ const HeroSection = () => {
   };
 
   // Add a function to play all notes in the current chord
-  const playChord = async () => {
+  const playChord = useCallback(async () => {
     try {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {
@@ -682,90 +670,42 @@ const HeroSection = () => {
     } catch (error) {
       console.error("Error playing chord:", error);
     }
-  };
+  }, [chordProgression, currentChordIndex, setAudioContextStarted, synthRef]);
 
-  // Handle voice leading transitions between chords
-  const moveToNextChord = (): void => {
-    // Save the current chord as the previous chord for voice leading
-    setPreviousChord({
-      notes: [...displayedChord.notes],
-      positions: [...displayedChord.positions],
-      index: displayedChord.index,
-    });
+  // Turn moveToNextChord into a useCallback
+  const moveToNextChord = useCallback((): void => {
+    // Get the next chord from the progression
+    const nextChordIndex = (currentChordIndex + 1) % chordProgression.length;
 
-    // Set transitioning state for animation effects
+    // Create positions for new notes that maintain their position in the visual field
+    // Remember the previous positions for smooth animation
+    const newPositions = [...initialPositions];
+
+    // Set up the transition
+    setPreviousChord(displayedChord);
     setTransitioning(true);
 
-    const nextIndex = (currentChordIndex + 1) % chordProgression.length;
-    setCurrentChordIndex(nextIndex);
+    // Update current chord index
+    setCurrentChordIndex(nextChordIndex);
 
-    const currentNotes = [...displayedChord.notes];
-    const nextNotes = chordProgression[nextIndex].notes;
-
-    // Voice leading assignment
-    const assignedNextNotes: (string | null)[] = [...currentNotes];
-    const assignedNextChordNotes = new Set<string>();
-
-    // First pass: Keep notes that are the same
-    currentNotes.forEach((note, i) => {
-      if (nextNotes.includes(note)) {
-        assignedNextNotes[i] = note;
-        assignedNextChordNotes.add(note);
-      } else {
-        assignedNextNotes[i] = null;
-      }
-    });
-
-    // Second pass: Assign closest notes by semitone distance
-    for (let i = 0; i < assignedNextNotes.length; i++) {
-      if (assignedNextNotes[i] === null) {
-        let bestNote = null;
-        let minDistance = Infinity;
-
-        for (const note of nextNotes) {
-          if (!assignedNextChordNotes.has(note)) {
-            const distance = getSemitoneDistance(currentNotes[i], note);
-            if (distance < minDistance) {
-              minDistance = distance;
-              bestNote = note;
-            }
-          }
-        }
-
-        if (bestNote) {
-          assignedNextNotes[i] = bestNote;
-          assignedNextChordNotes.add(bestNote);
-        }
-      }
-    }
-
-    // Assign any remaining notes
-    const remainingNotes = nextNotes.filter(
-      (note) => !assignedNextChordNotes.has(note)
-    );
-    for (let i = 0; i < assignedNextNotes.length; i++) {
-      if (assignedNextNotes[i] === null && remainingNotes.length > 0) {
-        const nextNote = remainingNotes.pop();
-        if (nextNote !== undefined) {
-          assignedNextNotes[i] = nextNote;
-        }
-      }
-    }
-
-    // Update the displayed chord with the new notes but keep positions the same
-    setDisplayedChord({
-      notes: assignedNextNotes.filter(
-        (note): note is string => note !== null
-      ) as string[],
-      positions: [...displayedChord.positions], // Use same positions to avoid jumping
-      index: nextIndex,
-    });
-
-    // Reset transitioning state after animation completes
+    // Play the chord with a slight delay to account for the animation
     setTimeout(() => {
-      setTransitioning(false);
-    }, 1500); // Match animation duration
-  };
+      playChord().catch((err) => console.error("Error playing chord:", err));
+    }, 500); // Half a second delay for the animation to start
+
+    // Update the displayed chord with new data and the same positions
+    setDisplayedChord({
+      notes: chordProgression[nextChordIndex].notes,
+      positions: newPositions,
+      index: nextChordIndex,
+    });
+  }, [
+    currentChordIndex,
+    chordProgression,
+    initialPositions,
+    displayedChord,
+    playChord,
+  ]);
 
   // Change chord every 4 seconds
   useEffect(() => {
@@ -774,7 +714,7 @@ const HeroSection = () => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [currentChordIndex, displayedChord]);
+  }, [moveToNextChord]);
 
   // Add animation progress tracker in useEffect - add this after the chord transition interval effect
   useEffect(() => {
@@ -985,6 +925,7 @@ const HeroSection = () => {
     wordMeasureRef,
     centerWordWidth,
     isMobile,
+    getWordColor,
   ]);
 
   // Render the voice leading lines during transitions

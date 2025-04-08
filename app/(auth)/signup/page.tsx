@@ -424,9 +424,9 @@ function SignUp() {
             size="40px"
             fontSize="1.8rem"
             showText={true}
-            href={null}
-            onClick={null}
-            className={null}
+            href={""}
+            onClick={() => {}}
+            className={""}
           />
         </div>
 
