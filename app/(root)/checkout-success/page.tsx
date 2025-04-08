@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -186,33 +186,63 @@ type SessionData = {
   customerEmail: string | null;
   isExistingUser: boolean;
 };
+
+// Separate component to handle search params
+function SearchParamsHandler({
+  onParamsReady,
+}: {
+  onParamsReady: (params: {
+    sessionId: string | null;
+    email: string | null;
+  }) => void;
+}) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Get the session ID and email from the URL query parameters
+    const sessionId = searchParams?.get("session_id");
+    const email = searchParams?.get("email");
+
+    onParamsReady({ sessionId, email });
+  }, [searchParams, onParamsReady]);
+
+  return null;
+}
+
 export default function CheckoutSuccess() {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
+
+  // State to store the query parameters from the SearchParamsHandler
+  const [params, setParams] = useState<{
+    sessionId: string | null;
+    email: string | null;
+  }>({
+    sessionId: null,
+    email: null,
+  });
+
+  // Handler for receiving query parameters
+  const handleParamsReady = useCallback(
+    (newParams: { sessionId: string | null; email: string | null }) => {
+      setParams(newParams);
+    },
+    []
+  );
 
   const fetchCheckoutSession = useCallback(async () => {
+    if (!params.sessionId) {
+      setError("Missing session ID. Please check your URL.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Get the session ID and error from the URL query parameters
-      const sessionId = searchParams.get("session_id");
-      const email = searchParams.get("email");
-      const errorParam = searchParams.get("error");
-
-      if (errorParam === "payment_failed") {
-        setError(
-          "Your payment was declined. Please try a different payment method."
-        );
-        setLoading(false);
-        return;
-      }
-
-      if (!sessionId) {
-        setError("No session ID found");
-        setLoading(false);
-        return;
-      }
+      // Using params from state instead of directly from useSearchParams
+      const sessionId = params.sessionId;
+      const email = params.email;
 
       // Mock API call to check if user exists
       const userExists = false; // This would be replaced with an actual API call
@@ -225,19 +255,20 @@ export default function CheckoutSuccess() {
       });
 
       setLoading(false);
-    } catch (error) {
-      setError(
-        `Failed to fetch session data: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+    } catch (err) {
+      console.error("Error fetching session data:", err);
+      setError("Failed to load checkout information. Please try again later.");
+    } finally {
       setLoading(false);
     }
-  }, [searchParams]);
+  }, [params]);
 
+  // Effect to trigger the data fetch when params are available
   useEffect(() => {
-    fetchCheckoutSession();
-  }, [fetchCheckoutSession]);
+    if (params.sessionId) {
+      fetchCheckoutSession();
+    }
+  }, [params, fetchCheckoutSession]);
 
   const handleContinue = () => {
     if (sessionData?.isExistingUser) {
@@ -308,6 +339,10 @@ export default function CheckoutSuccess() {
 
   return (
     <PageContainer>
+      <Suspense fallback={null}>
+        <SearchParamsHandler onParamsReady={handleParamsReady} />
+      </Suspense>
+
       <HeaderNav>
         <HeaderContent>
           <CymasphereLogo
