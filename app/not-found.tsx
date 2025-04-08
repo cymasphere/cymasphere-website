@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 export default function NotFound() {
   return (
@@ -14,10 +17,12 @@ export default function NotFound() {
         backgroundColor: "var(--background)",
       }}
     >
+      <CymasphereLogo size="60px" fontSize="2rem" />
       <h1
         style={{
           fontSize: "6rem",
           marginBottom: "1rem",
+          marginTop: "2rem",
           color: "var(--primary)",
         }}
       >
@@ -46,12 +51,23 @@ export default function NotFound() {
       <Link
         href="/"
         style={{
-          backgroundColor: "var(--primary)",
+          background: "linear-gradient(90deg, var(--primary), var(--accent))",
           color: "white",
           padding: "0.8rem 1.5rem",
-          borderRadius: "4px",
+          borderRadius: "50px",
           fontWeight: "600",
-          transition: "all 0.2s ease",
+          transition: "all 0.3s ease",
+          boxShadow: "0 4px 15px rgba(108, 99, 255, 0.3)",
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = "translateY(-3px)";
+          e.currentTarget.style.boxShadow =
+            "0 8px 25px rgba(108, 99, 255, 0.4)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow =
+            "0 4px 15px rgba(108, 99, 255, 0.3)";
         }}
       >
         Return to Home
