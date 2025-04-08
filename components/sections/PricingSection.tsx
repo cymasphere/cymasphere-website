@@ -9,8 +9,14 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheck, FaGift } from "react-icons/fa";
-import StripeCheckout from "@/components/checkout/StripeCheckout";
+import { FaCheck, FaGift, FaLock, FaUnlock } from "react-icons/fa";
+// Import Stripe actions
+import {
+  initiateCheckout,
+  getPrices,
+  PlanType,
+  PriceData,
+} from "@/utils/stripe/actions";
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
 import dynamic from "next/dynamic";
@@ -49,18 +55,6 @@ interface ChordCenter {
   noteCount: number;
   color: string;
   scale: number;
-}
-
-interface PlanOption {
-  name: string;
-  price: string;
-  period: string;
-  buttonText: string;
-  priceId: string;
-  isSubscription: boolean;
-  trialDays?: number;
-  monthlyPrice?: string;
-  lifetimeLabel?: string;
 }
 
 // Type definitions for CymasphereLogo component
@@ -1386,10 +1380,6 @@ const CardHeader = styled.div`
   }
 `;
 
-const PlanPrice = styled.div`
-  margin: 10px 0;
-`;
-
 const Price = styled.span`
   font-size: 3rem;
   font-weight: 700;
@@ -1468,84 +1458,213 @@ const SavingsInfo = styled.div`
   }
 `;
 
+// Add a loader component
+const Loader = styled.div`
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-left: 8px;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+// Update the button for checkout with loading state
+const CheckoutButton = styled.button<{ $variant?: "primary" | "secondary" }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: ${(props) =>
+    props.$variant === "secondary"
+      ? "rgba(255, 255, 255, 0.1)"
+      : "linear-gradient(135deg, var(--primary), var(--accent))"};
+  color: ${(props) =>
+    props.$variant === "secondary" ? "var(--text)" : "white"};
+  padding: 14px 20px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  border: ${(props) =>
+    props.$variant === "secondary"
+      ? "1px solid rgba(255, 255, 255, 0.2)"
+      : "none"};
+  transition: all 0.3s ease;
+  margin-bottom: ${(props) => (props.$variant === "secondary" ? "0" : "10px")};
+  pointer-events: auto !important;
+
+  &:hover {
+    background: ${(props) =>
+      props.$variant === "secondary"
+        ? "rgba(255, 255, 255, 0.15)"
+        : "linear-gradient(135deg, var(--accent), var(--primary))"};
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+// Add styled component for price display with discount
+const PriceDisplay = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+`;
+
+const OriginalPrice = styled.span`
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+`;
+
+const DiscountTag = styled.span`
+  background: linear-gradient(135deg, #f9c846, #f96e46);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 10px;
+`;
+
+const TrialOptionContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+`;
+
+const TrialOption = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+`;
+
+const TrialIcon = styled.span`
+  margin-right: 8px;
+  font-size: 0.9rem;
+`;
+
 const PricingSection = () => {
   // State to track the selected billing period
-  const [billingPeriod, setBillingPeriod] = useState("monthly");
-
-  // State to track the pointer position
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [pointerTop, setPointerTop] = useState(0);
+  const [billingPeriod, setBillingPeriod] = useState<PlanType>("monthly");
+  const [checkoutLoading, setCheckoutLoading] = useState<
+    "short" | "long" | null
+  >(null);
+  // State for prices from Stripe
+  const [prices, setPrices] = useState<Record<PlanType, PriceData> | null>(
+    null
+  );
+  const [pricesLoading, setPricesLoading] = useState(true);
 
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
   const yearlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
   const lifetimeBtnRef = React.useRef<HTMLButtonElement | null>(null);
 
-  // Update pointer position when billing period changes
+  // Fetch prices from Stripe on component mount
   useEffect(() => {
-    const updatePointerPosition = () => {
-      let currentRef;
-      switch (billingPeriod) {
-        case "monthly":
-          currentRef = monthlyBtnRef.current;
-          break;
-        case "yearly":
-          currentRef = yearlyBtnRef.current;
-          break;
-        case "lifetime":
-          currentRef = lifetimeBtnRef.current;
-          break;
-        default:
-          currentRef = monthlyBtnRef.current;
-      }
-
-      if (currentRef && currentRef.parentElement) {
-        const buttonRect = currentRef.getBoundingClientRect();
-        const containerRect = currentRef.parentElement.getBoundingClientRect();
-        const relativeTop =
-          buttonRect.top - containerRect.top + buttonRect.height / 2 - 10;
-        setPointerTop(relativeTop);
+    const fetchPrices = async () => {
+      setPricesLoading(true);
+      try {
+        const result = await getPrices();
+        if (result.prices) {
+          setPrices(result.prices);
+        }
+      } catch (error) {
+        console.error("Error fetching prices:", error);
+      } finally {
+        setPricesLoading(false);
       }
     };
 
-    // Update position after render
-    updatePointerPosition();
+    fetchPrices();
+  }, []);
 
-    // Also update on window resize
-    window.addEventListener("resize", updatePointerPosition);
-    return () => window.removeEventListener("resize", updatePointerPosition);
+  // Simplify the resize effect to avoid unused variables
+  useEffect(() => {
+    // Just keep the event listener for resize
+    const handleResize = () => {
+      // Empty handler that does nothing but satisfies the dependency
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [billingPeriod]);
 
-  // Define the plan details for each billing period
-  const planOptions: Record<string, PlanOption> = {
-    monthly: {
-      name: "Cymasphere Pro",
-      price: "8",
-      period: "/month",
-      buttonText: "Start Free Trial",
-      priceId: process.env.REACT_APP_STRIPE_PRICE_MONTHLY || "price_monthly",
-      isSubscription: true,
-      trialDays: 14,
-    },
-    yearly: {
-      name: "Cymasphere Pro",
-      price: "69",
-      period: "/year",
-      monthlyPrice: "$6/month",
-      buttonText: "Start Free Trial",
-      priceId: process.env.REACT_APP_STRIPE_PRICE_YEARLY || "price_yearly",
-      isSubscription: true,
-      trialDays: 14,
-    },
-    lifetime: {
-      name: "Cymasphere Pro",
-      price: "199",
-      period: "",
-      lifetimeLabel: "one-time purchase",
-      buttonText: "Buy Now",
-      priceId: process.env.REACT_APP_STRIPE_PRICE_LIFETIME || "price_lifetime",
-      isSubscription: false,
-    },
+  // Handle checkout with different trial options
+  const handleCheckout = async (collectPaymentMethod: boolean) => {
+    if (!prices) return;
+
+    setCheckoutLoading(collectPaymentMethod ? "long" : "short");
+
+    try {
+      const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
+
+      const result = await initiateCheckout(
+        billingPeriod,
+        undefined,
+        undefined,
+        promotionCode,
+        collectPaymentMethod
+      );
+
+      if (result.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
+      } else if (result.error) {
+        console.error("Checkout error:", result.error);
+        // Handle error (could add toast notification here)
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  // Define the plan details based on prices from Stripe
+  const currentPlan = prices?.[billingPeriod];
+
+  // Calculate the discounted price if a discount exists
+  const getDisplayPrice = (plan: PriceData | undefined) => {
+    if (!plan) return { display: "$0" };
+
+    const baseAmount = plan.amount / 100;
+    let discountedAmount = baseAmount;
+    let discountText = "";
+
+    if (plan.discount) {
+      if (plan.discount.percent_off) {
+        discountedAmount = baseAmount * (1 - plan.discount.percent_off / 100);
+        discountText = `${plan.discount.percent_off}% OFF`;
+      } else if (plan.discount.amount_off) {
+        discountedAmount = baseAmount - plan.discount.amount_off / 100;
+        discountText = `$${plan.discount.amount_off / 100} OFF`;
+      }
+    }
+
+    return {
+      display: `$${discountedAmount.toFixed(0)}`,
+      original: plan.discount ? `$${baseAmount.toFixed(0)}` : undefined,
+      discountText,
+    };
   };
 
   // Features included in the plan
@@ -1564,8 +1683,22 @@ const PricingSection = () => {
     "Premium Support & All Future Updates",
   ];
 
-  // Get the current plan based on selected billing period
-  const currentPlan = planOptions[billingPeriod] || planOptions.monthly;
+  // Get price details for the current plan
+  const priceDetails = getDisplayPrice(currentPlan);
+
+  // Period text based on billing period
+  const getPeriodText = () => {
+    switch (billingPeriod) {
+      case "monthly":
+        return "/month";
+      case "annual":
+        return "/year";
+      case "lifetime":
+        return "";
+      default:
+        return "";
+    }
+  };
 
   return (
     <PricingContainer id="pricing">
@@ -1585,12 +1718,12 @@ const PricingSection = () => {
           <TrialBanner>
             <TrialText>
               <h3>
-                <FaGift /> Try <span> FREE </span> for 14 days
+                <FaGift /> Try <span> FREE </span> for up to 14 days
               </h3>
               <p>
-                Experience all premium features without commitment.
+                Experience all premium features with two trial options.
                 <br />
-                No credit card required to start.
+                Choose 7 days with no card or 14 days with card on file.
               </p>
             </TrialText>
           </TrialBanner>
@@ -1613,8 +1746,8 @@ const PricingSection = () => {
 
             <BillingToggleButton
               ref={yearlyBtnRef}
-              $active={billingPeriod === "yearly"}
-              onClick={() => setBillingPeriod("yearly")}
+              $active={billingPeriod === "annual"}
+              onClick={() => setBillingPeriod("annual")}
             >
               Yearly
             </BillingToggleButton>
@@ -1635,7 +1768,7 @@ const PricingSection = () => {
                 <span>Most Flexible</span> - Pay month-to-month, cancel anytime
               </SavingsInfo>
             )}
-            {billingPeriod === "yearly" && (
+            {billingPeriod === "annual" && (
               <SavingsInfo>
                 Save <span>25%</span> with yearly billing
               </SavingsInfo>
@@ -1677,38 +1810,44 @@ const PricingSection = () => {
                 Complete solution for music producers
               </div>
 
-              <PlanPrice>
-                <Price>${currentPlan.price}</Price>
-                <BillingPeriod>{currentPlan.period}</BillingPeriod>
-                {billingPeriod === "yearly" && (
-                  <div style={{ marginTop: "5px", fontSize: "1rem" }}>
-                    {currentPlan.monthlyPrice} billed annually
+              {pricesLoading ? (
+                <div style={{ textAlign: "center", padding: "20px" }}>
+                  <Loader />
+                </div>
+              ) : (
+                <PriceDisplay>
+                  {priceDetails.original && (
+                    <OriginalPrice>
+                      {priceDetails.original}
+                      {getPeriodText()}
+                    </OriginalPrice>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <Price>{priceDetails.display}</Price>
+                    <BillingPeriod>{getPeriodText()}</BillingPeriod>
+                    {priceDetails.discountText && (
+                      <DiscountTag>{priceDetails.discountText}</DiscountTag>
+                    )}
                   </div>
-                )}
-                {billingPeriod === "lifetime" && (
-                  <div
-                    style={{ marginTop: "5px", fontSize: "1rem", opacity: 0.8 }}
-                  >
-                    {currentPlan.lifetimeLabel}
-                  </div>
-                )}
-                {billingPeriod !== "lifetime" && (
-                  <div
-                    style={{
-                      marginTop: "10px",
-                      fontSize: "0.9rem",
-                      color: "#F96E46",
-                      fontWeight: "bold",
-                      background: "rgba(249, 110, 70, 0.1)",
-                      padding: "5px 10px",
-                      borderRadius: "6px",
-                      display: "inline-block",
-                    }}
-                  >
-                    First {currentPlan.trialDays} days free - Cancel anytime
-                  </div>
-                )}
-              </PlanPrice>
+                  {billingPeriod === "annual" && currentPlan && (
+                    <div style={{ marginTop: "5px", fontSize: "1rem" }}>
+                      ${(currentPlan.amount / 100 / 12).toFixed(0)}/month billed
+                      annually
+                    </div>
+                  )}
+                  {billingPeriod === "lifetime" && (
+                    <div
+                      style={{
+                        marginTop: "5px",
+                        fontSize: "1rem",
+                        opacity: 0.8,
+                      }}
+                    >
+                      one-time purchase
+                    </div>
+                  )}
+                </PriceDisplay>
+              )}
             </CardHeader>
 
             <CardBody>
@@ -1733,13 +1872,66 @@ const PricingSection = () => {
                 ))}
               </FeaturesList>
 
-              <StripeCheckout
-                priceId={currentPlan.priceId}
-                buttonText={currentPlan.buttonText}
-                billingPeriod={billingPeriod}
-                price={currentPlan.price}
-                trialDays={currentPlan.trialDays}
-              />
+              {billingPeriod !== "lifetime" ? (
+                <TrialOptionContainer>
+                  <TrialOption>
+                    <TrialIcon>
+                      <FaUnlock />
+                    </TrialIcon>
+                    7-day trial - No credit card required
+                  </TrialOption>
+                  <CheckoutButton
+                    $variant="secondary"
+                    onClick={() => handleCheckout(false)}
+                    disabled={pricesLoading || checkoutLoading !== null}
+                  >
+                    {checkoutLoading === "short" ? (
+                      <>
+                        Processing <Loader />
+                      </>
+                    ) : (
+                      "Start 7-Day Free Trial"
+                    )}
+                  </CheckoutButton>
+
+                  <div style={{ margin: "10px 0", textAlign: "center" }}>
+                    or
+                  </div>
+
+                  <TrialOption>
+                    <TrialIcon>
+                      <FaLock />
+                    </TrialIcon>
+                    14-day trial - Card on file (won&apos;t be charged until
+                    trial ends)
+                  </TrialOption>
+                  <CheckoutButton
+                    onClick={() => handleCheckout(true)}
+                    disabled={pricesLoading || checkoutLoading !== null}
+                  >
+                    {checkoutLoading === "long" ? (
+                      <>
+                        Processing <Loader />
+                      </>
+                    ) : (
+                      "Start 14-Day Free Trial"
+                    )}
+                  </CheckoutButton>
+                </TrialOptionContainer>
+              ) : (
+                <CheckoutButton
+                  onClick={() => handleCheckout(false)}
+                  disabled={pricesLoading || checkoutLoading !== null}
+                >
+                  {checkoutLoading === "short" ? (
+                    <>
+                      Processing <Loader />
+                    </>
+                  ) : (
+                    "Buy Now"
+                  )}
+                </CheckoutButton>
+              )}
             </CardBody>
           </PricingCard>
         </motion.div>
