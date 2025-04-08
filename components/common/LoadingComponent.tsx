@@ -3,7 +3,7 @@ import styled from "styled-components";
 import EnergyBall from "@/components/common/EnergyBall";
 
 interface LoadingContainerProps {
-  fullScreen?: boolean;
+  $fullScreen?: boolean;
 }
 
 const LoadingContainer = styled.div<LoadingContainerProps>`
@@ -12,11 +12,11 @@ const LoadingContainer = styled.div<LoadingContainerProps>`
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: ${(props) => (props.fullScreen ? "100vh" : "100%")};
-  position: ${(props) => (props.fullScreen ? "fixed" : "relative")};
-  top: ${(props) => (props.fullScreen ? "0" : "auto")};
-  left: ${(props) => (props.fullScreen ? "0" : "auto")};
-  z-index: ${(props) => (props.fullScreen ? "9999" : "1")};
+  height: ${(props) => (props.$fullScreen ? "100vh" : "100%")};
+  position: ${(props) => (props.$fullScreen ? "fixed" : "relative")};
+  top: ${(props) => (props.$fullScreen ? "0" : "auto")};
+  left: ${(props) => (props.$fullScreen ? "0" : "auto")};
+  z-index: ${(props) => (props.$fullScreen ? "9999" : "1")};
   background: "transparent";
 `;
 
@@ -39,7 +39,7 @@ const LoadingComponent: React.FC<LoadingComponentProps> = ({
   fullScreen = false,
 }) => {
   return (
-    <LoadingContainer fullScreen={fullScreen}>
+    <LoadingContainer $fullScreen={fullScreen}>
       <EnergyBall size={size} marginRight="0" />
       {text && <LoadingText>{text}</LoadingText>}
     </LoadingContainer>
