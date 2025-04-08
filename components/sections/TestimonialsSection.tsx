@@ -48,7 +48,11 @@ const TestimonialWrapper = styled.div`
   box-sizing: border-box;
 `;
 
-const TestimonialSlider = styled.div`
+interface TestimonialSliderProps {
+  $activeIndex: number;
+}
+
+const TestimonialSlider = styled.div<TestimonialSliderProps>`
   display: flex;
   transition: transform 0.5s ease;
   transform: translateX(-${(props) => props.$activeIndex * 100}%);
@@ -162,7 +166,11 @@ const TestimonialDots = styled.div`
   margin-top: 30px;
 `;
 
-const Dot = styled.button`
+interface DotProps {
+  $active?: boolean;
+}
+
+const Dot = styled.button<DotProps>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -218,7 +226,7 @@ const TestimonialsSection = () => {
     setIsAutoPlaying(false);
   };
 
-  const goToSlide = (index) => {
+  const goToSlide = (index: number) => {
     setActiveIndex(index);
     setIsAutoPlaying(false);
   };

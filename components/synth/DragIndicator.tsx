@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { useState, useEffect } from "react";
+import styled, { keyframes } from "styled-components";
 
 // Drag animation for finger gesture
 const dragDown = keyframes`
@@ -30,7 +30,11 @@ const pulse = keyframes`
   }
 `;
 
-const Container = styled.div`
+interface ContainerProps {
+  visible?: boolean;
+}
+
+const Container = styled.div<ContainerProps>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,7 +42,7 @@ const Container = styled.div`
   margin: 10px 0;
   padding: 5px;
   width: 100%;
-  opacity: ${props => props.visible ? 1 : 0};
+  opacity: ${(props) => (props.visible ? 1 : 0)};
   transition: opacity 0.3s ease;
   pointer-events: none;
 `;
@@ -62,16 +66,16 @@ const Text = styled.div`
 
 const DragIndicator = ({ visible = true }) => {
   const [isVisible, setIsVisible] = useState(false);
-  
+
   useEffect(() => {
     // Only show after a delay to avoid distracting initially
     const timer = setTimeout(() => {
       setIsVisible(visible);
     }, 1500);
-    
+
     return () => clearTimeout(timer);
   }, [visible]);
-  
+
   return (
     <Container visible={isVisible}>
       <FingerDrag>👆</FingerDrag>
@@ -80,4 +84,4 @@ const DragIndicator = ({ visible = true }) => {
   );
 };
 
-export default DragIndicator; 
+export default DragIndicator;

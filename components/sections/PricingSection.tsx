@@ -113,7 +113,6 @@ const ChordWeb = React.memo(() => {
     const ambientSynth = new Tone.PolySynth(Tone.AMSynth, {
       oscillator: {
         type: "sine",
-        modulationType: "triangle", // Changed to triangle for more underwater harmonics
       },
       envelope: {
         attack: 0.5, // Slower attack for underwater muffled effect
@@ -123,7 +122,6 @@ const ChordWeb = React.memo(() => {
       },
       modulation: {
         type: "sine",
-        frequency: 0.8, // Slower frequency for underwater wavering
       },
       modulationEnvelope: {
         attack: 0.8, // Slower modulation attack

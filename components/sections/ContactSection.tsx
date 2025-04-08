@@ -145,8 +145,15 @@ const SuccessMessage = styled(motion.div)`
   color: #2ed573;
 `;
 
+interface FormState {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 const ContactSection = () => {
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<FormState>({
     name: "",
     email: "",
     subject: "",
@@ -155,14 +162,16 @@ const ContactSection = () => {
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormState({
       ...formState,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Here you would normally send the form data to your server
     console.log("Form data:", formState);

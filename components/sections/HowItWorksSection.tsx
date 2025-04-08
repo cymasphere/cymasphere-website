@@ -66,7 +66,11 @@ const TabsContainer = styled.div`
   max-width: 500px;
 `;
 
-const Tab = styled.button`
+interface TabProps {
+  $active?: boolean;
+}
+
+const Tab = styled.button<TabProps>`
   background: ${(props) =>
     props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
@@ -96,7 +100,11 @@ const Tab = styled.button`
   }
 `;
 
-const WorkflowStep = styled(motion.div)`
+interface WorkflowStepProps {
+  reversed?: boolean;
+}
+
+const WorkflowStep = styled(motion.div)<WorkflowStepProps>`
   display: flex;
   flex-direction: ${(props) => (props.reversed ? "row-reverse" : "row")};
   align-items: center;
@@ -113,7 +121,11 @@ const StepContent = styled.div`
   padding: 0 20px;
 `;
 
-const StepImage = styled(motion.div)`
+interface StepImageProps {
+  src?: string;
+}
+
+const StepImage = styled(motion.div)<StepImageProps>`
   flex: 1;
   border-radius: 12px;
   overflow: hidden;
@@ -130,7 +142,11 @@ const StepImage = styled(motion.div)`
   }
 `;
 
-const WorkflowTitle = styled.h3`
+interface WorkflowTitleProps {
+  number?: string | number;
+}
+
+const WorkflowTitle = styled.h3<WorkflowTitleProps>`
   font-size: 1.5rem;
   color: var(--primary);
   margin-bottom: 15px;
@@ -212,7 +228,7 @@ const BackgroundCircle2 = styled.div`
 
 const workflowVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (custom) => ({
+  visible: (custom: number) => ({
     opacity: 1,
     y: 0,
     transition: { delay: custom * 0.2, duration: 0.5 },
@@ -221,7 +237,7 @@ const workflowVariants = {
 
 const imageVariants = {
   hidden: { opacity: 0, scale: 0.9 },
-  visible: (custom) => ({
+  visible: (custom: number) => ({
     opacity: 1,
     scale: 1,
     transition: { delay: custom * 0.2 + 0.1, duration: 0.5 },

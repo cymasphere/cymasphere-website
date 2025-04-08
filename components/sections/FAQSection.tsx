@@ -64,7 +64,11 @@ const Question = styled.h3`
   flex: 1;
 `;
 
-const ToggleButton = styled.span`
+interface ToggleButtonProps {
+  isOpen?: boolean;
+}
+
+const ToggleButton = styled.span<ToggleButtonProps>`
   color: var(--primary);
   font-size: 1.5rem;
   font-weight: bold;
@@ -84,10 +88,14 @@ const Answer = styled(motion.div)`
   font-size: 1rem;
 `;
 
-const FAQSection = () => {
-  const [expandedFaqs, setExpandedFaqs] = useState({});
+interface ExpandedFaqs {
+  [key: number]: boolean;
+}
 
-  const toggleFaq = (index) => {
+const FAQSection = () => {
+  const [expandedFaqs, setExpandedFaqs] = useState<ExpandedFaqs>({});
+
+  const toggleFaq = (index: number) => {
     setExpandedFaqs((prev) => ({
       ...prev,
       [index]: !prev[index],
