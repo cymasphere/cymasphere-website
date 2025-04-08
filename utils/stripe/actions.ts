@@ -47,10 +47,7 @@ export async function initiateCheckout(
       resolved_customer_id = await findOrCreateCustomer(email);
     } else if (customerId) {
       resolved_customer_id = customerId;
-    } else {
-      throw new Error("No customer ID or email provided");
     }
-
     // Create checkout session with or without customer ID
     return await createCheckoutSession(
       resolved_customer_id,
@@ -256,14 +253,13 @@ export async function createCheckoutSession(
     // Add customer ID if available
     if (customerId) {
       sessionConfig.customer = customerId;
-    } else {
-      // For guest checkout, collect customer email
-      sessionConfig.customer_creation = "always";
     }
 
     // Apply promotion code if provided
     if (promotionCode) {
       sessionConfig.discounts = [{ promotion_code: promotionCode }];
+    } else {
+      sessionConfig.allow_promotion_codes = true;
     }
 
     // Set up trial configuration with different durations
@@ -288,6 +284,8 @@ export async function createCheckoutSession(
         sessionConfig.payment_method_collection = "if_required";
       }
     }
+
+    console.log(JSON.stringify(sessionConfig));
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
