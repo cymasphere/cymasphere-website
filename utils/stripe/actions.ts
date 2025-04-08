@@ -238,6 +238,7 @@ export async function createCheckoutSession(
         throw new Error("Invalid plan type");
     }
 
+    const return_url = `${process.env.NEXT_PUBLIC_SITE_URL}/api/checkout-result?session_id={CHECKOUT_SESSION_ID}`;
     // Create checkout session with optional customer ID
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       line_items: [
@@ -247,8 +248,8 @@ export async function createCheckoutSession(
         },
       ],
       mode: mode,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?checkout=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing?checkout=cancelled`,
+      success_url: return_url,
+      cancel_url: return_url,
       // allow_promotion_codes: true, // Allow manual coupon entry
     };
 
@@ -338,6 +339,77 @@ export type CustomerPurchasedProResponse = {
   subscription_expiration?: Date; // Unix timestamp when subscription expires
   error?: Error | unknown;
 };
+
+/**
+ * Fetches the result of a checkout session by ID
+ * @param sessionId The Stripe checkout session ID
+ * @returns Session details including status, subscription, and customer info
+ */
+export async function getCheckoutSessionResult(sessionId: string): Promise<{
+  success: boolean;
+  status: string;
+  customerId?: string;
+  customerEmail?: string;
+  subscriptionId?: string;
+  paymentStatus?: string;
+  mode?: string;
+  error?: string;
+}> {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["customer", "subscription", "payment_intent"],
+    });
+
+    // Handle the customer field which can be string ID or expanded Customer object
+    let customerId: string | undefined;
+    let customerEmail: string | undefined;
+
+    if (session.customer) {
+      if (typeof session.customer === "string") {
+        customerId = session.customer;
+      } else if ("id" in session.customer) {
+        customerId = session.customer.id;
+        // Only access email if it's a full Customer object (not DeletedCustomer)
+        if (!session.customer.deleted && "email" in session.customer) {
+          customerEmail = session.customer.email || undefined;
+        }
+      }
+    }
+
+    // Handle subscription field
+    let subscriptionId: string | undefined;
+    if (session.subscription) {
+      subscriptionId =
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
+    }
+
+    // Handle payment_intent field
+    let paymentStatus: string | undefined;
+    if (session.payment_intent && typeof session.payment_intent !== "string") {
+      paymentStatus = session.payment_intent.status;
+    }
+
+    return {
+      success: true,
+      status: session.status || "unknown",
+      customerId,
+      customerEmail,
+      subscriptionId,
+      paymentStatus,
+      mode: session.mode || undefined,
+    };
+  } catch (error) {
+    console.error("Error fetching checkout session:", error);
+    return {
+      success: false,
+      status: "error",
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
 
 export async function customerPurchasedPro(
   customer_id: string

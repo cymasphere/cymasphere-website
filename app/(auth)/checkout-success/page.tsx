@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -182,101 +182,52 @@ const ErrorMessage = styled.p`
 
 type SessionData = {
   id: string;
-  status: string;
   customerEmail: string | null;
+  customerId: string | null;
   isExistingUser: boolean;
 };
-
-// Separate component to handle search params
-function SearchParamsHandler({
-  onParamsReady,
-}: {
-  onParamsReady: (params: {
-    sessionId: string | null;
-    email: string | null;
-  }) => void;
-}) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Get the session ID and email from the URL query parameters
-    const sessionId = searchParams?.get("session_id");
-    const email = searchParams?.get("email");
-
-    onParamsReady({ sessionId, email });
-  }, [searchParams, onParamsReady]);
-
-  return null;
-}
 
 export default function CheckoutSuccess() {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // State to store the query parameters from the SearchParamsHandler
-  const [params, setParams] = useState<{
-    sessionId: string | null;
-    email: string | null;
-  }>({
-    sessionId: null,
-    email: null,
-  });
+  useEffect(() => {
+    // Extract data from URL parameters
+    const sessionId = searchParams?.get("session_id");
+    const userExists = searchParams?.get("user_exists") === "true";
+    const email = searchParams?.get("email");
+    const customerId = searchParams?.get("customer_id");
 
-  // Handler for receiving query parameters
-  const handleParamsReady = useCallback(
-    (newParams: { sessionId: string | null; email: string | null }) => {
-      setParams(newParams);
-    },
-    []
-  );
-
-  const fetchCheckoutSession = useCallback(async () => {
-    if (!params.sessionId) {
+    if (!sessionId) {
       setError("Missing session ID. Please check your URL.");
       setLoading(false);
       return;
     }
 
-    try {
-      // Using params from state instead of directly from useSearchParams
-      const sessionId = params.sessionId;
-      const email = params.email;
+    // Set session data from URL parameters
+    setSessionData({
+      id: sessionId,
+      customerEmail: email,
+      customerId: customerId,
+      isExistingUser: userExists,
+    });
 
-      // Mock API call to check if user exists
-      const userExists = false; // This would be replaced with an actual API call
-
-      setSessionData({
-        id: sessionId,
-        status: "complete",
-        customerEmail: email || null,
-        isExistingUser: userExists,
-      });
-
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching session data:", err);
-      setError("Failed to load checkout information. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  }, [params]);
-
-  // Effect to trigger the data fetch when params are available
-  useEffect(() => {
-    if (params.sessionId) {
-      fetchCheckoutSession();
-    }
-  }, [params, fetchCheckoutSession]);
+    setLoading(false);
+  }, [searchParams]);
 
   const handleContinue = () => {
     if (sessionData?.isExistingUser) {
       router.push("/dashboard");
     } else {
+      // Include customer ID in the URL for easier signup association
       router.push(
         `/signup?email=${encodeURIComponent(
           sessionData?.customerEmail || ""
+        )}&customer_id=${encodeURIComponent(
+          sessionData?.customerId || ""
         )}&checkout_complete=true`
       );
     }
@@ -339,10 +290,6 @@ export default function CheckoutSuccess() {
 
   return (
     <PageContainer>
-      <Suspense fallback={null}>
-        <SearchParamsHandler onParamsReady={handleParamsReady} />
-      </Suspense>
-
       <HeaderNav>
         <HeaderContent>
           <CymasphereLogo
@@ -382,9 +329,15 @@ export default function CheckoutSuccess() {
           <DetailsItem>
             <ItemLabel>Email:</ItemLabel>
             <ItemValue>
-              {sessionData?.customerEmail || "Processing..."}
+              {sessionData?.customerEmail || "Not available"}
             </ItemValue>
           </DetailsItem>
+          {sessionData?.customerId && (
+            <DetailsItem>
+              <ItemLabel>Customer ID:</ItemLabel>
+              <ItemValue>{sessionData.customerId}</ItemValue>
+            </DetailsItem>
+          )}
         </DetailsList>
 
         <BackButton onClick={handleContinue} style={{ marginTop: "2rem" }}>
