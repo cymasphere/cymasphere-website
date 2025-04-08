@@ -4,6 +4,7 @@ import { Montserrat } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { StyledComponentsRegistry } from "./registry";
 import "./globals.css";
 
 // Theme configuration
@@ -59,11 +60,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
-        <ThemeProvider theme={theme}>
-          <ToastProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <StyledComponentsRegistry>
+          <ThemeProvider theme={theme}>
+            <ToastProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );
