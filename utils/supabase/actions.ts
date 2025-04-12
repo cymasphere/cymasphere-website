@@ -155,8 +155,6 @@ export async function fetchUserSessions(): Promise<{
         return { sessions: [], error: "Failed to fetch user sessions" };
       }
 
-      console.log("sessions", data);
-
       return { sessions: data as SessionData[], error: null };
     }
 

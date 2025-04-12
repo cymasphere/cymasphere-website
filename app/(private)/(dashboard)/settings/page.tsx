@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -145,15 +145,30 @@ const DevicesList = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const DeviceItem = styled.div`
+// Add an indicator component for active session
+const ActiveSessionBadge = styled.div`
+  background-color: var(--primary);
+  color: white;
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+`;
+
+// Update the styled component for active session highlighting
+const DeviceItem = styled.div<{ $isActive?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  background-color: rgba(30, 30, 46, 0.5);
+  background-color: ${(props) =>
+    props.$isActive ? "rgba(108, 99, 255, 0.1)" : "rgba(30, 30, 46, 0.5)"};
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid
+    ${(props) =>
+      props.$isActive ? "var(--primary)" : "rgba(255, 255, 255, 0.05)"};
 `;
 
 const DeviceInfo = styled.div`
@@ -338,94 +353,100 @@ function Settings() {
   const [activeDevices, setActiveDevices] = useState<Device[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
 
+  // Track current session ID
+  const [currentSessionId, setCurrentSessionId] = useState<string>("");
+
+  // Common function to refresh sessions data
+  const refreshSessionData = useCallback(async () => {
+    if (!user || !session) return;
+
+    setIsLoadingSessions(true);
+    try {
+      const { sessions, error } = await fetchUserSessions();
+
+      if (error) {
+        console.error("Error fetching sessions:", error);
+        return;
+      }
+
+      if (sessions && sessions.length > 0) {
+        // Store the current session ID
+        setCurrentSessionId(session.user?.id || "");
+
+        // Transform the session data into the device format
+        const deviceData: Device[] = sessions.map(
+          (sessionData: SessionData) => {
+            // Determine device type based on user agent
+            let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+            let deviceName = "Unknown Device";
+
+            // Safely access properties with optional chaining
+            const userAgent = sessionData?.user_agent || "";
+
+            if (
+              userAgent.includes("Mobile") ||
+              userAgent.includes("Android") ||
+              userAgent.includes("iPhone")
+            ) {
+              deviceType = "mobile";
+              if (userAgent.includes("iPhone")) {
+                deviceName = "iPhone";
+              } else if (userAgent.includes("Android")) {
+                deviceName = "Android Device";
+              } else {
+                deviceName = "Mobile Device";
+              }
+            } else if (
+              userAgent.includes("iPad") ||
+              userAgent.includes("Tablet")
+            ) {
+              deviceType = "tablet";
+              deviceName = userAgent.includes("iPad") ? "iPad" : "Tablet";
+            } else {
+              if (userAgent.includes("Windows")) {
+                deviceName = "Windows PC";
+              } else if (userAgent.includes("Mac")) {
+                deviceName = "Mac";
+              } else if (userAgent.includes("Linux")) {
+                deviceName = "Linux PC";
+              } else {
+                deviceName = "Desktop";
+              }
+            }
+
+            // Format last active time
+            const lastActive =
+              sessionData?.updated_at ||
+              sessionData?.created_at ||
+              new Date().toISOString();
+            const formattedTime = formatLastActive(new Date(lastActive));
+
+            // Format location
+            const location = (sessionData?.ip as string) || "Unknown location";
+
+            return {
+              id: sessionData?.id || "",
+              name: deviceName,
+              type: deviceType,
+              location: location,
+              lastActive: formattedTime,
+            };
+          }
+        );
+
+        setActiveDevices(deviceData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sessions:", err);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [user, session]);
+
   // Fetch the user's active sessions
   useEffect(() => {
-    const fetchSessions = async () => {
-      if (user && session) {
-        setIsLoadingSessions(true);
-        try {
-          const { sessions, error } = await fetchUserSessions();
-
-          if (error) {
-            console.error("Error fetching sessions:", error);
-            return;
-          }
-
-          if (sessions && sessions.length > 0) {
-            // Transform the session data into the device format using type assertion
-            const deviceData: Device[] = sessions.map(
-              (sessionData: SessionData) => {
-                // Determine device type based on user agent (simplified example)
-                let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
-                let deviceName = "Unknown Device";
-
-                // Safely access properties with optional chaining
-                const userAgent = sessionData?.user_agent || "";
-
-                if (
-                  userAgent.includes("Mobile") ||
-                  userAgent.includes("Android") ||
-                  userAgent.includes("iPhone")
-                ) {
-                  deviceType = "mobile";
-                  if (userAgent.includes("iPhone")) {
-                    deviceName = "iPhone";
-                  } else if (userAgent.includes("Android")) {
-                    deviceName = "Android Device";
-                  } else {
-                    deviceName = "Mobile Device";
-                  }
-                } else if (
-                  userAgent.includes("iPad") ||
-                  userAgent.includes("Tablet")
-                ) {
-                  deviceType = "tablet";
-                  deviceName = userAgent.includes("iPad") ? "iPad" : "Tablet";
-                } else {
-                  if (userAgent.includes("Windows")) {
-                    deviceName = "Windows PC";
-                  } else if (userAgent.includes("Mac")) {
-                    deviceName = "Mac";
-                  } else if (userAgent.includes("Linux")) {
-                    deviceName = "Linux PC";
-                  } else {
-                    deviceName = "Desktop";
-                  }
-                }
-
-                // Format last active time - safely access with optional chaining
-                const lastActive =
-                  sessionData?.updated_at ||
-                  sessionData?.created_at ||
-                  new Date().toISOString();
-                const formattedTime = formatLastActive(new Date(lastActive));
-
-                // Format location - safely access with optional chaining
-                const location =
-                  (sessionData?.ip as string) || "Unknown location";
-
-                return {
-                  id: sessionData?.id || "",
-                  name: deviceName,
-                  type: deviceType,
-                  location: location,
-                  lastActive: formattedTime,
-                };
-              }
-            );
-
-            setActiveDevices(deviceData);
-          }
-        } catch (err) {
-          console.error("Failed to fetch sessions:", err);
-        } finally {
-          setIsLoadingSessions(false);
-        }
-      }
-    };
-
-    fetchSessions();
-  }, [user, session]);
+    refreshSessionData();
+  }, [refreshSessionData]);
 
   // Helper function to format the last active time
   const formatLastActive = (date: Date): string => {
@@ -592,6 +613,31 @@ function Settings() {
     }
   };
 
+  // Add a new function to handle "Sign Out from Others"
+  const handleSignOutOthers = async () => {
+    try {
+      // Sign out from all other devices
+      await signOut("others");
+
+      // Show confirmation modal
+      setConfirmationTitle("Success");
+      setConfirmationMessage("You've been signed out from all other devices.");
+      setConfirmationIcon("success");
+      setShowConfirmationModal(true);
+
+      // Refresh the sessions list
+      await refreshSessionData();
+    } catch (error) {
+      console.error("Error signing out from other devices:", error);
+      setConfirmationTitle("Error");
+      setConfirmationMessage(
+        "Failed to sign out from other devices. Please try again."
+      );
+      setConfirmationIcon("warning");
+      setShowConfirmationModal(true);
+    }
+  };
+
   return (
     <SettingsContainer>
       <SectionTitle>Settings</SectionTitle>
@@ -670,24 +716,34 @@ function Settings() {
               {activeDevices.length === 0 ? (
                 <p>No active sessions found.</p>
               ) : (
-                activeDevices.map((device) => (
-                  <DeviceItem key={device.id}>
-                    <DeviceInfo>
-                      {renderDeviceIcon(device.type)}
-                      <div>
-                        <DeviceName>{device.name}</DeviceName>
-                        <DeviceDetails>
-                          {device.location} • {device.lastActive}
-                        </DeviceDetails>
-                      </div>
-                    </DeviceInfo>
-                    <LogoutDeviceButton
-                      onClick={() => handleLogoutDevice(device)}
-                    >
-                      Sign Out
-                    </LogoutDeviceButton>
-                  </DeviceItem>
-                ))
+                activeDevices.map((device) => {
+                  const isCurrentDevice = device.id === currentSessionId;
+                  return (
+                    <DeviceItem key={device.id} $isActive={isCurrentDevice}>
+                      <DeviceInfo>
+                        {renderDeviceIcon(device.type)}
+                        <div>
+                          <DeviceName>
+                            {device.name}
+                            {isCurrentDevice && (
+                              <ActiveSessionBadge>Current</ActiveSessionBadge>
+                            )}
+                          </DeviceName>
+                          <DeviceDetails>
+                            {device.location} • {device.lastActive}
+                          </DeviceDetails>
+                        </div>
+                      </DeviceInfo>
+                      {isCurrentDevice && (
+                        <LogoutDeviceButton
+                          onClick={() => handleLogoutDevice(device)}
+                        >
+                          Sign Out
+                        </LogoutDeviceButton>
+                      )}
+                    </DeviceItem>
+                  );
+                })
               )}
             </DevicesList>
           )}
@@ -696,15 +752,22 @@ function Settings() {
             <DeviceLimit>
               Device Limit: {activeDevices.length} of 5 used
             </DeviceLimit>
-            <DeviceCounter $warning={activeDevices.length >= 4}>
+            <DeviceCounter warning={activeDevices.length >= 4}>
               {activeDevices.length} Active{" "}
               {activeDevices.length === 1 ? "Device" : "Devices"}
             </DeviceCounter>
           </DeviceCount>
 
-          <OutlineButton onClick={handleLogout}>
-            <FaSignOutAlt /> Sign Out From All Devices
-          </OutlineButton>
+          <div style={{ display: "flex", gap: "1rem" }}>
+            {activeDevices.length > 1 && (
+              <OutlineButton onClick={handleSignOutOthers}>
+                <FaSignOutAlt /> Sign Out From Other Devices
+              </OutlineButton>
+            )}
+            <OutlineButton onClick={handleLogout}>
+              <FaSignOutAlt /> Sign Out From All Devices
+            </OutlineButton>
+          </div>
         </CardContent>
       </AnimatedCard>
 
