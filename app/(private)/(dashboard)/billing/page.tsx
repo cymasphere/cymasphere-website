@@ -908,24 +908,29 @@ export default function BillingPage() {
     if (confirmationTitle === "Upgrading Your Plan") {
       if (user && selectedBillingPeriod !== "none") {
         // Get the appropriate promotion code based on the selected billing period
+        // Only apply promo codes for new customers, not for plan upgrades
         let promotionCode: string | undefined;
 
-        if (
-          selectedBillingPeriod === "monthly" &&
-          monthlyDiscount?.promotion_code
-        ) {
-          promotionCode = monthlyDiscount.promotion_code;
-        } else if (
-          selectedBillingPeriod === "annual" &&
-          yearlyDiscount?.promotion_code
-        ) {
-          promotionCode = yearlyDiscount.promotion_code;
-        } else if (
-          selectedBillingPeriod === "lifetime" &&
-          lifetimeDiscount?.promotion_code
-        ) {
-          promotionCode = lifetimeDiscount.promotion_code;
+        // Only apply automatic promo codes for NEW customers (ones without an existing plan)
+        if (userSubscription.subscription === "none") {
+          if (
+            selectedBillingPeriod === "monthly" &&
+            monthlyDiscount?.promotion_code
+          ) {
+            promotionCode = monthlyDiscount.promotion_code;
+          } else if (
+            selectedBillingPeriod === "annual" &&
+            yearlyDiscount?.promotion_code
+          ) {
+            promotionCode = yearlyDiscount.promotion_code;
+          } else if (
+            selectedBillingPeriod === "lifetime" &&
+            lifetimeDiscount?.promotion_code
+          ) {
+            promotionCode = lifetimeDiscount.promotion_code;
+          }
         }
+        // Else: For existing customers, don't pass a promo code - they can enter it manually at checkout
 
         // Show loading state
         setIsLoadingPrices(true);
@@ -1464,21 +1469,58 @@ export default function BillingPage() {
                   </BillingInfo>
                 ) : (
                   <BillingInfo>
-                    <FaInfoCircle /> Next billing date:{" "}
-                    {formatDate(userSubscription.subscription_expiration)}
+                    <FaInfoCircle />
+                    {userSubscription.subscription === "lifetime"
+                      ? "You have lifetime access to all features."
+                      : `Next billing date: ${formatDate(
+                          userSubscription.subscription_expiration
+                        )}`}
                   </BillingInfo>
                 )}
-                <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
+                <Button
+                  onClick={handlePlanChange}
+                  disabled={
+                    isLoadingPrices ||
+                    userSubscription.subscription === "lifetime"
+                  }
+                  title={
+                    userSubscription.subscription === "lifetime"
+                      ? "Lifetime plans cannot be changed"
+                      : ""
+                  }
+                  style={{
+                    cursor:
+                      userSubscription.subscription === "lifetime"
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity:
+                      userSubscription.subscription === "lifetime" ? 0.6 : 1,
+                  }}
+                >
                   {isLoadingPrices ? (
                     <span>
                       <LoadingComponent size="20px" text="" />
                     </span>
                   ) : isInTrialPeriod ? (
                     "Choose Plan"
+                  ) : userSubscription.subscription === "lifetime" ? (
+                    "Lifetime Plan"
                   ) : (
                     "Change Plan"
                   )}
                 </Button>
+                {userSubscription.subscription === "lifetime" && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      fontSize: "0.85rem",
+                      color: "var(--text-secondary)",
+                      opacity: 0.8,
+                    }}
+                  >
+                    Lifetime subscriptions cannot be changed to other plans.
+                  </div>
+                )}
               </>
             )}
           </PlanDetails>
