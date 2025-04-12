@@ -2,7 +2,7 @@
 
 import { PostgrestError } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/utils/supabase/server";
-import { Profile } from "@/utils/supabase/types";
+import { Profile, SessionData } from "@/utils/supabase/types";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
 
@@ -124,4 +124,45 @@ async function updateUserProfile(profile: Profile): Promise<Profile> {
   }
 
   return data;
+}
+
+/**
+ * Fetches the sessions for a user
+ */
+export async function fetchUserSessions(): Promise<{
+  sessions: SessionData[];
+  error: string | null;
+}> {
+  try {
+    const supabase = await createSupabaseServer();
+
+    const {
+      data: { user },
+      error: user_error,
+    } = await supabase.auth.getUser();
+
+    if (user_error) {
+      console.error("Error getting user:", user_error);
+      return { sessions: [], error: "Failed to fetch user" };
+    }
+
+    if (user) {
+      // row level security prevents selecting sessions for other users
+      const { data, error } = await supabase.from("user_sessions").select("*");
+
+      if (error) {
+        console.error("Error in fetchUserSession:", error);
+        return { sessions: [], error: "Failed to fetch user sessions" };
+      }
+
+      console.log("sessions", data);
+
+      return { sessions: data as SessionData[], error: null };
+    }
+
+    return { sessions: [], error: "User not found" };
+  } catch (error) {
+    console.error("Error in fetchUserSession:", error);
+    return { sessions: [], error: "Failed to fetch user sessions" };
+  }
 }

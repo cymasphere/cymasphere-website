@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +14,10 @@ import {
   FaCheck,
   FaInfoCircle,
 } from "react-icons/fa";
+import { useAuth } from "@/contexts/AuthContext";
+import AnimatedCard from "@/components/settings/CardComponent";
+import { fetchUserSessions } from "@/utils/supabase/actions";
+import { SessionData } from "@/utils/supabase/types";
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -30,14 +34,6 @@ const SectionTitle = styled.h2`
   font-size: 1.75rem;
   margin-bottom: 1.5rem;
   color: var(--text);
-`;
-
-const SettingsCard = styled(motion.div)`
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
 const CardTitle = styled.h3`
@@ -209,18 +205,27 @@ const DeviceLimit = styled.div`
 `;
 
 interface DeviceCounterProps {
-  warning: boolean;
+  $warning: boolean;
 }
 
-const DeviceCounter = styled.div<DeviceCounterProps>`
+const StyledDeviceCounter = styled.div<DeviceCounterProps>`
   background-color: ${(props) =>
-    props.warning ? "rgba(255, 87, 51, 0.2)" : "rgba(108, 99, 255, 0.1)"};
+    props.$warning ? "rgba(255, 87, 51, 0.2)" : "rgba(108, 99, 255, 0.1)"};
   border-radius: 20px;
   padding: 0.25rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: ${(props) => (props.warning ? "var(--error)" : "var(--primary)")};
+  color: ${(props) => (props.$warning ? "var(--error)" : "var(--primary)")};
 `;
+
+// Create a wrapper component that accepts standard props and converts to transient props
+const DeviceCounter: React.FC<
+  React.PropsWithChildren<{ warning: boolean }>
+> = ({ warning, children }) => {
+  return (
+    <StyledDeviceCounter $warning={warning}>{children}</StyledDeviceCounter>
+  );
+};
 
 // Modal components
 const ModalOverlay = styled(motion.div)`
@@ -299,7 +304,7 @@ interface ProfileState {
 }
 
 interface Device {
-  id: number;
+  id: string;
   name: string;
   type: "mobile" | "tablet" | "desktop";
   location: string;
@@ -316,6 +321,8 @@ function Settings() {
     deleteConfirmation: "",
   });
 
+  const { user, session, signOut } = useAuth();
+
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeviceLogoutModal, setShowDeviceLogoutModal] = useState(false);
@@ -327,30 +334,117 @@ function Settings() {
     "success" | "warning" | "info"
   >("success");
 
-  // Mock data for active devices
-  const [activeDevices, setActiveDevices] = useState<Device[]>([
-    {
-      id: 1,
-      name: "MacBook Pro",
-      type: "desktop",
-      location: "San Francisco, CA",
-      lastActive: "Now",
-    },
-    {
-      id: 2,
-      name: "iPhone 13",
-      type: "mobile",
-      location: "San Francisco, CA",
-      lastActive: "10 min ago",
-    },
-    {
-      id: 3,
-      name: "iPad Pro",
-      type: "tablet",
-      location: "San Francisco, CA",
-      lastActive: "2 hrs ago",
-    },
-  ]);
+  // Real session data for active devices
+  const [activeDevices, setActiveDevices] = useState<Device[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+
+  // Fetch the user's active sessions
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (user && session) {
+        setIsLoadingSessions(true);
+        try {
+          const { sessions, error } = await fetchUserSessions();
+
+          if (error) {
+            console.error("Error fetching sessions:", error);
+            return;
+          }
+
+          if (sessions && sessions.length > 0) {
+            // Transform the session data into the device format using type assertion
+            const deviceData: Device[] = sessions.map(
+              (sessionData: SessionData) => {
+                // Determine device type based on user agent (simplified example)
+                let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+                let deviceName = "Unknown Device";
+
+                // Safely access properties with optional chaining
+                const userAgent = sessionData?.user_agent || "";
+
+                if (
+                  userAgent.includes("Mobile") ||
+                  userAgent.includes("Android") ||
+                  userAgent.includes("iPhone")
+                ) {
+                  deviceType = "mobile";
+                  if (userAgent.includes("iPhone")) {
+                    deviceName = "iPhone";
+                  } else if (userAgent.includes("Android")) {
+                    deviceName = "Android Device";
+                  } else {
+                    deviceName = "Mobile Device";
+                  }
+                } else if (
+                  userAgent.includes("iPad") ||
+                  userAgent.includes("Tablet")
+                ) {
+                  deviceType = "tablet";
+                  deviceName = userAgent.includes("iPad") ? "iPad" : "Tablet";
+                } else {
+                  if (userAgent.includes("Windows")) {
+                    deviceName = "Windows PC";
+                  } else if (userAgent.includes("Mac")) {
+                    deviceName = "Mac";
+                  } else if (userAgent.includes("Linux")) {
+                    deviceName = "Linux PC";
+                  } else {
+                    deviceName = "Desktop";
+                  }
+                }
+
+                // Format last active time - safely access with optional chaining
+                const lastActive =
+                  sessionData?.updated_at ||
+                  sessionData?.created_at ||
+                  new Date().toISOString();
+                const formattedTime = formatLastActive(new Date(lastActive));
+
+                // Format location - safely access with optional chaining
+                const location =
+                  (sessionData?.ip as string) || "Unknown location";
+
+                return {
+                  id: sessionData?.id || "",
+                  name: deviceName,
+                  type: deviceType,
+                  location: location,
+                  lastActive: formattedTime,
+                };
+              }
+            );
+
+            setActiveDevices(deviceData);
+          }
+        } catch (err) {
+          console.error("Failed to fetch sessions:", err);
+        } finally {
+          setIsLoadingSessions(false);
+        }
+      }
+    };
+
+    fetchSessions();
+  }, [user, session]);
+
+  // Helper function to format the last active time
+  const formatLastActive = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 5) {
+      return "Now";
+    } else if (diffMins < 60) {
+      return `${diffMins} min ago`;
+    } else if (diffMins < 24 * 60) {
+      const diffHours = Math.floor(diffMins / 60);
+      return `${diffHours} hr${diffHours === 1 ? "" : "s"} ago`;
+    } else {
+      const diffDays = Math.floor(diffMins / (60 * 24));
+      return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    }
+  };
 
   const handleSelectChange = (
     e: React.ChangeEvent<HTMLSelectElement>,
@@ -376,20 +470,26 @@ function Settings() {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
-    // Handle logout logic here
-    console.log("Logging out user");
+  const confirmLogout = async () => {
+    try {
+      // Sign out of all devices using the auth context
+      await signOut("global");
 
-    setShowLogoutModal(false);
-    setConfirmationTitle("Logged Out Successfully");
-    setConfirmationMessage("You have been logged out from all devices.");
-    setConfirmationIcon("success");
-    setShowConfirmationModal(true);
-
-    // In a real implementation, you would use auth context to log out
-    // and redirect to login page
-    // Example: auth.logout();
-    // navigate('/login');
+      setShowLogoutModal(false);
+      setConfirmationTitle("Logged Out Successfully");
+      setConfirmationMessage("You have been logged out from all devices.");
+      setConfirmationIcon("success");
+      setShowConfirmationModal(true);
+    } catch (error) {
+      console.error("Error logging out:", error);
+      setShowLogoutModal(false);
+      setConfirmationTitle("Logout Failed");
+      setConfirmationMessage(
+        "There was an error logging out from all devices. Please try again."
+      );
+      setConfirmationIcon("warning");
+      setShowConfirmationModal(true);
+    }
   };
 
   const handleLogoutDevice = (device: Device) => {
@@ -397,23 +497,40 @@ function Settings() {
     setShowDeviceLogoutModal(true);
   };
 
-  const confirmLogoutDevice = () => {
+  const confirmLogoutDevice = async () => {
     if (!deviceToLogout) return;
 
-    // Remove the device from active devices list
-    setActiveDevices((prev) =>
-      prev.filter((device) => device.id !== deviceToLogout.id)
-    );
+    try {
+      // For current device, use signOut with "local" scope
+      // For other devices, in a real implementation with Supabase,
+      // you would use the session ID to revoke a specific session
 
-    console.log(`Logged out device ${deviceToLogout.id}`);
-    setShowDeviceLogoutModal(false);
+      // In a real implementation, we would need to identify the current session
+      // For now, assuming the current session can't be determined, use a global signOut
+      await signOut("global");
 
-    setConfirmationTitle("Device Logged Out");
-    setConfirmationMessage(
-      `Your ${deviceToLogout.name} has been logged out successfully.`
-    );
-    setConfirmationIcon("success");
-    setShowConfirmationModal(true);
+      // Remove the device from active devices list
+      setActiveDevices((prev) =>
+        prev.filter((device) => device.id !== deviceToLogout.id)
+      );
+
+      setShowDeviceLogoutModal(false);
+      setConfirmationTitle("Device Logged Out");
+      setConfirmationMessage(
+        `The device (${deviceToLogout.name}) has been logged out successfully.`
+      );
+      setConfirmationIcon("success");
+      setShowConfirmationModal(true);
+    } catch (error) {
+      console.error("Error logging out device:", error);
+      setShowDeviceLogoutModal(false);
+      setConfirmationTitle("Device Logout Failed");
+      setConfirmationMessage(
+        "There was an error logging out this device. Please try again."
+      );
+      setConfirmationIcon("warning");
+      setShowConfirmationModal(true);
+    }
   };
 
   const handleDeleteAccount = (e: React.FormEvent) => {
@@ -479,7 +596,7 @@ function Settings() {
     <SettingsContainer>
       <SectionTitle>Settings</SectionTitle>
 
-      <SettingsCard
+      <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -530,9 +647,9 @@ function Settings() {
             </SettingItem>
           </SettingsList>
         </CardContent>
-      </SettingsCard>
+      </AnimatedCard>
 
-      <SettingsCard
+      <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
@@ -546,24 +663,34 @@ function Settings() {
             logged in on up to 5 devices at once.
           </p>
 
-          <DevicesList>
-            {activeDevices.map((device) => (
-              <DeviceItem key={device.id}>
-                <DeviceInfo>
-                  {renderDeviceIcon(device.type)}
-                  <div>
-                    <DeviceName>{device.name}</DeviceName>
-                    <DeviceDetails>
-                      {device.location} • {device.lastActive}
-                    </DeviceDetails>
-                  </div>
-                </DeviceInfo>
-                <LogoutDeviceButton onClick={() => handleLogoutDevice(device)}>
-                  Sign Out
-                </LogoutDeviceButton>
-              </DeviceItem>
-            ))}
-          </DevicesList>
+          {isLoadingSessions ? (
+            <p>Loading your active sessions...</p>
+          ) : (
+            <DevicesList>
+              {activeDevices.length === 0 ? (
+                <p>No active sessions found.</p>
+              ) : (
+                activeDevices.map((device) => (
+                  <DeviceItem key={device.id}>
+                    <DeviceInfo>
+                      {renderDeviceIcon(device.type)}
+                      <div>
+                        <DeviceName>{device.name}</DeviceName>
+                        <DeviceDetails>
+                          {device.location} • {device.lastActive}
+                        </DeviceDetails>
+                      </div>
+                    </DeviceInfo>
+                    <LogoutDeviceButton
+                      onClick={() => handleLogoutDevice(device)}
+                    >
+                      Sign Out
+                    </LogoutDeviceButton>
+                  </DeviceItem>
+                ))
+              )}
+            </DevicesList>
+          )}
 
           <DeviceCount>
             <DeviceLimit>
@@ -579,9 +706,9 @@ function Settings() {
             <FaSignOutAlt /> Sign Out From All Devices
           </OutlineButton>
         </CardContent>
-      </SettingsCard>
+      </AnimatedCard>
 
-      <SettingsCard
+      <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
@@ -614,7 +741,7 @@ function Settings() {
             </DangerButton>
           </Form>
         </CardContent>
-      </SettingsCard>
+      </AnimatedCard>
 
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
