@@ -209,3 +209,14 @@ html {
   margin: 20px 0;
   border: 1px solid rgba(108, 99, 255, 0.1);
 }
+
+/* Logo Text Styling - HIGHEST PRIORITY */
+.dashboard-logo .cyma {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-logo .sphere {
+  color: white;
+}

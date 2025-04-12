@@ -71,7 +71,7 @@ const CymasphereLogo: React.FC<CymasphereLogoProps> = ({
       {showText && (
         <LogoText $fontSize={fontSize}>
           <span className="cyma">CYMA</span>
-          SPHERE
+          <span className="sphere">SPHERE</span>
         </LogoText>
       )}
     </LogoWrapper>
