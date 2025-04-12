@@ -456,3 +456,78 @@ export async function getUpcomingInvoice(customerId: string | null) {
     return { amount: null, error: errorMessage };
   }
 }
+
+/**
+ * Updates a customer's subscription to a new plan type
+ * @param customerId The Stripe customer ID
+ * @param planType The new plan type to change to (monthly or annual only)
+ * @returns Object indicating success and any errors
+ */
+export async function updateSubscription(
+  customerId: string,
+  planType: "monthly" | "annual"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!customerId) {
+      return { success: false, error: "Missing customer ID" };
+    }
+
+    // Get price ID for the new plan
+    let priceId: string;
+    switch (planType) {
+      case "monthly":
+        priceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
+        break;
+      case "annual":
+        priceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
+        break;
+      default:
+        return {
+          success: false,
+          error: "Invalid plan type for subscription update",
+        };
+    }
+
+    // Find the customer's active subscriptions
+    const active_sub = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "active",
+      limit: 1,
+    });
+    const trialing_sub = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 1,
+    });
+
+    if (!active_sub.data.length && !trialing_sub.data.length) {
+      return { success: false, error: "No active subscription found" };
+    }
+
+    const subscription = active_sub.data.length
+      ? active_sub.data[0]
+      : trialing_sub.data[0];
+
+    const subscriptionId = subscription.id;
+
+    const updateParams: Stripe.SubscriptionUpdateParams = {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          price: priceId,
+        },
+      ],
+    };
+
+    await stripe.subscriptions.update(subscriptionId, updateParams);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating subscription:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}

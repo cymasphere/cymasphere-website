@@ -13,7 +13,7 @@ export type CustomerPurchasedProResponse = {
 };
 
 // Type for Stripe metadata and nested properties
-type StripeAttrs = {
+type StripeSubscriptionAttrs = {
   metadata?: { price_id?: string };
   refunded?: boolean;
   status?:
@@ -44,8 +44,6 @@ export async function customerPurchasedProFromSupabase(
     let hasLifetime = false;
     let activeSubscriptionId: string | undefined;
 
-    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
-
     // First check for lifetime purchase
     // Check charges for one-time lifetime purchase
     const { data: charges, error: chargesError } = await supabase
@@ -53,9 +51,8 @@ export async function customerPurchasedProFromSupabase(
       .from("stripe_charges")
       .select("*")
       .eq("customer", customer_id)
-      .eq("status", "succeeded")
       .order("created", { ascending: false })
-      .limit(100);
+      .limit(1);
 
     console.log("charges", charges);
 
@@ -68,14 +65,9 @@ export async function customerPurchasedProFromSupabase(
       };
     }
 
-    // Look for lifetime purchase in charges
-    for (const charge of charges || []) {
-      const attrs = charge.attrs as StripeAttrs | null;
-      if (attrs?.metadata?.price_id === lifetimePriceId && !attrs.refunded) {
-        hasLifetime = true;
-        subscriptionType = "lifetime";
-        break;
-      }
+    if (charges.length > 0 && charges[0].status === "succeeded") {
+      hasLifetime = true;
+      subscriptionType = "lifetime";
     }
 
     // Check for active subscriptions (even if we found a lifetime purchase)
@@ -106,7 +98,7 @@ export async function customerPurchasedProFromSupabase(
 
     for (const subscription of subscriptions || []) {
       // Skip canceled or incomplete subscriptions
-      const attrs = subscription.attrs as StripeAttrs | null;
+      const attrs = subscription.attrs as StripeSubscriptionAttrs | null;
 
       switch (attrs?.status) {
         case "active":
@@ -175,5 +167,81 @@ export async function customerPurchasedProFromSupabase(
       subscription: "none",
       error,
     };
+  }
+}
+
+/**
+ * Interface for invoice data returned from the Supabase Stripe tables
+ */
+export interface InvoiceData {
+  id: string;
+  amount: number;
+  status: string;
+  created: string;
+  currency: string;
+  pdf_url?: string;
+  receipt_url?: string;
+}
+
+/**
+ * Fetches invoice history for a customer from the Supabase Stripe tables
+ * @param customerId The Stripe customer ID to fetch invoices for
+ * @param limit Number of invoices to return (default: 10)
+ */
+export async function getCustomerInvoices(
+  customerId: string | null,
+  limit: number = 10
+): Promise<{ invoices: InvoiceData[]; error: string | null }> {
+  try {
+    if (!customerId) {
+      return { invoices: [], error: "No customer ID provided" };
+    }
+
+    // Create Supabase service role client to access the stripe_tables schema
+    const { createSupabaseServiceRole } = await import(
+      "@/utils/supabase/service"
+    );
+    const supabase = await createSupabaseServiceRole();
+
+    // Query the stripe_invoices table for invoices belonging to this customer
+    const { data, error } = await supabase
+      .schema("stripe_tables")
+      .from("stripe_invoices")
+      .select("*")
+      .eq("customer", customerId)
+      .order("period_end", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("Error querying stripe_invoices:", error);
+      return { invoices: [], error: error.message };
+    }
+
+    // Format the invoice data for the UI
+    const invoices: InvoiceData[] = (data || []).map((invoice) => {
+      const attrs = invoice.attrs as {
+        hosted_invoice_url?: string;
+        invoice_pdf?: string;
+        created?: number;
+      } | null;
+
+      return {
+        id: invoice.id || "",
+        amount: (invoice.total || 0) / 100, // Convert cents to dollars
+        status: invoice.status || "unknown",
+        created: new Date(
+          attrs?.created ? attrs.created * 1000 : Date.now()
+        ).toISOString(),
+        currency: invoice.currency || "usd",
+        pdf_url: attrs?.invoice_pdf,
+        receipt_url: attrs?.hosted_invoice_url,
+      };
+    });
+
+    return { invoices, error: null };
+  } catch (error: unknown) {
+    console.error("Error fetching customer invoices:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { invoices: [], error: errorMessage };
   }
 }
