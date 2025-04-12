@@ -489,26 +489,27 @@ export async function updateSubscription(
     }
 
     // Find the customer's active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
+    const active_sub = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
+    const trialing_sub = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 1,
+    });
 
-    if (!subscriptions.data.length) {
+    if (!active_sub.data.length && !trialing_sub.data.length) {
       return { success: false, error: "No active subscription found" };
     }
 
-    const subscription = subscriptions.data[0];
+    const subscription = active_sub.data.length
+      ? active_sub.data[0]
+      : trialing_sub.data[0];
+
     const subscriptionId = subscription.id;
 
-    // Check if downgrading from annual to monthly
-    const isDowngrade =
-      subscription.items.data[0].price.id ===
-        process.env.STRIPE_PRICE_ID_ANNUAL && planType === "monthly";
-
-    // If downgrading from annual to monthly, schedule update at period end
-    // If upgrading from monthly to annual, update immediately
     const updateParams: Stripe.SubscriptionUpdateParams = {
       items: [
         {
@@ -516,18 +517,8 @@ export async function updateSubscription(
           price: priceId,
         },
       ],
-      proration_behavior: isDowngrade ? "none" : "create_prorations",
-      cancel_at_period_end: false,
     };
 
-    // When downgrading from annual to monthly, change at the end of billing period
-    if (isDowngrade) {
-      updateParams.cancel_at_period_end = false;
-      updateParams.proration_behavior = "none";
-      updateParams.billing_cycle_anchor = "unchanged";
-    }
-
-    // Update the subscription
     await stripe.subscriptions.update(subscriptionId, updateParams);
 
     return { success: true };

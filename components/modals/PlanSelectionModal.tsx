@@ -418,6 +418,7 @@ interface PlanSelectionModalProps {
     promotion_code?: string;
   };
   onCardToggleChange?: (willProvideCard: boolean) => void;
+  isPlanChangeLoading?: boolean;
 }
 
 const PlanSelectionModal = ({
@@ -449,6 +450,7 @@ const PlanSelectionModal = ({
   yearlyDiscount,
   lifetimeDiscount,
   onCardToggleChange,
+  isPlanChangeLoading = false,
 }: PlanSelectionModalProps) => {
   // State for client-side rendering
   const [isMounted, setIsMounted] = useState(false);
@@ -941,11 +943,15 @@ const PlanSelectionModal = ({
                   marginRight: "0.5rem",
                   background: "rgba(255, 255, 255, 0.1)",
                 }}
+                disabled={isPlanChangeLoading}
               >
                 Cancel
               </Button>
               <Button
-                disabled={profile.subscription === selectedSubscription}
+                disabled={
+                  profile.subscription === selectedSubscription ||
+                  isPlanChangeLoading
+                }
                 onClick={() => {
                   console.log("Confirming plan: pro");
                   onConfirm("pro");
@@ -954,9 +960,13 @@ const PlanSelectionModal = ({
                   position: "relative",
                   overflow: "hidden",
                   opacity:
-                    profile.subscription === selectedSubscription ? 0.5 : 1,
+                    profile.subscription === selectedSubscription ||
+                    isPlanChangeLoading
+                      ? 0.5
+                      : 1,
                   cursor:
-                    profile.subscription === selectedSubscription
+                    profile.subscription === selectedSubscription ||
+                    isPlanChangeLoading
                       ? "not-allowed"
                       : "pointer",
                 }}
@@ -985,16 +995,50 @@ const PlanSelectionModal = ({
                   }, 600);
                 }}
               >
-                {profile.subscription === "none"
-                  ? "Start Free Trial"
-                  : selectedSubscription === "lifetime"
-                  ? "Upgrade to Lifetime"
-                  : "Change Plan"}
+                {isPlanChangeLoading ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div
+                      className="spinner"
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        border: "2px solid rgba(255,255,255,0.2)",
+                        borderTop: "2px solid white",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        marginRight: "8px",
+                      }}
+                    />
+                    Processing...
+                  </div>
+                ) : profile.subscription === "none" ? (
+                  "Start Free Trial"
+                ) : selectedSubscription === "lifetime" ? (
+                  "Upgrade to Lifetime"
+                ) : (
+                  "Change Plan"
+                )}
               </Button>
             </ModalFooter>
           </ModalContent>
         </ModalOverlay>
       )}
+      <style jsx global>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </AnimatePresence>
   );
 };
