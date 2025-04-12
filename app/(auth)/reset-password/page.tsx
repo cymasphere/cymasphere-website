@@ -303,6 +303,9 @@ function ResetPassword() {
         setError("No user found with this email address");
       } else if (result.error.code === "email_address_invalid") {
         setError("Invalid email address");
+      } else if (result.error.message.includes("email rate limit exceeded") || 
+                 result.error.message.includes("rate limit")) {
+        setError("Too many password reset attempts. Please wait a few minutes before trying again.");
       } else {
         setError("Failed to send password reset email. Please try again.");
       }

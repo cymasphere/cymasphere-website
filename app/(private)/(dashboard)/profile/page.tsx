@@ -302,10 +302,18 @@ function Profile() {
     try {
       const { error } = await resetPassword(user.email);
       if (error) {
-        setMessage({
-          text: `Error sending reset email: ${error.message}`,
-          type: "error",
-        });
+        if (error.message.includes("email rate limit exceeded") || 
+            error.message.includes("rate limit")) {
+          setMessage({
+            text: "Too many password reset attempts. Please wait a few minutes before trying again.",
+            type: "error",
+          });
+        } else {
+          setMessage({
+            text: `Error sending reset email: ${error.message}`,
+            type: "error",
+          });
+        }
       } else {
         setMessage({
           text: "Password reset email sent! Please check your inbox.",
