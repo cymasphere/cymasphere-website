@@ -184,3 +184,28 @@ html {
 :focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Add skeleton loading styles */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(108, 99, 255, 0.05) 25%,
+    rgba(108, 99, 255, 0.2) 37%,
+    rgba(108, 99, 255, 0.05) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 8px;
+  width: 100%;
+  margin: 20px 0;
+  border: 1px solid rgba(108, 99, 255, 0.1);
+}
