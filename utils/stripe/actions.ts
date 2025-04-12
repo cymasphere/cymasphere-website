@@ -336,6 +336,29 @@ export type CustomerPurchasedProResponse = {
   error?: Error | unknown;
 };
 
+export async function cancelSubscription(
+  customerId: string,
+  subscriptionId: string
+): Promise<{ success: boolean; error?: Error | unknown }> {
+  try {
+    console.log(
+      `Cancelling subscription ${subscriptionId} for customer ${customerId} who upgraded to lifetime`
+    );
+
+    // Cancel the subscription immediately
+    await stripe.subscriptions.cancel(subscriptionId, {
+      invoice_now: false, // Don't generate a final invoice
+      prorate: false, // Prorate any unused time
+    });
+
+    console.log(`Successfully cancelled subscription ${subscriptionId}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`Failed to cancel subscription ${subscriptionId}:`, error);
+    return { success: false, error: error as Error };
+  }
+}
+
 /**
  * Fetches the result of a checkout session by ID
  * @param sessionId The Stripe checkout session ID
@@ -403,88 +426,6 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       status: "error",
       error:
         error instanceof Error ? error.message : "An unexpected error occurred",
-    };
-  }
-}
-
-export async function customerPurchasedPro(
-  customer_id: string
-): Promise<CustomerPurchasedProResponse> {
-  try {
-    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
-    const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
-    const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
-
-    // Check for one-time purchase
-    const charges = await stripe.charges.list({
-      customer: customer_id,
-      limit: 100,
-    });
-
-    // Find if any charge contains the one-time purchase product
-    let oneTimePurchase = false;
-
-    for (const charge of charges.data) {
-      // Check if this charge is for the one-time purchase product
-      if (charge.metadata && charge.metadata.price_id === lifetimePriceId) {
-        if (charge.refunded) {
-          break;
-        } else {
-          oneTimePurchase = true;
-          break;
-        }
-      }
-    }
-
-    console.log("charges", JSON.stringify(charges, null, 2));
-
-    if (oneTimePurchase) {
-      return {
-        success: true,
-        subscription: "lifetime",
-      };
-    }
-
-    // Check for subscription purchases
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer_id,
-      status: "all",
-    });
-
-    console.log("subscriptions", JSON.stringify(subscriptions, null, 2));
-
-    // Find if any subscription contains either of the subscription products
-    let subscriptionType: SubscriptionType = "none";
-    let current_period_end: Date | undefined;
-    let trial_end_date: Date | undefined;
-
-    for (const subscription of subscriptions.data) {
-      // Check if this subscription contains one of our products
-      for (const item of subscription.items.data) {
-        const priceId = item.price.id;
-        if (priceId === monthlyPriceId || priceId === annualPriceId) {
-          subscriptionType = priceId === monthlyPriceId ? "monthly" : "annual";
-          current_period_end = new Date(subscription.current_period_end * 1000);
-          // Capture trial end date if exists
-          if (subscription.trial_end) {
-            trial_end_date = new Date(subscription.trial_end * 1000);
-          }
-        }
-      }
-      if (subscriptionType !== "none") break;
-    }
-
-    return {
-      success: true,
-      subscription: subscriptionType,
-      trial_end_date,
-      subscription_expiration: current_period_end,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      subscription: "none",
-      error,
     };
   }
 }

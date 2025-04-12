@@ -2,6 +2,7 @@
 
 import { SubscriptionType } from "@/utils/supabase/types";
 import { createServiceClient } from "@/utils/supabase/service";
+import { cancelSubscription } from "./actions";
 
 export type CustomerPurchasedProResponse = {
   success: boolean;
@@ -40,6 +41,10 @@ export async function customerPurchasedProFromSupabase(
     let subscriptionType: SubscriptionType = "none";
     let current_period_end: Date | undefined;
     let trial_end_date: Date | undefined;
+    let hasLifetime = false;
+    let activeSubscriptionId: string | undefined;
+
+    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
 
     // First check for lifetime purchase
     // Check charges for one-time lifetime purchase
@@ -48,6 +53,8 @@ export async function customerPurchasedProFromSupabase(
       .from("stripe_charges")
       .select("*")
       .eq("customer", customer_id)
+      .eq("status", "succeeded")
+      .order("created", { ascending: false })
       .limit(100);
 
     console.log("charges", charges);
@@ -62,33 +69,22 @@ export async function customerPurchasedProFromSupabase(
     }
 
     // Look for lifetime purchase in charges
-    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
     for (const charge of charges || []) {
-      // Safely check metadata for the lifetime price ID
       const attrs = charge.attrs as StripeAttrs | null;
-      if (attrs?.metadata?.price_id === lifetimePriceId) {
-        // Check if the charge was refunded
-        if (!attrs.refunded) {
-          subscriptionType = "lifetime";
-          break;
-        }
+      if (attrs?.metadata?.price_id === lifetimePriceId && !attrs.refunded) {
+        hasLifetime = true;
+        subscriptionType = "lifetime";
+        break;
       }
     }
 
-    // If already found lifetime, return early
-    if (subscriptionType === "lifetime") {
-      return {
-        success: true,
-        subscription: subscriptionType,
-      };
-    }
-
-    // Check for active subscriptions
+    // Check for active subscriptions (even if we found a lifetime purchase)
     const { data: subscriptions, error: subscriptionsError } = await supabase
       .schema("stripe_tables")
       .from("stripe_subscriptions")
       .select("*")
-      .eq("customer", customer_id);
+      .eq("customer", customer_id)
+      .order("current_period_end", { ascending: false });
 
     console.log("subscriptions", subscriptions);
 
@@ -105,16 +101,20 @@ export async function customerPurchasedProFromSupabase(
     const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
     const annualPriceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
 
+    let hasActiveSubscription = false;
+    let activeSubscriptionType: "monthly" | "annual" | undefined;
+
     for (const subscription of subscriptions || []) {
       // Skip canceled or incomplete subscriptions
       const attrs = subscription.attrs as StripeAttrs | null;
-      const status = attrs?.status;
-      if (
-        status === "canceled" ||
-        status === "incomplete" ||
-        status === "incomplete_expired"
-      ) {
-        continue;
+
+      switch (attrs?.status) {
+        case "active":
+        case "trialing":
+        case "past_due":
+          break;
+        default:
+          continue;
       }
 
       // Check subscription items
@@ -124,31 +124,42 @@ export async function customerPurchasedProFromSupabase(
         if (priceId === monthlyPriceId || priceId === annualPriceId) {
           // Consider active subscriptions - those that are active, trialing, or past_due
           // These are statuses where the customer still has access to the service
-          if (
-            status === "active" ||
-            status === "trialing" ||
-            status === "past_due"
-          ) {
-            subscriptionType =
-              priceId === monthlyPriceId ? "monthly" : "annual";
+          hasActiveSubscription = true;
+          activeSubscriptionType =
+            priceId === monthlyPriceId ? "monthly" : "annual";
+          activeSubscriptionId = subscription.id || undefined;
 
-            // Set expiration date
-            if (subscription.current_period_end) {
-              current_period_end = new Date(subscription.current_period_end);
-            }
-
-            // Check for trial end date
-            const trialEnd = attrs?.trial_end;
-            if (trialEnd) {
-              trial_end_date = new Date(trialEnd * 1000);
-            }
-
-            break;
+          // Set expiration date
+          if (subscription.current_period_end) {
+            current_period_end = new Date(subscription.current_period_end);
           }
+
+          // Check for trial end date
+          const trialEnd = attrs?.trial_end;
+          if (trialEnd) {
+            trial_end_date = new Date(trialEnd * 1000);
+          }
+
+          break;
         }
       }
 
-      if (subscriptionType !== "none") break;
+      if (hasActiveSubscription) break;
+    }
+
+    // If the user has both lifetime and an active subscription, we should cancel the subscription
+    if (hasLifetime && hasActiveSubscription && activeSubscriptionId) {
+      // Initiate subscription cancellation process
+      await cancelSubscription(customer_id, activeSubscriptionId);
+    }
+
+    // If user has lifetime, that takes precedence over any subscription
+    if (hasLifetime) {
+      subscriptionType = "lifetime";
+    }
+    // Otherwise, use the active subscription type if any
+    else if (hasActiveSubscription && activeSubscriptionType) {
+      subscriptionType = activeSubscriptionType;
     }
 
     return {
