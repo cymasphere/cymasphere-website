@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +14,11 @@ import {
   FaGift,
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
-import { Profile } from "@/utils/supabase/types";
+import { Profile, SubscriptionType } from "@/utils/supabase/types";
+import { initiateCheckout, getPrices } from "@/utils/stripe/actions";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const BillingContainer = styled.div`
   width: 100%;
@@ -656,20 +660,54 @@ export default function BillingPage() {
   const [showRemoveConfirmModal, setShowRemoveConfirmModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [confirmationTitle, setConfirmationTitle] = useState("");
+  const [selectedBillingPeriod, setSelectedBillingPeriod] =
+    useState<SubscriptionType>("none");
+  const [willProvideCard, setWillProvideCard] = useState(false);
 
-  // Mock user subscription data - in a real app, this would come from context/API
-  const [userSubscription, setUserSubscription] = useState<Profile>({
-    avatar_url: null,
-    customer_id: null,
-    first_name: null,
-    id: "",
-    last_name: null,
-    last_stripe_api_check: null,
-    subscription: "none",
-    subscription_expiration: null,
-    trial_expiration: null,
-    updated_at: null,
-  });
+  const router = useRouter();
+  const { user } = useAuth();
+
+  // State for plan prices and discounts
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState(8);
+  const [yearlyPrice, setYearlyPrice] = useState(69);
+  const [lifetimePrice, setLifetimePrice] = useState(199);
+
+  // State for discounts
+  const [monthlyDiscount, setMonthlyDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  const [yearlyDiscount, setYearlyDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  const [lifetimeDiscount, setLifetimeDiscount] = useState<{
+    percent_off?: number;
+    amount_off?: number;
+    promotion_code?: string;
+  } | null>(null);
+
+  // User subscription data
+  const [userSubscription] = useState<Profile>(
+    user?.profile || {
+      avatar_url: null,
+      customer_id: null,
+      first_name: null,
+      id: "",
+      last_name: null,
+      last_stripe_api_check: null,
+      subscription: "none",
+      subscription_expiration: null,
+      trial_expiration: null,
+      updated_at: null,
+    }
+  );
 
   // Mock payment methods
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
@@ -752,72 +790,6 @@ export default function BillingPage() {
     },
   };
 
-  const handlePlanChange = () => {
-    setShowPlanModal(true);
-  };
-
-  const handleBillingPeriodChange = (
-    interval: "none" | "monthly" | "annual" | "lifetime"
-  ) => {
-    setUserSubscription((prev) => ({
-      ...prev,
-      subscription: interval,
-    }));
-  };
-
-  const handleConfirmPlanChange = () => {
-    // If user is changing to a more expensive plan (monthly -> yearly -> lifetime)
-    const shouldRedirectToCheckout =
-      (userSubscription.subscription === "monthly" &&
-        userSubscription.subscription !== "monthly") ||
-      (userSubscription.subscription === "annual" &&
-        userSubscription.subscription !== "annual" &&
-        userSubscription.subscription === "lifetime");
-
-    if (shouldRedirectToCheckout) {
-      // Show confirmation modal instead of alert
-      setConfirmationTitle("Upgrading Your Plan");
-      setConfirmationMessage(
-        `You're upgrading to the ${userSubscription.subscription} plan. You'll be redirected to checkout to complete your purchase.`
-      );
-      setShowConfirmationModal(true);
-      setShowPlanModal(false);
-      return;
-    }
-
-    // If downgrading from annual to monthly
-    if (userSubscription.subscription === "annual") {
-      setConfirmationTitle("Plan Change Scheduled");
-      setConfirmationMessage(
-        `Your plan will be changed to monthly at the end of your current billing period on ${formatDate(
-          userSubscription.subscription_expiration
-        )}.`
-      );
-      setShowConfirmationModal(true);
-    } else {
-      setConfirmationTitle("Plan Updated");
-      setConfirmationMessage(
-        `Your plan has been changed to ${userSubscription.subscription}.`
-      );
-      setShowConfirmationModal(true);
-    }
-
-    setShowPlanModal(false);
-  };
-
-  const handleConfirmationClose = () => {
-    setShowConfirmationModal(false);
-
-    // If it was an upgrade that required checkout, redirect here
-    if (confirmationTitle === "Upgrading Your Plan") {
-      // In a real app, you would navigate to checkout
-      console.log(
-        `Redirecting to checkout for upgrade to ${userSubscription.subscription}`
-      );
-      // router.push('/checkout', { state: { interval: userSubscription.subscription, upgrading: true } });
-    }
-  };
-
   // Format the date for display
   const formatDate = (date: string | number | null | undefined) => {
     if (!date) return "";
@@ -832,7 +804,180 @@ export default function BillingPage() {
   const getCurrentPrice = () => {
     return userSubscription.subscription === "monthly"
       ? planOptions.pro.monthlyPrice
-      : planOptions.pro.yearlyPrice;
+      : userSubscription.subscription === "annual"
+      ? planOptions.pro.yearlyPrice
+      : planOptions.pro.lifetimePrice;
+  };
+
+  // Add function to check if user is in trial period
+  const isInTrialPeriod = () => {
+    return (
+      userSubscription.trial_expiration &&
+      new Date() < new Date(userSubscription.trial_expiration)
+    );
+  };
+
+  // Add function to get days left in trial
+  const getDaysLeftInTrial = () => {
+    if (!userSubscription.trial_expiration) return 0;
+    const today = new Date();
+    const trialEnd = new Date(userSubscription.trial_expiration);
+    const diffTime = Math.abs(trialEnd.getTime() - today.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Fetch prices from Stripe when component mounts
+  useEffect(() => {
+    async function fetchPrices() {
+      try {
+        setIsLoadingPrices(true);
+        setPriceError(null);
+
+        const { prices, error } = await getPrices();
+
+        if (error) {
+          setPriceError(error);
+          return;
+        }
+
+        // Update state with fetched prices
+        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+        setYearlyPrice(Math.round(prices.annual.amount / 100));
+        setLifetimePrice(Math.round(prices.lifetime.amount / 100));
+
+        // Store discount information if available
+        if (prices.monthly.discount) {
+          setMonthlyDiscount(prices.monthly.discount);
+        }
+
+        if (prices.annual.discount) {
+          setYearlyDiscount(prices.annual.discount);
+        }
+
+        if (prices.lifetime.discount) {
+          setLifetimeDiscount(prices.lifetime.discount);
+        }
+      } catch (err) {
+        console.error("Error fetching prices:", err);
+        setPriceError("Failed to load pricing information");
+      } finally {
+        setIsLoadingPrices(false);
+      }
+    }
+
+    fetchPrices();
+  }, []);
+
+  const handlePlanChange = () => {
+    // Reset to current interval when opening modal
+    setSelectedBillingPeriod(
+      userSubscription.subscription === "none"
+        ? "monthly"
+        : userSubscription.subscription
+    );
+    setShowPlanModal(true);
+  };
+
+  const handleBillingPeriodChange = (period: SubscriptionType) => {
+    setSelectedBillingPeriod(period);
+  };
+
+  const handleConfirmPlanChange = () => {
+    // If user is changing to a more expensive plan (monthly -> yearly -> lifetime)
+    const shouldRedirectToCheckout =
+      (userSubscription.subscription === "monthly" &&
+        selectedBillingPeriod !== "monthly") ||
+      (userSubscription.subscription === "annual" &&
+        selectedBillingPeriod !== "annual" &&
+        selectedBillingPeriod === "lifetime") ||
+      userSubscription.subscription === "none";
+
+    if (shouldRedirectToCheckout) {
+      // Show confirmation modal instead of alert
+      setConfirmationTitle("Upgrading Your Plan");
+      setConfirmationMessage(
+        `You're upgrading to the ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`
+      );
+      setShowConfirmationModal(true);
+      setShowPlanModal(false);
+      return;
+    }
+
+    // If downgrading from annual to monthly
+    if (
+      userSubscription.subscription === "annual" &&
+      selectedBillingPeriod === "monthly"
+    ) {
+      setConfirmationTitle("Plan Change Scheduled");
+      setConfirmationMessage(
+        `Your plan will be changed to monthly at the end of your current billing period on ${formatDate(
+          userSubscription.subscription_expiration
+        )}.`
+      );
+      setShowConfirmationModal(true);
+    } else {
+      setConfirmationTitle("Plan Updated");
+      setConfirmationMessage(
+        `Your plan has been changed to ${selectedBillingPeriod}.`
+      );
+      setShowConfirmationModal(true);
+    }
+
+    setShowPlanModal(false);
+  };
+
+  const handleConfirmationClose = async () => {
+    setShowConfirmationModal(false);
+
+    // If it was an upgrade that required checkout, redirect here
+    if (confirmationTitle === "Upgrading Your Plan") {
+      if (user && selectedBillingPeriod !== "none") {
+        // Get the appropriate promotion code based on the selected billing period
+        let promotionCode: string | undefined;
+
+        if (
+          selectedBillingPeriod === "monthly" &&
+          monthlyDiscount?.promotion_code
+        ) {
+          promotionCode = monthlyDiscount.promotion_code;
+        } else if (
+          selectedBillingPeriod === "annual" &&
+          yearlyDiscount?.promotion_code
+        ) {
+          promotionCode = yearlyDiscount.promotion_code;
+        } else if (
+          selectedBillingPeriod === "lifetime" &&
+          lifetimeDiscount?.promotion_code
+        ) {
+          promotionCode = lifetimeDiscount.promotion_code;
+        }
+
+        // Start loading state if needed
+        setIsLoadingPrices(true);
+
+        const { url, error } = await initiateCheckout(
+          selectedBillingPeriod,
+          user.email,
+          user.profile.customer_id || undefined,
+          promotionCode,
+          willProvideCard
+        );
+
+        setIsLoadingPrices(false);
+
+        if (url) {
+          router.push(url);
+        } else {
+          console.error("Error initiating checkout:", error);
+          // Show error modal if needed
+        }
+      }
+    }
+  };
+
+  const handleCardToggleChange = (newValue: boolean) => {
+    setWillProvideCard(newValue);
   };
 
   const handleAddPaymentMethod = () => {
@@ -968,24 +1113,6 @@ export default function BillingPage() {
     }
   };
 
-  // Add function to check if user is in trial period
-  const isInTrialPeriod = () => {
-    return (
-      userSubscription.trial_expiration &&
-      new Date() < new Date(userSubscription.trial_expiration)
-    );
-  };
-
-  // Add function to get days left in trial
-  const getDaysLeftInTrial = () => {
-    if (!userSubscription.trial_expiration) return 0;
-    const today = new Date();
-    const trialEnd = new Date(userSubscription.trial_expiration);
-    const diffTime = Math.abs(trialEnd.getTime() - today.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
   return (
     <BillingContainer>
       <SectionTitle>Billing & Subscription</SectionTitle>
@@ -1009,7 +1136,14 @@ export default function BillingPage() {
         </AlertBanner>
       )}
 
-      {userSubscription.subscription === "none" && (
+      {priceError && (
+        <AlertBanner style={{ backgroundColor: "rgba(255, 72, 66, 0.1)" }}>
+          <FaTimes />
+          <p>{priceError} Showing default prices.</p>
+        </AlertBanner>
+      )}
+
+      {userSubscription.subscription === "none" && !priceError && (
         <AlertBanner>
           <FaTimes />
           <p>
@@ -1037,7 +1171,13 @@ export default function BillingPage() {
                   Your subscription is currently inactive. Upgrade to a paid
                   plan to access all features.
                 </PlanDescription>
-                <Button onClick={handlePlanChange}>Choose a Plan</Button>
+                <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
+                  {isLoadingPrices ? (
+                    <LoadingComponent size="20px" text="" />
+                  ) : (
+                    "Choose a Plan"
+                  )}
+                </Button>
               </>
             ) : (
               <>
@@ -1081,8 +1221,14 @@ export default function BillingPage() {
                     {formatDate(userSubscription.subscription_expiration)}
                   </BillingInfo>
                 )}
-                <Button onClick={handlePlanChange}>
-                  {isInTrialPeriod() ? "Choose Plan" : "Change Plan"}
+                <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
+                  {isLoadingPrices ? (
+                    <LoadingComponent size="20px" text="" />
+                  ) : isInTrialPeriod() ? (
+                    "Choose Plan"
+                  ) : (
+                    "Change Plan"
+                  )}
                 </Button>
               </>
             )}
@@ -1174,7 +1320,7 @@ export default function BillingPage() {
         </CardContent>
       </BillingCard>
 
-      {/* Plan Selection Modal - Updated to use shared component */}
+      {/* Plan Selection Modal */}
       <AnimatePresence>
         {showPlanModal && (
           <PlanSelectionModal
@@ -1185,16 +1331,16 @@ export default function BillingPage() {
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
             planName="Cymasphere Pro"
-            monthlyPrice={planOptions.pro.monthlyPrice}
-            yearlyPrice={planOptions.pro.yearlyPrice}
-            lifetimePrice={planOptions.pro.lifetimePrice || 199}
+            monthlyPrice={monthlyPrice}
+            yearlyPrice={yearlyPrice}
+            lifetimePrice={lifetimePrice}
             planDescription={planOptions.pro.description}
-            trialDays={planOptions.pro.trialDays || 14}
+            trialDays={planOptions.pro.trialDays}
             planFeatures={planOptions.pro.features}
-            monthlyDiscount={undefined}
-            yearlyDiscount={undefined}
-            lifetimeDiscount={undefined}
-            onCardToggleChange={undefined}
+            monthlyDiscount={monthlyDiscount || undefined}
+            yearlyDiscount={yearlyDiscount || undefined}
+            lifetimeDiscount={lifetimeDiscount || undefined}
+            onCardToggleChange={handleCardToggleChange}
           />
         )}
       </AnimatePresence>

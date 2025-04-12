@@ -11,10 +11,8 @@ import {
   FaLaptop,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
-import { Profile, SubscriptionType } from "@/utils/supabase/types";
 import { capitalize } from "@/utils/stringUtils";
-import { initiateCheckout, getPrices } from "@/utils/stripe/actions";
+import { getPrices } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
 
@@ -391,10 +389,6 @@ function DashboardPage() {
 
   const router = useRouter();
 
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [selectedBillingPeriod, setSelectedBillingPeriod] = useState(
-    user.profile.subscription
-  );
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
@@ -404,99 +398,16 @@ function DashboardPage() {
     message: "",
   });
 
-  // Remove mock data and use actual subscription data from user
-  const [userSubscription, setUserSubscription] = useState<Profile>(
-    user.profile
-  );
+  // Use actual subscription data from user
+  const userSubscription = user.profile;
 
   // Add state for Stripe prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
 
-  // Add state for discounts
-  const [monthlyDiscount, setMonthlyDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
-
-  const [yearlyDiscount, setYearlyDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
-
-  const [lifetimeDiscount, setLifetimeDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
-
-  // Replace hardcoded variables with state
-  const [planName] = useState("Cymasphere Pro");
+  // Only keep the monthly price for display purposes
   const [monthlyPrice, setMonthlyPrice] = useState(8);
-  const [yearlyPrice, setYearlyPrice] = useState(69);
-  const [lifetimePrice, setLifetimePrice] = useState(199);
-  const [planDescription] = useState("Complete solution for music producers");
   const [trialDays] = useState(14);
-
-  const planFeatures = [
-    "Interactive Harmony Palette",
-    "Advanced Voice Leading Control",
-    "Unlimited Saved Progressions",
-    "Premium Sound Libraries",
-    "MIDI Export & Import",
-    "Dynamic Pattern Editor",
-    "Song Builder Tool",
-    "Cloud Storage & Backup",
-    "Priority Email Support",
-    "Free Updates",
-  ];
-
-  // Change default value to false (off)
-  const [willProvideCard, setWillProvideCard] = useState(false);
-
-  // Fetch prices from Stripe when component mounts
-  useEffect(() => {
-    async function fetchPrices() {
-      try {
-        setIsLoadingPrices(true);
-        setPriceError(null);
-
-        const { prices, error } = await getPrices();
-
-        if (error) {
-          setPriceError(error);
-          return;
-        }
-
-        // Update state with fetched prices
-        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
-        setYearlyPrice(Math.round(prices.annual.amount / 100));
-        setLifetimePrice(Math.round(prices.lifetime.amount / 100));
-
-        // Store discount information if available
-        if (prices.monthly.discount) {
-          setMonthlyDiscount(prices.monthly.discount);
-        }
-
-        if (prices.annual.discount) {
-          setYearlyDiscount(prices.annual.discount);
-        }
-
-        if (prices.lifetime.discount) {
-          setLifetimeDiscount(prices.lifetime.discount);
-        }
-      } catch (err) {
-        console.error("Error fetching prices:", err);
-        setPriceError("Failed to load pricing information");
-      } finally {
-        setIsLoadingPrices(false);
-      }
-    }
-
-    fetchPrices();
-  }, []);
 
   // Use actual connected devices if available
   // const connectedDevices = user.profile.connectedDevices || [
@@ -532,108 +443,9 @@ function DashboardPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  // Event handlers
+  // Navigate to billing page instead of showing modal
   const handlePlanChange = () => {
-    // Reset to current interval when opening modal
-    setSelectedBillingPeriod(
-      userSubscription.subscription === "none"
-        ? "monthly"
-        : userSubscription.subscription
-    );
-    setShowPlanModal(true);
-  };
-
-  const handleBillingPeriodChange = (period: SubscriptionType) => {
-    console.log(`Setting billing period to: ${period}`);
-    setSelectedBillingPeriod(period);
-  };
-
-  const handleConfirmPlanChange = (plan: string) => {
-    console.log(`Plan changed to: ${plan} (${selectedBillingPeriod})`);
-
-    // Update the user subscription to reflect the new selection
-    // This would normally be done via an API call to update the subscription
-    const updatedSubscription: Profile = {
-      ...userSubscription,
-      subscription: selectedBillingPeriod,
-      subscription_expiration:
-        selectedBillingPeriod === "lifetime"
-          ? null
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      trial_expiration:
-        selectedBillingPeriod === "lifetime"
-          ? null
-          : new Date(
-              Date.now() + trialDays * 24 * 60 * 60 * 1000
-            ).toISOString(),
-    };
-
-    // Set the state properly
-    setUserSubscription(updatedSubscription);
-
-    setShowPlanModal(false);
-
-    // Show confirmation message similar to Billing component
-    if (
-      user.profile.subscription === "none" ||
-      selectedBillingPeriod === "annual" ||
-      selectedBillingPeriod === "lifetime"
-    ) {
-      setConfirmationTitle("Upgrading Your Plan");
-      setConfirmationMessage(
-        `You're upgrading to the ${planName} ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`
-      );
-    } else {
-      setConfirmationTitle("Plan Updated");
-      setConfirmationMessage(
-        `You have successfully updated to the ${planName} plan. Your subscription will be billed ${selectedBillingPeriod}.`
-      );
-    }
-
-    setShowConfirmationModal(true);
-  };
-
-  const handleModalClose = async () => {
-    setShowConfirmationModal(false);
-    if (selectedBillingPeriod !== "none") {
-      // Get the appropriate promotion code based on the selected billing period
-      let promotionCode: string | undefined;
-
-      if (
-        selectedBillingPeriod === "monthly" &&
-        monthlyDiscount?.promotion_code
-      ) {
-        promotionCode = monthlyDiscount.promotion_code;
-      } else if (
-        selectedBillingPeriod === "annual" &&
-        yearlyDiscount?.promotion_code
-      ) {
-        promotionCode = yearlyDiscount.promotion_code;
-      } else if (
-        selectedBillingPeriod === "lifetime" &&
-        lifetimeDiscount?.promotion_code
-      ) {
-        promotionCode = lifetimeDiscount.promotion_code;
-      }
-
-      const { url, error } = await initiateCheckout(
-        selectedBillingPeriod,
-        user.email,
-        user.profile.customer_id || undefined,
-        promotionCode,
-        willProvideCard
-      );
-
-      if (url) {
-        router.push(url);
-      } else {
-        console.error("Error initiating checkout:", error);
-      }
-    }
-  };
-
-  const handleCardToggleChange = (newValue: boolean) => {
-    setWillProvideCard(newValue);
+    router.push("/billing");
   };
 
   const handleContactInputChange = (
@@ -666,10 +478,37 @@ function DashboardPage() {
     setShowConfirmationModal(true);
   };
 
+  // Fetch price from Stripe when component mounts
   useEffect(() => {
-    console.log("userSubscription", userSubscription.subscription);
-    console.log("user.profile.subscription", user.profile.subscription);
-  }, [userSubscription, user]);
+    async function fetchPrices() {
+      try {
+        setIsLoadingPrices(true);
+        setPriceError(null);
+
+        const { prices, error } = await getPrices();
+
+        if (error) {
+          setPriceError(error);
+          return;
+        }
+
+        // Only update monthly price for dashboard display
+        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+      } catch (err) {
+        console.error("Error fetching prices:", err);
+        setPriceError("Failed to load pricing information");
+      } finally {
+        setIsLoadingPrices(false);
+      }
+    }
+
+    fetchPrices();
+  }, []);
+
+  const handleModalClose = () => {
+    setShowConfirmationModal(false);
+  };
+
   return (
     <DashboardContainer>
       <WelcomeSection>
@@ -686,14 +525,12 @@ function DashboardPage() {
 
       <StatsGrid>
         <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          {user.profile.subscription === selectedBillingPeriod && (
-            <StatHeader>
-              <StatTitle>Current Plan</StatTitle>
-              <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
-                <FaCreditCard />
-              </StatIcon>
-            </StatHeader>
-          )}
+          <StatHeader>
+            <StatTitle>Current Plan</StatTitle>
+            <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
+              <FaCreditCard />
+            </StatIcon>
+          </StatHeader>
           <StatValue>{capitalize(userSubscription.subscription)}</StatValue>
           <StatDescription>
             {isInTrialPeriod()
@@ -787,10 +624,8 @@ function DashboardPage() {
           <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
-            ) : isInTrialPeriod() ? (
-              "Choose Plan"
             ) : (
-              "Change Plan"
+              "Manage Subscription"
             )}
           </Button>
         </Card>
@@ -811,31 +646,6 @@ function DashboardPage() {
           </Button>
         </Card>
       </CardGrid>
-
-      {/* Shared Plan Selection Modal */}
-      <AnimatePresence>
-        {showPlanModal && (
-          <PlanSelectionModal
-            isOpen={showPlanModal}
-            onClose={() => setShowPlanModal(false)}
-            profile={userSubscription}
-            onIntervalChange={handleBillingPeriodChange}
-            onConfirm={handleConfirmPlanChange}
-            formatDate={formatDate}
-            planName={planName}
-            monthlyPrice={monthlyPrice}
-            yearlyPrice={yearlyPrice}
-            lifetimePrice={lifetimePrice}
-            planDescription={planDescription}
-            trialDays={trialDays}
-            planFeatures={planFeatures}
-            monthlyDiscount={monthlyDiscount || undefined}
-            yearlyDiscount={yearlyDiscount || undefined}
-            lifetimeDiscount={lifetimeDiscount || undefined}
-            onCardToggleChange={handleCardToggleChange}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Confirmation Modal */}
       <AnimatePresence>
