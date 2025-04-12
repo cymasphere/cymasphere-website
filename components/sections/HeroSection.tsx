@@ -206,13 +206,6 @@ const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
 const HeroSection = () => {
   const { t } = useTranslation();
 
-  // Add a flag to track if user has interacted
-  const [userHasInteracted, setUserHasInteracted] = useState(false);
-  // Add a mute flag to prevent any sound until user interaction
-  const isMutedRef = useRef<boolean>(true);
-  // Add flag to track if synth has been initialized
-  const [synthInitialized, setSynthInitialized] = useState(false);
-
   // Diatonic chords in the key of C in descending 5ths
   const chordProgression = useMemo(
     () => [
@@ -263,43 +256,112 @@ const HeroSection = () => {
   const [wordWidths, setWordWidths] = useState<Record<number, number>>({});
   const wordMeasureRef = useRef<HTMLDivElement>(null);
 
-  // Basic state for the current chord
-  const [currentChordIndex, setCurrentChordIndex] = useState(0);
+  // Use windowSize hook to get both width and height
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
+  const isMobile = windowWidth <= 768;
 
   // Measure all word widths once on first render and when language changes
   useEffect(() => {
     // Skip SSR execution
     if (typeof window === "undefined") return;
 
-    if (wordMeasureRef.current) {
-      const widths: Record<number, number> = {};
+    // Use a timeout to ensure DOM is fully rendered
+    const timeoutId = setTimeout(() => {
+      if (wordMeasureRef.current) {
+        const widths: Record<number, number> = {};
 
-      const tempDiv = wordMeasureRef.current;
-      const baseStyle = {
-        visibility: "hidden",
-        position: "absolute",
-        fontSize: "4rem",
-        whiteSpace: "nowrap",
-        padding: "0 10px",
-      };
+        const tempDiv = wordMeasureRef.current;
+        const baseStyle = {
+          visibility: "hidden",
+          position: "absolute",
+          fontSize: !isMobile ? "4rem" : "3rem", // Match the actual font size
+          whiteSpace: "nowrap",
+          padding: "0 10px",
+          fontWeight: "bold", // Match the actual font weight
+        };
 
-      // Apply base style to the measurement div
-      Object.assign(tempDiv.style, baseStyle);
-      document.body.appendChild(tempDiv);
+        // Apply base style to the measurement div
+        Object.assign(tempDiv.style, baseStyle);
+        document.body.appendChild(tempDiv);
 
-      // Measure each word
-      titleWords.forEach((word, index) => {
-        tempDiv.textContent = word;
-        widths[index] = tempDiv.offsetWidth;
-      });
+        // Measure each word
+        titleWords.forEach((word, index) => {
+          tempDiv.textContent = word;
+          widths[index] = tempDiv.offsetWidth;
+        });
 
-      // Clean up
-      document.body.removeChild(tempDiv);
-      setWordWidths(widths);
-      console.log("Measured widths:", widths);
+        // Clean up
+        document.body.removeChild(tempDiv);
+        setWordWidths(widths);
+        
+        // Also update the current center word width
+        setCenterWordWidth(widths[currentWordIndex] || 120);
+        
+        console.log("Measured widths:", widths);
+      }
+    }, 100); // Short timeout to ensure DOM is ready
+    
+    return () => clearTimeout(timeoutId);
+  }, [titleWords, isMobile]);
+
+  // Update center word width whenever the currentWordIndex changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    // If we have measured widths, use them
+    if (wordWidths && Object.keys(wordWidths).length > 0) {
+      const newWidth = wordWidths[currentWordIndex] || 120;
+      setCenterWordWidth(newWidth);
+      console.log(`Updated center word width for "${titleWords[currentWordIndex]}" to ${newWidth}px`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Also update from the DOM if possible (as a fallback)
+    else if (centerWordRef.current) {
+      setCenterWordWidth(centerWordRef.current.offsetWidth);
+    }
+  }, [currentWordIndex, wordWidths, titleWords]);
+
+  // ROBUST WORD CYCLING IMPLEMENTATION
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === "undefined") return;
+
+    console.log("Setting up word cycling with titleWords:", titleWords.length);
+
+    // Create an interval that cycles the words every 2 seconds
+    const intervalId = setInterval(() => {
+      // Use function form of state update to ensure we're using the latest state
+      setCurrentWordIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % titleWords.length;
+        // console.log(
+        //   `Cycling word from ${prevIndex} (${titleWords[prevIndex]}) to ${nextIndex} (${titleWords[nextIndex]})`
+        // );
+        return nextIndex;
+      });
+    }, 2000);
+
+    // Clean up the interval on unmount
+    return () => {
+      console.log("Cleaning up word cycling interval");
+      clearInterval(intervalId);
+    };
+  }, [titleWords.length]); // Only depend on the length of titleWords, not the array itself
+
+  // Function to get color for each title word
+  const getWordColor = useCallback((index: number): string => {
+    const colors = [
+      "#E74C3C", // Red - Music
+      "#FF5E5B", // Coral - Song
+      "#FFD166", // Yellow - Chord
+      "#06D6A0", // Green - Pattern
+      "#118AB2", // Blue - Progression
+      "#9370DB", // Purple - Voicing
+      "#3F51B5", // Indigo - Harmony
+    ];
+    return colors[index % colors.length];
   }, []);
+
+  // Basic state for the current chord
+  const [currentChordIndex, setCurrentChordIndex] = useState(0);
 
   // State for the positions of the notes
   // We'll use fixed positions to avoid any jumpiness
@@ -315,12 +377,7 @@ const HeroSection = () => {
   // Define the chord type for better type safety
   interface ChordType {
     notes: string[];
-    positions: {
-      top?: string;
-      left?: string;
-      bottom?: string;
-      right?: string;
-    }[];
+    positions: typeof initialPositions;
     index: number;
   }
 
@@ -331,8 +388,8 @@ const HeroSection = () => {
     index: 0,
   });
 
-  const [transitioning, setTransitioning] = useState(false);
   const [previousChord, setPreviousChord] = useState<ChordType | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   // Define allowed effect types for the effectsChain.getEffect method
   type EffectType =
@@ -386,144 +443,178 @@ const HeroSection = () => {
     }
   }, [titleWords]);
 
-  // Modify the audio initialization to be completely separate from any auto-play behavior
-  const initializeSynthOnDemand = useCallback(async () => {
-    if (synthInitialized || !effectsChain) return;
-    
-    console.log("Initializing synth on demand due to user interaction");
-    
-    try {
-      // Make sure audio context is started - this requires user interaction first
-      if (Tone.context.state !== "running") {
-        await Tone.start();
-        setAudioContextStarted(true);
-      }
-      
-      // Explicitly disable auto-starting behavior in Tone.js
-      Tone.Transport.stop();
-      Tone.getDestination().volume.value = 0; // Normal volume since we're initializing on demand
-      
-      // Create a new synth
-      const newSynth = createSynth("polysynth", effectsChain);
+  // Use the synth in a way consistent with the Try Me section
+  useEffect(() => {
+    let localSynth: DisposableSynth = null;
 
-      // Store in ref
-      synthRef.current = newSynth;
-      
-      // Apply the atmospheric preset
-      if (newSynth) {
-        try {
-          const preset = getPresetById("atmospheric");
-          console.log("Applying atmospheric preset to hero section floating notes");
+    const initializeSynth = async () => {
+      if (!effectsChain) return;
 
-          // Apply synth parameters 
-          if (preset.synthParams) {
-            Object.entries(preset.synthParams).forEach(
-              ([paramKey, paramValue]) => {
-                if (typeof paramValue === "object" && paramValue !== null) {
-                  // Handle nested objects like oscillator.type
-                  Object.entries(
-                    paramValue as Record<string, unknown>
-                  ).forEach(([nestedKey, nestedValue]) => {
+      try {
+        // Initialize audio context if needed
+        if (Tone.context.state !== "running") {
+          await Tone.start();
+          setAudioContextStarted(true);
+        }
+
+        // Create a new synth using the same approach as Try Me section
+        const newSynth = createSynth("polysynth", effectsChain);
+
+        // Store in ref
+        synthRef.current = newSynth;
+        localSynth = newSynth;
+
+        // Apply the preset using the exact same method as in SynthesizerContainer
+        if (newSynth) {
+          try {
+            const preset = getPresetById("atmospheric");
+            console.log(
+              `Applying atmospheric preset to hero section floating notes`
+            );
+
+            // Apply synth parameters exactly as in SynthesizerContainer.js
+            if (preset.synthParams) {
+              Object.entries(preset.synthParams).forEach(
+                ([paramKey, paramValue]) => {
+                  if (typeof paramValue === "object" && paramValue !== null) {
+                    // Handle nested objects like oscillator.type
+                    Object.entries(
+                      paramValue as Record<string, unknown>
+                    ).forEach(([nestedKey, nestedValue]) => {
+                      try {
+                        // Use type assertion
+                        const typedSynth = newSynth as unknown as {
+                          set: (params: Record<string, unknown>) => void;
+                        };
+                        typedSynth.set({
+                          [paramKey]: { [nestedKey]: nestedValue },
+                        });
+                      } catch (paramError) {
+                        console.warn(
+                          `Error setting nested param ${paramKey}.${nestedKey}:`,
+                          paramError
+                        );
+                      }
+                    });
+                  } else {
+                    // Handle direct parameters
                     try {
                       // Use type assertion
                       const typedSynth = newSynth as unknown as {
                         set: (params: Record<string, unknown>) => void;
                       };
-                      typedSynth.set({
-                        [paramKey]: { [nestedKey]: nestedValue },
-                      });
+                      typedSynth.set({ [paramKey]: paramValue });
                     } catch (paramError) {
                       console.warn(
-                        `Error setting nested param ${paramKey}.${nestedKey}:`,
+                        `Error setting param ${paramKey}:`,
                         paramError
                       );
                     }
-                  });
-                } else {
-                  // Handle direct parameters
-                  try {
-                    // Use type assertion
-                    const typedSynth = newSynth as unknown as {
-                      set: (params: Record<string, unknown>) => void;
-                    };
-                    typedSynth.set({ [paramKey]: paramValue });
-                  } catch (paramError) {
-                    console.warn(
-                      `Error setting param ${paramKey}:`,
-                      paramError
-                    );
                   }
                 }
-              }
-            );
-          }
+              );
+            }
 
-          // Apply effects
-          if (preset.effects && effectsChain) {
-            Object.entries(preset.effects).forEach(
-              ([effectType, effectParams]) => {
-                // Type assertion for effect type
-                const effect = effectsChain.getEffect(
-                  effectType as EffectType
-                );
-                if (effect) {
-                  Object.entries(
-                    effectParams as Record<string, unknown>
-                  ).forEach(([paramKey, paramValue]) => {
-                    try {
-                      effect.set({ [paramKey]: paramValue });
-                    } catch (effectError) {
-                      console.warn(
-                        `Error setting effect param ${effectType}.${paramKey}:`,
-                        effectError
-                      );
-                    }
-                  });
+            // Apply effects using the exact same approach
+            if (preset.effects && effectsChain) {
+              Object.entries(preset.effects).forEach(
+                ([effectType, effectParams]) => {
+                  // Type assertion for effect type
+                  const effect = effectsChain.getEffect(
+                    effectType as EffectType
+                  );
+                  if (effect) {
+                    Object.entries(
+                      effectParams as Record<string, unknown>
+                    ).forEach(([paramKey, paramValue]) => {
+                      try {
+                        effect.set({ [paramKey]: paramValue });
+                      } catch (effectError) {
+                        console.warn(
+                          `Error setting effect param ${effectType}.${paramKey}:`,
+                          effectError
+                        );
+                      }
+                    });
+                  }
                 }
-              }
-            );
+              );
+            }
+          } catch (error) {
+            console.error("Error applying atmospheric preset:", error);
           }
-        } catch (error) {
-          console.error("Error applying atmospheric preset:", error);
         }
+      } catch (error) {
+        console.error("Error initializing synth in HeroSection:", error);
       }
-      
-      // Mark synth as initialized
-      setSynthInitialized(true);
-      
-    } catch (error) {
-      console.error("Error initializing synth in HeroSection:", error);
-    }
-  }, [synthInitialized, effectsChain]);
+    };
 
-  // Handle cleanup only
-  useEffect(() => {
+    initializeSynth();
+
+    // Clean up
     return () => {
-      if (synthRef.current) {
+      if (localSynth) {
         try {
-          disposeSynth(synthRef.current);
+          disposeSynth(localSynth);
         } catch (error) {
           console.error("Error disposing synth:", error);
         }
       }
     };
-  }, []);
+  }, [effectsChain]);
 
-  // Function to play chord (only when user clicks)
+  // Update the playNote function to assign proper octaves
+  const playNote = async (noteName: string): Promise<void> => {
+    try {
+      // Make sure audio context is started
+      if (Tone.context.state !== "running") {
+        await Tone.start();
+        setAudioContextStarted(true);
+      }
+
+      // Add octave information to the note if it doesn't have one
+      let noteWithOctave = noteName;
+      if (!noteName.match(/\d/)) {
+        // Default octave is 4 for middle register
+        // Adjust octave based on note position in the scale for better spread
+        if (["A", "A#", "Bb", "B"].includes(noteName)) {
+          noteWithOctave = `${noteName}3`; // Lower octave for A, Bb, B
+        } else if (["C", "C#", "Db", "D", "D#", "Eb"].includes(noteName)) {
+          noteWithOctave = `${noteName}4`; // Middle octave for C through E
+        } else {
+          noteWithOctave = `${noteName}4`; // Middle octave for F through G#
+        }
+      }
+
+      console.log(`Playing note ${noteWithOctave} with atmospheric preset`);
+
+      // Exactly follow the pattern from SynthesizerContainer.js for playing notes
+      if (synthRef.current) {
+        // Check for _disposed property to avoid playing disposed synths
+        const synth = synthRef.current as unknown as {
+          _disposed?: boolean;
+          triggerAttackRelease: (
+            notes: string | string[],
+            duration: string
+          ) => void;
+        };
+        if (!synth._disposed) {
+          // Use the proper note with octave for correct pitch
+          synth.triggerAttackRelease(noteWithOctave, "0.5s");
+        }
+      }
+    } catch (error) {
+      console.error("Error playing note:", error, noteName);
+    }
+  };
+
+  // Add a function to play all notes in the current chord
   const playChord = useCallback(async () => {
     try {
-      // Set the user interaction flag to true and unmute
-      setUserHasInteracted(true);
-      isMutedRef.current = false;
-      
-      // Initialize synth on demand if not already done
-      if (!synthInitialized) {
-        await initializeSynthOnDemand();
-      }
-      
-      // Only continue if we're not muted
-      if (isMutedRef.current) {
-        return; // Exit if muted
+      // Make sure audio context is started
+      if (Tone.context.state !== "running") {
+        await Tone.start();
+        setAudioContextStarted(true);
       }
 
       // Get the current chord's notes
@@ -541,7 +632,7 @@ const HeroSection = () => {
           ) => void;
         };
         if (!synth._disposed) {
-          const notesWithOctaves = currentChord.notes.map((note: string) => {
+          const notesWithOctaves = currentChord.notes.map((note) => {
             // Add octave information to the note if it doesn't have one
             if (!note.match(/\d/)) {
               // Default octave is 4 for middle register
@@ -595,86 +686,89 @@ const HeroSection = () => {
     } catch (error) {
       console.error("Error playing chord:", error);
     }
-  }, [chordProgression, currentChordIndex, synthInitialized, initializeSynthOnDemand]);
+  }, [chordProgression, currentChordIndex, setAudioContextStarted, synthRef]);
 
-  // Function to move to the next chord
-  const moveToNextChord = useCallback(() => {
-    // Don't change chord during transition
-    if (transitioning) return;
-    
-    setTransitioning(true);
-    setPreviousChord(displayedChord);
-    
-    // Get next chord
+  // Turn moveToNextChord into a useCallback
+  const moveToNextChord = useCallback((): void => {
+    // Get the next chord from the progression
     const nextChordIndex = (currentChordIndex + 1) % chordProgression.length;
-    const nextChord = {
-      notes: chordProgression[nextChordIndex].notes,
-      positions: displayedChord.positions,
-      index: nextChordIndex,
-      id: `chord-${nextChordIndex}-${Date.now()}`, // Add unique ID for animation
-    };
-    
-    // Update displayed chord (triggers animation)
-    setDisplayedChord(nextChord);
-    
-    // Set current chord index to next chord
-    setCurrentChordIndex(nextChordIndex);
-    
-    // After animation completes, reset transition state
-    setTimeout(() => {
-      setTransitioning(false);
-    }, 500); // Match this to your transition duration in CSS
 
-    // IMPORTANT: We don't call playChord() here, so the chord change is visual only
-  }, [transitioning, displayedChord, currentChordIndex, chordProgression]);
-  
-  // Set up a useEffect to change words every 4 seconds
+    // Create positions for new notes that maintain their position in the visual field
+    // Remember the previous positions for smooth animation
+    const newPositions = [...initialPositions];
+
+    // Set up the transition
+    setPreviousChord(displayedChord);
+    setTransitioning(true);
+
+    // Update current chord index
+    setCurrentChordIndex(nextChordIndex);
+
+    // Play the chord with a slight delay to account for the animation
+    setTimeout(() => {
+      playChord().catch((err) => console.error("Error playing chord:", err));
+    }, 500); // Half a second delay for the animation to start
+
+    // Update the displayed chord with new data and the same positions
+    setDisplayedChord({
+      notes: chordProgression[nextChordIndex].notes,
+      positions: newPositions,
+      index: nextChordIndex,
+    });
+  }, [
+    currentChordIndex,
+    chordProgression,
+    initialPositions,
+    displayedChord,
+    playChord,
+  ]);
+
+  // Change chord every 4 seconds
   useEffect(() => {
-    const wordInterval = setInterval(() => {
-      setCurrentWordIndex((prevIndex) => (prevIndex + 1) % titleWords.length);
-      // Update centerWordWidth based on the next word
-      if (centerWordRef.current) {
-        const nextWordIndex = (currentWordIndex + 1) % titleWords.length;
-        setCenterWordWidth(centerWordRef.current.offsetWidth);
-      }
-      // Change chord when word changes
+    const interval = setInterval(() => {
       moveToNextChord();
     }, 4000);
-  
-    return () => clearInterval(wordInterval);
-  }, [currentWordIndex, titleWords, moveToNextChord, centerWordRef]);
 
-  // Update center word width when it changes
+    return () => clearInterval(interval);
+  }, [moveToNextChord]);
+
+  // Add animation progress tracker in useEffect - add this after the chord transition interval effect
   useEffect(() => {
-    if (centerWordRef.current) {
-      setCenterWordWidth(centerWordRef.current.offsetWidth);
+    if (!transitioning) {
+      return;
     }
-  }, [currentWordIndex, centerWordRef]);
 
-  // Get a color for each word
-  const getWordColor = useCallback(
-    (index: number) => {
-      const colorMap: Record<number, string> = {
-        0: "#FF7A5C", // Coral for Music
-        1: "#FFD166", // Yellow for Song
-        2: "#06D6A0", // Green for Chord
-        3: "#118AB2", // Blue for Pattern
-        4: "#073B4C", // Dark Blue for Progression
-        5: "#7209B7", // Purple for Voicing
-        6: "#F72585", // Pink for Harmony
-      };
+    let startTime: number | null = null;
+    const duration = 1500; // 1.5 seconds for the transition
 
-      // Return the color for the index, or a default color if not found
-      return colorMap[index % titleWords.length] || "#06D6A0";
-    },
-    [titleWords.length]
-  );
+    // Animation frame to track progress
+    const updateProgress = (timestamp: number): void => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
 
-  const { width: windowWidth, height: windowHeight } = useWindowSize();
-  const isMobile = windowWidth <= 768;
+      if (progress < 1) {
+        // Continue animation
+        animationFrameId = requestAnimationFrame(updateProgress);
+      } else {
+        // Animation complete
+        setTransitioning(false);
+      }
+    };
 
-  // Create renderContent function
-  const renderContent = useCallback((): React.ReactNode => {
+    // Start the animation
+    let animationFrameId = requestAnimationFrame(updateProgress);
+
+    // Cleanup
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [transitioning]);
+
+  // Move handlePlay inside useCallback to fix dependency issue
+  const renderContent = useCallback(() => {
     // Get the current word from titleWords array
     const currentWord = titleWords[currentWordIndex];
 
@@ -835,51 +929,57 @@ const HeroSection = () => {
       </HeroContent>
     );
   }, [
-    centerWordRef,
-    centerWordWidth,
     titleWords,
     currentWordIndex,
+    t,
+    audioContextStarted,
+    playChord,
+    synthRef,
+    wordMeasureRef,
+    centerWordWidth,
+    isMobile,
     getWordColor,
-    displayedChord,
-    previousChord,
-    transitioning,
-    moveToNextChord
   ]);
 
   // Render the voice leading lines during transitions
   const renderVoiceLeadingLines = () => {
-    if (!previousChord || !transitioning) return null;
+    if (!previousChord || !transitioning) {
+      return null;
+    }
 
-    return previousChord.notes.map((prevNote, index) => {
-      const prevPos = previousChord.positions[index];
-      const currPos = displayedChord.positions[index];
-
-      // Don't show lines if the note didn't change
-      if (prevNote === displayedChord.notes[index]) return null;
-
-      // Calculate line positions and angles
-      // (Calculate positions based on viewport percentage)
+    // Create lines between notes that are moving
+    const lines = [];
+    
+    // Iterate through the notes in previous chord
+    for (let i = 0; i < previousChord.notes.length; i++) {
+      const prevNote = previousChord.notes[i];
+      const prevPos = previousChord.positions[i] || { top: "15%", left: "10%" };
+      const currNote = displayedChord.notes[i] || "";
+      const currPos = displayedChord.positions[i] || { top: "15%", left: "10%" };
+      
+      // Calculate start position
       const startX = prevPos.left
         ? (parseInt(prevPos.left.replace("%", "")) * windowWidth) / 100 + 30
         : windowWidth -
           (parseInt((prevPos.right || "0").replace("%", "")) * windowWidth) /
             100 -
           30;
-
+      
       const startY = prevPos.top
         ? (parseInt(prevPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -
           (parseInt((prevPos.bottom || "0").replace("%", "")) * windowHeight) /
             100 -
           30;
-
+          
+      // Calculate end position
       const endX = currPos.left
         ? (parseInt(currPos.left.replace("%", "")) * windowWidth) / 100 + 30
         : windowWidth -
           (parseInt((currPos.right || "0").replace("%", "")) * windowWidth) /
             100 -
           30;
-
+          
       const endY = currPos.top
         ? (parseInt(currPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -
@@ -895,11 +995,11 @@ const HeroSection = () => {
 
       // Get the source and target colors
       const sourceColor = pitchColors[prevNote] || "#6C63FF";
-      const targetColor = pitchColors[displayedChord.notes[index]] || "#6C63FF";
+      const targetColor = pitchColors[displayedChord.notes[i]] || "#6C63FF";
 
-      return (
+      lines.push(
         <motion.div
-          key={`line-${index}-${displayedChord.index}`}
+          key={`line-${i}-${displayedChord.index}`}
           style={{
             position: "absolute",
             height: 2,
@@ -916,7 +1016,9 @@ const HeroSection = () => {
           transition={{ duration: 1.5, ease: "easeInOut" }}
         />
       );
-    });
+    }
+
+    return lines;
   };
 
   // Render the floating musical notes
@@ -1122,7 +1224,7 @@ const HeroSection = () => {
     });
   };
 
-  // Render the chord name display - update to just call playChord directly when clicked
+  // Render the chord name display
   const renderChordName = () => (
     <AnimatePresence mode="sync">
       <motion.div
@@ -1193,66 +1295,11 @@ const HeroSection = () => {
     }
   }, []);
 
-  // Modify the playNote function to play sound only when clicked
-  const playNote = useCallback(async (noteName: string): Promise<void> => {
-    try {
-      // Set the user interaction flag to true and unmute
-      setUserHasInteracted(true);
-      isMutedRef.current = false;
-      
-      // Initialize synth on demand if not already done
-      if (!synthInitialized) {
-        await initializeSynthOnDemand();
-      }
-      
-      // Only continue if we're not muted
-      if (isMutedRef.current) {
-        return; // Exit if muted
-      }
-
-      // Add octave information to the note if it doesn't have one
-      let noteWithOctave = noteName;
-      if (!noteName.match(/\d/)) {
-        // Default octave is 4 for middle register
-        // Adjust octave based on note position in the scale for better spread
-        if (["A", "A#", "Bb", "B"].includes(noteName)) {
-          noteWithOctave = `${noteName}3`; // Lower octave for A, Bb, B
-        } else if (["C", "C#", "Db", "D", "D#", "Eb"].includes(noteName)) {
-          noteWithOctave = `${noteName}4`; // Middle octave for C through E
-        } else {
-          noteWithOctave = `${noteName}4`; // Middle octave for F through G#
-        }
-      }
-
-      console.log(`Playing note ${noteWithOctave} with atmospheric preset`);
-
-      // Play note only if synth is ready and not disposed
-      if (synthRef.current) {
-        // Check for _disposed property to avoid playing disposed synths
-        const synth = synthRef.current as unknown as {
-          _disposed?: boolean;
-          triggerAttackRelease: (
-            notes: string | string[],
-            duration: string
-          ) => void;
-        };
-        if (!synth._disposed) {
-          // Use the proper note with octave for correct pitch
-          synth.triggerAttackRelease(noteWithOctave, "0.5s");
-        }
-      }
-    } catch (error) {
-      console.error("Error playing note:", error, noteName);
-    }
-  }, [synthInitialized, initializeSynthOnDemand]);
-
   return (
     <HeroContainer id="home">
-      {/* Remove the mute/unmute toggle button */}
-      
       {renderContent()}
-      {renderNotes()}
       {renderVoiceLeadingLines()}
+      {renderNotes()}
       {renderChordName()}
     </HeroContainer>
   );

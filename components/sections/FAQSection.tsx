@@ -68,7 +68,9 @@ interface ToggleButtonProps {
   isOpen?: boolean;
 }
 
-const ToggleButton = styled.span<ToggleButtonProps>`
+const ToggleButton = styled(({ isOpen, ...props }: ToggleButtonProps & React.HTMLAttributes<HTMLSpanElement>) => (
+  <span {...props} />
+))`
   color: var(--primary);
   font-size: 1.5rem;
   font-weight: bold;

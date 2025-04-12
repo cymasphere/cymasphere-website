@@ -9,7 +9,8 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheck, FaGift, FaLock, FaUnlock } from "react-icons/fa";
+import { FaCheck, FaGift, FaLock, FaUnlock, FaInfoCircle } from "react-icons/fa";
+import { IoInformationCircle } from "react-icons/io5";
 // Import Stripe actions
 import {
   initiateCheckout,
@@ -24,6 +25,7 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 // Import useRouter from next/navigation
 import { useRouter } from "next/navigation";
+import { createPortal } from 'react-dom';
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1237,84 +1239,124 @@ const SaveLabel = styled.span`
   margin-left: 6px;
 `;
 
-// Add new styled components for the free trial
-const TrialBanner = styled.div`
-  background: linear-gradient(
-    135deg,
-    rgba(249, 200, 70, 0.1),
-    rgba(249, 110, 70, 0.1)
-  );
+// Add new styled components after TrialOption
+
+const RadioButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 15px 0;
+`;
+
+const RadioOptionsContainer = styled.div`
+  background: rgba(108, 99, 255, 0.05);
+  border: 1px solid rgba(108, 99, 255, 0.2);
   border-radius: 10px;
-  padding: 12px 20px;
-  margin: 20px auto 30px;
-  max-width: 650px;
-  text-align: center;
-  border: 1px solid rgba(249, 200, 70, 0.3);
+  padding: 16px;
+  margin-bottom: 20px;
+`;
+
+const RadioOptionTitle = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  
+  svg {
+    margin-right: 6px;
+    color: var(--primary);
+  }
+`;
+
+const RadioOption = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: 5px;
   position: relative;
   overflow: hidden;
-  pointer-events: none; /* No need for interaction */
 
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      45deg,
-      rgba(249, 200, 70, 0.05),
-      rgba(249, 110, 70, 0.05)
-    );
-    z-index: 0;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
   }
 `;
 
-const TrialText = styled.div`
+const RadioInput = styled.input`
   position: relative;
-  z-index: 1;
+  cursor: pointer;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(108, 99, 255, 0.4);
+  border-radius: 50%;
+  margin-right: 10px;
+  outline: none;
+  transition: all 0.2s ease;
 
-  h3 {
-    font-size: 1.4rem;
-    margin: 0 0 5px;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      margin-right: 10px;
-      color: #f96e46;
-    }
-
-    span {
-      background: linear-gradient(90deg, #f9c846, #f96e46);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: 700;
-      margin: 0 5px;
+  &:checked {
+    border-color: var(--primary);
+    background-color: transparent;
+    
+    &:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
     }
   }
 
-  p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
+  &:hover {
+    border-color: var(--primary);
   }
 `;
 
-const TrialBadge = styled.div`
-  position: absolute;
-  top: -15px;
-  right: -15px;
-  background: linear-gradient(90deg, #f9c846, #f96e46);
-  color: white;
+const TrialDescription = styled.span`
+  margin-left: 8px;
+  flex: 1;
+`;
+
+const InfoIcon = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--primary);
+  cursor: pointer;
+  margin-left: 5px;
+`;
+
+const TooltipContent = styled.div`
+  position: fixed;
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 240px;
   font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  box-shadow: 0 4px 10px rgba(249, 110, 70, 0.3);
-  z-index: 2;
+  color: var(--text);
+  z-index: 9999;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+`;
+
+const TrialIcon = styled.span`
+  margin-right: 8px;
+  font-size: 0.9rem;
 `;
 
 // Single pricing card
@@ -1552,18 +1594,114 @@ const TrialOptionContainer = styled.div`
   margin-top: 15px;
 `;
 
-const TrialOption = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+// Add definitions for the components causing linter errors
+const TrialBanner = styled.div`
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 20px auto 30px;
+  max-width: 700px;
+  pointer-events: none;
 `;
 
-const TrialIcon = styled.span`
-  margin-right: 8px;
-  font-size: 0.9rem;
+const TrialText = styled.div`
+  text-align: center;
+  
+  h3 {
+    font-size: 1.3rem;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    svg {
+      margin-right: 8px;
+      color: var(--primary);
+    }
+    
+    span {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0 5px;
+      font-weight: 700;
+    }
+  }
+  
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
 `;
+
+const CardTrialBadge = styled.div`
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  padding: 8px 15px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+`;
+
+const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: boolean }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const iconRef = useRef<HTMLDivElement>(null);
+
+  const updateTooltipPosition = () => {
+    if (iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect();
+      // Position to the right of the icon
+      setTooltipPosition({
+        top: rect.top,
+        left: rect.right + 10
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (showTooltip) {
+      updateTooltipPosition();
+      window.addEventListener('scroll', updateTooltipPosition);
+      window.addEventListener('resize', updateTooltipPosition);
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', updateTooltipPosition);
+      window.removeEventListener('resize', updateTooltipPosition);
+    };
+  }, [showTooltip]);
+
+  return (
+    <>
+      <InfoIcon 
+        ref={iconRef} 
+        onClick={onClick}
+        onMouseEnter={() => {
+          setShowTooltip(true);
+          updateTooltipPosition();
+        }}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <IoInformationCircle size={22} />
+      </InfoIcon>
+      {showTooltip && typeof document !== 'undefined' && createPortal(
+        <TooltipContent style={{ top: tooltipPosition.top + 'px', left: tooltipPosition.left + 'px' }}>
+          Credit card required for 14-day trial. You can cancel anytime before the trial ends to avoid being charged.
+        </TooltipContent>,
+        document.body
+      )}
+    </>
+  );
+};
 
 const PricingSection = () => {
   const router = useRouter();
@@ -1580,6 +1718,8 @@ const PricingSection = () => {
     null
   );
   const [pricesLoading, setPricesLoading] = useState(true);
+  // Set default trial type to 14 days
+  const [trialType, setTrialType] = useState<"7day" | "14day">("14day");
 
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
@@ -1809,7 +1949,7 @@ const PricingSection = () => {
         >
           <PricingCard>
             {billingPeriod !== "lifetime" && (
-              <TrialBadge>14-Day Free Trial</TrialBadge>
+              <CardTrialBadge>14-Day Free Trial</CardTrialBadge>
             )}
             <CardHeader>
               <PlanName>
@@ -1893,47 +2033,57 @@ const PricingSection = () => {
 
               {billingPeriod !== "lifetime" ? (
                 <TrialOptionContainer>
-                  <TrialOption>
-                    <TrialIcon>
-                      <FaUnlock />
-                    </TrialIcon>
-                    7-day trial - No credit card required
-                  </TrialOption>
+                  <RadioOptionsContainer>
+                    <RadioOptionTitle>
+                      <FaGift /> Choose your free trial option:
+                    </RadioOptionTitle>
+                    <RadioButtonGroup>
+                      <RadioOption>
+                        <RadioInput
+                          type="radio"
+                          name="trialOption"
+                          value="14day"
+                          checked={trialType === "14day"}
+                          onChange={() => setTrialType("14day")}
+                        />
+                        <TrialIcon>
+                          <FaUnlock />
+                        </TrialIcon>
+                        <TrialDescription>
+                          14-day trial - Add card on file <InfoButton onClick={() => {}} isActive={false} />
+                          <br />(won&apos;t be charged until
+                          trial ends)
+                        </TrialDescription>
+                      </RadioOption>
+
+                      <RadioOption>
+                        <RadioInput
+                          type="radio"
+                          name="trialOption"
+                          value="7day"
+                          checked={trialType === "7day"}
+                          onChange={() => setTrialType("7day")}
+                        />
+                        <TrialIcon>
+                          <FaUnlock />
+                        </TrialIcon>
+                        <TrialDescription>
+                          7-day trial - No credit card required
+                        </TrialDescription>
+                      </RadioOption>
+                    </RadioButtonGroup>
+                  </RadioOptionsContainer>
+
                   <CheckoutButton
-                    $variant="secondary"
-                    onClick={() => handleCheckout(false)}
+                    onClick={() => handleCheckout(trialType === "14day")}
                     disabled={pricesLoading || checkoutLoading !== null}
                   >
-                    {checkoutLoading === "short" ? (
+                    {checkoutLoading !== null ? (
                       <>
                         Processing <Loader />
                       </>
                     ) : (
-                      "Start 7-Day Free Trial"
-                    )}
-                  </CheckoutButton>
-
-                  <div style={{ margin: "10px 0", textAlign: "center" }}>
-                    or
-                  </div>
-
-                  <TrialOption>
-                    <TrialIcon>
-                      <FaLock />
-                    </TrialIcon>
-                    14-day trial - Card on file (won&apos;t be charged until
-                    trial ends)
-                  </TrialOption>
-                  <CheckoutButton
-                    onClick={() => handleCheckout(true)}
-                    disabled={pricesLoading || checkoutLoading !== null}
-                  >
-                    {checkoutLoading === "long" ? (
-                      <>
-                        Processing <Loader />
-                      </>
-                    ) : (
-                      "Start 14-Day Free Trial"
+                      `Start ${trialType === "14day" ? "14" : "7"}-day Free Trial`
                     )}
                   </CheckoutButton>
                 </TrialOptionContainer>
