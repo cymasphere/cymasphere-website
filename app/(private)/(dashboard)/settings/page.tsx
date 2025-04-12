@@ -209,17 +209,17 @@ const DeviceLimit = styled.div`
 `;
 
 interface DeviceCounterProps {
-  warning: boolean;
+  $warning: boolean;
 }
 
 const DeviceCounter = styled.div<DeviceCounterProps>`
   background-color: ${(props) =>
-    props.warning ? "rgba(255, 87, 51, 0.2)" : "rgba(108, 99, 255, 0.1)"};
+    props.$warning ? "rgba(255, 87, 51, 0.2)" : "rgba(108, 99, 255, 0.1)"};
   border-radius: 20px;
   padding: 0.25rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: ${(props) => (props.warning ? "var(--error)" : "var(--primary)")};
+  color: ${(props) => (props.$warning ? "var(--error)" : "var(--primary)")};
 `;
 
 // Modal components
@@ -569,7 +569,7 @@ function Settings() {
             <DeviceLimit>
               Device Limit: {activeDevices.length} of 5 used
             </DeviceLimit>
-            <DeviceCounter warning={activeDevices.length >= 4}>
+            <DeviceCounter $warning={activeDevices.length >= 4}>
               {activeDevices.length} Active{" "}
               {activeDevices.length === 1 ? "Device" : "Devices"}
             </DeviceCounter>
