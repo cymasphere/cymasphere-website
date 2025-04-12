@@ -13,7 +13,7 @@ export type CustomerPurchasedProResponse = {
 };
 
 // Type for Stripe metadata and nested properties
-type StripeAttrs = {
+type StripeSubscriptionAttrs = {
   metadata?: { price_id?: string };
   refunded?: boolean;
   status?:
@@ -44,8 +44,6 @@ export async function customerPurchasedProFromSupabase(
     let hasLifetime = false;
     let activeSubscriptionId: string | undefined;
 
-    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
-
     // First check for lifetime purchase
     // Check charges for one-time lifetime purchase
     const { data: charges, error: chargesError } = await supabase
@@ -53,9 +51,8 @@ export async function customerPurchasedProFromSupabase(
       .from("stripe_charges")
       .select("*")
       .eq("customer", customer_id)
-      .eq("status", "succeeded")
       .order("created", { ascending: false })
-      .limit(100);
+      .limit(1);
 
     console.log("charges", charges);
 
@@ -68,14 +65,9 @@ export async function customerPurchasedProFromSupabase(
       };
     }
 
-    // Look for lifetime purchase in charges
-    for (const charge of charges || []) {
-      const attrs = charge.attrs as StripeAttrs | null;
-      if (attrs?.metadata?.price_id === lifetimePriceId && !attrs.refunded) {
-        hasLifetime = true;
-        subscriptionType = "lifetime";
-        break;
-      }
+    if (charges.length > 0 && charges[0].status === "succeeded") {
+      hasLifetime = true;
+      subscriptionType = "lifetime";
     }
 
     // Check for active subscriptions (even if we found a lifetime purchase)
@@ -106,7 +98,7 @@ export async function customerPurchasedProFromSupabase(
 
     for (const subscription of subscriptions || []) {
       // Skip canceled or incomplete subscriptions
-      const attrs = subscription.attrs as StripeAttrs | null;
+      const attrs = subscription.attrs as StripeSubscriptionAttrs | null;
 
       switch (attrs?.status) {
         case "active":
