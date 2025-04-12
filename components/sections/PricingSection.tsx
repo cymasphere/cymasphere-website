@@ -1695,7 +1695,7 @@ const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: bool
       </InfoIcon>
       {showTooltip && typeof document !== 'undefined' && createPortal(
         <TooltipContent style={{ top: tooltipPosition.top + 'px', left: tooltipPosition.left + 'px' }}>
-          Free trial for 14 days, cancel anytime. No credit card required.
+          Credit card required for 14-day trial. You can cancel anytime before the trial ends to avoid being charged.
         </TooltipContent>,
         document.body
       )}
