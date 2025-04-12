@@ -803,10 +803,10 @@ export default function BillingPage() {
   // Get the price for the current subscription
   const getCurrentPrice = () => {
     return userSubscription.subscription === "monthly"
-      ? planOptions.pro.monthlyPrice
+      ? monthlyPrice
       : userSubscription.subscription === "annual"
-      ? planOptions.pro.yearlyPrice
-      : planOptions.pro.lifetimePrice;
+      ? yearlyPrice
+      : lifetimePrice;
   };
 
   // Add function to check if user is in trial period
@@ -1128,9 +1128,8 @@ export default function BillingPage() {
           <FaGift />
           <p>
             You&apos;re currently on a <strong>14-day free trial</strong> with
-            full access to all premium features.
-            {getDaysLeftInTrial()} days remaining. Your first payment of $
-            {getCurrentPrice()} will be on{" "}
+            full access to all premium features. {getDaysLeftInTrial()} days
+            remaining. Your first payment of ${getCurrentPrice()} will be on{" "}
             {formatDate(userSubscription.trial_expiration)}.
           </p>
         </AlertBanner>
