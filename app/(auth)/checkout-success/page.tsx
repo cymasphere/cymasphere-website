@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -171,7 +172,15 @@ function CheckoutSuccessContent() {
 
 export default function CheckoutSuccess() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <LoadingSpinner
+          size="large"
+          fullScreen={true}
+          text="Processing payment..."
+        />
+      }
+    >
       <CheckoutSuccessContent />
     </Suspense>
   );

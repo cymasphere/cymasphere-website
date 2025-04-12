@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaTimesCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -217,21 +218,18 @@ function CheckoutCanceledContent() {
   );
 }
 
-// Loading fallback
-const LoadingFallback = () => {
-  return (
-    <PageContainer>
-      <ContentContainer>
-        <Title>Loading...</Title>
-      </ContentContainer>
-    </PageContainer>
-  );
-};
-
 // Main export with Suspense boundary
 export default function CheckoutCanceled() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense
+      fallback={
+        <LoadingSpinner
+          size="large"
+          fullScreen={true}
+          text="Processing payment..."
+        />
+      }
+    >
       <CheckoutCanceledContent />
     </Suspense>
   );
