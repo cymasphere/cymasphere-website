@@ -3,7 +3,7 @@
 import { type NextRequest } from "next/server";
 import { redirect } from "next/navigation";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
-import { createClient } from "@/utils/supabase/server";
+import { createSupabaseServer } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     let isSignedUp = false;
     if (sessionResult.customerId) {
       try {
-        const supabase = await createClient();
+        const supabase = await createSupabaseServer();
         const { data: profile } = await supabase
           .from("profiles")
           .select()

@@ -1,7 +1,7 @@
 "use server";
 
 import { SubscriptionType } from "@/utils/supabase/types";
-import { createServiceClient } from "@/utils/supabase/service";
+import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { cancelSubscription } from "./actions";
 
 export type CustomerPurchasedProResponse = {
@@ -37,7 +37,7 @@ export async function customerPurchasedProFromSupabase(
   customer_id: string
 ): Promise<CustomerPurchasedProResponse> {
   try {
-    const supabase = await createServiceClient();
+    const supabase = await createSupabaseServiceRole();
     let subscriptionType: SubscriptionType = "none";
     let current_period_end: Date | undefined;
     let trial_end_date: Date | undefined;

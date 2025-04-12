@@ -14,7 +14,7 @@ import {
   signUpWithStripe,
   updateStripe,
 } from "@/utils/supabase/actions";
-import { createClient } from "@/utils/supabase/client";
+import { createSupabaseBrowser } from "@/utils/supabase/client";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -42,7 +42,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const supabase = createClient();
+const supabase = createSupabaseBrowser();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);

@@ -1,7 +1,7 @@
 "use server";
 
 import { PostgrestError } from "@supabase/supabase-js";
-import { createClient } from "@/utils/supabase/server";
+import { createSupabaseServer } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
@@ -12,7 +12,7 @@ export async function signUpWithStripe(
   password: string
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServer();
 
     // Find or create a Stripe customer
     const customer_id = await findOrCreateCustomer(email);
@@ -39,7 +39,7 @@ export async function signUpWithStripe(
 export async function fetchProfile(
   id: string
 ): Promise<{ profile: Profile | null; error: PostgrestError | null }> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
 
   const { data: profile, error } = await supabase
     .from("profiles")
@@ -102,7 +102,7 @@ export async function updateStripe(
 
 // Helper function to update the user profile
 async function updateUserProfile(profile: Profile): Promise<Profile> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: user, error: user_error } = await supabase.auth.getUser();
 
   console.log("updating user", !!user);
