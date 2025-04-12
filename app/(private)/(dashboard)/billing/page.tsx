@@ -20,6 +20,10 @@ import {
   getPrices,
   getUpcomingInvoice,
 } from "@/utils/stripe/actions";
+import {
+  getCustomerInvoices,
+  InvoiceData,
+} from "@/utils/stripe/supabase-stripe";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -1121,32 +1125,67 @@ export default function BillingPage() {
     number | null
   >(null);
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
+  const [invoices, setInvoices] = useState<InvoiceData[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
-  // Fetch upcoming invoice amount
+  // Fetch invoices along with upcoming invoice amount
   useEffect(() => {
-    async function fetchUpcomingInvoice() {
-      if (!user?.profile?.customer_id || !isInTrialPeriod()) return;
+    async function fetchUserData() {
+      if (!user?.profile?.customer_id) return;
 
+      // Fetch upcoming invoice if in trial period
+      if (isInTrialPeriod()) {
+        try {
+          setIsLoadingInvoice(true);
+          const { amount, error } = await getUpcomingInvoice(
+            user.profile.customer_id
+          );
+
+          if (error) {
+            console.error("Error fetching upcoming invoice:", error);
+          } else {
+            setUpcomingInvoiceAmount(amount);
+          }
+        } catch (err) {
+          console.error("Error in fetchUpcomingInvoice:", err);
+        } finally {
+          setIsLoadingInvoice(false);
+        }
+      }
+
+      // Fetch invoice history
       try {
-        setIsLoadingInvoice(true);
-        const { amount, error } = await getUpcomingInvoice(
+        setIsLoadingInvoices(true);
+        setInvoiceError(null);
+        const { invoices, error } = await getCustomerInvoices(
           user.profile.customer_id
         );
 
         if (error) {
-          console.error("Error fetching upcoming invoice:", error);
+          console.error("Error fetching invoices:", error);
+          setInvoiceError(error);
         } else {
-          setUpcomingInvoiceAmount(amount);
+          setInvoices(invoices);
         }
       } catch (err) {
-        console.error("Error in fetchUpcomingInvoice:", err);
+        console.error("Error in fetchInvoices:", err);
+        setInvoiceError("Failed to load invoice history");
       } finally {
-        setIsLoadingInvoice(false);
+        setIsLoadingInvoices(false);
       }
     }
 
-    fetchUpcomingInvoice();
+    fetchUserData();
   }, [user?.profile?.customer_id]);
+
+  // Helper function to format currency
+  const formatCurrency = (amount: number, currency: string = "usd") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  };
 
   return (
     <BillingContainer>
@@ -1166,15 +1205,9 @@ export default function BillingPage() {
             full access to all premium features. {getDaysLeftInTrial()} days
             remaining. Your first payment of $
             {isLoadingInvoice ? (
-              <LoadingComponent
-                size="12px"
-                text=""
-                style={{
-                  display: "inline-block",
-                  marginLeft: "4px",
-                  marginRight: "4px",
-                }}
-              />
+              <span style={{ display: "inline-block", margin: "0 4px" }}>
+                <LoadingComponent size="12px" text="" />
+              </span>
             ) : upcomingInvoiceAmount !== null ? (
               upcomingInvoiceAmount.toFixed(2)
             ) : (
@@ -1222,7 +1255,9 @@ export default function BillingPage() {
                 </PlanDescription>
                 <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
                   {isLoadingPrices ? (
-                    <LoadingComponent size="20px" text="" />
+                    <span>
+                      <LoadingComponent size="20px" text="" />
+                    </span>
                   ) : (
                     "Choose a Plan"
                   )}
@@ -1272,7 +1307,9 @@ export default function BillingPage() {
                 )}
                 <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
                   {isLoadingPrices ? (
-                    <LoadingComponent size="20px" text="" />
+                    <span>
+                      <LoadingComponent size="20px" text="" />
+                    </span>
                   ) : isInTrialPeriod() ? (
                     "Choose Plan"
                   ) : (
@@ -1340,32 +1377,49 @@ export default function BillingPage() {
           <FaHistory /> Billing History
         </CardTitle>
         <CardContent>
-          <InvoicesList>
-            <InvoiceItem>
-              <InvoiceDate>March 15, 2023</InvoiceDate>
-              <InvoiceAmount>$8.00</InvoiceAmount>
-              <InvoiceStatus status="paid">Paid</InvoiceStatus>
-              <DownloadButton>
-                <FaReceipt /> Receipt
-              </DownloadButton>
-            </InvoiceItem>
-            <InvoiceItem>
-              <InvoiceDate>February 15, 2023</InvoiceDate>
-              <InvoiceAmount>$8.00</InvoiceAmount>
-              <InvoiceStatus status="paid">Paid</InvoiceStatus>
-              <DownloadButton>
-                <FaReceipt /> Receipt
-              </DownloadButton>
-            </InvoiceItem>
-            <InvoiceItem>
-              <InvoiceDate>January 15, 2023</InvoiceDate>
-              <InvoiceAmount>$8.00</InvoiceAmount>
-              <InvoiceStatus status="paid">Paid</InvoiceStatus>
-              <DownloadButton>
-                <FaReceipt /> Receipt
-              </DownloadButton>
-            </InvoiceItem>
-          </InvoicesList>
+          {isLoadingInvoices ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "2rem 0",
+              }}
+            >
+              <LoadingComponent size="30px" text="Loading invoices..." />
+            </div>
+          ) : invoiceError ? (
+            <div style={{ color: "var(--error)", padding: "1rem 0" }}>
+              {invoiceError}
+            </div>
+          ) : invoices.length === 0 ? (
+            <div style={{ color: "var(--text-secondary)", padding: "1rem 0" }}>
+              No billing history available.
+            </div>
+          ) : (
+            <InvoicesList>
+              {invoices.map((invoice) => (
+                <InvoiceItem key={invoice.id}>
+                  <InvoiceDate>{formatDate(invoice.created)}</InvoiceDate>
+                  <InvoiceAmount>
+                    {formatCurrency(invoice.amount, invoice.currency)}
+                  </InvoiceAmount>
+                  <InvoiceStatus
+                    status={invoice.status === "paid" ? "paid" : "unpaid"}
+                  >
+                    {invoice.status.charAt(0).toUpperCase() +
+                      invoice.status.slice(1)}
+                  </InvoiceStatus>
+                  {invoice.pdf_url && (
+                    <DownloadButton
+                      onClick={() => window.open(invoice.pdf_url, "_blank")}
+                    >
+                      <FaReceipt /> Receipt
+                    </DownloadButton>
+                  )}
+                </InvoiceItem>
+              ))}
+            </InvoicesList>
+          )}
         </CardContent>
       </BillingCard>
 
