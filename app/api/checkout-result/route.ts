@@ -1,7 +1,7 @@
 "use server";
 
 import { type NextRequest } from "next/server";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
 import { createSupabaseServer } from "@/utils/supabase/server";
 
@@ -11,7 +11,9 @@ export async function GET(request: NextRequest) {
 
   // If no session ID, redirect to error page
   if (!sessionId) {
-    return redirect("/checkout-canceled?error=missing_session_id");
+    return NextResponse.redirect(
+      new URL("/checkout-canceled?error=missing_session_id", request.url)
+    );
   }
 
   try {
@@ -20,10 +22,13 @@ export async function GET(request: NextRequest) {
 
     // If session retrieval failed, redirect to canceled page with error
     if (!sessionResult.success) {
-      return redirect(
-        `/checkout-canceled?error=${encodeURIComponent(
-          sessionResult.error || "payment_verification_failed"
-        )}`
+      return NextResponse.redirect(
+        new URL(
+          `/checkout-canceled?error=${encodeURIComponent(
+            sessionResult.error || "payment_verification_failed"
+          )}`,
+          request.url
+        )
       );
     }
 
@@ -34,8 +39,11 @@ export async function GET(request: NextRequest) {
       sessionResult.paymentStatus === "paid";
 
     if (!isPaymentSuccessful) {
-      return redirect(
-        `/checkout-canceled?error=payment_incomplete&status=${sessionResult.status}`
+      return NextResponse.redirect(
+        new URL(
+          `/checkout-canceled?error=payment_incomplete&status=${sessionResult.status}`,
+          request.url
+        )
       );
     }
 
@@ -59,9 +67,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Payment successful, redirect to success page with appropriate parameter
-    return redirect(`/checkout-success?isSignedUp=${isSignedUp}`);
+    return NextResponse.redirect(
+      new URL(`/checkout-success?isSignedUp=${isSignedUp}`, request.url)
+    );
   } catch (error) {
     console.error("Error processing checkout:", error);
-    return redirect("/checkout-canceled?error=server_error");
+    return NextResponse.redirect(
+      new URL("/checkout-canceled?error=server_error", request.url)
+    );
   }
 }
