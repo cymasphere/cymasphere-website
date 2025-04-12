@@ -1,5 +1,4 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { fromIni } from "@aws-sdk/credential-providers";
 
 interface SendEmailParams {
   to: string | string[];
@@ -27,10 +26,13 @@ export async function sendEmail({
   const region = process.env.AWS_REGION || "us-east-1";
   
   try {
-    // Create SES client explicitly using credentials from AWS CLI
+    // Create SES client using environment variables instead of AWS CLI
     const sesClient = new SESClient({ 
       region,
-      credentials: fromIni()
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+      }
     });
 
     // Format recipient email addresses
@@ -79,8 +81,7 @@ export async function sendEmail({
     
     // More specific error messaging
     if (errorMessage.includes('security token')) {
-      console.error("Invalid security token. Check that you're logged in with the correct AWS profile.");
-      console.error("Try running 'aws configure' to set up your credentials.");
+      console.error("Invalid security token. Check AWS credentials in .env.local file.");
     }
     else if (errorMessage.includes('Email address is not verified')) {
       console.error("The email address is not verified. In SES sandbox mode, both sender and recipient emails must be verified.");
