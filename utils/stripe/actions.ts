@@ -456,3 +456,87 @@ export async function getUpcomingInvoice(customerId: string | null) {
     return { amount: null, error: errorMessage };
   }
 }
+
+/**
+ * Updates a customer's subscription to a new plan type
+ * @param customerId The Stripe customer ID
+ * @param planType The new plan type to change to (monthly or annual only)
+ * @returns Object indicating success and any errors
+ */
+export async function updateSubscription(
+  customerId: string,
+  planType: "monthly" | "annual"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!customerId) {
+      return { success: false, error: "Missing customer ID" };
+    }
+
+    // Get price ID for the new plan
+    let priceId: string;
+    switch (planType) {
+      case "monthly":
+        priceId = process.env.STRIPE_PRICE_ID_MONTHLY!;
+        break;
+      case "annual":
+        priceId = process.env.STRIPE_PRICE_ID_ANNUAL!;
+        break;
+      default:
+        return {
+          success: false,
+          error: "Invalid plan type for subscription update",
+        };
+    }
+
+    // Find the customer's active subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "active",
+      limit: 1,
+    });
+
+    if (!subscriptions.data.length) {
+      return { success: false, error: "No active subscription found" };
+    }
+
+    const subscription = subscriptions.data[0];
+    const subscriptionId = subscription.id;
+
+    // Check if downgrading from annual to monthly
+    const isDowngrade =
+      subscription.items.data[0].price.id ===
+        process.env.STRIPE_PRICE_ID_ANNUAL && planType === "monthly";
+
+    // If downgrading from annual to monthly, schedule update at period end
+    // If upgrading from monthly to annual, update immediately
+    const updateParams: Stripe.SubscriptionUpdateParams = {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          price: priceId,
+        },
+      ],
+      proration_behavior: isDowngrade ? "none" : "create_prorations",
+      cancel_at_period_end: false,
+    };
+
+    // When downgrading from annual to monthly, change at the end of billing period
+    if (isDowngrade) {
+      updateParams.cancel_at_period_end = false;
+      updateParams.proration_behavior = "none";
+      updateParams.billing_cycle_anchor = "unchanged";
+    }
+
+    // Update the subscription
+    await stripe.subscriptions.update(subscriptionId, updateParams);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating subscription:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}

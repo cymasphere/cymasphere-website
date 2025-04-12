@@ -38,6 +38,7 @@ type AuthContextType = {
     data: object | null;
   }>;
   updateProfile: (profile: Profile) => Promise<{ error: string | null }>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +49,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = async () => {
+    if (session?.user) {
+      try {
+        const { profile, error } = await fetchProfile(session.user.id);
+        if (error) {
+          console.log(JSON.stringify(error));
+          return;
+        }
+
+        if (profile) {
+          // Check Stripe subscription status
+          const { success, profile: updatedProfile } = await updateStripe(
+            session.user.email!,
+            profile
+          );
+
+          if (success && updatedProfile) {
+            setUser({ ...session.user, profile: updatedProfile });
+          } else if (profile) {
+            setUser({ ...session.user, profile });
+          }
+        }
+      } catch (error) {
+        console.error("Error refreshing user:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     console.log("auth context triggered");
@@ -142,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     resetPassword,
     updateProfile,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,6 +19,7 @@ import {
   initiateCheckout,
   getPrices,
   getUpcomingInvoice,
+  updateSubscription,
 } from "@/utils/stripe/actions";
 import {
   getCustomerInvoices,
@@ -673,7 +674,7 @@ export default function BillingPage() {
   const [willProvideCard, setWillProvideCard] = useState(false);
 
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   // State for plan prices and discounts
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
@@ -818,22 +819,22 @@ export default function BillingPage() {
   };
 
   // Add function to check if user is in trial period
-  const isInTrialPeriod = () => {
+  const isInTrialPeriod = useMemo(() => {
     return (
       userSubscription.trial_expiration &&
       new Date() < new Date(userSubscription.trial_expiration)
     );
-  };
+  }, [userSubscription.trial_expiration]);
 
   // Add function to get days left in trial
-  const getDaysLeftInTrial = () => {
+  const daysLeftInTrial = useMemo(() => {
     if (!userSubscription.trial_expiration) return 0;
     const today = new Date();
     const trialEnd = new Date(userSubscription.trial_expiration);
     const diffTime = Math.abs(trialEnd.getTime() - today.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
-  };
+  }, [userSubscription.trial_expiration]);
 
   // Fetch prices from Stripe when component mounts
   useEffect(() => {
@@ -884,61 +885,123 @@ export default function BillingPage() {
         ? "monthly"
         : userSubscription.subscription
     );
+
+    // Reset willProvideCard to true on modal open
+    setWillProvideCard(true);
+
     setShowPlanModal(true);
   };
 
   const handleBillingPeriodChange = (period: SubscriptionType) => {
+    // Don't allow selecting the current plan if they already have one
+    if (
+      userSubscription.subscription !== "none" &&
+      period === userSubscription.subscription
+    ) {
+      return;
+    }
     setSelectedBillingPeriod(period);
   };
 
-  const handleConfirmPlanChange = () => {
-    // If user is changing to a more expensive plan (monthly -> yearly -> lifetime)
-    const shouldRedirectToCheckout =
-      (userSubscription.subscription === "monthly" &&
-        selectedBillingPeriod !== "monthly") ||
-      (userSubscription.subscription === "annual" &&
-        selectedBillingPeriod !== "annual" &&
-        selectedBillingPeriod === "lifetime") ||
-      userSubscription.subscription === "none";
+  const handleConfirmPlanChange = async () => {
+    if (selectedBillingPeriod === userSubscription.subscription) {
+      // Don't do anything if they select their current plan
+      setShowPlanModal(false);
+      return;
+    }
 
-    if (shouldRedirectToCheckout) {
-      // Show confirmation modal instead of alert
+    // Handle lifetime plan separately - always goes to checkout
+    if (selectedBillingPeriod === "lifetime") {
       setConfirmationTitle("Upgrading Your Plan");
       setConfirmationMessage(
-        `You're upgrading to the ${selectedBillingPeriod} plan. You'll be redirected to checkout to complete your purchase.`
+        `You're upgrading to the lifetime plan. You'll be redirected to checkout to complete your purchase.`
       );
       setShowConfirmationModal(true);
       setShowPlanModal(false);
       return;
     }
 
-    // If downgrading from annual to monthly
-    if (
-      userSubscription.subscription === "annual" &&
-      selectedBillingPeriod === "monthly"
-    ) {
-      setConfirmationTitle("Plan Change Scheduled");
+    // For users without a plan, direct to checkout
+    if (userSubscription.subscription === "none") {
+      setConfirmationTitle("Upgrading Your Plan");
       setConfirmationMessage(
-        `Your plan will be changed to monthly at the end of your current billing period on ${formatDate(
-          userSubscription.subscription_expiration
-        )}.`
+        `You're starting a ${
+          planOptions.pro.trialDays
+        }-day free trial of the ${selectedBillingPeriod} plan. ${
+          willProvideCard
+            ? "You'll be asked to provide your payment details, but won't be charged until your trial ends."
+            : "You can use basic features without providing payment information."
+        }`
       );
       setShowConfirmationModal(true);
-    } else {
-      setConfirmationTitle("Plan Updated");
-      setConfirmationMessage(
-        `Your plan has been changed to ${selectedBillingPeriod}.`
-      );
-      setShowConfirmationModal(true);
+      setShowPlanModal(false);
+      return;
     }
 
-    setShowPlanModal(false);
+    // For users with an existing plan switching between monthly/annual
+    // Update the subscription in Stripe and refresh the user
+    try {
+      setIsLoadingPrices(true); // Show loading state
+
+      // Call the updateSubscription function with user's customer ID and plan type
+      if (
+        user &&
+        user.profile.customer_id &&
+        (selectedBillingPeriod === "monthly" ||
+          selectedBillingPeriod === "annual")
+      ) {
+        // Modified to use just customer_id and plan type
+        const { success, error } = await updateSubscription(
+          user.profile.customer_id,
+          selectedBillingPeriod
+        );
+
+        if (!success) {
+          throw new Error(error || "Failed to update subscription");
+        }
+
+        // Update user data from Stripe
+        await refreshUser();
+
+        if (
+          userSubscription.subscription === "annual" &&
+          selectedBillingPeriod === "monthly"
+        ) {
+          setConfirmationTitle("Plan Change Scheduled");
+          setConfirmationMessage(
+            `Your plan will be changed to monthly at the end of your current billing period on ${formatDate(
+              userSubscription.subscription_expiration
+            )}.`
+          );
+        } else {
+          setConfirmationTitle("Plan Updated");
+          setConfirmationMessage(
+            `Your plan has been changed to ${selectedBillingPeriod}.`
+          );
+        }
+      }
+
+      setShowConfirmationModal(true);
+      setShowPlanModal(false);
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      // Show error notification
+      setConfirmationTitle("Error");
+      setConfirmationMessage(
+        error instanceof Error
+          ? `Failed to update your subscription: ${error.message}`
+          : "An unexpected error occurred while updating your subscription."
+      );
+      setShowConfirmationModal(true);
+    } finally {
+      setIsLoadingPrices(false); // Hide loading state
+    }
   };
 
   const handleConfirmationClose = async () => {
     setShowConfirmationModal(false);
 
-    // If it was an upgrade that required checkout, redirect here
+    // If it was an upgrade that required checkout (lifetime plan or new subscription)
     if (confirmationTitle === "Upgrading Your Plan") {
       if (user && selectedBillingPeriod !== "none") {
         // Get the appropriate promotion code based on the selected billing period
@@ -969,7 +1032,8 @@ export default function BillingPage() {
           user.email,
           user.profile.customer_id || undefined,
           promotionCode,
-          willProvideCard
+          // Card is always required for existing users
+          userSubscription.subscription !== "none" ? true : willProvideCard
         );
 
         setIsLoadingPrices(false);
@@ -1135,7 +1199,7 @@ export default function BillingPage() {
       if (!user?.profile?.customer_id) return;
 
       // Fetch upcoming invoice if in trial period
-      if (isInTrialPeriod()) {
+      if (isInTrialPeriod) {
         try {
           setIsLoadingInvoice(true);
           const { amount, error } = await getUpcomingInvoice(
@@ -1177,7 +1241,7 @@ export default function BillingPage() {
     }
 
     fetchUserData();
-  }, [user?.profile?.customer_id]);
+  }, [user?.profile?.customer_id, isInTrialPeriod]);
 
   // Helper function to format currency
   const formatCurrency = (amount: number, currency: string = "usd") => {
@@ -1191,7 +1255,7 @@ export default function BillingPage() {
     <BillingContainer>
       <SectionTitle>Billing & Subscription</SectionTitle>
 
-      {isInTrialPeriod() && (
+      {isInTrialPeriod && (
         <AlertBanner
           style={{
             backgroundColor: "rgba(249, 200, 70, 0.1)",
@@ -1202,7 +1266,7 @@ export default function BillingPage() {
           <FaGift />
           <p>
             You&apos;re currently on a <strong>14-day free trial</strong> with
-            full access to all premium features. {getDaysLeftInTrial()} days
+            full access to all premium features. {daysLeftInTrial} days
             remaining. Your first payment of $
             {isLoadingInvoice ? (
               <span style={{ display: "inline-block", margin: "0 4px" }}>
@@ -1269,7 +1333,7 @@ export default function BillingPage() {
                   Cymasphere Pro -{" "}
                   {userSubscription.subscription.charAt(0).toUpperCase() +
                     userSubscription.subscription.slice(1)}
-                  {isInTrialPeriod() && (
+                  {isInTrialPeriod && (
                     <span
                       style={{
                         fontSize: "0.8rem",
@@ -1293,11 +1357,11 @@ export default function BillingPage() {
                   Complete solution for music producers with full access to all
                   features.
                 </PlanDescription>
-                {isInTrialPeriod() ? (
+                {isInTrialPeriod ? (
                   <BillingInfo>
                     <FaInfoCircle /> Trial ends:{" "}
                     {formatDate(userSubscription.trial_expiration)} (
-                    {getDaysLeftInTrial()} days left)
+                    {daysLeftInTrial} days left)
                   </BillingInfo>
                 ) : (
                   <BillingInfo>
@@ -1310,7 +1374,7 @@ export default function BillingPage() {
                     <span>
                       <LoadingComponent size="20px" text="" />
                     </span>
-                  ) : isInTrialPeriod() ? (
+                  ) : isInTrialPeriod ? (
                     "Choose Plan"
                   ) : (
                     "Change Plan"
@@ -1409,9 +1473,9 @@ export default function BillingPage() {
                     {invoice.status.charAt(0).toUpperCase() +
                       invoice.status.slice(1)}
                   </InvoiceStatus>
-                  {invoice.pdf_url && (
+                  {invoice.receipt_url && (
                     <DownloadButton
-                      onClick={() => window.open(invoice.pdf_url, "_blank")}
+                      onClick={() => window.open(invoice.receipt_url, "_blank")}
                     >
                       <FaReceipt /> Receipt
                     </DownloadButton>

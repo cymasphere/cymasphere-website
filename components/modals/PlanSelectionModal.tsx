@@ -458,7 +458,11 @@ const PlanSelectionModal = ({
     profile.subscription
   );
 
+  // Default to willProvideCard true, but allow the toggle only for new users
   const [willProvideCard, setWillProvideCard] = useState(true);
+
+  // Check if user has no active subscription
+  const isNewUser = profile.subscription === "none";
 
   // Actual trial days based on toggle state
   const effectiveTrialDays = willProvideCard ? trialDays : 7;
@@ -474,6 +478,14 @@ const PlanSelectionModal = ({
 
   // Handle interval change locally and propagate to parent
   const handleSubscriptionChange = (subscription: SubscriptionType) => {
+    // Don't allow selecting the current plan if they already have one
+    if (
+      profile.subscription !== "none" &&
+      subscription === profile.subscription
+    ) {
+      return;
+    }
+
     console.log(`Setting subscription to: ${subscription} (local modal state)`);
     setSelectedSubscription(subscription);
     onIntervalChange(subscription);
@@ -543,25 +555,29 @@ const PlanSelectionModal = ({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>Change Your Billing Plan</ModalTitle>
+              <ModalTitle>Choose Your Plan</ModalTitle>
               <CloseButton onClick={onClose}>
                 <FaTimes />
               </CloseButton>
             </ModalHeader>
             <ModalBody>
-              <PromotionBanner>
-                <TrialBadge>
-                  <FaGift /> Limited Time Offer
-                </TrialBadge>
-                <PromotionText>
-                  Start with a <span>{effectiveTrialDays}-day FREE trial</span>{" "}
-                  on any plan!
-                </PromotionText>
-                <PromotionSubtext>
-                  Experience all premium features without commitment. No credit
-                  card required to start.
-                </PromotionSubtext>
-              </PromotionBanner>
+              {/* Only show trial promotion banner for new users */}
+              {isNewUser && (
+                <PromotionBanner>
+                  <TrialBadge>
+                    <FaGift /> Limited Time Offer
+                  </TrialBadge>
+                  <PromotionText>
+                    Start with a{" "}
+                    <span>{effectiveTrialDays}-day FREE trial</span> on any
+                    plan!
+                  </PromotionText>
+                  <PromotionSubtext>
+                    Experience all premium features without commitment. No
+                    credit card required to start.
+                  </PromotionSubtext>
+                </PromotionBanner>
+              )}
 
               {profile.subscription === "annual" && (
                 <PlanChangeInfo>
@@ -582,6 +598,7 @@ const PlanSelectionModal = ({
                     console.log("Monthly plan selected");
                     handleSubscriptionChange("monthly");
                   }}
+                  disabled={profile.subscription === "monthly"}
                 >
                   Monthly
                 </BillingToggleButton>
@@ -592,6 +609,7 @@ const PlanSelectionModal = ({
                     console.log("Yearly plan selected");
                     handleSubscriptionChange("annual");
                   }}
+                  disabled={profile.subscription === "annual"}
                 >
                   Yearly
                   <SaveLabel>Save 25%</SaveLabel>
@@ -603,14 +621,15 @@ const PlanSelectionModal = ({
                     console.log("Lifetime plan selected");
                     handleSubscriptionChange("lifetime");
                   }}
+                  disabled={profile.subscription === "lifetime"}
                 >
                   Lifetime
                   <SaveLabel>Best Value</SaveLabel>
                 </BillingToggleButton>
               </BillingToggleContainer>
 
-              {/* Add card toggle control if not lifetime plan */}
-              {selectedSubscription !== "lifetime" && (
+              {/* Add card toggle control only for new users and if not lifetime plan */}
+              {isNewUser && selectedSubscription !== "lifetime" && (
                 <CardInfoToggleContainer>
                   <ToggleLabel>
                     <span>Enter card info now:</span>
@@ -682,16 +701,19 @@ const PlanSelectionModal = ({
                           `$${monthlyPrice}`
                         )}{" "}
                         <span>/month</span>
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--primary)",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          After your {effectiveTrialDays}-day free trial
-                        </div>
+                        {/* Only show trial info for new users */}
+                        {isNewUser && (
+                          <div
+                            style={{
+                              fontSize: "0.9rem",
+                              marginTop: "5px",
+                              color: "var(--primary)",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            After your {effectiveTrialDays}-day free trial
+                          </div>
+                        )}
                         {monthlyDiscount &&
                           (monthlyDiscount.percent_off ||
                             monthlyDiscount.amount_off) && (
@@ -784,16 +806,19 @@ const PlanSelectionModal = ({
                           })()}
                           /month billed annually
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--primary)",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          After your {effectiveTrialDays}-day free trial
-                        </div>
+                        {/* Only show trial info for new users */}
+                        {isNewUser && (
+                          <div
+                            style={{
+                              fontSize: "0.9rem",
+                              marginTop: "5px",
+                              color: "var(--primary)",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            After your {effectiveTrialDays}-day free trial
+                          </div>
+                        )}
                         {yearlyDiscount &&
                           (yearlyDiscount.percent_off ||
                             yearlyDiscount.amount_off) && (
@@ -928,6 +953,12 @@ const PlanSelectionModal = ({
                 style={{
                   position: "relative",
                   overflow: "hidden",
+                  opacity:
+                    profile.subscription === selectedSubscription ? 0.5 : 1,
+                  cursor:
+                    profile.subscription === selectedSubscription
+                      ? "not-allowed"
+                      : "pointer",
                 }}
                 onMouseDown={(e) => {
                   const btn = e.currentTarget;
@@ -954,11 +985,11 @@ const PlanSelectionModal = ({
                   }, 600);
                 }}
               >
-                {profile.trial_expiration && selectedSubscription !== "lifetime"
-                  ? "Choose Plan"
+                {profile.subscription === "none"
+                  ? "Start Free Trial"
                   : selectedSubscription === "lifetime"
-                  ? "Purchase Lifetime License"
-                  : "Confirm Change"}
+                  ? "Upgrade to Lifetime"
+                  : "Change Plan"}
               </Button>
             </ModalFooter>
           </ModalContent>
