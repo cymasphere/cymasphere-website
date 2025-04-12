@@ -3,10 +3,8 @@
 import { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
-import {
-  customerPurchasedPro,
-  findOrCreateCustomer,
-} from "@/utils/stripe/actions";
+import { findOrCreateCustomer } from "@/utils/stripe/actions";
+import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
 
 export async function signUpWithStripe(
   name: string,
@@ -53,12 +51,11 @@ export async function fetchProfile(
 }
 
 /**
- * Updates a user's subscription status by checking Stripe
+ * Updates a user's subscription status by checking the Stripe tables in Supabase
  *
  * Logic:
- * - If user is pro, only check if last_stripe_api_check was more than a week ago
- * - If user is not pro, always check to ensure purchases are reflected
- * - Checks one-time purchase and two subscription products
+ * - No need to check for rate limits since we're querying our own database
+ * - Uses the stripe_tables schema to check subscription status
  * - Updates profile with appropriate status
  */
 export async function updateStripe(
@@ -66,25 +63,14 @@ export async function updateStripe(
   profile: Profile
 ): Promise<{ success: boolean; profile?: Profile; error?: Error | unknown }> {
   try {
-    // Check if we need to query Stripe
-    const shouldCheckStripe =
-      profile.subscription === "none" ||
-      !profile.last_stripe_api_check ||
-      new Date(profile.last_stripe_api_check).getTime() <
-        Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-    if (!shouldCheckStripe) {
-      return { success: true, profile };
-    }
-
     let updatedProfile: Profile = { ...profile };
     // If no customer ID, user has no Stripe purchases
     if (!updatedProfile.customer_id) {
       updatedProfile.customer_id = await findOrCreateCustomer(email);
     }
 
-    // Use the stripe actions to check customer status
-    const customerStatus = await customerPurchasedPro(
+    // Use the Supabase Stripe tables to check customer status
+    const customerStatus = await customerPurchasedProFromSupabase(
       updatedProfile.customer_id
     );
 
@@ -125,11 +111,9 @@ async function updateUserProfile(profile: Profile): Promise<Profile> {
     console.log("Error getting user:", user_error);
   }
 
-  const last_stripe_api_check = new Date().toISOString();
-
   const { data, error } = await supabase
     .from("profiles")
-    .update({ ...profile, last_stripe_api_check }, { count: "exact" })
+    .update(profile, { count: "exact" })
     .eq("id", profile.id)
     .select()
     .single();

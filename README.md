@@ -20,6 +20,29 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Stripe Integration
+
+This project uses Supabase's [Stripe Wrapper](https://supabase.com/docs/guides/database/extensions/wrappers/stripe) to access Stripe data directly from Postgres. The Stripe data is stored in a private schema called `stripe_tables`.
+
+### Setup
+
+1. Enable the Stripe wrapper in your Supabase project
+2. Configure your environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public/anon key for client-side operations
+   - `SUPABASE_SERVICE_ROLE_KEY`: Service role key for accessing private schemas
+   - Various Stripe API keys and price IDs
+
+### How it Works
+
+When a user logs in, the application:
+
+1. Retrieves their Stripe customer ID from their profile
+2. Queries the Supabase Stripe tables to check their subscription status
+3. Updates their profile with the current subscription type and expiration dates
+
+This approach eliminates the need for direct Stripe API calls and their associated rate limits.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

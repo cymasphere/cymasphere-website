@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public > database.types.ts"
+    "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts"
   },
   "packageManager": "bun@1.2.2",
   "overrides": {
