@@ -1,10 +1,7 @@
-"use client";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "styled-components";
-import { ToastProvider } from "@/contexts/ToastContext";
 import StyledComponentsRegistry from "./registry";
+import ClientLayout from "./ClientLayout";
 import "./globals.css";
 
 // Theme configuration
@@ -61,11 +58,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
         <StyledComponentsRegistry>
-          <ThemeProvider theme={theme}>
-            <ToastProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </ToastProvider>
-          </ThemeProvider>
+          <ClientLayout>{children}</ClientLayout>
         </StyledComponentsRegistry>
       </body>
     </html>

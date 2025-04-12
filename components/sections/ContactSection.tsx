@@ -161,6 +161,7 @@ const ContactSection = () => {
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -171,24 +172,52 @@ const ContactSection = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Here you would normally send the form data to your server
-    console.log("Form data:", formState);
-
-    // For demo purposes, we'll just show a success message
-    setIsSubmitted(true);
-    setFormState({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
-
-    // Reset the success message after 5 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-    }, 5000);
+    
+    try {
+      // Set the submitting state to true
+      setIsSubmitting(true);
+      
+      // Send the contact form data to our API
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formState),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        // Show success message
+        setIsSubmitted(true);
+        
+        // Reset form fields
+        setFormState({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+        
+        // Reset the success message after 5 seconds
+        setTimeout(() => {
+          setIsSubmitted(false);
+        }, 5000);
+      } else {
+        // Handle error case
+        console.error("Form submission error:", result.error);
+        alert(`Failed to submit form: ${result.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      alert("An error occurred while submitting the form. Please try again.");
+    } finally {
+      // Reset the submitting state
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -289,7 +318,9 @@ const ContactSection = () => {
               />
             </FormGroup>
 
-            <SubmitButton type="submit">Send Message</SubmitButton>
+            <SubmitButton type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Sending..." : "Send Message"}
+            </SubmitButton>
           </ContactForm>
         </ContactFlexContainer>
       </ContactContent>

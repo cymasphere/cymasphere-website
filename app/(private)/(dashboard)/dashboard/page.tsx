@@ -9,6 +9,8 @@ import {
   FaTimes,
   FaPaperPlane,
   FaLaptop,
+  FaExclamationTriangle,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { capitalize } from "@/utils/stringUtils";
@@ -392,11 +394,13 @@ function DashboardPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [confirmationIcon, setConfirmationIcon] = useState<"success" | "warning" | "info">("success");
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use actual subscription data from user
   const userSubscription = user.profile;
@@ -458,24 +462,70 @@ function DashboardPage() {
     });
   };
 
-  const handleContactSubmit = () => {
-    console.log("Contact form submitted:", contactForm);
+  const handleContactSubmit = async () => {
+    try {
+      // Set submitting state
+      setIsSubmitting(true);
+      
+      // Prepare the data for the API request
+      const contactData = {
+        name: user.profile.first_name + " " + user.profile.last_name,
+        email: user.email,
+        subject: contactForm.subject,
+        message: contactForm.message,
+        userId: user.id, // Include user ID for tracking
+      };
 
-    // Reset form
-    setContactForm({
-      subject: "",
-      message: "",
-    });
+      // Send the contact form data to our API
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactData),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        // Reset form
+        setContactForm({
+          subject: "",
+          message: "",
+        });
 
-    // Close modal
-    setShowContactModal(false);
+        // Close modal
+        setShowContactModal(false);
 
-    // Show confirmation
-    setConfirmationTitle("Message Sent!");
-    setConfirmationMessage(
-      "Your message has been sent to our support team. We will respond to your inquiry as soon as possible."
-    );
-    setShowConfirmationModal(true);
+        // Show confirmation
+        setConfirmationTitle("Message Sent!");
+        setConfirmationMessage(
+          "Your message has been sent to our support team. We will respond to your inquiry as soon as possible."
+        );
+        setConfirmationIcon("success");
+        setShowConfirmationModal(true);
+      } else {
+        // Show error message
+        setConfirmationTitle("Error");
+        setConfirmationMessage(
+          `Failed to send message: ${result.error || "Unknown error"}. Please try again.`
+        );
+        setConfirmationIcon("warning");
+        setShowConfirmationModal(true);
+      }
+    } catch (error) {
+      console.error("Contact form error:", error);
+      // Show error message
+      setConfirmationTitle("Error");
+      setConfirmationMessage(
+        "An unexpected error occurred. Please try again later."
+      );
+      setConfirmationIcon("warning");
+      setShowConfirmationModal(true);
+    } finally {
+      // Reset submitting state
+      setIsSubmitting(false);
+    }
   };
 
   // Fetch price from Stripe when component mounts
@@ -507,6 +557,19 @@ function DashboardPage() {
 
   const handleModalClose = () => {
     setShowConfirmationModal(false);
+  };
+
+  // Function to render confirmation modal icon
+  const renderConfirmationIcon = () => {
+    switch (confirmationIcon) {
+      case "warning":
+        return <FaExclamationTriangle style={{ color: "var(--warning)" }} />;
+      case "info":
+        return <FaInfoCircle style={{ color: "var(--primary)" }} />;
+      case "success":
+      default:
+        return <FaCheck style={{ color: "var(--success)" }} />;
+    }
   };
 
   return (
@@ -679,7 +742,7 @@ function DashboardPage() {
                     color: "var(--primary)",
                   }}
                 >
-                  <FaCheck />
+                  {renderConfirmationIcon()}
                 </div>
                 <p
                   style={{
@@ -783,9 +846,9 @@ function DashboardPage() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleContactSubmit}>
-                  <FaPaperPlane style={{ marginRight: "0.5rem" }} /> Send
-                  Message
+                <Button onClick={handleContactSubmit} disabled={isSubmitting}>
+                  <FaPaperPlane style={{ marginRight: "0.5rem" }} /> 
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </ModalFooter>
             </ModalContent>

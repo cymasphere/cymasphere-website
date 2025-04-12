@@ -696,7 +696,7 @@ function Settings() {
             <DeviceLimit>
               Device Limit: {activeDevices.length} of 5 used
             </DeviceLimit>
-            <DeviceCounter warning={activeDevices.length >= 4}>
+            <DeviceCounter $warning={activeDevices.length >= 4}>
               {activeDevices.length} Active{" "}
               {activeDevices.length === 1 ? "Device" : "Devices"}
             </DeviceCounter>
