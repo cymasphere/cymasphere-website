@@ -55,6 +55,11 @@ const FeaturesSectionSkeleton = () => (
   </div>
 );
 
+// How It Works Section Skeleton
+const HowItWorksSectionSkeleton = () => (
+  <GenericSectionSkeleton height="800px" />
+);
+
 // Generic Section Skeleton for simpler sections
 const GenericSectionSkeleton = ({ height = "600px" }: { height?: string }) => (
   <div style={{ padding: "100px 20px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -77,7 +82,7 @@ const FeaturesSection = dynamic(() => import("@/components/sections/FeaturesSect
 });
 
 const HowItWorksSection = dynamic(() => import("@/components/sections/HowItWorksSection"), {
-  loading: () => <GenericSectionSkeleton height="800px" />
+  loading: () => <HowItWorksSectionSkeleton />
 });
 
 const PricingSection = dynamic(() => import("@/components/sections/PricingSection"), {
@@ -101,10 +106,10 @@ export default function Home() {
       <>
         <HeroSectionSkeleton />
         <FeaturesSectionSkeleton />
-        <GenericSectionSkeleton height="800px" />
-        <GenericSectionSkeleton height="800px" />
-        <GenericSectionSkeleton height="600px" />
-        <GenericSectionSkeleton height="500px" />
+        <HowItWorksSectionSkeleton />
+        <GenericSectionSkeleton height="800px" /> {/* Pricing */}
+        <GenericSectionSkeleton height="600px" /> {/* FAQ */}
+        <GenericSectionSkeleton height="500px" /> {/* Contact */}
       </>
     );
   }
