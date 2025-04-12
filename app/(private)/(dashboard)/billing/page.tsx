@@ -15,7 +15,11 @@ import {
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { Profile, SubscriptionType } from "@/utils/supabase/types";
-import { initiateCheckout, getPrices } from "@/utils/stripe/actions";
+import {
+  initiateCheckout,
+  getPrices,
+  getUpcomingInvoice,
+} from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -1113,6 +1117,37 @@ export default function BillingPage() {
     }
   };
 
+  const [upcomingInvoiceAmount, setUpcomingInvoiceAmount] = useState<
+    number | null
+  >(null);
+  const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
+
+  // Fetch upcoming invoice amount
+  useEffect(() => {
+    async function fetchUpcomingInvoice() {
+      if (!user?.profile?.customer_id || !isInTrialPeriod()) return;
+
+      try {
+        setIsLoadingInvoice(true);
+        const { amount, error } = await getUpcomingInvoice(
+          user.profile.customer_id
+        );
+
+        if (error) {
+          console.error("Error fetching upcoming invoice:", error);
+        } else {
+          setUpcomingInvoiceAmount(amount);
+        }
+      } catch (err) {
+        console.error("Error in fetchUpcomingInvoice:", err);
+      } finally {
+        setIsLoadingInvoice(false);
+      }
+    }
+
+    fetchUpcomingInvoice();
+  }, [user?.profile?.customer_id]);
+
   return (
     <BillingContainer>
       <SectionTitle>Billing & Subscription</SectionTitle>
@@ -1129,8 +1164,23 @@ export default function BillingPage() {
           <p>
             You&apos;re currently on a <strong>14-day free trial</strong> with
             full access to all premium features. {getDaysLeftInTrial()} days
-            remaining. Your first payment of ${getCurrentPrice()} will be on{" "}
-            {formatDate(userSubscription.trial_expiration)}.
+            remaining. Your first payment of $
+            {isLoadingInvoice ? (
+              <LoadingComponent
+                size="12px"
+                text=""
+                style={{
+                  display: "inline-block",
+                  marginLeft: "4px",
+                  marginRight: "4px",
+                }}
+              />
+            ) : upcomingInvoiceAmount !== null ? (
+              upcomingInvoiceAmount.toFixed(2)
+            ) : (
+              getCurrentPrice()
+            )}{" "}
+            will be on {formatDate(userSubscription.trial_expiration)}.
           </p>
         </AlertBanner>
       )}

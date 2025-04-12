@@ -429,3 +429,30 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
     };
   }
 }
+
+/**
+ * Gets the upcoming invoice for a customer to show accurate first charge amount
+ */
+export async function getUpcomingInvoice(customerId: string | null) {
+  try {
+    if (!customerId) {
+      return { amount: null, error: "No customer ID provided" };
+    }
+
+    const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
+      customer: customerId,
+    });
+
+    return {
+      amount: upcomingInvoice.amount_due / 100,
+      error: null,
+      due_date: upcomingInvoice.due_date
+        ? new Date(upcomingInvoice.due_date * 1000)
+        : null,
+    };
+  } catch (error: unknown) {
+    console.error("Error fetching upcoming invoice:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { amount: null, error: errorMessage };
+  }
+}
