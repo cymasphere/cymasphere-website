@@ -1,4 +1,4 @@
-name: Build Website Static Export
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -94,6 +95,7 @@ jobs:
           
           const nextConfig = {
             output: 'export',
+            basePath: '/cymasphere-website',
             compiler: {
               styledComponents: true
             },
@@ -112,11 +114,8 @@ jobs:
             typescript: {
               ignoreBuildErrors: true,
             },
-            experimental: {
-              // Mark specific routes as static
-              outputFileTracingIncludes: {
-                '/**/*': ['./public/**/*'],
-              },
+            images: {
+              unoptimized: true,
             },
           };
           
@@ -133,9 +132,21 @@ jobs:
           export NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock-key
           npm run build
       
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+        
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v2
         with:
-          name: cymasphere-website-out
-          path: out/
-          retention-days: 1 
+          path: out
+          
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2 
