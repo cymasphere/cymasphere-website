@@ -67,13 +67,23 @@ export default function RootLayout({
         <script 
           dangerouslySetInnerHTML={{ 
             __html: `
-              if (process.env.NODE_ENV === 'production') {
-                document.addEventListener('DOMContentLoaded', function() {
+              if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+                (function() {
+                  // Create link element immediately
                   const link = document.createElement('link');
                   link.rel = 'stylesheet';
                   link.href = '/styles/main.css';
-                  document.head.appendChild(link);
-                });
+                  
+                  // Add it to head as soon as possible
+                  if (document.head) {
+                    document.head.appendChild(link);
+                  } else {
+                    // If head isn't available yet, wait for it
+                    document.addEventListener('DOMContentLoaded', function() {
+                      document.head.appendChild(link);
+                    });
+                  }
+                })();
               }
             `
           }} 

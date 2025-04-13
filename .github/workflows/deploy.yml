@@ -330,17 +330,309 @@ jobs:
           .p-4 {
             padding: 1rem;
           }
+          
+          /* Logo Text Styling - HIGHEST PRIORITY */
+          .cyma, span.cyma {
+            font-family: var(--font-montserrat), sans-serif !important;
+            background: linear-gradient(90deg, var(--primary), var(--accent)) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+          }
+          
+          /* Extra important styles for SPHERE text */
+          .sphere, span.sphere {
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            font-weight: 700 !important;
+            background: none !important;
+            background-image: none !important;
+          }
+          
+          /* Scrollbar styling */
+          ::-webkit-scrollbar {
+            width: 8px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: var(--card-bg);
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+          }
+          
+          /* Dashboard-specific styles */
+          .dashboard-logo .cyma {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+          
+          .dashboard-logo .sphere {
+            color: white;
+          }
+          
+          /* Header styles */
+          header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 3000;
+            transition: all 0.3s ease-in-out;
+          }
+          
+          .header-scrolled {
+            background-color: rgba(15, 14, 23, 0.95);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+          }
+          
+          /* Logo styles */
+          .logo-container {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 700;
+            font-size: 1.8rem;
+            cursor: pointer;
+          }
+          
+          /* HeroSection styles */
+          .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 20px 80px;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--background);
+          }
+          
+          .hero-section:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                circle at 30% 50%,
+                rgba(108, 99, 255, 0.1),
+                transparent 50%
+              ),
+              radial-gradient(
+                circle at 70% 30%,
+                rgba(78, 205, 196, 0.1),
+                transparent 50%
+              );
+            z-index: 0;
+          }
+          
+          .hero-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          
+          .hero-title {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            line-height: 1.1;
+          }
+          
+          .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 900px;
+            text-align: center;
+          }
+          
+          .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+          }
+          
+          .primary-button {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: white;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+            text-decoration: none;
+            display: inline-block;
+          }
+          
+          .primary-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+          }
+          
+          .secondary-button {
+            background: transparent;
+            color: var(--text);
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid var(--primary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+          }
+          
+          .secondary-button:hover {
+            background: rgba(108, 99, 255, 0.1);
+            border-color: var(--accent);
+          }
+          
+          /* Footer styles */
+          .footer {
+            background-color: var(--card-bg);
+            padding: 4rem 0 2rem;
+            color: var(--text-secondary);
+          }
+          
+          .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 3rem;
+          }
+          
+          .footer-column {
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .footer-heading {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+            letter-spacing: 0.5px;
+          }
+          
+          .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+            cursor: pointer;
+            display: block;
+          }
+          
+          .footer-link:hover {
+            color: var(--primary);
+          }
+          
+          .copyright {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+          }
+          
+          /* Make page transitions smoother */
+          html {
+            scroll-behavior: smooth;
+          }
+          
+          /* Responsive styles */
+          @media (max-width: 768px) {
+            .hero-title {
+              font-size: 3rem;
+            }
+            
+            .button-group {
+              flex-direction: column;
+              align-items: center;
+            }
+            
+            .footer-content {
+              grid-template-columns: repeat(2, 1fr);
+              gap: 2rem;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .footer-content {
+              grid-template-columns: 1fr;
+              gap: 2rem;
+            }
+          }
+          
+          /* Animation keyframes */
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          
+          /* Apply animations to key elements */
+          .hero-title, .hero-subtitle, .button-group {
+            animation: slideUp 0.8s ease forwards;
+          }
+          
+          /* Energy ball animation */
+          @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+          }
+          
+          .energy-ball {
+            animation: pulse 2s infinite ease-in-out;
+          }
           EOL
           
           # Add a script to load CSS in head
           cat > public/css-loader.js << EOL
           // Script to dynamically load CSS in production environment
-          document.addEventListener('DOMContentLoaded', function() {
+          (function() {
+            // Create link element immediately
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = '/styles/main.css';
-            document.head.appendChild(link);
-          });
+            
+            // Add it to head as soon as possible
+            if (document.head) {
+              document.head.appendChild(link);
+            } else {
+              // If head isn't available yet, wait for it
+              document.addEventListener('DOMContentLoaded', function() {
+                document.head.appendChild(link);
+              });
+            }
+          })();
           EOL
           
           # Ensure script gets added in _document.js or layout
@@ -354,10 +646,15 @@ jobs:
             useEffect(() => {
               // Only run in production to avoid conflicts with development styles
               if (process.env.NODE_ENV === 'production') {
+                // Create link element immediately
                 const link = document.createElement('link');
                 link.rel = 'stylesheet';
                 link.href = '/styles/main.css';
-                document.head.appendChild(link);
+                
+                // Add it to head as soon as possible
+                if (document.head) {
+                  document.head.appendChild(link);
+                }
               }
             }, []);
             
