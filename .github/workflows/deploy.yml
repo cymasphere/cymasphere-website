@@ -24,7 +24,10 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Install with proper platform bindings
           npm ci
+          # Rebuild lightningcss binary for current platform
+          npm rebuild lightningcss --platform=linux --arch=x64
 
       - name: Create build workarounds
         run: |
