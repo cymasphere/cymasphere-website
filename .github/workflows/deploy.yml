@@ -38,19 +38,23 @@ jobs:
           
           # Create mock API routes to bypass authentication and Stripe issues
           mkdir -p app/api/checkout-result
-          echo "export async function GET() { return Response.json({ message: 'This is a mock API response' }); }" > app/api/checkout-result/route.ts
+          echo "export const dynamic = 'force-static';" > app/api/checkout-result/route.ts
+          echo "export async function GET() { return Response.json({ message: 'This is a mock API response' }); }" >> app/api/checkout-result/route.ts
           echo "export async function POST() { return Response.json({ message: 'This is a mock API response' }); }" >> app/api/checkout-result/route.ts
           
           # Create mock auth API routes
           mkdir -p app/api/auth/login
-          echo "export async function POST() { return Response.json({ user: { id: '123', email: 'mock@example.com' }, session: { access_token: 'mock_token' } }); }" > app/api/auth/login/route.ts
+          echo "export const dynamic = 'force-static';" > app/api/auth/login/route.ts
+          echo "export async function POST() { return Response.json({ user: { id: '123', email: 'mock@example.com' }, session: { access_token: 'mock_token' } }); }" >> app/api/auth/login/route.ts
           echo "export async function GET() { return Response.json({ user: { id: '123', email: 'mock@example.com' }, session: { access_token: 'mock_token' } }); }" >> app/api/auth/login/route.ts
           
           mkdir -p app/api/auth/signup
-          echo "export async function POST() { return Response.json({ user: { id: '123', email: 'mock@example.com' }, session: { access_token: 'mock_token' } }); }" > app/api/auth/signup/route.ts
+          echo "export const dynamic = 'force-static';" > app/api/auth/signup/route.ts
+          echo "export async function POST() { return Response.json({ user: { id: '123', email: 'mock@example.com' }, session: { access_token: 'mock_token' } }); }" >> app/api/auth/signup/route.ts
           
           mkdir -p app/api/auth/logout
-          echo "export async function POST() { return Response.json({ success: true }); }" > app/api/auth/logout/route.ts
+          echo "export const dynamic = 'force-static';" > app/api/auth/logout/route.ts
+          echo "export async function POST() { return Response.json({ success: true }); }" >> app/api/auth/logout/route.ts
           
           # Create a mock database client
           mkdir -p lib
@@ -116,6 +120,10 @@ jobs:
             },
             images: {
               unoptimized: true,
+            },
+            // Exclude API routes from static export
+            experimental: {
+              excludeRoute: (path) => path.includes('/api/'),
             },
           };
           
