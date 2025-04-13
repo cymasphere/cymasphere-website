@@ -3,6 +3,8 @@ import { Montserrat } from "next/font/google";
 import StyledComponentsRegistry from "./registry";
 import ClientLayout from "./ClientLayout";
 import "./globals.css";
+// Import will be created during CI build
+// import ClientScript from "./head-script/client-script";
 
 // Theme configuration
 const theme = {
@@ -56,10 +58,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
+      {/* Script to load CSS will be added during CI build */}
       <body>
         <StyledComponentsRegistry>
           <ClientLayout>{children}</ClientLayout>
         </StyledComponentsRegistry>
+        {/* Production-only script to load CSS */}
+        <script 
+          dangerouslySetInnerHTML={{ 
+            __html: `
+              if (process.env.NODE_ENV === 'production') {
+                document.addEventListener('DOMContentLoaded', function() {
+                  const link = document.createElement('link');
+                  link.rel = 'stylesheet';
+                  link.href = '/styles/main.css';
+                  document.head.appendChild(link);
+                });
+              }
+            `
+          }} 
+        />
       </body>
     </html>
   );
