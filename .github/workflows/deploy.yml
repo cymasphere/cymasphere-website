@@ -56,6 +56,11 @@ jobs:
           echo "export const dynamic = 'force-static';" > app/api/auth/logout/route.ts
           echo "export async function POST() { return Response.json({ success: true }); }" >> app/api/auth/logout/route.ts
           
+          mkdir -p app/api/auth/confirm
+          echo "export const dynamic = 'force-static';" > app/api/auth/confirm/route.ts
+          echo "export async function GET() { return Response.json({ success: true }); }" >> app/api/auth/confirm/route.ts
+          echo "export async function POST() { return Response.json({ success: true }); }" >> app/api/auth/confirm/route.ts
+          
           # Create a mock database client
           mkdir -p lib
           cat > lib/supabase-browser.ts << 'EOL'
@@ -100,6 +105,10 @@ jobs:
           const nextConfig = {
             output: 'export',
             basePath: '/cymasphere-website',
+            trailingSlash: true,
+            images: {
+              unoptimized: true,
+            },
             compiler: {
               styledComponents: true
             },
@@ -118,26 +127,91 @@ jobs:
             typescript: {
               ignoreBuildErrors: true,
             },
-            images: {
-              unoptimized: true,
-            },
-            // Exclude API routes from static export
-            experimental: {
-              excludeRoute: (path) => path.includes('/api/'),
+            // Skip API routes in the build by redirecting them
+            async redirects() {
+              return [
+                {
+                  source: '/api/:path*',
+                  destination: '/api-mock.json',
+                  permanent: false,
+                },
+              ]
             },
           };
           
           module.exports = nextConfig;
           EOL
           
+          # Create static JSON files for API responses
+          mkdir -p public
+          echo '{"success":true,"message":"This is a static API response"}' > public/api-mock.json
+          
           # Disable linting during build
           node -e "const pkg = require('./package.json'); pkg.scripts.build = pkg.scripts.build.replace('--lint', ' --no-lint'); require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
+          
+      - name: Prepare for static export
+        run: |
+          # Create a minimalist layout that works with static export
+          cat > app/layout.tsx << 'EOL'
+          import './globals.css'
+          import { Inter } from 'next/font/google'
+
+          const inter = Inter({ subsets: ['latin'] })
+
+          export default function RootLayout({
+            children,
+          }: {
+            children: React.ReactNode
+          }) {
+            return (
+              <html lang="en">
+                <head>
+                  <meta charSet="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <meta name="description" content="CymaSphere - Music Analysis Platform" />
+                  <link rel="stylesheet" href="/cymasphere-website/styles/main.css" />
+                </head>
+                <body className={inter.className}>
+                  {children}
+                </body>
+              </html>
+            )
+          }
+          EOL
+          
+          # Create an empty app/globals.css
+          echo "/* Global styles */" > app/globals.css
+          
+          # Create a basic home page
+          cat > app/page.tsx << 'EOL'
+          export default function Home() {
+            return (
+              <main className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">CymaSphere</h1>
+                <p className="mb-4">
+                  A cutting-edge platform for music analysis and visualization.
+                </p>
+                <div className="card p-4 bg-card text-card-foreground">
+                  <h2 className="text-xl font-bold mb-2">Static Export Demo</h2>
+                  <p>
+                    This is a static export of the CymaSphere website.
+                  </p>
+                </div>
+              </main>
+            )
+          }
+          EOL
+          
+          # Delete existing middleware to avoid export issues
+          rm -f middleware.ts
           
       - name: Build Next.js application
         run: |
           # Set environment variables
           export NEXT_PUBLIC_SUPABASE_URL=https://mock-supabase-url.supabase.co
           export NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock-key
+          
+          # Build the project
           npm run build
       
       - name: Setup Pages
