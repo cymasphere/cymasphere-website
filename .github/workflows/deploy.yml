@@ -23,7 +23,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Force reinstall of packages with platform-specific binaries
+          npm ci --force
+          # Rebuild native dependencies for the current platform
+          npm rebuild --platform=linux --arch=x64
+        env:
+          LIGHTNINGCSS_SKIP_NATIVE_INSTALL: "1"
 
       - name: Build Next.js application
         run: npm run build
@@ -85,18 +91,6 @@ jobs:
           ENV HOSTNAME "0.0.0.0"
 
           CMD ["node", "server.js"]
-          EOL
-
-      - name: Update next.config.ts for standalone output
-        run: |
-          cat > next.config.ts << EOL
-          import { NextConfig } from 'next';
-
-          const config: NextConfig = {
-            output: 'standalone',
-          };
-
-          export default config;
           EOL
 
       - name: Build and push Docker image
