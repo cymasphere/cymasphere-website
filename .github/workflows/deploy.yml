@@ -51,6 +51,43 @@ jobs:
           mkdir -p app/api/auth/logout
           echo "export async function POST() { return Response.json({ success: true }); }" > app/api/auth/logout/route.ts
           
+          # Create a mock database client
+          mkdir -p lib
+          cat > lib/supabase-browser.ts << 'EOL'
+          import { createClient } from '@supabase/supabase-js'
+
+          export const createBrowserClient = () => {
+            return createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.com',
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock_key',
+              {
+                auth: {
+                  persistSession: false,
+                }
+              }
+            )
+          }
+          EOL
+
+          cat > lib/supabase-server.ts << 'EOL'
+          import { createClient } from '@supabase/supabase-js'
+          import { cookies } from 'next/headers'
+
+          export const createServerClient = () => {
+            const cookieStore = cookies()
+            
+            return createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.com',
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock_key',
+              {
+                auth: {
+                  persistSession: false,
+                }
+              }
+            )
+          }
+          EOL
+          
           # Create a simplified next.config.js
           cat > next.config.js << 'EOL'
           /** @type {import('next').NextConfig} */
@@ -74,7 +111,13 @@ jobs:
             },
             typescript: {
               ignoreBuildErrors: true,
-            }
+            },
+            experimental: {
+              // Mark specific routes as static
+              outputFileTracingIncludes: {
+                '/**/*': ['./public/**/*'],
+              },
+            },
           };
           
           module.exports = nextConfig;
@@ -91,6 +134,27 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
           NEXT_PUBLIC_SUPABASE_URL: https://mock-supabase-url.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock-key
+          
+      - name: Create CI Dockerfile
+        run: |
+          cat > Dockerfile << 'EOL'
+          FROM node:20-alpine
+
+          WORKDIR /app
+
+          COPY package.json package-lock.json ./
+          COPY .next ./.next
+          COPY public ./public
+          COPY node_modules ./node_modules
+
+          ENV NODE_ENV=production
+          ENV PORT=3000
+          ENV HOSTNAME=0.0.0.0
+
+          EXPOSE 3000
+
+          CMD ["npm", "start"]
+          EOL
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
