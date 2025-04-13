@@ -35,6 +35,25 @@ jobs:
           mkdir -p temp-css
           echo "/* Empty file to replace Tailwind */" > temp-css/empty.css
           
+          # Create a mock @tailwindcss/postcss module
+          mkdir -p node_modules/@tailwindcss/postcss/dist
+          cat > node_modules/@tailwindcss/postcss/dist/index.js << EOL
+          module.exports = {
+            postcss: true,
+            // Mock the required API
+            default: () => ({
+              plugins: []
+            })
+          };
+          EOL
+          cat > node_modules/@tailwindcss/postcss/package.json << EOL
+          {
+            "name": "@tailwindcss/postcss",
+            "version": "0.0.1",
+            "main": "dist/index.js"
+          }
+          EOL
+          
           # Create a simplified next.config.js for build
           cat > next.config.js << EOL
           /** @type {import('next').NextConfig} */
