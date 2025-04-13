@@ -24,52 +24,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Install dependencies without building native modules
-          npm ci --ignore-scripts
-          # Install necessary build tools
-          sudo apt-get update && sudo apt-get install -y build-essential python3
-          # Downgrade to TailwindCSS 3.x which doesn't have the lightningcss dependency
-          npm uninstall tailwindcss @tailwindcss/postcss
-          npm install tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16
+          # Force reinstall of packages with platform-specific binaries
+          npm ci --force
+          # Rebuild native dependencies for the current platform
+          npm rebuild --platform=linux --arch=x64
         env:
-          # Skip native module installation for lightningcss
           LIGHTNINGCSS_SKIP_NATIVE_INSTALL: "1"
-
-      - name: Create temporary CSS fix
-        run: |
-          # Install the WASM version which works cross-platform
-          npm install lightningcss-wasm
-          # Directly replace the problematic module with WASM version
-          mkdir -p node_modules/lightningcss-override
-          echo 'module.exports = require("lightningcss-wasm");' > node_modules/lightningcss-override/index.js
-          # Update the package.json to use our override
-          echo "module.exports = require('lightningcss-wasm');" > node_modules/lightningcss/node/index.js
-          
-          # Create postcss.config.js for TailwindCSS 3.x
-          cat > postcss.config.js << EOL
-          module.exports = {
-            plugins: {
-              tailwindcss: {},
-              autoprefixer: {},
-            },
-          }
-          EOL
-          
-          # Create a simplified tailwind.config.js for TailwindCSS 3.x
-          cat > tailwind.config.js << EOL
-          /** @type {import('tailwindcss').Config} */
-          module.exports = {
-            content: [
-              './app/**/*.{js,ts,jsx,tsx,mdx}',
-              './pages/**/*.{js,ts,jsx,tsx,mdx}',
-              './components/**/*.{js,ts,jsx,tsx,mdx}',
-            ],
-            theme: {
-              extend: {},
-            },
-            plugins: [],
-          }
-          EOL
 
       - name: Build Next.js application
         run: npm run build
@@ -98,22 +58,16 @@ jobs:
 
           # Install dependencies only when needed
           FROM base AS deps
-          RUN apk add --no-cache libc6-compat python3 make g++
+          RUN apk add --no-cache libc6-compat
           WORKDIR /app
           COPY package.json package-lock.json* ./
-          # Install dependencies without native modules
-          RUN npm ci --ignore-scripts
-          # Use TailwindCSS 3.x instead of 4.x to avoid lightningcss issues
-          RUN npm uninstall tailwindcss @tailwindcss/postcss
-          RUN npm install tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16
+          RUN npm ci
 
           # Rebuild the source code only when needed
           FROM base AS builder
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
-          # Set environment variable to use JS implementation instead of native
-          ENV LIGHTNINGCSS_SKIP_NATIVE_INSTALL=1
           RUN npm run build
 
           # Production image, copy all the files and run next
