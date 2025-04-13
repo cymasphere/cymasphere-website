@@ -155,6 +155,9 @@ jobs:
 
       - name: Create Dockerfile for Next.js
         run: |
+          # Create public directory if it doesn't exist
+          mkdir -p public
+          
           cat > Dockerfile << EOL
           FROM node:19-alpine
 
@@ -165,9 +168,9 @@ jobs:
           COPY .next/static ./.next/static
           COPY public ./public
 
-          ENV NODE_ENV production
-          ENV PORT 3000
-          ENV HOSTNAME "0.0.0.0"
+          ENV NODE_ENV=production
+          ENV PORT=3000
+          ENV HOSTNAME="0.0.0.0"
 
           EXPOSE 3000
 
