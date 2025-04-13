@@ -24,12 +24,39 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Force reinstall of packages with platform-specific binaries
-          npm ci --force
-          # Rebuild native dependencies for the current platform
-          npm rebuild --platform=linux --arch=x64
+          # Install without binary dependencies
+          npm ci --omit=optional
+          # Force install lightningcss for the current platform
+          npm install --no-save lightningcss@latest
         env:
-          LIGHTNINGCSS_SKIP_NATIVE_INSTALL: "1"
+          LIGHTNINGCSS_SKIP_NATIVE_INSTALL: "0"
+          npm_config_platform: "linux"
+          npm_config_arch: "x64"
+
+      - name: Create temporary workaround for CSS
+        run: |
+          # Create a simplified next.config.js for build
+          cat > next.config.mjs << EOL
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'standalone',
+            // Disable Tailwind JIT to work around lightningcss issues
+            experimental: {
+              optimizeCss: false
+            },
+            webpack: (config) => {
+              // Replace lightningcss with a simple pass-through for this build
+              config.resolve.alias = {
+                ...config.resolve.alias,
+                'lightningcss': require.resolve('postcss')
+              };
+              return config;
+            }
+          };
+          
+          export default nextConfig;
+          EOL
+          mv next.config.mjs next.config.js
 
       - name: Build Next.js application
         run: npm run build
@@ -56,22 +83,7 @@ jobs:
           cat > Dockerfile << EOL
           FROM node:19-alpine AS base
 
-          # Install dependencies only when needed
-          FROM base AS deps
-          RUN apk add --no-cache libc6-compat
-          WORKDIR /app
-          COPY package.json package-lock.json* ./
-          RUN npm ci
-
-          # Rebuild the source code only when needed
-          FROM base AS builder
-          WORKDIR /app
-          COPY --from=deps /app/node_modules ./node_modules
-          COPY . .
-          RUN npm run build
-
-          # Production image, copy all the files and run next
-          FROM base AS runner
+          # Production image, copy all the files from the build
           WORKDIR /app
 
           ENV NODE_ENV production
@@ -79,9 +91,10 @@ jobs:
           RUN addgroup --system --gid 1001 nodejs
           RUN adduser --system --uid 1001 nextjs
 
-          COPY --from=builder /app/public ./public
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+          # Copy the pre-built standalone Next.js app
+          COPY .next/standalone ./
+          COPY .next/static ./.next/static
+          COPY public ./public
 
           USER nextjs
 
