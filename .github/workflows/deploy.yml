@@ -24,12 +24,25 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Force reinstall of packages with platform-specific binaries
-          npm ci --force
-          # Rebuild native dependencies for the current platform
-          npm rebuild --platform=linux --arch=x64
+          # Install dependencies without building native modules
+          npm ci --ignore-scripts
+          # Install necessary build tools
+          sudo apt-get update && sudo apt-get install -y build-essential python3
         env:
+          # Skip native module installation for lightningcss
           LIGHTNINGCSS_SKIP_NATIVE_INSTALL: "1"
+
+      - name: Create temporary CSS fix
+        run: |
+          # Create a temporary adapter to fix lightningcss issues
+          mkdir -p node_modules/.temp
+          echo 'module.exports = require("lightningcss-wasm");' > node_modules/.temp/lightningcss-fix.js
+          # Update package.json to include this fix
+          jq '.dependencies["lightningcss-wasm"] = "^1.0.0"' package.json > temp.json && mv temp.json package.json
+          # Install the WASM version which works cross-platform
+          npm install lightningcss-wasm
+          # Create an alias for webpack to use
+          echo "module.exports = require('../.temp/lightningcss-fix.js');" > node_modules/lightningcss/node/index.js
 
       - name: Build Next.js application
         run: npm run build
@@ -58,16 +71,20 @@ jobs:
 
           # Install dependencies only when needed
           FROM base AS deps
-          RUN apk add --no-cache libc6-compat
+          RUN apk add --no-cache libc6-compat python3 make g++
           WORKDIR /app
           COPY package.json package-lock.json* ./
-          RUN npm ci
+          # Force rebuild of native modules for Alpine
+          RUN npm ci --force
+          RUN npm rebuild
 
           # Rebuild the source code only when needed
           FROM base AS builder
           WORKDIR /app
           COPY --from=deps /app/node_modules ./node_modules
           COPY . .
+          # Set environment variable to use JS implementation instead of native
+          ENV LIGHTNINGCSS_SKIP_NATIVE_INSTALL=1
           RUN npm run build
 
           # Production image, copy all the files and run next
