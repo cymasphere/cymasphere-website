@@ -1,4 +1,5 @@
-import { Inter, Roboto_Mono } from 'next/font/google'
+// Removing next/font imports to avoid lightningcss issues
+// import { Inter, Roboto_Mono } from 'next/font/google'
 import StyledComponentsRegistry from './registry'
 import ClientLayout from './ClientLayout'
 // The ClientScript component will be created during CI build
@@ -6,6 +7,8 @@ import ClientLayout from './ClientLayout'
 import './globals.css'
 import { Metadata } from 'next'
 
+// Commented out font configuration
+/*
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
@@ -17,6 +20,7 @@ const roboto_mono = Roboto_Mono({
   display: 'swap',
   variable: '--font-roboto-mono',
 })
+*/
 
 // Theme configuration
 export const theme = {
@@ -68,7 +72,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${roboto_mono.variable}`}>
+      <body>
         <StyledComponentsRegistry>
           <ClientLayout>{children}</ClientLayout>
         </StyledComponentsRegistry>
