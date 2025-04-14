@@ -42,8 +42,15 @@ jobs:
 
       - name: Ensure public directory exists
         run: |
-          # Run the script to ensure public directory exists
-          node scripts/ensure-public-dir.js
+          # Create public directory and subdirectories if they don't exist
+          mkdir -p public/styles
+          mkdir -p public/images
+          mkdir -p public/audio
+          
+          # Create empty files in each directory to ensure they exist
+          touch public/styles/.gitkeep
+          touch public/images/.gitkeep
+          touch public/audio/.gitkeep
           
           # Verify directory structure
           ls -la public/
@@ -164,7 +171,14 @@ jobs:
             echo "Connected to host successfully!"
             whoami
             hostname
-            ls -la ~/.ssh/
+            
+            # Ensure SSH directory exists and has correct permissions
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+            
+            # Write SSH key to file with correct permissions
+            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
             
             # Install Docker if not already installed
             if ! command -v docker &> /dev/null; then
