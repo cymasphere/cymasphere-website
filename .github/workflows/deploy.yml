@@ -150,12 +150,19 @@ jobs:
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
           file: ./Dockerfile
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.LIGHTSAIL_IP }}
           username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          key_path: ~/.ssh/id_rsa
           port: 22
           script_stop: true
           debug: true
@@ -165,12 +172,6 @@ jobs:
             whoami
             hostname
             ls -la ~/.ssh/
-            
-            # Ensure SSH key is properly formatted
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
             
             # Install Docker if not already installed
             if ! command -v docker &> /dev/null; then
