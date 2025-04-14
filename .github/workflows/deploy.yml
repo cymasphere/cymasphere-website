@@ -119,7 +119,7 @@ jobs:
               styledComponents: true,
             },
             webpack: (config) => {
-              # Add null-loader for CSS files
+              // Add null-loader for CSS files
               config.module.rules.push({
                 test: /\.css$/,
                 use: 'null-loader'
