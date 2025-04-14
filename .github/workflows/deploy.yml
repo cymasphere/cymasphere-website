@@ -172,14 +172,6 @@ jobs:
             whoami
             hostname
             
-            # Ensure SSH directory exists and has correct permissions
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-            
-            # Write SSH key to file with correct permissions
-            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            
             # Install Docker if not already installed
             if ! command -v docker &> /dev/null; then
               echo "Installing Docker..."
