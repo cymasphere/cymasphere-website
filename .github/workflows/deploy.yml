@@ -186,12 +186,11 @@ jobs:
             echo "Connected to host successfully!"
             whoami
             hostname
-            ls -la ~/.ssh/
             
             # Ensure SSH key is properly formatted
             mkdir -p ~/.ssh
             chmod 700 ~/.ssh
-            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             
             # Install Docker if not already installed
