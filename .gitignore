@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 *.exe
+
+# SSH keys
+lightsail_key
+lightsail_key.pub
