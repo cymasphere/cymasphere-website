@@ -37,16 +37,22 @@ ENV STRIPE_PRICE_ID_LIFETIME=$STRIPE_PRICE_ID_LIFETIME
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
-# Copy necessary files first
+# Create public directory structure
+RUN mkdir -p public/styles
+RUN mkdir -p public/images
+RUN mkdir -p public/audio
+RUN touch public/styles/main.css
+RUN touch public/images/.gitkeep
+RUN touch public/audio/.gitkeep
+
+# Copy necessary files
 COPY . .
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Ensure directories exist and set permissions
-RUN mkdir -p .next public/styles public/images public/audio && \
-    touch public/styles/main.css public/images/.gitkeep public/audio/.gitkeep && \
-    chmod -R 755 public
+# Ensure directories exist
+RUN mkdir -p .next
 
 # Build the application
 RUN npm run build
@@ -87,9 +93,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     chown -R nextjs:nodejs /app
 
 # Copy necessary files from the build output
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
