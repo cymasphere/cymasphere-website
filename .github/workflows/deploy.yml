@@ -42,36 +42,14 @@ jobs:
 
       - name: Ensure public directory exists
         run: |
-          # Create necessary directories
-          mkdir -p public/styles
-          mkdir -p public/images
-          mkdir -p public/audio
-          
-          # Create necessary files
-          touch public/styles/main.css
-          touch public/images/.gitkeep
-          touch public/audio/.gitkeep
+          # Run the script to ensure public directory exists
+          node scripts/ensure-public-dir.js
           
           # Verify directory structure
           ls -la public/
           ls -la public/styles/
           ls -la public/images/
           ls -la public/audio/
-          
-          # Create a basic main.css file
-          cat > public/styles/main.css << 'EOL'
-          /* Main CSS file */
-          :root {
-            --primary-color: #0070f3;
-            --secondary-color: #1a1a1a;
-          }
-          
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          }
-          EOL
 
       - name: Create null-loader module
         run: |
