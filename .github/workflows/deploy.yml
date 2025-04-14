@@ -157,6 +157,13 @@ jobs:
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
           file: ./Dockerfile
 
+      - name: Format SSH Key
+        run: |
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail_key
+          chmod 600 ~/.ssh/lightsail_key
+          ssh-keygen -y -f ~/.ssh/lightsail_key > ~/.ssh/lightsail_key.pub
+          cat ~/.ssh/lightsail_key
+
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
         with:
