@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=optional
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -18,9 +18,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV NEXT_SKIP_LINT 1
 ENV NEXT_SKIP_ESL 1
 
-# Copy the build output from the GitHub Actions workflow
-COPY .next ./.next
-COPY public ./public
+# Note: The build is performed in the GitHub Actions workflow
+# We're just using the build artifacts here
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -33,10 +32,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
+RUN mkdir -p .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
+# Copy necessary files from the builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

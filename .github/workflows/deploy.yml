@@ -1,4 +1,4 @@
-name: Build and Deploy Static Site to GitHub Pages
+name: Deploy to AWS Lightsail
 
 on:
   push:
@@ -6,185 +6,166 @@ on:
       - main
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
+  packages: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      NEXT_SKIP_ESL: 1
+      NEXT_SKIP_LINT: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create Static Site
-        run: |
-          # Create a completely static site
-          mkdir -p _site/styles
-          
-          # Create CSS file
-          cat > _site/styles/main.css << 'EOL'
-          :root {
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            --color-primary: #4f46e5;
-            --color-primary-light: #6366f1;
-            --color-primary-dark: #4338ca;
-            --color-secondary: #06b6d4;
-            --color-secondary-light: #22d3ee;
-            --color-secondary-dark: #0891b2;
-            --color-background: #0f172a;
-            --color-foreground: #f8fafc;
-            --color-card: #1e293b;
-            --color-card-foreground: #f8fafc;
-            --color-border: #334155;
-          }
-          
-          html, body {
-            font-family: var(--font-sans);
-            background-color: var(--color-background);
-            color: var(--color-foreground);
-            margin: 0;
-            padding: 0;
-            line-height: 1.5;
-          }
-          
-          .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-          }
-          
-          .card {
-            background-color: var(--color-card);
-            color: var(--color-card-foreground);
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          }
-          
-          .text-2xl {
-            font-size: 1.5rem;
-            line-height: 2rem;
-          }
-          
-          .font-bold {
-            font-weight: 700;
-          }
-          
-          .mb-2 {
-            margin-bottom: 0.5rem;
-          }
-          
-          .mb-4 {
-            margin-bottom: 1rem;
-          }
-          
-          .mb-6 {
-            margin-bottom: 1.5rem;
-          }
-          
-          .p-4 {
-            padding: 1rem;
-          }
-          
-          .mx-auto {
-            margin-left: auto;
-            margin-right: auto;
-          }
-          
-          .mt-8 {
-            margin-top: 2rem;
-          }
-          
-          .grid {
-            display: grid;
-          }
-          
-          .grid-cols-2 {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          
-          .gap-4 {
-            gap: 1rem;
-          }
-          
-          .list-disc {
-            list-style-type: disc;
-          }
-          
-          .pl-5 {
-            padding-left: 1.25rem;
-          }
-          
-          .flex {
-            display: flex;
-          }
-          
-          .items-center {
-            align-items: center;
-          }
-          
-          .justify-between {
-            justify-content: space-between;
-          }
-          EOL
-          
-          # Create index.html
-          cat > _site/index.html << 'EOL'
-          <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <meta name="description" content="CymaSphere - Music Analysis Platform" />
-              <title>CymaSphere</title>
-              <link rel="stylesheet" href="styles/main.css" />
-            </head>
-            <body>
-              <main class="container mx-auto p-4">
-                <h1 class="text-2xl font-bold mb-4">CymaSphere</h1>
-                <p class="mb-4">
-                  A cutting-edge platform for music analysis and visualization.
-                </p>
-                <div class="card p-4 mb-6">
-                  <h2 class="text-2xl font-bold mb-2">Static Site Demo</h2>
-                  <p>
-                    Welcome to the CymaSphere static site. This is a simplified version.
-                  </p>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4 mt-8">
-                  <div class="card p-4">
-                    <h2 class="text-2xl font-bold mb-2">Features</h2>
-                    <ul class="list-disc pl-5">
-                      <li>Advanced audio analysis</li>
-                      <li>Stunning visualizations</li>
-                      <li>Powerful editing tools</li>
-                      <li>Collaborative workspaces</li>
-                    </ul>
-                  </div>
-                  
-                  <div class="card p-4">
-                    <h2 class="text-2xl font-bold mb-2">Coming Soon</h2>
-                    <ul class="list-disc pl-5">
-                      <li>Mobile application</li>
-                      <li>Enhanced collaborative features</li>
-                      <li>AI-powered audio enhancement</li>
-                      <li>Real-time collaboration</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <footer class="mt-8 p-4 card">
-                  <div class="flex items-center justify-between">
-                    <p>© 2025 CymaSphere. All rights reserved.</p>
-                  </div>
-                </footer>
-              </main>
-            </body>
-          </html>
-          EOL
-      
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          folder: _site 
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci --omit=optional
+
+      - name: Create next.config.js for production
+        run: |
+          cat > next.config.js << 'EOL'
+          /** @type {import('next').NextConfig} */
+          
+          const nextConfig = {
+            output: 'standalone',
+            compiler: {
+              styledComponents: true,
+            },
+            webpack: (config, { isServer }) => {
+              // Fix for lightningcss native bindings in different environments
+              config.resolve.alias = {
+                ...config.resolve.alias,
+                lightningcss: require.resolve('lightningcss')
+              };
+              
+              return config;
+            }
+          };
+          
+          module.exports = nextConfig;
+          EOL
+
+      - name: Build Next.js application
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create deploy script
+        run: |
+          cat > deploy.sh << 'EOL'
+          #!/bin/bash
+          
+          # Check if the container exists
+          CONTAINER_NAME=cymasphere-website
+          
+          # Pull the latest image
+          docker pull ghcr.io/${{ github.repository }}:latest
+          
+          # Stop and remove existing container if it exists
+          if [ "$(docker ps -a -q -f name=$CONTAINER_NAME)" ]; then
+            echo "Stopping and removing existing container..."
+            docker stop $CONTAINER_NAME
+            docker rm $CONTAINER_NAME
+          fi
+          
+          # Run the new container
+          echo "Starting new container..."
+          docker run -d \
+            --name $CONTAINER_NAME \
+            --restart always \
+            -p 80:3000 \
+            ghcr.io/${{ github.repository }}:latest
+          
+          # Clean up old images
+          echo "Cleaning up old images..."
+          docker system prune -f
+          
+          echo "Deployment completed successfully!"
+          EOL
+          
+          chmod +x deploy.sh
+
+      - name: Deploy to AWS Lightsail
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.LIGHTSAIL_IP }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            # Install Docker if not already installed
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+            fi
+            
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull the latest image
+            docker pull ghcr.io/${{ github.repository }}:latest
+            
+            # Stop and remove existing container
+            if [ "$(docker ps -a -q -f name=cymasphere-website)" ]; then
+              docker stop cymasphere-website
+              docker rm cymasphere-website
+            fi
+            
+            # Run the new container
+            docker run -d \
+              --name cymasphere-website \
+              --restart always \
+              -p 80:3000 \
+              ghcr.io/${{ github.repository }}:latest
+            
+            # Clean up
+            docker system prune -f
+          
+      - name: Verify deployment
+        run: |
+          echo "Waiting for service to fully initialize..."
+          sleep 30
+          
+          # Check if site is accessible (5 retries with 10s intervals)
+          for i in {1..5}; do
+            if curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}:80; then
+              echo "✅ Service verified! Site is accessible."
+              exit 0
+            else
+              echo "Attempt $i: Site not accessible yet, waiting 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          echo "⚠️ Warning: Could not verify site accessibility within timeout period."
+          echo "Please manually check the site and server logs."
+          # Don't fail the workflow as the deployment may still be initializing 

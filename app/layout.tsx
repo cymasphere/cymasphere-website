@@ -68,13 +68,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <title>CymaSphere</title>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="CymaSphere - Music Analysis Platform" />
-        <link rel="stylesheet" href="/styles/main.css" />
-      </head>
       <body className={`${inter.variable} ${roboto_mono.variable}`}>
         <StyledComponentsRegistry>
           <ClientLayout>{children}</ClientLayout>
