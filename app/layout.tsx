@@ -1,5 +1,4 @@
-// Removing next/font imports to avoid lightningcss issues
-// import { Inter, Roboto_Mono } from 'next/font/google'
+// No CSS imports to avoid build issues
 import StyledComponentsRegistry from './registry'
 import ClientLayout from './ClientLayout'
 // The ClientScript component will be created during CI build
