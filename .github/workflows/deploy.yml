@@ -153,9 +153,9 @@ jobs:
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.AWS_LIGHTSAIL_HOST }}
-          username: ${{ secrets.AWS_LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.AWS_LIGHTSAIL_SSH_KEY }}
+          host: ${{ secrets.LIGHTSAIL_IP }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22
           script_stop: true
           debug: true
@@ -169,7 +169,7 @@ jobs:
             # Ensure SSH key is properly formatted
             mkdir -p ~/.ssh
             chmod 700 ~/.ssh
-            echo "${{ secrets.AWS_LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             
             # Install Docker if not already installed
