@@ -127,16 +127,6 @@ jobs:
             typescript: {
               ignoreBuildErrors: true,
             },
-            // Skip API routes in the build by redirecting them
-            async redirects() {
-              return [
-                {
-                  source: '/api/:path*',
-                  destination: '/api-mock.json',
-                  permanent: false,
-                },
-              ]
-            },
           };
           
           module.exports = nextConfig;
@@ -184,21 +174,55 @@ jobs:
           
           # Create a basic home page
           cat > app/page.tsx << 'EOL'
+          "use client";
+          
+          import { useState } from 'react';
+          
           export default function Home() {
+            const [email, setEmail] = useState('');
+            
+            const handleSubscribe = (e: React.FormEvent) => {
+              e.preventDefault();
+              alert(`Thank you for subscribing with ${email}!`);
+              setEmail('');
+            };
+            
             return (
               <main className="container mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">CymaSphere</h1>
                 <p className="mb-4">
                   A cutting-edge platform for music analysis and visualization.
                 </p>
-                <div className="card p-4 bg-card text-card-foreground">
+                <div className="card p-4 bg-card text-card-foreground mb-6">
                   <h2 className="text-xl font-bold mb-2">Static Export Demo</h2>
                   <p>
                     This is a static export of the CymaSphere website.
                   </p>
                 </div>
+                
+                <div className="card p-4 bg-card text-card-foreground">
+                  <h2 className="text-xl font-bold mb-2">Stay Updated</h2>
+                  <p className="mb-4">Subscribe to our newsletter for updates.</p>
+                  
+                  <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="p-2 border border-border rounded bg-background text-foreground"
+                      required
+                    />
+                    <button 
+                      type="submit"
+                      className="bg-primary text-white p-2 rounded hover:bg-primary-dark"
+                    >
+                      Subscribe
+                    </button>
+                  </form>
+                </div>
               </main>
-            )
+            );
           }
           EOL
           
