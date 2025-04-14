@@ -175,9 +175,9 @@ jobs:
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.LIGHTSAIL_IP }}
-          username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          host: ${{ secrets.AWS_LIGHTSAIL_HOST }}
+          username: ${{ secrets.AWS_LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.AWS_LIGHTSAIL_SSH_KEY }}
           port: 22
           script_stop: true
           debug: true
@@ -186,11 +186,12 @@ jobs:
             echo "Connected to host successfully!"
             whoami
             hostname
+            ls -la ~/.ssh/
             
             # Ensure SSH key is properly formatted
             mkdir -p ~/.ssh
             chmod 700 ~/.ssh
-            echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+            echo "${{ secrets.AWS_LIGHTSAIL_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             
             # Install Docker if not already installed
@@ -201,10 +202,10 @@ jobs:
             fi
             
             # Login to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u cymasphere --password-stdin
             
             # Pull the latest image
-            docker pull ghcr.io/${{ github.repository }}:latest
+            docker pull ghcr.io/cymasphere/cymasphere-website:latest
             
             # Stop and remove existing container
             if [ "$(docker ps -a -q -f name=cymasphere-website)" ]; then
@@ -227,7 +228,7 @@ jobs:
               -e STRIPE_PRICE_ID_LIFETIME="${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" \
               -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" \
               -e NEXT_PUBLIC_SITE_URL="${{ secrets.NEXT_PUBLIC_SITE_URL }}" \
-              ghcr.io/${{ github.repository }}:latest
+              ghcr.io/cymasphere/cymasphere-website:latest
             
             # Clean up
             docker system prune -f
