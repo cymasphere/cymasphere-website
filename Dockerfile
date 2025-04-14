@@ -6,20 +6,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
-RUN npm ci --omit=optional
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NEXT_SKIP_LINT 1
-ENV NEXT_SKIP_ESL 1
-
-# Note: The build is performed in the GitHub Actions workflow
-# We're just using the build artifacts here
+RUN npm ci --omit=dev
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -35,10 +22,10 @@ RUN adduser --system --uid 1001 nextjs
 RUN mkdir -p .next
 RUN chown nextjs:nodejs .next
 
-# Copy necessary files from the builder stage
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy necessary files from the build output
+COPY --chown=nextjs:nodejs public ./public
+COPY --chown=nextjs:nodejs .next/standalone ./
+COPY --chown=nextjs:nodejs .next/static ./.next/static
 
 USER nextjs
 

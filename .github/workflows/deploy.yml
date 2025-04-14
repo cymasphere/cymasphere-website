@@ -25,9 +25,20 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies with native bindings
         run: |
-          npm ci --omit=optional
+          # Install dependencies with platform-specific bindings
+          npm ci
+          # Ensure lightningcss is properly installed for linux-x64-gnu platform
+          npm rebuild lightningcss --platform=linux --arch=x64
+
+      - name: Create postcss-mock.js to handle platform-specific issues
+        run: |
+          cat > postcss-mock.js << 'EOL'
+          module.exports = {
+            plugins: []
+          };
+          EOL
 
       - name: Create next.config.js for production
         run: |
@@ -40,10 +51,10 @@ jobs:
               styledComponents: true,
             },
             webpack: (config, { isServer }) => {
-              // Fix for lightningcss native bindings in different environments
+              // Replace postcss config with mock to avoid lightningcss issues
               config.resolve.alias = {
                 ...config.resolve.alias,
-                lightningcss: require.resolve('lightningcss')
+                './postcss.config.mjs': require.resolve('./postcss-mock.js')
               };
               
               return config;
