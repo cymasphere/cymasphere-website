@@ -17,6 +17,17 @@ jobs:
       NEXT_TELEMETRY_DISABLED: 1
       NEXT_SKIP_LINT: 1
       NEXTJS_DISABLE_LINT: 1
+      # Add Supabase environment variables
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      # Add Stripe environment variables
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
+      STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
+      STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
+      # Add site URL
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -142,11 +153,19 @@ jobs:
               docker rm cymasphere-website
             fi
             
-            # Run the new container
+            # Run the new container with environment variables
             docker run -d \
               --name cymasphere-website \
               --restart always \
               -p 80:3000 \
+              -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+              -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+              -e STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+              -e STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+              -e STRIPE_PRICE_ID_MONTHLY="${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" \
+              -e STRIPE_PRICE_ID_ANNUAL="${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" \
+              -e STRIPE_PRICE_ID_LIFETIME="${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" \
+              -e NEXT_PUBLIC_SITE_URL="${{ secrets.NEXT_PUBLIC_SITE_URL }}" \
               ghcr.io/${{ github.repository }}:latest
             
             # Clean up
