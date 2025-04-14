@@ -155,11 +155,13 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22
           script_stop: true
+          debug: true
           script: |
             # Debug information
             echo "Connected to host successfully!"
             whoami
             hostname
+            ls -la ~/.ssh/
             
             # Install Docker if not already installed
             if ! command -v docker &> /dev/null; then
