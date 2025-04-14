@@ -28,10 +28,10 @@ jobs:
       - name: Create CSS bypass files
         run: |
           # Create a mock CSS loader
-          mkdir -p css-mock
+          mkdir -p empty-module
           
           # Create an empty module to bypass CSS imports
-          cat > css-mock/index.js << 'EOL'
+          cat > empty-module/index.js << 'EOL'
           module.exports = {}
           EOL
           
@@ -52,6 +52,8 @@ jobs:
           cat > next.config.js << 'EOL'
           /** @type {import('next').NextConfig} */
           
+          const path = require('path');
+          
           const nextConfig = {
             output: 'standalone',
             compiler: {
@@ -63,7 +65,8 @@ jobs:
                 if (rule.oneOf) {
                   rule.oneOf.forEach((r) => {
                     if (r.test && r.test.toString().includes('css')) {
-                      r.use = [{ loader: require.resolve('../../css-mock') }];
+                      // Use absolute path to empty module
+                      r.use = [{ loader: path.resolve('./empty-module/index.js') }];
                     }
                   });
                 }
