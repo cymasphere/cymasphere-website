@@ -6,29 +6,24 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
       - name: Create Static Site
         run: |
           # Create a completely static site
-          mkdir -p out/cymasphere-website/styles
+          mkdir -p _site/styles
           
           # Create CSS file
-          cat > out/cymasphere-website/styles/main.css << 'EOL'
+          cat > _site/styles/main.css << 'EOL'
           :root {
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             --color-primary: #4f46e5;
@@ -134,7 +129,7 @@ jobs:
           EOL
           
           # Create index.html
-          cat > out/cymasphere-website/index.html << 'EOL'
+          cat > _site/index.html << 'EOL'
           <!DOCTYPE html>
           <html lang="en">
             <head>
@@ -189,21 +184,7 @@ jobs:
           </html>
           EOL
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: out
-          
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site 
