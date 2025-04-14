@@ -48,6 +48,7 @@ jobs:
           touch public/styles/main.css
           touch public/images/.gitkeep
           touch public/audio/.gitkeep
+          ls -la public/
 
       - name: Create null-loader module
         run: |
@@ -146,6 +147,7 @@ jobs:
             STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
             NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          file: ./Dockerfile
 
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
