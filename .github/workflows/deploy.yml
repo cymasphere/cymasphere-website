@@ -45,6 +45,9 @@ jobs:
           mkdir -p public/styles
           mkdir -p public/images
           mkdir -p public/audio
+          touch public/styles/main.css
+          touch public/images/.gitkeep
+          touch public/audio/.gitkeep
 
       - name: Create null-loader module
         run: |
@@ -92,7 +95,7 @@ jobs:
               styledComponents: true,
             },
             webpack: (config) => {
-              // Add null-loader for CSS files
+              # Add null-loader for CSS files
               config.module.rules.push({
                 test: /\.css$/,
                 use: 'null-loader'
