@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 # Build stage: build the application
-FROM base AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Define ARGs for build-time environment variables
@@ -45,6 +45,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Ensure directories exist
 RUN mkdir -p public
 RUN mkdir -p .next
+
+# Build the application
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
