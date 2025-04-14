@@ -20,12 +20,14 @@ jobs:
       # Add Supabase environment variables
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       # Add Stripe environment variables
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
       STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
       STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
       # Add site URL
       NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
     steps:
@@ -37,6 +39,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Ensure public directory exists
+        run: |
+          mkdir -p public/styles
+          mkdir -p public/images
+          mkdir -p public/audio
 
       - name: Create null-loader module
         run: |
@@ -124,6 +132,17 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
+            STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
+            STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
       - name: Deploy to AWS Lightsail
         uses: appleboy/ssh-action@v1.0.0
@@ -160,11 +179,13 @@ jobs:
               -p 80:3000 \
               -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
               -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+              -e SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
               -e STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
               -e STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
               -e STRIPE_PRICE_ID_MONTHLY="${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" \
               -e STRIPE_PRICE_ID_ANNUAL="${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" \
               -e STRIPE_PRICE_ID_LIFETIME="${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" \
+              -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" \
               -e NEXT_PUBLIC_SITE_URL="${{ secrets.NEXT_PUBLIC_SITE_URL }}" \
               ghcr.io/${{ github.repository }}:latest
             
