@@ -37,6 +37,14 @@ ENV STRIPE_PRICE_ID_LIFETIME=$STRIPE_PRICE_ID_LIFETIME
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
+# Create public directory structure
+RUN mkdir -p public/styles
+RUN mkdir -p public/images
+RUN mkdir -p public/audio
+RUN touch public/styles/main.css
+RUN touch public/images/.gitkeep
+RUN touch public/audio/.gitkeep
+
 # Copy necessary files
 COPY . .
 
@@ -44,7 +52,6 @@ COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 
 # Ensure directories exist
-RUN mkdir -p public
 RUN mkdir -p .next
 
 # Build the application
