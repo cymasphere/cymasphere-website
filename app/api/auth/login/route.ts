@@ -1,13 +1,13 @@
 "use server";
 
 import { NextResponse, type NextRequest } from "next/server";
-
-import { Profile } from "@/utils/supabase/types";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from '@supabase/supabase-js';
 import { updateStripe } from "@/utils/supabase/actions";
 
-interface ProfileWithEmail extends Profile {
+interface ProfileWithEmail {
+  id: string;
   email: string;
+  [key: string]: any;
 }
 
 type LoginResponse = {
@@ -43,26 +43,11 @@ const err = (code: string, message: string): NextResponse<LoginResponse> => {
   });
 };
 
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      setAll(_cookiesToSet) {},
-    },
-  }
-);
-
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
   try {
     const body = await request.formData();
-
     const email = body.get("email")?.toString();
     const password = body.get("password")?.toString();
 
@@ -71,6 +56,12 @@ export async function POST(
         "invalid_credentials",
         "email and password fields are required"
       );
+
+    // Initialize Supabase client directly with environment variables
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     const {
       data: { user, session },
@@ -99,7 +90,7 @@ export async function POST(
         // Check and update Stripe subscription status
         try {
           const { success, profile: updatedProfile } = await updateStripe(
-            user.email!,
+            user.email,
             profile
           );
 
@@ -126,9 +117,9 @@ export async function POST(
       }
     }
 
-    return err("unexpected_failure", "An unexpected error occured");
+    return err("unexpected_failure", "An unexpected error occurred");
   } catch (error) {
-    console.log(error);
-    return err("unexpected_failure", "An unexpected error occured");
+    console.error("Unexpected error during login:", error);
+    return err("unexpected_failure", "An unexpected error occurred");
   }
 }

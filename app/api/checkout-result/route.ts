@@ -3,7 +3,7 @@
 import { type NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
-import { createSupabaseServer } from "@/utils/supabase/server";
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -51,7 +51,12 @@ export async function GET(request: NextRequest) {
     let isSignedUp = false;
     if (sessionResult.customerId) {
       try {
-        const supabase = await createSupabaseServer();
+        // Use direct Supabase client initialization with environment variables
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
         const { data: profile } = await supabase
           .from("profiles")
           .select()
