@@ -54,8 +54,6 @@ export async function customerPurchasedProFromSupabase(
       .order("created", { ascending: false })
       .limit(1);
 
-    console.log("charges", charges);
-
     if (chargesError) {
       console.error("Error querying stripe_charges:", chargesError);
       return {
@@ -77,8 +75,6 @@ export async function customerPurchasedProFromSupabase(
       .select("*")
       .eq("customer", customer_id)
       .order("current_period_end", { ascending: false });
-
-    console.log("subscriptions", subscriptions);
 
     if (subscriptionsError) {
       console.error("Error querying stripe_subscriptions:", subscriptionsError);
