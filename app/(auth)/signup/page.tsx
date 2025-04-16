@@ -259,28 +259,6 @@ const buttonVariants = {
   },
 };
 
-// Add Success Message styled components here, outside of the component function
-const SuccessMessage = styled(motion.div)`
-  background-color: rgba(0, 201, 167, 0.1);
-  border: 2px solid var(--success);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const SuccessTitle = styled.h3`
-  color: var(--success);
-  font-size: 24px;
-  margin-bottom: 16px;
-`;
-
-const SuccessText = styled.div`
-  color: var(--text);
-  line-height: 1.6;
-  font-size: 16px;
-`;
-
 // Add styled component for name fields container
 const NameFieldsContainer = styled.div`
   display: flex;
@@ -345,7 +323,6 @@ function SignUp() {
   const [error, setError] = useState("");
   const [loadingState, setLoadingState] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [redirectAfterLogin, setRedirectAfterLogin] = useState("");
   const [isCheckoutComplete, setIsCheckoutComplete] = useState(false);
 
@@ -408,17 +385,36 @@ function SignUp() {
       // Combine first and last name for the API call
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const result = await signUp(fullName, formData.email, formData.password);
-
+      
+      // When a user already exists in Supabase Auth:
+      // 1. If identities array is empty, it means the user exists and has confirmed their email
+      // 2. If there's an error with "already registered" in the message, that's also a clear sign
+      
+      // Check for existing account
       if (result.error) {
         console.error("Sign up error:", result.error.message);
+        
+        // Check if the error is about an existing account
+        if (result.error.message.toLowerCase().includes("user already registered") || 
+            result.error.message.toLowerCase().includes("email already") ||
+            result.error.message.toLowerCase().includes("account already exists")) {
+          // Redirect to the account exists page
+          router.push(`/signup-account-exists?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
+        
+        // For other errors, show the error message
         setError(result.error.message);
-      } else {
-        // Show success message
-        setSuccess(true);
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+      } else if (result.data && result.data.user) {
+        // Check for empty identities array which indicates an existing confirmed user
+        if (!result.data.user.identities || result.data.user.identities.length === 0) {
+          // User already exists - redirect to account exists page
+          router.push(`/signup-account-exists?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
+        
+        // New user successfully created
+        router.push(`/signup-success?name=${encodeURIComponent(formData.firstName)}&email=${encodeURIComponent(formData.email)}`);
       }
     } catch (err: unknown) {
       console.error("Sign up error:", err);
@@ -470,32 +466,6 @@ function SignUp() {
         <Title>
           Create an <span>account</span>
         </Title>
-
-        {/* Display success message if signup was successful */}
-        {success && (
-          <SuccessMessage
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <SuccessTitle>Account Created Successfully!</SuccessTitle>
-            <SuccessText>
-              <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
-                Hi {formData.firstName}! A verification email has been sent to{" "}
-                {formData.email}.
-              </strong>
-              <br />
-              <br />
-              Please check your inbox (and spam folder) and click the link to
-              verify your account.
-              <br />
-              <br />
-              <strong>
-                You must verify your email before accessing all features.
-              </strong>
-            </SuccessText>
-          </SuccessMessage>
-        )}
 
         {/* Display error message if there was an error */}
         {error && (

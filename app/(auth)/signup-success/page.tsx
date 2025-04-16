@@ -1,11 +1,11 @@
 "use client";
-import React, { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -67,7 +67,7 @@ const ContentContainer = styled(motion.div)`
   justify-content: center;
   text-align: center;
   padding: 8rem 2rem 4rem;
-  max-width: 1200px;
+  max-width: 650px;
   width: 100%;
   z-index: 1;
 `;
@@ -94,16 +94,25 @@ const Subtitle = styled.h2`
   color: var(--text-secondary);
 `;
 
-const Message = styled.p`
+const Message = styled.div`
   font-size: 1.2rem;
   line-height: 1.6;
   margin-bottom: 2rem;
   max-width: 800px;
   color: var(--text-secondary);
+  background-color: rgba(0, 201, 167, 0.1);
+  border: 2px solid var(--success);
+  border-radius: 12px;
+  padding: 2rem;
 `;
 
-const BackButton = styled.button`
-  padding: 12px 24px;
+const Highlight = styled.span`
+  color: var(--success);
+  font-weight: 500;
+`;
+
+const Button = styled.button`
+  padding: 12px 30px;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
   border: none;
@@ -112,7 +121,7 @@ const BackButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 2rem;
+  margin-top: 1rem;
 
   &:hover {
     transform: translateY(-3px);
@@ -120,19 +129,10 @@ const BackButton = styled.button`
   }
 `;
 
-function CheckoutSuccessContent() {
-  const router = useRouter();
+export default function SignupSuccess() {
   const searchParams = useSearchParams();
-  const isSignedUp = searchParams.get("isSignedUp") === "true";
-  const isTrial = searchParams.get("isTrial") === "true";
-
-  const handleContinue = () => {
-    if (isSignedUp) {
-      router.push("/downloads");
-    } else {
-      router.push("/signup");
-    }
-  };
+  const name = searchParams.get("name") || "there";
+  const email = searchParams.get("email") || "your email";
 
   return (
     <PageContainer>
@@ -155,49 +155,27 @@ function CheckoutSuccessContent() {
         transition={{ duration: 0.5 }}
       >
         <SuccessIcon />
+        <Title>Account Created Successfully!</Title>
+        <Subtitle>Welcome to Cymasphere</Subtitle>
         
-        {isTrial ? (
-          <>
-            <Title>Trial Started!</Title>
-            <Subtitle>Welcome to Cymasphere Pro</Subtitle>
-            <Message>
-              {isSignedUp
-                ? "Your free trial has been successfully activated. You can now explore all the premium features of Cymasphere Pro."
-                : "Your free trial has been successfully activated. To start using Cymasphere Pro, you'll need to create your account."}
-            </Message>
-          </>
-        ) : (
-          <>
-            <Title>Payment Successful!</Title>
-            <Subtitle>Thank you for your purchase</Subtitle>
-            <Message>
-              {isSignedUp
-                ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
-                : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
-            </Message>
-          </>
-        )}
+        <Message>
+          <p>
+            <strong>Hi {name}!</strong> A verification email has been sent to <Highlight>{email}</Highlight>.
+          </p>
+          <br />
+          <p>
+            Please check your inbox (and spam folder) and click the link to verify your account.
+          </p>
+          <br />
+          <p>
+            <strong>You must verify your email before accessing all features.</strong>
+          </p>
+        </Message>
 
-        <BackButton onClick={handleContinue}>
-          {isSignedUp ? "Go to Downloads" : "Create Your Account"}
-        </BackButton>
+        <Link href="/login" passHref>
+          <Button>Go to Login</Button>
+        </Link>
       </ContentContainer>
     </PageContainer>
   );
-}
-
-export default function CheckoutSuccess() {
-  return (
-    <Suspense
-      fallback={
-        <LoadingSpinner
-          size="large"
-          fullScreen={true}
-          text="Processing checkout..."
-        />
-      }
-    >
-      <CheckoutSuccessContent />
-    </Suspense>
-  );
-}
+} 

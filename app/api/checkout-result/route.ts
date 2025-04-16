@@ -66,9 +66,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Payment successful, redirect to success page with appropriate parameter
+    // Determine if this is a free trial
+    const isTrial = sessionResult.mode === "subscription" && (
+      sessionResult.hasTrialPeriod === true || 
+      (sessionResult.subscription && 
+       typeof sessionResult.subscription !== 'string' && 
+       sessionResult.subscription.trial_end)
+    );
+
+    // Payment successful, redirect to success page with appropriate parameters
     return NextResponse.redirect(
-      new URL(`/checkout-success?isSignedUp=${isSignedUp}`, request.url)
+      new URL(`/checkout-success?isSignedUp=${isSignedUp}&isTrial=${isTrial}`, request.url)
     );
   } catch (error) {
     console.error("Error processing checkout:", error);

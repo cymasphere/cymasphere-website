@@ -736,6 +736,11 @@ export default function BillingPage() {
     return diffDays;
   }, [userSubscription.trial_expiration]);
 
+  // Calculate trial duration (fixed to 7 days)
+  const trialDuration = useMemo(() => {
+    return 7;
+  }, []);
+
   // Mock payment methods
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
     {
@@ -1129,7 +1134,7 @@ export default function BillingPage() {
       yearlyPrice: 69,
       lifetimePrice: 199,
       description: "Complete solution for music producers",
-      trialDays: 14, // Added trial days info
+      trialDays: 7,
       features: [
         "Interactive Harmony Palette",
         "Advanced Voice Leading Control",
@@ -1369,7 +1374,7 @@ export default function BillingPage() {
         >
           <FaGift />
           <p>
-            You&apos;re currently on a <strong>14-day free trial</strong> with
+            You&apos;re currently on a <strong>7-day free trial</strong> with
             full access to all premium features. {daysLeftInTrial} days
             remaining. Your first payment of $
             {isLoadingInvoice ? (
@@ -1444,12 +1449,12 @@ export default function BillingPage() {
                         fontWeight: "bold",
                         color: "#F96E46",
                         background: "rgba(249, 110, 70, 0.1)",
-                        padding: "3px 8px",
+                        padding: "3px 12px 3px 20px",
                         borderRadius: "10px",
                         marginLeft: "10px",
                       }}
                     >
-                      Trial
+                      7-day Trial
                     </span>
                   )}
                 </PlanName>

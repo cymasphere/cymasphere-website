@@ -372,6 +372,8 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
   subscriptionId?: string;
   paymentStatus?: string;
   mode?: string;
+  hasTrialPeriod?: boolean;
+  subscription?: Stripe.Subscription | string;
   error?: string;
 }> {
   try {
@@ -397,11 +399,20 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
 
     // Handle subscription field
     let subscriptionId: string | undefined;
+    let hasTrialPeriod: boolean = false;
+    let subscription: Stripe.Subscription | string | undefined = undefined;
+    
     if (session.subscription) {
+      subscription = session.subscription;
       subscriptionId =
         typeof session.subscription === "string"
           ? session.subscription
           : session.subscription.id;
+          
+      // Check if the subscription includes a trial period
+      if (typeof session.subscription !== "string") {
+        hasTrialPeriod = !!session.subscription.trial_end;
+      }
     }
 
     // Handle payment_intent field
@@ -418,6 +429,8 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       subscriptionId,
       paymentStatus,
       mode: session.mode || undefined,
+      hasTrialPeriod,
+      subscription,
     };
   } catch (error) {
     console.error("Error fetching checkout session:", error);
