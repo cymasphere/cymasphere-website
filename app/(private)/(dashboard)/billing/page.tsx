@@ -1134,7 +1134,7 @@ export default function BillingPage() {
       yearlyPrice: 69,
       lifetimePrice: 199,
       description: "Complete solution for music producers",
-      trialDays: 14, // Added trial days info
+      trialDays: 7,
       features: [
         "Interactive Harmony Palette",
         "Advanced Voice Leading Control",

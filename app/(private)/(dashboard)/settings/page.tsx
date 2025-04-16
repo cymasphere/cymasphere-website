@@ -311,7 +311,6 @@ const ModalFooter = styled.div`
 
 interface SettingsState {
   language: string;
-  audioQuality: string;
 }
 
 interface ProfileState {
@@ -329,7 +328,6 @@ interface Device {
 function Settings() {
   const [settings, setSettings] = useState<SettingsState>({
     language: "en",
-    audioQuality: "high",
   });
 
   const [profile, setProfile] = useState<ProfileState>({
@@ -669,25 +667,6 @@ function Settings() {
                   <option value="fr">French</option>
                   <option value="de">German</option>
                   <option value="ja">Japanese</option>
-                </Select>
-              </SelectWrapper>
-            </SettingItem>
-
-            <SettingItem>
-              <SettingInfo>
-                <SettingTitle>Audio Quality</SettingTitle>
-                <SettingDescription>
-                  Set the preferred audio quality for playback
-                </SettingDescription>
-              </SettingInfo>
-              <SelectWrapper>
-                <Select
-                  value={settings.audioQuality}
-                  onChange={(e) => handleSelectChange(e, "audioQuality")}
-                >
-                  <option value="low">Low (256 kbps)</option>
-                  <option value="medium">Medium (320 kbps)</option>
-                  <option value="high">High (lossless)</option>
                 </Select>
               </SelectWrapper>
             </SettingItem>
