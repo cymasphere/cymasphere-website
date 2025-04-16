@@ -197,7 +197,7 @@ const TrialBadge = styled.div`
   right: -32px;
   background: linear-gradient(90deg, #ffd700, #ffa500);
   color: #1a1a1a;
-  padding: 5px 40px;
+  padding: 5px 40px 5px 50px;
   font-size: 0.8rem;
   font-weight: 700;
   transform: rotate(45deg);
@@ -411,7 +411,13 @@ function DashboardPage() {
 
   // Only keep the monthly price for display purposes
   const [monthlyPrice, setMonthlyPrice] = useState(8);
-  const [trialDays] = useState(14);
+  
+  // Calculate trial duration based on expiration and signup dates
+  const getTrialDuration = () => {
+    return 7; // Fixed to 7-day trial
+  };
+  
+  const trialDays = getTrialDuration();
 
   // Use actual connected devices if available
   // const connectedDevices = user.profile.connectedDevices || [
@@ -630,7 +636,7 @@ function DashboardPage() {
       <CardGrid>
         <Card whileHover={{ y: -5, transition: { duration: 0.2 } }}>
           {isInTrialPeriod() && (
-            <TrialBadge>{trialDays}-Day Free Trial</TrialBadge>
+            <TrialBadge>{trialDays}-Day Trial</TrialBadge>
           )}
           <CardTitle>
             <FaCreditCard /> Subscription
