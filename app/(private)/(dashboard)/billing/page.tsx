@@ -1478,8 +1478,14 @@ export default function BillingPage() {
                   )}
                 </PlanName>
                 <PlanPrice>
-                  ${getCurrentPrice()}{" "}
-                  <span>{userSubscription.subscription !== "lifetime" ? `/ ${userSubscription.subscription}` : "(one-time payment)"}</span>
+                  {isLoadingPrices ? (
+                    <>-</>
+                  ) : (
+                    <>
+                      ${getCurrentPrice()}{" "}
+                      <span>{userSubscription.subscription !== "lifetime" ? `/ ${userSubscription.subscription}` : "(one-time payment)"}</span>
+                    </>
+                  )}
                 </PlanPrice>
                 <PlanDescription>
                   Complete solution for music producers with full access to all
