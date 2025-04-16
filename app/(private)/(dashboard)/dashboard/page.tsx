@@ -11,6 +11,7 @@ import {
   FaLaptop,
   FaExclamationTriangle,
   FaInfoCircle,
+  FaCrown,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { capitalize } from "@/utils/stringUtils";
@@ -444,6 +445,22 @@ function DashboardPage() {
     return new Date() < new Date(userSubscription.trial_expiration);
   };
 
+  const hasCompletedTrial = () => {
+    // Consider a trial completed if:
+    // 1. User has an active subscription (not "none")
+    // 2. User has a past trial_expiration date
+    return (
+      userSubscription.subscription !== "none" || 
+      (userSubscription.trial_expiration && 
+       new Date(userSubscription.trial_expiration) < new Date())
+    );
+  };
+
+  // Determine if we should show trial messaging
+  const shouldShowTrialContent = () => {
+    return isInTrialPeriod() && !hasCompletedTrial();
+  };
+
   const getDaysLeftInTrial = () => {
     if (!userSubscription.trial_expiration) return 0;
     const today = new Date();
@@ -602,7 +619,7 @@ function DashboardPage() {
           </StatHeader>
           <StatValue>{capitalize(userSubscription.subscription)}</StatValue>
           <StatDescription>
-            {isInTrialPeriod()
+            {shouldShowTrialContent()
               ? `${getDaysLeftInTrial()} days left in your free trial`
               : "Upgrade to access premium features"}
           </StatDescription>
@@ -635,7 +652,7 @@ function DashboardPage() {
 
       <CardGrid>
         <Card whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          {isInTrialPeriod() && (
+          {shouldShowTrialContent() && (
             <TrialBadge>{trialDays}-Day Trial</TrialBadge>
           )}
           <CardTitle>
@@ -658,7 +675,7 @@ function DashboardPage() {
               <InfoLabel>Current Plan</InfoLabel>
               <InfoValue>{capitalize(userSubscription.subscription)}</InfoValue>
             </SubscriptionInfo>
-            {isInTrialPeriod() && (
+            {shouldShowTrialContent() && (
               <SubscriptionInfo>
                 <InfoLabel>Trial Status</InfoLabel>
                 <InfoValue>{getDaysLeftInTrial()} days remaining</InfoValue>
@@ -667,7 +684,7 @@ function DashboardPage() {
             <SubscriptionInfo>
               <InfoLabel>Renewal Date</InfoLabel>
               <InfoValue>
-                {isInTrialPeriod()
+                {shouldShowTrialContent()
                   ? formatDate(userSubscription.trial_expiration)
                   : userSubscription.subscription_expiration
                   ? formatDate(userSubscription.subscription_expiration)
@@ -677,7 +694,7 @@ function DashboardPage() {
             <SubscriptionInfo>
               <InfoLabel>Next Payment</InfoLabel>
               <InfoValue>
-                {isInTrialPeriod()
+                {shouldShowTrialContent()
                   ? `$${
                       isLoadingPrices ? "..." : monthlyPrice
                     }.00 on ${formatDate(userSubscription.trial_expiration)}`
@@ -685,8 +702,10 @@ function DashboardPage() {
               </InfoValue>
             </SubscriptionInfo>
             <p>
-              {isInTrialPeriod()
+              {shouldShowTrialContent()
                 ? `You're currently on a ${trialDays}-day free trial with full access to all premium features. No payment until your trial ends.`
+                : userSubscription.subscription !== "none"
+                ? `Your ${userSubscription.subscription} subscription is active. Enjoy all premium features and benefits.`
                 : "Upgrade to unlock premium features and advanced audio processing capabilities."}
             </p>
           </CardContent>
@@ -694,7 +713,9 @@ function DashboardPage() {
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
             ) : (
-              "Manage Subscription"
+              userSubscription.subscription === "none" 
+                ? "Get Started" 
+                : "Manage Subscription"
             )}
           </Button>
         </Card>

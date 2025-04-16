@@ -464,7 +464,14 @@ const PlanSelectionModal = ({
   const [willProvideCard, setWillProvideCard] = useState(true);
 
   // Check if user has no active subscription
-  const isNewUser = profile.subscription === "none";
+  const isNewUser = React.useMemo(() => {
+    // A user is considered "new" if they have no subscription history at all
+    return (
+      profile.subscription === "none" && 
+      !profile.subscription_expiration && 
+      !profile.trial_expiration
+    );
+  }, [profile]);
 
   // Actual trial days based on toggle state
   const effectiveTrialDays = willProvideCard ? trialDays : 7;
@@ -563,7 +570,7 @@ const PlanSelectionModal = ({
               </CloseButton>
             </ModalHeader>
             <ModalBody>
-              {/* Only show trial promotion banner for new users */}
+              {/* Only show trial promotion banner for truly new users */}
               {isNewUser && (
                 <PromotionBanner>
                   <TrialBadge>

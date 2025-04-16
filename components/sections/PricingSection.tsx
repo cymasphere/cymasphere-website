@@ -17,6 +17,7 @@ import {
   getPrices,
   PlanType,
   PriceData,
+  checkExistingCustomer
 } from "@/utils/stripe/actions";
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
@@ -26,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 // Import useRouter from next/navigation
 import { useRouter } from "next/navigation";
 import { createPortal } from 'react-dom';
+import EmailCollectionModal from "../modals/EmailCollectionModal";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1720,6 +1722,8 @@ const PricingSection = () => {
   const [pricesLoading, setPricesLoading] = useState(true);
   // Set default trial type to 14 days
   const [trialType, setTrialType] = useState<"7day" | "14day">("14day");
+  // State for email collection modal
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
@@ -1767,6 +1771,12 @@ const PricingSection = () => {
       return;
     }
 
+    // If user is not logged in and starting a trial, show email collection modal
+    if (!user && (trialType === "7day" || trialType === "14day")) {
+      setShowEmailModal(true);
+      return;
+    }
+
     setCheckoutLoading(collectPaymentMethod ? "long" : "short");
 
     try {
@@ -1795,6 +1805,64 @@ const PricingSection = () => {
       console.error("Checkout error:", error);
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  // Handle email submission from modal
+  const handleEmailSubmit = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    if (!prices) return { success: false, error: "Price information is not available" };
+    
+    try {
+      // Check if the customer already exists and has a subscription or prior transactions
+      const customerCheck = await checkExistingCustomer(email);
+      
+      if (customerCheck.error) {
+        return { success: false, error: customerCheck.error };
+      }
+      
+      // If the customer has prior transactions, direct them to login
+      if (customerCheck.exists && customerCheck.hasPriorTransactions) {
+        return { 
+          success: false, 
+          error: "This email is already associated with an account. Please sign in to continue."
+        };
+      }
+      
+      // If we get here, either the customer doesn't exist yet or doesn't have prior transactions
+      setShowEmailModal(false);
+      setCheckoutLoading(trialType === "14day" ? "long" : "short");
+
+      const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
+      const collectPaymentMethod = trialType === "14day";
+
+      const result = await initiateCheckout(
+        billingPeriod,
+        email,
+        undefined,
+        promotionCode,
+        collectPaymentMethod
+      );
+
+      if (result.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
+        return { success: true };
+      } else if (result.error) {
+        console.error("Checkout error:", result.error);
+        setCheckoutLoading(null);
+        return { success: false, error: result.error };
+      }
+      
+      // If we get here, the checkout was initiated but no URL was returned
+      setCheckoutLoading(null);
+      return { success: false, error: "Could not create checkout session" };
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setCheckoutLoading(null);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+      };
     }
   };
 
@@ -1859,6 +1927,28 @@ const PricingSection = () => {
     }
   };
 
+  // Check if user has completed a trial or has a subscription
+  const shouldHideTrialContent = React.useMemo(() => {
+    if (!user?.profile) return false;
+    
+    // Hide trial content if:
+    return (
+      // User has an active subscription
+      user.profile.subscription !== "none" ||
+      // User previously had a trial that expired
+      (user.profile.trial_expiration && new Date(user.profile.trial_expiration) < new Date()) ||
+      // User previously had a subscription that ended
+      (user.profile.subscription === "none" && user.profile.subscription_expiration && 
+       new Date(user.profile.subscription_expiration) < new Date())
+    );
+  }, [user]);
+
+  // Determine if we should show trial options
+  const showTrialOptions = React.useMemo(() => {
+    // Don't show trial options for lifetime plan or if user shouldn't see trial content
+    return billingPeriod !== "lifetime" && !shouldHideTrialContent;
+  }, [billingPeriod, shouldHideTrialContent]);
+
   return (
     <PricingContainer id="pricing">
       {/* Render ChordWeb only once on initial mount - won't be affected by state changes */}
@@ -1873,19 +1963,21 @@ const PricingSection = () => {
         >
           <SectionTitle>Simple, Transparent Pricing</SectionTitle>
 
-          {/* Free Trial Banner - Moved above the subtext */}
-          <TrialBanner>
-            <TrialText>
-              <h3>
-                <FaGift /> Try <span> FREE </span> for up to 14 days
-              </h3>
-              <p>
-                Experience all premium features with two trial options.
-                <br />
-                Choose 7 days with no card or 14 days with card on file.
-              </p>
-            </TrialText>
-          </TrialBanner>
+          {/* Free Trial Banner - Only show if user hasn't completed a trial */}
+          {!shouldHideTrialContent && (
+            <TrialBanner>
+              <TrialText>
+                <h3>
+                  <FaGift /> Try <span> FREE </span> for up to 14 days
+                </h3>
+                <p>
+                  Experience all premium features with two trial options.
+                  <br />
+                  Choose 7 days with no card or 14 days with card on file.
+                </p>
+              </TrialText>
+            </TrialBanner>
+          )}
 
           <SectionSubtitle>
             Choose the billing option that works best for you.
@@ -1948,7 +2040,7 @@ const PricingSection = () => {
           viewport={{ once: true, amount: 0.2 }}
         >
           <PricingCard>
-            {billingPeriod !== "lifetime" && (
+            {showTrialOptions && (
               <CardTrialBadge>14-Day Free Trial</CardTrialBadge>
             )}
             <CardHeader>
@@ -2031,7 +2123,7 @@ const PricingSection = () => {
                 ))}
               </FeaturesList>
 
-              {billingPeriod !== "lifetime" ? (
+              {showTrialOptions ? (
                 <TrialOptionContainer>
                   <RadioOptionsContainer>
                     <RadioOptionTitle>
@@ -2097,7 +2189,7 @@ const PricingSection = () => {
                       Processing <Loader />
                     </>
                   ) : (
-                    "Buy Now"
+                    shouldHideTrialContent && user?.profile?.subscription === "none" ? "Upgrade Now" : "Buy Now"
                   )}
                 </CheckoutButton>
               )}
@@ -2105,6 +2197,15 @@ const PricingSection = () => {
           </PricingCard>
         </motion.div>
       </ContentContainer>
+      
+      {/* Email Collection Modal */}
+      <EmailCollectionModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSubmit={handleEmailSubmit}
+        collectPaymentMethod={trialType === "14day"}
+        trialDays={trialType === "14day" ? 14 : 7}
+      />
     </PricingContainer>
   );
 };

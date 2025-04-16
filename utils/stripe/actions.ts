@@ -544,3 +544,72 @@ export async function updateSubscription(
     };
   }
 }
+
+/**
+ * Checks if a Stripe customer with the given email exists and has prior transactions or active subscriptions
+ * @param email Customer email to check
+ * @returns Object indicating if customer exists, has prior transactions, and has an active subscription
+ */
+export async function checkExistingCustomer(email: string): Promise<{ 
+  exists: boolean; 
+  hasPriorTransactions: boolean;
+  hasActiveSubscription: boolean; 
+  error?: string 
+}> {
+  try {
+    // Search for existing customers with this email
+    const customers = await stripe.customers.list({
+      email,
+      limit: 1,
+    });
+
+    // If no customer exists, return false for all flags
+    if (customers.data.length === 0) {
+      return { exists: false, hasPriorTransactions: false, hasActiveSubscription: false };
+    }
+
+    const customerId = customers.data[0].id;
+
+    // Get customer's subscriptions to check if they're already subscribed
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    // Check for any payments (invoice or charge history)
+    const charges = await stripe.charges.list({
+      customer: customerId,
+      limit: 10,
+    });
+
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 10
+    });
+
+    // Check if customer has any prior transactions (completed charges or paid invoices)
+    const hasPriorTransactions = 
+      charges.data.some(charge => charge.paid) || 
+      invoices.data.some(invoice => invoice.paid) ||
+      subscriptions.data.some(sub => sub.status === 'trialing' || sub.status === 'active' || sub.status === 'past_due');
+
+    // Check if they have an active subscription
+    const hasActiveSubscription = 
+      subscriptions.data.some(sub => sub.status === 'active' || sub.status === 'trialing');
+
+    // Return the customer status information
+    return {
+      exists: true,
+      hasPriorTransactions,
+      hasActiveSubscription
+    };
+  } catch (error) {
+    console.error("Error checking existing customer:", error);
+    return { 
+      exists: false, 
+      hasPriorTransactions: false,
+      hasActiveSubscription: false, 
+      error: error instanceof Error ? error.message : "An unexpected error occurred" 
+    };
+  }
+}

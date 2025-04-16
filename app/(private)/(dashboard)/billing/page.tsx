@@ -1360,11 +1360,30 @@ export default function BillingPage() {
     }).format(amount);
   };
 
+  // Check if user has completed a trial
+  const hasCompletedTrial = useMemo(() => {
+    // Consider a trial completed if:
+    // 1. User has an active subscription (not "none")
+    // 2. User has a past trial_expiration date but no active subscription
+    return (
+      userSubscription.subscription !== "none" || 
+      (userSubscription.trial_expiration && 
+       new Date(userSubscription.trial_expiration) < new Date() &&
+       userSubscription.subscription === "none")
+    );
+  }, [userSubscription]);
+
+  // Check if the user should see trial messaging
+  const shouldShowTrialContent = useMemo(() => {
+    // Only show trial content if user is currently in an active trial period
+    return isInTrialPeriod && !hasCompletedTrial;
+  }, [isInTrialPeriod, hasCompletedTrial]);
+
   return (
     <BillingContainer>
       <SectionTitle>Billing & Subscription</SectionTitle>
 
-      {isInTrialPeriod && (
+      {shouldShowTrialContent && (
         <AlertBanner
           style={{
             backgroundColor: "rgba(249, 200, 70, 0.1)",
@@ -1442,7 +1461,7 @@ export default function BillingPage() {
                   Cymasphere Pro -{" "}
                   {userSubscription.subscription.charAt(0).toUpperCase() +
                     userSubscription.subscription.slice(1)}
-                  {isInTrialPeriod && (
+                  {shouldShowTrialContent && (
                     <span
                       style={{
                         fontSize: "0.8rem",
@@ -1466,7 +1485,7 @@ export default function BillingPage() {
                   Complete solution for music producers with full access to all
                   features.
                 </PlanDescription>
-                {isInTrialPeriod ? (
+                {shouldShowTrialContent ? (
                   <BillingInfo>
                     <FaInfoCircle /> Trial ends:{" "}
                     {formatDate(userSubscription.trial_expiration)} (
@@ -1506,7 +1525,7 @@ export default function BillingPage() {
                     <span>
                       <LoadingComponent size="20px" text="" />
                     </span>
-                  ) : isInTrialPeriod ? (
+                  ) : shouldShowTrialContent ? (
                     "Choose Plan"
                   ) : userSubscription.subscription === "lifetime" ? (
                     "Lifetime Plan"
