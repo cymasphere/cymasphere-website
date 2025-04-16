@@ -472,7 +472,11 @@ function DashboardPage() {
 
   // Navigate to billing page instead of showing modal
   const handlePlanChange = () => {
-    router.push("/billing");
+    if (userSubscription.subscription === "lifetime") {
+      router.push("/downloads");
+    } else {
+      router.push("/billing");
+    }
   };
 
   const handleContactInputChange = (
@@ -621,6 +625,8 @@ function DashboardPage() {
           <StatDescription>
             {shouldShowTrialContent()
               ? `${getDaysLeftInTrial()} days left in your free trial`
+              : userSubscription.subscription === "lifetime"
+              ? "Includes free updates for life"
               : "Upgrade to access premium features"}
           </StatDescription>
         </StatCard>
@@ -656,7 +662,7 @@ function DashboardPage() {
             <TrialBadge>{trialDays}-Day Trial</TrialBadge>
           )}
           <CardTitle>
-            <FaCreditCard /> Subscription
+            <FaCreditCard /> {userSubscription.subscription === "lifetime" ? "Membership" : "Subscription"}
           </CardTitle>
           <CardContent>
             {/* Show price error if there is one */}
@@ -682,7 +688,7 @@ function DashboardPage() {
               </SubscriptionInfo>
             )}
             <SubscriptionInfo>
-              <InfoLabel>Renewal Date</InfoLabel>
+              <InfoLabel>{userSubscription.subscription === "lifetime" ? "Purchase Date" : "Renewal Date"}</InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent()
                   ? formatDate(userSubscription.trial_expiration)
@@ -692,7 +698,7 @@ function DashboardPage() {
               </InfoValue>
             </SubscriptionInfo>
             <SubscriptionInfo>
-              <InfoLabel>Next Payment</InfoLabel>
+              <InfoLabel>{userSubscription.subscription === "lifetime" ? "Future Payments" : "Next Payment"}</InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent()
                   ? `$${
@@ -704,6 +710,8 @@ function DashboardPage() {
             <p>
               {shouldShowTrialContent()
                 ? `You're currently on a ${trialDays}-day free trial with full access to all premium features. No payment until your trial ends.`
+                : userSubscription.subscription === "lifetime"
+                ? "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently."
                 : userSubscription.subscription !== "none"
                 ? `Your ${userSubscription.subscription} subscription is active. Enjoy all premium features and benefits.`
                 : "Upgrade to unlock premium features and advanced audio processing capabilities."}
@@ -715,6 +723,8 @@ function DashboardPage() {
             ) : (
               userSubscription.subscription === "none" 
                 ? "Get Started" 
+                : userSubscription.subscription === "lifetime"
+                ? "Download"
                 : "Manage Subscription"
             )}
           </Button>

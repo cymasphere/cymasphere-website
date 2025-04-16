@@ -1479,7 +1479,7 @@ export default function BillingPage() {
                 </PlanName>
                 <PlanPrice>
                   ${getCurrentPrice()}{" "}
-                  <span>/ {userSubscription.subscription}</span>
+                  <span>{userSubscription.subscription !== "lifetime" ? `/ ${userSubscription.subscription}` : "(one-time payment)"}</span>
                 </PlanPrice>
                 <PlanDescription>
                   Complete solution for music producers with full access to all
@@ -1495,7 +1495,7 @@ export default function BillingPage() {
                   <BillingInfo>
                     <FaInfoCircle />
                     {userSubscription.subscription === "lifetime"
-                      ? "You have lifetime access to all features."
+                      ? "You have lifetime access with free updates for life."
                       : `Next billing date: ${formatDate(
                           userSubscription.subscription_expiration
                         )}`}

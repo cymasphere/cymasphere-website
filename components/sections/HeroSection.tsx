@@ -912,7 +912,7 @@ const HeroSection = () => {
           transition={{ duration: 1.2, delay: 0.4 }}
         >
           <PrimaryButton
-            href="#how-it-works"
+            href="#pricing"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
