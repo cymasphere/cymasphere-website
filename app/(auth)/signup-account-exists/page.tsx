@@ -1,11 +1,11 @@
 "use client";
-import React, { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaInfoCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -67,13 +67,13 @@ const ContentContainer = styled(motion.div)`
   justify-content: center;
   text-align: center;
   padding: 8rem 2rem 4rem;
-  max-width: 1200px;
+  max-width: 650px;
   width: 100%;
   z-index: 1;
 `;
 
-const SuccessIcon = styled(FaCheckCircle)`
-  color: var(--success);
+const InfoIcon = styled(FaInfoCircle)`
+  color: var(--primary);
   font-size: 5rem;
   margin-bottom: 2rem;
 `;
@@ -94,16 +94,41 @@ const Subtitle = styled.h2`
   color: var(--text-secondary);
 `;
 
-const Message = styled.p`
+const Message = styled.div`
   font-size: 1.2rem;
   line-height: 1.6;
   margin-bottom: 2rem;
   max-width: 800px;
   color: var(--text-secondary);
+  background-color: rgba(108, 99, 255, 0.1);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 2rem;
 `;
 
-const BackButton = styled.button`
-  padding: 12px 24px;
+const Highlight = styled.span`
+  color: var(--primary);
+  font-weight: 500;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  width: 100%;
+  max-width: 650px;
+  margin-top: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    max-width: 400px;
+  }
+`;
+
+const PrimaryButton = styled.button`
+  padding: 12px 30px;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
   border: none;
@@ -112,7 +137,8 @@ const BackButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 2rem;
+  min-width: 160px;
+  text-align: center;
 
   &:hover {
     transform: translateY(-3px);
@@ -120,19 +146,28 @@ const BackButton = styled.button`
   }
 `;
 
-function CheckoutSuccessContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isSignedUp = searchParams.get("isSignedUp") === "true";
-  const isTrial = searchParams.get("isTrial") === "true";
+const SecondaryButton = styled.button`
+  padding: 12px 30px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+  text-align: center;
 
-  const handleContinue = () => {
-    if (isSignedUp) {
-      router.push("/downloads");
-    } else {
-      router.push("/signup");
-    }
-  };
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+  }
+`;
+
+export default function AccountExists() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "your email";
 
   return (
     <PageContainer>
@@ -154,50 +189,34 @@ function CheckoutSuccessContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <SuccessIcon />
+        <InfoIcon />
+        <Title>Account Already Exists</Title>
+        <Subtitle>This email is already registered</Subtitle>
         
-        {isTrial ? (
-          <>
-            <Title>Trial Started!</Title>
-            <Subtitle>Welcome to Cymasphere Pro</Subtitle>
-            <Message>
-              {isSignedUp
-                ? "Your free trial has been successfully activated. You can now explore all the premium features of Cymasphere Pro."
-                : "Your free trial has been successfully activated. To start using Cymasphere Pro, you'll need to create your account."}
-            </Message>
-          </>
-        ) : (
-          <>
-            <Title>Payment Successful!</Title>
-            <Subtitle>Thank you for your purchase</Subtitle>
-            <Message>
-              {isSignedUp
-                ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
-                : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
-            </Message>
-          </>
-        )}
+        <Message>
+          <p>
+            An account with the email <Highlight>{email}</Highlight> already exists.
+          </p>
+          <br />
+          <p>
+            You can either sign in with your existing account or reset your password if you've forgotten it.
+          </p>
+        </Message>
 
-        <BackButton onClick={handleContinue}>
-          {isSignedUp ? "Go to Downloads" : "Create Your Account"}
-        </BackButton>
+        <ButtonContainer>
+          <Link href="/login" passHref>
+            <PrimaryButton as="a">Sign In</PrimaryButton>
+          </Link>
+          
+          <Link href="/reset-password" passHref>
+            <SecondaryButton as="a">Reset Password</SecondaryButton>
+          </Link>
+          
+          <Link href="/signup" passHref>
+            <SecondaryButton as="a">Try Another Email</SecondaryButton>
+          </Link>
+        </ButtonContainer>
       </ContentContainer>
     </PageContainer>
   );
-}
-
-export default function CheckoutSuccess() {
-  return (
-    <Suspense
-      fallback={
-        <LoadingSpinner
-          size="large"
-          fullScreen={true}
-          text="Processing checkout..."
-        />
-      }
-    >
-      <CheckoutSuccessContent />
-    </Suspense>
-  );
-}
+} 
