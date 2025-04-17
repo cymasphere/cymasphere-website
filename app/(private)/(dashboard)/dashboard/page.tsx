@@ -69,6 +69,7 @@ const StatCard = styled(motion.div)`
   border-radius: 10px;
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
 `;
 
 const StatHeader = styled.div`
@@ -428,13 +429,14 @@ function DashboardPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  // Navigate to billing page instead of showing modal
-  const handlePlanChange = () => {
-    if (userSubscription.subscription === "lifetime") {
-      router.push("/downloads");
-    } else {
-      router.push("/billing");
-    }
+  // Navigate to billing page
+  const navigateToBilling = () => {
+    router.push("/billing");
+  };
+
+  // Navigate to settings page
+  const navigateToSettings = () => {
+    router.push("/settings");
   };
 
   const handleContactInputChange = (
@@ -574,7 +576,10 @@ function DashboardPage() {
       </WelcomeSection>
 
       <StatsGrid>
-        <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+          onClick={navigateToBilling}
+        >
           <StatHeader>
             <StatTitle>Current Plan</StatTitle>
             <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
@@ -591,7 +596,10 @@ function DashboardPage() {
           </StatDescription>
         </StatCard>
 
-        <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+          onClick={navigateToSettings}
+        >
           <StatHeader>
             <StatTitle>Connected Devices</StatTitle>
             <StatIcon color="linear-gradient(90deg, #FF6B6B, #FF8E53)">
@@ -600,7 +608,15 @@ function DashboardPage() {
           </StatHeader>
           <StatValue>
             {isLoadingDevices ? (
-              <LoadingComponent size="20px" text="" />
+              <div
+                style={{
+                  minWidth: "60px",
+                  display: "inline-block",
+                  textAlign: "center",
+                }}
+              >
+                <LoadingComponent size="20px" text="" />
+              </div>
             ) : (
               `${deviceCount} / ${maxDevices}`
             )}
@@ -608,7 +624,10 @@ function DashboardPage() {
           <StatDescription>Active device connections</StatDescription>
         </StatCard>
 
-        <StatCard whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+          onClick={() => setShowContactModal(true)}
+        >
           <StatHeader>
             <StatTitle>Support</StatTitle>
             <StatIcon color="linear-gradient(90deg, #84fab0, #8fd3f4)">
@@ -692,7 +711,7 @@ function DashboardPage() {
                 : "Upgrade to unlock premium features and advanced audio processing capabilities."}
             </p>
           </CardContent>
-          <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
+          <Button onClick={navigateToBilling} disabled={isLoadingPrices}>
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
             ) : userSubscription.subscription === "none" ? (
