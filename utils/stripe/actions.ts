@@ -629,3 +629,32 @@ export async function checkExistingCustomer(email: string): Promise<{
     };
   }
 }
+
+/**
+ * Creates a Stripe customer portal session for managing billing
+ * @param customerId The Stripe customer ID
+ * @returns URL to the customer portal
+ */
+export async function createCustomerPortalSession(
+  customerId: string
+): Promise<{ url: string | null; error?: string }> {
+  try {
+    if (!customerId) {
+      return { url: null, error: "Missing customer ID" };
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/billing`,
+    });
+
+    return { url: session.url };
+  } catch (error) {
+    console.error("Error creating customer portal session:", error);
+    return {
+      url: null,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
