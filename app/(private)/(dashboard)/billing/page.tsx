@@ -288,13 +288,11 @@ interface PlanOption {
   yearlyPrice: number;
   lifetimePrice?: number;
   description: string;
-  trialDays?: number;
   features: string[];
 }
 
 interface ProPlanOption extends PlanOption {
   lifetimePrice: number;
-  trialDays: number;
 }
 
 interface PlanOptions {
@@ -458,8 +456,8 @@ export default function BillingPage() {
 
       // Only fetch user-specific data if they have a customer ID
       if (user?.profile?.customer_id) {
-        // Fetch upcoming invoice if in a trial period
-        if (isInTrialPeriod) {
+        // Fetch upcoming invoice if user has an active subscription or is in trial
+        if (isInTrialPeriod || userSubscription.subscription !== "none") {
           fetchUpcomingInvoice();
         }
 
@@ -565,12 +563,20 @@ export default function BillingPage() {
     setLastUserUpdate(new Date());
   };
 
+  // Add a separate handler for when users click X or outside the modal
+  const handleDismissConfirmation = () => {
+    setShowConfirmationModal(false);
+  };
+
   // Update handleConfirmationClose to use the new refreshAllData function
   const handleConfirmationClose = async () => {
     setShowConfirmationModal(false);
 
-    // If it was an upgrade that required checkout (lifetime plan or new subscription)
-    if (confirmationTitle === "Upgrading Your Plan") {
+    // If it was an upgrade or new plan that required checkout (lifetime plan or new subscription)
+    if (
+      confirmationTitle === "Upgrading Your Plan" ||
+      confirmationTitle === "Starting Your Plan"
+    ) {
       if (user && selectedBillingPeriod !== "none") {
         // Get the appropriate promotion code based on the selected billing period
         // Only apply promo codes for new customers, not for plan upgrades
@@ -666,10 +672,10 @@ export default function BillingPage() {
 
     // For users without a plan, direct to checkout
     if (userSubscription.subscription === "none") {
-      setConfirmationTitle("Upgrading Your Plan");
+      setConfirmationTitle("Starting Your Plan");
       setConfirmationMessage(
         `You're starting a ${
-          planOptions.pro.trialDays
+          willProvideCard ? "14" : "7"
         }-day free trial of the ${selectedBillingPeriod} plan. ${
           willProvideCard
             ? "You'll be asked to provide your payment details, but won't be charged until your trial ends."
@@ -794,7 +800,6 @@ export default function BillingPage() {
       yearlyPrice: 69,
       lifetimePrice: 199,
       description: "Complete solution for music producers",
-      trialDays: 7,
       features: [
         "Interactive Harmony Palette",
         "Advanced Voice Leading Control",
@@ -1065,7 +1070,13 @@ export default function BillingPage() {
                     <FaInfoCircle />
                     {userSubscription.subscription === "lifetime"
                       ? "You have lifetime access with free updates for life."
-                      : `Next billing date: ${formatDate(
+                      : isLoadingInvoice
+                      ? `Calculating your next payment...`
+                      : `You will be charged ${
+                          upcomingInvoiceAmount !== null
+                            ? `$${upcomingInvoiceAmount.toFixed(2)}`
+                            : `$${getCurrentPrice()}`
+                        } on ${formatDate(
                           userSubscription.subscription_expiration
                         )}`}
                   </BillingInfo>
@@ -1190,7 +1201,6 @@ export default function BillingPage() {
             yearlyPrice={yearlyPrice}
             lifetimePrice={lifetimePrice}
             planDescription={planOptions.pro.description}
-            trialDays={planOptions.pro.trialDays}
             planFeatures={planOptions.pro.features}
             monthlyDiscount={monthlyDiscount || undefined}
             yearlyDiscount={yearlyDiscount || undefined}
@@ -1208,7 +1218,7 @@ export default function BillingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleConfirmationClose}
+            onClick={handleDismissConfirmation}
           >
             <ModalContent
               initial={{ y: 50, opacity: 0 }}
@@ -1219,7 +1229,7 @@ export default function BillingPage() {
             >
               <ModalHeader>
                 <ModalTitle>{confirmationTitle}</ModalTitle>
-                <CloseButton onClick={handleConfirmationClose}>
+                <CloseButton onClick={handleDismissConfirmation}>
                   <FaTimes />
                 </CloseButton>
               </ModalHeader>

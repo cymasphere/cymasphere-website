@@ -214,6 +214,11 @@ export async function createCheckoutSession(
   collectPaymentMethod: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
+    // Return error if customer ID is not provided
+    if (!customerId) {
+      return { url: null, error: "Customer ID is required for checkout" };
+    }
+
     let priceId: string;
     let mode: "payment" | "subscription";
 
@@ -244,20 +249,19 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      payment_intent_data: {
-        metadata: {
-          purchase_type: planType,
-        },
-      },
       mode: mode,
       success_url: return_url,
       cancel_url: return_url,
-      // allow_promotion_codes: true, // Allow manual coupon entry
+      customer: customerId,
     };
 
-    // Add customer ID if available
-    if (customerId) {
-      sessionConfig.customer = customerId;
+    // Add payment_intent_data only for lifetime purchases
+    if (planType === "lifetime") {
+      sessionConfig.payment_intent_data = {
+        metadata: {
+          purchase_type: "lifetime",
+        },
+      };
     }
 
     // Apply promotion code if provided
@@ -451,10 +455,14 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
 /**
  * Gets the upcoming invoice for a customer to show accurate first charge amount
  */
-export async function getUpcomingInvoice(customerId: string | null) {
+export async function getUpcomingInvoice(customerId: string | null): Promise<{
+  amount: number;
+  error: string | null;
+  due_date: Date | null;
+}> {
   try {
     if (!customerId) {
-      return { amount: null, error: "No customer ID provided" };
+      return { amount: 0, error: "No customer ID provided", due_date: null };
     }
 
     const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
@@ -471,7 +479,7 @@ export async function getUpcomingInvoice(customerId: string | null) {
   } catch (error: unknown) {
     console.error("Error fetching upcoming invoice:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { amount: null, error: errorMessage };
+    return { amount: 0, error: errorMessage, due_date: null };
   }
 }
 

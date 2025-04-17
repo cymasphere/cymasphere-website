@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { capitalize } from "@/utils/stringUtils";
-import { getPrices } from "@/utils/stripe/actions";
+import { getPrices, getUpcomingInvoice } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
@@ -365,6 +365,14 @@ function DashboardPage() {
 
   const maxDevices = 5;
 
+  // Add state for upcoming invoice
+  const [upcomingInvoice, setUpcomingInvoice] = useState<{
+    amount: number | null;
+    error: string | null;
+    due_date: Date | null;
+  }>({ amount: null, error: null, due_date: null });
+  const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
+
   // Helper functions
   const formatDate = (date: string | number | null | undefined) => {
     if (!date) return "N/A";
@@ -399,10 +407,10 @@ function DashboardPage() {
     fetchDeviceCount();
   }, []);
 
-  const isInTrialPeriod = () => {
+  const isInTrialPeriod = useCallback(() => {
     if (!userSubscription.trial_expiration) return false;
     return new Date() < new Date(userSubscription.trial_expiration);
-  };
+  }, [userSubscription.trial_expiration]);
 
   const hasCompletedTrial = () => {
     // Consider a trial completed if:
@@ -548,6 +556,37 @@ function DashboardPage() {
 
     fetchPrices();
   }, []);
+
+  // Fetch upcoming invoice from Stripe
+  useEffect(() => {
+    // Create local variable to determine if we should fetch
+    const isRecurringSubscription =
+      userSubscription.subscription === "monthly" ||
+      userSubscription.subscription === "annual";
+
+    async function fetchUpcomingInvoice() {
+      // Only fetch if we haven't already loaded or if there was an error
+      if (isRecurringSubscription) {
+        try {
+          setIsLoadingInvoice(true);
+          const invoice = await getUpcomingInvoice(user.profile.customer_id);
+          setUpcomingInvoice(invoice);
+        } catch (err) {
+          console.error("Error fetching upcoming invoice:", err);
+        } finally {
+          setIsLoadingInvoice(false);
+        }
+      }
+    }
+
+    fetchUpcomingInvoice();
+
+    // Use actual state values rather than function calls in dependencies
+  }, [
+    user.profile.customer_id,
+    userSubscription.subscription,
+    userSubscription.trial_expiration,
+  ]);
 
   const handleModalClose = () => {
     setShowConfirmationModal(false);
@@ -699,11 +738,27 @@ function DashboardPage() {
                   : "Next Payment"}
               </InfoLabel>
               <InfoValue>
-                {shouldShowTrialContent()
-                  ? `$${
-                      isLoadingPrices ? "..." : monthlyPrice
-                    }.00 on ${formatDate(userSubscription.trial_expiration)}`
-                  : "$0.00"}
+                {shouldShowTrialContent() ? (
+                  `$${
+                    isLoadingPrices ? "..." : monthlyPrice
+                  }.00 on ${formatDate(userSubscription.trial_expiration)}`
+                ) : userSubscription.subscription === "lifetime" ? (
+                  "$0.00"
+                ) : isLoadingInvoice ? (
+                  <LoadingComponent size="16px" text="" />
+                ) : upcomingInvoice.error ? (
+                  "$0.00"
+                ) : upcomingInvoice.amount ? (
+                  `$${upcomingInvoice.amount.toFixed(2)} ${
+                    upcomingInvoice.due_date
+                      ? `on ${formatDate(
+                          upcomingInvoice.due_date.toISOString()
+                        )}`
+                      : ""
+                  }`
+                ) : (
+                  "$0.00"
+                )}
               </InfoValue>
             </SubscriptionInfo>
             <p>

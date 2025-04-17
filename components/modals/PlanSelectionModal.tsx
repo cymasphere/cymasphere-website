@@ -400,7 +400,6 @@ interface PlanSelectionModalProps {
   yearlyPrice: number;
   lifetimePrice: number;
   planDescription: string;
-  trialDays: number;
   planFeatures: string[];
   monthlyDiscount?: {
     percent_off?: number;
@@ -433,7 +432,6 @@ const PlanSelectionModal = ({
   yearlyPrice = 69,
   lifetimePrice = 199,
   planDescription = "Complete solution for music producers",
-  trialDays = 14,
   planFeatures = [
     "Interactive Harmony Palette",
     "Advanced Voice Leading Control",
@@ -467,14 +465,14 @@ const PlanSelectionModal = ({
   const isNewUser = React.useMemo(() => {
     // A user is considered "new" if they have no subscription history at all
     return (
-      profile.subscription === "none" && 
-      !profile.subscription_expiration && 
+      profile.subscription === "none" &&
+      !profile.subscription_expiration &&
       !profile.trial_expiration
     );
   }, [profile]);
 
   // Actual trial days based on toggle state
-  const effectiveTrialDays = willProvideCard ? trialDays : 7;
+  const effectiveTrialDays = willProvideCard ? 14 : 7;
 
   // Update local state when the modal opens with the current subscription
   useEffect(() => {
