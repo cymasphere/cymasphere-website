@@ -401,14 +401,14 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
     let subscriptionId: string | undefined;
     let hasTrialPeriod: boolean = false;
     let subscription: Stripe.Subscription | string | undefined = undefined;
-    
+
     if (session.subscription) {
       subscription = session.subscription;
       subscriptionId =
         typeof session.subscription === "string"
           ? session.subscription
           : session.subscription.id;
-          
+
       // Check if the subscription includes a trial period
       if (typeof session.subscription !== "string") {
         hasTrialPeriod = !!session.subscription.trial_end;
@@ -550,11 +550,11 @@ export async function updateSubscription(
  * @param email Customer email to check
  * @returns Object indicating if customer exists, has prior transactions, and has an active subscription
  */
-export async function checkExistingCustomer(email: string): Promise<{ 
-  exists: boolean; 
+export async function checkExistingCustomer(email: string): Promise<{
+  exists: boolean;
   hasPriorTransactions: boolean;
-  hasActiveSubscription: boolean; 
-  error?: string 
+  hasActiveSubscription: boolean;
+  error?: string;
 }> {
   try {
     // Search for existing customers with this email
@@ -565,7 +565,11 @@ export async function checkExistingCustomer(email: string): Promise<{
 
     // If no customer exists, return false for all flags
     if (customers.data.length === 0) {
-      return { exists: false, hasPriorTransactions: false, hasActiveSubscription: false };
+      return {
+        exists: false,
+        hasPriorTransactions: false,
+        hasActiveSubscription: false,
+      };
     }
 
     const customerId = customers.data[0].id;
@@ -584,32 +588,39 @@ export async function checkExistingCustomer(email: string): Promise<{
 
     const invoices = await stripe.invoices.list({
       customer: customerId,
-      limit: 10
+      limit: 10,
     });
 
     // Check if customer has any prior transactions (completed charges or paid invoices)
-    const hasPriorTransactions = 
-      charges.data.some(charge => charge.paid) || 
-      invoices.data.some(invoice => invoice.paid) ||
-      subscriptions.data.some(sub => sub.status === 'trialing' || sub.status === 'active' || sub.status === 'past_due');
+    const hasPriorTransactions =
+      charges.data.some((charge) => charge.paid) ||
+      invoices.data.some((invoice) => invoice.paid) ||
+      subscriptions.data.some(
+        (sub) =>
+          sub.status === "trialing" ||
+          sub.status === "active" ||
+          sub.status === "past_due"
+      );
 
     // Check if they have an active subscription
-    const hasActiveSubscription = 
-      subscriptions.data.some(sub => sub.status === 'active' || sub.status === 'trialing');
+    const hasActiveSubscription = subscriptions.data.some(
+      (sub) => sub.status === "active" || sub.status === "trialing"
+    );
 
     // Return the customer status information
     return {
       exists: true,
       hasPriorTransactions,
-      hasActiveSubscription
+      hasActiveSubscription,
     };
   } catch (error) {
     console.error("Error checking existing customer:", error);
-    return { 
-      exists: false, 
+    return {
+      exists: false,
       hasPriorTransactions: false,
-      hasActiveSubscription: false, 
-      error: error instanceof Error ? error.message : "An unexpected error occurred" 
+      hasActiveSubscription: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
     };
   }
 }

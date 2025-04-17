@@ -3,6 +3,7 @@
 import { SubscriptionType } from "@/utils/supabase/types";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { cancelSubscription } from "./actions";
+import Stripe from "stripe";
 
 export type CustomerPurchasedProResponse = {
   success: boolean;
@@ -239,5 +240,58 @@ export async function getCustomerInvoices(
     console.error("Error fetching customer invoices:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { invoices: [], error: errorMessage };
+  }
+}
+
+/**
+ * Deletes a user account by first removing their Stripe customer record,
+ * then deleting their Supabase user account
+ */
+export async function deleteUserAccount(userId: string) {
+  "use server";
+
+  try {
+    // Get the Stripe customer ID for this user
+    const supabase = await createSupabaseServiceRole();
+
+    // First, get the Stripe customer ID from the profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("customer_id")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      return { success: false, error: "Could not find user profile" };
+    }
+
+    const stripeCustomerId = profile?.customer_id;
+
+    if (stripeCustomerId) {
+      // Delete the customer from Stripe
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+      try {
+        await stripe.customers.del(stripeCustomerId);
+        console.log(`Deleted Stripe customer: ${stripeCustomerId}`);
+      } catch (stripeError) {
+        console.error("Error deleting Stripe customer:", stripeError);
+        // Continue with user deletion even if Stripe deletion fails
+      }
+    }
+
+    // Delete the user from Supabase
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+
+    if (deleteError) {
+      console.error("Error deleting user:", deleteError);
+      return { success: false, error: "Failed to delete user account" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteUserAccount:", error);
+    return { success: false, error: "An unexpected error occurred" };
   }
 }

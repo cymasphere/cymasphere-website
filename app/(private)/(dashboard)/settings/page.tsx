@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCard from "@/components/settings/CardComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
+import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -450,27 +451,61 @@ function Settings() {
     }
   };
 
-  const handleDeleteAccount = (e: React.FormEvent) => {
+  const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle account deletion logic here
+    // Handle account deletion logic
 
     if (profile.deleteConfirmation !== "DELETE") {
       setConfirmationTitle("Confirmation Required");
       setConfirmationMessage(
-        "Please type &quot;DELETE&quot; to confirm account deletion."
+        'Please type "DELETE" to confirm account deletion.'
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
       return;
     }
 
-    console.log("Account deletion requested");
-    setConfirmationTitle("Account Deletion Initiated");
+    // Show loading confirmation
+    setConfirmationTitle("Processing Deletion Request");
     setConfirmationMessage(
-      "Account deletion request submitted. You will receive an email with further instructions."
+      "Please wait while we process your account deletion request..."
     );
     setConfirmationIcon("info");
     setShowConfirmationModal(true);
+
+    try {
+      if (!user?.id) {
+        throw new Error("User ID not found");
+      }
+
+      const result = await deleteUserAccount(user.id);
+
+      if (result.success) {
+        // Show success message
+        setConfirmationTitle("Account Deleted");
+        setConfirmationMessage(
+          "Your account has been successfully deleted. You will be redirected to the homepage."
+        );
+        setConfirmationIcon("success");
+
+        // Wait 3 seconds then redirect to homepage
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 3000);
+      } else {
+        // Show error message
+        setConfirmationTitle("Deletion Failed");
+        setConfirmationMessage(`Account deletion failed: ${result.error}`);
+        setConfirmationIcon("warning");
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      setConfirmationTitle("Deletion Failed");
+      setConfirmationMessage(
+        "There was an error processing your account deletion. Please try again later."
+      );
+      setConfirmationIcon("warning");
+    }
 
     // Reset confirmation field
     setProfile((prev) => ({
@@ -619,6 +654,12 @@ function Settings() {
             <p>
               Warning: Deleting your account is permanent and cannot be undone.
               All your data and settings will be permanently removed.
+              <br />
+              <br />
+              <strong>Important:</strong> If you have an active subscription, it
+              will be canceled immediately. If you purchased a lifetime
+              subscription, you will permanently lose access to it and cannot
+              restore it later.
             </p>
           </WarningBox>
 
