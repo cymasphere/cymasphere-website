@@ -969,17 +969,6 @@ export default function BillingPage() {
         </AlertBanner>
       )}
 
-      {userSubscription.subscription === "none" && !priceError && (
-        <AlertBanner>
-          <FaTimes />
-          <p>
-            Your subscription payment has failed. Please update your payment
-            method to reactivate your subscription and regain access to all
-            features.
-          </p>
-        </AlertBanner>
-      )}
-
       <BillingCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
