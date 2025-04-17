@@ -68,7 +68,7 @@ export async function customerPurchasedProFromSupabase(
         (paymentIntent.attrs as {
           metadata?: { purchase_type?: string };
           status?: string;
-          dispute?: object | null;
+          dispute?: unknown | null;
           refunded?: boolean;
         }) || {};
 
