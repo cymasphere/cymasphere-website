@@ -434,6 +434,11 @@ function DashboardPage() {
     router.push("/billing");
   };
 
+  // Navigate to downloads page
+  const navigateToDownloads = () => {
+    router.push("/downloads");
+  };
+
   // Navigate to settings page
   const navigateToSettings = () => {
     router.push("/settings");
@@ -711,15 +716,20 @@ function DashboardPage() {
                 : "Upgrade to unlock premium features and advanced audio processing capabilities."}
             </p>
           </CardContent>
-          <Button onClick={navigateToBilling} disabled={isLoadingPrices}>
+          <Button
+            onClick={
+              userSubscription.subscription !== "none"
+                ? navigateToDownloads
+                : navigateToBilling
+            }
+            disabled={isLoadingPrices}
+          >
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
             ) : userSubscription.subscription === "none" ? (
               "Get Started"
-            ) : userSubscription.subscription === "lifetime" ? (
-              "Download"
             ) : (
-              "Manage Subscription"
+              "Download"
             )}
           </Button>
         </Card>
