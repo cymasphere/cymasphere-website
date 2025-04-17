@@ -381,7 +381,7 @@ const HeroSection = () => {
     index: number;
   }
 
-  // Voice leading state
+  // Voice leading state - initialize with a unique key to ensure proper rerenders
   const [displayedChord, setDisplayedChord] = useState<ChordType>({
     notes: chordProgression[0].notes,
     positions: initialPositions,
@@ -390,6 +390,20 @@ const HeroSection = () => {
 
   const [previousChord, setPreviousChord] = useState<ChordType | null>(null);
   const [transitioning, setTransitioning] = useState(false);
+
+  // Add a guard flag to prevent overlapping transitions
+  const isTransitioningRef = useRef(false);
+
+  // Effect to sync the transition ref with the state for safer checks
+  useEffect(() => {
+    isTransitioningRef.current = transitioning;
+  }, [transitioning]);
+
+  // Reset transition state on mount to ensure a clean start
+  useEffect(() => {
+    setTransitioning(false);
+    console.log("Hero section mounted, set initial chord to C Major");
+  }, []);
 
   // Define allowed effect types for the effectsChain.getEffect method
   type EffectType =
@@ -690,28 +704,114 @@ const HeroSection = () => {
 
   // Turn moveToNextChord into a useCallback
   const moveToNextChord = useCallback((): void => {
+    // Prevent overlapping transitions using the ref for more reliability
+    if (isTransitioningRef.current) {
+      console.log("Skipping chord change - transition already in progress");
+      return;
+    }
+    
     // Get the next chord from the progression
     const nextChordIndex = (currentChordIndex + 1) % chordProgression.length;
+    console.log(`Moving to next chord: ${nextChordIndex} (${chordProgression[nextChordIndex].name})`);
 
-    // Create positions for new notes that maintain their position in the visual field
-    // Remember the previous positions for smooth animation
+    // Get current and next chord notes
+    const currentNotes = chordProgression[currentChordIndex].notes;
+    const nextNotes = chordProgression[nextChordIndex].notes;
+    
+    // Create a new array for the next positions based on voice leading principles
     const newPositions = [...initialPositions];
+    
+    // Map current displayed notes to their positions
+    const currentNotePositions = displayedChord.notes.map((note, index) => ({
+      note,
+      position: displayedChord.positions[index]
+    }));
+    
+    // Create a map to track which notes from the next chord have been assigned
+    const assignedNextNotes = new Set<string>();
+    
+    // Create the voice-led notes array, starting with the current note positions
+    const voiceLeadingNotes: string[] = [];
+    
+    // For each current note position, find the best voice leading note from the next chord
+    currentNotePositions.forEach(({ note: currentNote }) => {
+      // First, check if the same note exists in the next chord (common tone)
+      if (nextNotes.includes(currentNote) && !assignedNextNotes.has(currentNote)) {
+        // Common tone voice leading - reuse the same note
+        voiceLeadingNotes.push(currentNote);
+        assignedNextNotes.add(currentNote);
+      } else {
+        // Find the closest note in the next chord
+        // This is a simple implementation - for real voice leading we'd consider semitone distances
+        
+        const noteIndex = {
+          'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 
+          'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 
+          'A#': 10, 'Bb': 10, 'B': 11
+        };
+        
+        // Get the chromatic index of the current note
+        const currentNoteIndex = noteIndex[currentNote as keyof typeof noteIndex] || 0;
+        
+        // Find the unassigned note from the next chord with the closest distance
+        let closestNote = '';
+        let smallestDistance = 12; // Maximum semitone distance in an octave
+        
+        for (const nextNote of nextNotes) {
+          if (!assignedNextNotes.has(nextNote)) {
+            const nextNoteIndex = noteIndex[nextNote as keyof typeof noteIndex] || 0;
+            
+            // Calculate semitone distance (considering octave wrapping)
+            let distance = Math.abs(nextNoteIndex - currentNoteIndex);
+            if (distance > 6) distance = 12 - distance; // Consider the shorter path around the circle
+            
+            if (distance < smallestDistance) {
+              smallestDistance = distance;
+              closestNote = nextNote;
+            }
+          }
+        }
+        
+        if (closestNote) {
+          voiceLeadingNotes.push(closestNote);
+          assignedNextNotes.add(closestNote);
+        }
+      }
+    });
+    
+    // If there are any unassigned notes from the next chord, add them
+    nextNotes.forEach(note => {
+      if (!assignedNextNotes.has(note)) {
+        voiceLeadingNotes.push(note);
+        assignedNextNotes.add(note);
+      }
+    });
+    
+    // Ensure we have the same number of notes (should always be true for triads)
+    while (voiceLeadingNotes.length < 3) {
+      // Find any unused notes from the next chord
+      const unusedNote = nextNotes.find(note => !voiceLeadingNotes.includes(note));
+      if (unusedNote) {
+        voiceLeadingNotes.push(unusedNote);
+      } else {
+        // Fallback - just duplicate the first note of the next chord
+        voiceLeadingNotes.push(nextNotes[0]);
+      }
+    }
+    
+    console.log(`Voice leading from ${currentNotes.join(',')} to ${voiceLeadingNotes.join(',')}`);
 
     // Set up the transition
     setPreviousChord(displayedChord);
     setTransitioning(true);
+    isTransitioningRef.current = true; // Set the ref directly for immediate effect
 
     // Update current chord index
     setCurrentChordIndex(nextChordIndex);
 
-    // Play the chord with a slight delay to account for the animation
-    setTimeout(() => {
-      playChord().catch((err) => console.error("Error playing chord:", err));
-    }, 500); // Half a second delay for the animation to start
-
-    // Update the displayed chord with new data and the same positions
+    // Update the displayed chord with voice-led notes and the same positions
     setDisplayedChord({
-      notes: chordProgression[nextChordIndex].notes,
+      notes: voiceLeadingNotes,
       positions: newPositions,
       index: nextChordIndex,
     });
@@ -725,21 +825,34 @@ const HeroSection = () => {
 
   // Change chord every 4 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
+    console.log("Setting up chord cycling interval");
+    
+    const intervalId = setInterval(() => {
+      console.log("Interval triggered - moving to next chord");
       moveToNextChord();
     }, 4000);
 
-    return () => clearInterval(interval);
+    // Initial chord play after a short delay
+    const initialPlayTimeout = setTimeout(() => {
+      moveToNextChord();
+    }, 2000);
+
+    return () => {
+      console.log("Cleaning up chord cycling interval");
+      clearInterval(intervalId);
+      clearTimeout(initialPlayTimeout);
+    };
   }, [moveToNextChord]);
 
-  // Add animation progress tracker in useEffect - add this after the chord transition interval effect
+  // Add animation progress tracker in useEffect
   useEffect(() => {
     if (!transitioning) {
       return;
     }
 
+    console.log("Starting chord transition animation");
     let startTime: number | null = null;
-    const duration = 1500; // 1.5 seconds for the transition
+    const duration = 1200; // 1.2 seconds for the transition (slightly shorter)
 
     // Animation frame to track progress
     const updateProgress = (timestamp: number): void => {
@@ -752,6 +865,7 @@ const HeroSection = () => {
         animationFrameId = requestAnimationFrame(updateProgress);
       } else {
         // Animation complete
+        console.log("Transition animation complete");
         setTransitioning(false);
       }
     };
@@ -759,11 +873,20 @@ const HeroSection = () => {
     // Start the animation
     let animationFrameId = requestAnimationFrame(updateProgress);
 
+    // Ensure we clean up and force transition to end after max duration
+    const safetyTimeout = setTimeout(() => {
+      if (transitioning) {
+        console.log("Forcing transition to end via safety timeout");
+        setTransitioning(false);
+      }
+    }, duration + 300); // Add a small buffer to the timeout
+
     // Cleanup
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      clearTimeout(safetyTimeout);
     };
   }, [transitioning]);
 
@@ -939,6 +1062,10 @@ const HeroSection = () => {
     centerWordWidth,
     isMobile,
     getWordColor,
+    displayedChord,
+    previousChord, 
+    transitioning,
+    positionAnimationOffsets
   ]);
 
   // Render the voice leading lines during transitions
