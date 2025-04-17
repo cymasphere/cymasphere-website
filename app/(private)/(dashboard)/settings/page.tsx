@@ -436,6 +436,8 @@ function Settings() {
       setConfirmationMessage("You have been logged out from all devices.");
       setConfirmationIcon("success");
       setShowConfirmationModal(true);
+
+      await refreshSessionData();
     } catch (error) {
       console.error("Error logging out:", error);
       setShowLogoutModal(false);
@@ -594,9 +596,11 @@ function Settings() {
           </DeviceCount>
 
           <div style={{ display: "flex", gap: "1rem" }}>
-            <OutlineButton onClick={handleLogout}>
-              <FaSignOutAlt /> Sign Out From All Devices
-            </OutlineButton>
+            {activeDevices.length > 0 && (
+              <OutlineButton onClick={handleLogout}>
+                <FaSignOutAlt /> Sign Out From All Devices
+              </OutlineButton>
+            )}
           </div>
         </CardContent>
       </AnimatedCard>
