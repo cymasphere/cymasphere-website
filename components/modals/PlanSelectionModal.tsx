@@ -485,14 +485,7 @@ const PlanSelectionModal = ({
 
   // Handle interval change locally and propagate to parent
   const handleSubscriptionChange = (subscription: SubscriptionType) => {
-    // Don't allow selecting the current plan if they already have one
-    if (
-      profile.subscription !== "none" &&
-      subscription === profile.subscription
-    ) {
-      return;
-    }
-
+    // Allow selecting the current plan to view its details
     console.log(`Setting subscription to: ${subscription} (local modal state)`);
     setSelectedSubscription(subscription);
     onIntervalChange(subscription);
@@ -606,7 +599,6 @@ const PlanSelectionModal = ({
                     console.log("Monthly plan selected");
                     handleSubscriptionChange("monthly");
                   }}
-                  disabled={profile.subscription === "monthly"}
                 >
                   Monthly
                 </BillingToggleButton>
@@ -617,7 +609,6 @@ const PlanSelectionModal = ({
                     console.log("Yearly plan selected");
                     handleSubscriptionChange("annual");
                   }}
-                  disabled={profile.subscription === "annual"}
                 >
                   Yearly
                   <SaveLabel>Save 25%</SaveLabel>
@@ -629,7 +620,6 @@ const PlanSelectionModal = ({
                     console.log("Lifetime plan selected");
                     handleSubscriptionChange("lifetime");
                   }}
-                  disabled={profile.subscription === "lifetime"}
                 >
                   Lifetime
                   <SaveLabel>Best Value</SaveLabel>
