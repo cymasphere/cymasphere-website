@@ -45,28 +45,43 @@ export async function customerPurchasedProFromSupabase(
     let hasLifetime = false;
     let activeSubscriptionId: string | undefined;
 
-    // First check for lifetime purchase
-    // Check charges for one-time lifetime purchase
-    const { data: charges, error: chargesError } = await supabase
+    // First check for lifetime purchase directly from payment intents
+    const { data: paymentIntents, error: piError } = await supabase
       .schema("stripe_tables")
-      .from("stripe_charges")
+      .from("stripe_payment_intents")
       .select("*")
       .eq("customer", customer_id)
-      .order("created", { ascending: false })
-      .limit(1);
+      .order("created", { ascending: false });
 
-    if (chargesError) {
-      console.error("Error querying stripe_charges:", chargesError);
+    if (piError) {
+      console.error("Error querying payment intents:", piError);
       return {
         success: false,
         subscription: "none",
-        error: chargesError,
+        error: piError,
       };
     }
 
-    if (charges.length > 0 && charges[0].status === "succeeded") {
-      hasLifetime = true;
-      subscriptionType = "lifetime";
+    // Check payment intents for lifetime purchase
+    for (const paymentIntent of paymentIntents) {
+      const attrs =
+        (paymentIntent.attrs as {
+          metadata?: { purchase_type?: string };
+          status?: string;
+          dispute?: object | null;
+          refunded?: boolean;
+        }) || {};
+
+      if (attrs?.metadata?.purchase_type === "lifetime") {
+        // If this is a lifetime purchase, check its status
+        if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
+          hasLifetime = true;
+          subscriptionType = "lifetime";
+        } else {
+          // If this lifetime purchase was refunded or disputed, they no longer have lifetime access
+          hasLifetime = false;
+        }
+      }
     }
 
     // Check for active subscriptions (even if we found a lifetime purchase)
