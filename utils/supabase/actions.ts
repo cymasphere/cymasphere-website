@@ -2,7 +2,7 @@
 
 import { PostgrestError } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/utils/supabase/server";
-import { Profile, SessionData } from "@/utils/supabase/types";
+import { Profile } from "@/utils/supabase/types";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
 
@@ -130,7 +130,7 @@ async function updateUserProfile(profile: Profile): Promise<Profile> {
  * Fetches the sessions for a user
  */
 export async function fetchUserSessions(): Promise<{
-  sessions: SessionData[];
+  sessions: { ip: string; device_name: string; last_used: string }[];
   error: string | null;
 }> {
   try {
@@ -148,14 +148,28 @@ export async function fetchUserSessions(): Promise<{
 
     if (user) {
       // row level security prevents selecting sessions for other users
-      const { data, error } = await supabase.from("user_sessions").select("*");
+      const { data, error } = await supabase
+        .from("user_sessions")
+        .select("ip, user_agent, refreshed_at, updated_at, created_at")
+        .ilike("user_agent", "cymasphere:%");
 
       if (error) {
         console.error("Error in fetchUserSession:", error);
         return { sessions: [], error: "Failed to fetch user sessions" };
       }
 
-      return { sessions: data as SessionData[], error: null };
+      // Transform the data to include only ip and device_name
+      const sessions = data.map((session) => ({
+        ip: (session.ip as string) || "Unknown",
+        device_name: session.user_agent!.replace("cymasphere: ", ""),
+        last_used:
+          session.refreshed_at ||
+          session.updated_at ||
+          session.created_at ||
+          new Date().toISOString(),
+      }));
+
+      return { sessions, error: null };
     }
 
     return { sessions: [], error: "User not found" };

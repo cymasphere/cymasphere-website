@@ -11,13 +11,13 @@ import {
   FaLaptop,
   FaExclamationTriangle,
   FaInfoCircle,
-  FaCrown,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { capitalize } from "@/utils/stringUtils";
 import { getPrices } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { fetchUserSessions } from "@/utils/supabase/actions";
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -321,70 +321,6 @@ const FormTextarea = styled.textarea`
   }
 `;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceList = styled.div`
-  margin-top: 15px;
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceItem = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  svg {
-    color: var(--primary);
-  }
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceName = styled.span`
-  font-weight: 500;
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceLastUsed = styled.span`
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-`;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DeviceCount = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-
-  span {
-    color: var(--text-secondary);
-  }
-
-  strong {
-    color: var(--primary);
-  }
-`;
-
 function DashboardPage() {
   const { user: userAuth } = useAuth();
 
@@ -395,13 +331,19 @@ function DashboardPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
-  const [confirmationIcon, setConfirmationIcon] = useState<"success" | "warning" | "info">("success");
+  const [confirmationIcon, setConfirmationIcon] = useState<
+    "success" | "warning" | "info"
+  >("success");
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({
     subject: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Simplified state for device count
+  const [deviceCount, setDeviceCount] = useState(0);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(true);
 
   // Use actual subscription data from user
   const userSubscription = user.profile;
@@ -412,21 +354,13 @@ function DashboardPage() {
 
   // Only keep the monthly price for display purposes
   const [monthlyPrice, setMonthlyPrice] = useState(8);
-  
+
   // Calculate trial duration based on expiration and signup dates
   const getTrialDuration = () => {
     return 7; // Fixed to 7-day trial
   };
-  
-  const trialDays = getTrialDuration();
 
-  // Use actual connected devices if available
-  // const connectedDevices = user.profile.connectedDevices || [
-  const connectedDevices = [
-    { id: 1, name: "MacBook Pro", lastUsed: "Last used 2 hours ago" },
-    { id: 2, name: "Studio PC", lastUsed: "Last used yesterday" },
-    { id: 3, name: "iPad Pro", lastUsed: "Last used 3 days ago" },
-  ];
+  const trialDays = getTrialDuration();
 
   const maxDevices = 5;
 
@@ -440,6 +374,30 @@ function DashboardPage() {
     });
   };
 
+  // Simplified function to fetch device count
+  useEffect(() => {
+    async function fetchDeviceCount() {
+      try {
+        setIsLoadingDevices(true);
+        const { sessions, error } = await fetchUserSessions();
+
+        if (error) {
+          console.error("Error fetching sessions:", error);
+          return;
+        }
+
+        // Just set the count
+        setDeviceCount(sessions.length);
+      } catch (err) {
+        console.error("Error fetching device count:", err);
+      } finally {
+        setIsLoadingDevices(false);
+      }
+    }
+
+    fetchDeviceCount();
+  }, []);
+
   const isInTrialPeriod = () => {
     if (!userSubscription.trial_expiration) return false;
     return new Date() < new Date(userSubscription.trial_expiration);
@@ -450,9 +408,9 @@ function DashboardPage() {
     // 1. User has an active subscription (not "none")
     // 2. User has a past trial_expiration date
     return (
-      userSubscription.subscription !== "none" || 
-      (userSubscription.trial_expiration && 
-       new Date(userSubscription.trial_expiration) < new Date())
+      userSubscription.subscription !== "none" ||
+      (userSubscription.trial_expiration &&
+        new Date(userSubscription.trial_expiration) < new Date())
     );
   };
 
@@ -493,7 +451,7 @@ function DashboardPage() {
     try {
       // Set submitting state
       setIsSubmitting(true);
-      
+
       // Prepare the data for the API request
       const contactData = {
         name: user.profile.first_name + " " + user.profile.last_name,
@@ -504,16 +462,16 @@ function DashboardPage() {
       };
 
       // Send the contact form data to our API
-      const response = await fetch('/api/contact', {
-        method: 'POST',
+      const response = await fetch("/api/contact", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(contactData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         // Reset form
         setContactForm({
@@ -535,7 +493,9 @@ function DashboardPage() {
         // Show error message
         setConfirmationTitle("Error");
         setConfirmationMessage(
-          `Failed to send message: ${result.error || "Unknown error"}. Please try again.`
+          `Failed to send message: ${
+            result.error || "Unknown error"
+          }. Please try again.`
         );
         setConfirmationIcon("warning");
         setShowConfirmationModal(true);
@@ -639,7 +599,11 @@ function DashboardPage() {
             </StatIcon>
           </StatHeader>
           <StatValue>
-            {connectedDevices.length} / {maxDevices}
+            {isLoadingDevices ? (
+              <LoadingComponent size="20px" text="" />
+            ) : (
+              `${deviceCount} / ${maxDevices}`
+            )}
           </StatValue>
           <StatDescription>Active device connections</StatDescription>
         </StatCard>
@@ -662,7 +626,10 @@ function DashboardPage() {
             <TrialBadge>{trialDays}-Day Trial</TrialBadge>
           )}
           <CardTitle>
-            <FaCreditCard /> {userSubscription.subscription === "lifetime" ? "Membership" : "Subscription"}
+            <FaCreditCard />{" "}
+            {userSubscription.subscription === "lifetime"
+              ? "Membership"
+              : "Subscription"}
           </CardTitle>
           <CardContent>
             {/* Show price error if there is one */}
@@ -688,7 +655,11 @@ function DashboardPage() {
               </SubscriptionInfo>
             )}
             <SubscriptionInfo>
-              <InfoLabel>{userSubscription.subscription === "lifetime" ? "Purchase Date" : "Renewal Date"}</InfoLabel>
+              <InfoLabel>
+                {userSubscription.subscription === "lifetime"
+                  ? "Purchase Date"
+                  : "Renewal Date"}
+              </InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent()
                   ? formatDate(userSubscription.trial_expiration)
@@ -698,7 +669,11 @@ function DashboardPage() {
               </InfoValue>
             </SubscriptionInfo>
             <SubscriptionInfo>
-              <InfoLabel>{userSubscription.subscription === "lifetime" ? "Future Payments" : "Next Payment"}</InfoLabel>
+              <InfoLabel>
+                {userSubscription.subscription === "lifetime"
+                  ? "Future Payments"
+                  : "Next Payment"}
+              </InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent()
                   ? `$${
@@ -720,12 +695,12 @@ function DashboardPage() {
           <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
+            ) : userSubscription.subscription === "none" ? (
+              "Get Started"
+            ) : userSubscription.subscription === "lifetime" ? (
+              "Download"
             ) : (
-              userSubscription.subscription === "none" 
-                ? "Get Started" 
-                : userSubscription.subscription === "lifetime"
-                ? "Download"
-                : "Manage Subscription"
+              "Manage Subscription"
             )}
           </Button>
         </Card>
@@ -884,7 +859,7 @@ function DashboardPage() {
                   Cancel
                 </Button>
                 <Button onClick={handleContactSubmit} disabled={isSubmitting}>
-                  <FaPaperPlane style={{ marginRight: "0.5rem" }} /> 
+                  <FaPaperPlane style={{ marginRight: "0.5rem" }} />
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </ModalFooter>

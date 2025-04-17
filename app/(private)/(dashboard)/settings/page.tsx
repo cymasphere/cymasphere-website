@@ -17,7 +17,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCard from "@/components/settings/CardComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
-import { SessionData } from "@/utils/supabase/types";
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -145,17 +144,6 @@ const DevicesList = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-// Add an indicator component for active session
-const ActiveSessionBadge = styled.div`
-  background-color: var(--primary);
-  color: white;
-  border-radius: 4px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
-`;
-
 // Update the styled component for active session highlighting
 const DeviceItem = styled.div<{ $isActive?: boolean }>`
   display: flex;
@@ -190,19 +178,6 @@ const DeviceName = styled.div`
 const DeviceDetails = styled.div`
   font-size: 0.8rem;
   color: var(--text-secondary);
-`;
-
-const LogoutDeviceButton = styled.button`
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--primary);
-    text-decoration: underline;
-  }
 `;
 
 const DeviceCount = styled.div`
@@ -318,7 +293,6 @@ interface ProfileState {
 }
 
 interface Device {
-  id: string;
   name: string;
   type: "mobile" | "tablet" | "desktop";
   location: string;
@@ -338,9 +312,7 @@ function Settings() {
 
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeviceLogoutModal, setShowDeviceLogoutModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [deviceToLogout, setDeviceToLogout] = useState<Device | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [confirmationTitle, setConfirmationTitle] = useState("");
   const [confirmationIcon, setConfirmationIcon] = useState<
@@ -350,9 +322,6 @@ function Settings() {
   // Real session data for active devices
   const [activeDevices, setActiveDevices] = useState<Device[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-
-  // Track current session ID
-  const [currentSessionId, setCurrentSessionId] = useState<string>("");
 
   // Common function to refresh sessions data
   const refreshSessionData = useCallback(async () => {
@@ -368,69 +337,37 @@ function Settings() {
       }
 
       if (sessions && sessions.length > 0) {
-        // Store the current session ID
-        setCurrentSessionId(session.user?.id || "");
-
         // Transform the session data into the device format
-        const deviceData: Device[] = sessions.map(
-          (sessionData: SessionData) => {
-            // Determine device type based on user agent
-            let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
-            let deviceName = "Unknown Device";
+        const deviceData: Device[] = sessions.map((sessionData) => {
+          // Determine device type based on device name
+          let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+          const deviceName = sessionData.device_name;
 
-            // Safely access properties with optional chaining
-            const userAgent = sessionData?.user_agent || "";
-
-            if (
-              userAgent.includes("Mobile") ||
-              userAgent.includes("Android") ||
-              userAgent.includes("iPhone")
-            ) {
-              deviceType = "mobile";
-              if (userAgent.includes("iPhone")) {
-                deviceName = "iPhone";
-              } else if (userAgent.includes("Android")) {
-                deviceName = "Android Device";
-              } else {
-                deviceName = "Mobile Device";
-              }
-            } else if (
-              userAgent.includes("iPad") ||
-              userAgent.includes("Tablet")
-            ) {
-              deviceType = "tablet";
-              deviceName = userAgent.includes("iPad") ? "iPad" : "Tablet";
-            } else {
-              if (userAgent.includes("Windows")) {
-                deviceName = "Windows PC";
-              } else if (userAgent.includes("Mac")) {
-                deviceName = "Mac";
-              } else if (userAgent.includes("Linux")) {
-                deviceName = "Linux PC";
-              } else {
-                deviceName = "Desktop";
-              }
-            }
-
-            // Format last active time
-            const lastActive =
-              sessionData?.updated_at ||
-              sessionData?.created_at ||
-              new Date().toISOString();
-            const formattedTime = formatLastActive(new Date(lastActive));
-
-            // Format location
-            const location = (sessionData?.ip as string) || "Unknown location";
-
-            return {
-              id: sessionData?.id || "",
-              name: deviceName,
-              type: deviceType,
-              location: location,
-              lastActive: formattedTime,
-            };
+          if (
+            deviceName.includes("Mobile") ||
+            deviceName.includes("Android") ||
+            deviceName.includes("iPhone")
+          ) {
+            deviceType = "mobile";
+          } else if (
+            deviceName.includes("iPad") ||
+            deviceName.includes("Tablet")
+          ) {
+            deviceType = "tablet";
           }
-        );
+
+          // Format last active time
+          const formattedTime = formatLastActive(
+            new Date(sessionData.last_used)
+          );
+
+          return {
+            name: deviceName,
+            type: deviceType,
+            location: sessionData.ip,
+            lastActive: formattedTime,
+          };
+        });
 
         setActiveDevices(deviceData);
       }
@@ -505,47 +442,6 @@ function Settings() {
       setConfirmationTitle("Logout Failed");
       setConfirmationMessage(
         "There was an error logging out from all devices. Please try again."
-      );
-      setConfirmationIcon("warning");
-      setShowConfirmationModal(true);
-    }
-  };
-
-  const handleLogoutDevice = (device: Device) => {
-    setDeviceToLogout(device);
-    setShowDeviceLogoutModal(true);
-  };
-
-  const confirmLogoutDevice = async () => {
-    if (!deviceToLogout) return;
-
-    try {
-      // For current device, use signOut with "local" scope
-      // For other devices, in a real implementation with Supabase,
-      // you would use the session ID to revoke a specific session
-
-      // In a real implementation, we would need to identify the current session
-      // For now, assuming the current session can't be determined, use a global signOut
-      await signOut("global");
-
-      // Remove the device from active devices list
-      setActiveDevices((prev) =>
-        prev.filter((device) => device.id !== deviceToLogout.id)
-      );
-
-      setShowDeviceLogoutModal(false);
-      setConfirmationTitle("Device Logged Out");
-      setConfirmationMessage(
-        `The device (${deviceToLogout.name}) has been logged out successfully.`
-      );
-      setConfirmationIcon("success");
-      setShowConfirmationModal(true);
-    } catch (error) {
-      console.error("Error logging out device:", error);
-      setShowDeviceLogoutModal(false);
-      setConfirmationTitle("Device Logout Failed");
-      setConfirmationMessage(
-        "There was an error logging out this device. Please try again."
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -695,34 +591,19 @@ function Settings() {
               {activeDevices.length === 0 ? (
                 <p>No active sessions found.</p>
               ) : (
-                activeDevices.map((device) => {
-                  const isCurrentDevice = device.id === currentSessionId;
-                  return (
-                    <DeviceItem key={device.id} $isActive={isCurrentDevice}>
-                      <DeviceInfo>
-                        {renderDeviceIcon(device.type)}
-                        <div>
-                          <DeviceName>
-                            {device.name}
-                            {isCurrentDevice && (
-                              <ActiveSessionBadge>Current</ActiveSessionBadge>
-                            )}
-                          </DeviceName>
-                          <DeviceDetails>
-                            {device.location} • {device.lastActive}
-                          </DeviceDetails>
-                        </div>
-                      </DeviceInfo>
-                      {isCurrentDevice && (
-                        <LogoutDeviceButton
-                          onClick={() => handleLogoutDevice(device)}
-                        >
-                          Sign Out
-                        </LogoutDeviceButton>
-                      )}
-                    </DeviceItem>
-                  );
-                })
+                activeDevices.map((device, index) => (
+                  <DeviceItem key={index}>
+                    <DeviceInfo>
+                      {renderDeviceIcon(device.type)}
+                      <div>
+                        <DeviceName>{device.name}</DeviceName>
+                        <DeviceDetails>
+                          {device.location} • {device.lastActive}
+                        </DeviceDetails>
+                      </div>
+                    </DeviceInfo>
+                  </DeviceItem>
+                ))
               )}
             </DevicesList>
           )}
@@ -823,63 +704,6 @@ function Settings() {
                   Cancel
                 </Button>
                 <Button onClick={confirmLogout}>Sign Out</Button>
-              </ModalFooter>
-            </ModalContent>
-          </ModalOverlay>
-        )}
-      </AnimatePresence>
-
-      {/* Device Logout Confirmation Modal */}
-      <AnimatePresence>
-        {showDeviceLogoutModal && deviceToLogout && (
-          <ModalOverlay
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowDeviceLogoutModal(false)}
-          >
-            <ModalContent
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ModalHeader>
-                <ModalTitle>Confirm Device Logout</ModalTitle>
-                <CloseButton onClick={() => setShowDeviceLogoutModal(false)}>
-                  <FaTimes />
-                </CloseButton>
-              </ModalHeader>
-              <ModalBody>
-                {deviceToLogout && (
-                  <>
-                    <p>Are you sure you want to sign out from this device?</p>
-                    <DeviceItem style={{ marginTop: "1rem" }}>
-                      <DeviceInfo>
-                        {renderDeviceIcon(deviceToLogout.type)}
-                        <div>
-                          <DeviceName>{deviceToLogout.name}</DeviceName>
-                          <DeviceDetails>
-                            {deviceToLogout.location} •{" "}
-                            {deviceToLogout.lastActive}
-                          </DeviceDetails>
-                        </div>
-                      </DeviceInfo>
-                    </DeviceItem>
-                  </>
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  onClick={() => setShowDeviceLogoutModal(false)}
-                  style={{
-                    marginRight: "0.5rem",
-                    background: "rgba(255, 255, 255, 0.1)",
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={confirmLogoutDevice}>Sign Out</Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>

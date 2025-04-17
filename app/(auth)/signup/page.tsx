@@ -385,36 +385,51 @@ function SignUp() {
       // Combine first and last name for the API call
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const result = await signUp(fullName, formData.email, formData.password);
-      
+
       // When a user already exists in Supabase Auth:
       // 1. If identities array is empty, it means the user exists and has confirmed their email
       // 2. If there's an error with "already registered" in the message, that's also a clear sign
-      
+
       // Check for existing account
       if (result.error) {
         console.error("Sign up error:", result.error.message);
-        
+
         // Check if the error is about an existing account
-        if (result.error.message.toLowerCase().includes("user already registered") || 
-            result.error.message.toLowerCase().includes("email already") ||
-            result.error.message.toLowerCase().includes("account already exists")) {
+        if (
+          result.error.message
+            .toLowerCase()
+            .includes("user already registered") ||
+          result.error.message.toLowerCase().includes("email already") ||
+          result.error.message.toLowerCase().includes("account already exists")
+        ) {
           // Redirect to the account exists page
-          router.push(`/signup-account-exists?email=${encodeURIComponent(formData.email)}`);
+          router.push(
+            `/signup-account-exists?email=${encodeURIComponent(formData.email)}`
+          );
           return;
         }
-        
+
         // For other errors, show the error message
         setError(result.error.message);
       } else if (result.data && result.data.user) {
         // Check for empty identities array which indicates an existing confirmed user
-        if (!result.data.user.identities || result.data.user.identities.length === 0) {
+        if (
+          !result.data.user.identities ||
+          result.data.user.identities.length === 0
+        ) {
           // User already exists - redirect to account exists page
-          router.push(`/signup-account-exists?email=${encodeURIComponent(formData.email)}`);
+          router.push(
+            `/signup-account-exists?email=${encodeURIComponent(formData.email)}`
+          );
           return;
         }
-        
+
         // New user successfully created
-        router.push(`/signup-success?name=${encodeURIComponent(formData.firstName)}&email=${encodeURIComponent(formData.email)}`);
+        router.push(
+          `/signup-success?name=${encodeURIComponent(
+            formData.firstName
+          )}&email=${encodeURIComponent(formData.email)}`
+        );
       }
     } catch (err: unknown) {
       console.error("Sign up error:", err);
