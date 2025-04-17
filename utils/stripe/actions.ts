@@ -244,6 +244,11 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
+      payment_intent_data: {
+        metadata: {
+          purchase_type: planType,
+        },
+      },
       mode: mode,
       success_url: return_url,
       cancel_url: return_url,
