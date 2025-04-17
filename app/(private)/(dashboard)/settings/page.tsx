@@ -429,7 +429,7 @@ function Settings() {
   const confirmLogout = async () => {
     try {
       // Sign out of all devices using the auth context
-      await signOut("global");
+      await signOut("others");
 
       setShowLogoutModal(false);
       setConfirmationTitle("Logged Out Successfully");
@@ -504,31 +504,6 @@ function Settings() {
       case "success":
       default:
         return <FaCheck style={{ color: "var(--success)" }} />;
-    }
-  };
-
-  // Add a new function to handle "Sign Out from Others"
-  const handleSignOutOthers = async () => {
-    try {
-      // Sign out from all other devices
-      await signOut("others");
-
-      // Show confirmation modal
-      setConfirmationTitle("Success");
-      setConfirmationMessage("You've been signed out from all other devices.");
-      setConfirmationIcon("success");
-      setShowConfirmationModal(true);
-
-      // Refresh the sessions list
-      await refreshSessionData();
-    } catch (error) {
-      console.error("Error signing out from other devices:", error);
-      setConfirmationTitle("Error");
-      setConfirmationMessage(
-        "Failed to sign out from other devices. Please try again."
-      );
-      setConfirmationIcon("warning");
-      setShowConfirmationModal(true);
     }
   };
 
@@ -619,11 +594,6 @@ function Settings() {
           </DeviceCount>
 
           <div style={{ display: "flex", gap: "1rem" }}>
-            {activeDevices.length > 1 && (
-              <OutlineButton onClick={handleSignOutOthers}>
-                <FaSignOutAlt /> Sign Out From Other Devices
-              </OutlineButton>
-            )}
             <OutlineButton onClick={handleLogout}>
               <FaSignOutAlt /> Sign Out From All Devices
             </OutlineButton>
