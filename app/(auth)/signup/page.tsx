@@ -383,8 +383,12 @@ function SignUp() {
     try {
       setLoadingState(true);
       // Combine first and last name for the API call
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const result = await signUp(fullName, formData.email, formData.password);
+      const result = await signUp(
+        formData.firstName.trim(),
+        formData.lastName.trim(),
+        formData.email.trim(),
+        formData.password
+      );
 
       // When a user already exists in Supabase Auth:
       // 1. If identities array is empty, it means the user exists and has confirmed their email
@@ -404,7 +408,9 @@ function SignUp() {
         ) {
           // Redirect to the account exists page
           router.push(
-            `/signup-account-exists?email=${encodeURIComponent(formData.email)}`
+            `/signup-account-exists?email=${encodeURIComponent(
+              formData.email.trim()
+            )}`
           );
           return;
         }
@@ -419,7 +425,9 @@ function SignUp() {
         ) {
           // User already exists - redirect to account exists page
           router.push(
-            `/signup-account-exists?email=${encodeURIComponent(formData.email)}`
+            `/signup-account-exists?email=${encodeURIComponent(
+              formData.email.trim()
+            )}`
           );
           return;
         }
@@ -427,8 +435,8 @@ function SignUp() {
         // New user successfully created
         router.push(
           `/signup-success?name=${encodeURIComponent(
-            formData.firstName
-          )}&email=${encodeURIComponent(formData.email)}`
+            formData.firstName.trim()
+          )}&email=${encodeURIComponent(formData.email.trim())}`
         );
       }
     } catch (err: unknown) {
@@ -501,7 +509,7 @@ function SignUp() {
                 type="text"
                 id="firstName"
                 name="firstName"
-                value={formData.firstName}
+                value={formData.firstName.trim()}
                 onChange={handleChange}
                 required
                 placeholder="First Name"
@@ -514,7 +522,7 @@ function SignUp() {
                 type="text"
                 id="lastName"
                 name="lastName"
-                value={formData.lastName}
+                value={formData.lastName.trim()}
                 onChange={handleChange}
                 required
                 placeholder="Last Name"
@@ -528,7 +536,7 @@ function SignUp() {
               type="email"
               id="email"
               name="email"
-              value={formData.email}
+              value={formData.email.trim()}
               onChange={handleChange}
               required
               readOnly={isCheckoutComplete}

@@ -22,7 +22,8 @@ type AuthContextType = {
   supabase: SupabaseClient;
   loading: boolean;
   signUp: (
-    name: string,
+    first_name: string,
+    last_name: string,
     email: string,
     password: string
   ) => Promise<AuthResponse>;
@@ -130,8 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await supabase.auth.signInWithPassword({ email, password });
   };
 
-  const signUp = async (name: string, email: string, password: string) => {
-    return await signUpWithStripe(name, email, password);
+  const signUp = async (
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string
+  ) => {
+    return await signUpWithStripe(first_name, last_name, email, password);
   };
 
   const signOut = async (scope: "global" | "local" | "others" | undefined) => {

@@ -7,7 +7,8 @@ import { findOrCreateCustomer } from "@/utils/stripe/actions";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
 
 export async function signUpWithStripe(
-  name: string,
+  first_name: string,
+  last_name: string,
   email: string,
   password: string
 ) {
@@ -23,7 +24,8 @@ export async function signUpWithStripe(
       password,
       options: {
         data: {
-          name,
+          first_name,
+          last_name,
           customer_id,
         },
       },
