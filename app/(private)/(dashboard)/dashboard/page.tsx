@@ -322,6 +322,16 @@ const FormTextarea = styled.textarea`
   }
 `;
 
+// Helper function to safely display user name
+const formatName = (
+  firstName: string | null,
+  lastName: string | null
+): string => {
+  const first = firstName || "";
+  const last = lastName || "";
+  return (first + (first && last ? " " : "") + last).trim();
+};
+
 function DashboardPage() {
   const { user: userAuth } = useAuth();
 
@@ -469,7 +479,7 @@ function DashboardPage() {
 
       // Prepare the data for the API request
       const contactData = {
-        name: user.profile.first_name + " " + user.profile.last_name,
+        name: formatName(user.profile.first_name, user.profile.last_name),
         email: user.email,
         subject: contactForm.subject,
         message: contactForm.message,
@@ -610,7 +620,9 @@ function DashboardPage() {
       <WelcomeSection>
         <WelcomeTitle>
           Welcome back{" "}
-          <span>{user.profile.first_name + " " + user.profile.last_name}</span>
+          <span>
+            {formatName(user.profile.first_name, user.profile.last_name)}
+          </span>
         </WelcomeTitle>
         <WelcomeSubtitle>
           {user
@@ -885,9 +897,10 @@ function DashboardPage() {
                   <FormLabel>Your Name</FormLabel>
                   <FormInput
                     type="text"
-                    value={
-                      user.profile.first_name + " " + user.profile.last_name
-                    }
+                    value={formatName(
+                      user.profile.first_name,
+                      user.profile.last_name
+                    )}
                     readOnly
                     style={{
                       backgroundColor: "rgba(40, 40, 60, 0.5)",
