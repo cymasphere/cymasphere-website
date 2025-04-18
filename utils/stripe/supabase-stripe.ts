@@ -259,10 +259,12 @@ export async function getCustomerInvoices(
 }
 
 /**
- * Deletes a user account by first removing their Stripe customer record,
+ * Deletes a user account by first canceling any active subscriptions,
  * then deleting their Supabase user account
  */
-export async function deleteUserAccount(userId: string) {
+export async function deleteUserAccount(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
   "use server";
 
   try {
@@ -284,15 +286,32 @@ export async function deleteUserAccount(userId: string) {
     const stripeCustomerId = profile?.customer_id;
 
     if (stripeCustomerId) {
-      // Delete the customer from Stripe
+      // Get Stripe instance
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
       try {
-        await stripe.customers.del(stripeCustomerId);
-        console.log(`Deleted Stripe customer: ${stripeCustomerId}`);
+        // Get all subscriptions for this customer
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: "all",
+        });
+
+        // Cancel all subscriptions that aren't already canceled
+        for (const subscription of subscriptions.data) {
+          if (subscription.status !== "canceled") {
+            await stripe.subscriptions.cancel(subscription.id);
+            console.log(
+              `Canceled subscription: ${subscription.id} for customer: ${stripeCustomerId}`
+            );
+          }
+        }
       } catch (stripeError) {
-        console.error("Error deleting Stripe customer:", stripeError);
-        // Continue with user deletion even if Stripe deletion fails
+        console.error("Error canceling subscriptions:", stripeError);
+        // Do not continue with user deletion if subscription cancellation fails
+        return {
+          success: false,
+          error: "Failed to cancel subscription. Account deletion aborted.",
+        };
       }
     }
 

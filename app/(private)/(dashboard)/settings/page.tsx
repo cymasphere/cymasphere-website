@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   FaGlobe,
   FaTrash,
@@ -657,9 +658,20 @@ function Settings() {
               <br />
               <br />
               <strong>Important:</strong> If you have an active subscription, it
-              will be canceled immediately. If you purchased a lifetime
-              subscription, you will permanently lose access to it and cannot
-              restore it later.
+              will be canceled immediately. Your purchase history will remain
+              securely stored in Stripe, and you can sign up again in the future
+              using the same email address.
+              <br />
+              <br />
+              If you only wish to <strong>cancel your subscription</strong>,
+              please visit the{" "}
+              <Link
+                href="/billing"
+                style={{ color: "var(--primary)", textDecoration: "underline" }}
+              >
+                billing page
+              </Link>{" "}
+              instead.
             </p>
           </WarningBox>
 
