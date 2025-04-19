@@ -1,7 +1,8 @@
 .container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  padding-top: 6rem;
 }
 
 .title {
@@ -70,6 +71,7 @@
 
 .markdown {
   line-height: 1.6;
+  text-align: center;
 }
 
 .markdown h1 {
@@ -97,6 +99,8 @@
 .markdown ol {
   margin-left: 1.5rem;
   margin-bottom: 1.5rem;
+  display: inline-block;
+  text-align: left;
 }
 
 .markdown li {

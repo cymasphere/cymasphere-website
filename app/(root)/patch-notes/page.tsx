@@ -40,8 +40,6 @@ const PatchNotesPage = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Patch Notes</h1>
-
       {isLoading && (
         <div className={styles.loadingContainer}>
           <Loader2 className={styles.loadingSpinner} />
