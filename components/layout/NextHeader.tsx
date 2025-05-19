@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styled from "styled-components";
 import {
   FaBars,
@@ -19,18 +19,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
-import { useTranslation } from "react-i18next";
+import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
+// Import translations directly to avoid hook ordering issues
+import i18next from "i18next";
 
-// Import the NextLanguageSelector instead of DynamicLanguageSelector
-import NextLanguageSelector from "../i18n/NextLanguageSelector";
-
-// No longer need to dynamically import the old language selector
-// const DynamicLanguageSelector = dynamic(
-//   () => import("../i18n/DynamicLanguageSelector"),
-//   {
-//     ssr: false,
-//   }
-// );
+// Dynamically import components with browser-only APIs
+const DynamicLanguageSelector = dynamic(
+  () => import("../i18n/DynamicLanguageSelector"),
+  {
+    ssr: false,
+  }
+);
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -38,6 +37,29 @@ const playSound = async () => {
     const { playLydianMaj7Chord } = await import("../../utils/audioUtils");
     playLydianMaj7Chord();
   }
+};
+
+// Function to get translations without using hooks
+const getTranslation = (key: string): string => {
+  // Safe access to i18next - if it's not initialized yet, return a fallback
+  if (i18next.isInitialized) {
+    return i18next.t(key);
+  }
+  
+  // Fallback values for common keys
+  const fallbacks: Record<string, string> = {
+    'common.navigation': 'Navigation',
+    'common.myAccount': 'My Account',
+    'common.logout': 'Logout',
+    'common.login': 'Login',
+    'common.signUp': 'Sign Up',
+    'header.features': 'Features',
+    'header.howItWorks': 'How It Works',
+    'header.pricing': 'Pricing',
+    'header.faq': 'FAQ'
+  };
+  
+  return fallbacks[key] || key;
 };
 
 // Animation variants
@@ -585,21 +607,41 @@ const NextHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
-  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes - with proper cleanup
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
 
-  // Define nav items outside of the render function to avoid recreating on each render
-  const navItems = [
-    { name: t("header.features"), path: "/#features" },
-    { name: t("header.howItWorks"), path: "/#how-it-works" },
-    { name: t("header.pricing"), path: "/#pricing" },
-    { name: t("header.faq"), path: "/#faq" },
-  ];
+  // Define nav items using the non-hook translation function
+  const navItems = useMemo(() => [
+    { name: getTranslation("header.features"), path: "/#features" },
+    { name: getTranslation("header.howItWorks"), path: "/#how-it-works" },
+    { name: getTranslation("header.pricing"), path: "/#pricing" },
+    { name: getTranslation("header.faq"), path: "/#faq" },
+  ], [language]); // Re-compute when language changes
 
   useEffect(() => {
     const handleScroll = () => {
@@ -686,12 +728,12 @@ const NextHeader = () => {
             <Link href="/dashboard" passHref legacyBehavior>
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                 <FaUser />
-                {t("common.myAccount")}
+                {getTranslation("common.myAccount")}
               </UserMenuItem>
             </Link>
             <UserMenuLogout onClick={handleLogout}>
               <FaSignOutAlt />
-              {t("common.logout")}
+              {getTranslation("common.logout")}
             </UserMenuLogout>
           </UserDropdown>
         </UserMenuContainer>
@@ -700,9 +742,9 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>{t("common.login")}</AuthButton>
+        <AuthButton onClick={handleLoginClick}>{getTranslation("common.login")}</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
-          {t("common.signUp")}
+          {getTranslation("common.signUp")}
         </AuthButton>
       </>
     );
@@ -792,7 +834,7 @@ const NextHeader = () => {
         variants={fadeIn}
       >
         <MobileMenuContent>
-          <MobileNavTitle>{t("common.navigation")}</MobileNavTitle>
+          <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
           <MobileNavLinks>
             {navItems.map((item, index) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
@@ -828,7 +870,7 @@ const NextHeader = () => {
                     animate={menuOpen ? "visible" : "hidden"}
                   >
                     <FaUser />
-                    {t("common.myAccount")}
+                    {getTranslation("common.myAccount")}
                   </MobileNavLink>
                 </Link>
                 <MobileNavLink
@@ -843,7 +885,7 @@ const NextHeader = () => {
                   animate={menuOpen ? "visible" : "hidden"}
                 >
                   <FaSignOutAlt />
-                  {t("common.logout")}
+                  {getTranslation("common.logout")}
                 </MobileNavLink>
               </MobileUserSection>
             )}
@@ -860,7 +902,7 @@ const NextHeader = () => {
                   handleLoginClick(e);
                 }}
               >
-                {t("common.login")}
+                {getTranslation("common.login")}
               </AuthButton>
               <AuthButton
                 $isMobile
@@ -870,7 +912,7 @@ const NextHeader = () => {
                   handleSignupClick(e);
                 }}
               >
-                {t("common.signUp")}
+                {getTranslation("common.signUp")}
               </AuthButton>
             </MobileAuthSection>
           )}

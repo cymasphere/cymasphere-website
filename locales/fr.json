@@ -230,6 +230,72 @@
       "seventh": "Seventh"
     }
   },
+  "howItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "Création musicale simplifiée",
+    "createSubtitle": "Composez de la musique avec des outils puissants",
+    "learnSubtitle": "Maîtrisez vos chansons préférées sans effort",
+    "integrateSubtitle": "Connectez-vous à votre flux de travail existant",
+    "tabs": {
+      "create": "CRÉER",
+      "learn": "APPRENDRE",
+      "integrate": "INTÉGRER"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Commencez avec des Progressions d'Accords",
+        "description": "Débutez avec des modèles préconçus ou créez sans effort vos propres progressions d'accords en faisant glisser des voicings depuis la palette d'Harmonie. L'application analyse automatiquement les gammes et les modes, garantissant que votre musique suit les principes théoriques appropriés."
+      },
+      "step2": {
+        "title": "Superposez Plusieurs Pistes",
+        "description": "Créez des compositions riches avec plusieurs pistes qui fonctionnent intelligemment ensemble. Ajoutez harmonie, mélodies et rythmes—tous synchronisés et harmoniquement compatibles avec votre progression d'accords."
+      },
+      "step3": {
+        "title": "Personnalisez avec Précision",
+        "description": "Affinez votre son avec une personnalisation détaillée. Ajustez les inversions, la densité des voicings, les notes de tension et les extensions harmoniques pour créer tout, des triades simples aux harmonies jazz complexes."
+      },
+      "step4": {
+        "title": "Musicalité Intelligente",
+        "description": "Expérimentez une musicalité de niveau professionnel avec une conduite des voix intelligente qui assure des transitions d'accords fluides. Accédez à des outils de composition auparavant disponibles uniquement pour les musiciens formés, vous permettant de créer des harmonies sophistiquées en toute confiance."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Apprentissage par Pistes Fantômes",
+        "description": "Maîtrisez les progressions d'accords grâce à des pistes fantômes interactives qui guident votre jeu. Expérimentez la réharmonisation en temps réel, observant comment l'application s'adapte à vos choix créatifs tout en maintenant la cohérence musicale."
+      },
+      "step2": {
+        "title": "Analyse Harmonique Interactive",
+        "description": "Explorez des affichages harmoniques complets qui révèlent la théorie derrière votre musique. Visualisez les voicings, les motifs, les gammes et les accords en temps réel, obtenant des aperçus profonds de la structure musicale de vos créations."
+      },
+      "step3": {
+        "title": "Apprentissage Basé sur les Motifs",
+        "description": "Commencez avec un motif simple et observez-le évoluer pendant que vous explorez différentes gammes et qualités d'accords. Le retour visuel de l'application vous aide à comprendre comment chaque note contribue à l'harmonie globale, tandis que l'éditeur de motifs vous permet d'expérimenter des variations et de développer votre intuition musicale."
+      },
+      "step4": {
+        "title": "Affinez vos Compétences",
+        "description": "Améliorez votre oreille musicale en expérimentant différentes substitutions d'accords et échanges modaux. En affinant vos choix harmoniques, vous développerez une compréhension plus profonde des qualités d'accords et des progressions, construisant naturellement à la fois vos compétences techniques et votre voix créative."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "Compatibilité DAW",
+        "description": "Utilisez Cymasphere comme application autonome ou comme plugin VST/AU dans votre DAW. Que vous esquissez des idées indépendamment ou que vous les intégrez directement dans votre production, l'application s'adapte à votre flux de travail préféré."
+      },
+      "step2": {
+        "title": "Contrôle Multi-Pistes",
+        "description": "Gérez plusieurs pistes simultanément, chacune avec ses propres paramètres de voix et motifs indépendants. Créez des arrangements riches et stratifiés en assignant différents éléments musicaux à des pistes séparées dans votre DAW."
+      },
+      "step3": {
+        "title": "Matrice de Canaux de Voix",
+        "description": "Contrôlez précisément où chaque voix est envoyée en utilisant la matrice de canaux. Dirigez les voix individuelles vers des canaux MIDI spécifiques dans votre DAW, vous donnant un contrôle complet sur l'assignation d'instruments et la distribution des voix."
+      },
+      "step4": {
+        "title": "Flux de Travail Transparent",
+        "description": "Intégrez Cymasphere dans votre processus de production comme un puissant générateur d'harmonie et de motifs. Utilisez-le pour esquisser rapidement des idées, développer des progressions complexes et créer des motifs musicaux qui s'intègrent directement dans les instruments de votre DAW."
+      }
+    }
+  },
   "footer": {
     "copyright": "© 2023 Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",

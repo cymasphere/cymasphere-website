@@ -230,6 +230,72 @@
       "seventh": "Seventh"
     }
   },
+  "howItWorks": {
+    "title": "Wie es funktioniert",
+    "subtitle": "Musikerstellung leicht gemacht",
+    "createSubtitle": "Komponieren Sie Musik mit leistungsstarken Werkzeugen",
+    "learnSubtitle": "Meistern Sie Ihre Lieblingssongs mühelos",
+    "integrateSubtitle": "Verbinden Sie sich mit Ihrem bestehenden Workflow",
+    "tabs": {
+      "create": "ERSTELLEN",
+      "learn": "LERNEN",
+      "integrate": "INTEGRIEREN"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Beginnen Sie mit Akkordprogressionen",
+        "description": "Starten Sie mit vorgefertigten Vorlagen oder erstellen Sie mühelos Ihre eigenen Akkordprogressionen, indem Sie Voicings aus der Harmoniepalette ziehen. Die App analysiert automatisch Tonleitern und Modi und stellt sicher, dass Ihre Musik den richtigen Theorieprinzipien folgt."
+      },
+      "step2": {
+        "title": "Mehrere Spuren übereinanderlegen",
+        "description": "Erstellen Sie reichhaltige Kompositionen mit mehreren Spuren, die intelligent zusammenarbeiten. Fügen Sie Harmonie, Melodien und Rhythmen hinzu – alle synchronisiert und harmonisch kompatibel mit Ihrer Akkordprogression."
+      },
+      "step3": {
+        "title": "Mit Präzision anpassen",
+        "description": "Verfeinern Sie Ihren Klang mit detaillierter Anpassung. Passen Sie Umkehrungen, Voicing-Dichte, Spannungstöne und harmonische Erweiterungen an, um alles von einfachen Dreiklängen bis hin zu komplexen Jazz-Harmonien zu gestalten."
+      },
+      "step4": {
+        "title": "Intelligente Musikalität",
+        "description": "Erleben Sie Musikalität auf professionellem Niveau mit intelligenter Stimmführung, die für reibungslose Akkordübergänge sorgt. Greifen Sie auf Kompositionswerkzeuge zu, die zuvor nur ausgebildeten Musikern zur Verfügung standen, und erstellen Sie selbstbewusst anspruchsvolle Harmonien."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Lernen mit Geisterspuren",
+        "description": "Meistern Sie Akkordprogressionen durch interaktive Geisterspuren, die Ihr Spiel leiten. Experimentieren Sie mit Reharmonisierung in Echtzeit und beobachten Sie, wie die App sich an Ihre kreativen Entscheidungen anpasst, während sie musikalische Kohärenz beibehält."
+      },
+      "step2": {
+        "title": "Interaktive harmonische Analyse",
+        "description": "Erkunden Sie umfassende harmonische Anzeigen, die die Theorie hinter Ihrer Musik offenbaren. Visualisieren Sie Voicings, Muster, Tonleitern und Akkorde in Echtzeit und gewinnen Sie tiefe Einblicke in die musikalische Struktur Ihrer Kreationen."
+      },
+      "step3": {
+        "title": "Musterbasiertes Lernen",
+        "description": "Beginnen Sie mit einem einfachen Muster und beobachten Sie, wie es sich entwickelt, während Sie verschiedene Tonleitern und Akkordqualitäten erkunden. Das visuelle Feedback der App hilft Ihnen zu verstehen, wie jede Note zur Gesamtharmonie beiträgt, während der Pattern-Editor Ihnen ermöglicht, mit Variationen zu experimentieren und Ihre musikalische Intuition aufzubauen."
+      },
+      "step4": {
+        "title": "Verfeinern Sie Ihre Fähigkeiten",
+        "description": "Verbessern Sie Ihr musikalisches Gehör, indem Sie mit verschiedenen Akkordsubstitutionen und modalen Wechseln experimentieren. Während Sie Ihre harmonischen Entscheidungen verfeinern, entwickeln Sie ein tieferes Verständnis für Akkordqualitäten und -progressionen und bauen auf natürliche Weise sowohl Ihre technischen Fähigkeiten als auch Ihre kreative Stimme auf."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "DAW-Kompatibilität",
+        "description": "Verwenden Sie Cymasphere als eigenständige Anwendung oder als VST/AU-Plugin in Ihrer DAW. Ob Sie Ideen unabhängig skizzieren oder direkt in Ihre Produktion integrieren, die App passt sich Ihrem bevorzugten Workflow an."
+      },
+      "step2": {
+        "title": "Multi-Spur-Kontrolle",
+        "description": "Verwalten Sie mehrere Spuren gleichzeitig, jede mit eigenen unabhängigen Stimmeneinstellungen und Mustern. Erstellen Sie reichhaltige, geschichtete Arrangements, indem Sie verschiedene musikalische Elemente separaten Spuren in Ihrer DAW zuweisen."
+      },
+      "step3": {
+        "title": "Stimmen-Kanal-Matrix",
+        "description": "Steuern Sie präzise, wohin jede Stimme mit der Kanalmatrix gesendet wird. Leiten Sie einzelne Stimmen an bestimmte MIDI-Kanäle in Ihrer DAW, was Ihnen vollständige Kontrolle über Instrumentenzuweisung und Stimmenverteilung gibt."
+      },
+      "step4": {
+        "title": "Nahtloser Workflow",
+        "description": "Integrieren Sie Cymasphere in Ihren Produktionsprozess als leistungsstarken Harmonie- und Mustergenerator. Nutzen Sie es, um schnell Ideen zu skizzieren, komplexe Progressionen zu entwickeln und musikalische Muster zu erstellen, die direkt in die Instrumente Ihrer DAW eingespeist werden."
+      }
+    }
+  },
   "footer": {
     "copyright": "© 2023 Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",

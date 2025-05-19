@@ -229,6 +229,72 @@
       "seventh": "Séptima"
     }
   },
+  "howItWorks": {
+    "title": "Cómo Funciona",
+    "subtitle": "Creación musical simplificada",
+    "createSubtitle": "Compón música con herramientas potentes",
+    "learnSubtitle": "Domina tus canciones favoritas sin esfuerzo",
+    "integrateSubtitle": "Conéctate con tu flujo de trabajo existente",
+    "tabs": {
+      "create": "CREAR",
+      "learn": "APRENDER",
+      "integrate": "INTEGRAR"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Comienza con Progresiones de Acordes",
+        "description": "Empieza con plantillas prediseñadas o construye sin esfuerzo tus propias progresiones de acordes arrastrando voces desde la paleta de Armonía. La aplicación analiza automáticamente escalas y modos, asegurando que tu música siga los principios teóricos adecuados."
+      },
+      "step2": {
+        "title": "Capas de Múltiples Pistas",
+        "description": "Crea composiciones ricas con múltiples pistas que trabajan juntas de manera inteligente. Añade armonía, melodías y ritmos—todos sincronizados y armónicamente compatibles con tu progresión de acordes."
+      },
+      "step3": {
+        "title": "Personaliza con Precisión",
+        "description": "Afina tu sonido con personalización detallada. Ajusta inversiones, densidad de voces, notas de tensión y extensiones armónicas para crear desde tríadas simples hasta complejas armonías de jazz."
+      },
+      "step4": {
+        "title": "Musicalidad Inteligente",
+        "description": "Experimenta una musicalidad de nivel profesional con conducción de voces inteligente que asegura transiciones suaves entre acordes. Accede a herramientas de composición anteriormente disponibles solo para músicos entrenados, permitiéndote crear armonías sofisticadas con confianza."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Aprendizaje con Pistas Guía",
+        "description": "Domina progresiones de acordes a través de pistas guía interactivas que orientan tu interpretación. Experimenta con la rearmonización en tiempo real, observando cómo la aplicación se adapta a tus elecciones creativas mientras mantiene la coherencia musical."
+      },
+      "step2": {
+        "title": "Análisis Armónico Interactivo",
+        "description": "Explora visualizaciones armónicas completas que revelan la teoría detrás de tu música. Visualiza voces, patrones, escalas y acordes en tiempo real, obteniendo profundos conocimientos sobre la estructura musical de tus creaciones."
+      },
+      "step3": {
+        "title": "Aprendizaje Basado en Patrones",
+        "description": "Comienza con un patrón simple y observa cómo evoluciona mientras exploras diferentes escalas y cualidades de acordes. La retroalimentación visual de la aplicación te ayuda a entender cómo cada nota contribuye a la armonía general, mientras que el editor de patrones te permite experimentar con variaciones y desarrollar tu intuición musical."
+      },
+      "step4": {
+        "title": "Refina tus Habilidades",
+        "description": "Mejora tu oído musical experimentando con diferentes sustituciones de acordes e intercambios modales. A medida que refinas tus elecciones armónicas, desarrollarás una comprensión más profunda de las cualidades y progresiones de acordes, construyendo naturalmente tanto tus habilidades técnicas como tu voz creativa."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "Compatibilidad con DAW",
+        "description": "Usa Cymasphere como una aplicación independiente o como un plugin VST/AU dentro de tu DAW. Ya sea que estés esbozando ideas de forma independiente o integrándolas directamente en tu producción, la aplicación se adapta a tu flujo de trabajo preferido."
+      },
+      "step2": {
+        "title": "Control Multi-Pista",
+        "description": "Gestiona múltiples pistas simultáneamente, cada una con sus propios ajustes de voces y patrones independientes. Crea arreglos ricos y en capas asignando diferentes elementos musicales a pistas separadas dentro de tu DAW."
+      },
+      "step3": {
+        "title": "Matriz de Canales de Voces",
+        "description": "Controla con precisión dónde se envía cada voz utilizando la matriz de canales. Dirige voces individuales a canales MIDI específicos en tu DAW, dándote control completo sobre la asignación de instrumentos y la distribución de voces."
+      },
+      "step4": {
+        "title": "Flujo de Trabajo Sin Fisuras",
+        "description": "Integra Cymasphere en tu proceso de producción como un potente generador de armonía y patrones. Úsalo para esbozar ideas rápidamente, desarrollar progresiones complejas y crear patrones musicales que se alimentan directamente en los instrumentos de tu DAW."
+      }
+    }
+  },
   "footer": {
     "copyright": "© 2023 Cymasphere. Todos los derechos reservados.",
     "privacyPolicy": "Política de Privacidad",

@@ -156,13 +156,69 @@
   },
   "howItWorks": {
     "title": "How It Works",
-    "subtitle": "Start making music in three simple steps",
-    "step1Title": "Create",
-    "step1Description": "Set up your chord progression and choose your musical style",
-    "step2Title": "Customize",
-    "step2Description": "Fine-tune the parameters to match your creative vision",
-    "step3Title": "Export",
-    "step3Description": "Download your creation as MIDI or audio to use in your projects"
+    "subtitle": "Music creation made simple",
+    "createSubtitle": "Compose music with powerful tools",
+    "learnSubtitle": "Master your favorite songs effortlessly",
+    "integrateSubtitle": "Connect with your existing workflow",
+    "tabs": {
+      "create": "CREATE",
+      "learn": "LEARN",
+      "integrate": "INTEGRATE"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Start with Chord Progressions",
+        "description": "Begin with pre-crafted templates or effortlessly build your own chord progressions by dragging voicings from the Harmony palette. The app automatically analyzes scales and modes, ensuring your music follows proper theory principles."
+      },
+      "step2": {
+        "title": "Layer Multiple Tracks",
+        "description": "Create rich compositions with multiple tracks that intelligently work together. Add harmony, melodies, and rhythms—all synchronized and harmonically compatible with your chord progression."
+      },
+      "step3": {
+        "title": "Customize with Precision",
+        "description": "Fine-tune your sound with detailed customization. Adjust inversions, voicing density, tension notes, and harmonic extensions to craft everything from simple triads to complex jazz harmonies."
+      },
+      "step4": {
+        "title": "Intelligent Musicality",
+        "description": "Experience professional-level musicality with intelligent voice leading that ensures smooth chord transitions. Access composition tools previously available only to trained musicians, empowering you to create sophisticated harmonies with confidence."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Ghost Track Learning",
+        "description": "Master chord progressions through interactive ghost tracks that guide your playing. Experiment with reharmonization in real-time, watching as the app adapts to your creative choices while maintaining musical coherence."
+      },
+      "step2": {
+        "title": "Interactive Harmonic Analysis",
+        "description": "Explore comprehensive harmonic displays that reveal the theory behind your music. Visualize voicings, patterns, scales, and chords in real-time, gaining deep insights into the musical structure of your creations."
+      },
+      "step3": {
+        "title": "Pattern-Based Learning",
+        "description": "Start with a simple pattern and watch it evolve as you explore different scales and chord qualities. The app's visual feedback helps you understand how each note contributes to the overall harmony, while the pattern editor lets you experiment with variations and build your musical intuition."
+      },
+      "step4": {
+        "title": "Refine Your Skills",
+        "description": "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "DAW Compatibility",
+        "description": "Use Cymasphere as a standalone application or as a VST/AU plugin within your DAW. Whether you're sketching ideas independently or integrating directly into your production, the app adapts to your preferred workflow."
+      },
+      "step2": {
+        "title": "Multi-Track Control",
+        "description": "Manage multiple tracks simultaneously, each with its own independent voice settings and patterns. Create rich, layered arrangements by assigning different musical elements to separate tracks within your DAW."
+      },
+      "step3": {
+        "title": "Voice Channel Matrix",
+        "description": "Precisely control where each voice is sent using the channel matrix. Route individual voices to specific MIDI channels in your DAW, giving you complete control over instrument assignment and voice distribution."
+      },
+      "step4": {
+        "title": "Seamless Workflow",
+        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator. Use it to quickly sketch ideas, develop complex progressions, and create musical patterns that feed directly into your DAW's instruments."
+      }
+    }
   },
   "pricing": {
     "title": "Plans & Pricing",
