@@ -62,84 +62,191 @@
     "livePerformance": "Live Performance",
     "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
     "customSounds": "Custom Sounds",
-    "customSoundsDesc": "Create and save your own custom sound presets"
-  },
-  "synth": {
-    "title": "Intelligent Chord Voicing Generator",
-    "description": "Create lush, beautiful chords with the press of a button.",
-    "chordSequence": "Chord Sequence",
-    "generateMelody": "Generate Melody",
-    "playChordSequence": "Play Chord Sequence",
-    "stopAll": "Stop",
-    "playBoth": "Play Both",
-    "generateRandomProgression": "Random Progression",
-    "generateRandomSongName": "Random Name",
-    "synthesizerTitle": "Synthesizer",
-    "synthesizerDesc": "Create and play musical patterns",
-    "songName": "Song Name",
-    "trackName": "Track Name",
-    "trackNamePlaceholder": "e.g., Piano, Melody, Bassline",
-    "trackNameHint": "Each track represents a different instrument or sound in your song",
-    "trackIllustration": "Think of tracks like layers in your musical arrangement - they'll play together to create your full song.",
-    "chords": {
-      "cMajor": "Cmaj7",
-      "dMinor": "Dmin7",
-      "eMinor": "Emin7",
-      "fMajor": "Fmaj7",
-      "g7sus4": "G7",
-      "aMinor": "Amin7",
-      "bm7b5": "Bm7b5"
+    "customSoundsDesc": "Create and save your own custom sound presets",
+    "sectionTitle": "Powerful Features",
+    "songBuilder": {
+      "title": "Song Builder",
+      "description": "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
+      "modalTitle": "Central Music Creation Hub",
+      "modalDescription": "The Song Builder is your central creative hub where all musical elements come together. Create, arrange, and refine your music with an intuitive interface designed for both beginners and professionals.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Professional Transport Controls with play, stop, record, loop functionality, BPM, meter, metronome and DAW sync",
+        "Interactive Timeline with grid snapping, zoom controls, and countoff capabilities",
+        "Multi-Track Management with per-track mute/solo, volume controls, and routing options",
+        "Comprehensive Arrangement View providing a holistic perspective of all voicings and patterns",
+        "Chord Progression Framework serving as the harmonic foundation for your compositions",
+        "Informative Keyboard Display showing chord voicings and voice leading"
+      ]
     },
-    "wizard": {
-      "step1": {
-        "title": "Step 1: Song Creation",
-        "description": "Start your creative journey by naming your musical piece.",
-        "namePlaceholder": "Enter a name for your song",
-        "nameHint": "This will be the title of your musical creation",
-        "illustration": "Every great piece of music starts with a name. What will you call yours?"
-      },
-      "step2": {
-        "title": "Step 2: Chord Progression",
-        "description": "Create the harmonic foundation for your song \"{songName}\".",
-        "chordSequence": "Chord Sequence",
-        "instruction": "Choose chords from the bank below and add them to your progression."
-      },
-      "step3": {
-        "title": "Step 3: Track Creation",
-        "description": "Name your first instrument track within \"{songName}\".",
-        "progression": "Your Progression:"
-      },
-      "step4": {
-        "title": "Step 4: Pattern Creation",
-        "description": "Create a melody pattern for your \"{trackName}\" track in \"{songName}\"."
-      },
-      "nextToProgression": "Continue to Chord Progression",
-      "nextToTrack": "Continue to Track Creation",
-      "nextToPattern": "Continue to Pattern Creation",
-      "backToSong": "Back to Song Creation",
-      "backToProgression": "Back to Chord Progression",
-      "backToTrack": "Back to Track Creation",
-      "finish": "Finish",
-      "congratsMessage": "Congratulations! You've just scratched the surface of Cymasphere's powerful music creation capabilities. Your song \"{songName}\" with the \"{trackName}\" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality."
+    "harmonyPalettes": {
+      "title": "Harmony Palettes",
+      "description": "Shape melodies and chords through an intuitive gestural interface for fluid musical expression.",
+      "modalTitle": "Visualize Chord Relationships",
+      "modalDescription": "Control harmony like a physical instrument with our intuitive gestural interface. Manipulate, arrange, and explore chord relationships through a tactile experience that makes complex music theory accessible and expressive.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Customizable Bank Arrangement to organize your chord collections through drag and drop",
+        "Drag and Drop Voicings directly from palettes to your progression timeline",
+        "Curated Collection Library with pre-selected scales and chord relationships",
+        "One-Click Transposition for instantly shifting keys across your entire composition",
+        "Voicing Parameter Dashboard for quick adjustments to chord characteristics",
+        "Custom Bank Creation for building your personal chord vocabulary"
+      ]
     },
-    "notes": {
-      "C": "C",
-      "D": "D",
-      "E": "E",
-      "F": "F",
-      "G": "G",
-      "A": "A",
-      "B": "B"
+    "patternEditor": {
+      "title": "Dynamic Pattern Editor",
+      "description": "Create intelligent musical patterns that adapt to chord changes in real time.",
+      "modalTitle": "Adaptive Musical Patterns",
+      "modalDescription": "The Dynamic Pattern Editor enables you to create complex musical motifs that respond intelligently to changes in your chord progressions. Build melodies and rhythmic sequences that maintain musical coherence even as the harmony shifts.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Intelligent Adaptation to chord progression changes in real-time",
+        "Advanced Piano Roll Interface with powerful editing tools",
+        "Context-Aware Note Entry with scale, chord, and voicing intelligence to prevent harmonic clashes",
+        "Dual Mode Operation with relative and absolute patterns for both contextual and fixed melodic content",
+        "Melodic Essence Extraction that captures the intent of any melody for reuse in different harmonic contexts"
+      ]
     },
-    "chordTypes": {
-      "major": "Major",
-      "minor": "Minor",
-      "diminished": "Diminished",
-      "augmented": "Augmented",
-      "seventh": "Seventh"
+    "voicingGenerator": {
+      "title": "Voicing Generator",
+      "description": "Transform chord progressions into expressive voicings with professional voice leading and harmonic control.",
+      "modalTitle": "Limitless Harmonic Possibilities",
+      "modalDescription": "The Voicing Generator transforms simple chord symbols into complex, expressive harmonic structures. Fine-tune every aspect of your chord voicings from global styles to individual note placement, creating professional arrangements that breathe life into your music.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Advanced Chord Editor with comprehensive scale and chord configuration tools for complete harmonic customization",
+        "Intelligent Voice Leading with automatic smooth transitions between chord changes based on proximity, common tones, and voice direction",
+        "Texture Controls including voicing width, density, inversions, octave distribution, and register placement",
+        "Harmonic Extensions with configurable 7ths, 9ths, 11ths and 13ths to add richness and color to your progressions",
+        "Multi-Level Settings allowing global changes to entire songs or focused edits to specific chord voicings with a single adjustment"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "Progression Timeline",
+      "description": "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
+      "modalTitle": "Master Chord Progression Creation",
+      "modalDescription": "The Progression Timeline streamlines the process of building, refining, and transforming chord progressions. With educational ghost tracks and powerful reharmonization tools, you can both learn from and reinvent your favorite music.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Intuitive Timeline Interface for visual progression building",
+        "Ghost Track Learning System that teaches progression structure",
+        "Real-time Reharmonization to transform existing progressions",
+        "Section-based Organization for structured composition",
+        "Drag and Drop Chord Arrangement for easily rearranging chords and adjusting their length by dragging boundaries",
+        "Display Toggling to show chord names as letters, Roman numerals, or solfege based on preference",
+        "Dynamic Pattern Updates where patterns and voicings automatically adapt when changes are made to the progression"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Advanced Voice Handling",
+      "description": "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
+      "modalTitle": "Complete Control Over Every Voice",
+      "modalDescription": "Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Dynamic Voice Count for arrangement flexibility - Add or remove voices for different textures",
+        "Smooth Voice Leading to control how voices move together - Options for parallel, contrary, or independent motion",
+        "Per-Voice MIDI Channel Routing for multi-instrument setups - Send voices to different instruments",
+        "Voice Range Constraints for instrument-appropriate writing - Set upper and lower limits for each voice",
+        "Designated Bass Channel for foundation control - Discrete controls for pedal tones and voice leading",
+        "Voice / Channel Matrix for effortless MIDI routing - Visually map voices to MIDI channels and instruments"
+      ]
     }
   },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "Start making music in three simple steps",
+    "step1Title": "Create",
+    "step1Description": "Set up your chord progression and choose your musical style",
+    "step2Title": "Customize",
+    "step2Description": "Fine-tune the parameters to match your creative vision",
+    "step3Title": "Export",
+    "step3Description": "Download your creation as MIDI or audio to use in your projects"
+  },
+  "pricing": {
+    "title": "Plans & Pricing",
+    "subtitle": "Flexible options to suit your needs",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "basic": {
+      "title": "Basic",
+      "price": "$9.99",
+      "description": "Perfect for beginners",
+      "features": [
+        "Access to core features",
+        "Export up to 5 songs per month",
+        "Standard quality audio export",
+        "Basic customer support"
+      ]
+    },
+    "pro": {
+      "title": "Pro",
+      "price": "$19.99",
+      "description": "For serious creators",
+      "features": [
+        "All Basic features",
+        "Unlimited exports",
+        "High-quality audio export",
+        "Priority customer support",
+        "Access to premium sound libraries"
+      ]
+    },
+    "enterprise": {
+      "title": "Enterprise",
+      "price": "Contact us",
+      "description": "For professional studios",
+      "features": [
+        "All Pro features",
+        "Custom integration options",
+        "Dedicated account manager",
+        "Training and onboarding",
+        "Commercial usage rights"
+      ]
+    },
+    "cta": "Get Started"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about Cymasphere",
+    "questions": [
+      {
+        "question": "What is Cymasphere?",
+        "answer": "Cymasphere is an AI-powered music creation tool that helps you generate professional-sounding music quickly and easily."
+      },
+      {
+        "question": "Do I need musical experience to use Cymasphere?",
+        "answer": "No, Cymasphere is designed to be accessible for users of all skill levels, from beginners to professionals."
+      },
+      {
+        "question": "What file formats can I export my music in?",
+        "answer": "You can export your creations as MIDI files, WAV audio, or MP3 files, depending on your subscription plan."
+      },
+      {
+        "question": "Is there a free trial available?",
+        "answer": "Yes, we offer a 14-day free trial so you can explore all the features before committing to a subscription."
+      },
+      {
+        "question": "Can I use Cymasphere with my existing DAW?",
+        "answer": "Absolutely! Cymasphere works as a standalone application or can be integrated with popular DAWs like Ableton Live, Logic Pro, FL Studio, and more."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have questions or feedback? We'd love to hear from you",
+    "nameLabel": "Your Name",
+    "emailLabel": "Email Address",
+    "messageLabel": "Message",
+    "submitButton": "Send Message",
+    "successMessage": "Thanks! Your message has been sent successfully.",
+    "errorMessage": "Oops! Something went wrong. Please try again."
+  },
   "footer": {
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "support": "Support",
     "copyright": "© 2023 Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"

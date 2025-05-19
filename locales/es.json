@@ -62,7 +62,97 @@
     "livePerformance": "Interpretación en Vivo",
     "livePerformanceDesc": "Toca y actúa con el sintetizador en tiempo real",
     "customSounds": "Sonidos Personalizados",
-    "customSoundsDesc": "Crea y guarda tus propios preajustes de sonido"
+    "customSoundsDesc": "Crea y guarda tus propios preajustes de sonido",
+    "sectionTitle": "Funciones Potentes",
+    "songBuilder": {
+      "title": "Creador de Canciones",
+      "description": "Combina pistas, progresiones y paletas de armonía en un espacio de trabajo intuitivo para una composición fluida.",
+      "modalTitle": "Centro de Creación Musical",
+      "modalDescription": "El Creador de Canciones es tu centro creativo donde todos los elementos musicales se unen. Crea, organiza y refina tu música con una interfaz intuitiva diseñada tanto para principiantes como para profesionales.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Controles de Transporte Profesionales con funciones de reproducción, parada, grabación, bucle, BPM, métrica, metrónomo y sincronización con DAW",
+        "Línea de Tiempo Interactiva con ajuste a cuadrícula, controles de zoom y capacidades de cuenta regresiva",
+        "Gestión Multi-Pista con silencio/solo por pista, controles de volumen y opciones de enrutamiento",
+        "Vista de Arreglo Completa que proporciona una perspectiva holística de todas las voces y patrones",
+        "Marco de Progresión de Acordes que sirve como base armónica para tus composiciones",
+        "Visualización de Teclado Informativa que muestra las voces de acordes y la conducción de voces"
+      ]
+    },
+    "harmonyPalettes": {
+      "title": "Paletas de Armonía",
+      "description": "Moldea melodías y acordes a través de una interfaz gestual intuitiva para una expresión musical fluida.",
+      "modalTitle": "Visualiza Relaciones de Acordes",
+      "modalDescription": "Controla la armonía como un instrumento físico con nuestra interfaz gestual intuitiva. Manipula, organiza y explora relaciones de acordes a través de una experiencia táctil que hace accesible y expresiva la compleja teoría musical.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Organización de Bancos Personalizable para organizar tus colecciones de acordes mediante arrastrar y soltar",
+        "Voces con Arrastrar y Soltar directamente desde las paletas a tu línea de tiempo de progresión",
+        "Biblioteca de Colecciones Seleccionadas con escalas preseleccionadas y relaciones de acordes",
+        "Transposición con Un Clic para cambiar instantáneamente las tonalidades en toda tu composición",
+        "Panel de Parámetros de Voces para ajustes rápidos de características de acordes",
+        "Creación de Bancos Personalizados para construir tu vocabulario personal de acordes"
+      ]
+    },
+    "patternEditor": {
+      "title": "Editor de Patrones Dinámicos",
+      "description": "Crea patrones musicales inteligentes que se adaptan a los cambios de acordes en tiempo real.",
+      "modalTitle": "Patrones Musicales Adaptativos",
+      "modalDescription": "El Editor de Patrones Dinámicos te permite crear motivos musicales complejos que responden de manera inteligente a los cambios en tus progresiones de acordes. Construye melodías y secuencias rítmicas que mantienen la coherencia musical incluso cuando cambia la armonía.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Adaptación Inteligente a cambios de progresión de acordes en tiempo real",
+        "Interfaz Avanzada de Piano Roll con potentes herramientas de edición",
+        "Entrada de Notas Consciente del Contexto con inteligencia de escala, acorde y voces para prevenir choques armónicos",
+        "Operación en Modo Dual con patrones relativos y absolutos para contenido melódico contextual y fijo",
+        "Extracción de Esencia Melódica que captura la intención de cualquier melodía para reutilizarla en diferentes contextos armónicos"
+      ]
+    },
+    "voicingGenerator": {
+      "title": "Generador de Voces",
+      "description": "Transforma progresiones de acordes en voces expresivas con conducción profesional de voces y control armónico.",
+      "modalTitle": "Posibilidades Armónicas Ilimitadas",
+      "modalDescription": "El Generador de Voces transforma simples símbolos de acordes en estructuras armónicas complejas y expresivas. Afina cada aspecto de tus voces de acordes, desde estilos globales hasta la colocación de notas individuales, creando arreglos profesionales que dan vida a tu música.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Editor de Acordes Avanzado con herramientas completas de configuración de escalas y acordes para personalización armónica completa",
+        "Conducción de Voces Inteligente con transiciones suaves automáticas entre cambios de acordes basadas en proximidad, tonos comunes y dirección de voces",
+        "Controles de Textura incluyendo anchura de voces, densidad, inversiones, distribución de octavas y colocación de registros",
+        "Extensiones Armónicas con 7mas, 9nas, 11nas y 13nas configurables para añadir riqueza y color a tus progresiones",
+        "Ajustes Multinivel que permiten cambios globales en canciones enteras o ediciones enfocadas en voces de acordes específicas con un solo ajuste"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "Línea de Tiempo de Progresión",
+      "description": "Aprende de pistas guía y transforma canciones existentes con potentes herramientas de rearmonización.",
+      "modalTitle": "Domina la Creación de Progresiones de Acordes",
+      "modalDescription": "La Línea de Tiempo de Progresión simplifica el proceso de construcción, refinamiento y transformación de progresiones de acordes. Con pistas guía educativas y potentes herramientas de rearmonización, puedes aprender de y reinventar tu música favorita.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Interfaz de Línea de Tiempo Intuitiva para construcción visual de progresiones",
+        "Sistema de Aprendizaje con Pistas Guía que enseña la estructura de progresiones",
+        "Rearmonización en Tiempo Real para transformar progresiones existentes",
+        "Organización Basada en Secciones para composición estructurada",
+        "Arreglo de Acordes con Arrastrar y Soltar para reorganizar fácilmente acordes y ajustar su duración arrastrando límites",
+        "Cambio de Visualización para mostrar nombres de acordes como letras, números romanos o solfeo según preferencia",
+        "Actualizaciones Dinámicas de Patrones donde patrones y voces se adaptan automáticamente cuando se realizan cambios en la progresión"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Manejo Avanzado de Voces",
+      "description": "Controla cantidad de voces, interacciones y enrutamiento MIDI para flexibilidad completa de arreglos.",
+      "modalTitle": "Control Completo Sobre Cada Voz",
+      "modalDescription": "El Manejo Avanzado de Voces proporciona control granular sobre cada voz individual en tu composición. Administra cantidad de voces, comportamiento, interacción y enrutamiento para crear arreglos complejos con completa libertad creativa.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Cantidad de Voces Dinámica para flexibilidad de arreglos - Añade o elimina voces para diferentes texturas",
+        "Conducción Suave de Voces para controlar cómo se mueven juntas las voces - Opciones para movimiento paralelo, contrario o independiente",
+        "Enrutamiento de Canal MIDI por Voz para configuraciones multi-instrumento - Envía voces a diferentes instrumentos",
+        "Restricciones de Rango de Voz para escritura apropiada al instrumento - Establece límites superiores e inferiores para cada voz",
+        "Canal de Bajo Designado para control de fundamentos - Controles discretos para tonos de pedal y conducción de voces",
+        "Matriz de Voz / Canal para enrutamiento MIDI sin esfuerzo - Mapea visualmente voces a canales MIDI e instrumentos"
+      ]
+    }
   },
   "synth": {
     "title": "Generador Inteligente de Voces de Acordes",

@@ -593,6 +593,14 @@ const NextHeader = () => {
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Define nav items outside of the render function to avoid recreating on each render
+  const navItems = [
+    { name: t("header.features"), path: "/#features" },
+    { name: t("header.howItWorks"), path: "/#how-it-works" },
+    { name: t("header.pricing"), path: "/#pricing" },
+    { name: t("header.faq"), path: "/#faq" },
+  ];
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -665,13 +673,6 @@ const NextHeader = () => {
     e.preventDefault();
     router.push("/signup");
   };
-
-  const navItems = [
-    { name: t("header.features"), path: "/#features" },
-    { name: t("header.howItWorks"), path: "/#how-it-works" },
-    { name: t("header.pricing"), path: "/#pricing" },
-    { name: t("header.faq"), path: "/#faq" },
-  ];
 
   const renderAuthSection = () => {
     if (user) {

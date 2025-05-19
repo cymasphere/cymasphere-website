@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
@@ -12,6 +12,8 @@ import {
   FaClock,
 } from "react-icons/fa";
 import dynamic from "next/dynamic";
+import { useTranslation } from "react-i18next";
+import { useParams } from "next/navigation";
 
 // Dynamically import modal to avoid SSR issues
 const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
@@ -203,147 +205,95 @@ const cardVariants = {
 const FeaturesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(0);
+  const { t, i18n } = useTranslation();
+  const params = useParams();
+  const currentLocale = (params?.locale as string) || 'en';
+
+  // Force re-render when language changes
+  const [, forceUpdate] = useState({});
+  useEffect(() => {
+    // This effect will run whenever the language changes
+    const handleLanguageChange = () => {
+      forceUpdate({});
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+    
+    // Cleanup
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [i18n]);
+
+  const formatDetailedDescription = (feature: string) => {
+    // Get the features array and ensure it's properly typed
+    const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
+    
+    // Create list items for each feature
+    const featuresList = featureItems.map((item: string) => {
+      const hasDash = item.includes(' - ');
+      const [title, description] = hasDash ? item.split(' - ', 2) : [item, ''];
+      return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
+    }).join('');
+
+    return `
+      <h3>${t(`features.${feature}.modalTitle`)}</h3>
+      <p>${t(`features.${feature}.modalDescription`)}</p>
+      
+      <h3 style="margin-bottom: 0.5rem;">${t(`features.${feature}.keyFeatures`)}</h3>
+      <ul style="margin-top: 0.5rem;">
+        ${featuresList}
+      </ul>
+    `;
+  };
 
   const featuresData = React.useMemo(
     () => [
       {
         icon: <FaLayerGroup />,
-        title: "Song Builder",
-        description:
-          "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
-        detailedDescription: `
-        <h3>Central Music Creation Hub</h3>
-        <p>The Song Builder is your central creative hub where all musical elements come together. Create, arrange, and refine your music with an intuitive interface designed for both beginners and professionals.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Professional Transport Controls</strong> with play, stop, record, loop functionality, BPM, meter, metronome and DAW sync</li>
-          <li><strong>Interactive Timeline</strong> with grid snapping, zoom controls, and countoff capabilities</li>
-          <li><strong>Multi-Track Management</strong> with per-track mute/solo, volume controls, and routing options</li>
-          <li><strong>Comprehensive Arrangement View</strong> providing a holistic perspective of all voicings and patterns</li>
-          <li><strong>Chord Progression Framework</strong> serving as the harmonic foundation for your compositions</li>
-          <li><strong>Informative Keyboard Display</strong> showing chord voicings and voice leading</li>
-        </ul>
-      `,
+        title: t("features.songBuilder.title"),
+        description: t("features.songBuilder.description"),
+        detailedDescription: formatDetailedDescription("songBuilder"),
         color: "#4A90E2",
       },
       {
         icon: <FaVolumeUp />,
-        title: "Harmony Palettes",
-        description:
-          "Shape melodies and chords through a tactile, gestural interface designed for fluid musical expression.",
-        detailedDescription: `
-        <h3>Visualize Chord Relationships</h3>
-        <p>Control harmony like a physical instrument with our intuitive gestural interface. Manipulate, arrange, and explore chord relationships through a tactile experience that makes complex music theory accessible and expressive.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Customizable Bank Arrangement</strong> to organize your chord collections through drag and drop</li>
-          <li><strong>Drag and Drop Voicings</strong> directly from palettes to your progression timeline</li>
-          <li><strong>Curated Collection Library</strong> with pre-selected scales and chord relationships</li>
-          <li><strong>One-Click Transposition</strong> for instantly shifting keys across your entire composition</li>
-          <li><strong>Voicing Parameter Dashboard</strong> for quick adjustments to chord characteristics</li>
-          <li><strong>Custom Bank Creation</strong> for building your personal chord vocabulary</li>
-        </ul>
-      `,
+        title: t("features.harmonyPalettes.title"),
+        description: t("features.harmonyPalettes.description"),
+        detailedDescription: formatDetailedDescription("harmonyPalettes"),
         color: "#50E3C2",
       },
       {
         icon: <FaWaveSquare />,
-        title: "Dynamic Pattern Editor",
-        description:
-          "Create intelligent musical patterns that adapt to chord changes in real-time.",
-        detailedDescription: `
-        <h3>Adaptive Musical Patterns</h3>
-        <p>The Dynamic Pattern Editor enables you to create complex musical motifs that respond intelligently to changes in your chord progressions. Build melodies and rhythmic sequences that maintain musical coherence even as the harmony shifts.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Intelligent Adaptation</strong> to chord progression changes in real-time</li>
-          <li><strong>Advanced Piano Roll Interface</strong> with powerful editing tools</li>
-          <li><strong>Context-Aware Note Entry</strong> with scale, chord, and voicing intelligence to prevent harmonic clashes</li>
-          <li><strong>Intuitive Note Manipulation</strong> with easy selection, dragging, copying, and transformation tools</li>
-          <li><strong>Dual Mode Operation</strong> with relative and absolute patterns for both contextual and fixed melodic content</li>
-          <li><strong>Melodic Essence Extraction</strong> that captures the intent of any melody for reuse in different harmonic contexts</li>
-        </ul>
-      `,
+        title: t("features.patternEditor.title"),
+        description: t("features.patternEditor.description"),
+        detailedDescription: formatDetailedDescription("patternEditor"),
         color: "#F5A623",
       },
       {
         icon: <FaMusic />,
-        title: "Voicing Generator",
-        description:
-          "Transform chord progressions into rich, expressive voicings with professional-grade voice leading and harmonic control.",
-        detailedDescription: `
-        <h3>Limitless Harmonic Possibilities</h3>
-        <p>The Voicing Generator transforms simple chord symbols into complex, expressive harmonic structures. Fine-tune every aspect of your chord voicings from global styles to individual note placement, creating professional arrangements that breathe life into your music.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Advanced Chord Editor</strong> with comprehensive scale and chord configuration tools for complete harmonic customization</li>
-          <li><strong>Intelligent Voice Leading</strong> with automatic smooth transitions between chord changes based on proximity, common tones, and voice direction</li>
-          <li><strong>Texture Controls</strong> including voicing width, density, inversions, octave distribution, and register placement</li>
-          <li><strong>Harmonic Extensions</strong> with configurable 7ths, 9ths, 11ths and 13ths to add richness and color to your progressions</li>
-          <li><strong>Multi-Level Settings</strong> allowing global changes to entire songs or focused edits to specific chord voicings with a single adjustment</li>
-        </ul>
-      `,
+        title: t("features.voicingGenerator.title"),
+        description: t("features.voicingGenerator.description"),
+        detailedDescription: formatDetailedDescription("voicingGenerator"),
         color: "#D0021B",
       },
       {
         icon: <FaClock />,
-        title: "Progression Timeline",
-        description:
-          "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
-        detailedDescription: `
-        <h3>Master Chord Progression Creation</h3>
-        <p>The Progression Timeline streamlines the process of building, refining, and transforming chord progressions. With educational ghost tracks and powerful reharmonization tools, you can both learn from and reinvent your favorite music.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Intuitive Timeline Interface</strong> for visual progression building</li>
-          <li><strong>Ghost Track Learning System</strong> that teaches progression structure</li>
-          <li><strong>Real-time Reharmonization</strong> to transform existing progressions</li>
-          <li><strong>Section-based Organization</strong> for structured composition</li>
-          <li><strong>Drag and Drop Chord Arrangement</strong> for easily rearranging chords and adjusting their length by dragging boundaries</li>
-          <li><strong>Display Toggling</strong> to show chord names as letters, Roman numerals, or solfege based on preference</li>
-          <li><strong>Dynamic Pattern Updates</strong> where patterns and voicings automatically adapt when changes are made to the progression</li>
-        </ul>
-      `,
+        title: t("features.progressionTimeline.title"),
+        description: t("features.progressionTimeline.description"),
+        detailedDescription: formatDetailedDescription("progressionTimeline"),
         color: "#9013FE",
       },
       {
         icon: <FaPuzzlePiece />,
-        title: "Advanced Voice Handling",
-        description:
-          "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
-        detailedDescription: `
-        <h3>Complete Control Over Every Voice</h3>
-        <p>Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.</p>
-        
-        <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-        <ul style="margin-top: 0.5rem;">
-          <li><strong>Dynamic Voice Count</strong> for arrangement flexibility</li>
-          <li><strong>Voice Interaction Rules</strong> to control how voices move together</li>
-          <li><strong>Per-Voice MIDI Channel Routing</strong> for multi-instrument setups</li>
-          <li><strong>Voice Range Constraints</strong> for instrument-appropriate writing</li>
-          <li><strong>Voice Activity Patterns</strong> for creating rhythmic interplay</li>
-          <li><strong>Custom Voice Behaviors</strong> for unique compositional techniques</li>
-        </ul>
-      `,
-        color: "#7ED321",
+        title: t("features.voiceHandling.title"),
+        description: t("features.voiceHandling.description"),
+        detailedDescription: formatDetailedDescription("voiceHandling"),
+        color: "#4CAF50",
       },
     ],
-    []
+    [t, currentLocale, i18n.language]
   );
-
-  const openModal = (index: number) => {
-    setSelectedFeature(index);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-  };
 
   return (
     <FeaturesContainer id="features">
@@ -355,7 +305,7 @@ const FeaturesSection = () => {
           viewport={{ once: true, amount: 0.2 }}
           style={{ willChange: "opacity, transform" }}
         >
-          <SectionTitle>Powerful Features</SectionTitle>
+          <SectionTitle>{t("features.sectionTitle")}</SectionTitle>
         </motion.div>
 
         <FeaturesGrid>
@@ -365,10 +315,12 @@ const FeaturesSection = () => {
               custom={index}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, amount: 0.1 }}
+              viewport={{ once: true, margin: "-50px" }}
               variants={cardVariants}
-              onClick={() => openModal(index)}
-              style={{ willChange: "opacity, transform" }}
+              onClick={() => {
+                setSelectedFeature(index);
+                setModalOpen(true);
+              }}
             >
               <FeatureIcon>{feature.icon}</FeatureIcon>
               <FeatureTitle>{feature.title}</FeatureTitle>
@@ -379,10 +331,10 @@ const FeaturesSection = () => {
       </FeaturesContent>
 
       <FeatureModal
-        isOpen={modalOpen}
-        onClose={closeModal}
-        initialIndex={selectedFeature}
         features={featuresData}
+        initialIndex={selectedFeature}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
       />
     </FeaturesContainer>
   );

@@ -55,14 +55,105 @@
     }
   },
   "features": {
-    "title": "Features",
-    "subtitle": "Discover what Cymasphere can do for you",
-    "aiComposition": "AI Composition",
-    "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
-    "livePerformance": "Live Performance",
-    "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
-    "customSounds": "Custom Sounds",
-    "customSoundsDesc": "Create and save your own custom sound presets"
+    "title": "Fonctionnalités",
+    "subtitle": "Découvrez ce que Cymasphere peut faire pour vous",
+    "aiComposition": "Composition par IA",
+    "aiCompositionDesc": "Générez de la musique en un clic grâce à notre IA avancée",
+    "livePerformance": "Performance en Direct",
+    "livePerformanceDesc": "Jouez et performez avec le synthétiseur en temps réel",
+    "customSounds": "Sons Personnalisés",
+    "customSoundsDesc": "Créez et sauvegardez vos propres préréglages sonores",
+    "sectionTitle": "Fonctionnalités Puissantes",
+    "songBuilder": {
+      "title": "Créateur de Chansons",
+      "description": "Combinez pistes, progressions et palettes d'harmonie dans un espace de travail intuitif pour une composition fluide.",
+      "modalTitle": "Créateur de Chansons - L'espace de travail central",
+      "modalDescription": "Le Créateur de Chansons est le cœur de Cymasphere, où vous pouvez organiser et combiner tous les éléments de votre musique. Voyez comment vos pistes, progressions et palettes d'harmonie s'intègrent pour créer une composition complète.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Interface intuitive - Organisation visuelle claire de tous les éléments de votre chanson",
+        "Combinaison flexible - Associez librement pistes, accords, et motifs",
+        "Outils d'arrangement - Manipulez facilement la structure de votre morceau",
+        "Compatibilité DAW - Exportez facilement votre travail vers d'autres plateformes",
+        "Contrôle du tempo - Ajustez la vitesse et le rythme en temps réel",
+        "Organisation par sections - Créez des couplets, refrains et ponts distincts"
+      ]
+    },
+    "harmonyPalettes": {
+      "title": "Palettes d'Harmonie",
+      "description": "Modelez mélodies et accords grâce à une interface gestuelle conçue pour une expression musicale fluide.",
+      "modalTitle": "Palettes d'Harmonie - Expression musicale intuitive",
+      "modalDescription": "Les Palettes d'Harmonie vous offrent une approche tactile et visuelle pour explorer et façonner votre musique. Utilisez des gestes intuitifs pour créer des progressions d'accords et des mélodies dans un environnement visuellement riche.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Interface gestuelle - Manipulez les accords et notes avec des mouvements naturels",
+        "Visualisation harmonique - Voyez les relations entre accords et tonalités",
+        "Préréglages de styles - Adaptez rapidement l'ambiance musicale à différents genres",
+        "Suggestions basées sur l'IA - Recevez des recommandations harmoniques intelligentes",
+        "Modulation facile - Changez de tonalité en toute simplicité",
+        "Analyse musicale - Comprendre visuellement les fondements théoriques de votre musique"
+      ]
+    },
+    "patternEditor": {
+      "title": "Éditeur de Motifs Dynamiques",
+      "description": "Créez des motifs musicaux intelligents qui s'adaptent aux changements d'accords en temps réel.",
+      "modalTitle": "Éditeur de Motifs Dynamiques - Adaptation en temps réel",
+      "modalDescription": "L'Éditeur de Motifs Dynamiques redéfinit la création de motifs musicaux. Contrairement aux séquenceurs traditionnels, vos motifs s'adaptent intelligemment aux accords et progressions, permettant une musique cohérente quelle que soit l'harmonie sous-jacente.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Adaptation harmonique - Les notes s'ajustent automatiquement aux changements d'accords",
+        "Motifs relatifs - Créez en fonction de degrés d'échelle plutôt que de notes fixes",
+        "Variations rythmiques - Modifiez dynamiquement le timing et la dynamique",
+        "Règles musicales intelligentes - Respecte automatiquement les principes théoriques",
+        "Préréglages par genre - Accédez à des modèles rythmiques spécifiques au style",
+        "Édition graphique - Interface visuelle intuitive pour la création de motifs"
+      ]
+    },
+    "voicingGenerator": {
+      "title": "Générateur de Voicings",
+      "description": "Transformez les progressions d'accords en voicings riches et expressifs avec une conduite des voix professionnelle.",
+      "modalTitle": "Générateur de Voicings - Richesse harmonique",
+      "modalDescription": "Le Générateur de Voicings transforme des progressions d'accords simples en arrangements harmoniques riches et nuancés. Obtenez instantanément une conduite des voix professionnelle avec un contrôle précis sur le style et la texture harmonique.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Conduite des voix professionnelle - Mouvements de notes fluides et naturels entre accords",
+        "Styles multiples - Explorez jazz, classique, pop, et d'autres approches harmoniques",
+        "Tension contrôlée - Ajustez la complexité et la dissonance des voicings",
+        "Tessiture adaptative - Optimisez les registres pour différents instruments",
+        "Inversions intelligentes - Positionnement automatique des notes pour une meilleure sonorité",
+        "Voicings personnalisés - Sauvegardez vos voicings préférés pour une utilisation future"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "Chronologie de Progression",
+      "description": "Apprenez des pistes guides et transformez des chansons existantes avec des outils puissants de réharmonisation.",
+      "modalTitle": "Chronologie de Progression - Structure harmonique temporelle",
+      "modalDescription": "La Chronologie de Progression vous permet de visualiser et manipuler la structure harmonique de votre musique dans le temps. Apprenez de chansons existantes, réharmonisez des progressions, et explorez des variations harmoniques avec précision.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Visualisation temporelle - Représentation claire des changements d'accords dans le temps",
+        "Pistes guides - Apprenez des progressions de chansons existantes",
+        "Outils de réharmonisation - Transformez des progressions existantes avec des substitutions",
+        "Suggestions d'accords - Recevez des recommandations intelligentes pour les progressions",
+        "Marqueurs de section - Organisez votre morceau avec des repères structurels",
+        "Analyse fonctionnelle - Comprenez le rôle de chaque accord dans la progression"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Gestion Avancée des Voix",
+      "description": "Contrôlez le nombre de voix, les interactions et le routage MIDI pour une flexibilité totale d'arrangement.",
+      "modalTitle": "Gestion Avancée des Voix - Contrôle complet de l'arrangement",
+      "modalDescription": "La Gestion Avancée des Voix vous donne un contrôle précis sur tous les aspects des voix individuelles dans votre musique. Définissez le nombre de voix, leurs interactions, leur routage et bien plus pour une flexibilité d'arrangement sans précédent.",
+      "keyFeatures": "Caractéristiques clés",
+      "features": [
+        "Configuration flexible des voix - Contrôlez précisément le nombre et le type de voix",
+        "Routage MIDI intelligent - Dirigez différentes voix vers différents canaux et instruments",
+        "Règles d'interaction - Définissez comment les voix interagissent entre elles",
+        "Contrepoint automatique - Créez des lignes mélodiques complémentaires",
+        "Filtrage de notes - Limitez les voix à des registres ou notes spécifiques",
+        "Configuration d'ensemble - Prédéfinissez des arrangements pour différentes formations"
+      ]
+    }
   },
   "synth": {
     "title": "Intelligent Chord Voicing Generator",
