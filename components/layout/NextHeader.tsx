@@ -14,11 +14,12 @@ import {
   FaRegCreditCard,
 } from "react-icons/fa";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
+import { useTranslation } from "react-i18next";
 
 // Import the NextLanguageSelector instead of DynamicLanguageSelector
 import NextLanguageSelector from "../i18n/NextLanguageSelector";
@@ -583,6 +584,8 @@ const menuItemVariants = {
 const NextHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -664,10 +667,10 @@ const NextHeader = () => {
   };
 
   const navItems = [
-    { name: "Features", path: "/#features" },
-    { name: "How It Works", path: "/#how-it-works" },
-    { name: "Pricing", path: "/#pricing" },
-    { name: "FAQ", path: "/#faq" },
+    { name: t("header.features"), path: "/#features" },
+    { name: t("header.howItWorks"), path: "/#how-it-works" },
+    { name: t("header.pricing"), path: "/#pricing" },
+    { name: t("header.faq"), path: "/#faq" },
   ];
 
   const renderAuthSection = () => {
@@ -682,12 +685,12 @@ const NextHeader = () => {
             <Link href="/dashboard" passHref legacyBehavior>
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                 <FaUser />
-                My Account
+                {t("common.myAccount")}
               </UserMenuItem>
             </Link>
             <UserMenuLogout onClick={handleLogout}>
               <FaSignOutAlt />
-              Logout
+              {t("common.logout")}
             </UserMenuLogout>
           </UserDropdown>
         </UserMenuContainer>
@@ -696,9 +699,9 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>Login</AuthButton>
+        <AuthButton onClick={handleLoginClick}>{t("common.login")}</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
-          Sign Up
+          {t("common.signUp")}
         </AuthButton>
       </>
     );
@@ -788,7 +791,7 @@ const NextHeader = () => {
         variants={fadeIn}
       >
         <MobileMenuContent>
-          <MobileNavTitle>Navigation</MobileNavTitle>
+          <MobileNavTitle>{t("common.navigation")}</MobileNavTitle>
           <MobileNavLinks>
             {navItems.map((item, index) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
@@ -824,7 +827,7 @@ const NextHeader = () => {
                     animate={menuOpen ? "visible" : "hidden"}
                   >
                     <FaUser />
-                    My Account
+                    {t("common.myAccount")}
                   </MobileNavLink>
                 </Link>
                 <MobileNavLink
@@ -839,7 +842,7 @@ const NextHeader = () => {
                   animate={menuOpen ? "visible" : "hidden"}
                 >
                   <FaSignOutAlt />
-                  Logout
+                  {t("common.logout")}
                 </MobileNavLink>
               </MobileUserSection>
             )}
@@ -856,7 +859,7 @@ const NextHeader = () => {
                   handleLoginClick(e);
                 }}
               >
-                Login
+                {t("common.login")}
               </AuthButton>
               <AuthButton
                 $isMobile
@@ -866,7 +869,7 @@ const NextHeader = () => {
                   handleSignupClick(e);
                 }}
               >
-                Sign Up
+                {t("common.signUp")}
               </AuthButton>
             </MobileAuthSection>
           )}

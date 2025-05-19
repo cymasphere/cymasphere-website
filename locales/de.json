@@ -6,7 +6,12 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "loading": "Wird geladen...",
-    "learnMore": "Mehr erfahren"
+    "learnMore": "Mehr erfahren",
+    "login": "Anmelden",
+    "signUp": "Registrieren",
+    "logout": "Abmelden",
+    "myAccount": "Mein Konto",
+    "navigation": "Navigation"
   },
   "header": {
     "home": "Startseite",

@@ -6,7 +6,12 @@
     "save": "Save",
     "cancel": "Cancel",
     "loading": "Loading...",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "myAccount": "My Account",
+    "navigation": "Navigation"
   },
   "header": {
     "home": "Home",

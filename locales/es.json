@@ -6,16 +6,21 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "loading": "Cargando...",
-    "learnMore": "Más Información"
+    "learnMore": "Más Información",
+    "login": "Ingresar",
+    "signUp": "Registrarse",
+    "logout": "Salir",
+    "myAccount": "Mi Cuenta",
+    "navigation": "Navegación"
   },
   "header": {
     "home": "Inicio",
-    "features": "Características",
+    "features": "Funciones",
     "howItWorks": "Cómo Funciona",
     "testimonials": "Testimonios",
-    "demo": "Demostración",
+    "demo": "Demo",
     "pricing": "Precios",
-    "faq": "Preguntas Frecuentes",
+    "faq": "Preguntas",
     "contact": "Contacto",
     "download": "Descargar",
     "tryDemo": "Probar Demo"
