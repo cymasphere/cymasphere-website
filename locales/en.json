@@ -300,10 +300,14 @@
   "contact": {
     "title": "Get in Touch",
     "subtitle": "Have questions or feedback? We'd love to hear from you",
+    "description": "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible.",
+    "emailInfo": "You can also reach us directly at",
     "nameLabel": "Your Name",
     "emailLabel": "Email Address",
+    "subjectLabel": "Subject",
     "messageLabel": "Message",
     "submitButton": "Send Message",
+    "sending": "Sending...",
     "successMessage": "Thanks! Your message has been sent successfully.",
     "errorMessage": "Oops! Something went wrong. Please try again."
   },

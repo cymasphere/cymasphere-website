@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 const ContactContainer = styled.section`
   padding: 100px 20px;
@@ -153,6 +155,29 @@ interface FormState {
 }
 
 const ContactSection = () => {
+  const { t, i18n } = useTranslation();
+  
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
   const [formState, setFormState] = useState<FormState>({
     name: "",
     email: "",
@@ -213,7 +238,7 @@ const ContactSection = () => {
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      alert("An error occurred while submitting the form. Please try again.");
+      alert(t("contact.errorMessage", "An error occurred while submitting the form. Please try again."));
     } finally {
       // Reset the submitting state
       setIsSubmitting(false);
@@ -229,7 +254,7 @@ const ContactSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <SectionTitle>Get In Touch</SectionTitle>
+          <SectionTitle>{t("contact.title", "Get In Touch")}</SectionTitle>
         </motion.div>
 
         <ContactFlexContainer>
@@ -240,16 +265,12 @@ const ContactSection = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true, amount: 0.2 }}
             >
-              <InfoTitle>Have questions about Cymasphere?</InfoTitle>
+              <InfoTitle>{t("contact.subtitle", "Have questions or feedback? We'd love to hear from you")}</InfoTitle>
               <InfoText>
-                We&apos;d love to hear from you! Whether you have questions
-                about features, pricing, or just want to share your feedback,
-                our team is here to help. Fill out the form and we&apos;ll get
-                back to you as soon as possible.
+                {t("contact.description", "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible.")}
               </InfoText>
               <InfoText>
-                You can also reach us directly at{" "}
-                <strong>support@cymasphere.com</strong>
+                {t("contact.emailInfo", "You can also reach us directly at")} <strong>support@cymasphere.com</strong>
               </InfoText>
             </motion.div>
           </ContactInfo>
@@ -267,12 +288,12 @@ const ContactSection = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                Thank you for your message! We&apos;ll get back to you soon.
+                {t("contact.successMessage", "Thank you for your message! We'll get back to you soon.")}
               </SuccessMessage>
             )}
 
             <FormGroup>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t("contact.nameLabel", "Your Name")}</Label>
               <Input
                 type="text"
                 id="name"
@@ -284,7 +305,7 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("contact.emailLabel", "Email Address")}</Label>
               <Input
                 type="email"
                 id="email"
@@ -296,7 +317,7 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="subject">Subject</Label>
+              <Label htmlFor="subject">{t("contact.subjectLabel", "Subject")}</Label>
               <Input
                 type="text"
                 id="subject"
@@ -308,7 +329,7 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="message">Message</Label>
+              <Label htmlFor="message">{t("contact.messageLabel", "Message")}</Label>
               <TextArea
                 id="message"
                 name="message"
@@ -319,7 +340,7 @@ const ContactSection = () => {
             </FormGroup>
 
             <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Sending..." : "Send Message"}
+              {isSubmitting ? t("contact.sending", "Sending...") : t("contact.submitButton", "Send Message")}
             </SubmitButton>
           </ContactForm>
         </ContactFlexContainer>

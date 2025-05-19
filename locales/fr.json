@@ -358,5 +358,19 @@
     "processing": "Traitement en cours",
     "upgradeNow": "Mettre à Niveau",
     "buyNow": "Acheter Maintenant"
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "subtitle": "Des questions ou des commentaires ? Nous serions ravis de vous entendre",
+    "description": "Nous aimerions avoir de vos nouvelles ! Que vous ayez des questions sur les fonctionnalités, les tarifs ou que vous souhaitiez simplement partager vos commentaires, notre équipe est là pour vous aider. Remplissez le formulaire et nous vous répondrons dans les plus brefs délais.",
+    "emailInfo": "Vous pouvez également nous contacter directement à",
+    "nameLabel": "Votre Nom",
+    "emailLabel": "Adresse E-mail",
+    "subjectLabel": "Sujet",
+    "messageLabel": "Message",
+    "submitButton": "Envoyer le Message",
+    "sending": "Envoi en cours...",
+    "successMessage": "Merci ! Votre message a été envoyé avec succès.",
+    "errorMessage": "Oups ! Une erreur s'est produite. Veuillez réessayer."
   }
 } 

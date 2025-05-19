@@ -358,5 +358,19 @@
     "processing": "Verarbeitung",
     "upgradeNow": "Jetzt upgraden",
     "buyNow": "Jetzt kaufen"
+  },
+  "contact": {
+    "title": "Kontakt aufnehmen",
+    "subtitle": "Haben Sie Fragen oder Feedback? Wir würden uns freuen, von Ihnen zu hören",
+    "description": "Wir freuen uns, von Ihnen zu hören! Ob Sie Fragen zu Funktionen, Preisen haben oder einfach Ihr Feedback teilen möchten, unser Team ist für Sie da. Füllen Sie das Formular aus und wir werden uns so schnell wie möglich bei Ihnen melden.",
+    "emailInfo": "Sie können uns auch direkt kontaktieren unter",
+    "nameLabel": "Ihr Name",
+    "emailLabel": "E-Mail-Adresse",
+    "subjectLabel": "Betreff",
+    "messageLabel": "Nachricht",
+    "submitButton": "Nachricht senden",
+    "sending": "Wird gesendet...",
+    "successMessage": "Vielen Dank! Ihre Nachricht wurde erfolgreich gesendet.",
+    "errorMessage": "Hoppla! Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
   }
 } 
