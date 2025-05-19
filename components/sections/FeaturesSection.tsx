@@ -227,15 +227,19 @@ const FeaturesSection = () => {
 
   const formatDetailedDescription = (feature: string) => {
     // Get the features array and ensure it's properly typed
-    const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
+    const featureItems = t(`features.${feature}.features`, { returnObjects: true });
     
-    // Create list items for each feature
-    const featuresList = featureItems.map((item: string) => {
-      const hasDash = item.includes(' - ');
-      const [title, description] = hasDash ? item.split(' - ', 2) : [item, ''];
-      return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
-    }).join('');
-
+    // Ensure featureItems is an array before using map
+    const featuresList = Array.isArray(featureItems) 
+      ? featureItems.map((item: any) => {
+          // Ensure item is a string
+          const itemStr = typeof item === 'string' ? item : String(item);
+          const hasDash = itemStr.includes(' - ');
+          const [title, description] = hasDash ? itemStr.split(' - ', 2) : [itemStr, ''];
+          return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
+        }).join('')
+      : ''; // Return empty string if not an array
+    
     return `
       <h3>${t(`features.${feature}.modalTitle`)}</h3>
       <p>${t(`features.${feature}.modalDescription`)}</p>
