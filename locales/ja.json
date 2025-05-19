@@ -297,9 +297,20 @@
     }
   },
   "footer": {
-    "copyright": "© 2023 Cymasphere. すべての権利を保有。",
+    "product": "製品",
+    "company": "企業情報",
+    "legal": "法的情報",
+    "support": "サポート",
+    "copyright": "© {{year}} Cymasphere. すべての権利を保有。",
     "privacyPolicy": "プライバシーポリシー",
-    "termsOfService": "利用規約"
+    "termsOfService": "利用規約",
+    "description": "Cymasphereは、プロデューサー、作曲家、ミュージシャン、教育者、学生のためのインタラクティブな音楽作曲ツールです。",
+    "navigation": "ナビゲーション",
+    "account": "アカウント",
+    "accountDashboard": "アカウントダッシュボード",
+    "aboutUs": "会社概要",
+    "termsConditions": "利用規約と条件",
+    "byNNAudio": "NNAudio製"
   },
   "language": {
     "en": "English",

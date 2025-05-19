@@ -316,9 +316,16 @@
     "company": "Company",
     "legal": "Legal",
     "support": "Support",
-    "copyright": "© 2023 Cymasphere. All rights reserved.",
+    "copyright": "© {{year}} Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "description": "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.",
+    "navigation": "Navigation",
+    "account": "Account",
+    "accountDashboard": "Account Dashboard",
+    "aboutUs": "About Us",
+    "termsConditions": "Terms & Conditions",
+    "byNNAudio": "by NNAudio"
   },
   "language": {
     "en": "English",

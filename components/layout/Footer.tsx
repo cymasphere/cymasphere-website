@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Link from "next/link";
 import {
@@ -12,6 +12,7 @@ import LegalModal from "@/components/modals/LegalModal";
 import AboutUsModal from "@/components/modals/AboutUsModal";
 import EnergyBall from "@/components/common/EnergyBall";
 import { playLydianMaj7Chord } from "@/utils/audioUtils";
+import i18next from "i18next";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);
@@ -211,9 +212,36 @@ const CopyrightLink = styled.a`
 `;
 
 const Footer = () => {
+  // Place all hooks at the top of the component in a consistent order
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
+  // Use i18next.t directly instead of the useTranslation hook
+  const t = (key: string, defaultValue?: string, options?: any) => {
+    return i18next.t(key, defaultValue ? { defaultValue, ...options } : options);
+  };
 
   return (
     <FooterContainer>
@@ -239,10 +267,9 @@ const Footer = () => {
               </LogoText>
             </FooterLogo>
           </Link>
-          <BrandCredit href="https://nnaud.io">by NNAudio</BrandCredit>
+          <BrandCredit href="https://nnaud.io">{t("footer.byNNAudio", "by NNAudio")}</BrandCredit>
           <FooterDescription>
-            Cymasphere is an interactive music compositional tool for producers,
-            composers, performing musicians, educators, and students.
+            {t("footer.description", "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.")}
           </FooterDescription>
           <SocialLinks>
             <SocialIcon
@@ -289,61 +316,61 @@ const Footer = () => {
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Navigation</FooterHeading>
+          <FooterHeading>{t("footer.navigation", "Navigation")}</FooterHeading>
           <Link href="/" passHref legacyBehavior>
-            <FooterLink>Home</FooterLink>
+            <FooterLink>{t("header.home", "Home")}</FooterLink>
           </Link>
           <FooterAnchor as="a" href="#features">
-            Features
+            {t("header.features", "Features")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#how-it-works">
-            How It Works
+            {t("header.howItWorks", "How It Works")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#pricing">
-            Pricing
+            {t("header.pricing", "Pricing")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#faq">
-            FAQ
+            {t("header.faq", "FAQ")}
           </FooterAnchor>
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Account</FooterHeading>
+          <FooterHeading>{t("footer.account", "Account")}</FooterHeading>
           <Link href="/login" passHref legacyBehavior>
-            <FooterLink>Login</FooterLink>
+            <FooterLink>{t("common.login", "Login")}</FooterLink>
           </Link>
           <Link href="/signup" passHref legacyBehavior>
-            <FooterLink>Sign Up</FooterLink>
+            <FooterLink>{t("common.signUp", "Sign Up")}</FooterLink>
           </Link>
           <Link href="/dashboard" passHref legacyBehavior>
-            <FooterLink>Account Dashboard</FooterLink>
+            <FooterLink>{t("footer.accountDashboard", "Account Dashboard")}</FooterLink>
           </Link>
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Company</FooterHeading>
+          <FooterHeading>{t("footer.company", "Company")}</FooterHeading>
           <FooterButton onClick={() => setShowAboutModal(true)}>
-            About Us
+            {t("footer.aboutUs", "About Us")}
           </FooterButton>
           <FooterButton onClick={() => setShowPrivacyModal(true)}>
-            Privacy Policy
+            {t("footer.privacyPolicy", "Privacy Policy")}
           </FooterButton>
           <FooterButton onClick={() => setShowTermsModal(true)}>
-            Terms & Conditions
+            {t("footer.termsConditions", "Terms & Conditions")}
           </FooterButton>
         </FooterColumn>
       </FooterContent>
 
       <Copyright>
         <p>
-          &copy; {new Date().getFullYear()} Cymasphere. All rights reserved.
+          {t("footer.copyright", "© {{year}} Cymasphere. All rights reserved.", { year: new Date().getFullYear() })}
           <span>
             <CopyrightLink
               href="https://nnaud.io"
               target="_blank"
               rel="noopener noreferrer"
             >
-              by NNAudio
+              {t("footer.byNNAudio", "by NNAudio")}
             </CopyrightLink>
           </span>
         </p>

@@ -297,9 +297,20 @@
     }
   },
   "footer": {
-    "copyright": "© 2023 Cymasphere. All rights reserved.",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "product": "Produit",
+    "company": "Entreprise",
+    "legal": "Mentions Légales",
+    "support": "Support",
+    "copyright": "© {{year}} Cymasphere. Tous droits réservés.",
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions d'Utilisation",
+    "description": "Cymasphere est un outil interactif de composition musicale pour les producteurs, compositeurs, musiciens, éducateurs et étudiants.",
+    "navigation": "Navigation",
+    "account": "Compte",
+    "accountDashboard": "Tableau de Bord",
+    "aboutUs": "À Propos de Nous",
+    "termsConditions": "Termes et Conditions",
+    "byNNAudio": "par NNAudio"
   },
   "language": {
     "en": "English",
