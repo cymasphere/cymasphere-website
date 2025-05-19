@@ -221,46 +221,55 @@
     }
   },
   "pricing": {
-    "title": "Plans & Pricing",
-    "subtitle": "Flexible options to suit your needs",
+    "title": "Pricing & Plans",
+    "subtitle": "Flexible options to fit your needs",
+    "simpleTransparent": "Simple, Transparent Pricing",
+    "chooseOption": "Choose the billing option that works best for you.",
+    "allFeatures": "All options include full access to all features.",
     "monthly": "Monthly",
     "yearly": "Yearly",
-    "basic": {
-      "title": "Basic",
-      "price": "$9.99",
-      "description": "Perfect for beginners",
-      "features": [
-        "Access to core features",
-        "Export up to 5 songs per month",
-        "Standard quality audio export",
-        "Basic customer support"
-      ]
+    "lifetime": "Lifetime",
+    "mostFlexible": "Most Flexible",
+    "payMonthly": "Pay month-to-month, cancel anytime",
+    "save": "Save",
+    "withYearlyBilling": "with yearly billing",
+    "bestValue": "Best Value",
+    "oneTimePayment": "One-time payment, lifetime access",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "billed": "billed annually",
+    "oneTimePurchase": "one-time purchase",
+    "proSolution": "Complete solution for music producers",
+    "allPlansInclude": "All Plans Include:",
+    "features": [
+      "Song Builder with Multi-Track Management",
+      "Intelligent Pattern Editor & Chord Adaptation",
+      "Gestural Harmony Palette Interface",
+      "Advanced Voice Leading & Chord Voicings",
+      "Interactive Chord Progression Timeline",
+      "Complete Voice and Range Control",
+      "Standalone App & DAW Plugin Support",
+      "Real-Time Chord Reharmonization Tools",
+      "Comprehensive Arrangement View",
+      "Custom Voicing Generation Engine",
+      "Cloud Storage & Project Backups",
+      "Premium Support & All Future Updates"
+    ],
+    "freeTrial": {
+      "title": "Try FREE for up to 14 days",
+      "description": "Experience all premium features with two trial options.",
+      "options": "Choose 7 days with no card or 14 days with card on file.",
+      "chooseFree": "Choose your free trial option:",
+      "withCard": "14-day trial - Add card on file",
+      "noCharge": "(won't be charged until trial ends)",
+      "noCard": "7-day trial - No credit card required",
+      "startNow": "Start Now",
+      "startTrial": "Start Trial",
+      "or": "or"
     },
-    "pro": {
-      "title": "Pro",
-      "price": "$19.99",
-      "description": "For serious creators",
-      "features": [
-        "All Basic features",
-        "Unlimited exports",
-        "High-quality audio export",
-        "Priority customer support",
-        "Access to premium sound libraries"
-      ]
-    },
-    "enterprise": {
-      "title": "Enterprise",
-      "price": "Contact us",
-      "description": "For professional studios",
-      "features": [
-        "All Pro features",
-        "Custom integration options",
-        "Dedicated account manager",
-        "Training and onboarding",
-        "Commercial usage rights"
-      ]
-    },
-    "cta": "Get Started"
+    "processing": "Processing",
+    "upgradeNow": "Upgrade Now",
+    "buyNow": "Buy Now"
   },
   "faq": {
     "title": "Frequently Asked Questions",

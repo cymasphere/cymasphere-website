@@ -230,18 +230,6 @@
       "seventh": "セブンス"
     }
   },
-  "footer": {
-    "copyright": "© 2023 Cymasphere. すべての権利を保有。",
-    "privacyPolicy": "プライバシーポリシー",
-    "termsOfService": "利用規約"
-  },
-  "language": {
-    "en": "English",
-    "es": "Español",
-    "fr": "Français",
-    "de": "Deutsch",
-    "ja": "日本語"
-  },
   "howItWorks": {
     "title": "使い方",
     "subtitle": "簡単な音楽作成",
@@ -307,5 +295,68 @@
         "description": "Cymasphereを強力な和声とパターンジェネレーターとしてプロダクションプロセスに統合します。これを使用して素早くアイデアをスケッチし、複雑な進行を開発し、DAWの楽器に直接供給される音楽パターンを作成します。"
       }
     }
+  },
+  "footer": {
+    "copyright": "© 2023 Cymasphere. すべての権利を保有。",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約"
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "ja": "日本語"
+  },
+  "pricing": {
+    "title": "料金プラン",
+    "subtitle": "ニーズに合わせた柔軟なオプション",
+    "simpleTransparent": "シンプルで透明な料金設定",
+    "chooseOption": "あなたに最適な請求オプションを選択してください。",
+    "allFeatures": "すべてのオプションにはすべての機能への完全アクセスが含まれています。",
+    "monthly": "月額",
+    "yearly": "年額",
+    "lifetime": "生涯",
+    "mostFlexible": "最も柔軟",
+    "payMonthly": "月々の支払い、いつでもキャンセル可能",
+    "save": "節約",
+    "withYearlyBilling": "年間請求で",
+    "bestValue": "最高の価値",
+    "oneTimePayment": "一回払い、生涯アクセス",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "billed": "年間請求",
+    "oneTimePurchase": "一回限りの購入",
+    "proSolution": "音楽制作者向けの完全なソリューション",
+    "allPlansInclude": "すべてのプランに含まれるもの：",
+    "features": [
+      "マルチトラック管理機能付きソングビルダー",
+      "インテリジェントなパターンエディタとコード適応",
+      "ジェスチャーによるハーモニーパレットインターフェース",
+      "高度な声部進行とコードボイシング",
+      "インタラクティブなコード進行タイムライン",
+      "完全な声部とレンジのコントロール",
+      "スタンドアロンアプリとDAWプラグインのサポート",
+      "リアルタイムコードリハーモナイゼーションツール",
+      "包括的なアレンジメントビュー",
+      "カスタムボイシング生成エンジン",
+      "クラウドストレージとプロジェクトバックアップ",
+      "プレミアムサポートと将来のすべてのアップデート"
+    ],
+    "freeTrial": {
+      "title": "最大14日間無料でお試し",
+      "description": "2つのトライアルオプションですべてのプレミアム機能を体験できます。",
+      "options": "カードなしの7日間またはカード登録付きの14日間をお選びください。",
+      "chooseFree": "無料トライアルオプションを選択：",
+      "withCard": "14日間トライアル - カード情報を登録",
+      "noCharge": "（トライアル終了まで請求されません）",
+      "noCard": "7日間トライアル - クレジットカード不要",
+      "startNow": "今すぐ始める",
+      "startTrial": "トライアルを開始",
+      "or": "または"
+    },
+    "processing": "処理中",
+    "upgradeNow": "今すぐアップグレード",
+    "buyNow": "今すぐ購入"
   }
 } 

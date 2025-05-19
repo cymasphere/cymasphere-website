@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheck, FaGift, FaLock, FaUnlock, FaInfoCircle } from "react-icons/fa";
+import { FaCheck, FaGift, FaUnlock, FaTimes, FaCreditCard } from "react-icons/fa";
 import { IoInformationCircle } from "react-icons/io5";
 // Import Stripe actions
 import {
@@ -28,6 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { createPortal } from 'react-dom';
 import EmailCollectionModal from "../modals/EmailCollectionModal";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1707,8 +1709,30 @@ const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: bool
 
 const PricingSection = () => {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   // Get authentication context
   const { user } = useAuth();
+
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
 
   // State to track the selected billing period
   const [billingPeriod, setBillingPeriod] = useState<PlanType>("monthly");
@@ -1894,21 +1918,39 @@ const PricingSection = () => {
     };
   };
 
-  // Features included in the plan
-  const features = [
-    "Song Builder with Multi-Track Management",
-    "Intelligent Pattern Editor & Chord Adaptation",
-    "Gestural Harmony Palette Interface",
-    "Advanced Voice Leading & Chord Voicings",
-    "Interactive Chord Progression Timeline",
-    "Complete Voice and Range Control",
-    "Standalone App & DAW Plugin Support",
-    "Real-Time Chord Reharmonization Tools",
-    "Comprehensive Arrangement View",
-    "Custom Voicing Generation Engine",
-    "Cloud Storage & Project Backups",
-    "Premium Support & All Future Updates",
-  ];
+  // Translate features
+  const features = React.useMemo(() => {
+    // If translations exist for features, use them, otherwise use English defaults
+    try {
+      // Use the correct type for the t function with returnObjects
+      const translatedFeatures = t("pricing.features", {
+        returnObjects: true
+      });
+      
+      // Check if it's an array and has elements
+      if (Array.isArray(translatedFeatures) && translatedFeatures.length > 0) {
+        return translatedFeatures;
+      }
+    } catch (error) {
+      console.log("Error loading translated features", error);
+    }
+    
+    // Fallback to English features
+    return [
+      "Song Builder with Multi-Track Management",
+      "Intelligent Pattern Editor & Chord Adaptation",
+      "Gestural Harmony Palette Interface",
+      "Advanced Voice Leading & Chord Voicings",
+      "Interactive Chord Progression Timeline",
+      "Complete Voice and Range Control",
+      "Standalone App & DAW Plugin Support",
+      "Real-Time Chord Reharmonization Tools",
+      "Comprehensive Arrangement View",
+      "Custom Voicing Generation Engine",
+      "Cloud Storage & Project Backups",
+      "Premium Support & All Future Updates",
+    ];
+  }, [t, language]);
 
   // Get price details for the current plan
   const priceDetails = getDisplayPrice(currentPlan);
@@ -1917,9 +1959,9 @@ const PricingSection = () => {
   const getPeriodText = () => {
     switch (billingPeriod) {
       case "monthly":
-        return "/month";
+        return t("pricing.perMonth", "/month");
       case "annual":
-        return "/year";
+        return t("pricing.perYear", "/year");
       case "lifetime":
         return "";
       default:
@@ -1961,28 +2003,28 @@ const PricingSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <SectionTitle>Simple, Transparent Pricing</SectionTitle>
+          <SectionTitle>{t("pricing.simpleTransparent", "Simple, Transparent Pricing")}</SectionTitle>
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (
             <TrialBanner>
               <TrialText>
                 <h3>
-                  <FaGift /> Try <span> FREE </span> for up to 14 days
+                  <FaGift /> {t("pricing.freeTrial.title", "Try FREE for up to 14 days")}
                 </h3>
                 <p>
-                  Experience all premium features with two trial options.
+                  {t("pricing.freeTrial.description", "Experience all premium features with two trial options.")}
                   <br />
-                  Choose 7 days with no card or 14 days with card on file.
+                  {t("pricing.freeTrial.options", "Choose 7 days with no card or 14 days with card on file.")}
                 </p>
               </TrialText>
             </TrialBanner>
           )}
 
           <SectionSubtitle>
-            Choose the billing option that works best for you.
+            {t("pricing.chooseOption", "Choose the billing option that works best for you.")}
             <br />
-            All options include full access to all features.
+            {t("pricing.allFeatures", "All options include full access to all features.")}
           </SectionSubtitle>
 
           {/* Billing period toggle */}
@@ -1992,7 +2034,7 @@ const PricingSection = () => {
               $active={billingPeriod === "monthly"}
               onClick={() => setBillingPeriod("monthly")}
             >
-              Monthly
+              {t("pricing.monthly", "Monthly")}
             </BillingToggleButton>
 
             <BillingToggleButton
@@ -2000,7 +2042,7 @@ const PricingSection = () => {
               $active={billingPeriod === "annual"}
               onClick={() => setBillingPeriod("annual")}
             >
-              Yearly
+              {t("pricing.yearly", "Yearly")}
             </BillingToggleButton>
 
             <BillingToggleButton
@@ -2008,7 +2050,7 @@ const PricingSection = () => {
               $active={billingPeriod === "lifetime"}
               onClick={() => setBillingPeriod("lifetime")}
             >
-              Lifetime
+              {t("pricing.lifetime", "Lifetime")}
             </BillingToggleButton>
           </BillingToggleContainer>
 
@@ -2016,17 +2058,17 @@ const PricingSection = () => {
           <div style={{ textAlign: "center" }}>
             {billingPeriod === "monthly" && (
               <SavingsInfo>
-                <span>Most Flexible</span> - Pay month-to-month, cancel anytime
+                <span>{t("pricing.mostFlexible", "Most Flexible")}</span> - {t("pricing.payMonthly", "Pay month-to-month, cancel anytime")}
               </SavingsInfo>
             )}
             {billingPeriod === "annual" && (
               <SavingsInfo>
-                Save <span>25%</span> with yearly billing
+                {t("pricing.save", "Save")} <span>25%</span> {t("pricing.withYearlyBilling", "with yearly billing")}
               </SavingsInfo>
             )}
             {billingPeriod === "lifetime" && (
               <SavingsInfo>
-                <span>Best Value</span> - One-time payment, lifetime access
+                <span>{t("pricing.bestValue", "Best Value")}</span> - {t("pricing.oneTimePayment", "One-time payment, lifetime access")}
               </SavingsInfo>
             )}
           </div>
@@ -2041,7 +2083,7 @@ const PricingSection = () => {
         >
           <PricingCard>
             {showTrialOptions && (
-              <CardTrialBadge>14-Day Free Trial</CardTrialBadge>
+              <CardTrialBadge>{t("pricing.freeTrial.title", "14-Day Free Trial")}</CardTrialBadge>
             )}
             <CardHeader>
               <PlanName>
@@ -2058,7 +2100,7 @@ const PricingSection = () => {
                 </div>
               </PlanName>
               <div style={{ fontSize: "1.1rem", opacity: 0.8 }}>
-                Complete solution for music producers
+                {t("pricing.proSolution", "Complete solution for music producers")}
               </div>
 
               {pricesLoading ? (
@@ -2082,8 +2124,8 @@ const PricingSection = () => {
                   </div>
                   {billingPeriod === "annual" && currentPlan && (
                     <div style={{ marginTop: "5px", fontSize: "1rem" }}>
-                      ${(currentPlan.amount / 100 / 12).toFixed(0)}/month billed
-                      annually
+                      ${(currentPlan.amount / 100 / 12).toFixed(0)}/
+                      {t("pricing.perMonth", "month")} {t("pricing.billed", "billed annually")}
                     </div>
                   )}
                   {billingPeriod === "lifetime" && (
@@ -2094,7 +2136,7 @@ const PricingSection = () => {
                         opacity: 0.8,
                       }}
                     >
-                      one-time purchase
+                      {t("pricing.oneTimePurchase", "one-time purchase")}
                     </div>
                   )}
                 </PriceDisplay>
@@ -2110,7 +2152,7 @@ const PricingSection = () => {
                   marginTop: "0",
                 }}
               >
-                All Plans Include:
+                {t("pricing.allPlansInclude", "All Plans Include:")}
               </h4>
               <FeaturesList>
                 {features.map((feature, index) => (
@@ -2127,7 +2169,7 @@ const PricingSection = () => {
                 <TrialOptionContainer>
                   <RadioOptionsContainer>
                     <RadioOptionTitle>
-                      <FaGift /> Choose your free trial option:
+                      <FaGift /> {t("pricing.freeTrial.chooseFree", "Choose your free trial option:")}
                     </RadioOptionTitle>
                     <RadioButtonGroup>
                       <RadioOption>
@@ -2142,9 +2184,8 @@ const PricingSection = () => {
                           <FaUnlock />
                         </TrialIcon>
                         <TrialDescription>
-                          14-day trial - Add card on file <InfoButton onClick={() => {}} isActive={false} />
-                          <br />(won&apos;t be charged until
-                          trial ends)
+                          {t("pricing.freeTrial.withCard", "14-day trial - Add card on file")} <InfoButton onClick={() => {}} isActive={false} />
+                          <br />{t("pricing.freeTrial.noCharge", "(won't be charged until trial ends)")}
                         </TrialDescription>
                       </RadioOption>
 
@@ -2160,7 +2201,7 @@ const PricingSection = () => {
                           <FaUnlock />
                         </TrialIcon>
                         <TrialDescription>
-                          7-day trial - No credit card required
+                          {t("pricing.freeTrial.noCard", "7-day trial - No credit card required")}
                         </TrialDescription>
                       </RadioOption>
                     </RadioButtonGroup>
@@ -2172,24 +2213,29 @@ const PricingSection = () => {
                   >
                     {checkoutLoading !== null ? (
                       <>
-                        Processing <Loader />
+                        {t("pricing.processing", "Processing")} <Loader />
                       </>
                     ) : (
-                      `Start ${trialType === "14day" ? "14" : "7"}-day Free Trial`
+                      t("pricing.freeTrial.startTrial", "Start Trial")
                     )}
                   </CheckoutButton>
                 </TrialOptionContainer>
-              ) : (
+              ) : null}
+
+              {/* Only show Buy Now button for Lifetime plan or when trial options are hidden */}
+              {(billingPeriod === "lifetime" || !showTrialOptions) && (
                 <CheckoutButton
                   onClick={() => handleCheckout(false)}
                   disabled={pricesLoading || checkoutLoading !== null}
                 >
                   {checkoutLoading === "short" ? (
                     <>
-                      Processing <Loader />
+                      {t("pricing.processing", "Processing")} <Loader />
                     </>
                   ) : (
-                    shouldHideTrialContent && user?.profile?.subscription === "none" ? "Upgrade Now" : "Buy Now"
+                    shouldHideTrialContent && user?.profile?.subscription === "none" ? 
+                      t("pricing.upgradeNow", "Upgrade Now") : 
+                      t("pricing.buyNow", "Buy Now")
                   )}
                 </CheckoutButton>
               )}
@@ -2197,15 +2243,17 @@ const PricingSection = () => {
           </PricingCard>
         </motion.div>
       </ContentContainer>
-      
-      {/* Email Collection Modal */}
-      <EmailCollectionModal
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        onSubmit={handleEmailSubmit}
-        collectPaymentMethod={trialType === "14day"}
-        trialDays={trialType === "14day" ? 14 : 7}
-      />
+
+      {/* Show email collection modal if open */}
+      {showEmailModal && (
+        <EmailCollectionModal
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          onSubmit={handleEmailSubmit}
+          collectPaymentMethod={trialType === "14day"}
+          trialDays={trialType === "14day" ? 14 : 7}
+        />
+      )}
     </PricingContainer>
   );
 };
