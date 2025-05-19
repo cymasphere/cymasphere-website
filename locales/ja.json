@@ -1,39 +1,39 @@
 {
   "common": {
-    "play": "Play",
-    "stop": "Stop",
-    "generate": "Generate",
-    "save": "Save",
-    "cancel": "Cancel",
-    "loading": "Loading...",
-    "learnMore": "Learn More"
+    "play": "再生",
+    "stop": "停止",
+    "generate": "生成",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "loading": "読み込み中...",
+    "learnMore": "詳細を見る"
   },
   "header": {
-    "home": "Home",
-    "features": "Features",
-    "howItWorks": "How It Works",
-    "testimonials": "Testimonials",
-    "demo": "Demo",
-    "pricing": "Pricing",
-    "faq": "FAQ",
-    "contact": "Contact",
-    "download": "Download",
-    "tryDemo": "Try Demo"
+    "home": "ホーム",
+    "features": "機能",
+    "howItWorks": "使い方",
+    "testimonials": "お客様の声",
+    "demo": "デモ",
+    "pricing": "料金",
+    "faq": "よくある質問",
+    "contact": "お問い合わせ",
+    "download": "ダウンロード",
+    "tryDemo": "デモを試す"
   },
   "hero": {
-    "title": "Generate Music With AI",
-    "titlePartA": "Intelligent",
-    "titlePartB": "Creation",
-    "subtitle": "Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.",
-    "cta": "Try It Now",
+    "title": "AIで音楽を作成",
+    "titlePartA": "インテリジェント",
+    "titlePartB": "クリエーション",
+    "subtitle": "音楽制作の次なる進化へ。理論的基盤が目に見えずにワークフローを導き、コードとメロディが目的を持って結びつき、あなた独自の音楽的ビジョンを強化します。",
+    "cta": "今すぐ試す",
     "titleWords": {
-      "music": "Music",
-      "song": "Song",
-      "chord": "Chord",
-      "pattern": "Pattern",
-      "progression": "Progression",
-      "voicing": "Voicing",
-      "harmony": "Harmony"
+      "music": "音楽",
+      "song": "曲",
+      "chord": "コード",
+      "pattern": "パターン",
+      "progression": "進行",
+      "voicing": "ボイシング",
+      "harmony": "ハーモニー"
     },
     "chords": {
       "cMajor": "C Major",
@@ -45,37 +45,37 @@
       "gMajor": "G Major"
     },
     "tooltips": {
-      "playNote": "Click to play this note",
-      "playChord": "Click to play the chord"
+      "playNote": "クリックして音を再生",
+      "playChord": "クリックしてコードを再生"
     }
   },
   "features": {
-    "title": "Features",
-    "subtitle": "Discover what Cymasphere can do for you",
-    "aiComposition": "AI Composition",
-    "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
-    "livePerformance": "Live Performance",
-    "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
-    "customSounds": "Custom Sounds",
-    "customSoundsDesc": "Create and save your own custom sound presets"
+    "title": "機能",
+    "subtitle": "Cymasphereがあなたにできることを発見しよう",
+    "aiComposition": "AI作曲",
+    "aiCompositionDesc": "高度なAIを使ってボタン一つで音楽を生成",
+    "livePerformance": "ライブパフォーマンス",
+    "livePerformanceDesc": "シンセサイザーでリアルタイムに演奏",
+    "customSounds": "カスタムサウンド",
+    "customSoundsDesc": "独自のサウンドプリセットを作成して保存"
   },
   "synth": {
-    "title": "Intelligent Chord Voicing Generator",
-    "description": "Create lush, beautiful chords with the press of a button.",
-    "chordSequence": "Chord Sequence",
-    "generateMelody": "Generate Melody",
-    "playChordSequence": "Play Chord Sequence",
-    "stopAll": "Stop All",
-    "playBoth": "Play Both",
-    "generateRandomProgression": "Random Progression",
-    "generateRandomSongName": "Random Name",
-    "synthesizerTitle": "Synthesizer",
-    "synthesizerDesc": "Create and play musical patterns",
-    "songName": "Song Name",
-    "trackName": "Track Name",
-    "trackNamePlaceholder": "e.g., Piano, Melody, Bassline",
-    "trackNameHint": "Each track represents a different instrument or sound in your song",
-    "trackIllustration": "Think of tracks like layers in your musical arrangement - they'll play together to create your full song.",
+    "title": "インテリジェントコードボイシングジェネレーター",
+    "description": "ボタン一つで豊かで美しいコードを作成。",
+    "chordSequence": "コード進行",
+    "generateMelody": "メロディを生成",
+    "playChordSequence": "コード進行を再生",
+    "stopAll": "すべて停止",
+    "playBoth": "両方を再生",
+    "generateRandomProgression": "ランダム進行",
+    "generateRandomSongName": "ランダム名",
+    "synthesizerTitle": "シンセサイザー",
+    "synthesizerDesc": "音楽パターンを作成して演奏",
+    "songName": "曲名",
+    "trackName": "トラック名",
+    "trackNamePlaceholder": "例: ピアノ、メロディ、ベースライン",
+    "trackNameHint": "各トラックは曲の中の異なる楽器や音を表します",
+    "trackIllustration": "トラックは音楽アレンジのレイヤーのように考えてください - それらが一緒に演奏されてフルの曲を作ります。",
     "chords": {
       "cMajor": "Cmaj7",
       "dMinor": "Dmin7",
@@ -87,34 +87,34 @@
     },
     "wizard": {
       "step1": {
-        "title": "Step 1: Song Creation",
-        "description": "Start your creative journey by naming your musical piece.",
-        "namePlaceholder": "Enter a name for your song",
-        "nameHint": "This will be the title of your musical creation",
-        "illustration": "Every great piece of music starts with a name. What will you call yours?"
+        "title": "ステップ1: 曲の作成",
+        "description": "音楽作品に名前をつけて創造的な旅を始めましょう。",
+        "namePlaceholder": "曲名を入力してください",
+        "nameHint": "これはあなたの音楽作品のタイトルになります",
+        "illustration": "すべての偉大な音楽は名前から始まります。あなたの作品には何という名前をつけますか？"
       },
       "step2": {
-        "title": "Step 2: Chord Progression",
-        "description": "Create the harmonic foundation for your song \"{songName}\".",
-        "chordSequence": "Chord Sequence",
-        "instruction": "Choose chords from the bank below and add them to your progression."
+        "title": "ステップ2: コード進行",
+        "description": "あなたの曲「{songName}」のための和声の基礎を作りましょう。",
+        "chordSequence": "コード進行",
+        "instruction": "下のコードバンクからコードを選んで進行に追加してください。"
       },
       "step3": {
-        "title": "Step 3: Track Creation",
-        "description": "Name your first instrument track within \"{songName}\".",
-        "progression": "Your Progression:"
+        "title": "ステップ3: トラック作成",
+        "description": "「{songName}」の中の最初の楽器トラックに名前をつけてください。",
+        "progression": "あなたの進行:"
       },
       "step4": {
-        "title": "Step 4: Pattern Creation",
-        "description": "Create a melody pattern for your \"{trackName}\" track in \"{songName}\"."
+        "title": "ステップ4: パターン作成",
+        "description": "「{songName}」の「{trackName}」トラックのメロディパターンを作成してください。"
       },
-      "nextToProgression": "Continue to Chord Progression",
-      "nextToTrack": "Continue to Track Creation",
-      "nextToPattern": "Continue to Pattern Creation",
-      "backToSong": "Back to Song Creation",
-      "backToProgression": "Back to Chord Progression",
-      "backToTrack": "Back to Track Creation",
-      "finish": "Finish",
+      "nextToProgression": "コード進行へ進む",
+      "nextToTrack": "トラック作成へ進む",
+      "nextToPattern": "パターン作成へ進む",
+      "backToSong": "曲作成に戻る",
+      "backToProgression": "コード進行に戻る",
+      "backToTrack": "トラック作成に戻る",
+      "finish": "完了",
       "congratsMessage": "おめでとうございます！Cymasphereの強力な音楽作成機能の一部を体験いただきました。\"{songName}\"という曲名と\"{trackName}\"というトラックは始まりに過ぎません。プラットフォーム全体を探索して、高度な機能、AI駆動の作曲ツール、そしてあなたの音楽的アイデアを現実に変える専門的なオーディオ制作機能をお試しください。"
     },
     "notes": {
@@ -127,17 +127,17 @@
       "B": "B"
     },
     "chordTypes": {
-      "major": "Major",
-      "minor": "Minor",
-      "diminished": "Diminished",
-      "augmented": "Augmented",
-      "seventh": "Seventh"
+      "major": "メジャー",
+      "minor": "マイナー",
+      "diminished": "ディミニッシュ",
+      "augmented": "オーギュメント",
+      "seventh": "セブンス"
     }
   },
   "footer": {
-    "copyright": "© 2023 Cymasphere. All rights reserved.",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "copyright": "© 2023 Cymasphere. すべての権利を保有。",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約"
   },
   "language": {
     "en": "English",

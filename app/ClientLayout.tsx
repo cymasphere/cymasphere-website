@@ -33,11 +33,18 @@ const theme = {
   },
 };
 
+// Update component props to include locale
+interface ClientLayoutProps {
+  children: React.ReactNode;
+  locale?: string;
+}
+
 export default function ClientLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+  locale = 'en'
+}: ClientLayoutProps) {
+  // The locale will be passed through to the page but we don't need to modify AuthProvider
+  // Next.js will handle the locale routing based on the directory structure
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>

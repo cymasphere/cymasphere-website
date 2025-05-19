@@ -21,18 +21,18 @@
     "tryDemo": "Probar Demo"
   },
   "hero": {
-    "title": "Genera Música Con IA",
+    "title": "Genera Música con IA",
     "titlePartA": "Creación",
     "titlePartB": "Inteligente",
-    "subtitle": "Revitaliza tu producción musical con herramientas potentes que inspiran creatividad y elevan tu sonido. La suite todo en uno para productores que exigen resultados profesionales.",
-    "cta": "Pruébalo ahora",
+    "subtitle": "Entra en la próxima evolución de la creación musical, donde los fundamentos teóricos guían invisiblemente tu flujo de trabajo. Acordes y melodías se conectan con propósito, potenciando tu visión musical única.",
+    "cta": "Pruébalo Ahora",
     "titleWords": {
       "music": "Música",
       "song": "Canción",
       "chord": "Acorde",
       "pattern": "Patrón",
       "progression": "Progresión",
-      "voicing": "Voces",
+      "voicing": "Voicing",
       "harmony": "Armonía"
     },
     "chords": {

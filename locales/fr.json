@@ -1,39 +1,39 @@
 {
   "common": {
-    "play": "Play",
-    "stop": "Stop",
-    "generate": "Generate",
-    "save": "Save",
-    "cancel": "Cancel",
-    "loading": "Loading...",
-    "learnMore": "Learn More"
+    "play": "Jouer",
+    "stop": "Arrêter",
+    "generate": "Générer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "learnMore": "En Savoir Plus"
   },
   "header": {
-    "home": "Home",
-    "features": "Features",
-    "howItWorks": "How It Works",
-    "testimonials": "Testimonials",
-    "demo": "Demo",
-    "pricing": "Pricing",
+    "home": "Accueil",
+    "features": "Fonctionnalités",
+    "howItWorks": "Comment ça marche",
+    "testimonials": "Témoignages",
+    "demo": "Démo",
+    "pricing": "Tarifs",
     "faq": "FAQ",
     "contact": "Contact",
-    "download": "Download",
-    "tryDemo": "Try Demo"
+    "download": "Télécharger",
+    "tryDemo": "Essayer la Démo"
   },
   "hero": {
-    "title": "Generate Music With AI",
-    "titlePartA": "Intelligent",
-    "titlePartB": "Creation",
-    "subtitle": "Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.",
-    "cta": "Try It Now",
+    "title": "Créez de la Musique avec l'IA",
+    "titlePartA": "Création",
+    "titlePartB": "Intelligente",
+    "subtitle": "Entrez dans la prochaine évolution de la création musicale, où les fondements théoriques guident invisiblement votre flux de travail. Les accords et les mélodies se connectent avec un objectif précis, renforçant votre vision musicale unique.",
+    "cta": "Essayez Maintenant",
     "titleWords": {
-      "music": "Music",
-      "song": "Song",
-      "chord": "Chord",
-      "pattern": "Pattern",
+      "music": "Musique",
+      "song": "Chanson",
+      "chord": "Accord",
+      "pattern": "Motif",
       "progression": "Progression",
       "voicing": "Voicing",
-      "harmony": "Harmony"
+      "harmony": "Harmonie"
     },
     "chords": {
       "cMajor": "C Major",

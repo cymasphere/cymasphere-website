@@ -49,13 +49,18 @@ const montserrat = Montserrat({
   weight: ["400", "500", "600", "700"],
 });
 
+// Define the interface for the RootLayout props to include params
+interface RootLayoutProps {
+  children: React.ReactNode;
+  params: { locale: string };
+}
+
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+  params: { locale = 'en' },
+}: RootLayoutProps) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
+    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
         <StyledComponentsRegistry>
           <ClientLayout>{children}</ClientLayout>

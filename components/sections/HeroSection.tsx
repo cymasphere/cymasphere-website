@@ -209,45 +209,30 @@ const HeroSection = () => {
   // Diatonic chords in the key of C in descending 5ths
   const chordProgression = useMemo(
     () => [
-      { name: t("hero.chords.cMajor", "C Major"), notes: ["C", "E", "G"] },
-      { name: t("hero.chords.fMajor", "F Major"), notes: ["F", "A", "C"] },
-      {
-        name: t("hero.chords.bDiminished", "B Diminished"),
-        notes: ["B", "D", "F"],
-      },
-      { name: t("hero.chords.eMinor", "E Minor"), notes: ["E", "G", "B"] },
-      { name: t("hero.chords.aMinor", "A Minor"), notes: ["A", "C", "E"] },
-      { name: t("hero.chords.dMinor", "D Minor"), notes: ["D", "F", "A"] },
-      { name: t("hero.chords.gMajor", "G Major"), notes: ["G", "B", "D"] },
-    ],
-    [t]
-  );
-
-  // Words to cycle through in the hero title - WRAPPED IN USEMEMO TO PREVENT RECREATION
-  // const titleWords = useMemo(
-  //   () => [
-  //     t("hero.titleWords.music", "Music"),
-  //     t("hero.titleWords.song", "Song"),
-  //     t("hero.titleWords.chord", "Chord"),
-  //     t("hero.titleWords.pattern", "Pattern"),
-  //     t("hero.titleWords.progression", "Progression"),
-  //     t("hero.titleWords.voicing", "Voicing"),
-  //     t("hero.titleWords.harmony", "Harmony"),
-  //   ],
-  //   [t]
-  // ); // Only recreate when translation function or language changes
-  const titleWords = useMemo(
-    () => [
-      "Music",
-      "Song",
-      "Chord",
-      "Pattern",
-      "Progression",
-      "Voicing",
-      "Harmony",
+      { name: "C Major", notes: ["C", "E", "G"] },
+      { name: "F Major", notes: ["F", "A", "C"] },
+      { name: "B Diminished", notes: ["B", "D", "F"] },
+      { name: "E Minor", notes: ["E", "G", "B"] },
+      { name: "A Minor", notes: ["A", "C", "E"] },
+      { name: "D Minor", notes: ["D", "F", "A"] },
+      { name: "G Major", notes: ["G", "B", "D"] },
     ],
     []
   );
+
+  // Words to cycle through in the hero title - WRAPPED IN USEMEMO TO PREVENT RECREATION
+  const titleWords = useMemo(
+    () => [
+      t("hero.titleWords.music", "Music"),
+      t("hero.titleWords.song", "Song"),
+      t("hero.titleWords.chord", "Chord"),
+      t("hero.titleWords.pattern", "Pattern"),
+      t("hero.titleWords.progression", "Progression"),
+      t("hero.titleWords.voicing", "Voicing"),
+      t("hero.titleWords.harmony", "Harmony"),
+    ],
+    [t]
+  ); // Only recreate when translation function or language changes
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [centerWordWidth, setCenterWordWidth] = useState(120); // Default width
   const centerWordRef = useRef<HTMLSpanElement>(null);
@@ -1024,9 +1009,7 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          Enter the next evolution of music creation, where theoretical
-          foundations invisibly guide your workflow. Chords and melodies connect
-          with purpose, empowering your unique musical vision.
+          {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
         </HeroSubtitle>
 
         <ButtonGroup

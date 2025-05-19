@@ -20,13 +20,16 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
 
-// Dynamically import components with browser-only APIs
-const DynamicLanguageSelector = dynamic(
-  () => import("../i18n/DynamicLanguageSelector"),
-  {
-    ssr: false,
-  }
-);
+// Import the NextLanguageSelector instead of DynamicLanguageSelector
+import NextLanguageSelector from "../i18n/NextLanguageSelector";
+
+// No longer need to dynamically import the old language selector
+// const DynamicLanguageSelector = dynamic(
+//   () => import("../i18n/DynamicLanguageSelector"),
+//   {
+//     ssr: false,
+//   }
+// );
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -765,7 +768,7 @@ const NextHeader = () => {
               </Link>
             ))}
             <div className="language-selector">
-              <DynamicLanguageSelector />
+              <NextLanguageSelector />
             </div>
             <AuthSection>{renderAuthSection()}</AuthSection>
           </Nav>
@@ -871,7 +874,7 @@ const NextHeader = () => {
 
         <MobileFooter>
           <div className="language-selector">
-            <DynamicLanguageSelector />
+            <NextLanguageSelector />
           </div>
         </MobileFooter>
       </MobileMenu>
