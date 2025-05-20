@@ -18,12 +18,24 @@ export const getCurrentLanguage = (): string => {
     return savedLanguage;
   }
   
-  // If no saved preference, try to use browser language
-  const browserLang = navigator.language.split('-')[0];
+  // If no saved preference, try to use browser language with better locale detection
+  const browserFullLocale = navigator.language; // e.g., 'en-US', 'fr-FR', 'es-MX'
+  const browserLang = browserFullLocale.split('-')[0].toLowerCase(); // Get just the language part
+
+  // Check if the browser language is in our supported languages
   if (languages.includes(browserLang)) {
-    // Save the detected browser language for future visits
     window.localStorage.setItem('i18nextLng', browserLang);
     return browserLang;
+  }
+
+  // Handle special cases for language variants
+  // For example, if browser shows 'en-GB', 'en-US', 'en-CA', etc., use 'en'
+  // Or for 'es-MX', 'es-AR', etc., use 'es'
+  for (const lang of languages) {
+    if (browserFullLocale.toLowerCase().startsWith(lang)) {
+      window.localStorage.setItem('i18nextLng', lang);
+      return lang;
+    }
   }
   
   // Fall back to default language
