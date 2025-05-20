@@ -2100,7 +2100,7 @@ const PricingSection = () => {
                 </div>
               </PlanName>
               <div style={{ fontSize: "1.1rem", opacity: 0.8 }}>
-                {t("pricing.proSolution", "Complete solution for music producers")}
+                {t("pricing.proSolution")}
               </div>
 
               {pricesLoading ? (

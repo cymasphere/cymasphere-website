@@ -678,8 +678,8 @@
     "lifetime": "Lifetime",
     "bestValue": "Best Value",
     "enterCardNow": "Enter card info now:",
-    "trialWithCard": "Get {{days}}-day trial (card required)",
-    "trialWithoutCard": "Get {{days}}-day trial (no card required)",
+    "trialWithCard": "{{days}}-day trial - Add card on file",
+    "trialWithoutCard": "{{days}}-day trial - No credit card required",
     "currentPlan": "Current Plan",
     "proBadge": "PRO",
     "afterTrial": "After your {{days}}-day free trial",
@@ -692,6 +692,20 @@
     "allPlansInclude": "All Plans Include:",
     "confirmationNote": "By confirming, you agree to the terms and pricing displayed above.",
     "provideCard": "Provide payment method now for a {{days}}-day trial",
-    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends."
+    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends.",
+    "chooseTrial": "Choose your free trial option:",
+    "noCharge": "(won't be charged until trial ends)",
+    "features": {
+      "interactive_harmony_palette": "Interactive Harmony Palette",
+      "advanced_voice_leading_control": "Advanced Voice Leading Control",
+      "unlimited_saved_progressions": "Unlimited Saved Progressions",
+      "premium_sound_libraries": "Premium Sound Libraries",
+      "midi_export_&_import": "MIDI Export & Import",
+      "dynamic_pattern_editor": "Dynamic Pattern Editor",
+      "song_builder_tool": "Song Builder Tool",
+      "cloud_storage_&_backup": "Cloud Storage & Backup",
+      "priority_email_support": "Priority Email Support",
+      "free_updates": "Free Updates"
+    }
   }
 } 

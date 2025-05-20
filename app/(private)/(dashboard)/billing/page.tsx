@@ -1158,7 +1158,7 @@ export default function BillingPage() {
             monthlyPrice={monthlyPrice}
             yearlyPrice={yearlyPrice}
             lifetimePrice={lifetimePrice}
-            planDescription={t("dashboard.billing.planDescription", "Complete solution for music producers")}
+            planDescription={t("pricing.proSolution")}
             planFeatures={[
               t("dashboard.billing.feature1", "Interactive Harmony Palette"),
               t("dashboard.billing.feature2", "Advanced Voice Leading Control"),
