@@ -118,6 +118,7 @@ const FooterLink = styled.span`
   transition: color 0.2s ease;
   cursor: pointer;
   display: block;
+  line-height: 1.5;
 
   &:hover {
     color: var(--primary);
@@ -133,6 +134,7 @@ const FooterAnchor = styled.span`
   transition: color 0.2s ease;
   display: block;
   cursor: pointer;
+  line-height: 1.5;
 
   &:hover {
     color: var(--primary);
@@ -150,10 +152,14 @@ const FooterButton = styled.button`
   margin-bottom: 0.75rem;
   cursor: pointer;
   transition: color 0.2s ease;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  line-height: 1.5;
+  font-family: inherit;
 
   &:hover {
-    color: var(--primary);
+    color: #6c63ff;
+    text-decoration: none;
   }
 `;
 
