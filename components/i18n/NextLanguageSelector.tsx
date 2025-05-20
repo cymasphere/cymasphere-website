@@ -69,7 +69,6 @@ const DropdownArrow = styled.span<{ $isOpen: boolean }>`
 
 const Dropdown = styled.div`
   position: absolute;
-  top: 100%;
   right: 0;
   margin-top: 8px;
   background-color: var(--card-bg);
@@ -79,6 +78,16 @@ const Dropdown = styled.div`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   width: 160px;
   z-index: 100;
+
+  /* Position dropdown based on screen size */
+  top: 100%;
+
+  @media (max-width: 768px) {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
 `;
 
 const LangOption = styled.div<{ $isActive: boolean }>`
