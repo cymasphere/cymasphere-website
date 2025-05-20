@@ -45,7 +45,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.div`
+const BackButton = styled.a`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -56,6 +56,7 @@ const BackButton = styled.div`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     color: var(--text);
@@ -348,7 +349,7 @@ function ResetPassword() {
   return (
     <AuthContainer>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-      <Link href="/login" passHref>
+      <Link href="/login" legacyBehavior>
         <BackButton>
           <FaArrowLeft /> {t("resetPassword.backToLogin", "Back to Login")}
         </BackButton>

@@ -368,7 +368,7 @@ function CreatePassword() {
   return (
     <AuthContainer>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-      <Link href="/login" passHref>
+      <Link href="/login" legacyBehavior>
         <BackButton>
           <FaArrowLeft /> Back to Login
         </BackButton>
@@ -420,7 +420,7 @@ function CreatePassword() {
           >
             {message}
             <div style={{ marginTop: "10px" }}>
-              <Link href="/login" passHref>
+              <Link href="/login" legacyBehavior>
                 <Button
                   as="a"
                   style={{
