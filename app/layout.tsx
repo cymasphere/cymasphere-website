@@ -63,7 +63,7 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <I18nProvider>
-            <ClientLayout>{children}</ClientLayout>
+          <ClientLayout>{children}</ClientLayout>
           </I18nProvider>
         </StyledComponentsRegistry>
       </body>

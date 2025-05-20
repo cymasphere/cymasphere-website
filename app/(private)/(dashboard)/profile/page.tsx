@@ -1,13 +1,15 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useState } from "react";
-import styled from "styled-components";
-import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 import { FaUser, FaLock, FaTimesCircle, FaSave } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Profile } from "@/utils/supabase/types";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const ProfileContainer = styled.div`
   width: 100%;
@@ -232,9 +234,20 @@ function Profile() {
     first_name: user?.profile?.first_name || "",
     last_name: user?.profile?.last_name || "",
   });
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
-  // Update profile data when user changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.profile) {
       setProfileData({
         first_name: user.profile.first_name || "",
@@ -266,20 +279,20 @@ function Profile() {
       const { error } = await updateProfile(updatedProfile);
       if (error) {
         setMessage({
-          text: `Error updating profile: ${error}`,
+          text: t("dashboard.profile.errorUpdating", "Error updating profile: {{error}}", { error: error.toString() }),
           type: "error",
         });
       } else {
         setMessage({
-          text: "Profile information updated successfully!",
+          text: t("dashboard.profile.profileUpdated", "Profile information updated successfully!"),
           type: "success",
         });
       }
     } catch (error) {
       setMessage({
-        text: `An unexpected error occurred: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        text: t("dashboard.profile.unexpectedError", "An unexpected error occurred: {{error}}", { 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        }),
         type: "error",
       });
     }
@@ -293,7 +306,7 @@ function Profile() {
   const handleResetPassword = async () => {
     if (!user?.email) {
       setMessage({
-        text: "No email address found for password reset",
+        text: t("dashboard.profile.noEmailFound", "No email address found for password reset"),
         type: "error",
       });
       return;
@@ -305,26 +318,26 @@ function Profile() {
         if (error.message.includes("email rate limit exceeded") || 
             error.message.includes("rate limit")) {
           setMessage({
-            text: "Too many password reset attempts. Please wait a few minutes before trying again.",
+            text: t("dashboard.profile.tooManyAttempts", "Too many password reset attempts. Please wait a few minutes before trying again."),
             type: "error",
           });
         } else {
           setMessage({
-            text: `Error sending reset email: ${error.message}`,
+            text: t("dashboard.profile.errorSendingReset", "Error sending reset email: {{error}}", { error: error.message }),
             type: "error",
           });
         }
       } else {
         setMessage({
-          text: "Password reset email sent! Please check your inbox.",
+          text: t("dashboard.profile.passwordResetSent", "Password reset email sent! Please check your inbox."),
           type: "success",
         });
       }
     } catch (error) {
       setMessage({
-        text: `An unexpected error occurred: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        text: t("dashboard.profile.unexpectedError", "An unexpected error occurred: {{error}}", { 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        }),
         type: "error",
       });
     }
@@ -335,11 +348,22 @@ function Profile() {
     }, 3000);
   };
 
+  // Show a loading state if translations aren't loaded yet
+  if (!translationsLoaded) {
+    return (
+      <ProfileContainer>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+          <LoadingComponent text={t("common.loading", "Loading...")} />
+        </div>
+      </ProfileContainer>
+    );
+  }
+
   if (!user) return null;
 
   return (
     <ProfileContainer>
-      <SectionTitle>My Profile</SectionTitle>
+      <SectionTitle>{t("dashboard.profile.title", "My Profile")}</SectionTitle>
 
       {message.text && (
         <Message type={message.type as "error" | "success"}>
@@ -355,13 +379,13 @@ function Profile() {
         custom={0}
       >
         <CardTitle>
-          <FaUser /> Personal Information
+          <FaUser /> {t("dashboard.profile.personalInfo", "Personal Information")}
         </CardTitle>
         <CardContent>
           <Form onSubmit={handleSaveProfile}>
             <TwoColumnGrid>
               <FormGroup>
-                <Label>First Name</Label>
+                <Label>{t("dashboard.profile.firstName", "First Name")}</Label>
                 <Input
                   type="text"
                   value={profileData.first_name}
@@ -371,7 +395,7 @@ function Profile() {
               </FormGroup>
 
               <FormGroup>
-                <Label>Last Name</Label>
+                <Label>{t("dashboard.profile.lastName", "Last Name")}</Label>
                 <Input
                   type="text"
                   value={profileData.last_name}
@@ -388,7 +412,7 @@ function Profile() {
               whileTap="tap"
               variants={buttonVariants}
             >
-              <FaSave /> Save Changes
+              <FaSave /> {t("dashboard.profile.saveChanges", "Save Changes")}
             </Button>
           </Form>
         </CardContent>
@@ -401,7 +425,7 @@ function Profile() {
         custom={1}
       >
         <CardTitle>
-          <FaLock /> Change Password
+          <FaLock /> {t("dashboard.profile.passwordSection", "Change Password")}
         </CardTitle>
         <CardContent>
           <Button
@@ -411,7 +435,7 @@ function Profile() {
             whileTap="tap"
             variants={buttonVariants}
           >
-            <FaLock /> Send Password Reset Email
+            <FaLock /> {t("dashboard.profile.sendResetEmail", "Send Password Reset Email")}
           </Button>
         </CardContent>
       </ProfileCard>
@@ -421,12 +445,13 @@ function Profile() {
 
 export default function ProfilePage() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <>
       <NextSEO
-        title="Profile - Cymasphere"
-        description="Your Cymasphere profile"
+        title={t("dashboard.profile.title", "Profile") + " - Cymasphere"}
+        description={t("dashboard.profile.title", "Your Cymasphere profile")}
         canonical="/profile"
         noindex={true}
       />

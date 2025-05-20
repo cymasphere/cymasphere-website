@@ -19,6 +19,8 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -347,6 +349,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   const user_display_name = useMemo(() => {
     if (!user) return "";
@@ -383,8 +397,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [sidebarOpen]);
 
-  // Return loading state if not mounted yet
-  if (!user) {
+  // Return loading state if not mounted yet or translations not loaded
+  if (!user || !translationsLoaded) {
     return (
       <LayoutContainer>
         <Content
@@ -394,7 +408,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             alignItems: "center",
           }}
         >
-          <LoadingComponent text="Loading dashboard..." />
+          <LoadingComponent text={t("dashboard.layout.loading", "Loading dashboard...")} />
         </Content>
       </LayoutContainer>
     );
@@ -497,7 +511,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/dashboard" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/dashboard")}
             >
-              <FaTachometerAlt /> Dashboard
+              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
             </NavItem>
           </Link>
           <Link href="/profile" passHref legacyBehavior>
@@ -505,7 +519,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/profile" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/profile")}
             >
-              <FaUser /> Profile
+              <FaUser /> {t("dashboard.layout.profile", "Profile")}
             </NavItem>
           </Link>
           <Link href="/billing" passHref legacyBehavior>
@@ -513,7 +527,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/billing" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/billing")}
             >
-              <FaCreditCard /> Billing
+              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
             </NavItem>
           </Link>
           <Link href="/downloads" passHref legacyBehavior>
@@ -521,7 +535,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/downloads" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/downloads")}
             >
-              <FaDownload /> Downloads
+              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </NavItem>
           </Link>
           <Link href="/settings" passHref legacyBehavior>
@@ -529,17 +543,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/settings" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/settings")}
             >
-              <FaCog /> Settings
+              <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </NavItem>
           </Link>
         </nav>
 
         <UserInfo>
           <UserName>
-            <h4>{user_display_name}</h4>
-            <p>{user.email}</p>
+            <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
+            <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
           </UserName>
-          <LogoutButton onClick={handleLogout} title="Logout">
+          <LogoutButton onClick={handleLogout} title={t("dashboard.layout.logout", "Logout")}>
             <FaSignOutAlt />
           </LogoutButton>
         </UserInfo>
@@ -571,9 +585,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                CYMA
+                {t("common.brandFirst", "CYMA")}
               </span>
-              <span style={{ color: "white" }}>SPHERE</span>
+              <span style={{ color: "white" }}>{t("common.brandSecond", "SPHERE")}</span>
             </span>
           </div>
         </MobileLogoContent>
@@ -585,7 +599,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>Account</MobileNavTitle>
+          <MobileNavTitle>{t("dashboard.layout.account", "Account")}</MobileNavTitle>
 
           <Link href="/dashboard" passHref legacyBehavior>
             <MobileNavItem
@@ -596,7 +610,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/dashboard")}
             >
-              <FaTachometerAlt /> Dashboard
+              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
             </MobileNavItem>
           </Link>
 
@@ -609,7 +623,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/profile")}
             >
-              <FaUser /> Profile
+              <FaUser /> {t("dashboard.layout.profile", "Profile")}
             </MobileNavItem>
           </Link>
 
@@ -622,7 +636,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/billing")}
             >
-              <FaCreditCard /> Billing
+              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
             </MobileNavItem>
           </Link>
 
@@ -635,7 +649,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/downloads")}
             >
-              <FaDownload /> Downloads
+              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </MobileNavItem>
           </Link>
 
@@ -648,7 +662,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/settings")}
             >
-              <FaCog /> Settings
+              <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </MobileNavItem>
           </Link>
 
@@ -661,16 +675,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
             >
-              <FaHome /> Back to Home
+              <FaHome /> {t("dashboard.layout.backToHome", "Back to Home")}
             </MobileNavItem>
           </Link>
 
           <MobileUserInfo>
             <UserName>
-              <h4>{user_display_name}</h4>
-              <p>{user.email}</p>
+              <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
+              <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
             </UserName>
-            <LogoutButton onClick={handleLogout} title="Logout">
+            <LogoutButton onClick={handleLogout} title={t("dashboard.layout.logout", "Logout")}>
               <FaSignOutAlt />
             </LogoutButton>
           </MobileUserInfo>
@@ -683,7 +697,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           handleNavigation(e, "/")
         }
       >
-        Back to Site <FaArrowLeft />
+        {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
       </BackButton>
 
       <Content>

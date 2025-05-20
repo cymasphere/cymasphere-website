@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCard from "@/components/settings/CardComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
 import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
+import { useTranslation } from "react-i18next";
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -302,6 +303,7 @@ interface Device {
 }
 
 function Settings() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<SettingsState>({
     language: "en",
   });
@@ -392,15 +394,21 @@ function Settings() {
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 5) {
-      return "Now";
+      return t("dashboard.settings.timeNow", "Now");
     } else if (diffMins < 60) {
-      return `${diffMins} min ago`;
+      return t("dashboard.settings.timeMinutes", "{{count}} min ago", { count: diffMins });
     } else if (diffMins < 24 * 60) {
       const diffHours = Math.floor(diffMins / 60);
-      return `${diffHours} hr${diffHours === 1 ? "" : "s"} ago`;
+      return t("dashboard.settings.timeHours", "{{count}} hr ago", { 
+        count: diffHours,
+        hr: diffHours === 1 ? t("dashboard.settings.hour", "hr") : t("dashboard.settings.hours", "hrs") 
+      });
     } else {
       const diffDays = Math.floor(diffMins / (60 * 24));
-      return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+      return t("dashboard.settings.timeDays", "{{count}} day ago", { 
+        count: diffDays,
+        day: diffDays === 1 ? t("dashboard.settings.day", "day") : t("dashboard.settings.days", "days") 
+      });
     }
   };
 
@@ -434,8 +442,8 @@ function Settings() {
       await signOut("others");
 
       setShowLogoutModal(false);
-      setConfirmationTitle("Logged Out Successfully");
-      setConfirmationMessage("You have been logged out from all devices.");
+      setConfirmationTitle(t("dashboard.settings.logoutSuccess", "Logged Out Successfully"));
+      setConfirmationMessage(t("dashboard.settings.logoutMessage", "You have been logged out from all devices."));
       setConfirmationIcon("success");
       setShowConfirmationModal(true);
 
@@ -443,9 +451,9 @@ function Settings() {
     } catch (error) {
       console.error("Error logging out:", error);
       setShowLogoutModal(false);
-      setConfirmationTitle("Logout Failed");
+      setConfirmationTitle(t("dashboard.settings.logoutFailed", "Logout Failed"));
       setConfirmationMessage(
-        "There was an error logging out from all devices. Please try again."
+        t("dashboard.settings.logoutError", "There was an error logging out from all devices. Please try again.")
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -457,9 +465,9 @@ function Settings() {
     // Handle account deletion logic
 
     if (profile.deleteConfirmation !== "DELETE") {
-      setConfirmationTitle("Confirmation Required");
+      setConfirmationTitle(t("dashboard.settings.confirmationRequired", "Confirmation Required"));
       setConfirmationMessage(
-        'Please type "DELETE" to confirm account deletion.'
+        t("dashboard.settings.confirmationMessage", 'Please type "DELETE" to confirm account deletion.')
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -467,9 +475,9 @@ function Settings() {
     }
 
     // Show loading confirmation
-    setConfirmationTitle("Processing Deletion Request");
+    setConfirmationTitle(t("dashboard.settings.processingDeletion", "Processing Deletion Request"));
     setConfirmationMessage(
-      "Please wait while we process your account deletion request..."
+      t("dashboard.settings.processingMessage", "Please wait while we process your account deletion request...")
     );
     setConfirmationIcon("info");
     setShowConfirmationModal(true);
@@ -483,9 +491,9 @@ function Settings() {
 
       if (result.success) {
         // Show success message
-        setConfirmationTitle("Account Deleted");
+        setConfirmationTitle(t("dashboard.settings.accountDeleted", "Account Deleted"));
         setConfirmationMessage(
-          "Your account has been successfully deleted. You will be redirected to the homepage."
+          t("dashboard.settings.accountDeletedMessage", "Your account has been successfully deleted. You will be redirected to the homepage.")
         );
         setConfirmationIcon("success");
 
@@ -495,15 +503,15 @@ function Settings() {
         }, 3000);
       } else {
         // Show error message
-        setConfirmationTitle("Deletion Failed");
-        setConfirmationMessage(`Account deletion failed: ${result.error}`);
+        setConfirmationTitle(t("dashboard.settings.deletionFailed", "Deletion Failed"));
+        setConfirmationMessage(t("dashboard.settings.deletionFailedError", "Account deletion failed: {{error}}", { error: result.error }));
         setConfirmationIcon("warning");
       }
     } catch (error) {
       console.error("Error deleting account:", error);
-      setConfirmationTitle("Deletion Failed");
+      setConfirmationTitle(t("dashboard.settings.deletionFailed", "Deletion Failed"));
       setConfirmationMessage(
-        "There was an error processing your account deletion. Please try again later."
+        t("dashboard.settings.deletionProcessingError", "There was an error processing your account deletion. Please try again later.")
       );
       setConfirmationIcon("warning");
     }
@@ -528,6 +536,19 @@ function Settings() {
     }
   };
 
+  // Helper function to translate device types
+  const getDeviceTypeName = (type: "mobile" | "tablet" | "desktop"): string => {
+    switch (type) {
+      case "mobile":
+        return t("dashboard.settings.deviceMobile", "Mobile");
+      case "tablet":
+        return t("dashboard.settings.deviceTablet", "Tablet");
+      case "desktop":
+      default:
+        return t("dashboard.settings.deviceDesktop", "Desktop");
+    }
+  };
+
   const handleModalClose = () => {
     setShowConfirmationModal(false);
   };
@@ -547,7 +568,7 @@ function Settings() {
 
   return (
     <SettingsContainer>
-      <SectionTitle>Settings</SectionTitle>
+      <SectionTitle>{t("dashboard.settings.title", "Settings")}</SectionTitle>
 
       <AnimatedCard
         initial={{ opacity: 0, y: 20 }}
@@ -555,15 +576,15 @@ function Settings() {
         transition={{ duration: 0.4 }}
       >
         <CardTitle>
-          <FaGlobe /> Preferences
+          <FaGlobe /> {t("dashboard.settings.language", "Language")}
         </CardTitle>
         <CardContent>
           <SettingsList>
             <SettingItem>
               <SettingInfo>
-                <SettingTitle>Language</SettingTitle>
+                <SettingTitle>{t("dashboard.settings.interfaceLanguage", "Interface Language")}</SettingTitle>
                 <SettingDescription>
-                  Set your preferred language
+                  {t("dashboard.settings.languageDesc", "Change the language used throughout the application")}
                 </SettingDescription>
               </SettingInfo>
               <SelectWrapper>
@@ -571,11 +592,11 @@ function Settings() {
                   value={settings.language}
                   onChange={(e) => handleSelectChange(e, "language")}
                 >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                  <option value="de">German</option>
-                  <option value="ja">Japanese</option>
+                  <option value="en">{t("language.en", "English")}</option>
+                  <option value="es">{t("language.es", "Español")}</option>
+                  <option value="fr">{t("language.fr", "Français")}</option>
+                  <option value="de">{t("language.de", "Deutsch")}</option>
+                  <option value="ja">{t("language.ja", "日本語")}</option>
                 </Select>
               </SelectWrapper>
             </SettingItem>
@@ -589,55 +610,61 @@ function Settings() {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <CardTitle>
-          <FaSignOutAlt /> Account Access
+          <FaMobileAlt /> {t("dashboard.settings.devices", "Active Devices")}
         </CardTitle>
         <CardContent>
-          <p>
-            Manage your active sessions and sign out from devices. You can be
-            logged in on up to 5 devices at once.
-          </p>
-
-          {isLoadingSessions ? (
-            <p>Loading your active sessions...</p>
-          ) : (
-            <DevicesList>
-              {activeDevices.length === 0 ? (
-                <p>No active sessions found.</p>
-              ) : (
-                activeDevices.map((device, index) => (
-                  <DeviceItem key={index}>
-                    <DeviceInfo>
-                      {renderDeviceIcon(device.type)}
-                      <div>
-                        <DeviceName>{device.name}</DeviceName>
-                        <DeviceDetails>
-                          {device.location} • {device.lastActive}
-                        </DeviceDetails>
-                      </div>
-                    </DeviceInfo>
-                  </DeviceItem>
-                ))
-              )}
-            </DevicesList>
-          )}
+          <DevicesList>
+            {isLoadingSessions ? (
+              <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                {t("common.loading", "Loading...")}
+              </div>
+            ) : activeDevices.length === 0 ? (
+              <div style={{ padding: "1rem 0" }}>
+                {t("dashboard.settings.noDevices", "No active devices found")}
+              </div>
+            ) : (
+              activeDevices.map((device, index) => (
+                <DeviceItem
+                  key={index}
+                  $isActive={
+                    device.location === "current" /* For current session highlighting */
+                  }
+                >
+                  <DeviceInfo>
+                    {renderDeviceIcon(device.type)}
+                    <div>
+                      <DeviceName>
+                        {device.name} ({getDeviceTypeName(device.type)})
+                      </DeviceName>
+                      <DeviceDetails>
+                        {device.location === "current"
+                          ? t("dashboard.settings.currentDevice", "Current Device")
+                          : device.location}{" "}
+                        · {device.lastActive}
+                      </DeviceDetails>
+                    </div>
+                  </DeviceInfo>
+                </DeviceItem>
+              ))
+            )}
+          </DevicesList>
 
           <DeviceCount>
             <DeviceLimit>
-              Device Limit: {activeDevices.length} of 5 used
+              {t("dashboard.settings.devicesInfo", "You're using {{current}} of {{max}} allowed devices", {
+                current: activeDevices.length,
+                max: 5
+              })}
             </DeviceLimit>
-            <DeviceCounter warning={activeDevices.length >= 4}>
-              {activeDevices.length} Active{" "}
-              {activeDevices.length === 1 ? "Device" : "Devices"}
+            <DeviceCounter warning={activeDevices.length >= 5}>
+              {activeDevices.length} / 5
             </DeviceCounter>
           </DeviceCount>
 
-          <div style={{ display: "flex", gap: "1rem" }}>
-            {activeDevices.length > 0 && (
-              <OutlineButton onClick={handleLogout}>
-                <FaSignOutAlt /> Sign Out From All Devices
-              </OutlineButton>
-            )}
-          </div>
+          <Button onClick={handleLogout}>
+            <FaSignOutAlt style={{ marginRight: "0.5rem" }} />
+            {t("dashboard.settings.logoutAll", "Logout from All Other Devices")}
+          </Button>
         </CardContent>
       </AnimatedCard>
 
@@ -646,50 +673,78 @@ function Settings() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
       >
-        <CardTitle style={{ color: "var(--danger)" }}>
-          <FaTrash /> Delete Account
+        <CardTitle>
+          <FaTrash style={{ color: "var(--error)" }} />{" "}
+          {t("dashboard.settings.dangerZone", "Danger Zone")}
         </CardTitle>
         <CardContent>
-          <WarningBox>
-            <FaExclamationTriangle />
-            <p>
-              Warning: Deleting your account is permanent and cannot be undone.
-              All your data and settings will be permanently removed.
-              <br />
-              <br />
-              <strong>Important:</strong> If you have an active subscription, it
-              will be canceled immediately. Your purchase history will remain
-              securely stored in Stripe, and you can sign up again in the future
-              using the same email address.
-              <br />
-              <br />
-              If you only wish to <strong>cancel your subscription</strong>,
-              please visit the{" "}
-              <Link
-                href="/billing"
-                style={{ color: "var(--primary)", textDecoration: "underline" }}
-              >
-                billing page
-              </Link>{" "}
-              instead.
+          <div
+            style={{
+              padding: "1rem",
+              backgroundColor: "rgba(255, 69, 58, 0.1)",
+              borderRadius: "6px",
+              marginBottom: "1rem",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "0.5rem",
+                color: "var(--error)",
+              }}
+            >
+              <FaExclamationTriangle style={{ marginRight: "0.5rem" }} />
+              <div style={{ fontWeight: 600 }}>
+                {t("dashboard.settings.deleteWarning", "Delete Account Permanently")}
+              </div>
+            </div>
+            <p style={{ fontSize: "0.9rem", marginBottom: "1rem" }}>
+              {t("dashboard.settings.deleteDesc", "This action cannot be undone. All of your data will be permanently deleted.")}
             </p>
-          </WarningBox>
 
-          <Form onSubmit={handleDeleteAccount}>
-            <FormGroup>
-              <Label>Type &quot;DELETE&quot; to confirm account deletion</Label>
-              <Input
-                type="text"
-                value={profile.deleteConfirmation}
-                onChange={(e) => handleProfileChange(e, "deleteConfirmation")}
-                required
-              />
-            </FormGroup>
-
-            <DangerButton type="submit">
-              Permanently Delete Account
-            </DangerButton>
-          </Form>
+            <form onSubmit={handleDeleteAccount}>
+              <div
+                style={{
+                  marginBottom: "1rem",
+                }}
+              >
+                <label
+                  htmlFor="deleteConfirmation"
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {t("dashboard.settings.typeDelete", 'Type "DELETE" to confirm:')}
+                </label>
+                <input
+                  type="text"
+                  id="deleteConfirmation"
+                  value={profile.deleteConfirmation}
+                  onChange={(e) => handleProfileChange(e, "deleteConfirmation")}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    backgroundColor: "rgba(30, 30, 46, 0.5)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "var(--text)",
+                    borderRadius: "6px",
+                  }}
+                />
+              </div>
+              <Button
+                type="submit"
+                style={{
+                  background: "var(--error)",
+                  width: "100%",
+                }}
+              >
+                {t("dashboard.settings.deleteAccount", "Delete My Account")}
+              </Button>
+            </form>
+          </div>
         </CardContent>
       </AnimatedCard>
 
@@ -709,15 +764,14 @@ function Settings() {
               onClick={(e) => e.stopPropagation()}
             >
               <ModalHeader>
-                <ModalTitle>Confirm Logout</ModalTitle>
+                <ModalTitle>{t("dashboard.settings.confirmLogout", "Confirm Logout")}</ModalTitle>
                 <CloseButton onClick={() => setShowLogoutModal(false)}>
                   <FaTimes />
                 </CloseButton>
               </ModalHeader>
               <ModalBody>
                 <p>
-                  Are you sure you want to sign out from all devices? This will
-                  end all your active sessions.
+                  {t("dashboard.settings.logoutConfirmation", "Are you sure you want to sign out from all devices? This will end all your active sessions.")}
                 </p>
               </ModalBody>
               <ModalFooter>
@@ -728,9 +782,9 @@ function Settings() {
                     background: "rgba(255, 255, 255, 0.1)",
                   }}
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
-                <Button onClick={confirmLogout}>Sign Out</Button>
+                <Button onClick={confirmLogout}>{t("dashboard.settings.signOut", "Sign Out")}</Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>
@@ -782,7 +836,7 @@ function Settings() {
                 </p>
               </ModalBody>
               <ModalFooter style={{ justifyContent: "center" }}>
-                <Button onClick={handleModalClose}>Got It</Button>
+                <Button onClick={handleModalClose}>{t("dashboard.main.gotIt", "Got It")}</Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>

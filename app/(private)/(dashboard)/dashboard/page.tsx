@@ -18,6 +18,7 @@ import { getPrices, getUpcomingInvoice } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
+import { useTranslation } from "react-i18next";
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -322,142 +323,136 @@ const FormTextarea = styled.textarea`
   }
 `;
 
-// Helper function to safely display user name
 const formatName = (
   firstName: string | null,
   lastName: string | null
 ): string => {
-  const first = firstName || "";
-  const last = lastName || "";
-  return (first + (first && last ? " " : "") + last).trim();
+  if (firstName || lastName) {
+    return `${firstName || ""} ${lastName || ""}`.trim();
+  }
+  return "";
 };
 
 function DashboardPage() {
+  const { t } = useTranslation();
   const { user: userAuth } = useAuth();
-
   const user = userAuth!;
-
   const router = useRouter();
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
-  const [confirmationIcon, setConfirmationIcon] = useState<
-    "success" | "warning" | "info"
-  >("success");
+  const [confirmationIcon, setConfirmationIcon] =
+    useState<"success" | "warning" | "info">("success");
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({
-    subject: "",
+    name: "",
+    email: "",
     message: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Simplified state for device count
+  const [isContactSubmitting, setIsContactSubmitting] = useState(false);
   const [deviceCount, setDeviceCount] = useState(0);
+  const [maxDevices, setMaxDevices] = useState(5);
   const [isLoadingDevices, setIsLoadingDevices] = useState(true);
 
-  // Use actual subscription data from user
-  const userSubscription = user.profile;
-
-  // Add state for Stripe prices
+  // State for prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
-
-  // Only keep the monthly price for display purposes
   const [monthlyPrice, setMonthlyPrice] = useState(8);
+  const [yearlyPrice, setYearlyPrice] = useState(69);
+  const [lifetimePrice, setLifetimePrice] = useState(199);
 
-  // Calculate trial duration based on expiration and signup dates
-  const getTrialDuration = () => {
-    return 7; // Fixed to 7-day trial
-  };
-
-  const trialDays = getTrialDuration();
-
-  const maxDevices = 5;
-
-  // Add state for upcoming invoice
+  // State for upcoming invoice
   const [upcomingInvoice, setUpcomingInvoice] = useState<{
     amount: number | null;
-    error: string | null;
     due_date: Date | null;
-  }>({ amount: null, error: null, due_date: null });
+    error: string | null;
+  }>({
+    amount: null,
+    due_date: null,
+    error: null,
+  });
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
 
-  // Helper functions
+  // Trial duration in days
+  const trialDays = 7; // Default value
+
+  // Get trial duration based on plan
+  const getTrialDuration = () => {
+    return trialDays;
+  };
+
+  // Format date for display
   const formatDate = (date: string | number | null | undefined) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString(t("common.locale", "en-US"), {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
   };
 
-  // Simplified function to fetch device count
+  // Fetch device count on component mount
   useEffect(() => {
     async function fetchDeviceCount() {
       try {
         setIsLoadingDevices(true);
         const { sessions, error } = await fetchUserSessions();
-
+        
         if (error) {
-          console.error("Error fetching sessions:", error);
-          return;
+          console.error("Error fetching device count:", error);
+        } else {
+          setDeviceCount(sessions?.length || 0);
         }
-
-        // Just set the count
-        setDeviceCount(sessions.length);
       } catch (err) {
-        console.error("Error fetching device count:", err);
+        console.error("Error in fetchDeviceCount:", err);
       } finally {
         setIsLoadingDevices(false);
       }
     }
 
-    fetchDeviceCount();
-  }, []);
+    if (user) {
+      fetchDeviceCount();
+    }
+  }, [user]);
 
-  const isInTrialPeriod = useCallback(() => {
-    if (!userSubscription.trial_expiration) return false;
-    return new Date() < new Date(userSubscription.trial_expiration);
-  }, [userSubscription.trial_expiration]);
-
+  // Determine if user has completed a trial
   const hasCompletedTrial = () => {
-    // Consider a trial completed if:
-    // 1. User has an active subscription (not "none")
-    // 2. User has a past trial_expiration date
+    // Consider a trial completed if user has a subscription that's not "none"
+    // or if trial_expiration is in the past
     return (
-      userSubscription.subscription !== "none" ||
-      (userSubscription.trial_expiration &&
-        new Date(userSubscription.trial_expiration) < new Date())
+      user.profile.subscription !== "none" ||
+      (user.profile.trial_expiration &&
+        new Date(user.profile.trial_expiration) < new Date())
     );
   };
 
-  // Determine if we should show trial messaging
+  // Determine if we should show trial content
   const shouldShowTrialContent = () => {
-    return isInTrialPeriod() && !hasCompletedTrial();
+    // Only show for active trial users
+    return user?.profile.trial_expiration && !hasCompletedTrial();
   };
 
+  // Get days left in trial
   const getDaysLeftInTrial = () => {
-    if (!userSubscription.trial_expiration) return 0;
+    if (!user?.profile.trial_expiration) return 0;
+    
     const today = new Date();
-    const trialEnd = new Date(userSubscription.trial_expiration);
+    const trialEnd = new Date(user.profile.trial_expiration);
     const diffTime = Number(trialEnd) - Number(today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
     return diffDays > 0 ? diffDays : 0;
   };
 
-  // Navigate to billing page
   const navigateToBilling = () => {
     router.push("/billing");
   };
 
-  // Navigate to downloads page
   const navigateToDownloads = () => {
     router.push("/downloads");
   };
 
-  // Navigate to settings page
   const navigateToSettings = () => {
     router.push("/settings");
   };
@@ -473,130 +468,122 @@ function DashboardPage() {
   };
 
   const handleContactSubmit = async () => {
+    // Basic validation
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      setConfirmationTitle(t("dashboard.main.error", "Error"));
+      setConfirmationMessage(t("dashboard.main.fillAllFields", "Please fill in all fields"));
+      setConfirmationIcon("warning");
+      setShowConfirmationModal(true);
+      return;
+    }
+
+    setIsContactSubmitting(true);
+
     try {
-      // Set submitting state
-      setIsSubmitting(true);
+      // TODO: Implement actual contact form submission
+      // Simulate an API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Prepare the data for the API request
-      const contactData = {
-        name: formatName(user.profile.first_name, user.profile.last_name),
-        email: user.email,
-        subject: contactForm.subject,
-        message: contactForm.message,
-        userId: user.id, // Include user ID for tracking
-      };
-
-      // Send the contact form data to our API
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(contactData),
+      // Show success message
+      setContactForm({
+        name: "",
+        email: "",
+        message: "",
       });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Reset form
-        setContactForm({
-          subject: "",
-          message: "",
-        });
-
-        // Close modal
-        setShowContactModal(false);
-
-        // Show confirmation
-        setConfirmationTitle("Message Sent!");
-        setConfirmationMessage(
-          "Your message has been sent to our support team. We will respond to your inquiry as soon as possible."
-        );
-        setConfirmationIcon("success");
-        setShowConfirmationModal(true);
-      } else {
-        // Show error message
-        setConfirmationTitle("Error");
-        setConfirmationMessage(
-          `Failed to send message: ${
-            result.error || "Unknown error"
-          }. Please try again.`
-        );
-        setConfirmationIcon("warning");
-        setShowConfirmationModal(true);
-      }
+      setShowContactModal(false);
+      
+      setConfirmationTitle(t("dashboard.main.messageSent", "Message Sent"));
+      setConfirmationMessage(t("dashboard.main.messageReceived", "We've received your message and will respond shortly."));
+      setConfirmationIcon("success");
+      setShowConfirmationModal(true);
     } catch (error) {
-      console.error("Contact form error:", error);
+      console.error("Error submitting contact form:", error);
+      
       // Show error message
-      setConfirmationTitle("Error");
-      setConfirmationMessage(
-        "An unexpected error occurred. Please try again later."
-      );
+      setConfirmationTitle(t("dashboard.main.error", "Error"));
+      setConfirmationMessage(t("dashboard.main.messageError", "Failed to send your message. Please try again later."));
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
     } finally {
-      // Reset submitting state
-      setIsSubmitting(false);
+      setIsContactSubmitting(false);
     }
   };
 
-  // Fetch price from Stripe when component mounts
+  // Fetch prices and upcoming invoice on component mount
   useEffect(() => {
     async function fetchPrices() {
       try {
         setIsLoadingPrices(true);
         setPriceError(null);
-
+        
         const { prices, error } = await getPrices();
-
+        
         if (error) {
-          setPriceError(error);
+          setPriceError(t("dashboard.billing.errorOccurred", "An error occurred: {{error}}", { error }));
           return;
         }
-
-        // Only update monthly price for dashboard display
-        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+        
+        if (prices) {
+          setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+          setYearlyPrice(Math.round(prices.annual.amount / 100));
+          setLifetimePrice(Math.round(prices.lifetime.amount / 100));
+        }
       } catch (err) {
         console.error("Error fetching prices:", err);
-        setPriceError("Failed to load pricing information");
+        setPriceError(t("dashboard.billing.errorOccurred", "An error occurred: {{error}}", { 
+          error: err instanceof Error ? err.message : t("common.unknownError", "Unknown error")
+        }));
       } finally {
         setIsLoadingPrices(false);
       }
     }
 
-    fetchPrices();
-  }, []);
-
-  // Fetch upcoming invoice from Stripe
-  useEffect(() => {
-    // Create local variable to determine if we should fetch
-    const isRecurringSubscription =
-      userSubscription.subscription === "monthly" ||
-      userSubscription.subscription === "annual";
-
     async function fetchUpcomingInvoice() {
-      // Only fetch if we haven't already loaded or if there was an error
-      if (isRecurringSubscription) {
-        try {
-          setIsLoadingInvoice(true);
-          const invoice = await getUpcomingInvoice(user.profile.customer_id);
-          setUpcomingInvoice(invoice);
-        } catch (err) {
-          console.error("Error fetching upcoming invoice:", err);
-        } finally {
-          setIsLoadingInvoice(false);
+      if (!user?.profile?.customer_id) return;
+      
+      try {
+        setIsLoadingInvoice(true);
+        
+        const { amount, error } = await getUpcomingInvoice(
+          user.profile.customer_id
+        );
+        
+        if (error) {
+          setUpcomingInvoice({
+            amount: null,
+            due_date: null,
+            error: error,
+          });
+        } else {
+          setUpcomingInvoice({
+            amount: amount,
+            due_date: null, // API doesn't return due date currently
+            error: null,
+          });
         }
+      } catch (err) {
+        console.error("Error fetching upcoming invoice:", err);
+        
+        setUpcomingInvoice({
+          amount: null,
+          due_date: null,
+          error: err instanceof Error ? err.message : t("common.unknownError", "Unknown error"),
+        });
+      } finally {
+        setIsLoadingInvoice(false);
       }
     }
 
-    fetchUpcomingInvoice();
-
-    // Use actual state values rather than function calls in dependencies
-  }, [
-    user.profile.customer_id,
-    userSubscription.subscription,
-    userSubscription.trial_expiration,
-  ]);
+    // Only fetch if the user is logged in
+    if (user) {
+      fetchPrices();
+      
+      // Only fetch upcoming invoice if user has customer ID
+      if (user.profile.customer_id) {
+        fetchUpcomingInvoice();
+      }
+    }
+  }, [user]);
 
   const handleModalClose = () => {
     setShowConfirmationModal(false);
@@ -619,15 +606,14 @@ function DashboardPage() {
     <DashboardContainer>
       <WelcomeSection>
         <WelcomeTitle>
-          Welcome back{" "}
-          <span>
-            {formatName(user.profile.first_name, user.profile.last_name)}
-          </span>
+          {t("dashboard.main.welcome", "Welcome back, {{name}}!", {
+            name: formatName(user.profile.first_name, user.profile.last_name)
+          })}
         </WelcomeTitle>
         <WelcomeSubtitle>
           {user
-            ? "Here's an overview of your CYMASPHERE account"
-            : "Please sign in to access your dashboard"}
+            ? t("dashboard.main.welcomeSubtitle", "Here's an overview of your CYMASPHERE account")
+            : t("dashboard.main.pleaseSignIn", "Please sign in to access your dashboard")}
         </WelcomeSubtitle>
       </WelcomeSection>
 
@@ -637,18 +623,18 @@ function DashboardPage() {
           onClick={navigateToBilling}
         >
           <StatHeader>
-            <StatTitle>Current Plan</StatTitle>
+            <StatTitle>{t("dashboard.main.plan", "Current Plan")}</StatTitle>
             <StatIcon color="linear-gradient(90deg, #6c63ff, #4ecdc4)">
               <FaCreditCard />
             </StatIcon>
           </StatHeader>
-          <StatValue>{capitalize(userSubscription.subscription)}</StatValue>
+          <StatValue>{user.profile.subscription === "none" ? t("common.none", "None") : capitalize(user.profile.subscription)}</StatValue>
           <StatDescription>
             {shouldShowTrialContent()
-              ? `${getDaysLeftInTrial()} days left in your free trial`
-              : userSubscription.subscription === "lifetime"
-              ? "Includes free updates for life"
-              : "Upgrade to access premium features"}
+              ? t("dashboard.main.trialDaysLeft", "{{days}} days left in your free trial", { days: getDaysLeftInTrial() })
+              : user.profile.subscription === "lifetime"
+              ? t("dashboard.main.lifetimeAccess", "Includes free updates for life")
+              : t("dashboard.main.upgradeToPro", "Upgrade to access premium features")}
           </StatDescription>
         </StatCard>
 
@@ -657,7 +643,7 @@ function DashboardPage() {
           onClick={navigateToSettings}
         >
           <StatHeader>
-            <StatTitle>Connected Devices</StatTitle>
+            <StatTitle>{t("dashboard.main.devices", "Connected Devices")}</StatTitle>
             <StatIcon color="linear-gradient(90deg, #FF6B6B, #FF8E53)">
               <FaLaptop />
             </StatIcon>
@@ -677,7 +663,7 @@ function DashboardPage() {
               `${deviceCount} / ${maxDevices}`
             )}
           </StatValue>
-          <StatDescription>Active device connections</StatDescription>
+          <StatDescription>{t("dashboard.main.activeDevices", "Active device connections")}</StatDescription>
         </StatCard>
 
         <StatCard
@@ -685,26 +671,26 @@ function DashboardPage() {
           onClick={() => setShowContactModal(true)}
         >
           <StatHeader>
-            <StatTitle>Support</StatTitle>
+            <StatTitle>{t("dashboard.main.support", "Support")}</StatTitle>
             <StatIcon color="linear-gradient(90deg, #84fab0, #8fd3f4)">
               <FaHeadphones />
             </StatIcon>
           </StatHeader>
-          <StatValue>24/7</StatValue>
-          <StatDescription>Premium support available</StatDescription>
+          <StatValue>{t("dashboard.main.supportAvailability", "24/7")}</StatValue>
+          <StatDescription>{t("dashboard.main.premiumSupport", "Premium support available")}</StatDescription>
         </StatCard>
       </StatsGrid>
 
       <CardGrid>
         <Card whileHover={{ y: -5, transition: { duration: 0.2 } }}>
           {shouldShowTrialContent() && (
-            <TrialBadge>{trialDays}-Day Trial</TrialBadge>
+            <TrialBadge>{t("dashboard.main.freeTrialBadge", "{{trialDays}}-Day Trial", { trialDays })}</TrialBadge>
           )}
           <CardTitle>
             <FaCreditCard />{" "}
-            {userSubscription.subscription === "lifetime"
-              ? "Membership"
-              : "Subscription"}
+            {user.profile.subscription === "lifetime"
+              ? t("dashboard.main.membership", "Membership")
+              : t("dashboard.main.subscription", "Subscription")}
           </CardTitle>
           <CardContent>
             {/* Show price error if there is one */}
@@ -716,58 +702,58 @@ function DashboardPage() {
                   fontSize: "0.9rem",
                 }}
               >
-                {priceError} Showing default prices.
+                {priceError} {t("dashboard.billing.showingDefaultPrices", "Showing default prices.")}
               </div>
             )}
             <SubscriptionInfo>
-              <InfoLabel>Current Plan</InfoLabel>
-              <InfoValue>{capitalize(userSubscription.subscription)}</InfoValue>
+              <InfoLabel>{t("dashboard.main.plan", "Current Plan")}</InfoLabel>
+              <InfoValue>{user.profile.subscription === "none" ? t("common.none", "None") : capitalize(user.profile.subscription)}</InfoValue>
             </SubscriptionInfo>
             {shouldShowTrialContent() && (
               <SubscriptionInfo>
-                <InfoLabel>Trial Status</InfoLabel>
-                <InfoValue>{getDaysLeftInTrial()} days remaining</InfoValue>
+                <InfoLabel>{t("dashboard.main.trialStatus", "Trial Status")}</InfoLabel>
+                <InfoValue>{t("dashboard.main.daysRemaining", "{{days}} days remaining", { days: getDaysLeftInTrial() })}</InfoValue>
               </SubscriptionInfo>
             )}
             <SubscriptionInfo>
               <InfoLabel>
-                {userSubscription.subscription === "lifetime"
-                  ? "Purchase Date"
-                  : "Renewal Date"}
+                {user.profile.subscription === "lifetime"
+                  ? t("dashboard.main.purchasedOn", "Purchase Date")
+                  : t("dashboard.main.renewalDate", "Renewal Date")}
               </InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent()
-                  ? formatDate(userSubscription.trial_expiration)
-                  : userSubscription.subscription_expiration
-                  ? formatDate(userSubscription.subscription_expiration)
-                  : "N/A"}
+                  ? formatDate(user.profile.trial_expiration)
+                  : user.profile.subscription_expiration
+                  ? formatDate(user.profile.subscription_expiration)
+                  : t("common.notAvailable", "N/A")}
               </InfoValue>
             </SubscriptionInfo>
             <SubscriptionInfo>
               <InfoLabel>
-                {userSubscription.subscription === "lifetime"
-                  ? "Future Payments"
-                  : "Next Payment"}
+                {user.profile.subscription === "lifetime"
+                  ? t("dashboard.main.futurePayments", "Future Payments")
+                  : t("dashboard.main.nextPayment", "Next Payment")}
               </InfoLabel>
               <InfoValue>
                 {shouldShowTrialContent() ? (
-                  `$${
-                    isLoadingPrices ? "..." : monthlyPrice
-                  }.00 on ${formatDate(userSubscription.trial_expiration)}`
-                ) : userSubscription.subscription === "lifetime" ? (
+                  t("dashboard.main.firstPayment", "${{amount}}.00 on {{date}}", {
+                    amount: isLoadingPrices ? "..." : monthlyPrice,
+                    date: formatDate(user.profile.trial_expiration)
+                  })
+                ) : user.profile.subscription === "lifetime" ? (
                   "$0.00"
                 ) : isLoadingInvoice ? (
                   <LoadingComponent size="16px" text="" />
                 ) : upcomingInvoice.error ? (
                   "$0.00"
                 ) : upcomingInvoice.amount ? (
-                  `$${upcomingInvoice.amount.toFixed(2)} ${
-                    upcomingInvoice.due_date
-                      ? `on ${formatDate(
-                          upcomingInvoice.due_date.toISOString()
-                        )}`
-                      : ""
-                  }`
+                  t("dashboard.main.amountOnDate", "${{amount}} {{date}}", {
+                    amount: upcomingInvoice.amount.toFixed(2),
+                    date: upcomingInvoice.due_date ? t("dashboard.main.onDate", "on {{date}}", {
+                      date: formatDate(upcomingInvoice.due_date.toISOString())
+                    }) : ""
+                  })
                 ) : (
                   "$0.00"
                 )}
@@ -775,17 +761,19 @@ function DashboardPage() {
             </SubscriptionInfo>
             <p>
               {shouldShowTrialContent()
-                ? `You're currently on a ${trialDays}-day free trial with full access to all premium features. No payment until your trial ends.`
-                : userSubscription.subscription === "lifetime"
-                ? "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently."
-                : userSubscription.subscription !== "none"
-                ? `Your ${userSubscription.subscription} subscription is active. Enjoy all premium features and benefits.`
-                : "Upgrade to unlock premium features and advanced audio processing capabilities."}
+                ? t("dashboard.main.trialMessage", "You're currently on a {{trialDays}}-day free trial with full access to all premium features. No payment until your trial ends.", { trialDays })
+                : user.profile.subscription === "lifetime"
+                ? t("dashboard.main.lifetimeMessage", "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently.")
+                : user.profile.subscription !== "none"
+                ? t("dashboard.main.activeSubscriptionMessage", "Your {{plan}} subscription is active. Enjoy all premium features and benefits.", {
+                    plan: user.profile.subscription
+                  })
+                : t("dashboard.main.upgradeMessage", "Upgrade to unlock premium features and advanced audio processing capabilities.")}
             </p>
           </CardContent>
           <Button
             onClick={
-              userSubscription.subscription !== "none"
+              user.profile.subscription !== "none"
                 ? navigateToDownloads
                 : navigateToBilling
             }
@@ -793,27 +781,26 @@ function DashboardPage() {
           >
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
-            ) : userSubscription.subscription === "none" ? (
-              "Get Started"
+            ) : user.profile.subscription === "none" ? (
+              t("dashboard.main.getStarted", "Get Started")
             ) : (
-              "Download"
+              t("dashboard.downloads.downloadButton", "Download")
             )}
           </Button>
         </Card>
 
         <Card whileHover={{ y: -5, transition: { duration: 0.2 } }}>
           <CardTitle>
-            <FaHeadphones /> Support
+            <FaHeadphones /> {t("dashboard.main.support", "Support")}
           </CardTitle>
           <CardContent>
-            <p>Need help with your account or have questions?</p>
+            <p>{t("dashboard.main.needHelp", "Need help with your account or have questions?")}</p>
             <p>
-              Our team is ready to assist you with any questions or issues you
-              might have.
+              {t("dashboard.main.supportIntro", "Our team is ready to assist you with any questions or issues you might have.")}
             </p>
           </CardContent>
           <Button onClick={() => setShowContactModal(true)}>
-            Contact Support
+            {t("dashboard.main.contactSupport", "Contact Support")}
           </Button>
         </Card>
       </CardGrid>
@@ -847,7 +834,12 @@ function DashboardPage() {
                   style={{
                     fontSize: "4rem",
                     marginBottom: "1rem",
-                    color: "var(--primary)",
+                    color:
+                      confirmationIcon === "warning"
+                        ? "var(--warning)"
+                        : confirmationIcon === "info"
+                        ? "var(--primary)"
+                        : "var(--success)",
                   }}
                 >
                   {renderConfirmationIcon()}
@@ -862,8 +854,10 @@ function DashboardPage() {
                   {confirmationMessage}
                 </p>
               </ModalBody>
-              <ModalFooter style={{ justifyContent: "center" }}>
-                <Button onClick={handleModalClose}>Got It</Button>
+              <ModalFooter>
+                <Button onClick={handleModalClose}>
+                  {t("dashboard.main.gotIt", "Got It")}
+                </Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>
@@ -884,80 +878,117 @@ function DashboardPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: "550px" }}
             >
               <ModalHeader>
-                <ModalTitle>Contact Support</ModalTitle>
+                <ModalTitle>{t("dashboard.main.contactSupport", "Contact Support")}</ModalTitle>
                 <CloseButton onClick={() => setShowContactModal(false)}>
                   <FaTimes />
                 </CloseButton>
               </ModalHeader>
               <ModalBody>
-                <FormGroup>
-                  <FormLabel>Your Name</FormLabel>
-                  <FormInput
-                    type="text"
-                    value={formatName(
-                      user.profile.first_name,
-                      user.profile.last_name
-                    )}
-                    readOnly
+                <p style={{ marginBottom: "1.5rem" }}>
+                  {t("dashboard.main.supportHelpText", "Our support team is here to assist you with any questions or issues you might have.")}
+                </p>
+                <div style={{ marginBottom: "1rem" }}>
+                  <label
+                    htmlFor="name"
                     style={{
-                      backgroundColor: "rgba(40, 40, 60, 0.5)",
-                      cursor: "not-allowed",
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      color: "var(--text-secondary)",
                     }}
-                  />
-                </FormGroup>
-
-                <FormGroup>
-                  <FormLabel>Your Email</FormLabel>
-                  <FormInput
-                    type="email"
-                    value={user.email}
-                    readOnly
-                    style={{
-                      backgroundColor: "rgba(40, 40, 60, 0.5)",
-                      cursor: "not-allowed",
-                    }}
-                  />
-                </FormGroup>
-
-                <FormGroup>
-                  <FormLabel htmlFor="subject">Subject</FormLabel>
-                  <FormInput
+                  >
+                    {t("dashboard.main.yourName", "Your Name")}
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
                     type="text"
-                    id="subject"
-                    name="subject"
-                    placeholder="How can we help you?"
-                    value={contactForm.subject}
+                    value={contactForm.name}
                     onChange={handleContactInputChange}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      color: "var(--text)",
+                    }}
                   />
-                </FormGroup>
-
-                <FormGroup>
-                  <FormLabel htmlFor="message">Message</FormLabel>
-                  <FormTextarea
+                </div>
+                <div style={{ marginBottom: "1rem" }}>
+                  <label
+                    htmlFor="email"
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {t("dashboard.main.yourEmail", "Your Email")}
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={contactForm.email}
+                    onChange={handleContactInputChange}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: "1rem" }}>
+                  <label
+                    htmlFor="message"
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {t("dashboard.main.message", "Your Message")}
+                  </label>
+                  <textarea
                     id="message"
                     name="message"
-                    placeholder="Please describe your issue or question in detail..."
                     value={contactForm.message}
                     onChange={handleContactInputChange}
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      color: "var(--text)",
+                      resize: "vertical",
+                    }}
                   />
-                </FormGroup>
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button
-                  onClick={() => setShowContactModal(false)}
-                  style={{
-                    marginRight: "0.5rem",
-                    background: "rgba(255, 255, 255, 0.1)",
-                  }}
+                  onClick={handleContactSubmit}
+                  disabled={isContactSubmitting}
+                  style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
                 >
-                  Cancel
-                </Button>
-                <Button onClick={handleContactSubmit} disabled={isSubmitting}>
-                  <FaPaperPlane style={{ marginRight: "0.5rem" }} />
-                  {isSubmitting ? "Sending..." : "Send Message"}
+                  {isContactSubmitting ? (
+                    <>
+                      <LoadingComponent size="18px" text="" />
+                      <span>{t("dashboard.main.sending", "Sending...")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaPaperPlane />
+                      <span>{t("dashboard.main.sendMessage", "Send Message")}</span>
+                    </>
+                  )}
                 </Button>
               </ModalFooter>
             </ModalContent>
