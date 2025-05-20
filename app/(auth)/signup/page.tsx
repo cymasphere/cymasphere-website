@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -313,6 +315,7 @@ function SearchParamsHandler({
 function SignUp() {
   const { signUp, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -322,9 +325,21 @@ function SignUp() {
   });
   const [error, setError] = useState("");
   const [loadingState, setLoadingState] = useState(false);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [redirectAfterLogin, setRedirectAfterLogin] = useState("");
   const [isCheckoutComplete, setIsCheckoutComplete] = useState(false);
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -333,7 +348,7 @@ function SignUp() {
       if (redirectAfterLogin) {
         router.push(redirectAfterLogin);
       } else {
-        router.push("/dashboard");
+        router.push(`/dashboard`);
       }
     }
   }, [user, router, redirectAfterLogin]);
@@ -367,16 +382,16 @@ function SignUp() {
 
     // Validate form
     if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match");
+      return setError(t("signup.errors.passwordsDoNotMatch", "Passwords do not match"));
     }
 
     if (formData.password.length < 6) {
-      return setError("Password must be at least 6 characters");
+      return setError(t("signup.errors.passwordTooShort", "Password must be at least 6 characters"));
     }
 
     if (!agreeToTerms) {
       return setError(
-        "You must agree to the Terms of Service and Privacy Policy"
+        t("signup.errors.agreeTerms", "You must agree to the Terms of Service and Privacy Policy")
       );
     }
 
@@ -416,7 +431,7 @@ function SignUp() {
         }
 
         // For other errors, show the error message
-        setError(result.error.message);
+        setError(t("signup.errors.generic", "{{message}}", { message: result.error.message }));
       } else if (result.data && result.data.user) {
         // Check for empty identities array which indicates an existing confirmed user
         if (
@@ -443,11 +458,26 @@ function SignUp() {
       console.error("Sign up error:", err);
       // Handle specific errors
       const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
+      setError(t("signup.errors.unknown", "{{message}}", { message: errorMessage }));
     } finally {
       setLoadingState(false);
     }
   };
+
+  // Render a loading indicator if translations aren't loaded yet
+  if (!translationsLoaded) {
+    return (
+      <div style={{ 
+        height: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        backgroundColor: "var(--background)"
+      }}>
+        <LoadingComponent size="40px" />
+      </div>
+    );
+  }
 
   return (
     <AuthContainer>
@@ -458,9 +488,9 @@ function SignUp() {
         />
       </Suspense>
 
-      <Link href="/" passHref legacyBehavior={false}>
+      <Link href={`/`} passHref legacyBehavior={false}>
         <BackButton>
-          <FaArrowLeft /> Back to Home
+          <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
         </BackButton>
       </Link>
 
@@ -487,7 +517,7 @@ function SignUp() {
         </div>
 
         <Title>
-          Create an <span>account</span>
+          {t("signup.title.createAn", "Create an")} <span>{t("signup.title.account", "account")}</span>
         </Title>
 
         {/* Display error message if there was an error */}
@@ -504,7 +534,7 @@ function SignUp() {
         <Form onSubmit={handleSubmit}>
           <NameFieldsContainer>
             <FormGroup>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">{t("signup.firstName", "First Name")}</Label>
               <Input
                 type="text"
                 id="firstName"
@@ -512,12 +542,12 @@ function SignUp() {
                 value={formData.firstName.trim()}
                 onChange={handleChange}
                 required
-                placeholder="First Name"
+                placeholder={t("signup.firstNamePlaceholder", "First Name")}
               />
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">{t("signup.lastName", "Last Name")}</Label>
               <Input
                 type="text"
                 id="lastName"
@@ -525,13 +555,13 @@ function SignUp() {
                 value={formData.lastName.trim()}
                 onChange={handleChange}
                 required
-                placeholder="Last Name"
+                placeholder={t("signup.lastNamePlaceholder", "Last Name")}
               />
             </FormGroup>
           </NameFieldsContainer>
 
           <FormGroup>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("common.email", "Email")}</Label>
             <Input
               type="email"
               id="email"
@@ -540,7 +570,7 @@ function SignUp() {
               onChange={handleChange}
               required
               readOnly={isCheckoutComplete}
-              placeholder="Enter your email address"
+              placeholder={t("signup.emailPlaceholder", "Enter your email address")}
               style={
                 isCheckoutComplete
                   ? {
@@ -558,13 +588,13 @@ function SignUp() {
                   marginTop: "0.5rem",
                 }}
               >
-                This email is linked to your purchase and cannot be changed
+                {t("signup.emailLinkedToPurchase", "This email is linked to your purchase and cannot be changed")}
               </div>
             )}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("common.password", "Password")}</Label>
             <Input
               type="password"
               id="password"
@@ -572,12 +602,12 @@ function SignUp() {
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Create a secure password"
+              placeholder={t("signup.passwordPlaceholder", "Create a secure password")}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("signup.confirmPassword", "Confirm Password")}</Label>
             <Input
               type="password"
               id="confirmPassword"
@@ -585,7 +615,7 @@ function SignUp() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Confirm your password"
+              placeholder={t("signup.confirmPasswordPlaceholder", "Confirm your password")}
             />
           </FormGroup>
 
@@ -598,8 +628,8 @@ function SignUp() {
               required
             />
             <CheckboxLabel htmlFor="terms">
-              I agree to the <Link href="/terms">Terms of Service</Link> and{" "}
-              <Link href="/privacy">Privacy Policy</Link>
+              {t("signup.agreeToTerms", "I agree to the")} <Link href="/terms">{t("signup.termsOfService", "Terms of Service")}</Link> {t("signup.and", "and")}{" "}
+              <Link href="/privacy">{t("signup.privacyPolicy", "Privacy Policy")}</Link>
             </CheckboxLabel>
           </CheckboxContainer>
 
@@ -616,17 +646,17 @@ function SignUp() {
                   <div style={{ marginRight: "10px" }}>
                     <LoadingComponent size="20px" />
                   </div>
-                  Creating Account...
+                  {t("signup.creatingAccount", "Creating Account...")}
                 </>
               ) : (
-                "Create Account"
+                t("signup.createAccount", "Create Account")
               )}
             </ButtonContent>
           </Button>
         </Form>
 
         <LinkText>
-          Already have an account? <Link href="/login">Log in</Link>
+          {t("signup.alreadyHaveAccount", "Already have an account?")} <Link href={`/login`}>{t("signup.login", "Log in")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

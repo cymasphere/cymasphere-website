@@ -14,7 +14,7 @@ import {
   FaRegCreditCard,
 } from "react-icons/fa";
 import Link from "next/link";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
@@ -606,7 +606,6 @@ const menuItemVariants = {
 const NextHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -708,12 +707,12 @@ const NextHeader = () => {
 
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push("/login");
+    router.push(`/login`);
   };
 
   const handleSignupClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push("/signup");
+    router.push(`/signup`);
   };
 
   const renderAuthSection = () => {

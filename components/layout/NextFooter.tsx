@@ -12,7 +12,7 @@ import LegalModal from "../modals/LegalModal";
 import AboutUsModal from "../modals/AboutUsModal";
 import EnergyBall from "../common/EnergyBall";
 import { playLydianMaj7Chord } from "../../utils/audioUtils";
-import { useRouter } from "next/router";
+import { useRouter, usePathname } from "next/navigation";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);
@@ -180,9 +180,10 @@ const NextFooter = () => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogoClick = (e: React.MouseEvent) => {
-    if (router.pathname === "/") {
+    if (pathname === "/") {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -283,7 +284,7 @@ const NextFooter = () => {
             href="/login"
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
-              window.location.href = "/login";
+              router.push("/login");
             }}
           >
             Login
@@ -293,7 +294,7 @@ const NextFooter = () => {
             href="/signup"
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
-              window.location.href = "/signup";
+              router.push("/signup");
             }}
           >
             Sign Up

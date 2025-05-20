@@ -6,12 +6,15 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "loading": "Wird geladen...",
-    "learnMore": "Mehr erfahren",
+    "learnMore": "Mehr Erfahren",
     "login": "Anmelden",
     "signUp": "Registrieren",
     "logout": "Abmelden",
     "myAccount": "Mein Konto",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "backToHome": "Zurück zur Startseite",
+    "email": "E-Mail",
+    "password": "Passwort"
   },
   "header": {
     "home": "Startseite",
@@ -320,7 +323,7 @@
     "ja": "日本語"
   },
   "pricing": {
-    "title": "Preise und Pläne",
+    "title": "Preise & Pläne",
     "subtitle": "Flexible Optionen für Ihre Bedürfnisse",
     "simpleTransparent": "Einfache, Transparente Preisgestaltung",
     "chooseOption": "Wählen Sie die Abrechnungsoption, die am besten zu Ihnen passt.",
@@ -383,5 +386,51 @@
     "sending": "Wird gesendet...",
     "successMessage": "Vielen Dank! Ihre Nachricht wurde erfolgreich gesendet.",
     "errorMessage": "Hoppla! Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "login": {
+    "subtitle": "Anmelden, um auf dein Konto zuzugreifen",
+    "forgotPassword": "Passwort vergessen?",
+    "loggingIn": "Anmeldung läuft...",
+    "loginButton": "Anmelden",
+    "noAccount": "Noch kein Konto?",
+    "signUp": "Registrieren",
+    "errors": {
+      "userNotFound": "Kein Konto mit dieser E-Mail gefunden. Bitte registriere dich zuerst.",
+      "invalidCredentials": "Falsches Passwort. Bitte versuche es erneut.",
+      "invalidEmail": "Ungültiges E-Mail-Format.",
+      "rateLimit": "Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuche es später erneut oder setze dein Passwort zurück.",
+      "generic": "Anmeldung fehlgeschlagen: {{message}}",
+      "unknown": "Anmeldung fehlgeschlagen: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Erstelle ein",
+      "account": "Konto"
+    },
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "firstNamePlaceholder": "Vorname",
+    "lastNamePlaceholder": "Nachname",
+    "emailPlaceholder": "Gib deine E-Mail-Adresse ein",
+    "emailLinkedToPurchase": "Diese E-Mail ist mit deinem Kauf verknüpft und kann nicht geändert werden",
+    "passwordPlaceholder": "Erstelle ein sicheres Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "confirmPasswordPlaceholder": "Bestätige dein Passwort",
+    "agreeToTerms": "Ich stimme den",
+    "termsOfService": "Nutzungsbedingungen",
+    "and": "und der",
+    "privacyPolicy": "Datenschutzerklärung zu",
+    "creatingAccount": "Konto wird erstellt...",
+    "createAccount": "Konto erstellen",
+    "alreadyHaveAccount": "Hast du bereits ein Konto?",
+    "login": "Anmelden",
+    "errors": {
+      "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
+      "passwordTooShort": "Passwort muss mindestens 6 Zeichen lang sein",
+      "agreeTerms": "Du musst den Nutzungsbedingungen und der Datenschutzerklärung zustimmen",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
   }
 } 

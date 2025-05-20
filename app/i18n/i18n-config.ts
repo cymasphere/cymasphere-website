@@ -7,12 +7,41 @@ import { initReactI18next } from 'react-i18next';
 export const languages = ['en', 'es', 'fr', 'de', 'ja'];
 export const defaultLanguage = 'en';
 
+// Function to get the current language preference from localStorage or browser
+export const getCurrentLanguage = (): string => {
+  if (typeof window === 'undefined') return defaultLanguage;
+  
+  // First check localStorage for saved preference
+  const savedLanguage = window.localStorage.getItem('i18nextLng');
+  
+  if (savedLanguage && languages.includes(savedLanguage)) {
+    return savedLanguage;
+  }
+  
+  // If no saved preference, try to use browser language
+  const browserLang = navigator.language.split('-')[0];
+  if (languages.includes(browserLang)) {
+    // Save the detected browser language for future visits
+    window.localStorage.setItem('i18nextLng', browserLang);
+    return browserLang;
+  }
+  
+  // Fall back to default language
+  window.localStorage.setItem('i18nextLng', defaultLanguage);
+  return defaultLanguage;
+};
+
 // Function to load translations for a language
 export const loadTranslations = async (locale: string) => {
   try {
     // Use fetch to get translations from our API
     const response = await fetch(`/api/translations?locale=${locale}`);
     const data = await response.json();
+    
+    // Always store language preference in localStorage
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('i18nextLng', locale);
+    }
     
     // Initialize i18next with the fetched translations
     if (!i18n.isInitialized) {

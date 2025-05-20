@@ -2,7 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import StyledComponentsRegistry from "./registry";
 import ClientLayout from "./ClientLayout";
-import { defaultLanguage } from './i18n/i18n-config';
+import I18nProvider from "@/app/i18n/I18nProvider";
 import "./globals.css";
 
 // Theme configuration
@@ -50,24 +50,21 @@ const montserrat = Montserrat({
   weight: ["400", "500", "600", "700"],
 });
 
-// Define the interface for the RootLayout props to include params
+// Define the interface for the RootLayout props
 interface RootLayoutProps {
   children: React.ReactNode;
-  params: { locale?: string };
 }
 
 export default function RootLayout({
-  children,
-  params = {},
+  children
 }: RootLayoutProps) {
-  // Ensure we have a valid locale or use default
-  const locale = params.locale || defaultLanguage;
-  
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
         <StyledComponentsRegistry>
-          <ClientLayout>{children}</ClientLayout>
+          <I18nProvider>
+            <ClientLayout>{children}</ClientLayout>
+          </I18nProvider>
         </StyledComponentsRegistry>
       </body>
     </html>

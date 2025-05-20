@@ -1,8 +1,13 @@
 "use client";
 
+import React from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import NextHeader from "@/components/layout/NextHeader";
+import Footer from "@/components/layout/Footer";
 
 // Theme configuration
 const theme = {
@@ -33,22 +38,69 @@ const theme = {
   },
 };
 
-// Update component props to include locale
+const LayoutWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background);
+`;
+
+const Main = styled(motion.main)`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  /* Content within can set their own max-width if needed */
+  > * {
+    margin: 0 auto;
+    width: 100%;
+  }
+`;
+
+// Animation variants
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 20,
+  },
+  in: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.3,
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
+  },
+};
+
 interface ClientLayoutProps {
   children: React.ReactNode;
-  locale?: string;
 }
 
 export default function ClientLayout({
-  children,
-  locale = 'en'
+  children
 }: ClientLayoutProps) {
-  // The locale will be passed through to the page but we don't need to modify AuthProvider
-  // Next.js will handle the locale routing based on the directory structure
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <LayoutWrapper>
+            <NextHeader />
+            <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
+              {children}
+            </Main>
+            <Footer />
+          </LayoutWrapper>
+        </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );

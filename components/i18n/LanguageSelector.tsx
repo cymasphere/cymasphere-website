@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import styles from "./LanguageSelector.module.css";
 import dynamic from "next/dynamic";
+import useLanguage from "@/hooks/useLanguage";
 
 // Define language code type
 type LanguageCode = "en" | "es" | "fr" | "de" | "ja";
@@ -25,7 +26,8 @@ const LANGUAGE_NAMES: Record<LanguageCode, string> = {
 };
 
 const LanguageSelector = () => {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage, isLoading } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,12 +48,16 @@ const LanguageSelector = () => {
     };
   }, []);
 
-  const changeLanguage = (langCode: LanguageCode) => {
-    i18n.changeLanguage(langCode);
+  const handleLanguageChange = (langCode: LanguageCode) => {
+    changeLanguage(langCode);
     setIsOpen(false);
   };
 
-  const currentLanguage = (i18n.language || "en") as LanguageCode;
+  const currentLang = (currentLanguage || "en") as LanguageCode;
+
+  if (isLoading) {
+    return <div className={styles["language-selector"]}>...</div>;
+  }
 
   return (
     <div
@@ -68,9 +74,9 @@ const LanguageSelector = () => {
           setIsOpen(!isOpen);
         }}
       >
-        <span className={styles["flag-icon"]}>{FLAGS[currentLanguage]}</span>
+        <span className={styles["flag-icon"]}>{FLAGS[currentLang]}</span>
         <span className={styles["language-name"]}>
-          {LANGUAGE_NAMES[currentLanguage] || t(`language.${currentLanguage}`)}
+          {LANGUAGE_NAMES[currentLang] || t(`language.${currentLang}`)}
         </span>
         <span className={styles["dropdown-arrow"]}>▼</span>
       </div>
@@ -81,11 +87,11 @@ const LanguageSelector = () => {
             <div
               key={langCode}
               className={`${styles["language-option"]} ${
-                langCode === currentLanguage ? styles["active"] : ""
+                langCode === currentLang ? styles["active"] : ""
               }`}
               onClick={(e) => {
                 e.stopPropagation(); // Prevent event bubbling
-                changeLanguage(langCode);
+                handleLanguageChange(langCode);
               }}
             >
               <span className={styles["flag-icon"]}>{FLAGS[langCode]}</span>

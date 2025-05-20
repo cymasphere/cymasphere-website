@@ -11,7 +11,10 @@
     "signUp": "登録",
     "logout": "ログアウト",
     "myAccount": "マイアカウント",
-    "navigation": "ナビゲーション"
+    "navigation": "ナビゲーション",
+    "backToHome": "ホームに戻る",
+    "email": "メールアドレス",
+    "password": "パスワード"
   },
   "header": {
     "home": "ホーム",
@@ -383,5 +386,51 @@
     "sending": "送信中...",
     "successMessage": "ありがとうございます！メッセージが正常に送信されました。",
     "errorMessage": "申し訳ありません！問題が発生しました。もう一度お試しください。"
+  },
+  "login": {
+    "subtitle": "アカウントにアクセスするにはログインしてください",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "loggingIn": "ログイン中...",
+    "loginButton": "ログイン",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "signUp": "登録する",
+    "errors": {
+      "userNotFound": "このメールアドレスでアカウントが見つかりません。まず登録してください。",
+      "invalidCredentials": "パスワードが正しくありません。もう一度お試しください。",
+      "invalidEmail": "無効なメールフォーマットです。",
+      "rateLimit": "ログイン試行回数が多すぎます。後でもう一度お試しいただくか、パスワードをリセットしてください。",
+      "generic": "ログインに失敗しました：{{message}}",
+      "unknown": "ログインに失敗しました：{{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "アカウントを",
+      "account": "作成"
+    },
+    "firstName": "名",
+    "lastName": "姓",
+    "firstNamePlaceholder": "名",
+    "lastNamePlaceholder": "姓",
+    "emailPlaceholder": "メールアドレスを入力してください",
+    "emailLinkedToPurchase": "このメールはあなたの購入に紐づいており、変更できません",
+    "passwordPlaceholder": "安全なパスワードを作成してください",
+    "confirmPassword": "パスワードの確認",
+    "confirmPasswordPlaceholder": "パスワードを確認してください",
+    "agreeToTerms": "私は",
+    "termsOfService": "利用規約",
+    "and": "と",
+    "privacyPolicy": "プライバシーポリシーに同意します",
+    "creatingAccount": "アカウント作成中...",
+    "createAccount": "アカウントを作成",
+    "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
+    "login": "ログイン",
+    "errors": {
+      "passwordsDoNotMatch": "パスワードが一致しません",
+      "passwordTooShort": "パスワードは少なくとも6文字必要です",
+      "agreeTerms": "利用規約とプライバシーポリシーに同意する必要があります",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
   }
 } 

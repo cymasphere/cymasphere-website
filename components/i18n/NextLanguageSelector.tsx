@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import styled from "styled-components";
-import { loadTranslations } from "@/app/i18n/i18n-config";
+import { loadTranslations, getCurrentLanguage } from "@/app/i18n/i18n-config";
 
 // Define language code type
 type LanguageCode = "en" | "es" | "fr" | "de" | "ja";
@@ -100,14 +97,17 @@ const LangOption = styled.div<{ $isActive: boolean }>`
 `;
 
 const NextLanguageSelector = () => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   
-  // Determine current locale from the URL path or params
-  const currentLocale = ((params?.locale as string) || 'en') as LanguageCode;
+  // State to store the current language
+  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
+  
+  // Initialize current language from localStorage on component mount
+  useEffect(() => {
+    const lang = getCurrentLanguage() as LanguageCode;
+    setCurrentLanguage(lang);
+  }, []);
   
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -131,17 +131,12 @@ const NextLanguageSelector = () => {
     try {
       console.log(`Changing language to ${langCode}`);
       
-      // Get the path without the locale prefix
-      const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
-      // Create the new path with the selected locale
-      const newPath = `/${langCode}${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`;
-      
-      // Also update the i18n instance manually
+      // Load translations for the new language
       await loadTranslations(langCode);
       console.log(`Translations loaded for ${langCode}`);
       
-      // Navigate to the new path
-      router.push(newPath);
+      // Update the component state
+      setCurrentLanguage(langCode);
       setIsOpen(false);
     } catch (error) {
       console.error("Error changing language:", error);
@@ -151,8 +146,8 @@ const NextLanguageSelector = () => {
   return (
     <Container ref={dropdownRef}>
       <SelectedLanguage onClick={() => setIsOpen(!isOpen)}>
-        <FlagIcon>{FLAGS[currentLocale]}</FlagIcon>
-        <LangName>{LANGUAGE_NAMES[currentLocale]}</LangName>
+        <FlagIcon>{FLAGS[currentLanguage]}</FlagIcon>
+        <LangName>{LANGUAGE_NAMES[currentLanguage]}</LangName>
         <DropdownArrow $isOpen={isOpen}>▼</DropdownArrow>
       </SelectedLanguage>
 
@@ -161,7 +156,7 @@ const NextLanguageSelector = () => {
           {(Object.keys(FLAGS) as LanguageCode[]).map((langCode) => (
             <LangOption
               key={langCode}
-              $isActive={langCode === currentLocale}
+              $isActive={langCode === currentLanguage}
               onClick={() => changeLanguage(langCode)}
             >
               <FlagIcon>{FLAGS[langCode]}</FlagIcon>

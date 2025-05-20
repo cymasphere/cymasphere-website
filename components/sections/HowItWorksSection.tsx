@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 const SectionContainer = styled.section`
   width: 100%;
@@ -255,11 +256,11 @@ const HowItWorksSection = () => {
       forceUpdate({});
     };
     
-    i18n.on('languageChanged', handleLanguageChanged);
+    i18next.on('languageChanged', handleLanguageChanged);
     return () => {
-      i18n.off('languageChanged', handleLanguageChanged);
+      i18next.off('languageChanged', handleLanguageChanged);
     };
-  }, [i18n]);
+  }, []);
 
   const sectionTitle = t("howItWorks.title", "How It Works");
 

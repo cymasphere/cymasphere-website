@@ -11,7 +11,10 @@
     "signUp": "S'inscrire",
     "logout": "Déconnexion",
     "myAccount": "Mon Compte",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "backToHome": "Retour à l'accueil",
+    "email": "Email",
+    "password": "Mot de passe"
   },
   "header": {
     "home": "Accueil",
@@ -383,5 +386,51 @@
     "sending": "Envoi en cours...",
     "successMessage": "Merci ! Votre message a été envoyé avec succès.",
     "errorMessage": "Oups ! Une erreur s'est produite. Veuillez réessayer."
+  },
+  "login": {
+    "subtitle": "Connectez-vous pour accéder à votre compte",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loggingIn": "Connexion en cours...",
+    "loginButton": "Se connecter",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "signUp": "S'inscrire",
+    "errors": {
+      "userNotFound": "Aucun compte trouvé avec cet email. Veuillez vous inscrire d'abord.",
+      "invalidCredentials": "Mot de passe incorrect. Veuillez réessayer.",
+      "invalidEmail": "Format d'email invalide.",
+      "rateLimit": "Trop de tentatives de connexion échouées. Veuillez réessayer plus tard ou réinitialiser votre mot de passe.",
+      "generic": "Échec de la connexion : {{message}}",
+      "unknown": "Échec de la connexion : {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Créer un",
+      "account": "compte"
+    },
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "firstNamePlaceholder": "Prénom",
+    "lastNamePlaceholder": "Nom",
+    "emailPlaceholder": "Entrez votre adresse email",
+    "emailLinkedToPurchase": "Cet email est lié à votre achat et ne peut pas être modifié",
+    "passwordPlaceholder": "Créez un mot de passe sécurisé",
+    "confirmPassword": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez votre mot de passe",
+    "agreeToTerms": "J'accepte les",
+    "termsOfService": "Conditions d'utilisation",
+    "and": "et",
+    "privacyPolicy": "Politique de confidentialité",
+    "creatingAccount": "Création du compte...",
+    "createAccount": "Créer un compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "login": "Se connecter",
+    "errors": {
+      "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit comporter au moins 6 caractères",
+      "agreeTerms": "Vous devez accepter les Conditions d'utilisation et la Politique de confidentialité",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
   }
 } 

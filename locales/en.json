@@ -11,7 +11,10 @@
     "signUp": "Sign Up",
     "logout": "Logout",
     "myAccount": "My Account",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "backToHome": "Back to Home",
+    "email": "Email",
+    "password": "Password"
   },
   "header": {
     "home": "Home",
@@ -333,5 +336,51 @@
     "fr": "Français",
     "de": "Deutsch",
     "ja": "日本語"
+  },
+  "login": {
+    "subtitle": "Login to access your account",
+    "forgotPassword": "Forgot password?",
+    "loggingIn": "Logging in...",
+    "loginButton": "Log In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "errors": {
+      "userNotFound": "No account found with this email. Please sign up first.",
+      "invalidCredentials": "Incorrect password. Please try again.",
+      "invalidEmail": "Invalid email format.",
+      "rateLimit": "Too many failed login attempts. Please try again later or reset your password.",
+      "generic": "Failed to log in: {{message}}",
+      "unknown": "Failed to log in: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Create an",
+      "account": "account"
+    },
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "firstNamePlaceholder": "First Name",
+    "lastNamePlaceholder": "Last Name",
+    "emailPlaceholder": "Enter your email address",
+    "emailLinkedToPurchase": "This email is linked to your purchase and cannot be changed",
+    "passwordPlaceholder": "Create a secure password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "agreeToTerms": "I agree to the",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "creatingAccount": "Creating Account...",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Log in",
+    "errors": {
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "agreeTerms": "You must agree to the Terms of Service and Privacy Policy",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
   }
 } 

@@ -9,9 +9,12 @@
     "learnMore": "Más Información",
     "login": "Ingresar",
     "signUp": "Registrarse",
-    "logout": "Salir",
+    "logout": "Cerrar Sesión",
     "myAccount": "Mi Cuenta",
-    "navigation": "Navegación"
+    "navigation": "Navegación",
+    "backToHome": "Volver al inicio",
+    "email": "Correo electrónico",
+    "password": "Contraseña"
   },
   "header": {
     "home": "Inicio",
@@ -319,7 +322,7 @@
     "ja": "日本語"
   },
   "pricing": {
-    "title": "Precios",
+    "title": "Precios y Planes",
     "subtitle": "Opciones flexibles para adaptarse a tus necesidades",
     "simpleTransparent": "Precios Simples y Transparentes",
     "chooseOption": "Elige la opción de facturación que mejor te funcione.",
@@ -382,5 +385,51 @@
     "sending": "Enviando...",
     "successMessage": "¡Gracias! Tu mensaje ha sido enviado correctamente.",
     "errorMessage": "¡Ups! Algo salió mal. Por favor, inténtalo de nuevo."
+  },
+  "login": {
+    "subtitle": "Inicia sesión para acceder a tu cuenta",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "loggingIn": "Iniciando sesión...",
+    "loginButton": "Iniciar sesión",
+    "noAccount": "¿No tienes una cuenta?",
+    "signUp": "Regístrate",
+    "errors": {
+      "userNotFound": "No se encontró una cuenta con este correo. Por favor, regístrate primero.",
+      "invalidCredentials": "Contraseña incorrecta. Por favor, inténtalo de nuevo.",
+      "invalidEmail": "Formato de correo electrónico inválido.",
+      "rateLimit": "Demasiados intentos de inicio de sesión fallidos. Por favor, inténtalo más tarde o restablece tu contraseña.",
+      "generic": "Error al iniciar sesión: {{message}}",
+      "unknown": "Error al iniciar sesión: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Crea una",
+      "account": "cuenta"
+    },
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "firstNamePlaceholder": "Nombre",
+    "lastNamePlaceholder": "Apellido",
+    "emailPlaceholder": "Introduce tu dirección de correo",
+    "emailLinkedToPurchase": "Este correo está vinculado a tu compra y no puede cambiarse",
+    "passwordPlaceholder": "Crea una contraseña segura",
+    "confirmPassword": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Confirma tu contraseña",
+    "agreeToTerms": "Acepto los",
+    "termsOfService": "Términos de servicio",
+    "and": "y",
+    "privacyPolicy": "Política de privacidad",
+    "creatingAccount": "Creando cuenta...",
+    "createAccount": "Crear cuenta",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "login": "Iniciar sesión",
+    "errors": {
+      "passwordsDoNotMatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "agreeTerms": "Debes aceptar los Términos de servicio y la Política de privacidad",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
   }
 } 

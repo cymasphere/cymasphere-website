@@ -14,6 +14,7 @@ import {
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
+import i18next from "i18next";
 
 // Dynamically import modal to avoid SSR issues
 const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
@@ -209,37 +210,31 @@ const FeaturesSection = () => {
   const params = useParams();
   const currentLocale = (params?.locale as string) || 'en';
 
-  // Force re-render when language changes
-  const [, forceUpdate] = useState({});
+  // Reset the animation state when language changes
   useEffect(() => {
-    // This effect will run whenever the language changes
     const handleLanguageChange = () => {
-      forceUpdate({});
+      setSelectedFeature(-1);
+      setModalOpen(false);
     };
-
-    i18n.on('languageChanged', handleLanguageChange);
     
-    // Cleanup
+    i18next.on('languageChanged', handleLanguageChange);
+    
     return () => {
-      i18n.off('languageChanged', handleLanguageChange);
+      i18next.off('languageChanged', handleLanguageChange);
     };
-  }, [i18n]);
+  }, []);
 
   const formatDetailedDescription = (feature: string) => {
     // Get the features array and ensure it's properly typed
-    const featureItems = t(`features.${feature}.features`, { returnObjects: true });
+    const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
     
-    // Ensure featureItems is an array before using map
-    const featuresList = Array.isArray(featureItems) 
-      ? featureItems.map((item: any) => {
-          // Ensure item is a string
-          const itemStr = typeof item === 'string' ? item : String(item);
-          const hasDash = itemStr.includes(' - ');
-          const [title, description] = hasDash ? itemStr.split(' - ', 2) : [itemStr, ''];
-          return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
-        }).join('')
-      : ''; // Return empty string if not an array
-    
+    // Create list items for each feature
+    const featuresList = featureItems.map((item: string) => {
+      const hasDash = item.includes(' - ');
+      const [title, description] = hasDash ? item.split(' - ', 2) : [item, ''];
+      return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
+    }).join('');
+
     return `
       <h3>${t(`features.${feature}.modalTitle`)}</h3>
       <p>${t(`features.${feature}.modalDescription`)}</p>

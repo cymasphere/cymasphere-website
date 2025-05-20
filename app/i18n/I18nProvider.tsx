@@ -1,33 +1,38 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import i18n, { loadTranslations, defaultLanguage, languages } from './i18n-config';
+import i18next from 'i18next';
+import useLanguage from '@/hooks/useLanguage';
 
 interface I18nProviderProps {
   children: React.ReactNode;
 }
 
 export default function I18nProvider({ children }: I18nProviderProps) {
-  const params = useParams();
+  const { currentLanguage, isLoading } = useLanguage();
   
-  // Get locale from URL params, verify it's valid, or fall back to default
-  let locale = (params?.locale as string) || defaultLanguage;
-  
-  // Ensure the locale is one of our supported languages
-  if (!locale || !languages.includes(locale)) {
-    locale = defaultLanguage;
-  }
-  
-  // Load translations whenever locale changes
+  // Listen for global language change events
   useEffect(() => {
-    const setupI18n = async () => {
-      await loadTranslations(locale);
-      console.log(`Loaded translations for ${locale}`);
+    // Listen for the global language change event
+    const handleGlobalLanguageChange = () => {
+      console.log('[I18nProvider] Detected global language change event');
+      
+      // Force a refresh of all components that use translations
+      if (i18next.isInitialized) {
+        i18next.emit('languageChanged', currentLanguage);
+      }
     };
     
-    setupI18n();
-  }, [locale]);
+    window.addEventListener('languageChange', handleGlobalLanguageChange);
+    
+    return () => {
+      window.removeEventListener('languageChange', handleGlobalLanguageChange);
+    };
+  }, [currentLanguage]);
+  
+  if (isLoading) {
+    return null;
+  }
   
   return <>{children}</>;
 } 
