@@ -760,5 +760,150 @@
       "priority_email_support": "Soporte por Email Prioritario",
       "free_updates": "Actualizaciones Gratuitas"
     }
+  },
+  "legal": {
+    "termsOfService": "Términos de Servicio",
+    "privacyPolicy": "Política de Privacidad",
+    "legalInformation": "Información Legal",
+    "lastUpdated": "Última Actualización",
+    "lastUpdatedDate": "1 de marzo de 2023",
+    "terms": {
+      "acceptance": {
+        "title": "1. Aceptación de Términos",
+        "content": "Al acceder o utilizar los servicios, sitio web o aplicaciones de Cymasphere, acepta estar sujeto a estos Términos de Servicio. Si no está de acuerdo con estos términos, por favor no utilice nuestros servicios."
+      },
+      "description": {
+        "title": "2. Descripción del Servicio",
+        "content": "Cymasphere proporciona herramientas de teoría musical y composición a través de aplicaciones web y de escritorio. Estos servicios pueden cambiar de vez en cuando sin previo aviso."
+      },
+      "accounts": {
+        "title": "3. Cuentas de Usuario",
+        "content": "Algunas características de nuestros servicios requieren que cree una cuenta. Usted es responsable de mantener la confidencialidad de la información de su cuenta y de todas las actividades que ocurran bajo su cuenta."
+      },
+      "content": {
+        "title": "4. Contenido del Usuario",
+        "content": "Usted conserva todos los derechos sobre cualquier contenido que cree, cargue o comparta a través de nuestros servicios. Al cargar contenido, otorga a Cymasphere una licencia no exclusiva para usar, reproducir y distribuir su contenido únicamente para proporcionarle servicios."
+      },
+      "ip": {
+        "title": "5. Propiedad Intelectual",
+        "content": "Cymasphere y su contenido, características y funcionalidad son propiedad de nosotros y están protegidos por derechos de autor, marcas comerciales y otras leyes de propiedad intelectual."
+      },
+      "subscription": {
+        "title": "6. Suscripción y Pagos",
+        "content": "Hay varios planes de suscripción disponibles para Cymasphere. Al suscribirse, acepta pagar las tarifas aplicables. Las tarifas de suscripción no son reembolsables excepto cuando lo exija la ley."
+      },
+      "termination": {
+        "title": "7. Terminación",
+        "content": "Nos reservamos el derecho de terminar o suspender su cuenta y acceso a nuestros servicios por violaciones de estos términos o por cualquier otra razón a nuestra discreción."
+      },
+      "disclaimer": {
+        "title": "8. Descargo de Responsabilidad",
+        "content": "Nuestros servicios se proporcionan \"tal cual\" y \"según disponibilidad\". No ofrecemos garantías, expresas o implícitas, sobre la confiabilidad, disponibilidad o precisión de nuestros servicios."
+      },
+      "limitation": {
+        "title": "9. Limitación de Responsabilidad",
+        "content": "En ningún caso Cymasphere será responsable por daños indirectos, incidentales, especiales o consecuentes que surjan de o en conexión con su uso de nuestros servicios."
+      },
+      "changes": {
+        "title": "10. Cambios en los Términos",
+        "content": "Podemos modificar estos términos en cualquier momento. El uso continuado de nuestros servicios después de los cambios constituye la aceptación de los términos modificados."
+      },
+      "governing": {
+        "title": "11. Ley Aplicable",
+        "content": "Estos términos se regirán por las leyes de la jurisdicción en la que opera Cymasphere, sin tener en cuenta sus disposiciones sobre conflictos de leyes."
+      },
+      "contact": {
+        "title": "12. Contacto",
+        "content": "Para preguntas sobre estos términos, contáctenos en support@cymasphere.com."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Introducción",
+        "content": "Esta Política de Privacidad explica cómo Cymasphere recopila, utiliza y protege su información personal cuando utiliza nuestros servicios. Respetamos su privacidad y estamos comprometidos a proteger sus datos personales."
+      },
+      "collect": {
+        "title": "2. Información que Recopilamos",
+        "content": "Recopilamos información que nos proporciona directamente, como su nombre, dirección de correo electrónico e información de pago cuando se registra para una cuenta. También recopilamos datos de uso e información técnica sobre su dispositivo y cómo interactúa con nuestros servicios."
+      },
+      "use": {
+        "title": "3. Cómo Utilizamos su Información",
+        "content": "Utilizamos su información para proporcionar y mejorar nuestros servicios, procesar transacciones, comunicarnos con usted y garantizar la seguridad. También podemos utilizar su información para investigación y análisis para comprender mejor cómo los usuarios interactúan con nuestros servicios."
+      },
+      "sharing": {
+        "title": "4. Compartir y Divulgación de Datos",
+        "content": "No vendemos su información personal. Podemos compartir su información con proveedores de servicios externos que nos ayudan a operar nuestros servicios, procesar pagos o analizar datos. También podemos divulgar su información si lo exige la ley."
+      },
+      "security": {
+        "title": "5. Seguridad de Datos",
+        "content": "Implementamos medidas de seguridad apropiadas para proteger su información personal. Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro."
+      },
+      "rights": {
+        "title": "6. Sus Derechos",
+        "content": "Dependiendo de su ubicación, puede tener ciertos derechos con respecto a sus datos personales, incluido el derecho a acceder, corregir, eliminar o restringir el procesamiento de sus datos. Contáctenos para ejercer estos derechos."
+      },
+      "cookies": {
+        "title": "7. Cookies y Tecnologías de Seguimiento",
+        "content": "Utilizamos cookies y tecnologías de seguimiento similares para mejorar su experiencia, analizar el uso y recopilar información sobre cómo interactúa con nuestros servicios. Puede controlar las cookies a través de la configuración de su navegador."
+      },
+      "children": {
+        "title": "8. Privacidad de los Niños",
+        "content": "Nuestros servicios no están destinados a niños menores de 13 años. No recopilamos conscientemente información de niños menores de 13 años. Si nos enteramos de que hemos recopilado información de un niño menor de 13 años, tomaremos medidas para eliminarla."
+      },
+      "changes": {
+        "title": "9. Cambios en esta Política de Privacidad",
+        "content": "Podemos actualizar esta Política de Privacidad de vez en cuando. Le notificaremos de cualquier cambio publicando la nueva política en esta página y actualizando la fecha de \"Última Actualización\"."
+      },
+      "contact": {
+        "title": "10. Contáctenos",
+        "content": "Si tiene preguntas sobre esta Política de Privacidad, contáctenos en support@cymasphere.com."
+      }
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "Nuestra Misión",
+      "content": "La misión de Cymasphere es hacer accesible la teoría musical sin requerir años de estudio o aplicación técnica a un instrumento. Creemos que la comprensión musical profunda debería estar al alcance de todos los creadores, no solo de los músicos formados. Nuestras herramientas están diseñadas para eliminar las barreras tradicionales a la creación musical mientras ofrecen libertad creativa.",
+      "highlight": "Estamos comprometidos a empoderar a creadores de todos los niveles haciendo que la complejidad teórica de la música sea intuitiva y accesible. Nuestro objetivo es permitirte realizar tu visión creativa sin los años de estudio normalmente requeridos."
+    },
+    "story": {
+      "title": "Nuestra Historia",
+      "content1": "Fundada en 2022 por un equipo de músicos dedicados, ingenieros de software y teóricos musicales, Cymasphere comenzó como un ambicioso proyecto para reimaginar cómo los músicos interactúan con la armonía y la composición.",
+      "content2": "Después de años de frustración con software musical existente que carecía de sofisticación teórica o era demasiado complejo para un uso intuitivo, nuestros fundadores se propusieron crear una herramienta que hiciera la teoría musical práctica, visual y genuinamente útil en el proceso creativo."
+    },
+    "values": {
+      "title": "Nuestros Valores",
+      "intro": "En Cymasphere, nos guiamos por un conjunto de valores fundamentales que dan forma a todo lo que hacemos:",
+      "integrity": {
+        "title": "Integridad Musical",
+        "content": "Respetamos los principios de la teoría musical mientras abrazamos la innovación"
+      },
+      "design": {
+        "title": "Diseño Intuitivo",
+        "content": "Nuestras interfaces son visualmente claras e inmediatamente comprensibles"
+      },
+      "freedom": {
+        "title": "Libertad Creativa",
+        "content": "Proporcionamos orientación sin limitar la expresión"
+      },
+      "learning": {
+        "title": "Aprendizaje Continuo",
+        "content": "Nuestras herramientas ayudan a los usuarios a desarrollar su comprensión musical"
+      }
+    },
+    "approach": {
+      "title": "Nuestro Enfoque",
+      "intro": "Cymasphere adopta un enfoque único para el software de composición musical centrándose en:",
+      "point1": "Visualizar la armonía y la conducción de voces de manera intuitiva",
+      "point2": "Proporcionar sugerencias inteligentes respetando su dirección creativa",
+      "point3": "Integrar conceptos teóricos sin problemas en el flujo de trabajo creativo",
+      "point4": "Construir puentes entre composición, arreglo y producción",
+      "conclusion": "Constantemente refinamos nuestro enfoque basándonos en los comentarios de los usuarios y los últimos desarrollos en tecnología musical. Creemos en crear herramientas que crezcan con usted y se adapten a sus necesidades creativas en evolución."
+    },
+    "future": {
+      "title": "Mirando hacia el Futuro",
+      "content1": "A medida que continuamos desarrollando Cymasphere, estamos entusiasmados con el futuro de la creación musical. Nuestra hoja de ruta incluye integración avanzada con los principales DAWs, paletas armónicas expandidas, funciones de composición asistida por IA más profundas y mucho más.",
+      "content2": "Le invitamos a unirse a nosotros en este viaje y ayudar a dar forma al futuro de las herramientas inteligentes de creación musical."
+    }
   }
 } 

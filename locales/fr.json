@@ -420,6 +420,105 @@
       "cloud_storage_&_backup": "Stockage Cloud et Sauvegarde",
       "priority_email_support": "Support par Email Prioritaire",
       "free_updates": "Mises à Jour Gratuites"
+    },
+    "legal": {
+      "termsOfService": "Conditions d'Utilisation",
+      "privacyPolicy": "Politique de Confidentialité",
+      "legalInformation": "Informations Légales",
+      "lastUpdated": "Dernière Mise à Jour",
+      "lastUpdatedDate": "1 Mars 2023",
+      "terms": {
+        "acceptance": {
+          "title": "1. Acceptation des Conditions",
+          "content": "En accédant ou en utilisant les services, le site web ou les applications de Cymasphere, vous acceptez d'être lié par ces Conditions d'Utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser nos services."
+        },
+        "description": {
+          "title": "2. Description du Service",
+          "content": "Cymasphere fournit des outils de théorie musicale et de composition via des applications web et de bureau. Ces services peuvent changer de temps à autre sans préavis."
+        },
+        "accounts": {
+          "title": "3. Comptes Utilisateurs",
+          "content": "Certaines fonctionnalités de nos services nécessitent la création d'un compte. Vous êtes responsable de maintenir la confidentialité des informations de votre compte et de toutes les activités qui se produisent sous votre compte."
+        },
+        "content": {
+          "title": "4. Contenu Utilisateur",
+          "content": "Vous conservez tous les droits sur tout contenu que vous créez, téléchargez ou partagez via nos services. En téléchargeant du contenu, vous accordez à Cymasphere une licence non exclusive pour utiliser, reproduire et distribuer votre contenu uniquement pour vous fournir des services."
+        },
+        "ip": {
+          "title": "5. Propriété Intellectuelle",
+          "content": "Cymasphere et son contenu, ses fonctionnalités et ses fonctionnalités nous appartiennent et sont protégés par les lois sur les droits d'auteur, les marques et autres lois sur la propriété intellectuelle."
+        },
+        "subscription": {
+          "title": "6. Abonnement et Paiements",
+          "content": "Différents plans d'abonnement sont disponibles pour Cymasphere. En vous abonnant, vous acceptez de payer les frais applicables. Les frais d'abonnement ne sont pas remboursables sauf si la loi l'exige."
+        },
+        "termination": {
+          "title": "7. Résiliation",
+          "content": "Nous nous réservons le droit de résilier ou suspendre votre compte et l'accès à nos services pour des violations de ces conditions ou pour toute autre raison à notre discrétion."
+        },
+        "disclaimer": {
+          "title": "8. Avis de Non-Responsabilité",
+          "content": "Nos services sont fournis \"tels quels\" et \"selon disponibilité\". Nous n'offrons aucune garantie, expresse ou implicite, concernant la fiabilité, la disponibilité ou l'exactitude de nos services."
+        },
+        "limitation": {
+          "title": "9. Limitation de Responsabilité",
+          "content": "En aucun cas, Cymasphere ne sera responsable des dommages indirects, accessoires, spéciaux ou consécutifs découlant de ou en relation avec votre utilisation de nos services."
+        },
+        "changes": {
+          "title": "10. Modifications des Conditions",
+          "content": "Nous pouvons modifier ces conditions à tout moment. L'utilisation continue de nos services après les modifications constitue l'acceptation des conditions modifiées."
+        },
+        "governing": {
+          "title": "11. Droit Applicable",
+          "content": "Ces conditions sont régies par les lois de la juridiction dans laquelle Cymasphere opère, sans égard à ses dispositions relatives aux conflits de lois."
+        },
+        "contact": {
+          "title": "12. Contact",
+          "content": "Pour toute question concernant ces conditions, veuillez nous contacter à support@cymasphere.com."
+        }
+      },
+      "privacy": {
+        "intro": {
+          "title": "1. Introduction",
+          "content": "Cette Politique de Confidentialité explique comment Cymasphere collecte, utilise et protège vos informations personnelles lorsque vous utilisez nos services. Nous respectons votre vie privée et nous nous engageons à protéger vos données personnelles."
+        },
+        "collect": {
+          "title": "2. Informations que Nous Collectons",
+          "content": "Nous collectons les informations que vous nous fournissez directement, comme votre nom, adresse e-mail et informations de paiement lorsque vous créez un compte. Nous collectons également des données d'utilisation et des informations techniques sur votre appareil et la façon dont vous interagissez avec nos services."
+        },
+        "use": {
+          "title": "3. Comment Nous Utilisons Vos Informations",
+          "content": "Nous utilisons vos informations pour fournir et améliorer nos services, traiter les transactions, communiquer avec vous et assurer la sécurité. Nous pouvons également utiliser vos informations pour la recherche et l'analyse afin de mieux comprendre comment les utilisateurs interagissent avec nos services."
+        },
+        "sharing": {
+          "title": "4. Partage et Divulgation des Données",
+          "content": "Nous ne vendons pas vos informations personnelles. Nous pouvons partager vos informations avec des fournisseurs de services tiers qui nous aident à exploiter nos services, traiter les paiements ou analyser les données. Nous pouvons également divulguer vos informations si la loi l'exige."
+        },
+        "security": {
+          "title": "5. Sécurité des Données",
+          "content": "Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos informations personnelles. Cependant, aucune méthode de transmission sur Internet ou de stockage électronique n'est sécurisée à 100 %."
+        },
+        "rights": {
+          "title": "6. Vos Droits",
+          "content": "Selon votre emplacement, vous pouvez avoir certains droits concernant vos données personnelles, y compris le droit d'accéder, de corriger, de supprimer ou de restreindre le traitement de vos données. Veuillez nous contacter pour exercer ces droits."
+        },
+        "cookies": {
+          "title": "7. Cookies et Technologies de Suivi",
+          "content": "Nous utilisons des cookies et des technologies de suivi similaires pour améliorer votre expérience, analyser l'utilisation et collecter des informations sur la façon dont vous interagissez avec nos services. Vous pouvez contrôler les cookies via les paramètres de votre navigateur."
+        },
+        "children": {
+          "title": "8. Confidentialité des Enfants",
+          "content": "Nos services ne sont pas destinés aux enfants de moins de 13 ans. Nous ne collectons pas sciemment d'informations auprès d'enfants de moins de 13 ans. Si nous apprenons que nous avons collecté des informations auprès d'un enfant de moins de 13 ans, nous prendrons des mesures pour les supprimer."
+        },
+        "changes": {
+          "title": "9. Modifications de Cette Politique de Confidentialité",
+          "content": "Nous pouvons mettre à jour cette Politique de Confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle politique sur cette page et en mettant à jour la date de \"Dernière Mise à Jour\"."
+        },
+        "contact": {
+          "title": "10. Nous Contacter",
+          "content": "Si vous avez des questions concernant cette Politique de Confidentialité, veuillez nous contacter à support@cymasphere.com."
+        }
+      }
     }
   },
   "contact": {
@@ -746,6 +845,52 @@
       "processingMessage": "Veuillez patienter pendant que nous traitons votre demande de suppression de compte...",
       "accountDeleted": "Compte Supprimé",
       "accountDeletedMessage": "Votre compte a été supprimé avec succès. Vous allez être redirigé vers la page d'accueil."
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "Notre Mission",
+      "content": "La mission de Cymasphere est de rendre la théorie musicale accessible sans nécessiter des années d'études ou d'application technique à un instrument. Nous croyons que la compréhension musicale profonde devrait être à la portée de tous les créateurs, pas seulement des musiciens formés. Nos outils sont conçus pour éliminer les barrières traditionnelles à la création musicale tout en offrant la liberté créative.",
+      "highlight": "Nous nous engageons à donner du pouvoir aux créateurs de tous niveaux, en rendant la complexité théorique de la musique intuitive et accessible. Notre objectif est de vous permettre de réaliser votre vision créative sans les années d'étude normalement requises."
+    },
+    "story": {
+      "title": "Notre Histoire",
+      "content1": "Fondée en 2022 par une équipe de musiciens dévoués, d'ingénieurs logiciels et de théoriciens de la musique, Cymasphere a commencé comme un projet ambitieux pour réimaginer comment les musiciens interagissent avec l'harmonie et la composition.",
+      "content2": "Après des années de frustration avec les logiciels de musique existants qui manquaient soit de sophistication théorique, soit étaient trop complexes pour une utilisation intuitive, nos fondateurs ont entrepris de créer un outil qui rendrait la théorie musicale pratique, visuelle et véritablement utile dans le processus créatif."
+    },
+    "values": {
+      "title": "Nos Valeurs",
+      "intro": "Chez Cymasphere, nous sommes guidés par un ensemble de valeurs fondamentales qui façonnent tout ce que nous faisons :",
+      "integrity": {
+        "title": "Intégrité Musicale",
+        "content": "Nous respectons les principes de la théorie musicale tout en embrassant l'innovation"
+      },
+      "design": {
+        "title": "Conception Intuitive",
+        "content": "Nos interfaces sont visuellement claires et immédiatement compréhensibles"
+      },
+      "freedom": {
+        "title": "Liberté Créative",
+        "content": "Nous fournissons des conseils sans limiter l'expression"
+      },
+      "learning": {
+        "title": "Apprentissage Continu",
+        "content": "Nos outils aident les utilisateurs à développer leur compréhension musicale"
+      }
+    },
+    "approach": {
+      "title": "Notre Approche",
+      "intro": "Cymasphere adopte une approche unique des logiciels de composition musicale en se concentrant sur :",
+      "point1": "Visualiser l'harmonie et la conduite des voix de manière intuitive",
+      "point2": "Fournir des suggestions intelligentes tout en respectant votre direction créative",
+      "point3": "Intégrer des concepts théoriques de manière transparente dans le flux de travail créatif",
+      "point4": "Établir des ponts entre la composition, l'arrangement et la production",
+      "conclusion": "Nous affinons constamment notre approche en fonction des retours des utilisateurs et des derniers développements en technologie musicale. Nous croyons en la création d'outils qui évoluent avec vous et s'adaptent à vos besoins créatifs en constante évolution."
+    },
+    "future": {
+      "title": "Regard vers l'Avenir",
+      "content1": "Alors que nous continuons à développer Cymasphere, nous sommes enthousiastes quant à l'avenir de la création musicale. Notre feuille de route comprend une intégration avancée avec les principaux DAW, des palettes harmoniques élargies, des fonctionnalités de composition assistée par IA plus profondes, et bien plus encore.",
+      "content2": "Nous vous invitons à nous rejoindre dans ce voyage et à aider à façonner l'avenir des outils de création musicale intelligents."
     }
   }
 } 

@@ -212,8 +212,8 @@ const CopyrightLink = styled.a`
 `;
 
 // Simple i18n wrapper functions to avoid hook ordering issues
-function getTranslation(key: string, defaultValue: string): string {
-  return i18next.t(key, { defaultValue }) as string;
+function getTranslation(key: string, defaultValue: string, options?: Record<string, any>): string {
+  return i18next.t(key, { defaultValue, ...options }) as string;
 }
 
 const Footer = () => {
@@ -365,7 +365,7 @@ const Footer = () => {
 
       <Copyright>
         <p>
-          {getTranslation("footer.copyright", `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`)}
+          {getTranslation("footer.copyright", `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`, { year: new Date().getFullYear() })}
           <span>
             <CopyrightLink
               href="https://nnaud.io"

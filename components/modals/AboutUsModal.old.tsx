@@ -253,8 +253,10 @@ const CompanyHighlight = styled.div`
 `;
 
 // Memoize the about us content since it's static
-const AboutUsContentSection = memo(() => {
+const AboutUsContentSection = () => {
   const { t } = useTranslation();
+
+  console.log('Rendering AboutUsContentSection with fresh content');
 
   return (
     <AboutUsContent>
@@ -275,6 +277,25 @@ const AboutUsContentSection = memo(() => {
       <p>
         {t("aboutUs.story.content2", "After observing that existing music software either required advanced theoretical understanding or severely limited creativity, our founders set out to create a tool that would make musical sophistication accessible to everyone, without requiring years of theoretical study or technical mastery of an instrument.")}
       </p>
+
+      <h3>{t("aboutUs.team.title", "Our Team")}</h3>
+      <TeamSection>
+        <TeamMember>
+          <TeamMemberImage>
+            {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+          </TeamMemberImage>
+          <TeamMemberName>{t("aboutUs.team.member1.name", "Ryan Johnson")}</TeamMemberName>
+          <TeamMemberRole>{t("aboutUs.team.member1.role", "Founder & Musician")}</TeamMemberRole>
+        </TeamMember>
+
+        <TeamMember>
+          <TeamMemberImage>
+            {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
+          </TeamMemberImage>
+          <TeamMemberName>{t("aboutUs.team.member2.name", "Garrett Fleischer")}</TeamMemberName>
+          <TeamMemberRole>{t("aboutUs.team.member2.role", "Founder & Lead Software Engineer")}</TeamMemberRole>
+        </TeamMember>
+      </TeamSection>
 
       <h3>{t("aboutUs.values.title", "Our Values")}</h3>
       <p>
@@ -326,10 +347,7 @@ const AboutUsContentSection = memo(() => {
       </p>
     </AboutUsContent>
   );
-});
-
-// Add display name to memoized component
-AboutUsContentSection.displayName = "AboutUsContentSection";
+};
 
 interface AboutUsModalProps {
   isOpen: boolean;
@@ -339,6 +357,9 @@ interface AboutUsModalProps {
 const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
   // Add translation hook
   const { t } = useTranslation();
+  
+  // Add timestamp to force re-rendering
+  const [timestamp, setTimestamp] = React.useState(Date.now());
 
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
@@ -346,6 +367,8 @@ const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
 
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      // Update timestamp when modal opens to force fresh rendering
+      setTimestamp(Date.now());
     } else {
       document.body.style.overflow = originalStyle;
     }
@@ -390,7 +413,7 @@ const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
               <FaTimes />
             </CloseButton>
 
-            <ContentContainer>
+            <ContentContainer key={`about-us-content-${timestamp}`}>
               <AboutUsContentSection />
             </ContentContainer>
           </ModalContainer>
