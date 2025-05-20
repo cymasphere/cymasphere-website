@@ -173,7 +173,6 @@ const LogoutButton = styled.button`
   font-size: 0.9rem;
 
   &:hover {
-    color: var(--error);
     background-color: rgba(255, 255, 255, 0.05);
   }
 

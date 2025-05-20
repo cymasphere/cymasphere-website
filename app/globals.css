@@ -236,3 +236,26 @@ html {
 .dashboard-logo .sphere {
   color: white;
 }
+
+/* Global button hover effect */
+button:hover, 
+.button:hover,
+a.button:hover,
+a:hover,
+[role="button"]:hover,
+button:hover *,
+a:hover *,
+[role="button"]:hover *,
+*[class*="Button"]:hover,
+*[class*="button"]:hover {
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+  filter: brightness(1.05) !important;
+}
+
+/* Override any green/accent color on button hover */
+button:hover, 
+a:hover,
+[role="button"]:hover {
+  color: white !important;
+}
