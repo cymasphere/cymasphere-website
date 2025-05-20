@@ -21,6 +21,7 @@ import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
+import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -134,15 +135,15 @@ const MobileLogoContent = styled.div`
 
 const UserInfo = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 1rem 1.5rem;
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
 const UserName = styled.div`
-  flex: 1;
+  margin-bottom: 1rem;
+  text-align: center;
 
   h4 {
     font-size: 0.95rem;
@@ -159,28 +160,48 @@ const UserName = styled.div`
 
 const LogoutButton = styled.button`
   background: none;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  padding: 8px 12px;
+  width: 100%;
+  justify-content: center;
+  font-size: 0.9rem;
 
   &:hover {
     color: var(--error);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  svg {
+    margin-right: 8px;
   }
 `;
 
-const BackButton = styled.a`
+const BackButtonContainer = styled.div`
   position: fixed;
   top: 25px;
   right: 30px;
   display: flex;
   align-items: center;
+  z-index: 1000;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const BackButton = styled.a`
+  display: flex;
+  align-items: center;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 1rem;
-  z-index: 1000;
   transition: all 0.3s ease;
 
   &:hover {
@@ -189,10 +210,6 @@ const BackButton = styled.a`
 
   svg {
     margin-left: 8px;
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
@@ -337,6 +354,25 @@ const MobileUserInfo = styled(UserInfo)`
 const PageTransition = styled(motion.div)`
   width: 100%;
   height: 100%;
+`;
+
+// Add a styled wrapper for mobile language selector
+const MobileLanguageWrapper = styled.div`
+  margin-bottom: 0.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+const MobileFooterSection = styled.div`
+  width: 80%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 interface DashboardLayoutProps {
@@ -553,8 +589,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
             <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
           </UserName>
-          <LogoutButton onClick={handleLogout} title={t("dashboard.layout.logout", "Logout")}>
-            <FaSignOutAlt />
+          <LogoutButton onClick={handleLogout}>
+            <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
           </LogoutButton>
         </UserInfo>
       </Sidebar>
@@ -679,26 +715,34 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <MobileUserInfo>
+          <MobileFooterSection>
+            <MobileLanguageWrapper>
+              <NextLanguageSelector />
+            </MobileLanguageWrapper>
+            
             <UserName>
               <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
               <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
             </UserName>
-            <LogoutButton onClick={handleLogout} title={t("dashboard.layout.logout", "Logout")}>
-              <FaSignOutAlt />
+            
+            <LogoutButton onClick={handleLogout}>
+              <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
             </LogoutButton>
-          </MobileUserInfo>
+          </MobileFooterSection>
         </MobileMenu>
       )}
 
-      <BackButton
-        href="/"
-        onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
-          handleNavigation(e, "/")
-        }
-      >
-        {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
-      </BackButton>
+      <BackButtonContainer>
+        <NextLanguageSelector />
+        <BackButton
+          href="/"
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
+            handleNavigation(e, "/")
+          }
+        >
+          {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
+        </BackButton>
+      </BackButtonContainer>
 
       <Content>
         <PageTransition

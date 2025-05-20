@@ -288,7 +288,8 @@ const ModalFooter = styled.div`
 `;
 
 interface SettingsState {
-  language: string;
+  // Remove the language: string; entry
+  // If this is the only entry, make it an empty interface
 }
 
 interface ProfileState {
@@ -305,7 +306,7 @@ interface Device {
 function Settings() {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<SettingsState>({
-    language: "en",
+    // Remove the language: "en" entry
   });
 
   const [profile, setProfile] = useState<ProfileState>({
@@ -574,40 +575,6 @@ function Settings() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-      >
-        <CardTitle>
-          <FaGlobe /> {t("dashboard.settings.language", "Language")}
-        </CardTitle>
-        <CardContent>
-          <SettingsList>
-            <SettingItem>
-              <SettingInfo>
-                <SettingTitle>{t("dashboard.settings.interfaceLanguage", "Interface Language")}</SettingTitle>
-                <SettingDescription>
-                  {t("dashboard.settings.languageDesc", "Change the language used throughout the application")}
-                </SettingDescription>
-              </SettingInfo>
-              <SelectWrapper>
-                <Select
-                  value={settings.language}
-                  onChange={(e) => handleSelectChange(e, "language")}
-                >
-                  <option value="en">{t("language.en", "English")}</option>
-                  <option value="es">{t("language.es", "Español")}</option>
-                  <option value="fr">{t("language.fr", "Français")}</option>
-                  <option value="de">{t("language.de", "Deutsch")}</option>
-                  <option value="ja">{t("language.ja", "日本語")}</option>
-                </Select>
-              </SelectWrapper>
-            </SettingItem>
-          </SettingsList>
-        </CardContent>
-      </AnimatedCard>
-
-      <AnimatedCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
       >
         <CardTitle>
           <FaMobileAlt /> {t("dashboard.settings.devices", "Active Devices")}
