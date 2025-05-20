@@ -431,5 +431,23 @@
       "generic": "{{message}}",
       "unknown": "{{message}}"
     }
+  },
+  "resetPassword": {
+    "title": "Restablecer Contraseña",
+    "description": "Introduce tu dirección de correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.",
+    "backToLogin": "Volver a Iniciar sesión",
+    "emailLabel": "Correo Electrónico",
+    "emailPlaceholder": "Introduce tu correo electrónico registrado",
+    "sendLink": "Enviar Enlace de Restablecimiento",
+    "sendingLink": "Enviando...",
+    "rememberPassword": "¿Recuerdas tu contraseña?",
+    "login": "Iniciar sesión",
+    "successMessage": "Si existe una cuenta con esta dirección de correo electrónico, hemos enviado instrucciones para restablecer tu contraseña. Por favor, revisa tu bandeja de entrada y carpeta de spam.",
+    "errors": {
+      "userNotFound": "No se encontró ningún usuario con esta dirección de correo electrónico",
+      "invalidEmail": "Dirección de correo electrónico inválida",
+      "rateLimit": "Demasiados intentos de restablecimiento de contraseña. Por favor, espera unos minutos antes de intentarlo de nuevo.",
+      "generic": "Error al enviar el correo electrónico de restablecimiento de contraseña. Por favor, inténtalo de nuevo."
+    }
   }
 } 

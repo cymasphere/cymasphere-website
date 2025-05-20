@@ -1,11 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import EnergyBall from "@/components/common/EnergyBall";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -283,7 +286,19 @@ function ResetPassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const { resetPassword } = useAuth();
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -300,31 +315,42 @@ function ResetPassword() {
 
       // Handle specific errors
       if (result.error.code === "user_not_found") {
-        setError("No user found with this email address");
+        setError(t("resetPassword.errors.userNotFound", "No user found with this email address"));
       } else if (result.error.code === "email_address_invalid") {
-        setError("Invalid email address");
+        setError(t("resetPassword.errors.invalidEmail", "Invalid email address"));
       } else if (result.error.message.includes("email rate limit exceeded") || 
                  result.error.message.includes("rate limit")) {
-        setError("Too many password reset attempts. Please wait a few minutes before trying again.");
+        setError(t("resetPassword.errors.rateLimit", "Too many password reset attempts. Please wait a few minutes before trying again."));
       } else {
-        setError("Failed to send password reset email. Please try again.");
+        setError(t("resetPassword.errors.generic", "Failed to send password reset email. Please try again."));
       }
     } else {
       // Success - no error returned
       setMessage(
-        "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder."
+        t("resetPassword.successMessage", "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.")
       );
     }
 
     setLoading(false);
   };
 
+  // If translations are still loading, show loading component
+  if (!translationsLoaded) {
+    return (
+      <AuthContainer>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <LoadingComponent text={t("common.loading", "Loading...")} />
+        </div>
+      </AuthContainer>
+    );
+  }
+
   return (
     <AuthContainer>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       <Link href="/login" passHref>
         <BackButton>
-          <FaArrowLeft /> Back to Login
+          <FaArrowLeft /> {t("resetPassword.backToLogin", "Back to Login")}
         </BackButton>
       </Link>
 
@@ -344,7 +370,7 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          Reset Password
+          {t("resetPassword.title", "Reset Password")}
         </Title>
 
         <Description
@@ -352,8 +378,7 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          Enter your email address and we&apos;ll send you instructions to reset
-          your password.
+          {t("resetPassword.description", "Enter your email address and we'll send you instructions to reset your password.")}
         </Description>
 
         {error && (
@@ -378,14 +403,14 @@ function ResetPassword() {
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">{t("resetPassword.emailLabel", "Email Address")}</Label>
             <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your registered email"
+              placeholder={t("resetPassword.emailPlaceholder", "Enter your registered email")}
             />
           </FormGroup>
 
@@ -396,12 +421,14 @@ function ResetPassword() {
             whileHover="hover"
             whileTap="tap"
           >
-            Send Reset Link
+            {loading ? 
+              t("resetPassword.sendingLink", "Sending...") : 
+              t("resetPassword.sendLink", "Send Reset Link")}
           </Button>
         </Form>
 
         <LinkText>
-          Remember your password? <Link href="/login">Log in</Link>
+          {t("resetPassword.rememberPassword", "Remember your password?")} <Link href="/login">{t("resetPassword.login", "Log in")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

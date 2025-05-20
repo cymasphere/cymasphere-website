@@ -382,5 +382,23 @@
       "generic": "{{message}}",
       "unknown": "{{message}}"
     }
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "description": "Enter your email address and we'll send you instructions to reset your password.",
+    "backToLogin": "Back to Login",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Enter your registered email",
+    "sendLink": "Send Reset Link",
+    "sendingLink": "Sending...",
+    "rememberPassword": "Remember your password?",
+    "login": "Log in",
+    "successMessage": "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.",
+    "errors": {
+      "userNotFound": "No user found with this email address",
+      "invalidEmail": "Invalid email address",
+      "rateLimit": "Too many password reset attempts. Please wait a few minutes before trying again.",
+      "generic": "Failed to send password reset email. Please try again."
+    }
   }
 } 

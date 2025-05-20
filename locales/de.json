@@ -432,5 +432,23 @@
       "generic": "{{message}}",
       "unknown": "{{message}}"
     }
+  },
+  "resetPassword": {
+    "title": "Passwort zurücksetzen",
+    "description": "Gib deine E-Mail-Adresse ein und wir senden dir Anweisungen zum Zurücksetzen deines Passworts.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "emailLabel": "E-Mail-Adresse",
+    "emailPlaceholder": "Gib deine registrierte E-Mail-Adresse ein",
+    "sendLink": "Link zum Zurücksetzen senden",
+    "sendingLink": "Wird gesendet...",
+    "rememberPassword": "Erinnerst du dich an dein Passwort?",
+    "login": "Anmelden",
+    "successMessage": "Wenn ein Konto mit dieser E-Mail-Adresse existiert, haben wir Anweisungen zum Zurücksetzen deines Passworts gesendet. Bitte überprüfe deinen Posteingang und Spam-Ordner.",
+    "errors": {
+      "userNotFound": "Kein Benutzer mit dieser E-Mail-Adresse gefunden",
+      "invalidEmail": "Ungültige E-Mail-Adresse",
+      "rateLimit": "Zu viele Passwort-Zurücksetzungsversuche. Bitte warte einige Minuten, bevor du es erneut versuchst.",
+      "generic": "Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts. Bitte versuche es erneut."
+    }
   }
 } 

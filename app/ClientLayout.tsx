@@ -8,6 +8,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
+import { usePathname } from "next/navigation";
 
 // Theme configuration
 const theme = {
@@ -89,16 +90,36 @@ interface ClientLayoutProps {
 export default function ClientLayout({
   children
 }: ClientLayoutProps) {
+  const pathname = usePathname();
+  
+  // Check if the route is in the auth directory
+  const isAuthRoute = pathname?.startsWith('/login') || 
+                      pathname?.startsWith('/signup') || 
+                      pathname?.startsWith('/reset-password') || 
+                      pathname?.startsWith('/create-password') ||
+                      pathname?.startsWith('/checkout-success') ||
+                      pathname?.startsWith('/checkout-canceled');
+                      
+  // Check if the route is in the dashboard section
+  const isDashboardRoute = pathname?.includes('/dashboard') || 
+                          pathname?.includes('/profile') || 
+                          pathname?.includes('/billing') || 
+                          pathname?.includes('/downloads') || 
+                          pathname?.includes('/settings');
+
+  // Hide header and footer for auth routes and dashboard routes
+  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute;
+
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>
         <AuthProvider>
           <LayoutWrapper>
-            <NextHeader />
+            {!shouldHideHeaderFooter && <NextHeader />}
             <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
               {children}
             </Main>
-            <Footer />
+            {!shouldHideHeaderFooter && <Footer />}
           </LayoutWrapper>
         </AuthProvider>
       </ToastProvider>

@@ -432,5 +432,23 @@
       "generic": "{{message}}",
       "unknown": "{{message}}"
     }
+  },
+  "resetPassword": {
+    "title": "パスワードをリセット",
+    "description": "メールアドレスを入力すると、パスワードリセットの手順をお送りします。",
+    "backToLogin": "ログインに戻る",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "登録済みのメールアドレスを入力",
+    "sendLink": "リセットリンクを送信",
+    "sendingLink": "送信中...",
+    "rememberPassword": "パスワードを思い出しましたか？",
+    "login": "ログイン",
+    "successMessage": "このメールアドレスでアカウントが存在する場合、パスワードリセットの手順を送信しました。受信トレイとスパムフォルダを確認してください。",
+    "errors": {
+      "userNotFound": "このメールアドレスを持つユーザーが見つかりません",
+      "invalidEmail": "無効なメールアドレス形式です",
+      "rateLimit": "パスワードリセットの試行回数が多すぎます。数分待ってから再試行してください。",
+      "generic": "パスワードリセットメールの送信に失敗しました。もう一度お試しください。"
+    }
   }
 } 

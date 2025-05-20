@@ -432,5 +432,23 @@
       "generic": "{{message}}",
       "unknown": "{{message}}"
     }
+  },
+  "resetPassword": {
+    "title": "Réinitialiser le mot de passe",
+    "description": "Entrez votre adresse e-mail et nous vous enverrons des instructions pour réinitialiser votre mot de passe.",
+    "backToLogin": "Retour à la connexion",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "Entrez votre e-mail enregistré",
+    "sendLink": "Envoyer le lien de réinitialisation",
+    "sendingLink": "Envoi en cours...",
+    "rememberPassword": "Vous vous souvenez de votre mot de passe ?",
+    "login": "Se connecter",
+    "successMessage": "Si un compte existe avec cette adresse e-mail, nous avons envoyé des instructions pour réinitialiser votre mot de passe. Veuillez vérifier votre boîte de réception et votre dossier spam.",
+    "errors": {
+      "userNotFound": "Aucun utilisateur trouvé avec cette adresse e-mail",
+      "invalidEmail": "Adresse e-mail invalide",
+      "rateLimit": "Trop de tentatives de réinitialisation de mot de passe. Veuillez attendre quelques minutes avant de réessayer.",
+      "generic": "Échec de l'envoi de l'e-mail de réinitialisation de mot de passe. Veuillez réessayer."
+    }
   }
 } 

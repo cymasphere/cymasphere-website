@@ -14,7 +14,6 @@ import {
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
-import i18next from "i18next";
 
 // Dynamically import modal to avoid SSR issues
 const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
@@ -210,19 +209,21 @@ const FeaturesSection = () => {
   const params = useParams();
   const currentLocale = (params?.locale as string) || 'en';
 
-  // Reset the animation state when language changes
+  // Force re-render when language changes
+  const [, forceUpdate] = useState({});
   useEffect(() => {
+    // This effect will run whenever the language changes
     const handleLanguageChange = () => {
-      setSelectedFeature(-1);
-      setModalOpen(false);
+      forceUpdate({});
     };
+
+    i18n.on('languageChanged', handleLanguageChange);
     
-    i18next.on('languageChanged', handleLanguageChange);
-    
+    // Cleanup
     return () => {
-      i18next.off('languageChanged', handleLanguageChange);
+      i18n.off('languageChanged', handleLanguageChange);
     };
-  }, []);
+  }, [i18n]);
 
   const formatDetailedDescription = (feature: string) => {
     // Get the features array and ensure it's properly typed
