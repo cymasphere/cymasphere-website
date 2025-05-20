@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { FaTimes, FaEnvelope, FaArrowRight, FaSignInAlt } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 // Styled components
 const ModalOverlay = styled(motion.div)`
@@ -204,6 +205,7 @@ export default function EmailCollectionModal({
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -216,12 +218,12 @@ export default function EmailCollectionModal({
 
     // Validate email
     if (!email.trim()) {
-      setError("Please enter your email address");
+      setError(t("common.errors.emailRequired", "Please enter your email address"));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
+      setError(t("common.errors.invalidEmail", "Please enter a valid email address"));
       return;
     }
 
@@ -238,7 +240,7 @@ export default function EmailCollectionModal({
       }
       // Otherwise the modal will be closed by the parent component
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t("common.errors.unexpectedError", "An unexpected error occurred. Please try again."));
       setIsSubmitting(false);
     }
   };
@@ -273,7 +275,7 @@ export default function EmailCollectionModal({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>Start Your Free Trial</ModalTitle>
+              <ModalTitle>{t("freeTrial.startTrial", "Start Your Free Trial")}</ModalTitle>
               <CloseButton onClick={handleModalClose}>
                 <FaTimes />
               </CloseButton>
@@ -283,16 +285,20 @@ export default function EmailCollectionModal({
                 <FaEnvelope />
               </IconContainer>
               <Message>
-                Enter your email address to start your {trialDays}-day free trial
-                {collectPaymentMethod ? " (credit card required)" : " (no credit card required)"}.
+                {t("freeTrial.enterEmail", "Enter your email address to start your {{days}}-day free trial {{requirement}}.", { 
+                  days: trialDays,
+                  requirement: collectPaymentMethod 
+                    ? t("freeTrial.cardRequired", "(credit card required)")
+                    : t("freeTrial.noCardRequired", "(no credit card required)")
+                })}
               </Message>
               <FormGroup>
-                <FormLabel htmlFor="email">Email Address</FormLabel>
+                <FormLabel htmlFor="email">{t("common.emailAddress", "Email Address")}</FormLabel>
                 <FormInput
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="your@email.com"
+                  placeholder={t("common.emailPlaceholder", "your@email.com")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -302,19 +308,19 @@ export default function EmailCollectionModal({
                 {/* Add login button when we detect an existing account */}
                 {isExistingAccountError && (
                   <LoginButton onClick={handleGoToLogin}>
-                    <FaSignInAlt style={{ marginRight: "8px" }} /> Go to Login
+                    <FaSignInAlt style={{ marginRight: "8px" }} /> {t("common.goToLogin", "Go to Login")}
                   </LoginButton>
                 )}
               </FormGroup>
             </ModalBody>
             <ModalFooter>
-              <Button onClick={handleModalClose}>Cancel</Button>
+              <Button onClick={handleModalClose}>{t("common.cancel", "Cancel")}</Button>
               <Button 
                 $primary 
                 onClick={handleSubmit} 
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : "Continue"} {!isSubmitting && <FaArrowRight />}
+                {isSubmitting ? t("common.processing", "Processing...") : t("common.continue", "Continue")} {!isSubmitting && <FaArrowRight />}
               </Button>
             </ModalFooter>
           </ModalContent>

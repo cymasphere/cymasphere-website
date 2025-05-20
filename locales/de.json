@@ -14,7 +14,17 @@
     "navigation": "Navigation",
     "backToHome": "Zurück zur Startseite",
     "email": "E-Mail",
-    "password": "Passwort"
+    "password": "Passwort",
+    "continue": "Fortfahren",
+    "processing": "Verarbeitung...",
+    "emailAddress": "E-Mail-Adresse",
+    "emailPlaceholder": "ihre@email.com",
+    "goToLogin": "Zur Anmeldung",
+    "errors": {
+      "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    }
   },
   "header": {
     "home": "Startseite",
@@ -596,5 +606,11 @@
       "content1": "Während wir Cymasphere weiterentwickeln, sind wir begeistert von der Zukunft der Musikproduktion. Unsere Roadmap umfasst die erweiterte Integration mit wichtigen DAWs, erweiterte Harmoniepaletten, tiefere KI-unterstützte Kompositionsfunktionen und vieles mehr.",
       "content2": "Wir laden Sie ein, uns auf dieser Reise zu begleiten und die Zukunft intelligenter Musikproduktionstools mitzugestalten."
     }
+  },
+  "freeTrial": {
+    "startTrial": "Starten Sie Ihre kostenlose Testversion",
+    "enterEmail": "Geben Sie Ihre E-Mail-Adresse ein, um Ihre {{days}}-tägige kostenlose Testversion zu starten {{requirement}}.",
+    "cardRequired": "(Kreditkarte erforderlich)",
+    "noCardRequired": "(keine Kreditkarte erforderlich)"
   }
 } 

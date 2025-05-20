@@ -18,7 +18,17 @@
     "close": "Close",
     "confirm": "Confirm",
     "locale": "en-US",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "continue": "Continue",
+    "processing": "Processing...",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "your@email.com",
+    "goToLogin": "Go to Login",
+    "errors": {
+      "emailRequired": "Please enter your email address",
+      "invalidEmail": "Please enter a valid email address",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    }
   },
   "header": {
     "home": "Home",
@@ -852,5 +862,11 @@
       "content1": "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more.",
       "content2": "We invite you to join us on this journey and help shape the future of intelligent music creation tools."
     }
+  },
+  "freeTrial": {
+    "startTrial": "Start Your Free Trial",
+    "enterEmail": "Enter your email address to start your {{days}}-day free trial {{requirement}}.",
+    "cardRequired": "(credit card required)",
+    "noCardRequired": "(no credit card required)"
   }
 } 

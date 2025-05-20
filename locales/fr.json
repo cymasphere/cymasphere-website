@@ -20,7 +20,17 @@
     "locale": "fr-FR",
     "unknownError": "Erreur inconnue",
     "notAvailable": "N/D",
-    "none": "Aucun"
+    "none": "Aucun",
+    "continue": "Continuer",
+    "processing": "Traitement en cours...",
+    "emailAddress": "Adresse e-mail",
+    "emailPlaceholder": "votre@email.com",
+    "goToLogin": "Aller à la connexion",
+    "errors": {
+      "emailRequired": "Veuillez entrer votre adresse e-mail",
+      "invalidEmail": "Veuillez entrer une adresse e-mail valide",
+      "unexpectedError": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    }
   },
   "header": {
     "home": "Accueil",
@@ -892,5 +902,11 @@
       "content1": "Alors que nous continuons à développer Cymasphere, nous sommes enthousiastes quant à l'avenir de la création musicale. Notre feuille de route comprend une intégration avancée avec les principaux DAW, des palettes harmoniques élargies, des fonctionnalités de composition assistée par IA plus profondes, et bien plus encore.",
       "content2": "Nous vous invitons à nous rejoindre dans ce voyage et à aider à façonner l'avenir des outils de création musicale intelligents."
     }
+  },
+  "freeTrial": {
+    "startTrial": "Commencez Votre Essai Gratuit",
+    "enterEmail": "Saisissez votre adresse e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
+    "cardRequired": "(carte de crédit requise)",
+    "noCardRequired": "(aucune carte de crédit requise)"
   }
 } 
