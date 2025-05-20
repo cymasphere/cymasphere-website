@@ -18,17 +18,7 @@
     "close": "Close",
     "confirm": "Confirm",
     "locale": "en-US",
-    "unknownError": "Unknown error",
-    "continue": "Continue",
-    "processing": "Processing...",
-    "emailAddress": "Email Address",
-    "emailPlaceholder": "your@email.com",
-    "goToLogin": "Go to Login",
-    "errors": {
-      "emailRequired": "Please enter your email address",
-      "invalidEmail": "Please enter a valid email address",
-      "unexpectedError": "An unexpected error occurred. Please try again."
-    }
+    "unknownError": "Unknown error"
   },
   "header": {
     "home": "Home",
@@ -295,23 +285,59 @@
     "questions": [
       {
         "question": "What is Cymasphere?",
-        "answer": "Cymasphere is an AI-powered music creation tool that helps you generate professional-sounding music quickly and easily."
+        "answer": "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels."
       },
       {
-        "question": "Do I need musical experience to use Cymasphere?",
-        "answer": "No, Cymasphere is designed to be accessible for users of all skill levels, from beginners to professionals."
+        "question": "What problems does Cymasphere solve for musicians?",
+        "answer": "Cymasphere addresses common compositional challenges like creating compelling chord progressions, developing complementary melodies, crafting smooth voice leading, and finding musical inspiration. It bridges the gap between music theory knowledge and practical application, making the entire composition process more intuitive and accessible for producers at any skill level."
       },
       {
-        "question": "What file formats can I export my music in?",
-        "answer": "You can export your creations as MIDI files, WAV audio, or MP3 files, depending on your subscription plan."
+        "question": "How does the Song Builder help with composition?",
+        "answer": "The Song Builder is your central creative hub where all musical elements come together. You can arrange chord progressions, create melody patterns, and build complete song structures with multiple tracks. The system features professional transport controls, an interactive timeline, multi-track management with per-track settings, and a comprehensive arrangement view that gives you a holistic perspective of your composition as it develops."
       },
       {
-        "question": "Is there a free trial available?",
-        "answer": "Yes, we offer a 14-day free trial so you can explore all the features before committing to a subscription."
+        "question": "How does the Interactive Harmony Palette work?",
+        "answer": "The Interactive Harmony Palette provides a visual, gestural interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions. You can drag and drop voicings directly to your timeline, instantly transpose keys, and create custom chord banks to develop your personal harmonic vocabulary."
       },
       {
-        "question": "Can I use Cymasphere with my existing DAW?",
-        "answer": "Absolutely! Cymasphere works as a standalone application or can be integrated with popular DAWs like Ableton Live, Logic Pro, FL Studio, and more."
+        "question": "What makes the Melody Pattern Constructor special?",
+        "answer": "The Melody Pattern Constructor helps you develop compelling melodies that complement your chord progressions. It suggests contextually appropriate melodic patterns based on your harmonic choices, allows you to experiment with different rhythmic variations, and provides intuitive tools for crafting memorable themes. The system intelligently adapts your melodic content when chord changes occur, maintaining musical coherence throughout your composition."
+      },
+      {
+        "question": "How do patterns adapt to chord changes?",
+        "answer": "Cymasphere's Dynamic Pattern Editor uses intelligent algorithms to adapt melodic patterns to your chord progressions in real-time. When you change a chord, the system automatically adjusts the pattern to maintain harmonic coherence while preserving the musical intent of your melody. This works in both relative and absolute modes, giving you flexibility to create context-aware melodies or fixed melodic content as needed."
+      },
+      {
+        "question": "What makes the Voicing Generator special?",
+        "answer": "The Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes chord progressions to ensure smooth voice transitions between chords, with controls for voicing width, density, inversions, and harmonic extensions. Settings can be applied globally or adjusted for specific sections of your composition."
+      },
+      {
+        "question": "What are the differences between the standalone app and the plugin?",
+        "answer": "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for focused composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs."
+      },
+      {
+        "question": "Which DAWs are compatible with the Cymasphere plugin?",
+        "answer": "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported."
+      },
+      {
+        "question": "Is Cymasphere suitable for beginners?",
+        "answer": "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony and melody concepts visually. The interactive nature of the tools encourages experimentation and learning by doing, making it an excellent platform for developing composition skills regardless of your starting point."
+      },
+      {
+        "question": "Do I need to know music theory to use Cymasphere?",
+        "answer": "No, that's one of Cymasphere's strengths! Cymasphere is a harmonic playground designed to enhance your understanding of music theory while you create. The visual interfaces help you understand musical relationships as you compose, making complex theory concepts intuitive even for beginners. It's both a powerful creation tool and an excellent learning resource that grows with you as you develop your skills."
+      },
+      {
+        "question": "How can I try Cymasphere before purchasing?",
+        "answer": "You can try Cymasphere with our free trial options. We offer a 7-day free trial without requiring a credit card, or a 14-day free trial with a card on file (which won't be charged until the trial ends). Both options give you full access to all premium features so you can explore everything Cymasphere has to offer before deciding on a subscription plan."
+      },
+      {
+        "question": "Do I have to pay for updates?",
+        "answer": "No, all Cymasphere customers have access to the most recent version of the software at no additional cost. This includes lifetime license holders, who receive all future updates as part of their one-time purchase. We're committed to continuously improving the software and adding new features that all users can enjoy."
+      },
+      {
+        "question": "Is there a user manual available for Cymasphere?",
+        "answer": "No, all help is directly built into the in-app help manager, making it effortless to explore and learn about new features. Questions, bug reports and other inquiries can be directed to our Discord server or by emailing support@cymasphere.com."
       }
     ]
   },
@@ -828,6 +854,25 @@
       "content1": "Founded in 2022 by a team of dedicated musicians, software engineers, and music theorists, Cymasphere began as an ambitious project to reimagine how musicians interact with harmony and composition.",
       "content2": "After years of frustration with existing music software that either lacked theoretical sophistication or was too complex for intuitive use, our founders set out to create a tool that would make music theory practical, visual, and genuinely helpful in the creative process."
     },
+    "team": {
+      "title": "Our Team",
+      "member1": {
+        "name": "David Chen",
+        "role": "Founder & Lead Developer"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Music Theory Specialist"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "UI/UX Designer" 
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Product Manager"
+      }
+    },
     "values": {
       "title": "Our Values",
       "intro": "At Cymasphere, we're guided by a set of core values that shape everything we do:",
@@ -862,11 +907,5 @@
       "content1": "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more.",
       "content2": "We invite you to join us on this journey and help shape the future of intelligent music creation tools."
     }
-  },
-  "freeTrial": {
-    "startTrial": "Start Your Free Trial",
-    "enterEmail": "Enter your email address to start your {{days}}-day free trial {{requirement}}.",
-    "cardRequired": "(credit card required)",
-    "noCardRequired": "(no credit card required)"
   }
 } 

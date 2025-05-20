@@ -34,16 +34,12 @@ export const getCurrentLanguage = (): string => {
 // Function to load translations for a language
 export const loadTranslations = async (locale: string) => {
   try {
-    console.log(`[i18n] Loading translations for: ${locale}`);
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
     
     // Use fetch to get translations from our API
-    const response = await fetch(`/api/translations?locale=${locale}`);
+    const response = await fetch(`/api/translations?locale=${locale}&_=${timestamp}`);
     const data = await response.json();
-    
-    // Log translation data info
-    console.log(`[i18n] Loaded translations for: ${locale}`);
-    console.log(`[i18n] Translation keys count: ${Object.keys(data).length}`);
-    console.log(`[i18n] First level keys: ${Object.keys(data).join(', ')}`);
     
     // Always store language preference in localStorage
     if (typeof window !== 'undefined') {

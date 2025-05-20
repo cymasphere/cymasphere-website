@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { 
   FaMusic, 
   FaQuestion, 
@@ -116,8 +117,14 @@ interface ExpandedFaqs {
   [key: number]: boolean;
 }
 
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
 const FAQSection = () => {
   const [expandedFaqs, setExpandedFaqs] = useState<ExpandedFaqs>({});
+  const { t } = useTranslation();
 
   const toggleFaq = (index: number) => {
     setExpandedFaqs((prev) => ({
@@ -126,75 +133,28 @@ const FAQSection = () => {
     }));
   };
 
-  const faqItems = [
-    {
-      icon: <FaMusic />,
-      question: "What is Cymasphere?",
-      answer:
-        "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels.",
-    },
-    {
-      icon: <FaQuestion />,
-      question: "What problems does Cymasphere solve for musicians?",
-      answer:
-        "Cymasphere addresses common compositional challenges like creating compelling chord progressions, developing complementary melodies, crafting smooth voice leading, and finding musical inspiration. It bridges the gap between music theory knowledge and practical application, making the entire composition process more intuitive and accessible for producers at any skill level.",
-    },
-    {
-      icon: <FaLayerGroup />,
-      question: "How does the Song Builder help with composition?",
-      answer:
-        "The Song Builder is your central creative hub where all musical elements come together. You can arrange chord progressions, create melody patterns, and build complete song structures with multiple tracks. The system features professional transport controls, an interactive timeline, multi-track management with per-track settings, and a comprehensive arrangement view that gives you a holistic perspective of your composition as it develops.",
-    },
-    {
-      icon: <FaPalette />,
-      question: "How does the Interactive Harmony Palette work?",
-      answer:
-        "The Interactive Harmony Palette provides a visual, gestural interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions. You can drag and drop voicings directly to your timeline, instantly transpose keys, and create custom chord banks to develop your personal harmonic vocabulary.",
-    },
-    {
-      icon: <FaWaveSquare />,
-      question: "What makes the Melody Pattern Constructor special?",
-      answer:
-        "The Melody Pattern Constructor helps you develop compelling melodies that complement your chord progressions. It suggests contextually appropriate melodic patterns based on your harmonic choices, allows you to experiment with different rhythmic variations, and provides intuitive tools for crafting memorable themes. The system intelligently adapts your melodic content when chord changes occur, maintaining musical coherence throughout your composition.",
-    },
-    {
-      icon: <FaSyncAlt />,
-      question: "How do patterns adapt to chord changes?",
-      answer:
-        "Cymasphere's Dynamic Pattern Editor uses intelligent algorithms to adapt melodic patterns to your chord progressions in real-time. When you change a chord, the system automatically adjusts the pattern to maintain harmonic coherence while preserving the musical intent of your melody. This works in both relative and absolute modes, giving you flexibility to create context-aware melodies or fixed melodic content as needed.",
-    },
-    {
-      icon: <FaSlidersH />,
-      question: "What makes the Voicing Generator special?",
-      answer:
-        "The Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes chord progressions to ensure smooth voice transitions between chords, with controls for voicing width, density, inversions, and harmonic extensions. Settings can be applied globally or adjusted for specific sections of your composition.",
-    },
-    {
-      icon: <FaPuzzlePiece />,
-      question:
-        "What are the differences between the standalone app and the plugin?",
-      answer:
-        "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for focused composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs.",
-    },
-    {
-      icon: <FaPlug />,
-      question: "Which DAWs are compatible with the Cymasphere plugin?",
-      answer:
-        "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported.",
-    },
-    {
-      icon: <FaUserGraduate />,
-      question: "Is Cymasphere suitable for beginners?",
-      answer:
-        "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony and melody concepts visually. The interactive nature of the tools encourages experimentation and learning by doing, making it an excellent platform for developing composition skills regardless of your starting point.",
-    },
-    {
-      icon: <FaBook />,
-      question: "Do I need to know music theory to use Cymasphere?",
-      answer:
-        "No, that's one of Cymasphere's strengths! While music theory knowledge can enhance your experience, Cymasphere is designed to be intuitive even for those with limited theory background. The visual interfaces help you understand musical relationships as you compose, making it both a powerful creation tool and an excellent learning resource that grows with you as you develop your skills.",
-    },
+  const faqIcons = [
+    <FaMusic key="music" />,
+    <FaQuestion key="question" />,
+    <FaLayerGroup key="layer" />,
+    <FaPalette key="palette" />,
+    <FaWaveSquare key="wave" />,
+    <FaSyncAlt key="sync" />,
+    <FaSlidersH key="sliders" />,
+    <FaPuzzlePiece key="puzzle" />,
+    <FaPlug key="plug" />,
+    <FaUserGraduate key="graduate" />,
+    <FaBook key="book" />
   ];
+
+  // Get questions and answers from translation files
+  const questionsData = t("faq.questions", { returnObjects: true }) as FAQItem[] || [];
+  
+  const faqItems = questionsData.map((question: FAQItem, index: number) => ({
+    icon: faqIcons[index % faqIcons.length],
+    question: question.question,
+    answer: question.answer
+  }));
 
   return (
     <FAQContainer id="faq">
@@ -205,7 +165,7 @@ const FAQSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <SectionTitle>Frequently Asked Questions</SectionTitle>
+          <SectionTitle>{t("faq.title")}</SectionTitle>
         </motion.div>
 
         {faqItems.map((faq, index) => (

@@ -383,6 +383,68 @@
     "upgradeNow": "Jetzt upgraden",
     "buyNow": "Jetzt kaufen"
   },
+  "faq": {
+    "title": "Häufig gestellte Fragen",
+    "subtitle": "Finden Sie Antworten auf häufige Fragen zu Cymasphere",
+    "questions": [
+      {
+        "question": "Was ist Cymasphere?",
+        "answer": "Cymasphere ist eine vollständige Suite zur Musikerstellung, die sowohl als eigenständige Anwendung als auch als Plugin (AU & VST3) für Ihre DAW verfügbar ist. Es bietet integrierte Werkzeuge zur Komposition von Harmonie und Melodie, mit intelligenten Akkordvoicings, Melodiemusterkonstruktion und interaktiver Visualisierung, die Musiktheorie für alle Kenntnisstufen zugänglich und intuitiv macht."
+      },
+      {
+        "question": "Welche Probleme löst Cymasphere für Musiker?",
+        "answer": "Cymasphere adressiert häufige kompositorische Herausforderungen wie das Erstellen überzeugender Akkordprogressionen, die Entwicklung komplementärer Melodien, die Gestaltung flüssiger Stimmführung und das Finden musikalischer Inspiration. Es überbrückt die Lücke zwischen Musiktheoriewissen und praktischer Anwendung und macht den gesamten Kompositionsprozess intuitiver und zugänglicher für Produzenten jeder Kenntnisstufe."
+      },
+      {
+        "question": "Wie hilft der Song-Builder bei der Komposition?",
+        "answer": "Der Song-Builder ist Ihr zentraler kreativer Hub, in dem alle musikalischen Elemente zusammenkommen. Sie können Akkordprogressionen arrangieren, Melodiemuster erstellen und komplette Songstrukturen mit mehreren Spuren aufbauen. Das System bietet professionelle Transportsteuerungen, eine interaktive Zeitleiste, Multi-Track-Management mit Einstellungen pro Spur und eine umfassende Arrangement-Ansicht, die Ihnen eine ganzheitliche Perspektive auf Ihre Komposition gibt, während sie sich entwickelt."
+      },
+      {
+        "question": "Wie funktioniert die Interaktive Harmonie-Palette?",
+        "answer": "Die Interaktive Harmonie-Palette bietet eine visuelle, gestische Oberfläche zur Erkundung von Akkordbeziehungen. Wählen Sie einfach einen Startakkord aus, und die Palette zeigt Ihnen harmonisch verwandte Optionen, wodurch es einfach wird, überzeugende Progressionen zu gestalten. Sie können Voicings direkt per Drag-and-Drop auf Ihre Zeitleiste ziehen, sofort Tonarten transponieren und benutzerdefinierte Akkordbanken erstellen, um Ihr persönliches harmonisches Vokabular zu entwickeln."
+      },
+      {
+        "question": "Was macht den Melodiemusterkonstruktor besonders?",
+        "answer": "Der Melodiemusterkonstruktor hilft Ihnen, überzeugende Melodien zu entwickeln, die Ihre Akkordprogressionen ergänzen. Er schlägt kontextuell passende melodische Muster basierend auf Ihren harmonischen Entscheidungen vor, ermöglicht Ihnen, mit verschiedenen rhythmischen Variationen zu experimentieren, und bietet intuitive Werkzeuge zur Erstellung einprägsamer Themen. Das System passt Ihren melodischen Inhalt intelligent an, wenn Akkordwechsel auftreten, und erhält die musikalische Kohärenz in Ihrer gesamten Komposition."
+      },
+      {
+        "question": "Wie passen sich Muster an Akkordwechsel an?",
+        "answer": "Der Dynamische Pattern-Editor von Cymasphere verwendet intelligente Algorithmen, um melodische Muster in Echtzeit an Ihre Akkordprogressionen anzupassen. Wenn Sie einen Akkord ändern, passt das System das Muster automatisch an, um harmonische Kohärenz zu erhalten und gleichzeitig die musikalische Absicht Ihrer Melodie zu bewahren. Dies funktioniert sowohl im relativen als auch im absoluten Modus und gibt Ihnen die Flexibilität, kontextbezogene Melodien oder festen melodischen Inhalt nach Bedarf zu erstellen."
+      },
+      {
+        "question": "Was macht den Voicing-Generator besonders?",
+        "answer": "Der Voicing-Generator verwendet fortschrittliche Algorithmen, um reiche, musikalisch befriedigende Akkordvoicings zu erstellen, die den Prinzipien der richtigen Stimmführung folgen. Er analysiert Akkordprogressionen, um reibungslose Stimmübergänge zwischen Akkorden zu gewährleisten, mit Kontrollen für Voicing-Breite, Dichte, Umkehrungen und harmonische Erweiterungen. Einstellungen können global angewendet oder für bestimmte Abschnitte Ihrer Komposition angepasst werden."
+      },
+      {
+        "question": "Was sind die Unterschiede zwischen der Standalone-App und dem Plugin?",
+        "answer": "Die Standalone-App und Plugin-Versionen teilen die gleichen Kernfunktionen und Funktionalitäten. Die Standalone-App arbeitet unabhängig, was sie ideal für fokussierte Komposition und Erkundung macht, während das Plugin sich direkt in Ihre DAW integriert für einen nahtlosen Produktions-Workflow. Sie können wählen, welche Version am besten für Ihren kreativen Prozess geeignet ist, oder je nach Bedarf beide verwenden."
+      },
+      {
+        "question": "Welche DAWs sind mit dem Cymasphere-Plugin kompatibel?",
+        "answer": "Das Cymasphere-Plugin (verfügbar in AU & VST3 Formaten) ist mit den meisten großen DAWs kompatibel, darunter Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig und Digital Performer. Sowohl macOS als auch Windows-Plattformen werden unterstützt."
+      },
+      {
+        "question": "Ist Cymasphere für Anfänger geeignet?",
+        "answer": "Absolut! Während Cymasphere fortgeschrittene Funktionalität für erfahrene Komponisten bietet, macht seine intuitive Oberfläche Musiktheorie für Anfänger zugänglich und hilft ihnen, Harmonie- und Melodiekonzepte visuell zu verstehen. Die interaktive Natur der Werkzeuge fördert Experimentieren und Lernen durch Tun, was es zu einer ausgezeichneten Plattform für die Entwicklung von Kompositionsfähigkeiten macht, unabhängig von Ihrem Ausgangspunkt."
+      },
+      {
+        "question": "Muss ich Musiktheorie kennen, um Cymasphere zu nutzen?",
+        "answer": "Nein, das ist eine der Stärken von Cymasphere! Cymasphere ist ein harmonischer Spielplatz, der entwickelt wurde, um Ihr Verständnis der Musiktheorie während des Kreationsprozesses zu verbessern. Die visuellen Oberflächen helfen Ihnen, musikalische Beziehungen beim Komponieren zu verstehen und machen komplexe Theoriekonzepte auch für Anfänger intuitiv. Es ist sowohl ein leistungsstarkes Kreationswerkzeug als auch eine ausgezeichnete Lernressource, die mit Ihnen wächst, während Sie Ihre Fähigkeiten entwickeln."
+      },
+      {
+        "question": "Wie kann ich Cymasphere vor dem Kauf ausprobieren?",
+        "answer": "Sie können Cymasphere mit unseren kostenlosen Testoptionen ausprobieren. Wir bieten eine 7-tägige kostenlose Testversion ohne Kreditkartenangabe oder eine 14-tägige kostenlose Testversion mit hinterlegter Karte (die erst nach Ablauf der Testphase belastet wird). Beide Optionen bieten vollen Zugriff auf alle Premium-Funktionen, sodass Sie alles erkunden können, was Cymasphere zu bieten hat, bevor Sie sich für einen Abonnementplan entscheiden."
+      },
+      {
+        "question": "Muss ich für Updates bezahlen?",
+        "answer": "Nein, alle Cymasphere-Kunden haben ohne zusätzliche Kosten Zugriff auf die neueste Version der Software. Dies gilt auch für Inhaber einer lebenslangen Lizenz, die alle zukünftigen Updates als Teil ihres einmaligen Kaufs erhalten. Wir sind bestrebt, die Software kontinuierlich zu verbessern und neue Funktionen hinzuzufügen, die alle Benutzer nutzen können."
+      },
+      {
+        "question": "Gibt es ein Benutzerhandbuch für Cymasphere?",
+        "answer": "Nein, alle Hilfestellungen sind direkt in den In-App-Hilfemanager integriert, was es mühelos macht, neue Funktionen zu erkunden und zu erlernen. Fragen, Fehlerberichte und andere Anfragen können an unseren Discord-Server gerichtet oder per E-Mail an support@cymasphere.com gesendet werden."
+      }
+    ]
+  },
   "contact": {
     "title": "Kontakt aufnehmen",
     "subtitle": "Haben Sie Fragen oder Feedback? Wir würden uns freuen, von Ihnen zu hören",
