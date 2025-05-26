@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import LegalModal from "@/components/modals/LegalModal";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
 
@@ -247,6 +248,16 @@ const CheckboxLabel = styled.label`
   }
 `;
 
+const ModalLink = styled.span`
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const buttonVariants = {
   hover: {
     scale: 1.03,
@@ -329,6 +340,8 @@ function SignUp() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [redirectAfterLogin, setRedirectAfterLogin] = useState("");
   const [isCheckoutComplete, setIsCheckoutComplete] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   
   // Initialize translations
   const { t } = useTranslation();
@@ -628,8 +641,8 @@ function SignUp() {
               required
             />
             <CheckboxLabel htmlFor="terms">
-              {t("signup.agreeToTerms", "I agree to the")} <Link href="/terms">{t("signup.termsOfService", "Terms of Service")}</Link> {t("signup.and", "and")}{" "}
-              <Link href="/privacy">{t("signup.privacyPolicy", "Privacy Policy")}</Link>
+              {t("signup.agreeToTerms", "I agree to the")} <ModalLink onClick={() => setShowTermsModal(true)}>{t("signup.termsOfService", "Terms of Service")}</ModalLink> {t("signup.and", "and")}{" "}
+              <ModalLink onClick={() => setShowPrivacyModal(true)}>{t("signup.privacyPolicy", "Privacy Policy")}</ModalLink>
             </CheckboxLabel>
           </CheckboxContainer>
 
@@ -659,6 +672,18 @@ function SignUp() {
           {t("signup.alreadyHaveAccount", "Already have an account?")} <Link href={`/login`}>{t("signup.login", "Log in")}</Link>
         </LinkText>
       </FormCard>
+
+      <LegalModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        modalType="terms"
+      />
+
+      <LegalModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        modalType="privacy"
+      />
     </AuthContainer>
   );
 }
