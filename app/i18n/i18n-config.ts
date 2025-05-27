@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 // Languages we support
-export const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'ja'];
+export const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'zh', 'ja'];
 export const defaultLanguage = 'en';
 
 // Function to get the current language preference from localStorage or browser

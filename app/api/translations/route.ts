@@ -4,7 +4,7 @@ import path from 'path';
 import 'server-only';
 
 // Languages we support - duplicated here to avoid importing from client component
-const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'ja'];
+const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'zh', 'ja'];
 const defaultLanguage = 'en';
 
 // Deep merge of objects
