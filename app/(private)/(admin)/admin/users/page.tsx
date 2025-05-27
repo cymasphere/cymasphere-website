@@ -25,12 +25,16 @@ import {
   FaEllipsisV,
   FaUserShield,
   FaBan,
+  FaUndo,
+  FaCheck,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { getAllUsersForCRM, UserData } from "@/utils/stripe/admin-analytics";
+import { refundPaymentIntent, refundInvoice } from "@/utils/stripe/actions";
 
 const Container = styled.div`
   width: 100%;
@@ -830,6 +834,206 @@ const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
   }
 `;
 
+// Refund Components
+const RefundButton = styled.button<{ variant?: 'primary' | 'danger'; disabled?: boolean }>`
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  ${props => props.disabled && `
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  `}
+  
+  ${props => {
+    switch (props.variant) {
+      case 'danger':
+        return `
+          background-color: rgba(220, 53, 69, 0.1);
+          color: #dc3545;
+          border: 1px solid rgba(220, 53, 69, 0.2);
+          &:hover:not(:disabled) {
+            background-color: rgba(220, 53, 69, 0.2);
+          }
+        `;
+      default:
+        return `
+          background-color: rgba(108, 99, 255, 0.1);
+          color: var(--primary);
+          border: 1px solid rgba(108, 99, 255, 0.2);
+          &:hover:not(:disabled) {
+            background-color: rgba(108, 99, 255, 0.2);
+          }
+        `;
+    }
+  }}
+
+  svg {
+    font-size: 0.7rem;
+  }
+`;
+
+const RefundNotification = styled(motion.div)<{ type: 'success' | 'error' }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 400px;
+  
+  ${props => props.type === 'success' ? `
+    background-color: #2ecc71;
+    border: 1px solid #27ae60;
+  ` : `
+    background-color: #e74c3c;
+    border: 1px solid #c0392b;
+  `}
+  
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Confirmation Modal Components
+const ConfirmationModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  padding: 20px;
+`;
+
+const ConfirmationModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+`;
+
+const ConfirmationTitle = styled.h3`
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const ConfirmationMessage = styled.p`
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+`;
+
+const ConfirmationDetails = styled.div`
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const ConfirmationDetailItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const ConfirmationDetailLabel = styled.span`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+`;
+
+const ConfirmationDetailValue = styled.span`
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+`;
+
+const ConfirmationButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+`;
+
+const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+  justify-content: center;
+  
+  ${props => props.variant === 'danger' ? `
+    background-color: #dc3545;
+    color: white;
+    &:hover {
+      background-color: #c82333;
+      transform: translateY(-1px);
+    }
+  ` : `
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+  `}
+  
+  svg {
+    font-size: 0.9rem;
+  }
+`;
+
 export default function AdminCRM() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -856,6 +1060,20 @@ export default function AdminCRM() {
   
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
+
+  // Refund state
+  const [refundLoading, setRefundLoading] = useState<string | null>(null);
+  const [refundSuccess, setRefundSuccess] = useState<string | null>(null);
+  const [refundError, setRefundError] = useState<string | null>(null);
+
+  // Confirmation modal state
+  const [showRefundConfirmation, setShowRefundConfirmation] = useState(false);
+  const [refundConfirmationData, setRefundConfirmationData] = useState<{
+    id: string;
+    type: 'purchase' | 'invoice';
+    amount: number;
+    description: string;
+  } | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -1111,6 +1329,83 @@ export default function AdminCRM() {
         break;
     }
   };
+
+  // Refund handlers
+  const showRefundConfirmationDialog = (id: string, type: 'purchase' | 'invoice', amount: number, description: string) => {
+    setRefundConfirmationData({ id, type, amount, description });
+    setShowRefundConfirmation(true);
+  };
+
+  const handleConfirmRefund = async () => {
+    if (!refundConfirmationData) return;
+
+    const { id, type, amount } = refundConfirmationData;
+    
+    try {
+      setRefundLoading(id);
+      setRefundError(null);
+      setRefundSuccess(null);
+      setShowRefundConfirmation(false);
+      setRefundConfirmationData(null);
+
+      let result;
+      if (type === 'purchase') {
+        result = await refundPaymentIntent(id);
+      } else {
+        result = await refundInvoice(id);
+      }
+      
+      if (result.success) {
+        setRefundSuccess(id);
+        // Refresh user data to show updated information
+        fetchUsers();
+      } else {
+        setRefundError(result.error || 'Failed to process refund');
+      }
+    } catch (error) {
+      setRefundError('An unexpected error occurred');
+      console.error('Refund error:', error);
+    } finally {
+      setRefundLoading(null);
+    }
+  };
+
+  const handleCancelRefund = () => {
+    setShowRefundConfirmation(false);
+    setRefundConfirmationData(null);
+  };
+
+  const handleRefundPurchase = (purchaseId: string, amount: number, description: string) => {
+    showRefundConfirmationDialog(purchaseId, 'purchase', amount, description);
+  };
+
+  const handleRefundInvoiceClick = (invoiceId: string, amount: number, description: string) => {
+    showRefundConfirmationDialog(invoiceId, 'invoice', amount, description);
+  };
+
+  const clearRefundMessages = () => {
+    setRefundSuccess(null);
+    setRefundError(null);
+  };
+
+  // Auto-dismiss refund notifications
+  useEffect(() => {
+    if (refundSuccess) {
+      const timer = setTimeout(() => {
+        setRefundSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [refundSuccess]);
+
+  useEffect(() => {
+    if (refundError) {
+      const timer = setTimeout(() => {
+        setRefundError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [refundError]);
 
   // Handle loading and auth states in render logic instead of early returns
   if (languageLoading || !user) {
@@ -1520,6 +1815,7 @@ export default function AdminCRM() {
                           <DataTableHeaderCell>Amount</DataTableHeaderCell>
                           <DataTableHeaderCell>Status</DataTableHeaderCell>
                           <DataTableHeaderCell>Date</DataTableHeaderCell>
+                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
                         </tr>
                       </DataTableHeader>
                       <DataTableBody>
@@ -1532,6 +1828,22 @@ export default function AdminCRM() {
                               <StatusBadge $status={purchase.status}>{purchase.status}</StatusBadge>
                             </DataTableCell>
                             <DataTableCell>{formatDate(purchase.createdAt)}</DataTableCell>
+                            <DataTableCell>
+                              {purchase.status === 'succeeded' && (
+                                <RefundButton
+                                  variant="danger"
+                                  disabled={refundLoading === purchase.id}
+                                  onClick={() => handleRefundPurchase(purchase.id, purchase.amount, purchase.description)}
+                                >
+                                  {refundLoading === purchase.id ? (
+                                    <LoadingSpinner />
+                                  ) : (
+                                    <FaUndo />
+                                  )}
+                                  {refundSuccess === purchase.id ? 'Refunded' : 'Refund'}
+                                </RefundButton>
+                              )}
+                            </DataTableCell>
                           </DataTableRow>
                         ))}
                       </DataTableBody>
@@ -1560,6 +1872,7 @@ export default function AdminCRM() {
                           <DataTableHeaderCell>Status</DataTableHeaderCell>
                           <DataTableHeaderCell>Created</DataTableHeaderCell>
                           <DataTableHeaderCell>Paid</DataTableHeaderCell>
+                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
                         </tr>
                       </DataTableHeader>
                       <DataTableBody>
@@ -1573,6 +1886,22 @@ export default function AdminCRM() {
                             </DataTableCell>
                             <DataTableCell>{formatDate(invoice.createdAt)}</DataTableCell>
                             <DataTableCell>{invoice.paidAt ? formatDate(invoice.paidAt) : 'N/A'}</DataTableCell>
+                            <DataTableCell>
+                              {invoice.status === 'paid' && (
+                                <RefundButton
+                                  variant="danger"
+                                  disabled={refundLoading === invoice.id}
+                                  onClick={() => handleRefundInvoiceClick(invoice.id, invoice.amount, invoice.number)}
+                                >
+                                  {refundLoading === invoice.id ? (
+                                    <LoadingSpinner />
+                                  ) : (
+                                    <FaUndo />
+                                  )}
+                                  {refundSuccess === invoice.id ? 'Refunded' : 'Refund'}
+                                </RefundButton>
+                              )}
+                            </DataTableCell>
                           </DataTableRow>
                         ))}
                       </DataTableBody>
@@ -1584,6 +1913,78 @@ export default function AdminCRM() {
               </ModalSection>
             </ModalContent>
           </ModalOverlay>
+        )}
+
+        {/* Refund Notifications */}
+        {refundSuccess && (
+          <RefundNotification
+            type="success"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearRefundMessages}
+          >
+            <FaCheck />
+            Refund processed successfully!
+          </RefundNotification>
+        )}
+
+        {refundError && (
+          <RefundNotification
+            type="error"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearRefundMessages}
+          >
+            <FaExclamationTriangle />
+            {refundError}
+          </RefundNotification>
+        )}
+
+        {/* Confirmation Modal */}
+        {showRefundConfirmation && (
+          <ConfirmationModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCancelRefund}
+          >
+            <ConfirmationModalContent
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ConfirmationTitle>
+                <FaCheck />
+                Refund Confirmation
+              </ConfirmationTitle>
+              <ConfirmationMessage>
+                Are you sure you want to refund this transaction?
+              </ConfirmationMessage>
+              <ConfirmationDetails>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>Amount</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue>{refundConfirmationData ? formatCurrency(refundConfirmationData.amount) : 'N/A'}</ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>Description</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue>{refundConfirmationData?.description}</ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+              </ConfirmationDetails>
+              <ConfirmationButtons>
+                <ConfirmationButton variant="danger" onClick={handleConfirmRefund}>
+                  <FaTrash />
+                  Refund
+                </ConfirmationButton>
+                <ConfirmationButton variant="secondary" onClick={handleCancelRefund}>
+                  <FaTimes />
+                  Cancel
+                </ConfirmationButton>
+              </ConfirmationButtons>
+            </ConfirmationModalContent>
+          </ConfirmationModalOverlay>
         )}
       </motion.div>
     </Container>

@@ -658,13 +658,9 @@ export async function createCustomerPortalSession(
   customerId: string
 ): Promise<{ url: string | null; error?: string }> {
   try {
-    if (!customerId) {
-      return { url: null, error: "Missing customer ID" };
-    }
-
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/billing`,
+      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
     });
 
     return { url: session.url };
@@ -673,7 +669,139 @@ export async function createCustomerPortalSession(
     return {
       url: null,
       error:
-        error instanceof Error ? error.message : "An unexpected error occurred",
+        error instanceof Error ? error.message : "Failed to create portal session",
+    };
+  }
+}
+
+/**
+ * Refund a payment intent (one-time purchase)
+ * @param paymentIntentId The payment intent ID to refund
+ * @param amount Optional partial refund amount in cents (if not provided, full refund)
+ * @param reason Optional reason for the refund
+ */
+export async function refundPaymentIntent(
+  paymentIntentId: string,
+  amount?: number,
+  reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
+): Promise<{ success: boolean; refund?: Stripe.Refund; error?: string }> {
+  try {
+    const refundData: Stripe.RefundCreateParams = {
+      payment_intent: paymentIntentId,
+      reason: reason || 'requested_by_customer',
+    };
+
+    // Add amount if partial refund
+    if (amount) {
+      refundData.amount = amount;
+    }
+
+    const refund = await stripe.refunds.create(refundData);
+
+    return {
+      success: true,
+      refund,
+    };
+  } catch (error) {
+    console.error("Error refunding payment intent:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to process refund",
+    };
+  }
+}
+
+/**
+ * Refund an invoice by creating a credit note
+ * @param invoiceId The invoice ID to refund
+ * @param amount Optional partial refund amount in cents (if not provided, full refund)
+ * @param reason Optional reason for the refund
+ */
+export async function refundInvoice(
+  invoiceId: string,
+  amount?: number,
+  reason?: Stripe.CreditNoteCreateParams.Reason
+): Promise<{ success: boolean; creditNote?: Stripe.CreditNote; error?: string }> {
+  try {
+    // First, get the invoice to check its status and amount
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    
+    if (invoice.status !== 'paid') {
+      return {
+        success: false,
+        error: 'Invoice must be paid to create a refund',
+      };
+    }
+
+    const creditNoteData: Stripe.CreditNoteCreateParams = {
+      invoice: invoiceId,
+      reason: reason || 'duplicate',
+    };
+
+    // Add amount if partial refund
+    if (amount) {
+      creditNoteData.amount = amount;
+    }
+
+    const creditNote = await stripe.creditNotes.create(creditNoteData);
+
+    return {
+      success: true,
+      creditNote,
+    };
+  } catch (error) {
+    console.error("Error refunding invoice:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to process refund",
+    };
+  }
+}
+
+/**
+ * Get refund history for a payment intent
+ * @param paymentIntentId The payment intent ID
+ */
+export async function getPaymentIntentRefunds(
+  paymentIntentId: string
+): Promise<{ refunds: Stripe.Refund[]; error?: string }> {
+  try {
+    const refunds = await stripe.refunds.list({
+      payment_intent: paymentIntentId,
+    });
+
+    return {
+      refunds: refunds.data,
+    };
+  } catch (error) {
+    console.error("Error fetching refunds:", error);
+    return {
+      refunds: [],
+      error: error instanceof Error ? error.message : "Failed to fetch refunds",
+    };
+  }
+}
+
+/**
+ * Get credit notes for an invoice
+ * @param invoiceId The invoice ID
+ */
+export async function getInvoiceCreditNotes(
+  invoiceId: string
+): Promise<{ creditNotes: Stripe.CreditNote[]; error?: string }> {
+  try {
+    const creditNotes = await stripe.creditNotes.list({
+      invoice: invoiceId,
+    });
+
+    return {
+      creditNotes: creditNotes.data,
+    };
+  } catch (error) {
+    console.error("Error fetching credit notes:", error);
+    return {
+      creditNotes: [],
+      error: error instanceof Error ? error.message : "Failed to fetch credit notes",
     };
   }
 }
