@@ -713,6 +713,12 @@
       "accountDeletedMessage": "Your account has been successfully deleted. You will be redirected to the homepage."
     }
   },
+  "freeTrial": {
+    "startTrial": "Start Your Free Trial",
+    "enterEmail": "Enter your email address to start your {{days}}-day free trial {{requirement}}.",
+    "cardRequired": "(credit card required)",
+    "noCardRequired": "(no credit card required)"
+  },
   "billing": {
     "choosePlan": "Choose Your Plan",
     "limitedOffer": "Limited Time Offer",

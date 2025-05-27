@@ -392,7 +392,10 @@
       "answer3": "Cymasphere senkronizasyon ve AI özellikleri için internet bağlantısı gerektirir, ancak sınırlı süreler için çevrimdışı çalışabilirsiniz.",
       "question4": "Hangi dosya formatları destekleniyor?",
       "answer4": "MIDI dışa aktarımının yanı sıra analiz ve yeniden armonizasyon için MIDI ve MusicXML dosya içe aktarımını destekliyoruz."
-    }
+    },
+    "processing": "İşleniyor...",
+    "upgradeNow": "Şimdi Yükselt",
+    "buyNow": "Şimdi Satın Al"
   },
   "language": {
     "en": "English",
@@ -1033,6 +1036,12 @@
       "generic": "Şifre sıfırlama e-postası gönderme başarısız. Lütfen tekrar deneyin."
     }
   },
+  "freeTrial": {
+    "startTrial": "Ücretsiz Denemenizi Başlatın",
+    "enterEmail": "{{days}} günlük ücretsiz denemenizi başlatmak için e-posta adresinizi girin {{requirement}}.",
+    "cardRequired": "(kredi kartı gerekli)",
+    "noCardRequired": "(kredi kartı gerekmez)"
+  },
   "billing": {
     "choosePlan": "Planınızı Seçin",
     "limitedOffer": "Sınırlı Süreli Teklif",
@@ -1061,7 +1070,9 @@
     "provideCard": "{{days}} günlük deneme için şimdi ödeme yöntemi sağlayın",
     "cardTooltip": "Ödeme yönteminizi şimdi eklemek denemenizi 7 gün yerine 14 güne uzatır. Denemeniz bitene kadar ücretlendirilmezsiniz.",
     "chooseTrial": "Ücretsiz deneme seçeneğinizi seçin:",
-    "noCharge": "(deneme bitene kadar ücretlendirilmez)"
+    "noCharge": "(deneme bitene kadar ücretlendirilmez)",
+    "continueToCheckout": "Ödemeye Devam Et",
+    "gotIt": "Anladım"
   },
   "legal": {
     "termsOfService": "Hizmet Şartları",

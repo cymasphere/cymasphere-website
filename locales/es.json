@@ -816,6 +816,12 @@
       "accountDeletedMessage": "Tu cuenta ha sido eliminada con éxito. Serás redirigido a la página de inicio."
     }
   },
+  "freeTrial": {
+    "startTrial": "Comienza tu Prueba Gratuita",
+    "enterEmail": "Ingresa tu dirección de correo electrónico para comenzar tu prueba gratuita de {{days}} días {{requirement}}.",
+    "cardRequired": "(tarjeta de crédito requerida)",
+    "noCardRequired": "(no se requiere tarjeta de crédito)"
+  },
   "billing": {
     "choosePlan": "Elige tu Plan",
     "limitedOffer": "Oferta por Tiempo Limitado",

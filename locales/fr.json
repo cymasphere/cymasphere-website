@@ -638,8 +638,14 @@
       "tooManyAttempts": "Trop de tentatives de réinitialisation de mot de passe. Veuillez attendre quelques minutes avant de réessayer.",
       "errorSendingReset": "Erreur lors de l'envoi de l'e-mail de réinitialisation : {{error}}",
       "unexpectedError": "Une erreur inattendue s'est produite : {{error}}"
-    },
-    "billing": {
+      },
+  "freeTrial": {
+    "startTrial": "Commencez Votre Essai Gratuit",
+    "enterEmail": "Entrez votre adresse e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
+    "cardRequired": "(carte de crédit requise)",
+    "noCardRequired": "(aucune carte de crédit requise)"
+  },
+  "billing": {
       "title": "Facturation et abonnement",
       "choosePlan": "Choisissez Votre Forfait",
       "limitedOffer": "Offre à Durée Limitée",
