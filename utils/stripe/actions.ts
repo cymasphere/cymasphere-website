@@ -477,9 +477,20 @@ export async function getUpcomingInvoice(customerId: string | null): Promise<{
         : null,
     };
   } catch (error: unknown) {
-    console.error("Error fetching upcoming invoice:", error);
+    // Handle the case where there are no upcoming invoices gracefully
+    // This is common for lifetime customers, canceled subscriptions, or customers without active subscriptions
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { amount: 0, error: errorMessage, due_date: null };
+    
+    if (errorMessage.includes("No upcoming invoices") || 
+        errorMessage.includes("no upcoming invoice") ||
+        errorMessage.includes("No invoice found")) {
+      // This is not really an error - just means no upcoming charges
+      return { amount: 0, error: null, due_date: null };
+    }
+    
+    // For other types of errors, still log them but don't expose the full error to the UI
+    console.error("Error fetching upcoming invoice:", error);
+    return { amount: 0, error: null, due_date: null };
   }
 }
 

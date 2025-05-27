@@ -527,11 +527,14 @@ export default function BillingPage() {
 
         if (error) {
           console.error("Error fetching upcoming invoice:", error);
+          // Don't set the amount if there's an error
+          setUpcomingInvoiceAmount(null);
         } else {
           setUpcomingInvoiceAmount(amount);
         }
       } catch (err) {
         console.error("Error in fetchUpcomingInvoice:", err);
+        setUpcomingInvoiceAmount(null);
       } finally {
         setIsLoadingInvoice(false);
       }
@@ -1105,7 +1108,7 @@ export default function BillingPage() {
                     <div
                       style={{ display: "flex", flexDirection: "column" }}
                     >
-                      <div>{invoice.id}</div>
+                      <div>{invoice.number || invoice.id}</div>
                       <InvoiceDate>
                         {formatDate(invoice.created)}
                       </InvoiceDate>

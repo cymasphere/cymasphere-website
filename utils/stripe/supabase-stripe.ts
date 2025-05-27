@@ -187,6 +187,7 @@ export async function customerPurchasedProFromSupabase(
  */
 export interface InvoiceData {
   id: string;
+  number?: string;
   amount: number;
   status: string;
   created: string;
@@ -235,10 +236,12 @@ export async function getCustomerInvoices(
         hosted_invoice_url?: string;
         invoice_pdf?: string;
         created?: number;
+        number?: string;
       } | null;
 
       return {
         id: invoice.id || "",
+        number: attrs?.number,
         amount: (invoice.total || 0) / 100, // Convert cents to dollars
         status: invoice.status || "unknown",
         created: new Date(

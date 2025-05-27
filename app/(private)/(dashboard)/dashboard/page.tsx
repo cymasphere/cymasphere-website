@@ -549,6 +549,7 @@ function DashboardPage() {
         );
         
         if (error) {
+          // Only show as error if it's not the common "no upcoming invoices" case
           setUpcomingInvoice({
             amount: null,
             due_date: null,
@@ -567,7 +568,7 @@ function DashboardPage() {
         setUpcomingInvoice({
           amount: null,
           due_date: null,
-          error: err instanceof Error ? err.message : t("common.unknownError", "Unknown error"),
+          error: null, // Don't show errors for common cases like no upcoming invoices
         });
       } finally {
         setIsLoadingInvoice(false);

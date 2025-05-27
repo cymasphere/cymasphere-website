@@ -588,7 +588,8 @@
       "nextBilling": "Data da próxima cobrança",
       "planDescription": "Solução completa para produtores musicais",
       "trialBanner": "Você está atualmente em um teste gratuito de {{trialDays}} dias com acesso completo a todos os recursos premium. {{daysLeft}} dias restantes. Seu primeiro pagamento de R${{amount}} será em {{date}}.",
-      "showingDefaultPrices": "Mostrando preços padrão."
+      "showingDefaultPrices": "Mostrando preços padrão.",
+      "loadingInvoices": "Carregando faturas..."
     },
     "downloads": {
       "title": "Downloads",

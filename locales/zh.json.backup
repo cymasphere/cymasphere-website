@@ -9,7 +9,7 @@
     "learnMore": "了解更多",
     "login": "登录",
     "signUp": "注册",
-    "logout": "退出登录",
+    "logout": "退出",
     "myAccount": "我的账户",
     "navigation": "导航",
     "backToHome": "返回首页",
@@ -20,11 +20,21 @@
     "locale": "zh-CN",
     "none": "无",
     "notAvailable": "不可用",
-    "unknownError": "未知错误"
+    "unknownError": "未知错误",
+    "continue": "继续",
+    "processing": "处理中...",
+    "emailAddress": "邮箱地址",
+    "emailPlaceholder": "example@email.com",
+    "goToLogin": "前往登录页面",
+    "errors": {
+      "emailRequired": "请输入您的邮箱地址",
+      "invalidEmail": "请输入有效的邮箱地址",
+      "unexpectedError": "发生意外错误，请重试。"
+    }
   },
   "header": {
     "home": "首页",
-    "features": "功能",
+    "features": "功能特色",
     "howItWorks": "工作原理",
     "testimonials": "用户评价",
     "demo": "演示",
@@ -35,24 +45,24 @@
     "tryDemo": "试用演示"
   },
   "hero": {
-    "title": "AI生成音乐",
+    "title": "用AI生成音乐",
     "titlePartA": "智能",
     "titlePartB": "创作",
-    "subtitle": "进入音乐创作的下一个进化阶段，理论基础在此无形地指导您的工作流程。和弦与旋律有目的地连接，增强您独特的音乐愿景。",
+    "subtitle": "进入音乐创作的下一个进化阶段，理论基础在不知不觉中指引您的工作流程。和弦与旋律有目的地连接，赋能您独特的音乐愿景。",
     "cta": "立即试用",
     "titleWords": {
       "music": "音乐",
       "song": "歌曲",
       "chord": "和弦",
       "pattern": "模式",
-      "progression": "进行",
-      "voicing": "声部",
+      "progression": "进程",
+      "voicing": "配音",
       "harmony": "和声"
     },
     "chords": {
       "cMajor": "C大调",
       "fMajor": "F大调",
-      "bDiminished": "B减音",
+      "bDiminished": "B减七",
       "eMinor": "E小调",
       "aMinor": "A小调",
       "dMinor": "D小调",
@@ -65,110 +75,110 @@
   },
   "features": {
     "title": "功能特色",
-    "subtitle": "探索Cymasphere能为您做些什么",
+    "subtitle": "探索Cymasphere能为您做什么",
     "aiComposition": "AI作曲",
     "aiCompositionDesc": "使用我们先进的AI，一键生成音乐",
-    "livePerformance": "现场演奏",
-    "livePerformanceDesc": "实时使用合成器演奏和表演",
+    "livePerformance": "实时演奏",
+    "livePerformanceDesc": "使用合成器进行实时演奏和表演",
     "customSounds": "自定义音色",
     "customSoundsDesc": "创建并保存您自己的自定义音色预设",
     "sectionTitle": "强大功能",
     "songBuilder": {
       "title": "歌曲构建器",
-      "description": "在一个直观的工作空间中结合音轨、进行和和声调色板，实现流畅的作曲。",
-      "modalTitle": "音乐创作中心",
-      "modalDescription": "歌曲构建器是您的创意中心，所有音乐元素在此汇聚。通过专为初学者和专业人士设计的直观界面，创建、编排和完善您的音乐。",
+      "description": "在一个直观的工作空间中结合音轨、进程和和声调色板，实现无缝作曲。",
+      "modalTitle": "音乐创作中心枢纽",
+      "modalDescription": "歌曲构建器是您的中央创作枢纽，所有音乐元素在这里汇聚。使用为初学者和专业人士设计的直观界面创建、编排和完善您的音乐。",
       "keyFeatures": "主要功能：",
       "features": [
-        "专业传输控制，包含播放、停止、录制、循环功能、BPM、拍号、节拍器和DAW同步",
+        "专业传输控制，包括播放、停止、录制、循环功能、BPM、拍号、节拍器和DAW同步",
         "交互式时间轴，具有网格对齐、缩放控制和倒计时功能",
-        "多轨管理，包含每轨静音/独奏、音量控制和路由选项",
-        "全面的编排视图，提供所有声部和模式的整体视角",
-        "和弦进行框架，作为您作品的和声基础",
-        "信息化键盘显示，展示和弦声部和声部进行"
+        "多轨管理，具有每轨静音/独奏、音量控制和路由选项",
+        "全面编排视图，提供所有配音和模式的整体视角",
+        "和弦进程框架，作为您作品的和声基础",
+        "信息键盘显示，显示和弦配音和声部进行"
       ]
     },
     "harmonyPalettes": {
       "title": "和声调色板",
       "description": "通过直观的手势界面塑造旋律和和弦，实现流畅的音乐表达。",
       "modalTitle": "可视化和弦关系",
-      "modalDescription": "使用我们直观的手势界面，像操控物理乐器一样控制和声。通过触觉体验操纵、编排和探索和弦关系，让复杂的音乐理论变得易于理解和富有表现力。",
+      "modalDescription": "使用我们直观的手势界面像控制物理乐器一样控制和声。通过触觉体验操纵、编排和探索和弦关系，使复杂的音乐理论变得易于理解和表达。",
       "keyFeatures": "主要功能：",
       "features": [
-        "可自定义库组织，通过拖拽方式整理您的和弦收藏",
-        "直接从调色板拖拽声部到您的进行时间轴",
+        "可自定义的和弦库排列，通过拖放组织您的和弦收藏",
+        "从调色板直接拖放配音到您的进程时间轴",
         "精选收藏库，包含预选的音阶和和弦关系",
         "一键转调，瞬间改变整个作品的调性",
-        "声部参数面板，快速调整和弦特性",
-        "自定义库创建，构建您的个人和弦词汇"
+        "配音参数面板，快速调整和弦特性",
+        "自定义和弦库创建，构建您的个人和弦词汇"
       ]
     },
     "patternEditor": {
       "title": "动态模式编辑器",
-      "description": "创建智能音乐模式，实时适应和弦变化。",
-      "modalTitle": "自适应音乐模式",
-      "modalDescription": "动态模式编辑器让您创建复杂的音乐动机，智能响应和弦进行的变化。构建旋律和节奏序列，即使在和声变化时也能保持音乐连贯性。",
+      "description": "创建能够实时适应和弦变化的智能音乐模式。",
+      "modalTitle": "适应性音乐模式",
+      "modalDescription": "动态模式编辑器使您能够创建复杂的音乐动机，智能地响应和弦进程的变化。构建即使在和声变化时也能保持音乐连贯性的旋律和节奏序列。",
       "keyFeatures": "主要功能：",
       "features": [
-        "实时智能适应和弦进行变化",
+        "智能适应实时和弦进程变化",
         "高级钢琴卷帘界面，配备强大的编辑工具",
-        "上下文感知音符输入，具有音阶、和弦和声部智能，防止和声冲突",
-        "双模式操作，相对和绝对模式适用于上下文和固定旋律内容",
-        "旋律精髓提取，捕捉任何旋律的意图，在不同和声语境中重复使用"
+        "上下文感知音符输入，具有音阶、和弦和配音智能，防止和声冲突",
+        "双模式操作，具有相对和绝对模式，适用于上下文和固定旋律内容",
+        "旋律本质提取，捕获任何旋律的意图，以便在不同和声上下文中重用"
       ]
     },
     "voicingGenerator": {
-      "title": "声部生成器",
-      "description": "将和弦进行转换为富有表现力的声部，具有专业的声部进行和和声控制。",
-      "modalTitle": "无限和声可能",
-      "modalDescription": "声部生成器将简单的和弦符号转换为复杂、富有表现力的和声结构。精细调整和弦声部的每个方面，从全局风格到单个音符位置，创建为您的音乐注入生命力的专业编排。",
+      "title": "配音生成器",
+      "description": "将和弦进程转换为具有专业声部进行和和声控制的表现力配音。",
+      "modalTitle": "无限和声可能性",
+      "modalDescription": "配音生成器将简单的和弦符号转换为复杂、表现力丰富的和声结构。从全局风格到单个音符位置，精细调整和弦配音的每个方面，创造让您的音乐充满生命力的专业编排。",
       "keyFeatures": "主要功能：",
       "features": [
-        "高级和弦编辑器，具有全面的音阶和和弦配置工具，实现完整的和声定制",
-        "智能声部进行，基于邻近性、共同音和声部方向自动平滑过渡和弦变化",
-        "纹理控制，包括声部宽度、密度、转位、八度分布和音域放置",
-        "可配置的和声扩展，包含7度、9度、11度和13度，为您的进行增加丰富性和色彩",
-        "多级设置，允许对整首歌曲进行全局更改或对特定和弦声部进行针对性编辑"
+        "高级和弦编辑器，具有全面的音阶和和弦配置工具，实现完整的和声自定义",
+        "智能声部进行，基于接近度、共同音和声部方向，在和弦变化之间自动平滑过渡",
+        "质感控制，包括配音宽度、密度、转位、八度分布和音域位置",
+        "和声延伸，可配置7度、9度、11度和13度音，为您的进程增添丰富性和色彩",
+        "多级设置，允许对整首歌曲进行全局更改或通过单次调整专注编辑特定和弦配音"
       ]
     },
     "progressionTimeline": {
-      "title": "进行时间轴",
-      "description": "从引导音轨学习，使用强大的重新和声工具改造现有歌曲。",
-      "modalTitle": "掌握和弦进行创建",
-      "modalDescription": "进行时间轴简化了构建、完善和转换和弦进行的过程。通过教育性引导音轨和强大的重新和声工具，您既可以学习又可以重新发明您喜爱的音乐。",
+      "title": "进程时间轴",
+      "description": "从幽灵音轨学习，使用强大的重新和声工具转换现有歌曲。",
+      "modalTitle": "掌握和弦进程创作",
+      "modalDescription": "进程时间轴简化了构建、完善和转换和弦进程的过程。通过教育性幽灵音轨和强大的重新和声工具，您既可以学习也可以重新创造您喜爱的音乐。",
       "keyFeatures": "主要功能：",
       "features": [
-        "直观的时间轴界面，用于视觉进行构建",
-        "引导音轨学习系统，教授进行结构",
-        "实时重新和声，改造现有进行",
+        "直观的时间轴界面，用于可视化进程构建",
+        "幽灵音轨学习系统，教授进程结构",
+        "实时重新和声，转换现有进程",
         "基于段落的组织，用于结构化作曲",
-        "拖拽和弦编排，通过拖拽边界轻松重新排列和弦并调整其长度",
+        "拖放和弦编排，通过拖拽边界轻松重新排列和弦并调整其长度",
         "显示切换，根据偏好显示和弦名称为字母、罗马数字或唱名",
-        "动态模式更新，当进行发生变化时，模式和声部自动适应"
+        "动态模式更新，当对进程进行更改时，模式和配音自动适应"
       ]
     },
     "voiceHandling": {
       "title": "高级声部处理",
       "description": "控制声部数量、交互和MIDI路由，实现完整的编排灵活性。",
-      "modalTitle": "完全控制每个声部",
-      "modalDescription": "高级声部处理为您作品中的每个独立声部提供精细控制。管理声部数量、行为、交互和路由，以完全的创作自由创建复杂编排。",
+      "modalTitle": "对每个声部的完全控制",
+      "modalDescription": "高级声部处理为您作品中的每个单独声部提供精细控制。管理声部数量、行为、交互和路由，以完全的创作自由创建复杂编排。",
       "keyFeatures": "主要功能：",
       "features": [
-        "动态声部数量用于编排灵活性 - 添加或删除声部以获得不同纹理",
-        "平滑声部进行控制声部如何协同移动 - 平行、反向或独立运动选项",
-        "每声部MIDI通道路由用于多乐器设置 - 将声部发送到不同乐器",
-        "声部音域约束用于适合乐器的写作 - 为每个声部设置上下限",
-        "指定低音通道用于基础控制 - 持续音和声部进行的独立控制",
-        "声部/通道矩阵用于轻松MIDI路由 - 可视化地将声部映射到MIDI通道和乐器"
+        "动态声部数量，实现编排灵活性 - 为不同质感添加或移除声部",
+        "平滑声部进行，控制声部如何共同移动 - 平行、反向或独立运动选项",
+        "每声部MIDI通道路由，用于多乐器设置 - 将声部发送到不同乐器",
+        "声部音域限制，用于适合乐器的写作 - 为每个声部设置上下限",
+        "指定低音通道，用于基础控制 - 持续音和声部进行的独立控制",
+        "声部/通道矩阵，轻松MIDI路由 - 将声部直观地映射到MIDI通道和乐器"
       ]
     }
   },
   "howItWorks": {
     "title": "工作原理",
     "subtitle": "音乐创作变得简单",
-    "createSubtitle": "使用强大工具作曲",
+    "createSubtitle": "用强大工具谱写音乐",
     "learnSubtitle": "轻松掌握您喜爱的歌曲",
-    "integrateSubtitle": "连接到您现有的工作流程",
+    "integrateSubtitle": "与您现有的工作流程连接",
     "tabs": {
       "create": "创作",
       "learn": "学习",
@@ -176,99 +186,99 @@
     },
     "createWorkflow": {
       "step1": {
-        "title": "从和弦进行开始",
-        "description": "从预制模板开始，或通过从和声调色板拖拽声部轻松构建您自己的和弦进行。应用程序自动分析音阶和调式，确保您的音乐遵循适当的理论原则。"
+        "title": "从和弦进程开始",
+        "description": "从预制模板开始，或通过从和声调色板拖动配音轻松构建您自己的和弦进程。应用程序自动分析音阶和调式，确保您的音乐遵循正确的理论原则。"
       },
       "step2": {
-        "title": "多层音轨",
-        "description": "创建丰富的作品，多个音轨智能协作。添加和声、旋律和节奏——全部与您的和弦进行同步且和声兼容。"
+        "title": "叠加多个音轨",
+        "description": "使用智能协作的多个音轨创建丰富的作品。添加和声、旋律和节奏——全部与您的和弦进程同步且和声兼容。"
       },
       "step3": {
-        "title": "精确定制",
-        "description": "通过详细定制微调您的声音。调整转位、声部密度、紧张音符和和声扩展，从简单三和弦到复杂爵士和声。"
+        "title": "精确自定义",
+        "description": "通过详细自定义精细调整您的声音。调整转位、配音密度、张力音符和和声延伸，制作从简单三和弦到复杂爵士和声的一切。"
       },
       "step4": {
         "title": "智能音乐性",
-        "description": "体验专业级音乐性，智能声部进行确保平滑的和弦过渡。使用以前只有受过训练的音乐家才能使用的作曲工具，让您自信地创作复杂和声。"
+        "description": "通过确保平滑和弦过渡的智能声部进行体验专业级音乐性。访问以前只有受过训练的音乐家才能使用的作曲工具，使您能够自信地创作复杂和声。"
       }
     },
     "learnWorkflow": {
       "step1": {
-        "title": "引导音轨学习",
-        "description": "通过引导您演奏的交互式引导音轨掌握和弦进行。实时实验重新和声，观察应用程序如何适应您的创意选择，同时保持音乐连贯性。"
+        "title": "幽灵音轨学习",
+        "description": "通过指导您演奏的交互式幽灵音轨掌握和弦进程。实时实验重新和声，观察应用程序如何适应您的创作选择同时保持音乐连贯性。"
       },
       "step2": {
-        "title": "交互式和声分析",
-        "description": "探索全面的和声显示，揭示您音乐背后的理论。实时可视化声部、模式、音阶和和弦，深入了解您创作的音乐结构。"
+        "title": "互动和声分析",
+        "description": "探索揭示音乐背后理论的全面和声显示。实时可视化配音、模式、音阶和和弦，深入了解您创作的音乐结构。"
       },
       "step3": {
         "title": "基于模式的学习",
-        "description": "从简单模式开始，观察它在您探索不同音阶和和弦品质时的演变。应用程序的视觉反馈帮助您理解每个音符如何贡献整体和声，而模式编辑器让您实验变化并培养音乐直觉。"
+        "description": "从简单的模式开始，观察它在您探索不同音阶和和弦特质时的演变。应用程序的视觉反馈帮助您理解每个音符如何为整体和声做出贡献，同时模式编辑器让您尝试变化并建立音乐直觉。"
       },
       "step4": {
-        "title": "精炼您的技能",
-        "description": "通过实验不同和弦替代和调式交换改善您的音乐听觉。当您完善和声选择时，您将对和弦品质和进行形成更深理解，自然地培养技术技能和创意声音。"
+        "title": "完善您的技能",
+        "description": "通过尝试不同的和弦替换和调式互换改善您的音乐听觉。当您完善和声选择时，您将对和弦特质和进程发展更深入的理解，自然地建立技术技能和创意声音。"
       }
     },
     "integrateWorkflow": {
       "step1": {
         "title": "DAW兼容性",
-        "description": "将Cymasphere用作独立应用程序或作为DAW中的VST/AU插件。无论您是独立构思创意还是直接集成到制作中，应用程序都能适应您的首选工作流程。"
+        "description": "将Cymasphere用作独立应用程序或在您的DAW中用作VST/AU插件。无论您是独立素描想法还是直接集成到制作中，应用程序都适应您的首选工作流程。"
       },
       "step2": {
         "title": "多轨控制",
-        "description": "同时管理多个音轨，每个都有自己独立的声部设置和模式。通过在DAW中将不同音乐元素分配给独立音轨创建丰富的分层编排。"
+        "description": "同时管理多个音轨，每个都有自己独立的声音设置和模式。通过在DAW中为不同的音轨分配不同的音乐元素创建丰富的分层编排。"
       },
       "step3": {
-        "title": "声部通道矩阵",
-        "description": "使用通道矩阵精确控制每个声部的发送位置。将单独声部路由到DAW中的特定MIDI通道，完全控制乐器分配和声部分布。"
+        "title": "声音通道矩阵",
+        "description": "使用通道矩阵精确控制每个声音的发送位置。将单个声音路由到DAW中的特定MIDI通道，完全控制乐器分配和声音分布。"
       },
       "step4": {
         "title": "无缝工作流程",
-        "description": "将Cymasphere作为强大的和声和模式生成器集成到您的制作过程中。用它快速构思创意、开发复杂进行，并创建直接输入到DAW乐器的音乐模式。"
+        "description": "将Cymasphere集成到您的制作流程中作为强大的和声和模式生成器。用它来快速素描想法，开发复杂的进程，并创建直接馈送到DAW乐器的音乐模式。"
       }
     }
   },
   "pricing": {
-    "title": "价格与套餐",
-    "subtitle": "灵活选择满足您的需求",
-    "simpleTransparent": "简单透明的价格",
+    "title": "价格和套餐",
+    "subtitle": "适合您需求的灵活选择",
+    "simpleTransparent": "简单、透明的价格",
     "chooseOption": "选择最适合您的计费选项。",
-    "allFeatures": "所有选项都包含完整功能访问。",
+    "allFeatures": "所有选项都包含完整的功能访问。",
     "monthly": "月付",
     "yearly": "年付",
     "lifetime": "终身",
     "mostFlexible": "最灵活",
     "payMonthly": "按月付费，随时取消",
     "save": "节省",
-    "withYearlyBilling": "年付计费",
+    "withYearlyBilling": "通过年付",
     "bestValue": "最超值",
     "oneTimePayment": "一次性付款，终身访问",
     "perMonth": "/月",
     "perYear": "/年",
     "billed": "年付计费",
     "oneTimePurchase": "一次性购买",
-    "proSolution": "音乐家完整作曲套件",
+    "proSolution": "音乐家的完整作曲套件",
     "currencySymbol": "￥",
     "allPlansInclude": "所有套餐包含：",
     "features": [
-      "歌曲构建器与多轨管理",
+      "多轨管理的歌曲构建器",
       "智能模式编辑器和和弦适应",
       "手势和声调色板界面",
-      "高级声部进行和和弦声部",
-      "交互式和弦进行时间轴",
-      "完整声部和音域控制",
-      "独立应用和DAW插件支持",
+      "高级声部进行和和弦配音",
+      "交互式和弦进程时间轴",
+      "完整的声部和音域控制",
+      "独立应用程序和DAW插件支持",
       "实时和弦重新和声工具",
-      "全面编排视图",
-      "自定义声部生成引擎",
+      "全面的编排视图",
+      "自定义配音生成引擎",
       "云存储和项目备份",
       "高级支持和所有未来更新"
     ],
     "freeTrial": {
-      "title": "免费试用最多14天",
-      "description": "通过两种试用选项体验所有高级功能。",
-      "options": "选择7天无卡或14天有卡存档。",
+      "title": "免费试用长达14天",
+      "description": "通过两个试用选项体验所有高级功能。",
+      "options": "选择7天无卡或14天存卡。",
       "chooseFree": "选择您的免费试用选项：",
       "withCard": "14天试用 - 添加存卡",
       "noCharge": "（试用结束前不收费）",
@@ -283,70 +293,57 @@
   },
   "faq": {
     "title": "常见问题",
-    "subtitle": "找到关于Cymasphere的常见问题答案",
+    "subtitle": "查找关于Cymasphere的常见问题答案",
     "questions": [
       {
         "question": "什么是Cymasphere？",
-        "answer": "Cymasphere是一个完整的歌曲创作套件，既可作为独立应用程序，也可作为DAW的插件（AU和VST3）。它提供集成工具来作曲和声和旋律，具有智能和弦声部、旋律模式构建和交互式可视化，让所有技能水平的用户都能理解和直观使用音乐理论。"
+        "answer": "Cymasphere是一个综合的歌曲创作套件，可作为独立应用程序和DAW插件（AU & VST3）使用。它提供了和声和旋律作曲的集成工具，具有智能和弦配音、旋律模式构建和交互式可视化功能，使音乐理论对所有技能水平都变得易于理解和直观。"
       },
       {
-        "question": "Cymasphere为音乐家解决什么问题？",
-        "answer": "Cymasphere解决常见的作曲挑战，如创建引人注目的和弦进行、开发互补旋律、制作平滑的声部进行和寻找音乐灵感。它弥合了音乐理论知识与实际应用之间的差距，使任何技能水平的制作人都能更直观地掌握整个作曲过程。"
+        "question": "Cymasphere为音乐家解决哪些问题？",
+        "answer": "Cymasphere解决了常见的作曲挑战，如创建引人注目的和弦进程、开发互补旋律、制作平滑的声部进行和寻找音乐灵感。它架起了音乐理论知识和实际应用之间的桥梁，使整个作曲过程对任何技能水平的制作人都更加直观和易于理解。"
       },
       {
         "question": "歌曲构建器如何帮助作曲？",
-        "answer": "歌曲构建器是您的中央创意中心，所有音乐元素在此汇聚。您可以编排和弦进行、创建旋律模式，并构建具有多个音轨的完整歌曲结构。系统具有专业传输控制、交互式时间轴、具有每轨设置的多轨管理，以及提供作品发展整体视角的全面编排视图。"
+        "answer": "歌曲构建器是您所有音乐元素汇聚的中央创作枢纽。您可以排列和弦进程、创建旋律模式，并使用多个音轨构建完整的歌曲结构。系统提供专业的传输控制、交互式时间轴、带有每轨设置的多轨管理，以及为您的作品发展提供整体视角的全面编排视图。"
       },
       {
         "question": "交互式和声调色板如何工作？",
-        "answer": "交互式和声调色板为探索和弦关系提供视觉、手势界面。只需选择起始和弦，调色板将显示和声相关选项，轻松制作引人注目的进行。您可以直接将声部拖拽到时间轴，瞬间转调，创建自定义和弦库来发展您的个人和声词汇。"
+        "answer": "交互式和声调色板提供了一个用于探索和弦关系的可视化、手势界面。只需选择一个起始和弦，调色板就会显示与其和声相关的选项，使创建引人注目的进程变得容易。您可以直接将配音拖放到时间轴上，即时转调，并创建自定义和弦库来发展您的个人和声词汇。"
       },
       {
-        "question": "旋律模式构造器有什么特别之处？",
-        "answer": "旋律模式构造器帮助您开发与和弦进行互补的引人注目旋律。它根据您的和声选择建议上下文适当的旋律模式，让您实验不同节奏变化，并提供直观工具来制作难忘主题。系统在和弦变化时智能适应您的旋律内容，在整个作品中保持音乐连贯性。"
+        "question": "旋律模式构建的特别之处是什么？",
+        "answer": "旋律模式构建帮助您开发与和弦进程互补的引人注目的旋律。它根据您的和声选择建议上下文适当的旋律模式，允许您尝试不同的节奏变化，并提供创建令人难忘主题的直观工具。当和弦变化发生时，系统会智能地调整您的旋律内容，在整个作品中保持音乐连贯性。"
       },
       {
         "question": "模式如何适应和弦变化？",
-        "answer": "Cymasphere的动态模式编辑器使用智能算法实时将旋律模式适应到您的和弦进行。当您更改和弦时，系统自动调整模式以保持和声连贯性，同时保留旋律的音乐意图。这在相对和绝对模式下都有效，让您灵活创建上下文感知旋律或根据需要的固定旋律内容。"
-      },
-      {
-        "question": "声部生成器有什么特别之处？",
-        "answer": "声部生成器使用高级算法创建丰富、音乐满意的和弦声部，遵循适当的声部进行原则。它分析和弦进行以确保和弦间平滑的声部过渡，具有声部宽度、密度、转位和和声扩展控制。设置可以全局应用或针对作品的特定部分调整。"
-      },
-      {
-        "question": "独立应用和插件版本有什么区别？",
-        "answer": "独立应用和插件版本共享相同的核心功能和特性。独立应用独立工作，非常适合专注作曲和探索，而插件直接与您的DAW集成，实现无缝制作工作流程。您可以选择最适合您创作过程的版本，或根据需要使用两者。"
-      },
-      {
-        "question": "哪些DAW与Cymasphere插件兼容？",
-        "answer": "Cymasphere插件（提供AU和VST3格式）与大多数主要DAW兼容，包括Logic Pro、Ableton Live、FL Studio、Cubase、Studio One、Reaper、Bitwig和Digital Performer。支持macOS和Windows平台。"
-      },
-      {
-        "question": "Cymasphere适合初学者吗？",
-        "answer": "绝对适合！虽然Cymasphere为经验丰富的作曲家提供高级功能，但其直观界面让初学者也能理解音乐理论，帮助他们可视化地理解和声和旋律概念。工具的交互性质鼓励实验和实践学习，使其成为无论起点如何都能发展作曲技能的绝佳平台。"
-      },
-      {
-        "question": "我需要了解音乐理论才能使用Cymasphere吗？",
-        "answer": "不需要，这正是Cymasphere的优势之一！Cymasphere是一个和声游乐场，旨在在您创作时增强您对音乐理论的理解。视觉界面帮助您在作曲时理解音乐关系，即使对初学者来说，复杂的理论概念也变得直观。它既是强大的创作工具，也是随着您技能发展而成长的优秀学习资源。"
-      },
-      {
-        "question": "我如何在购买前试用Cymasphere？",
-        "answer": "您可以通过我们的免费试用选项试用Cymasphere。我们提供7天免费试用（无需信用卡），或14天免费试用（需要存卡，但试用结束前不收费）。两种选项都能完全访问所有高级功能，让您在决定订阅计划前探索Cymasphere的所有功能。"
-      },
-      {
-        "question": "我需要为更新付费吗？",
-        "answer": "不需要，所有Cymasphere客户都可以免费访问软件的最新版本。这包括终身许可证持有者，他们获得所有未来更新作为一次性购买的一部分。我们致力于持续改进软件并添加所有用户都能享受的新功能。"
-      },
-      {
-        "question": "Cymasphere有用户手册吗？",
-        "answer": "没有，所有帮助都直接内置在应用程序的帮助管理器中，让探索和学习新功能变得毫不费力。问题、错误报告和其他询问可以通过我们的Discord服务器或发送邮件至support@cymasphere.com。"
+        "answer": "Cymasphere的动态模式编辑器使用智能算法实时调整旋律模式以适应您的和弦进程。当您更改和弦时，系统会自动调整模式以保持和声连贯性，同时保留旋律的音乐意图。这在相对和绝对模式下都有效，为创建上下文适应旋律或固定旋律内容提供了灵活性。"
       }
     ]
   },
+  "testimonials": {
+    "title": "用户评价",
+    "subtitle": "了解Cymasphere如何改变音乐创作",
+    "testimonial1": {
+      "quote": "Cymasphere彻底改变了我的作曲过程。智能声部进行让我能够创造出手动永远无法实现的复杂和声。",
+      "author": "陈萨拉",
+      "role": "作曲家"
+    },
+    "testimonial2": {
+      "quote": "作为音乐教师，我使用Cymasphere来演示复杂的理论概念。我的学生终于理解了和弦进程是如何工作的！",
+      "author": "迈克尔·罗德里格斯博士",
+      "role": "音乐教师"
+    },
+    "testimonial3": {
+      "quote": "和声调色板的手势界面非常巧妙。我能够以全新且直观的方式探索和弦关系。",
+      "author": "亚历克斯·汤普森",
+      "role": "音乐制作人"
+    }
+  },
   "contact": {
     "title": "联系我们",
-    "subtitle": "有问题或反馈？我们很乐意听到您的声音",
-    "description": "我们很乐意听到您的声音！无论您对功能、价格有疑问，还是只是想分享反馈，我们的团队随时为您提供帮助。填写表单，我们会尽快回复您。",
+    "subtitle": "有问题或反馈？我们很想听到您的声音",
+    "description": "我们很想听到您的声音！无论您对功能、价格有疑问，还是只是想分享您的反馈，我们的团队都在这里为您提供帮助。填写表单，我们将尽快回复您。",
     "emailInfo": "您也可以直接联系我们",
     "nameLabel": "您的姓名",
     "emailLabel": "邮箱地址",
@@ -355,23 +352,23 @@
     "submitButton": "发送消息",
     "sending": "发送中...",
     "successMessage": "谢谢！您的消息已成功发送。",
-    "errorMessage": "哎呀！出了点问题。请重试。"
+    "errorMessage": "糟糕！出了点问题。请重试。"
   },
   "footer": {
     "product": "产品",
     "company": "公司",
     "legal": "法律",
     "support": "支持",
-    "copyright": "© {{year}} Cymasphere。保留所有权利。",
+    "copyright": "© {{year}} Cymasphere. 保留所有权利。",
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
-    "description": "Cymasphere是为制作人、作曲家、演奏音乐家、教育工作者和学生设计的交互式音乐作曲工具。",
+    "description": "Cymasphere是一个交互式音乐作曲工具，适用于制作人、作曲家、演奏音乐家、教育者和学生。",
     "navigation": "导航",
     "account": "账户",
     "accountDashboard": "账户仪表板",
     "aboutUs": "关于我们",
-    "termsConditions": "条款与条件",
-    "byNNAudio": "由NNAudio开发"
+    "termsConditions": "条款和条件",
+    "byNNAudio": "由NNAudio制作"
   },
   "language": {
     "en": "English",
@@ -385,7 +382,7 @@
     "ja": "日本語"
   },
   "login": {
-    "subtitle": "登录访问您的账户",
+    "subtitle": "登录以访问您的账户",
     "forgotPassword": "忘记密码？",
     "loggingIn": "登录中...",
     "loginButton": "登录",
@@ -395,7 +392,7 @@
       "userNotFound": "未找到此邮箱的账户。请先注册。",
       "invalidCredentials": "密码错误。请重试。",
       "invalidEmail": "邮箱格式无效。",
-      "rateLimit": "登录尝试失败次数过多。请稍后重试或重置密码。",
+      "rateLimit": "登录尝试失败次数过多。请稍后重试或重置您的密码。",
       "generic": "登录失败：{{message}}",
       "unknown": "登录失败：{{message}}"
     }
@@ -405,13 +402,13 @@
       "createAn": "创建",
       "account": "账户"
     },
-    "firstName": "名字",
-    "lastName": "姓氏",
-    "firstNamePlaceholder": "名字",
-    "lastNamePlaceholder": "姓氏",
+    "firstName": "名",
+    "lastName": "姓",
+    "firstNamePlaceholder": "您的名字",
+    "lastNamePlaceholder": "您的姓氏",
     "emailPlaceholder": "输入您的邮箱地址",
-    "emailLinkedToPurchase": "此邮箱与您的购买相关联，无法更改",
-    "passwordPlaceholder": "创建安全密码",
+    "emailLinkedToPurchase": "此邮箱与您的购买链接，无法更改",
+    "passwordPlaceholder": "创建一个安全密码",
     "confirmPassword": "确认密码",
     "confirmPasswordPlaceholder": "确认您的密码",
     "agreeToTerms": "我同意",
@@ -432,19 +429,19 @@
   },
   "resetPassword": {
     "title": "重置密码",
-    "description": "输入您的邮箱地址，我们将发送重置密码的说明。",
+    "description": "输入您的邮箱地址，我们将向您发送重置密码的说明。",
     "backToLogin": "返回登录",
     "emailLabel": "邮箱地址",
     "emailPlaceholder": "输入您的注册邮箱",
     "sendLink": "发送重置链接",
     "sendingLink": "发送中...",
-    "rememberPassword": "记住密码？",
+    "rememberPassword": "记起密码了？",
     "login": "登录",
-    "successMessage": "如果此邮箱地址存在账户，我们已发送重置密码的说明。请检查您的收件箱和垃圾邮件文件夹。",
+    "successMessage": "如果该邮箱地址存在账户，我们已发送密码重置说明。请检查您的收件箱和垃圾邮件文件夹。",
     "errors": {
       "userNotFound": "未找到此邮箱地址的用户",
       "invalidEmail": "邮箱地址无效",
-      "rateLimit": "密码重置尝试次数过多。请等待几分钟后重试。",
+      "rateLimit": "密码重置尝试次数过多。请等待几分钟后再次尝试。",
       "generic": "发送密码重置邮件失败。请重试。"
     }
   },
@@ -458,7 +455,7 @@
       "backToSite": "返回网站",
       "backToHome": "返回首页",
       "logout": "退出登录",
-      "loading": "加载仪表板中...",
+      "loading": "正在加载仪表板...",
       "account": "账户",
       "welcomeUser": "{{name}}",
       "emailLabel": "{{email}}"
@@ -484,8 +481,8 @@
       "manageSubscription": "管理订阅",
       "contactSupport": "联系支持",
       "needHelp": "需要账户帮助或有疑问？",
-      "contactHelpText": "我们的支持团队随时为您解答任何问题或困难。",
-      "supportHelpText": "我们的支持团队随时为您解答任何问题或困难。",
+      "contactHelpText": "我们的支持团队随时为您解答任何问题。",
+      "supportHelpText": "我们的支持团队随时为您解答任何问题。",
       "sendMessage": "发送消息",
       "messageSent": "消息已发送",
       "messageReceived": "我们已收到您的消息，将尽快回复。",
@@ -620,86 +617,86 @@
       "trialBanner": "您目前正在{{trialDays}}天免费试用期内，可完全访问所有高级功能。剩余{{daysLeft}}天。您的首次付款￥{{amount}}将在{{date}}进行。",
       "showingDefaultPrices": "显示默认价格。",
       "loadingInvoices": "正在加载发票..."
-    },
-    "downloads": {
-      "title": "下载",
-      "availableDownloads": "可用下载",
-      "version": "版本",
-      "platform": "平台",
-      "size": "大小",
-      "releaseDate": "发布日期",
-      "downloadButton": "下载",
-      "noDownloads": "无可用下载",
-      "downloadingTitle": "下载中...",
-      "downloadComplete": "下载完成",
-      "installationInstructions": "安装说明",
-      "systemRequirements": "系统要求",
-      "installers": "Cymasphere安装包",
-      "macosTitle": "Cymasphere for macOS",
-      "macosDesc": "适用于macOS的通用安装包，包含独立应用程序和插件（AU、VST3），支持Apple Silicon和Intel处理器。",
-      "windowsTitle": "Cymasphere for Windows",
-      "windowsDesc": "适用于Windows 10/11的完整安装包，包含独立应用程序和插件格式（VST3）。",
-      "updated": "已更新",
-      "updateDate": "2023年3月10日",
-      "downloadMacos": "下载macOS版",
-      "downloadWindows": "下载Windows版",
-      "resources": "资源",
-      "quickStart": "快速入门指南",
-      "quickStartDesc": "几分钟内快速上手Cymasphere",
-      "downloadPdf": "下载PDF"
-    },
-    "settings": {
-      "title": "设置",
-      "preferences": "偏好设置",
-      "theme": "主题",
-      "language": "语言",
-      "notifications": "通知",
-      "emailNotifications": "邮件通知",
-      "security": "安全",
-      "twoFactorAuth": "双重身份验证",
-      "changePassword": "更改密码",
-      "deleteAccount": "删除账户",
-      "deleteWarning": "永久删除账户",
-      "deleteDesc": "此操作无法撤销。您的所有数据将被永久删除。",
-      "dangerZone": "危险区域",
-      "saveSettings": "保存设置",
-      "settingsUpdated": "设置更新成功",
-      "interfaceLanguage": "界面语言",
-      "languageDesc": "更改应用程序中使用的语言",
-      "devices": "活跃设备",
-      "noDevices": "未找到活跃设备",
-      "currentDevice": "当前设备",
-      "devicesInfo": "您正在使用{{current}}/{{max}}台允许的设备",
-      "logoutAll": "从所有其他设备退出",
-      "confirmLogout": "确认退出",
-      "logoutFailed": "退出失败",
-      "logoutMessage": "您已从所有设备退出。",
-      "logoutConfirmation": "您确定要从所有设备退出吗？这将结束您的所有活跃会话。",
-      "signOut": "退出",
-      "logoutSuccess": "成功退出",
-      "logoutError": "从所有设备退出时出现错误。请重试。",
-      "typeDelete": "输入\"DELETE\"确认：",
-      "timeNow": "现在",
-      "timeMinutes": "{{count}}分钟前",
-      "timeHours": "{{count}}小时前",
-      "timeDays": "{{count}}天前",
-      "hour": "小时",
-      "hours": "小时",
-      "day": "天",
-      "days": "天",
-      "deviceMobile": "手机",
-      "deviceTablet": "平板",
-      "deviceDesktop": "桌面",
-      "deletionFailed": "删除失败",
-      "deletionFailedError": "账户删除失败：{{error}}",
-      "deletionProcessingError": "处理您的账户删除请求时出现错误。请稍后重试。",
-      "confirmationRequired": "需要确认",
-      "confirmationMessage": "请输入\"DELETE\"确认账户删除。",
-      "processingDeletion": "处理删除请求",
-      "processingMessage": "请等待我们处理您的账户删除请求...",
-      "accountDeleted": "账户已删除",
-      "accountDeletedMessage": "您的账户已成功删除。您将被重定向到首页。"
     }
+  },
+  "downloads": {
+    "title": "下载",
+    "availableDownloads": "可用下载",
+    "version": "版本",
+    "platform": "平台",
+    "size": "大小",
+    "releaseDate": "发布日期",
+    "downloadButton": "下载",
+    "noDownloads": "无可用下载",
+    "downloadingTitle": "下载中...",
+    "downloadComplete": "下载完成",
+    "installationInstructions": "安装说明",
+    "systemRequirements": "系统要求",
+    "installers": "Cymasphere安装包",
+    "macosTitle": "Cymasphere for macOS",
+    "macosDesc": "适用于macOS的通用安装包，包含独立应用程序和插件（AU、VST3），支持Apple Silicon和Intel处理器。",
+    "windowsTitle": "Cymasphere for Windows",
+    "windowsDesc": "适用于Windows 10/11的完整安装包，包含独立应用程序和插件格式（VST3）。",
+    "updated": "已更新",
+    "updateDate": "2023年3月10日",
+    "downloadMacos": "下载macOS版",
+    "downloadWindows": "下载Windows版",
+    "resources": "资源",
+    "quickStart": "快速入门指南",
+    "quickStartDesc": "几分钟内快速上手Cymasphere",
+    "downloadPdf": "下载PDF"
+  },
+  "settings": {
+    "title": "设置",
+    "preferences": "偏好设置",
+    "theme": "主题",
+    "language": "语言",
+    "notifications": "通知",
+    "emailNotifications": "邮件通知",
+    "security": "安全",
+    "twoFactorAuth": "双重身份验证",
+    "changePassword": "更改密码",
+    "deleteAccount": "删除账户",
+    "deleteWarning": "永久删除账户",
+    "deleteDesc": "此操作无法撤销。您的所有数据将被永久删除。",
+    "dangerZone": "危险区域",
+    "saveSettings": "保存设置",
+    "settingsUpdated": "设置更新成功",
+    "interfaceLanguage": "界面语言",
+    "languageDesc": "更改应用程序中使用的语言",
+    "devices": "活跃设备",
+    "noDevices": "未找到活跃设备",
+    "currentDevice": "当前设备",
+    "devicesInfo": "您正在使用{{current}}/{{max}}台允许的设备",
+    "logoutAll": "从所有其他设备退出",
+    "confirmLogout": "确认退出",
+    "logoutFailed": "退出失败",
+    "logoutMessage": "您已从所有设备退出。",
+    "logoutConfirmation": "您确定要从所有设备退出吗？这将结束您的所有活跃会话。",
+    "signOut": "退出",
+    "logoutSuccess": "成功退出",
+    "logoutError": "从所有设备退出时出现错误。请重试。",
+    "typeDelete": "输入\"DELETE\"确认：",
+    "timeNow": "现在",
+    "timeMinutes": "{{count}}分钟前",
+    "timeHours": "{{count}}小时前",
+    "timeDays": "{{count}}天前",
+    "hour": "小时",
+    "hours": "小时",
+    "day": "天",
+    "days": "天",
+    "deviceMobile": "手机",
+    "deviceTablet": "平板",
+    "deviceDesktop": "桌面",
+    "deletionFailed": "删除失败",
+    "deletionFailedError": "账户删除失败：{{error}}",
+    "deletionProcessingError": "处理您的账户删除请求时出现错误。请稍后重试。",
+    "confirmationRequired": "需要确认",
+    "confirmationMessage": "请输入\"DELETE\"确认账户删除。",
+    "processingDeletion": "处理删除请求",
+    "processingMessage": "请等待我们处理您的账户删除请求...",
+    "accountDeleted": "账户已删除",
+    "accountDeletedMessage": "您的账户已成功删除。您将被重定向到首页。"
   },
   "billing": {
     "choosePlan": "选择您的套餐",
@@ -768,7 +765,7 @@
       },
       "disclaimer": {
         "title": "8. 免责声明",
-        "content": "我们的服务按现状和可用基础提供。我们不对我们服务的可靠性、可用性或准确性做出任何明示或暗示的保证。"
+        "content": "我们的服务按"现状"和"可用"基础提供。我们不对我们服务的可靠性、可用性或准确性做出任何明示或暗示的保证。"
       },
       "limitation": {
         "title": "9. 责任限制",
@@ -822,7 +819,7 @@
       },
       "changes": {
         "title": "9. 本隐私政策的变更",
-        "content": "我们可能会不时更新本隐私政策。我们将通过在此页面发布新政策并更新最后更新日期来通知您任何更改。"
+        "content": "我们可能会不时更新本隐私政策。我们将通过在此页面发布新政策并更新\"最后更新\"日期来通知您任何更改。"
       },
       "contact": {
         "title": "10. 联系我们",

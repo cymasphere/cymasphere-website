@@ -701,7 +701,8 @@
       "nextBilling": "Prossima data fatturazione",
       "planDescription": "Soluzione completa per produttori musicali",
       "trialBanner": "Sei attualmente in una prova gratuita di {{trialDays}} giorni con accesso completo a tutte le funzionalità premium. {{daysLeft}} giorni rimasti. Il tuo primo pagamento di €{{amount}} sarà il {{date}}.",
-      "showingDefaultPrices": "Mostrando prezzi predefiniti."
+      "showingDefaultPrices": "Mostrando prezzi predefiniti.",
+      "loadingInvoices": "Caricamento fatture..."
     },
     "downloads": {
       "title": "Download",
