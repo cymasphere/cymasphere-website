@@ -335,7 +335,9 @@
     "en": "English",
     "es": "Español",
     "fr": "Français",
+    "it": "Italiano",
     "de": "Deutsch",
+    "pt": "Português",
     "ja": "日本語"
   },
   "pricing": {
@@ -358,7 +360,7 @@
     "perYear": "/an",
     "billed": "facturé annuellement",
     "oneTimePurchase": "achat unique",
-    "proSolution": "Solution complète pour les producteurs de musique",
+    "proSolution": "Suite compositionnelle complète pour musiciens",
     "allPlansInclude": "Tous les Forfaits Incluent :",
     "features": [
       "Créateur de Chansons avec Gestion Multi-Pistes",
@@ -687,20 +689,13 @@
       "specificError": "Échec de la mise à jour de votre abonnement : {{error}}",
       "freePlan": "Gratuit",
       "freePlanDesc": "Accès limité aux fonctionnalités de base",
-      "noPlan": "Aucun",
+            "noPlan": "Aucun",
       "noPlanDesc": "Aucun abonnement actif",
-      "features": {
-        "interactive_harmony_palette": "Palette d'Harmonie Interactive",
-        "advanced_voice_leading_control": "Contrôle Avancé de la Conduite des Voix",
-        "unlimited_saved_progressions": "Progressions Sauvegardées Illimitées",
-        "premium_sound_libraries": "Bibliothèques Sonores Premium",
-        "midi_export_&_import": "Exportation et Importation MIDI",
-        "dynamic_pattern_editor": "Éditeur de Motifs Dynamique",
-        "song_builder_tool": "Outil de Construction de Chansons",
-        "cloud_storage_&_backup": "Stockage Cloud et Sauvegarde",
-        "priority_email_support": "Support par Email Prioritaire",
-        "free_updates": "Mises à Jour Gratuites"
-      }
+      "subscribePlan": "S'abonner à un forfait",
+      "cancelNotice": "Votre abonnement sera annulé le {{date}}. Vous aurez accès jusqu'à cette date.",
+      "continueToCheckout": "Continuer vers le Paiement",
+      "gotIt": "Compris",
+      "showingDefaultPrices": "Affichage des prix par défaut."
     },
     "downloads": {
       "title": "Téléchargements",

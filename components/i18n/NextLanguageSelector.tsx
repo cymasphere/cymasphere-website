@@ -5,14 +5,17 @@ import styled from "styled-components";
 import { loadTranslations, getCurrentLanguage } from "@/app/i18n/i18n-config";
 
 // Define language code type
-type LanguageCode = "en" | "es" | "fr" | "de" | "ja";
+type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "ja";
 
 // Flag icons for each language
 const FLAGS: Record<LanguageCode, string> = {
   en: "🇺🇸",
   es: "🇪🇸",
   fr: "🇫🇷",
+  it: "🇮🇹",
   de: "🇩🇪",
+  pt: "🇵🇹",
+  tr: "🇹🇷",
   ja: "🇯🇵",
 };
 
@@ -21,7 +24,10 @@ const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   en: "English",
   es: "Español",
   fr: "Français",
+  it: "Italiano",
   de: "Deutsch",
+  pt: "Português",
+  tr: "Türkçe",
   ja: "日本語",
 };
 

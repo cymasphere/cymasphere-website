@@ -1159,18 +1159,37 @@ export default function BillingPage() {
             yearlyPrice={yearlyPrice}
             lifetimePrice={lifetimePrice}
             planDescription={t("pricing.proSolution")}
-            planFeatures={[
-              t("dashboard.billing.feature1", "Interactive Harmony Palette"),
-              t("dashboard.billing.feature2", "Advanced Voice Leading Control"),
-              t("dashboard.billing.feature3", "Unlimited Saved Progressions"),
-              t("dashboard.billing.feature4", "Premium Sound Libraries"),
-              t("dashboard.billing.feature5", "MIDI Export & Import"),
-              t("dashboard.billing.feature6", "Dynamic Pattern Editor"),
-              t("dashboard.billing.feature7", "Song Builder Tool"),
-              t("dashboard.billing.feature8", "Cloud Storage & Backup"),
-              t("dashboard.billing.feature9", "Priority Email Support"),
-              t("dashboard.billing.feature10", "Free Updates"),
-            ]}
+            planFeatures={(() => {
+              // Use the same features array as the main pricing section
+              try {
+                const translatedFeatures = t("pricing.features", {
+                  returnObjects: true
+                });
+                
+                // Check if it's an array and has elements
+                if (Array.isArray(translatedFeatures) && translatedFeatures.length > 0) {
+                  return translatedFeatures;
+                }
+              } catch (error) {
+                console.log("Error loading translated features", error);
+              }
+              
+              // Fallback to English features
+              return [
+                "Song Builder with Multi-Track Management",
+                "Intelligent Pattern Editor & Chord Adaptation",
+                "Gestural Harmony Palette Interface",
+                "Advanced Voice Leading & Chord Voicings",
+                "Interactive Chord Progression Timeline",
+                "Complete Voice and Range Control",
+                "Standalone App & DAW Plugin Support",
+                "Real-Time Chord Reharmonization Tools",
+                "Comprehensive Arrangement View",
+                "Custom Voicing Generation Engine",
+                "Cloud Storage & Project Backups",
+                "Premium Support & All Future Updates",
+              ];
+            })()}
             monthlyDiscount={monthlyDiscount || undefined}
             yearlyDiscount={yearlyDiscount || undefined}
             lifetimeDiscount={lifetimeDiscount || undefined}

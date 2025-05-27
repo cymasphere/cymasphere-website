@@ -3,16 +3,20 @@ import { useTranslation } from "react-i18next";
 import styles from "./LanguageSelector.module.css";
 import dynamic from "next/dynamic";
 import useLanguage from "@/hooks/useLanguage";
+import { languages } from "@/app/i18n/config";
 
 // Define language code type
-type LanguageCode = "en" | "es" | "fr" | "de" | "ja";
+type LanguageCode = "en" | "es" | "fr" | "it" | "de" | "pt" | "tr" | "ja";
 
 // Flag icons for each language
 const FLAGS: Record<LanguageCode, string> = {
   en: "🇺🇸",
   es: "🇪🇸",
   fr: "🇫🇷",
+  it: "🇮🇹",
   de: "🇩🇪",
+  pt: "🇵🇹",
+  tr: "🇹🇷",
   ja: "🇯🇵",
 };
 
@@ -21,7 +25,10 @@ const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   en: "English",
   es: "Español",
   fr: "Français",
+  it: "Italiano",
   de: "Deutsch",
+  pt: "Português",
+  tr: "Türkçe",
   ja: "日本語",
 };
 
@@ -83,7 +90,7 @@ const LanguageSelector = () => {
 
       {isOpen && (
         <div className={styles["language-dropdown"]}>
-          {(Object.keys(FLAGS) as LanguageCode[]).map((langCode) => (
+          {(languages as LanguageCode[]).map((langCode) => (
             <div
               key={langCode}
               className={`${styles["language-option"]} ${

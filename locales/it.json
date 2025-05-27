@@ -1,0 +1,986 @@
+{
+  "common": {
+    "play": "Riproduci",
+    "stop": "Ferma",
+    "generate": "Genera",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "loading": "Caricamento...",
+    "learnMore": "Scopri di più",
+    "login": "Accedi",
+    "signUp": "Registrati",
+    "logout": "Esci",
+    "myAccount": "Il mio account",
+    "navigation": "Navigazione",
+    "backToHome": "Torna alla home",
+    "email": "Email",
+    "password": "Password",
+    "close": "Chiudi",
+    "confirm": "Conferma",
+    "locale": "it-IT",
+    "none": "Nessuno",
+    "notAvailable": "N/D",
+    "unknownError": "Errore sconosciuto",
+    "continue": "Continua",
+    "processing": "Elaborazione...",
+    "emailAddress": "Indirizzo email",
+    "emailPlaceholder": "tua@email.com",
+    "goToLogin": "Vai al login",
+    "errors": {
+      "emailRequired": "Inserisci il tuo indirizzo email",
+      "invalidEmail": "Inserisci un indirizzo email valido",
+      "unexpectedError": "Si è verificato un errore imprevisto. Riprova."
+    }
+  },
+  "header": {
+    "home": "Home",
+    "features": "Funzionalità",
+    "howItWorks": "Come funziona",
+    "testimonials": "Testimonianze",
+    "demo": "Demo",
+    "pricing": "Prezzi",
+    "faq": "FAQ",
+    "contact": "Contatti",
+    "download": "Scarica",
+    "tryDemo": "Prova la demo"
+  },
+  "hero": {
+    "title": "Genera musica con l'IA",
+    "titlePartA": "Creazione",
+    "titlePartB": "Intelligente",
+    "subtitle": "Entra nella prossima evoluzione della creazione musicale, dove le basi teoriche guidano invisibilmente il tuo flusso di lavoro. Accordi e melodie si connettono con uno scopo, potenziando la tua visione musicale unica.",
+    "cta": "Provalo ora",
+    "titleWords": {
+      "music": "Musica",
+      "song": "Canzone",
+      "chord": "Accordo",
+      "pattern": "Pattern",
+      "progression": "Progressione",
+      "voicing": "Voicing",
+      "harmony": "Armonia"
+    },
+    "chords": {
+      "cMajor": "Do Maggiore",
+      "fMajor": "Fa Maggiore",
+      "bDiminished": "Si Diminuito",
+      "eMinor": "Mi Minore",
+      "aMinor": "La Minore",
+      "dMinor": "Re Minore",
+      "gMajor": "Sol Maggiore"
+    },
+    "tooltips": {
+      "playNote": "Clicca per suonare questa nota",
+      "playChord": "Clicca per suonare l'accordo"
+    }
+  },
+  "features": {
+    "title": "Funzionalità",
+    "subtitle": "Scopri cosa può fare Cymasphere per te",
+    "aiComposition": "Composizione IA",
+    "aiCompositionDesc": "Genera musica con un clic usando la nostra IA avanzata",
+    "livePerformance": "Performance dal vivo",
+    "livePerformanceDesc": "Suona ed esibisciti con il sintetizzatore in tempo reale",
+    "customSounds": "Suoni personalizzati",
+    "customSoundsDesc": "Crea e salva i tuoi preset sonori personalizzati",
+    "sectionTitle": "Funzionalità potenti",
+    "songBuilder": {
+      "title": "Song Builder",
+      "description": "Combina tracce, progressioni e palette armoniche in un unico spazio di lavoro intuitivo per una composizione fluida.",
+      "modalTitle": "Hub centrale di creazione musicale",
+      "modalDescription": "Il Song Builder è il tuo hub creativo centrale dove tutti gli elementi musicali si uniscono. Crea, arrangia e perfeziona la tua musica con un'interfaccia intuitiva progettata sia per principianti che per professionisti.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Controlli di trasporto professionali con funzionalità play, stop, record, loop, BPM, metro, metronomo e sincronizzazione DAW",
+        "Timeline interattiva con snap alla griglia, controlli zoom e capacità di conteggio",
+        "Gestione multi-traccia con mute/solo per traccia, controlli volume e opzioni di routing",
+        "Vista arrangiamento completa che fornisce una prospettiva olistica di tutti i voicing e pattern",
+        "Framework di progressione accordi che serve come base armonica per le tue composizioni",
+        "Display tastiera informativo che mostra voicing degli accordi e condotta delle voci"
+      ]
+    },
+    "harmonyPalettes": {
+      "title": "Palette armoniche",
+      "description": "Modella melodie e accordi attraverso un'interfaccia gestuale intuitiva per un'espressione musicale fluida.",
+      "modalTitle": "Visualizza le relazioni tra accordi",
+      "modalDescription": "Controlla l'armonia come uno strumento fisico con la nostra interfaccia gestuale intuitiva. Manipola, arrangia ed esplora le relazioni tra accordi attraverso un'esperienza tattile che rende la teoria musicale complessa accessibile ed espressiva.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Disposizione banco personalizzabile per organizzare le tue collezioni di accordi tramite drag and drop",
+        "Voicing drag and drop direttamente dalle palette alla tua timeline di progressione",
+        "Libreria di collezioni curate con scale e relazioni di accordi preselezionate",
+        "Trasposizione con un clic per spostare istantaneamente le tonalità in tutta la composizione",
+        "Dashboard parametri voicing per regolazioni rapide delle caratteristiche degli accordi",
+        "Creazione banco personalizzato per costruire il tuo vocabolario di accordi personale"
+      ]
+    },
+    "patternEditor": {
+      "title": "Editor di pattern dinamici",
+      "description": "Crea pattern musicali intelligenti che si adattano ai cambi di accordi in tempo reale.",
+      "modalTitle": "Pattern musicali adattivi",
+      "modalDescription": "L'Editor di pattern dinamici ti consente di creare motivi musicali complessi che rispondono intelligentemente ai cambiamenti nelle tue progressioni di accordi. Costruisci melodie e sequenze ritmiche che mantengono la coerenza musicale anche quando l'armonia cambia.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Adattamento intelligente ai cambiamenti di progressione accordi in tempo reale",
+        "Interfaccia piano roll avanzata con potenti strumenti di editing",
+        "Inserimento note context-aware con intelligenza di scala, accordo e voicing per prevenire scontri armonici",
+        "Operazione doppia modalità con pattern relativi e assoluti per contenuto melodico sia contestuale che fisso",
+        "Estrazione essenza melodica che cattura l'intento di qualsiasi melodia per il riutilizzo in diversi contesti armonici"
+      ]
+    },
+    "voicingGenerator": {
+      "title": "Generatore di voicing",
+      "description": "Trasforma le progressioni di accordi in voicing espressivi con condotta delle voci professionale e controllo armonico.",
+      "modalTitle": "Possibilità armoniche illimitate",
+      "modalDescription": "Il Generatore di voicing trasforma semplici simboli di accordi in strutture armoniche complesse ed espressive. Regola finemente ogni aspetto dei tuoi voicing di accordi dalle impostazioni globali al posizionamento delle singole note, creando arrangiamenti professionali che danno vita alla tua musica.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Editor accordi avanzato con strumenti completi di configurazione scale e accordi per personalizzazione armonica completa",
+        "Condotta delle voci intelligente con transizioni automatiche fluide tra cambi di accordi basate su prossimità, note comuni e direzione delle voci",
+        "Controlli texture inclusi ampiezza voicing, densità, rivolti, distribuzione ottave e posizionamento registro",
+        "Estensioni armoniche con settime, none, undicesime e tredicesime configurabili per aggiungere ricchezza e colore alle tue progressioni",
+        "Impostazioni multi-livello che consentono modifiche globali a intere canzoni o modifiche mirate a specifici voicing di accordi con una singola regolazione"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "Timeline progressioni",
+      "description": "Impara dalle tracce fantasma e trasforma canzoni esistenti con potenti strumenti di riarmonizzazione.",
+      "modalTitle": "Padroneggia la creazione di progressioni di accordi",
+      "modalDescription": "La Timeline progressioni semplifica il processo di costruzione, perfezionamento e trasformazione delle progressioni di accordi. Con tracce fantasma educative e potenti strumenti di riarmonizzazione, puoi sia imparare che reinventare la tua musica preferita.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Interfaccia timeline intuitiva per la costruzione visuale di progressioni",
+        "Sistema di apprendimento tracce fantasma che insegna la struttura delle progressioni",
+        "Riarmonizzazione in tempo reale per trasformare progressioni esistenti",
+        "Organizzazione basata su sezioni per composizione strutturata",
+        "Arrangiamento accordi drag and drop per riorganizzare facilmente accordi e regolare la loro lunghezza trascinando i confini",
+        "Commutazione display per mostrare nomi accordi come lettere, numeri romani o solfeggio basato sulla preferenza",
+        "Aggiornamenti pattern dinamici dove pattern e voicing si adattano automaticamente quando vengono apportate modifiche alla progressione"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Gestione voci avanzata",
+      "description": "Controlla il numero di voci, le interazioni e il routing MIDI per una flessibilità di arrangiamento completa.",
+      "modalTitle": "Controllo completo su ogni voce",
+      "modalDescription": "La Gestione voci avanzata fornisce controllo granulare su ogni aspetto delle singole voci nella tua composizione. Gestisci numero di voci, comportamento, interazione e routing per creare arrangiamenti complessi con completa libertà creativa.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Numero voci dinamico per flessibilità arrangiamento - Aggiungi o rimuovi voci per diverse texture",
+        "Condotta voci fluida per controllare come le voci si muovono insieme - Opzioni per movimento parallelo, contrario o indipendente",
+        "Routing canale MIDI per voce per configurazioni multi-strumento - Invia voci a diversi canali e strumenti",
+        "Vincoli range voce per scrittura appropriata allo strumento - Imposta limiti superiori e inferiori per ogni voce",
+        "Canale basso designato per controllo fondazione - Controlli discreti per note pedale e condotta delle voci",
+        "Matrice voce/canale per routing MIDI senza sforzo - Mappa visualmente voci a canali MIDI e strumenti"
+      ]
+    }
+  },
+  "synth": {
+    "title": "Generatore intelligente di voicing accordi",
+    "description": "Crea accordi ricchi e belli con la pressione di un pulsante.",
+    "chordSequence": "Sequenza accordi",
+    "generateMelody": "Genera melodia",
+    "playChordSequence": "Riproduci sequenza accordi",
+    "stopAll": "Ferma tutto",
+    "playBoth": "Riproduci entrambi",
+    "generateRandomProgression": "Progressione casuale",
+    "generateRandomSongName": "Nome casuale",
+    "synthesizerTitle": "Sintetizzatore",
+    "synthesizerDesc": "Crea e riproduci pattern musicali",
+    "songName": "Nome canzone",
+    "trackName": "Nome traccia",
+    "trackNamePlaceholder": "es. Pianoforte, Melodia, Bassline",
+    "trackNameHint": "Ogni traccia rappresenta uno strumento o suono diverso nella tua canzone",
+    "trackIllustration": "Pensa alle tracce come strati nel tuo arrangiamento musicale - suoneranno insieme per creare la tua canzone completa.",
+    "chords": {
+      "cMajor": "Cmaj7",
+      "dMinor": "Dmin7",
+      "eMinor": "Emin7",
+      "fMajor": "Fmaj7",
+      "g7sus4": "G7",
+      "aMinor": "Amin7",
+      "bm7b5": "Bm7b5"
+    },
+    "wizard": {
+      "step1": {
+        "title": "Passo 1: Creazione canzone",
+        "description": "Inizia il tuo viaggio creativo dando un nome al tuo pezzo musicale.",
+        "namePlaceholder": "Inserisci un nome per la tua canzone",
+        "nameHint": "Questo sarà il titolo della tua creazione musicale",
+        "illustration": "Ogni grande pezzo musicale inizia con un nome. Come chiamerai il tuo?"
+      },
+      "step2": {
+        "title": "Passo 2: Progressione accordi",
+        "description": "Crea la base armonica per la tua canzone \"{songName}\".",
+        "chordSequence": "Sequenza accordi",
+        "instruction": "Scegli accordi dalla banca sottostante e aggiungili alla tua progressione."
+      },
+      "step3": {
+        "title": "Passo 3: Creazione traccia",
+        "description": "Dai un nome alla tua prima traccia strumentale in \"{songName}\".",
+        "progression": "La tua progressione:"
+      },
+      "step4": {
+        "title": "Passo 4: Creazione pattern",
+        "description": "Crea un pattern melodico per la tua traccia \"{trackName}\" in \"{songName}\"."
+      },
+      "nextToProgression": "Continua alla progressione accordi",
+      "nextToTrack": "Continua alla creazione traccia",
+      "nextToPattern": "Continua alla creazione pattern",
+      "backToSong": "Torna alla creazione canzone",
+      "backToProgression": "Torna alla progressione accordi",
+      "backToTrack": "Torna alla creazione traccia",
+      "finish": "Termina",
+      "congratsMessage": "Congratulazioni! Hai appena iniziato a scoprire le potenti capacità di creazione musicale di Cymasphere. La tua canzone \"{songName}\" con la traccia \"{trackName}\" è solo l'inizio. Esplora l'intera piattaforma per sbloccare funzionalità avanzate, strumenti di composizione alimentati dall'IA e capacità di produzione audio professionale che trasformeranno le tue idee musicali in realtà."
+    },
+    "notes": {
+      "C": "Do",
+      "D": "Re",
+      "E": "Mi",
+      "F": "Fa",
+      "G": "Sol",
+      "A": "La",
+      "B": "Si"
+    },
+    "chordTypes": {
+      "major": "Maggiore",
+      "minor": "Minore",
+      "diminished": "Diminuito",
+      "augmented": "Aumentato",
+      "seventh": "Settima"
+    }
+  },
+  "howItWorks": {
+    "title": "Come funziona",
+    "subtitle": "Creazione musicale resa semplice",
+    "createSubtitle": "Componi musica con strumenti potenti",
+    "learnSubtitle": "Padroneggia le tue canzoni preferite senza sforzo",
+    "integrateSubtitle": "Connettiti al tuo flusso di lavoro esistente",
+    "tabs": {
+      "create": "CREA",
+      "learn": "IMPARA",
+      "integrate": "INTEGRA"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Inizia con le progressioni di accordi",
+        "description": "Inizia con modelli pre-realizzati o crea senza sforzo le tue progressioni di accordi trascinando voicing dalla palette Armonia. L'app analizza automaticamente scale e modi, assicurando che la tua musica segua i principi teorici appropriati."
+      },
+      "step2": {
+        "title": "Sovrapponi più tracce",
+        "description": "Crea composizioni ricche con più tracce che lavorano intelligentemente insieme. Aggiungi armonia, melodie e ritmi—tutti sincronizzati e armonicamente compatibili con la tua progressione di accordi."
+      },
+      "step3": {
+        "title": "Personalizza con precisione",
+        "description": "Affina il tuo suono con personalizzazione dettagliata. Regola rivolti, densità voicing, note di tensione ed estensioni armoniche per creare tutto, dalle triadi semplici alle armonie jazz complesse."
+      },
+      "step4": {
+        "title": "Musicalità intelligente",
+        "description": "Sperimenta musicalità di livello professionale con condotta delle voci intelligente che assicura transizioni di accordi fluide. Accedi a strumenti di composizione precedentemente disponibili solo per musicisti formati, permettendoti di creare armonie sofisticate con fiducia."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Apprendimento tracce fantasma",
+        "description": "Padroneggia le progressioni di accordi attraverso tracce fantasma interattive che guidano il tuo suonare. Sperimenta con la riarmonizzazione in tempo reale, osservando come l'app si adatta alle tue scelte creative mantenendo la coerenza musicale."
+      },
+      "step2": {
+        "title": "Analisi armonica interattiva",
+        "description": "Esplora display armonici completi che rivelano la teoria dietro la tua musica. Visualizza voicing, pattern, scale e accordi in tempo reale, ottenendo intuizioni profonde nella struttura musicale delle tue creazioni."
+      },
+      "step3": {
+        "title": "Apprendimento basato su pattern",
+        "description": "Inizia con un pattern semplice e guardalo evolvere mentre esplori diverse scale e qualità di accordi. Il feedback visivo dell'app ti aiuta a capire come ogni nota contribuisce all'armonia complessiva, mentre l'editor pattern ti permette di sperimentare con variazioni e costruire la tua intuizione musicale."
+      },
+      "step4": {
+        "title": "Affina le tue abilità",
+        "description": "Migliora il tuo orecchio musicale sperimentando con diverse sostituzioni di accordi e interscambi modali. Mentre affini le tue scelte armoniche, svilupperai una comprensione più profonda delle qualità degli accordi e delle progressioni, costruendo naturalmente sia le tue abilità tecniche che la tua voce creativa."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "Compatibilità DAW",
+        "description": "Usa Cymasphere come applicazione standalone o come plugin VST/AU nella tua DAW. Che tu stia abbozzando idee indipendentemente o integrando direttamente nella tua produzione, l'app si adatta al tuo flusso di lavoro preferito."
+      },
+      "step2": {
+        "title": "Controllo multi-traccia",
+        "description": "Gestisci più tracce simultaneamente, ognuna con le proprie impostazioni di voce e pattern indipendenti. Crea arrangiamenti ricchi e stratificati assegnando diversi elementi musicali a tracce separate nella tua DAW."
+      },
+      "step3": {
+        "title": "Matrice canali voce",
+        "description": "Controlla precisamente dove ogni voce viene inviata usando la matrice canali. Instrada singole voci a canali MIDI specifici nella tua DAW, dandoti controllo completo sull'assegnazione strumenti e distribuzione voci."
+      },
+      "step4": {
+        "title": "Flusso di lavoro senza soluzione di continuità",
+        "description": "Integra Cymasphere nel tuo processo di produzione come potente generatore di armonia e pattern. Usalo per abbozzare rapidamente idee, sviluppare progressioni complesse e creare pattern musicali che si alimentano direttamente negli strumenti della tua DAW."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Prezzi e piani",
+    "subtitle": "Opzioni flessibili per le tue esigenze",
+    "simpleTransparent": "Prezzi semplici e trasparenti",
+    "chooseOption": "Scegli l'opzione di fatturazione che funziona meglio per te.",
+    "allFeatures": "Tutte le opzioni includono accesso completo a tutte le funzionalità.",
+    "monthly": "Mensile",
+    "yearly": "Annuale",
+    "lifetime": "A vita",
+    "mostFlexible": "Più flessibile",
+    "payMonthly": "Paga mese per mese, cancella in qualsiasi momento",
+    "save": "Risparmia",
+    "withYearlyBilling": "con fatturazione annuale",
+    "bestValue": "Miglior valore",
+    "oneTimePayment": "Pagamento unico, accesso a vita",
+    "perMonth": "/mese",
+    "perYear": "/anno",
+    "billed": "fatturato annualmente",
+    "oneTimePurchase": "acquisto unico",
+    "proSolution": "Suite compositiva completa per musicisti",
+    "currencySymbol": "€",
+    "allPlansInclude": "Tutti i piani includono:",
+    "features": [
+      "Song Builder con gestione multi-traccia",
+      "Editor pattern intelligente e adattamento accordi",
+      "Interfaccia gestuale palette armonia",
+      "Condotta voci avanzata e voicing accordi",
+      "Timeline progressione accordi interattiva",
+      "Controllo completo voce e range",
+      "Supporto app standalone e plugin DAW",
+      "Strumenti riarmonizzazione accordi in tempo reale",
+      "Vista arrangiamento completa",
+      "Motore generazione voicing personalizzato",
+      "Archiviazione cloud e backup progetti",
+      "Supporto premium e tutti gli aggiornamenti futuri"
+    ],
+    "freeTrial": {
+      "title": "Prova GRATIS fino a 14 giorni",
+      "description": "Sperimenta tutte le funzionalità premium con due opzioni di prova.",
+      "options": "Scegli 7 giorni senza carta o 14 giorni con carta in archivio.",
+      "chooseFree": "Scegli la tua opzione di prova gratuita:",
+      "withCard": "Prova 14 giorni - Aggiungi carta in archivio",
+      "noCharge": "(non verrà addebitato fino alla fine della prova)",
+      "noCard": "Prova 7 giorni - Nessuna carta di credito richiesta",
+      "startNow": "Inizia ora",
+      "startTrial": "Inizia prova",
+      "or": "o"
+    },
+    "processing": "Elaborazione",
+    "upgradeNow": "Aggiorna ora",
+    "buyNow": "Acquista ora"
+  },
+  "faq": {
+    "title": "Domande frequenti",
+    "subtitle": "Trova risposte alle domande comuni su Cymasphere",
+    "questions": [
+      {
+        "question": "Cos'è Cymasphere?",
+        "answer": "Cymasphere è una suite completa di creazione musicale disponibile sia come applicazione standalone che come plugin (AU & VST3) per la tua DAW. Fornisce strumenti integrati per comporre sia armonia che melodia, con voicing di accordi intelligenti, costruzione di pattern melodici e visualizzazione interattiva che rende la teoria musicale accessibile e intuitiva per tutti i livelli di abilità."
+      },
+      {
+        "question": "Quali problemi risolve Cymasphere per i musicisti?",
+        "answer": "Cymasphere affronta sfide compositive comuni come creare progressioni di accordi convincenti, sviluppare melodie complementari, creare condotta delle voci fluida e trovare ispirazione musicale. Colma il divario tra conoscenza della teoria musicale e applicazione pratica, rendendo l'intero processo compositivo più intuitivo e accessibile per produttori di qualsiasi livello di abilità."
+      },
+      {
+        "question": "Come aiuta il Song Builder con la composizione?",
+        "answer": "Il Song Builder è il tuo hub creativo centrale dove tutti gli elementi musicali si uniscono. Puoi arrangiare progressioni di accordi, creare pattern melodici e costruire strutture di canzoni complete con più tracce. Il sistema presenta controlli di trasporto professionali, una timeline interattiva, gestione multi-traccia con impostazioni per traccia e una vista arrangiamento completa che ti dà una prospettiva olistica della tua composizione mentre si sviluppa."
+      },
+      {
+        "question": "Come funziona la palette armonia interattiva?",
+        "answer": "La palette armonia interattiva fornisce un'interfaccia visuale e gestuale per esplorare le relazioni tra accordi. Seleziona semplicemente un accordo di partenza e la palette ti mostrerà opzioni armonicamente correlate, rendendo facile creare progressioni convincenti. Puoi trascinare e rilasciare voicing direttamente sulla tua timeline, trasporre istantaneamente tonalità e creare banchi di accordi personalizzati per sviluppare il tuo vocabolario armonico personale."
+      },
+      {
+        "question": "Cosa rende speciale il costruttore di pattern melodici?",
+        "answer": "Il costruttore di pattern melodici ti aiuta a sviluppare melodie convincenti che complementano le tue progressioni di accordi. Suggerisce pattern melodici contestualmente appropriati basati sulle tue scelte armoniche, ti permette di sperimentare con diverse variazioni ritmiche e fornisce strumenti intuitivi per creare temi memorabili. Il sistema adatta intelligentemente il tuo contenuto melodico quando si verificano cambi di accordi, mantenendo la coerenza musicale in tutta la tua composizione."
+      },
+      {
+        "question": "Come si adattano i pattern ai cambi di accordi?",
+        "answer": "L'editor di pattern dinamici di Cymasphere usa algoritmi intelligenti per adattare pattern melodici alle tue progressioni di accordi in tempo reale. Quando cambi un accordo, il sistema regola automaticamente il pattern per mantenere la coerenza armonica preservando l'intento musicale della tua melodia. Questo funziona sia in modalità relativa che assoluta, dandoti flessibilità per creare melodie context-aware o contenuto melodico fisso secondo necessità."
+      },
+      {
+        "question": "Cosa rende speciale il generatore di voicing?",
+        "answer": "Il generatore di voicing usa algoritmi avanzati per creare voicing di accordi ricchi e musicalmente soddisfacenti che seguono principi di condotta delle voci appropriati. Analizza progressioni di accordi per assicurare transizioni di voce fluide tra accordi, con controlli per ampiezza voicing, densità, rivolti ed estensioni armoniche. Le impostazioni possono essere applicate globalmente o regolate per sezioni specifiche della tua composizione."
+      },
+      {
+        "question": "Quali sono le differenze tra l'app standalone e il plugin?",
+        "answer": "L'app standalone e le versioni plugin condividono le stesse funzionalità e caratteristiche principali. L'app standalone funziona indipendentemente, rendendola ottima per composizione focalizzata ed esplorazione, mentre il plugin si integra direttamente con la tua DAW per un flusso di lavoro di produzione senza soluzione di continuità. Puoi scegliere quale versione funziona meglio per il tuo processo creativo, o usare entrambe a seconda delle tue esigenze."
+      },
+      {
+        "question": "Quali DAW sono compatibili con il plugin Cymasphere?",
+        "answer": "Il plugin Cymasphere (disponibile nei formati AU & VST3) è compatibile con la maggior parte delle DAW principali inclusi Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig e Digital Performer. Sono supportate sia le piattaforme macOS che Windows."
+      },
+      {
+        "question": "Cymasphere è adatto ai principianti?",
+        "answer": "Assolutamente! Mentre Cymasphere offre funzionalità avanzate per compositori esperti, la sua interfaccia intuitiva rende la teoria musicale accessibile ai principianti, aiutandoli a capire visualmente i concetti di armonia e melodia. La natura interattiva degli strumenti incoraggia sperimentazione e apprendimento facendo, rendendolo un'eccellente piattaforma per sviluppare abilità compositive indipendentemente dal tuo punto di partenza."
+      },
+      {
+        "question": "Devo conoscere la teoria musicale per usare Cymasphere?",
+        "answer": "No, questa è una delle forze di Cymasphere! Cymasphere è un parco giochi armonico progettato per migliorare la tua comprensione della teoria musicale mentre crei. Le interfacce visuali ti aiutano a capire le relazioni musicali mentre componi, rendendo concetti teorici complessi intuitivi anche per i principianti. È sia un potente strumento di creazione che un'eccellente risorsa di apprendimento che cresce con te mentre sviluppi le tue abilità."
+      },
+      {
+        "question": "Come posso provare Cymasphere prima dell'acquisto?",
+        "answer": "Puoi provare Cymasphere con le nostre opzioni di prova gratuita. Offriamo una prova gratuita di 7 giorni senza richiedere una carta di credito, o una prova gratuita di 14 giorni con una carta in archivio (che non verrà addebitata fino alla fine della prova). Entrambe le opzioni ti danno accesso completo a tutte le funzionalità premium così puoi esplorare tutto quello che Cymasphere ha da offrire prima di decidere su un piano di abbonamento."
+      },
+      {
+        "question": "Devo pagare per gli aggiornamenti?",
+        "answer": "No, tutti i clienti Cymasphere hanno accesso alla versione più recente del software senza costi aggiuntivi. Questo include i possessori di licenze a vita, che ricevono tutti gli aggiornamenti futuri come parte del loro acquisto unico. Siamo impegnati a migliorare continuamente il software e aggiungere nuove funzionalità di cui tutti gli utenti possono godere."
+      },
+      {
+        "question": "È disponibile un manuale utente per Cymasphere?",
+        "answer": "No, tutto l'aiuto è direttamente integrato nel gestore aiuto in-app, rendendo semplice esplorare e imparare nuove funzionalità. Domande, segnalazioni bug e altre richieste possono essere indirizzate al nostro server Discord o inviando email a support@cymasphere.com."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Mettiti in contatto",
+    "subtitle": "Hai domande o feedback? Ci piacerebbe sentirti",
+    "description": "Ci piacerebbe sentirti! Che tu abbia domande su funzionalità, prezzi o voglia semplicemente condividere il tuo feedback, il nostro team è qui per aiutare. Compila il modulo e ti risponderemo il prima possibile.",
+    "emailInfo": "Puoi anche raggiungerci direttamente a",
+    "nameLabel": "Il tuo nome",
+    "emailLabel": "Indirizzo email",
+    "subjectLabel": "Oggetto",
+    "messageLabel": "Messaggio",
+    "submitButton": "Invia messaggio",
+    "sending": "Invio...",
+    "successMessage": "Grazie! Il tuo messaggio è stato inviato con successo.",
+    "errorMessage": "Ops! Qualcosa è andato storto. Riprova."
+  },
+  "footer": {
+    "product": "Prodotto",
+    "company": "Azienda",
+    "legal": "Legale",
+    "support": "Supporto",
+    "copyright": "© {{year}} Cymasphere. Tutti i diritti riservati.",
+    "privacyPolicy": "Informativa privacy",
+    "termsOfService": "Termini di servizio",
+    "description": "Cymasphere è uno strumento interattivo di composizione musicale per produttori, compositori, musicisti, educatori e studenti.",
+    "navigation": "Navigazione",
+    "account": "Account",
+    "accountDashboard": "Dashboard account",
+    "aboutUs": "Chi siamo",
+    "termsConditions": "Termini e condizioni",
+    "byNNAudio": "di NNAudio"
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "de": "Deutsch",
+    "pt": "Português",
+    "ja": "日本語"
+  },
+  "login": {
+    "subtitle": "Accedi per accedere al tuo account",
+    "forgotPassword": "Password dimenticata?",
+    "loggingIn": "Accesso in corso...",
+    "loginButton": "Accedi",
+    "noAccount": "Non hai un account?",
+    "signUp": "Registrati",
+    "errors": {
+      "userNotFound": "Nessun account trovato con questa email. Registrati prima.",
+      "invalidCredentials": "Password errata. Riprova.",
+      "invalidEmail": "Formato email non valido.",
+      "rateLimit": "Troppi tentativi di accesso falliti. Riprova più tardi o reimposta la password.",
+      "generic": "Accesso fallito: {{message}}",
+      "unknown": "Accesso fallito: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Crea un",
+      "account": "account"
+    },
+    "firstName": "Nome",
+    "lastName": "Cognome",
+    "firstNamePlaceholder": "Nome",
+    "lastNamePlaceholder": "Cognome",
+    "emailPlaceholder": "Inserisci il tuo indirizzo email",
+    "emailLinkedToPurchase": "Questa email è collegata al tuo acquisto e non può essere cambiata",
+    "passwordPlaceholder": "Crea una password sicura",
+    "confirmPassword": "Conferma password",
+    "confirmPasswordPlaceholder": "Conferma la tua password",
+    "agreeToTerms": "Accetto i",
+    "termsOfService": "Termini di servizio",
+    "and": "e",
+    "privacyPolicy": "Informativa privacy",
+    "creatingAccount": "Creazione account...",
+    "createAccount": "Crea account",
+    "alreadyHaveAccount": "Hai già un account?",
+    "login": "Accedi",
+    "errors": {
+      "passwordsDoNotMatch": "Le password non corrispondono",
+      "passwordTooShort": "La password deve essere di almeno 6 caratteri",
+      "agreeTerms": "Devi accettare i Termini di servizio e l'Informativa privacy",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
+  },
+  "resetPassword": {
+    "title": "Reimposta password",
+    "description": "Inserisci il tuo indirizzo email e ti invieremo le istruzioni per reimpostare la password.",
+    "backToLogin": "Torna al login",
+    "emailLabel": "Indirizzo email",
+    "emailPlaceholder": "Inserisci la tua email registrata",
+    "sendLink": "Invia link di reset",
+    "sendingLink": "Invio...",
+    "rememberPassword": "Ricordi la password?",
+    "login": "Accedi",
+    "successMessage": "Se esiste un account con questo indirizzo email, abbiamo inviato le istruzioni per reimpostare la password. Controlla la tua casella di posta e la cartella spam.",
+    "errors": {
+      "userNotFound": "Nessun utente trovato con questo indirizzo email",
+      "invalidEmail": "Indirizzo email non valido",
+      "rateLimit": "Troppi tentativi di reset password. Aspetta alcuni minuti prima di riprovare.",
+      "generic": "Invio email di reset password fallito. Riprova."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "dashboard": "Dashboard",
+      "profile": "Profilo",
+      "billing": "Fatturazione",
+      "downloads": "Download",
+      "settings": "Impostazioni",
+      "backToSite": "Torna al sito",
+      "backToHome": "Torna alla home",
+      "logout": "Esci",
+      "loading": "Caricamento dashboard...",
+      "account": "Account",
+      "welcomeUser": "{{name}}",
+      "emailLabel": "{{email}}"
+    },
+    "main": {
+      "welcome": "Bentornato, {{name}}!",
+      "welcomeSubtitle": "Ecco una panoramica del tuo account CYMASPHERE",
+      "pleaseSignIn": "Accedi per accedere alla tua dashboard",
+      "deviceConnections": "Connessioni dispositivi",
+      "activeDevices": "Connessioni dispositivi attive",
+      "subscriptionStatus": "Stato abbonamento",
+      "memberSince": "Membro dal",
+      "nextBilling": "Prossima fatturazione",
+      "accountInfo": "Info account",
+      "yourAccount": "Il tuo account",
+      "trialEnding": "La tua prova gratuita termina tra",
+      "days": "giorni",
+      "subscribeNow": "Abbonati ora",
+      "statusActive": "Attivo",
+      "statusInactive": "Inattivo",
+      "statusTrial": "Prova",
+      "freeTrialBadge": "Prova {{trialDays}} giorni",
+      "manageSubscription": "Gestisci abbonamento",
+      "contactSupport": "Contatta supporto",
+      "needHelp": "Hai bisogno di aiuto con il tuo account o hai domande?",
+      "contactHelpText": "Il nostro team di supporto è qui per assisterti con qualsiasi domanda o problema.",
+      "supportHelpText": "Il nostro team di supporto è qui per assisterti con qualsiasi domanda o problema.",
+      "sendMessage": "Invia messaggio",
+      "messageSent": "Messaggio inviato",
+      "messageReceived": "Abbiamo ricevuto il tuo messaggio e risponderemo a breve.",
+      "close": "Chiudi",
+      "error": "Errore",
+      "fillAllFields": "Compila tutti i campi",
+      "messageError": "Invio messaggio fallito. Riprova più tardi.",
+      "gotIt": "Capito",
+      "subscription": "Abbonamento",
+      "membership": "Iscrizione",
+      "free": "Gratuito",
+      "upgradeToPro": "Aggiorna a Pro per accesso completo",
+      "lifetimeAccess": "Include aggiornamenti gratuiti a vita",
+      "nextPayment": "Prossimo pagamento",
+      "futurePayments": "Pagamenti futuri",
+      "amountOnDate": "€{{amount}} {{date}}",
+      "onDate": "il {{date}}",
+      "firstPayment": "€{{amount}}.00 il {{date}}",
+      "devices": "Dispositivi connessi",
+      "devicesCount": "{{count}} di 5 dispositivi connessi",
+      "trial": "PROVA",
+      "trialActive": "La tua prova è attiva",
+      "trialDaysLeft": "{{days}} giorni rimasti nella tua prova gratuita",
+      "trialStatus": "Stato prova",
+      "daysRemaining": "{{days}} giorni rimasti",
+      "renewalDate": "Data rinnovo",
+      "trialMessage": "Sei attualmente in una prova gratuita di {{trialDays}} giorni con accesso completo a tutte le funzionalità premium. Nessun pagamento fino alla fine della prova.",
+      "lifetimeMessage": "Hai un'iscrizione a vita con aggiornamenti gratuiti a vita. Goditi tutte le funzionalità e benefici premium permanentemente.",
+      "activeSubscriptionMessage": "Il tuo abbonamento {{plan}} è attivo. Goditi tutte le funzionalità e benefici premium.",
+      "upgradeMessage": "Aggiorna per sbloccare funzionalità premium e capacità di elaborazione audio avanzate.",
+      "fullAccess": "Attualmente hai accesso completo a tutte le funzionalità premium:",
+      "featureAdvancedChords": "Progressioni accordi avanzate",
+      "featureUnlimitedSaves": "Progressioni salvate illimitate",
+      "featureMIDI": "Esportazione e importazione MIDI",
+      "featureCloudStorage": "Archiviazione cloud",
+      "noPaymentNeeded": "Nessun pagamento necessario per continuare a usare le funzionalità base quando la prova termina.",
+      "plan": "Piano attuale",
+      "monthly": "Mensile",
+      "annual": "Annuale",
+      "lifetime": "A vita",
+      "price": "Prezzo",
+      "purchasedOn": "Data acquisto",
+      "freeAccountBasicFeatures": "Il tuo account gratuito include funzionalità base. Aggiorna per accesso completo:",
+      "premiumFeatures": "Il tuo account include queste funzionalità premium:",
+      "upgradeNow": "Aggiorna ora",
+      "getStarted": "Inizia",
+      "manageBilling": "Gestisci abbonamento",
+      "support": "Supporto",
+      "supportAvailability": "24/7",
+      "premiumSupport": "Supporto premium disponibile",
+      "supportIntro": "Hai bisogno di aiuto con il tuo account o hai domande su Cymasphere? Inviaci un messaggio e ti risponderemo il prima possibile.",
+      "yourName": "Il tuo nome",
+      "yourEmail": "La tua email",
+      "message": "Il tuo messaggio",
+      "sending": "Invio..."
+    },
+    "profile": {
+      "title": "Il mio profilo",
+      "personalInfo": "Informazioni personali",
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "saveChanges": "Salva modifiche",
+      "passwordSection": "Cambia password",
+      "sendResetEmail": "Invia email reset password",
+      "profileUpdated": "Informazioni profilo aggiornate con successo!",
+      "errorUpdating": "Errore aggiornamento profilo: {{error}}",
+      "passwordResetSent": "Email reset password inviata! Controlla la tua casella di posta.",
+      "noEmailFound": "Nessun indirizzo email trovato per il reset password",
+      "tooManyAttempts": "Troppi tentativi di reset password. Aspetta alcuni minuti prima di riprovare.",
+      "errorSendingReset": "Errore invio email reset: {{error}}",
+      "unexpectedError": "Si è verificato un errore imprevisto: {{error}}"
+    },
+    "billing": {
+      "title": "Fatturazione e abbonamento",
+      "currentPlan": "Piano attuale",
+      "paymentHistory": "Cronologia pagamenti",
+      "upgradeDowngrade": "Aggiorna/Declassa",
+      "cancelSubscription": "Cancella abbonamento",
+      "reactivateSubscription": "Riattiva abbonamento",
+      "paymentMethods": "Metodi di pagamento",
+      "addPaymentMethod": "Aggiungi metodo di pagamento",
+      "noPaymentHistory": "Nessuna cronologia pagamenti disponibile",
+      "transactionId": "ID transazione",
+      "date": "Data",
+      "amount": "Importo",
+      "status": "Stato",
+      "freePlan": "Gratuito",
+      "freePlanDesc": "Accesso limitato alle funzionalità base",
+      "noPlan": "Nessuno",
+      "noPlanDesc": "Nessun abbonamento attivo",
+      "monthly": "Mensile",
+      "yearly": "Annuale",
+      "month": "mese",
+      "year": "anno",
+      "lifetimePlan": "A vita",
+      "lifetimePlanDesc": "Accesso completo a tutte le funzionalità per sempre con aggiornamenti gratuiti",
+      "paidPlanDesc": "Accesso completo a tutte le funzionalità e contenuti premium",
+      "subscribePlan": "Abbonati a un piano",
+      "changePlan": "Cambia piano",
+      "manageBilling": "Gestisci fatturazione",
+      "paid": "Pagato",
+      "unpaid": "Non pagato",
+      "viewReceipt": "Visualizza",
+      "noTransactions": "Nessuna cronologia transazioni disponibile",
+      "redirectingPortal": "Reindirizzamento al portale fatturazione...",
+      "error": "Errore",
+      "portalAccessError": "Accesso al portale fatturazione fallito: {{error}}",
+      "errorOccurred": "Si è verificato un errore: {{error}}",
+      "upgradingPlan": "Aggiornamento del tuo piano",
+      "lifetimeUpgradeMessage": "Stai aggiornando al piano a vita. Sarai reindirizzato al checkout per completare l'acquisto.",
+      "startingPlan": "Avvio del tuo piano",
+      "startingPlanMessage": "Stai iniziando una prova gratuita di {{trialDays}} giorni del piano {{plan}}. {{paymentMessage}}",
+      "withCardMessage": "Ti verrà chiesto di fornire i dettagli di pagamento, ma non verrai addebitato fino alla fine della prova.",
+      "withoutCardMessage": "Puoi usare le funzionalità base senza fornire informazioni di pagamento.",
+      "planChangeScheduled": "Cambio piano programmato",
+      "planChangeScheduledMessage": "Il tuo piano sarà cambiato a mensile alla fine del tuo periodo di fatturazione attuale il {{date}}.",
+      "planUpdated": "Piano aggiornato",
+      "planUpdatedMessage": "Il tuo abbonamento è stato cambiato al piano {{plan}}. Le modifiche avranno effetto immediatamente.",
+      "subscriptionUpdateFailed": "Aggiornamento abbonamento fallito",
+      "unexpectedError": "Si è verificato un errore imprevisto durante l'aggiornamento del tuo abbonamento.",
+      "noActiveSubscription": "Nessun abbonamento attivo trovato sul tuo account. Contatta il supporto per assistenza.",
+      "billingCycleError": "Impossibile cambiare il ciclo di fatturazione. Contatta il supporto per assistenza con i cambi di piano mensili e annuali.",
+      "paymentMethodError": "C'è stato un problema con il tuo metodo di pagamento. Aggiorna le tue informazioni di pagamento e riprova.",
+      "permissionError": "Non hai il permesso di fare questa modifica. Contatta il supporto per assistenza.",
+      "prorationError": "C'è stato un problema nel calcolare la tua fattura per il nuovo piano. Riprova più tardi o contatta il supporto.",
+      "specificError": "Aggiornamento abbonamento fallito: {{error}}",
+      "cancelNotice": "Il tuo abbonamento sarà cancellato il {{date}}. Avrai accesso fino ad allora.",
+      "continueToCheckout": "Continua al checkout",
+      "gotIt": "Capito",
+      "nextBilling": "Prossima data fatturazione",
+      "planDescription": "Soluzione completa per produttori musicali",
+      "trialBanner": "Sei attualmente in una prova gratuita di {{trialDays}} giorni con accesso completo a tutte le funzionalità premium. {{daysLeft}} giorni rimasti. Il tuo primo pagamento di €{{amount}} sarà il {{date}}.",
+      "showingDefaultPrices": "Mostrando prezzi predefiniti."
+    },
+    "downloads": {
+      "title": "Download",
+      "availableDownloads": "Download disponibili",
+      "version": "Versione",
+      "platform": "Piattaforma",
+      "size": "Dimensione",
+      "releaseDate": "Data rilascio",
+      "downloadButton": "Scarica",
+      "noDownloads": "Nessun download disponibile",
+      "downloadingTitle": "Download in corso...",
+      "downloadComplete": "Download completato",
+      "installationInstructions": "Istruzioni installazione",
+      "systemRequirements": "Requisiti di sistema",
+      "installers": "Installer Cymasphere",
+      "macosTitle": "Cymasphere per macOS",
+      "macosDesc": "Installer universale per macOS con app standalone e plugin (AU, VST3) per processori Apple Silicon e Intel.",
+      "windowsTitle": "Cymasphere per Windows",
+      "windowsDesc": "Installer completo per Windows 10/11 inclusi app standalone e formati plugin (VST3).",
+      "updated": "Aggiornato",
+      "updateDate": "10 marzo 2023",
+      "downloadMacos": "Scarica per macOS",
+      "downloadWindows": "Scarica per Windows",
+      "resources": "Risorse",
+      "quickStart": "Guida avvio rapido",
+      "quickStartDesc": "Inizia con Cymasphere in pochi minuti",
+      "downloadPdf": "Scarica PDF"
+    },
+    "settings": {
+      "title": "Impostazioni",
+      "preferences": "Preferenze",
+      "theme": "Tema",
+      "language": "Lingua",
+      "notifications": "Notifiche",
+      "emailNotifications": "Notifiche email",
+      "security": "Sicurezza",
+      "twoFactorAuth": "Autenticazione a due fattori",
+      "changePassword": "Cambia password",
+      "deleteAccount": "Elimina account",
+      "deleteWarning": "Elimina account permanentemente",
+      "deleteDesc": "Questa azione non può essere annullata. Tutti i tuoi dati saranno eliminati permanentemente.",
+      "dangerZone": "Zona pericolosa",
+      "saveSettings": "Salva impostazioni",
+      "settingsUpdated": "Impostazioni aggiornate con successo",
+      "interfaceLanguage": "Lingua interfaccia",
+      "languageDesc": "Cambia la lingua usata in tutta l'applicazione",
+      "devices": "Dispositivi attivi",
+      "noDevices": "Nessun dispositivo attivo trovato",
+      "currentDevice": "Dispositivo attuale",
+      "devicesInfo": "Stai usando {{current}} di {{max}} dispositivi consentiti",
+      "logoutAll": "Esci da tutti gli altri dispositivi",
+      "confirmLogout": "Conferma logout",
+      "logoutFailed": "Logout fallito",
+      "logoutMessage": "Sei stato disconnesso da tutti i dispositivi.",
+      "logoutConfirmation": "Sei sicuro di voler uscire da tutti i dispositivi? Questo terminerà tutte le tue sessioni attive.",
+      "signOut": "Esci",
+      "logoutSuccess": "Logout riuscito",
+      "logoutError": "C'è stato un errore nel logout da tutti i dispositivi. Riprova.",
+      "typeDelete": "Digita \"DELETE\" per confermare:",
+      "timeNow": "Ora",
+      "timeMinutes": "{{count}} min fa",
+      "timeHours": "{{count}} ore fa",
+      "timeDays": "{{count}} giorni fa",
+      "hour": "ora",
+      "hours": "ore",
+      "day": "giorno",
+      "days": "giorni",
+      "deviceMobile": "Mobile",
+      "deviceTablet": "Tablet",
+      "deviceDesktop": "Desktop",
+      "deletionFailed": "Eliminazione fallita",
+      "deletionFailedError": "Eliminazione account fallita: {{error}}",
+      "deletionProcessingError": "C'è stato un errore nell'elaborazione dell'eliminazione del tuo account. Riprova più tardi.",
+      "confirmationRequired": "Conferma richiesta",
+      "confirmationMessage": "Digita \"DELETE\" per confermare l'eliminazione dell'account.",
+      "processingDeletion": "Elaborazione richiesta eliminazione",
+      "processingMessage": "Attendi mentre elaboriamo la tua richiesta di eliminazione account...",
+      "accountDeleted": "Account eliminato",
+      "accountDeletedMessage": "Il tuo account è stato eliminato con successo. Sarai reindirizzato alla homepage."
+    }
+  },
+  "billing": {
+    "choosePlan": "Scegli il tuo piano",
+    "limitedOffer": "Offerta a tempo limitato",
+    "startWithTrial": "Inizia con una prova GRATUITA di {{days}} giorni su qualsiasi piano!",
+    "trialExperience": "Sperimenta tutte le funzionalità premium senza impegno. Nessuna carta di credito richiesta per iniziare.",
+    "yearlyToMonthly": "Il tuo abbonamento è attualmente fatturato annualmente. Se passi a un piano mensile, il cambio avrà effetto dopo la fine del tuo periodo di fatturazione attuale il {{date}}.",
+    "monthly": "Mensile",
+    "yearly": "Annuale",
+    "save25": "Risparmia 25%",
+    "lifetime": "A vita",
+    "bestValue": "Miglior valore",
+    "enterCardNow": "Inserisci info carta ora:",
+    "trialWithCard": "Prova {{days}} giorni - Aggiungi carta in archivio",
+    "trialWithoutCard": "Prova {{days}} giorni - Nessuna carta di credito richiesta",
+    "currentPlan": "Piano attuale",
+    "proBadge": "PRO",
+    "afterTrial": "Dopo la tua prova gratuita di {{days}} giorni",
+    "percentDiscount": "{{percent}}% di sconto applicato!",
+    "amountDiscount": "€{{amount}} di sconto!",
+    "firstPayment": "Primo pagamento: {{date}}",
+    "nextBilling": "Prossima fatturazione: {{date}}",
+    "oneTimePurchase": "acquisto unico",
+    "purchased": "Acquistato",
+    "allPlansInclude": "Tutti i piani includono:",
+    "confirmationNote": "Confermando, accetti i termini e i prezzi mostrati sopra.",
+    "provideCard": "Fornisci metodo di pagamento ora per una prova di {{days}} giorni",
+    "cardTooltip": "Aggiungere il tuo metodo di pagamento ora estende la tua prova a 14 giorni invece di 7. Non verrai addebitato fino alla fine della prova.",
+    "chooseTrial": "Scegli la tua opzione di prova gratuita:",
+    "noCharge": "(non verrà addebitato fino alla fine della prova)"
+  },
+  "legal": {
+    "termsOfService": "Termini di servizio",
+    "privacyPolicy": "Informativa privacy",
+    "legalInformation": "Informazioni legali",
+    "lastUpdated": "Ultimo aggiornamento",
+    "lastUpdatedDate": "1 marzo 2023",
+    "terms": {
+      "acceptance": {
+        "title": "1. Accettazione dei termini",
+        "content": "Accedendo o utilizzando i servizi, il sito web o le applicazioni di Cymasphere, accetti di essere vincolato da questi Termini di servizio. Se non accetti questi termini, non utilizzare i nostri servizi."
+      },
+      "description": {
+        "title": "2. Descrizione del servizio",
+        "content": "Cymasphere fornisce strumenti di teoria musicale e composizione attraverso applicazioni web e desktop. Questi servizi possono cambiare di volta in volta senza preavviso."
+      },
+      "accounts": {
+        "title": "3. Account utente",
+        "content": "Alcune funzionalità dei nostri servizi richiedono la creazione di un account. Sei responsabile del mantenimento della riservatezza delle informazioni del tuo account e di tutte le attività che si verificano sotto il tuo account."
+      },
+      "content": {
+        "title": "4. Contenuto utente",
+        "content": "Mantieni tutti i diritti su qualsiasi contenuto che crei, carichi o condividi attraverso i nostri servizi. Caricando contenuto, concedi a Cymasphere una licenza non esclusiva per utilizzare, riprodurre e distribuire il tuo contenuto esclusivamente per fornirti servizi."
+      },
+      "ip": {
+        "title": "5. Proprietà intellettuale",
+        "content": "Cymasphere e i suoi contenuti, funzionalità e funzionalità sono di nostra proprietà e sono protetti da copyright, marchi e altre leggi sulla proprietà intellettuale."
+      },
+      "subscription": {
+        "title": "6. Abbonamento e pagamenti",
+        "content": "Sono disponibili vari piani di abbonamento per Cymasphere. Abbonandoti, accetti di pagare le tariffe applicabili. Le tariffe di abbonamento non sono rimborsabili tranne quando richiesto dalla legge."
+      },
+      "termination": {
+        "title": "7. Risoluzione",
+        "content": "Ci riserviamo il diritto di terminare o sospendere il tuo account e l'accesso ai nostri servizi per violazioni di questi termini o per qualsiasi altra ragione a nostra discrezione."
+      },
+      "disclaimer": {
+        "title": "8. Esclusione di garanzie",
+        "content": "I nostri servizi sono forniti \"così come sono\" e \"come disponibili\". Non forniamo garanzie, espresse o implicite, riguardo all'affidabilità, disponibilità o accuratezza dei nostri servizi."
+      },
+      "limitation": {
+        "title": "9. Limitazione di responsabilità",
+        "content": "In nessun caso Cymasphere sarà responsabile per danni indiretti, incidentali, speciali o consequenziali derivanti da o in connessione con il tuo uso dei nostri servizi."
+      },
+      "changes": {
+        "title": "10. Modifiche ai termini",
+        "content": "Possiamo modificare questi termini in qualsiasi momento. L'uso continuato dei nostri servizi dopo le modifiche costituisce accettazione dei termini modificati."
+      },
+      "governing": {
+        "title": "11. Legge applicabile",
+        "content": "Questi termini saranno governati dalle leggi della giurisdizione in cui opera Cymasphere, senza riguardo alle sue disposizioni sui conflitti di legge."
+      },
+      "contact": {
+        "title": "12. Contatto",
+        "content": "Per domande su questi termini, contattaci a support@cymasphere.com."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Introduzione",
+        "content": "Questa Informativa privacy spiega come Cymasphere raccoglie, utilizza e protegge le tue informazioni personali quando usi i nostri servizi. Rispettiamo la tua privacy e siamo impegnati a proteggere i tuoi dati personali."
+      },
+      "collect": {
+        "title": "2. Informazioni che raccogliamo",
+        "content": "Raccogliamo informazioni che ci fornisci direttamente, come il tuo nome, indirizzo email e informazioni di pagamento quando ti registri per un account. Raccogliamo anche dati di utilizzo e informazioni tecniche sul tuo dispositivo e su come interagisci con i nostri servizi."
+      },
+      "use": {
+        "title": "3. Come utilizziamo le tue informazioni",
+        "content": "Utilizziamo le tue informazioni per fornire e migliorare i nostri servizi, elaborare transazioni, comunicare con te e garantire la sicurezza. Possiamo anche utilizzare le tue informazioni per ricerca e analisi per comprendere meglio come gli utenti interagiscono con i nostri servizi."
+      },
+      "sharing": {
+        "title": "4. Condivisione e divulgazione dati",
+        "content": "Non vendiamo le tue informazioni personali. Possiamo condividere le tue informazioni con fornitori di servizi terzi che ci aiutano a gestire i nostri servizi, elaborare pagamenti o analizzare dati. Possiamo anche divulgare le tue informazioni se richiesto dalla legge."
+      },
+      "security": {
+        "title": "5. Sicurezza dei dati",
+        "content": "Implementiamo misure di sicurezza appropriate per proteggere le tue informazioni personali. Tuttavia, nessun metodo di trasmissione su Internet o archiviazione elettronica è sicuro al 100%."
+      },
+      "rights": {
+        "title": "6. I tuoi diritti",
+        "content": "A seconda della tua posizione, potresti avere certi diritti riguardo ai tuoi dati personali, incluso il diritto di accedere, correggere, eliminare o limitare l'elaborazione dei tuoi dati. Contattaci per esercitare questi diritti."
+      },
+      "cookies": {
+        "title": "7. Cookie e tecnologie di tracciamento",
+        "content": "Utilizziamo cookie e tecnologie di tracciamento simili per migliorare la tua esperienza, analizzare l'utilizzo e raccogliere informazioni su come interagisci con i nostri servizi. Puoi controllare i cookie attraverso le impostazioni del tuo browser."
+      },
+      "children": {
+        "title": "8. Privacy dei bambini",
+        "content": "I nostri servizi non sono destinati a bambini sotto i 13 anni. Non raccogliamo consapevolmente informazioni da bambini sotto i 13 anni. Se veniamo a sapere di aver raccolto informazioni da un bambino sotto i 13 anni, prenderemo provvedimenti per eliminarle."
+      },
+      "changes": {
+        "title": "9. Modifiche a questa informativa privacy",
+        "content": "Possiamo aggiornare questa Informativa privacy di volta in volta. Ti informeremo di eventuali modifiche pubblicando la nuova politica su questa pagina e aggiornando la data \"Ultimo aggiornamento\"."
+      },
+      "contact": {
+        "title": "10. Contattaci",
+        "content": "Se hai domande su questa Informativa privacy, contattaci a support@cymasphere.com."
+      }
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "La nostra missione",
+      "content": "La missione di Cymasphere è colmare il divario tra teoria musicale e creatività musicale. Crediamo che la teoria dovrebbe migliorare e guidare il processo creativo, non limitarlo. I nostri strumenti sono progettati per fornire sia guida che libertà, trovando l'equilibrio perfetto tra ispirazione e integrità compositiva.",
+      "highlight": "Siamo impegnati a potenziare musicisti di tutti i livelli di abilità rendendo la teoria musicale intuitiva, interattiva e ispiratrice. Il nostro obiettivo è vedere la tua visione creativa fiorire attraverso migliori strumenti compositivi."
+    },
+    "story": {
+      "title": "La nostra storia",
+      "content1": "Fondata nel 2022 da un team di musicisti dedicati, ingegneri software e teorici musicali, Cymasphere è iniziata come un progetto ambizioso per reimmaginare come i musicisti interagiscono con armonia e composizione.",
+      "content2": "Dopo anni di frustrazione con software musicali esistenti che mancavano di sofisticazione teorica o erano troppo complessi per un uso intuitivo, i nostri fondatori si sono proposti di creare uno strumento che rendesse la teoria musicale pratica, visuale e genuinamente utile nel processo creativo."
+    },
+    "team": {
+      "title": "Il nostro team",
+      "member1": {
+        "name": "David Chen",
+        "role": "Fondatore e sviluppatore principale"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Specialista teoria musicale"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "Designer UI/UX"
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Product manager"
+      }
+    },
+    "values": {
+      "title": "I nostri valori",
+      "intro": "In Cymasphere, siamo guidati da un insieme di valori fondamentali che plasmano tutto quello che facciamo:",
+      "integrity": {
+        "title": "Integrità musicale",
+        "content": "Rispettiamo i principi della teoria musicale abbracciando l'innovazione"
+      },
+      "design": {
+        "title": "Design intuitivo",
+        "content": "Le nostre interfacce sono visualmente chiare e immediatamente comprensibili"
+      },
+      "freedom": {
+        "title": "Libertà creativa",
+        "content": "Forniamo guida senza limitare l'espressione"
+      },
+      "learning": {
+        "title": "Apprendimento continuo",
+        "content": "I nostri strumenti aiutano gli utenti a sviluppare la loro comprensione musicale"
+      }
+    },
+    "approach": {
+      "title": "Il nostro approccio",
+      "intro": "Cymasphere adotta un approccio unico al software di composizione musicale concentrandosi su:",
+      "point1": "Visualizzare armonia e condotta delle voci in modi intuitivi",
+      "point2": "Fornire suggerimenti intelligenti rispettando la tua direzione creativa",
+      "point3": "Integrare concetti teorici senza soluzione di continuità nel flusso di lavoro creativo",
+      "point4": "Costruire ponti tra composizione, arrangiamento e produzione",
+      "conclusion": "Stiamo costantemente raffinando il nostro approccio basato sul feedback degli utenti e gli ultimi sviluppi nella tecnologia musicale. Crediamo nel creare strumenti che crescono con te e si adattano alle tue esigenze creative in evoluzione."
+    },
+    "future": {
+      "title": "Guardando avanti",
+      "content1": "Mentre continuiamo a sviluppare Cymasphere, siamo entusiasti del futuro della creazione musicale. La nostra roadmap include integrazione avanzata con le principali DAW, palette armoniche espanse, funzionalità di composizione assistita da IA più profonde e molto altro.",
+      "content2": "Ti invitiamo a unirti a noi in questo viaggio e aiutare a plasmare il futuro degli strumenti di creazione musicale intelligenti."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Inizia la tua prova gratuita",
+    "enterEmail": "Inserisci il tuo indirizzo email per iniziare la tua prova gratuita di {{days}} giorni {{requirement}}.",
+    "cardRequired": "(carta di credito richiesta)",
+    "noCardRequired": "(nessuna carta di credito richiesta)"
+  }
+} 

@@ -43,14 +43,6 @@ const ModalContent = styled(motion.div)`
   will-change: transform, opacity;
 `;
 
-const ModalHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
 const ModalTitle = styled.h2`
   margin: 0;
   font-size: 1.5rem;
@@ -196,8 +188,44 @@ const Button = styled.button`
 const BillingToggleContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-bottom: 2rem;
   gap: 0.5rem;
+`;
+
+const ModalHeader = styled.div`
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  
+  ${BillingToggleContainer} {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    
+    ${BillingToggleContainer} {
+      position: static;
+      transform: none;
+      order: 2;
+      align-self: stretch;
+      justify-content: center;
+    }
+    
+    ${CloseButton} {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      order: 3;
+    }
+  }
 `;
 
 interface BillingToggleButtonProps {
@@ -642,38 +670,7 @@ const PlanSelectionModal = ({
           >
             <ModalHeader>
               <ModalTitle>{t("billing.choosePlan", "Choose Your Plan")}</ModalTitle>
-              <CloseButton onClick={onClose}>
-                <FaTimes />
-              </CloseButton>
-            </ModalHeader>
-            <ModalBody>
-              {/* Only show trial promotion banner for truly new users */}
-              {isNewUser && (
-                <PromotionBanner>
-                  <TrialBadge>
-                    <FaGift /> {t("billing.limitedOffer", "Limited Time Offer")}
-                  </TrialBadge>
-                  <PromotionText>
-                    {t("billing.startWithTrial", "Start with a {{days}}-day FREE trial on any plan!", { days: effectiveTrialDays })}
-                  </PromotionText>
-                  <PromotionSubtext>
-                    {t("billing.trialExperience", "Experience all premium features without commitment. No credit card required to start.")}
-                  </PromotionSubtext>
-                </PromotionBanner>
-              )}
-
-              {profile.subscription === "annual" && (
-                <PlanChangeInfo>
-                  <FaInfoCircle />
-                  <p>
-                    {t("billing.yearlyToMonthly", "Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {{date}}.", {
-                      date: formatDateHelper(profile.subscription_expiration)
-                    })}
-                  </p>
-                </PlanChangeInfo>
-              )}
-
-              <BillingToggleContainer>
+              <BillingToggleContainer style={{ margin: 0, gap: '0.5rem' }}>
                 <BillingToggleButton
                   $active={selectedSubscription === "monthly"}
                   onClick={() => {
@@ -706,6 +703,36 @@ const PlanSelectionModal = ({
                   <SaveLabel>{t("billing.bestValue", "Best Value")}</SaveLabel>
                 </BillingToggleButton>
               </BillingToggleContainer>
+              <CloseButton onClick={onClose}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            <ModalBody>
+              {/* Only show trial promotion banner for truly new users */}
+              {isNewUser && (
+                <PromotionBanner>
+                  <TrialBadge>
+                    <FaGift /> {t("billing.limitedOffer", "Limited Time Offer")}
+                  </TrialBadge>
+                  <PromotionText>
+                    {t("billing.startWithTrial", "Start with a {{days}}-day FREE trial on any plan!", { days: effectiveTrialDays })}
+                  </PromotionText>
+                  <PromotionSubtext>
+                    {t("billing.trialExperience", "Experience all premium features without commitment. No credit card required to start.")}
+                  </PromotionSubtext>
+                </PromotionBanner>
+              )}
+
+              {profile.subscription === "annual" && (
+                <PlanChangeInfo>
+                  <FaInfoCircle />
+                  <p>
+                    {t("billing.yearlyToMonthly", "Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {{date}}.", {
+                      date: formatDateHelper(profile.subscription_expiration)
+                    })}
+                  </p>
+                </PlanChangeInfo>
+              )}
 
               
 
@@ -790,29 +817,6 @@ const PlanSelectionModal = ({
                             {t("billing.afterTrial", "After your {{days}}-day free trial", { days: effectiveTrialDays })}
                           </div>
                         )}
-                        
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--text-secondary)",
-                            textAlign: "center"
-                          }}
-                        >
-                          {profile.trial_expiration
-                            ? t("billing.firstPayment", "First payment: {{date}}", { 
-                                date: formatDateHelper(profile.trial_expiration) 
-                              })
-                            : t("billing.nextBilling", "Next billing: {{date}}", { 
-                                date: formatDateHelper(
-                                  profile.subscription_expiration ||
-                                    new Date(
-                                      Date.now() +
-                                        1000 * 60 * 60 * 24 * effectiveTrialDays
-                                    ).toISOString()
-                                )
-                              })}
-                        </div>
                       </PriceDisplay>
                     )}
                     {selectedSubscription === "annual" && (
@@ -899,29 +903,6 @@ const PlanSelectionModal = ({
                             {t("billing.afterTrial", "After your {{days}}-day free trial", { days: effectiveTrialDays })}
                           </div>
                         )}
-                        
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--text-secondary)",
-                            textAlign: "center"
-                          }}
-                        >
-                          {profile.trial_expiration
-                            ? t("billing.firstPayment", "First payment: {{date}}", { 
-                                date: formatDateHelper(profile.trial_expiration) 
-                              })
-                            : t("billing.nextBilling", "Next billing: {{date}}", { 
-                                date: formatDateHelper(
-                                  profile.subscription_expiration ||
-                                    new Date(
-                                      Date.now() +
-                                        1000 * 60 * 60 * 24 * effectiveTrialDays
-                                    ).toISOString()
-                                )
-                              })}
-                        </div>
                       </PriceDisplay>
                     )}
                     {selectedSubscription === "lifetime" && (
@@ -992,7 +973,7 @@ const PlanSelectionModal = ({
                         <FeatureIcon>
                           <FaCheck />
                         </FeatureIcon>
-                        {t(`billing.features.${feature.toLowerCase().replace(/\s+/g, '_')}`, feature)}
+                        {feature}
                       </PlanFeature>
                     ))}
                   </PlanFeatures>
@@ -1040,6 +1021,31 @@ const PlanSelectionModal = ({
                       </TrialDescription>
                     </RadioOption>
                   </RadioButtonGroup>
+                  
+                  {/* Billing date positioned at bottom right */}
+                  <div
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-secondary)",
+                      textAlign: "right",
+                      marginTop: "12px",
+                      fontStyle: "italic"
+                    }}
+                  >
+                    {profile.trial_expiration
+                      ? t("billing.firstPayment", "First payment: {{date}}", { 
+                          date: formatDateHelper(profile.trial_expiration) 
+                        })
+                      : t("billing.nextBilling", "Next billing: {{date}}", { 
+                          date: formatDateHelper(
+                            profile.subscription_expiration ||
+                              new Date(
+                                Date.now() +
+                                  1000 * 60 * 60 * 24 * effectiveTrialDays
+                              ).toISOString()
+                          )
+                        })}
+                  </div>
                 </RadioOptionsContainer>
               )}
 

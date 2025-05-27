@@ -1,0 +1,1230 @@
+{
+  "common": {
+    "play": "Çal",
+    "stop": "Durdur",
+    "generate": "Oluştur",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "loading": "Yükleniyor...",
+    "learnMore": "Daha fazla bilgi",
+    "login": "Giriş yap",
+    "signUp": "Kayıt ol",
+    "logout": "Çıkış yap",
+    "myAccount": "Hesabım",
+    "navigation": "Navigasyon",
+    "backToHome": "Ana sayfaya dön",
+    "email": "E-posta",
+    "password": "Şifre",
+    "close": "Kapat",
+    "confirm": "Onayla",
+    "locale": "tr-TR",
+    "none": "Hiçbiri",
+    "notAvailable": "Mevcut değil",
+    "unknownError": "Bilinmeyen hata",
+    "continue": "Devam et",
+    "processing": "İşleniyor...",
+    "emailAddress": "E-posta adresi",
+    "emailPlaceholder": "ornek@email.com",
+    "goToLogin": "Giriş sayfasına git",
+    "errors": {
+      "emailRequired": "Lütfen e-posta adresinizi girin",
+      "invalidEmail": "Lütfen geçerli bir e-posta adresi girin",
+      "unexpectedError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
+    }
+  },
+  "header": {
+    "home": "Ana sayfa",
+    "features": "Özellikler",
+    "howItWorks": "Nasıl çalışır",
+    "testimonials": "Referanslar",
+    "demo": "Demo",
+    "pricing": "Fiyatlandırma",
+    "faq": "SSS",
+    "contact": "İletişim",
+    "download": "İndir",
+    "tryDemo": "Demo'yu dene"
+  },
+  "hero": {
+    "title": "AI ile müzik oluştur",
+    "titlePartA": "Akıllı",
+    "titlePartB": "Yaratım",
+    "subtitle": "Teorik temellerin iş akışınızı görünmez şekilde yönlendirdiği müzik yaratımının yeni evrimine girin. Akorlar ve melodiler amaçla bağlanır, benzersiz müzikal vizyonunuzu güçlendirir.",
+    "cta": "Şimdi dene",
+    "titleWords": {
+      "music": "Müzik",
+      "song": "Şarkı",
+      "chord": "Akor",
+      "pattern": "Desen",
+      "progression": "İlerleme",
+      "voicing": "Seslendirme",
+      "harmony": "Armoni"
+    },
+    "chords": {
+      "cMajor": "Do Majör",
+      "fMajor": "Fa Majör",
+      "bDiminished": "Si Eksiltilmiş",
+      "eMinor": "Mi Minör",
+      "aMinor": "La Minör",
+      "dMinor": "Re Minör",
+      "gMajor": "Sol Majör"
+    },
+    "tooltips": {
+      "playNote": "Bu notayı çalmak için tıklayın",
+      "playChord": "Akoru çalmak için tıklayın"
+    }
+  },
+  "features": {
+    "title": "Özellikler",
+    "subtitle": "Cymasphere'in sizin için neler yapabileceğini keşfedin",
+    "aiComposition": "AI Kompozisyon",
+    "aiCompositionDesc": "Gelişmiş AI'mızı kullanarak tek tıkla müzik oluşturun",
+    "livePerformance": "Canlı Performans",
+    "livePerformanceDesc": "Sentezleyici ile gerçek zamanlı çalın ve performans sergileyın",
+    "customSounds": "Özel Sesler",
+    "customSoundsDesc": "Kendi özel ses ön ayarlarınızı oluşturun ve kaydedin",
+    "sectionTitle": "Güçlü özellikler",
+    "songBuilder": {
+      "title": "Şarkı oluşturucu",
+      "description": "Parçaları, ilerlemeleri ve armoni paletlerini sorunsuz kompozisyon için tek bir sezgisel çalışma alanında birleştirin.",
+      "modalTitle": "Merkezi müzik yaratım merkezi",
+      "modalDescription": "Şarkı Oluşturucu, tüm müzikal öğelerin bir araya geldiği merkezi yaratıcı merkezinizdir. Hem yeni başlayanlar hem de profesyoneller için tasarlanmış sezgisel bir arayüzle müziğinizi oluşturun, düzenleyin ve geliştirin.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Çal, durdur, kaydet, döngü işlevselliği, BPM, ölçü, metronom ve DAW senkronizasyonu ile profesyonel taşıma kontrolleri",
+        "Izgara yakalama, yakınlaştırma kontrolleri ve geri sayım yetenekleri ile etkileşimli zaman çizelgesi",
+        "Parça başına sustur/solo, ses kontrolleri ve yönlendirme seçenekleri ile çoklu parça yönetimi",
+        "Tüm seslendirmeler ve desenlerin bütünsel perspektifini sağlayan kapsamlı düzenleme görünümü",
+        "Kompozisyonlarınız için armonik temel görevi gören akor ilerlemesi çerçevesi",
+        "Akor seslendirmelerini ve ses yönlendirmesini gösteren bilgilendirici klavye ekranı"
+      ]
+    },
+    "harmonyPalettes": {
+      "title": "Armoni paletleri",
+      "description": "Akıcı müzikal ifade için sezgisel bir jestsel arayüz aracılığıyla melodileri ve akorları şekillendirin.",
+      "modalTitle": "Akor ilişkilerini görselleştirin",
+      "modalDescription": "Sezgisel jestsel arayüzümüzle armoniyi fiziksel bir enstrüman gibi kontrol edin. Karmaşık müzik teorisini erişilebilir ve ifadeli hale getiren dokunsal bir deneyim aracılığıyla akor ilişkilerini manipüle edin, düzenleyin ve keşfedin.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Akor koleksiyonlarınızı sürükle ve bırak ile düzenlemek için özelleştirilebilir banka düzenlemesi",
+        "Paletlerden doğrudan ilerleme zaman çizelgenize seslendirmeleri sürükle ve bırak",
+        "Önceden seçilmiş ölçekler ve akor ilişkileri ile düzenlenmiş koleksiyon kütüphanesi",
+        "Tüm kompozisyonunuzda tonları anında değiştirmek için tek tıkla transpoze",
+        "Akor özelliklerini hızlı ayarlamalar için seslendirme parametre panosu",
+        "Kişisel akor kelime dağarcığınızı oluşturmak için özel banka oluşturma"
+      ]
+    },
+    "patternEditor": {
+      "title": "Dinamik desen editörü",
+      "description": "Gerçek zamanlı akor değişikliklerine uyum sağlayan akıllı müzikal desenler oluşturun.",
+      "modalTitle": "Uyarlanabilir müzikal desenler",
+      "modalDescription": "Dinamik Desen Editörü, akor ilerlemelerinizdeki değişikliklere akıllıca yanıt veren karmaşık müzikal motifler oluşturmanızı sağlar. Armoni değişse bile müzikal tutarlılığı koruyan melodiler ve ritmik diziler oluşturun.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Gerçek zamanlı akor ilerlemesi değişikliklerine akıllı uyarlama",
+        "Güçlü düzenleme araçları ile gelişmiş piyano rulosu arayüzü",
+        "Armonik çakışmaları önlemek için ölçek, akor ve seslendirme zekası ile bağlam farkında nota girişi",
+        "Hem bağlamsal hem de sabit melodik içerik için göreceli ve mutlak desenlerle çift mod işlemi",
+        "Farklı armonik bağlamlarda yeniden kullanım için herhangi bir melodinin amacını yakalayan melodik öz çıkarımı"
+      ]
+    },
+    "voicingGenerator": {
+      "title": "Seslendirme oluşturucu",
+      "description": "Akor ilerlemelerini profesyonel ses yönlendirme ve armonik kontrol ile ifadeli seslendirmelere dönüştürün.",
+      "modalTitle": "Sınırsız armonik olanaklar",
+      "modalDescription": "Seslendirme Oluşturucu, basit akor sembollerini karmaşık, ifadeli armonik yapılara dönüştürür. Küresel stillerden bireysel nota yerleşimine kadar akor seslendirmelerinizin her yönünü ince ayarlayın, müziğinize hayat veren profesyonel düzenlemeler oluşturun.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Tam armonik özelleştirme için kapsamlı ölçek ve akor yapılandırma araçları ile gelişmiş akor editörü",
+        "Yakınlık, ortak tonlar ve ses yönüne dayalı akor değişiklikleri arasında otomatik yumuşak geçişlerle akıllı ses yönlendirme",
+        "Seslendirme genişliği, yoğunluk, çevirmeler, oktav dağılımı ve kayıt yerleşimi dahil doku kontrolleri",
+        "İlerlemelerinize zenginlik ve renk katmak için yapılandırılabilir 7'ler, 9'lar, 11'ler ve 13'ler ile armonik uzantılar",
+        "Tüm şarkılarda küresel değişikliklere veya tek bir ayarla belirli akor seslendirmelerine odaklanmış düzenlemelere izin veren çok seviyeli ayarlar"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "İlerleme zaman çizelgesi",
+      "description": "Hayalet parçalardan öğrenin ve güçlü yeniden armonizasyon araçlarıyla mevcut şarkıları dönüştürün.",
+      "modalTitle": "Akor ilerlemesi oluşturmada ustalaşın",
+      "modalDescription": "İlerleme Zaman Çizelgesi, akor ilerlemelerini oluşturma, geliştirme ve dönüştürme sürecini kolaylaştırır. Eğitici hayalet parçalar ve güçlü yeniden armonizasyon araçlarıyla hem favori müziğinizden öğrenebilir hem de onu yeniden icat edebilirsiniz.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Görsel ilerleme oluşturma için sezgisel zaman çizelgesi arayüzü",
+        "İlerleme yapısını öğreten hayalet parça öğrenme sistemi",
+        "Mevcut ilerlemeleri dönüştürmek için gerçek zamanlı yeniden armonizasyon",
+        "Yapılandırılmış kompozisyon için bölüm tabanlı organizasyon",
+        "Akorları kolayca yeniden düzenlemek ve sınırları sürükleyerek uzunluklarını ayarlamak için sürükle ve bırak akor düzenlemesi",
+        "Tercihe göre akor isimlerini harf, Roma rakamları veya solfej olarak göstermek için ekran değiştirme",
+        "İlerlemede değişiklik yapıldığında desenlerin ve seslendirmelerin otomatik olarak uyarlandığı dinamik desen güncellemeleri"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Gelişmiş ses işleme",
+      "description": "Tam düzenleme esnekliği için ses sayısını, etkileşimleri ve MIDI yönlendirmesini kontrol edin.",
+      "modalTitle": "Her ses üzerinde tam kontrol",
+      "modalDescription": "Gelişmiş Ses İşleme, kompozisyonunuzdaki her bir sesin granüler kontrolünü sağlar. Tam yaratıcı özgürlükle karmaşık düzenlemeler oluşturmak için ses sayısını, davranışını, etkileşimini ve yönlendirmesini yönetin.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Düzenleme esnekliği için dinamik ses sayısı - Farklı dokular için ses ekleyin veya çıkarın",
+        "Seslerin birlikte nasıl hareket ettiğini kontrol etmek için yumuşak ses yönlendirme - Paralel, karşıt veya bağımsız hareket seçenekleri",
+        "Çoklu enstrüman kurulumları için ses başına MIDI kanal yönlendirmesi - Sesleri farklı enstrümanlara gönderin",
+        "Enstrümana uygun yazım için ses aralığı kısıtlamaları - Her ses için üst ve alt sınırlar belirleyin",
+        "Temel kontrol için belirlenmiş bas kanalı - Pedal tonları ve ses yönlendirme için ayrık kontroller",
+        "Zahmetsiz MIDI yönlendirme için ses/kanal matrisi - Sesleri MIDI kanalları ve enstrümanlara görsel olarak eşleyin"
+      ]
+    }
+  },
+  "howItWorks": {
+    "title": "Nasıl çalışır",
+    "subtitle": "Müzik yaratımı basitleştirildi",
+    "createSubtitle": "Güçlü araçlarla müzik besteleme",
+    "learnSubtitle": "Favori şarkılarınızda zahmetsizce ustalaşın",
+    "integrateSubtitle": "Mevcut iş akışınızla bağlantı kurun",
+    "tabs": {
+      "create": "OLUŞTUR",
+      "learn": "ÖĞREN",
+      "integrate": "ENTEGRE ET"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Akor ilerlemeleriyle başlayın",
+        "description": "Önceden hazırlanmış şablonlarla başlayın veya Armoni paletinden seslendirmeleri sürükleyerek kendi akor ilerlemelerinizi zahmetsizce oluşturun. Uygulama otomatik olarak ölçekleri ve modları analiz ederek müziğinizin uygun teori ilkelerini takip etmesini sağlar."
+      },
+      "step2": {
+        "title": "Birden fazla parça ekleyin",
+        "description": "Akıllıca birlikte çalışan birden fazla parçayla zengin kompozisyonlar oluşturun. Armoni, melodi ve ritim ekleyin—hepsi akor ilerlemeniyle senkronize ve armonik olarak uyumlu."
+      },
+      "step3": {
+        "title": "Hassasiyetle özelleştirin",
+        "description": "Detaylı özelleştirmeyle sesinizi ince ayarlayın. Basit üçlülerden karmaşık caz armonilerine kadar her şeyi oluşturmak için çevirmeleri, seslendirme yoğunluğunu, gerilim notalarını ve armonik uzantıları ayarlayın."
+      },
+      "step4": {
+        "title": "Akıllı müzikalite",
+        "description": "Yumuşak akor geçişlerini sağlayan akıllı ses yönlendirmeyle profesyonel seviye müzikalite deneyimleyin. Daha önce sadece eğitimli müzisyenlere sunulan kompozisyon araçlarına erişin, güvenle sofistike armoniler oluşturmanızı sağlayın."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Hayalet parça öğrenimi",
+        "description": "Çalışınızı yönlendiren etkileşimli hayalet parçalar aracılığıyla akor ilerlemelerinde ustalaşın. Gerçek zamanlı yeniden armonizasyonla deney yapın, uygulamanın müzikal tutarlılığı korurken yaratıcı seçimlerinize nasıl uyum sağladığını izleyin."
+      },
+      "step2": {
+        "title": "Akıllı armonik analiz",
+        "description": "Otomatik armonik analizle favori şarkılarınızın arkasındaki teoriyi anlayın. Uygulama ölçekleri, modları ve akor ilişkilerini tanımlayarak müzikal anlayışınızı derinleştiren içgörüler sağlar."
+      },
+      "step3": {
+        "title": "Etkileşimli pratik",
+        "description": "Temponuza ve stilinize uyum sağlayan akıllı eşlik ile pratik yapın. Sistem girişlerinize yanıt vererek becerilerinizle birlikte gelişen dinamik bir pratik deneyimi oluşturur."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "Sorunsuz MIDI dışa aktarım",
+        "description": "Yaratımlarınızı herhangi bir DAW ile uyumlu endüstri standardı MIDI dosyaları olarak dışa aktarın. Sonraki düzenleme için tüm armonik ve yapısal bilgileri koruyun."
+      },
+      "step2": {
+        "title": "DAW senkronizasyonu",
+        "description": "MIDI saat ve taşıma kontrolü aracılığıyla favori DAW'ınızla doğrudan senkronize olun. Cymasphere'i mevcut iş akışınızda sanal enstrüman veya kompozisyon aracı olarak kullanın."
+      },
+      "step3": {
+        "title": "Bulut işbirliği",
+        "description": "Bulut platformumuz aracılığıyla işbirlikçilerle projeler paylaşın. Gerçek zamanlı veya asenkron çalışın, sürüm kontrolü ve değişiklik geçmişini koruyun."
+      }
+    }
+  },
+  "synth": {
+    "title": "Akıllı akor seslendirme oluşturucu",
+    "description": "Bir düğmeye basarak zengin ve güzel akorlar oluşturun.",
+    "chordSequence": "Akor dizisi",
+    "generateMelody": "Melodi oluştur",
+    "playChordSequence": "Akor dizisini çal",
+    "stopAll": "Hepsini durdur",
+    "playBoth": "İkisini de çal",
+    "generateRandomProgression": "Rastgele ilerleme",
+    "generateRandomSongName": "Rastgele isim",
+    "synthesizerTitle": "Sentezleyici",
+    "synthesizerDesc": "Müzikal desenler oluşturun ve çalın",
+    "songName": "Şarkı adı",
+    "trackName": "Parça adı",
+    "trackNamePlaceholder": "örn. Piyano, Melodi, Bas hattı",
+    "trackNameHint": "Her parça müziğinizdeki farklı bir enstrümanı veya sesi temsil eder",
+    "trackIllustration": "Parçaları müzikal düzenlemenizde katmanlar olarak düşünün - tam müziğinizi oluşturmak için birlikte çalacaklar.",
+    "chords": {
+      "cMajor": "Domaj7",
+      "dMinor": "Rem7",
+      "eMinor": "Mim7",
+      "fMajor": "Famaj7",
+      "g7sus4": "Sol7",
+      "aMinor": "Lam7",
+      "bm7b5": "Sim7b5"
+    },
+    "melodyGeneration": {
+      "title": "Melodi oluşturma",
+      "description": "Akor ilerlemenizie mükemmel uyum sağlayan melodiler oluşturun",
+      "generateButton": "Melodi oluştur",
+      "regenerateButton": "Yeniden oluştur",
+      "playButton": "Melodi çal",
+      "stopButton": "Melodiyi durdur"
+    },
+    "voicingControls": {
+      "title": "Seslendirme kontrolleri",
+      "density": "Yoğunluk",
+      "spread": "Yayılım",
+      "inversion": "Çevirme",
+      "extensions": "Uzantılar"
+    }
+  },
+  "testimonials": {
+    "title": "Kullanıcılarımız ne diyor",
+    "subtitle": "Cymasphere'in müzik yaratımını nasıl dönüştürdüğünü keşfedin",
+    "testimonial1": {
+      "quote": "Cymasphere kompozisyon sürecimi devrim niteliğinde değiştirdi. Akıllı ses yönlendirme, manuel olarak asla yapamayacağım karmaşık armoniler oluşturmama olanak tanıyor.",
+      "author": "Sarah Chen",
+      "role": "Besteci"
+    },
+    "testimonial2": {
+      "quote": "Müzik öğretmeni olarak, karmaşık teorik kavramları göstermek için Cymasphere kullanıyorum. Öğrencilerim sonunda akor ilerlemelerinin nasıl çalıştığını anlıyor!",
+      "author": "Dr. Michael Rodriguez",
+      "role": "Müzik öğretmeni"
+    },
+    "testimonial3": {
+      "quote": "Armoni paletleri için jestsel arayüz dahice. Akor ilişkilerini tamamen yeni ve sezgisel bir şekilde keşfedebiliyorum.",
+      "author": "Alex Thompson",
+      "role": "Müzik prodüktörü"
+    }
+  },
+  "pricing": {
+    "title": "Fiyatlandırma ve Planlar",
+    "subtitle": "İhtiyaçlarınıza uygun esnek seçenekler",
+    "simpleTransparent": "Basit, Şeffaf Fiyatlandırma",
+    "chooseOption": "Size en uygun faturalama seçeneğini seçin.",
+    "allFeatures": "Tüm seçenekler tüm özelliklere tam erişim içerir.",
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "lifetime": "Yaşam Boyu",
+    "mostFlexible": "En Esnek",
+    "payMonthly": "Aylık öde, istediğin zaman iptal et",
+    "save": "Tasarruf Et",
+    "withYearlyBilling": "yıllık faturalandırma ile",
+    "bestValue": "En İyi Değer",
+    "oneTimePayment": "Tek seferlik ödeme, yaşam boyu erişim",
+    "perMonth": "/ay",
+    "perYear": "/yıl",
+    "billed": "yıllık faturalandırılır",
+    "oneTimePurchase": "tek seferlik satın alma",
+    "proSolution": "Müzisyenler için komple kompozisyon paketi",
+    "currencySymbol": "₺",
+    "allPlansInclude": "Tüm Planlar Şunları İçerir:",
+    "features": [
+      "Çoklu Parça Yönetimi ile Şarkı Oluşturucu",
+      "Akıllı Desen Editörü ve Akor Adaptasyonu",
+      "Jestsel Armoni Paleti Arayüzü",
+      "Gelişmiş Ses Yönlendirme ve Akor Seslendirmeleri",
+      "Etkileşimli Akor İlerlemesi Zaman Çizelgesi",
+      "Tam Ses ve Aralık Kontrolü",
+      "Bağımsız Uygulama ve DAW Eklenti Desteği",
+      "Gerçek Zamanlı Akor Yeniden Armonizasyon Araçları",
+      "Kapsamlı Düzenleme Görünümü",
+      "Özel Seslendirme Üretim Motoru",
+      "Bulut Depolama ve Proje Yedekleri",
+      "Premium Destek ve Gelecekteki Tüm Güncellemeler"
+    ],
+    "freeTrial": {
+      "title": "14 güne kadar ÜCRETSİZ deneyin",
+      "description": "İki deneme seçeneği ile tüm premium özellikleri deneyimleyin.",
+      "options": "Kartsız 7 gün veya dosyada kartla 14 gün seçin.",
+      "chooseFree": "Ücretsiz deneme seçeneğinizi seçin:",
+      "withCard": "14 günlük deneme - Dosyada kart ekle",
+      "noCharge": "(deneme bitene kadar ücretlendirilmez)",
+      "noCard": "7 günlük deneme - Kredi kartı gerekmez",
+      "startNow": "Şimdi Başla",
+      "startTrial": "Denemeyi Başlat",
+      "or": "veya"
+    },
+    "free": {
+      "title": "Ücretsiz",
+      "price": "₺0",
+      "period": "/ay",
+      "description": "Müzikal yolculuğunuza başlamak için mükemmel",
+      "features": [
+        "3 projeye kadar",
+        "Temel akor ilerlemeleri",
+        "Sınırlı MIDI dışa aktarım",
+        "Topluluk desteği"
+      ],
+      "cta": "Ücretsiz başla"
+    },
+    "pro": {
+      "title": "Pro",
+      "price": "₺290",
+      "period": "/ay",
+      "description": "Ciddi müzisyenler ve içerik yaratıcıları için",
+      "features": [
+        "Sınırsız proje",
+        "Tüm armoni paletleri",
+        "Tam MIDI dışa aktarım",
+        "DAW senkronizasyonu",
+        "Öncelikli destek"
+      ],
+      "cta": "Ücretsiz deneme başlat",
+      "popular": "En popüler"
+    },
+    "studio": {
+      "title": "Stüdyo",
+      "price": "₺990",
+      "period": "/ay",
+      "description": "Profesyonel stüdyolar ve ekipler için",
+      "features": [
+        "Pro'daki her şey",
+        "Ekip işbirliği",
+        "Sınırsız bulut depolama",
+        "Gelişmiş analitik",
+        "Özel destek"
+      ],
+      "cta": "Satış ile iletişime geç"
+    },
+    "faq": {
+      "title": "Sık sorulan sorular",
+      "question1": "Aboneliğimi istediğim zaman iptal edebilir miyim?",
+      "answer1": "Evet, aboneliğinizi istediğiniz zaman iptal edebilirsiniz. Mevcut fatura döneminin sonuna kadar premium özelliklere erişiminiz devam edecektir.",
+      "question2": "Ücretsiz deneme mevcut mu?",
+      "answer2": "Evet, tüm ücretli planlar için 14 günlük ücretsiz deneme sunuyoruz. Kredi kartı gerekmez.",
+      "question3": "Cymasphere'i çevrimdışı kullanabilir miyim?",
+      "answer3": "Cymasphere senkronizasyon ve AI özellikleri için internet bağlantısı gerektirir, ancak sınırlı süreler için çevrimdışı çalışabilirsiniz.",
+      "question4": "Hangi dosya formatları destekleniyor?",
+      "answer4": "MIDI dışa aktarımının yanı sıra analiz ve yeniden armonizasyon için MIDI ve MusicXML dosya içe aktarımını destekliyoruz."
+    }
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "de": "Deutsch",
+    "pt": "Português",
+    "tr": "Türkçe",
+    "ja": "日本語"
+  },
+  "contact": {
+    "title": "İletişime geçin",
+    "subtitle": "Bir sorunuz var mı veya yardıma mı ihtiyacınız var? Sizden haber almayı çok isteriz.",
+    "description": "Sizden haber almayı çok isteriz! Özellikler, fiyatlandırma hakkında sorularınız olsun veya sadece geri bildirimlerinizi paylaşmak isteyin, ekibimiz size yardımcı olmak için burada. Formu doldurun, en kısa sürede size geri döneceğiz.",
+    "emailInfo": "Bize doğrudan şu adresten de ulaşabilirsiniz",
+    "nameLabel": "Adınız",
+    "emailLabel": "E-posta Adresi",
+    "subjectLabel": "Konu",
+    "messageLabel": "Mesaj",
+    "submitButton": "Mesaj Gönder",
+    "sending": "Gönderiliyor...",
+    "successMessage": "Teşekkürler! Mesajınız başarıyla gönderildi.",
+    "errorMessage": "Ups! Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "form": {
+      "name": "İsim",
+      "namePlaceholder": "Tam adınız",
+      "email": "E-posta",
+      "emailPlaceholder": "ornek@email.com",
+      "subject": "Konu",
+      "subjectPlaceholder": "Nasıl yardımcı olabiliriz?",
+      "message": "Mesaj",
+      "messagePlaceholder": "Sorunuz veya geri bildiriminiz hakkında bize daha fazla bilgi verin...",
+      "send": "Mesaj gönder",
+      "sending": "Gönderiliyor...",
+      "success": "Mesaj başarıyla gönderildi! Yakında sizinle iletişime geçeceğiz.",
+      "error": "Mesaj gönderilirken hata oluştu. Lütfen tekrar deneyin."
+    },
+    "info": {
+      "title": "İletişim bilgileri",
+      "email": "merhaba@cymasphere.com",
+      "phone": "+1 (555) 123-4567",
+      "address": "123 Müzik Sokağı, Armoni Şehri, AS 12345"
+    },
+    "social": {
+      "title": "Bizi takip edin",
+      "twitter": "Twitter",
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "youtube": "YouTube"
+    }
+  },
+  "footer": {
+    "product": "Ürün",
+    "company": "Şirket",
+    "legal": "Hukuki",
+    "support": "Destek",
+    "copyright": "© {{year}} Cymasphere. Tüm hakları saklıdır.",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Hizmet Şartları",
+    "description": "Cymasphere, prodüktörler, besteciler, müzisyenler, eğitmenler ve öğrenciler için etkileşimli bir müzik kompozisyon aracıdır.",
+    "navigation": "Navigasyon",
+    "account": "Hesap",
+    "accountDashboard": "Hesap Kontrol Paneli",
+    "aboutUs": "Hakkımızda",
+    "termsConditions": "Şartlar ve Koşullar",
+    "byNNAudio": "NNAudio tarafından"
+  },
+  "download": {
+    "title": "Cymasphere İndir",
+    "subtitle": "Cymasphere'i tercih ettiğiniz platform için indirin",
+    "platforms": {
+      "windows": "Windows",
+      "mac": "macOS",
+      "linux": "Linux"
+    },
+    "requirements": {
+      "title": "Sistem gereksinimleri",
+      "windows": {
+        "title": "Windows",
+        "items": [
+          "Windows 10 veya üzeri",
+          "4 GB RAM (8 GB önerilen)",
+          "2 GB boş disk alanı",
+          "Uyumlu ses kartı"
+        ]
+      },
+      "mac": {
+        "title": "macOS",
+        "items": [
+          "macOS 10.14 veya üzeri",
+          "4 GB RAM (8 GB önerilen)",
+          "2 GB boş disk alanı",
+          "Uyumlu ses arayüzü"
+        ]
+      },
+      "linux": {
+        "title": "Linux",
+        "items": [
+          "Ubuntu 18.04+ veya eşdeğeri",
+          "4 GB RAM (8 GB önerilen)",
+          "2 GB boş disk alanı",
+          "ALSA veya JACK"
+        ]
+      }
+    },
+    "version": "Sürüm 2.1.0",
+    "releaseDate": "15 Mart 2024'te yayınlandı",
+    "downloadButton": "Ücretsiz indir",
+    "comingSoon": "Yakında"
+  },
+  "dashboard": {
+    "layout": {
+      "dashboard": "Kontrol Paneli",
+      "profile": "Profil",
+      "billing": "Faturalama",
+      "downloads": "İndirmeler",
+      "settings": "Ayarlar",
+      "backToSite": "Siteye Dön",
+      "backToHome": "Ana Sayfaya Dön",
+      "logout": "Çıkış Yap",
+      "loading": "Kontrol paneli yükleniyor...",
+      "account": "Hesap",
+      "welcomeUser": "{{name}}",
+      "emailLabel": "{{email}}"
+    },
+    "main": {
+      "welcome": "Tekrar hoş geldiniz, {{name}}!",
+      "welcomeSubtitle": "CYMASPHERE hesabınızın genel bakışı",
+      "pleaseSignIn": "Kontrol panelinize erişmek için lütfen giriş yapın",
+      "deviceConnections": "Cihaz Bağlantıları",
+      "activeDevices": "Aktif cihaz bağlantıları",
+      "subscriptionStatus": "Abonelik Durumu",
+      "memberSince": "Üyelik tarihi",
+      "nextBilling": "Sonraki faturalama",
+      "accountInfo": "Hesap Bilgileri",
+      "yourAccount": "Hesabınız",
+      "trialEnding": "Ücretsiz denemeniz sona eriyor",
+      "days": "gün",
+      "subscribeNow": "Şimdi Abone Ol",
+      "statusActive": "Aktif",
+      "statusInactive": "Pasif",
+      "statusTrial": "Deneme",
+      "freeTrialBadge": "{{trialDays}} Günlük Deneme",
+      "manageSubscription": "Aboneliği Yönet",
+      "contactSupport": "Desteğe Başvur",
+      "needHelp": "Hesabınızla ilgili yardıma mı ihtiyacınız var veya sorularınız mı var?",
+      "contactHelpText": "Destek ekibimiz sahip olabileceğiniz herhangi bir soru veya sorunla size yardımcı olmak için burada.",
+      "supportHelpText": "Destek ekibimiz sahip olabileceğiniz herhangi bir soru veya sorunla size yardımcı olmak için burada.",
+      "sendMessage": "Mesaj Gönder",
+      "messageSent": "Mesaj Gönderildi",
+      "messageReceived": "Mesajınızı aldık ve kısa sürede yanıtlayacağız.",
+      "close": "Kapat",
+      "error": "Hata",
+      "fillAllFields": "Lütfen tüm alanları doldurun",
+      "messageError": "Mesajınızı göndermede başarısız. Lütfen daha sonra tekrar deneyin.",
+      "gotIt": "Anladım",
+      "subscription": "Abonelik",
+      "membership": "Üyelik",
+      "free": "Ücretsiz",
+      "upgradeToPro": "Tam erişim için Pro'ya yükseltin",
+      "lifetimeAccess": "Yaşam boyu ücretsiz güncellemeleri içerir",
+      "nextPayment": "Sonraki Ödeme",
+      "futurePayments": "Gelecek Ödemeler",
+      "amountOnDate": "₺{{amount}} {{date}}",
+      "onDate": "{{date}} tarihinde",
+      "firstPayment": "₺{{amount}}.00 {{date}} tarihinde",
+      "devices": "Bağlı Cihazlar",
+      "devicesCount": "5 cihazdan {{count}} tanesi bağlı",
+      "trial": "DENEME",
+      "trialActive": "Denemeniz Aktif",
+      "trialDaysLeft": "Ücretsiz denemenizde {{days}} gün kaldı",
+      "trialStatus": "Deneme Durumu",
+      "daysRemaining": "{{days}} gün kaldı",
+      "renewalDate": "Yenileme Tarihi",
+      "trialMessage": "Şu anda tüm premium özelliklere tam erişimi olan {{trialDays}} günlük ücretsiz deneme sürecindesiniz. Denemeniz bitene kadar ödeme yok.",
+      "lifetimeMessage": "Yaşam boyu ücretsiz güncellemelerle yaşam boyu üyeliğiniz var. Tüm premium özelliklerin ve avantajların kalıcı olarak tadını çıkarın.",
+      "activeSubscriptionMessage": "{{plan}} aboneliğiniz aktif. Tüm premium özelliklerin ve avantajların tadını çıkarın.",
+      "upgradeMessage": "Premium özellikleri ve gelişmiş ses işleme yeteneklerini açmak için yükseltin.",
+      "fullAccess": "Şu anda tüm premium özelliklere tam erişiminiz var:",
+      "featureAdvancedChords": "Gelişmiş Akor İlerlemeleri",
+      "featureUnlimitedSaves": "Sınırsız Kayıtlı İlerlemeler",
+      "featureMIDI": "MIDI Dışa & İçe Aktarım",
+      "featureCloudStorage": "Bulut Depolama",
+      "noPaymentNeeded": "Denemeniz bittiğinde temel özellikleri kullanmaya devam etmek için ödeme gerekmiyor.",
+      "plan": "Mevcut Plan",
+      "monthly": "Aylık",
+      "annual": "Yıllık",
+      "lifetime": "Yaşam Boyu",
+      "price": "Fiyat",
+      "purchasedOn": "Satın Alma Tarihi",
+      "freeAccountBasicFeatures": "Ücretsiz hesabınız temel özellikleri içerir. Tam erişim için yükseltin:",
+      "premiumFeatures": "Hesabınız bu premium özellikleri içerir:",
+      "upgradeNow": "Şimdi Yükselt",
+      "getStarted": "Başlayın",
+      "manageBilling": "Aboneliği Yönet",
+      "support": "Destek",
+      "supportAvailability": "7/24",
+      "premiumSupport": "Premium destek mevcut",
+      "supportIntro": "Hesabınızla ilgili yardıma mı ihtiyacınız var veya Cymasphere hakkında sorularınız mı var? Bize mesaj gönderin, en kısa sürede size döneceğiz.",
+      "yourName": "Adınız",
+      "yourEmail": "E-postanız",
+      "message": "Mesajınız",
+      "sending": "Gönderiliyor..."
+    },
+    "profile": {
+      "title": "Profilim",
+      "personalInfo": "Kişisel Bilgiler",
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "passwordSection": "Şifre Değiştir",
+      "sendResetEmail": "Şifre Sıfırlama E-postası Gönder",
+      "profileUpdated": "Profil bilgileri başarıyla güncellendi!",
+      "errorUpdating": "Profil güncellenirken hata: {{error}}",
+      "passwordResetSent": "Şifre sıfırlama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
+      "noEmailFound": "Şifre sıfırlama için e-posta adresi bulunamadı",
+      "tooManyAttempts": "Çok fazla şifre sıfırlama denemesi. Lütfen tekrar denemeden önce birkaç dakika bekleyin.",
+      "errorSendingReset": "Sıfırlama e-postası gönderilirken hata: {{error}}",
+      "unexpectedError": "Beklenmeyen bir hata oluştu: {{error}}"
+    },
+    "billing": {
+      "title": "Faturalama ve Abonelik",
+      "currentPlan": "Mevcut Plan",
+      "paymentHistory": "Ödeme Geçmişi",
+      "upgradeDowngrade": "Yükselt/Düşür",
+      "cancelSubscription": "Aboneliği İptal Et",
+      "reactivateSubscription": "Aboneliği Yeniden Etkinleştir",
+      "paymentMethods": "Ödeme Yöntemleri",
+      "addPaymentMethod": "Ödeme Yöntemi Ekle",
+      "noPaymentHistory": "Ödeme geçmişi mevcut değil",
+      "transactionId": "İşlem ID",
+      "date": "Tarih",
+      "amount": "Tutar",
+      "status": "Durum",
+      "freePlan": "Ücretsiz",
+      "freePlanDesc": "Temel özelliklere sınırlı erişim",
+      "noPlan": "Hiçbiri",
+      "noPlanDesc": "Aktif abonelik yok",
+      "monthly": "Aylık",
+      "yearly": "Yıllık",
+      "month": "ay",
+      "year": "yıl",
+      "lifetimePlan": "Yaşam Boyu",
+      "lifetimePlanDesc": "Ücretsiz güncellemelerle tüm özelliklere sonsuza kadar tam erişim",
+      "paidPlanDesc": "Tüm premium özellik ve içeriğe tam erişim",
+      "subscribePlan": "Bir Plana Abone Ol",
+      "changePlan": "Plan Değiştir",
+      "manageBilling": "Faturalamayı Yönet",
+      "paid": "Ödendi",
+      "unpaid": "Ödenmedi",
+      "viewReceipt": "Görüntüle",
+      "noTransactions": "İşlem geçmişi mevcut değil",
+      "redirectingPortal": "Faturalama portalına yönlendiriliyor...",
+      "error": "Hata",
+      "portalAccessError": "Faturalama portalına erişim başarısız: {{error}}",
+      "errorOccurred": "Bir hata oluştu: {{error}}",
+      "upgradingPlan": "Planınızı Yükseltiyoruz",
+      "lifetimeUpgradeMessage": "Yaşam boyu plana yükseltiyorsunuz. Satın alma işleminizi tamamlamak için ödeme sayfasına yönlendirileceksiniz.",
+      "startingPlan": "Planınızı Başlatıyoruz",
+      "startingPlanMessage": "{{plan}} planının {{trialDays}} günlük ücretsiz denemesini başlatıyorsunuz. {{paymentMessage}}",
+      "withCardMessage": "Ödeme bilgilerinizi vermeniz istenecek, ancak denemeniz bitene kadar ücretlendirilmeyeceksiniz.",
+      "withoutCardMessage": "Ödeme bilgisi vermeden temel özellikleri kullanabilirsiniz.",
+      "planChangeScheduled": "Plan Değişikliği Planlandı",
+      "planChangeScheduledMessage": "Planınız mevcut faturalama döneminiz {{date}} tarihinde sona erdikten sonra aylık olarak değiştirilecek.",
+      "planUpdated": "Plan Güncellendi",
+      "planUpdatedMessage": "Aboneliğiniz {{plan}} planına değiştirildi. Değişiklikler hemen geçerli olacak.",
+      "subscriptionUpdateFailed": "Abonelik Güncellemesi Başarısız",
+      "unexpectedError": "Aboneliğinizi güncellerken beklenmeyen bir hata oluştu.",
+      "noActiveSubscription": "Hesabınızda aktif abonelik bulunamadı. Lütfen yardım için desteğe başvurun.",
+      "billingCycleError": "Faturalama döngüsü değiştirilemiyor. Aylık ve yıllık plan değişiklikleri için lütfen desteğe başvurun.",
+      "paymentMethodError": "Ödeme yönteminizle ilgili bir sorun oluştu. Lütfen ödeme bilgilerinizi güncelleyin ve tekrar deneyin.",
+      "permissionError": "Bu değişikliği yapma yetkiniz yok. Lütfen yardım için desteğe başvurun.",
+      "prorationError": "Yeni planınız için faturanız hesaplanırken sorun oluştu. Lütfen daha sonra tekrar deneyin veya desteğe başvurun.",
+      "specificError": "Aboneliğinizi güncelleme başarısız: {{error}}",
+      "cancelNotice": "Aboneliğiniz {{date}} tarihinde iptal edilecek. O zamana kadar erişiminiz olacak.",
+      "nextBilling": "Sonraki faturalama tarihi",
+      "planDescription": "Müzik prodüktörleri için komple çözüm",
+      "trialBanner": "Şu anda tüm premium özelliklere tam erişimi olan {{trialDays}} günlük ücretsiz deneme sürecindesiniz. {{daysLeft}} gün kaldı. İlk ödemeniz ₺{{amount}} {{date}} tarihinde olacak.",
+      "showingDefaultPrices": "Varsayılan fiyatlar gösteriliyor."
+    },
+    "downloads": {
+      "title": "İndirmeler",
+      "availableDownloads": "Mevcut İndirmeler",
+      "version": "Sürüm",
+      "platform": "Platform",
+      "size": "Boyut",
+      "releaseDate": "Yayın Tarihi",
+      "downloadButton": "İndir",
+      "noDownloads": "İndirme mevcut değil",
+      "downloadingTitle": "İndiriliyor...",
+      "downloadComplete": "İndirme Tamamlandı",
+      "installationInstructions": "Kurulum Talimatları",
+      "systemRequirements": "Sistem Gereksinimleri",
+      "installers": "Cymasphere Kurulumları",
+      "macosTitle": "macOS için Cymasphere",
+      "macosDesc": "Hem Apple Silicon hem de Intel işlemciler için bağımsız uygulama ve eklentiler (AU, VST3) içeren macOS için evrensel kurulum.",
+      "windowsTitle": "Windows için Cymasphere",
+      "windowsDesc": "Bağımsız uygulama ve eklenti formatları (VST3) dahil Windows 10/11 için komple kurulum.",
+      "updated": "Güncellendi",
+      "updateDate": "10 Mart 2023",
+      "downloadMacos": "macOS için İndir",
+      "downloadWindows": "Windows için İndir",
+      "resources": "Kaynaklar",
+      "quickStart": "Hızlı Başlangıç Kılavuzu",
+      "quickStartDesc": "Cymasphere ile dakikalar içinde başlayın",
+      "downloadPdf": "PDF İndir"
+    },
+    "settings": {
+      "title": "Ayarlar",
+      "preferences": "Tercihler",
+      "theme": "Tema",
+      "language": "Dil",
+      "notifications": "Bildirimler",
+      "emailNotifications": "E-posta Bildirimleri",
+      "security": "Güvenlik",
+      "twoFactorAuth": "İki Faktörlü Kimlik Doğrulama",
+      "changePassword": "Şifre Değiştir",
+      "deleteAccount": "Hesabı Sil",
+      "deleteWarning": "Hesabı Kalıcı Olarak Sil",
+      "deleteDesc": "Bu işlem geri alınamaz. Tüm verileriniz kalıcı olarak silinecektir.",
+      "dangerZone": "Tehlike Bölgesi",
+      "saveSettings": "Ayarları Kaydet",
+      "settingsUpdated": "Ayarlar başarıyla güncellendi",
+      "interfaceLanguage": "Arayüz Dili",
+      "languageDesc": "Uygulama genelinde kullanılan dili değiştirin",
+      "devices": "Aktif Cihazlar",
+      "noDevices": "Aktif cihaz bulunamadı",
+      "currentDevice": "Mevcut Cihaz",
+      "devicesInfo": "İzin verilen {{max}} cihazdan {{current}} tanesini kullanıyorsunuz",
+      "logoutAll": "Diğer Tüm Cihazlardan Çıkış Yap",
+      "confirmLogout": "Çıkışı Onayla",
+      "logoutFailed": "Çıkış Başarısız",
+      "logoutMessage": "Tüm cihazlardan çıkış yaptınız.",
+      "logoutConfirmation": "Tüm cihazlardan çıkış yapmak istediğinizden emin misiniz? Bu tüm aktif oturumlarınızı sonlandıracak.",
+      "signOut": "Çıkış Yap",
+      "logoutSuccess": "Başarıyla Çıkış Yapıldı",
+      "logoutError": "Tüm cihazlardan çıkış yaparken hata oluştu. Lütfen tekrar deneyin.",
+      "typeDelete": "Onaylamak için \"DELETE\" yazın:",
+      "timeNow": "Şimdi",
+      "timeMinutes": "{{count}} dakika önce",
+      "timeHours": "{{count}} saat önce",
+      "timeDays": "{{count}} gün önce",
+      "hour": "saat",
+      "hours": "saat",
+      "day": "gün",
+      "days": "gün",
+      "deviceMobile": "Mobil",
+      "deviceTablet": "Tablet",
+      "deviceDesktop": "Masaüstü",
+      "deletionFailed": "Silme Başarısız",
+      "deletionFailedError": "Hesap silme başarısız: {{error}}",
+      "deletionProcessingError": "Hesap silme işleminizi gerçekleştirirken hata oluştu. Lütfen daha sonra tekrar deneyin.",
+      "confirmationRequired": "Onay Gerekli",
+      "confirmationMessage": "Hesap silme işlemini onaylamak için lütfen \"DELETE\" yazın.",
+      "processingDeletion": "Silme İsteği İşleniyor",
+      "processingMessage": "Hesap silme isteğinizi işlerken lütfen bekleyin...",
+      "accountDeleted": "Hesap Silindi",
+      "accountDeletedMessage": "Hesabınız başarıyla silindi. Ana sayfaya yönlendirileceksiniz."
+    }
+  },
+  "auth": {
+    "signIn": "Giriş yap",
+    "signUp": "Kayıt ol",
+    "signOut": "Çıkış yap",
+    "email": "E-posta",
+    "password": "Şifre",
+    "confirmPassword": "Şifreyi onayla",
+    "forgotPassword": "Şifremi unuttum?",
+    "resetPassword": "Şifreyi sıfırla",
+    "createAccount": "Hesap oluştur",
+    "alreadyHaveAccount": "Zaten hesabınız var mı?",
+    "dontHaveAccount": "Hesabınız yok mu?",
+    "signInWithGoogle": "Google ile giriş yap",
+    "signInWithGitHub": "GitHub ile giriş yap",
+    "or": "veya",
+    "terms": "Hesap oluşturarak şunları kabul etmiş olursunuz:",
+    "termsOfService": "Hizmet şartları",
+    "and": "ve",
+    "privacyPolicy": "Gizlilik politikası",
+    "errors": {
+      "invalidCredentials": "Geçersiz kimlik bilgileri",
+      "emailAlreadyExists": "E-posta zaten mevcut",
+      "passwordTooShort": "Şifre en az 8 karakter olmalıdır",
+      "passwordsDoNotMatch": "Şifreler eşleşmiyor",
+      "emailRequired": "E-posta gereklidir",
+      "passwordRequired": "Şifre gereklidir"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "account": "Hesap",
+    "preferences": "Tercihler",
+    "audio": "Ses",
+    "midi": "MIDI",
+    "appearance": "Görünüm",
+    "language": "Dil",
+    "theme": "Tema",
+    "notifications": "Bildirimler",
+    "privacy": "Gizlilik",
+    "billing": "Faturalama",
+    "profile": {
+      "title": "Profil",
+      "name": "İsim",
+      "email": "E-posta",
+      "avatar": "Avatar",
+      "updateProfile": "Profili güncelle"
+    },
+    "audio": {
+      "title": "Ses ayarları",
+      "device": "Ses cihazı",
+      "sampleRate": "Örnekleme hızı",
+      "bufferSize": "Tampon boyutu",
+      "latency": "Gecikme"
+    },
+    "midi": {
+      "title": "MIDI ayarları",
+      "inputDevice": "Giriş cihazı",
+      "outputDevice": "Çıkış cihazı",
+      "channel": "Kanal"
+    },
+    "appearance": {
+      "title": "Görünüm",
+      "theme": "Tema",
+      "light": "Açık",
+      "dark": "Koyu",
+      "system": "Sistem"
+    },
+    "notifications": {
+      "title": "Bildirimler",
+      "email": "E-posta bildirimleri",
+      "push": "Push bildirimleri",
+      "updates": "Ürün güncellemeleri",
+      "marketing": "Pazarlama e-postaları"
+    }
+  },
+  "subscription": {
+    "title": "Abonelik",
+    "currentPlan": "Mevcut plan",
+    "usage": "Kullanım",
+    "billing": "Faturalama",
+    "upgrade": "Yükselt",
+    "downgrade": "Düşür",
+    "cancel": "Aboneliği iptal et",
+    "renews": "Yenilenir",
+    "expires": "Sona erer",
+    "status": {
+      "active": "Aktif",
+      "canceled": "İptal edildi",
+      "expired": "Süresi doldu",
+      "trial": "Deneme"
+    }
+  },
+  "faq": {
+    "title": "Sık Sorulan Sorular",
+    "subtitle": "Cymasphere hakkında sık sorulan soruların yanıtlarını bulun",
+    "questions": [
+      {
+        "question": "Cymasphere nedir?",
+        "answer": "Cymasphere, hem bağımsız uygulama hem de DAW için eklenti (AU & VST3) olarak mevcut olan kapsamlı bir şarkı yaratım paketidir. Akıllı akor seslendirme, melodi desen yapısı ve müzik teorisini her seviyedeki beceri için erişilebilir ve sezgisel hale getiren etkileşimli görselleştirme sunan, armoni ve melodi besteleme için entegre araçlar sağlar."
+      },
+      {
+        "question": "Cymasphere müzisyenler için hangi sorunları çözer?",
+        "answer": "Cymasphere, etkileyici akor ilerlemeleri oluşturma, tamamlayıcı melodiler geliştirme, yumuşak ses yönlendirmesi yapma ve müzikal ilham bulma gibi yaygın kompozisyon zorluklarını ele alır. Müzik teorisi bilgisi ve pratik uygulama arasındaki köprüyü kurar, herhangi bir beceri seviyesindeki prodüktörler için tüm kompozisyon sürecini daha sezgisel ve erişilebilir hale getirir."
+      },
+      {
+        "question": "Şarkı Oluşturucu kompozisyonda nasıl yardımcı olur?",
+        "answer": "Şarkı Oluşturucu, tüm müzikal öğelerin bir araya geldiği merkezi yaratıcı merkezinizdir. Akor ilerlemelerini düzenleyebilir, melodi desenleri oluşturabilir ve birden fazla parçayla komple şarkı yapıları inşa edebilirsiniz. Sistem profesyonel taşıma kontrolleri, etkileşimli zaman çizelgesi, parça başına ayarları olan çoklu parça yönetimi ve kompozisyonunuzun gelişimi boyunca bütünsel bir perspektif sağlayan kapsamlı düzenleme görünümü sunar."
+      },
+      {
+        "question": "Etkileşimli Armoni Paleti nasıl çalışır?",
+        "answer": "Etkileşimli Armoni Paleti, akor ilişkilerini keşfetmek için görsel, jestsel bir arayüz sağlar. Sadece başlangıç akorunu seçin ve palet size armonik olarak ilişkili seçenekleri gösterecek, etkileyici ilerlemeler yapmayı kolaylaştırır. Seslendirmeleri doğrudan zaman çizelgenize sürükleyip bırakabilir, anında ton değiştirebilir ve kişisel armonik kelime dağarcığınızı geliştirmek için özel akor bankaları oluşturabilirsiniz."
+      },
+      {
+        "question": "Melodi Desen Yapısını özel kılan nedir?",
+        "answer": "Melodi Desen Yapısı, akor ilerlemelerinizi tamamlayan etkileyici melodiler geliştirmenize yardımcı olur. Armonik seçimlerinize dayalı olarak bağlam uygun melodik desenler önerir, farklı ritmik varyasyonlarla deneme yapmanıza olanak tanır ve akılda kalıcı temalar yapmak için sezgisel araçlar sağlar. Sistem, akor değişiklikleri meydana geldiğinde melodik içeriğinizi akıllıca uyarlar, kompozisyonunuz boyunca müzikal tutarlılığı korur."
+      },
+      {
+        "question": "Desenler akor değişikliklerine nasıl uyum sağlar?",
+        "answer": "Cymasphere'in Dinamik Desen Editörü, melodik desenleri gerçek zamanlı olarak akor ilerlemelerinize uyarlamak için akıllı algoritmalar kullanır. Bir akoru değiştirdiğinizde, sistem melodinizin müzikal amacını korurken armonik tutarlılığı sürdürmek için deseni otomatik olarak ayarlar. Bu hem göreceli hem de mutlak modlarda çalışır, bağlam farkında melodiler veya sabit melodik içerik oluşturma esnekliği sunar."
+      },
+      {
+        "question": "Seslendirme Oluşturucuyu özel kılan nedir?",
+        "answer": "Seslendirme Oluşturucu, uygun ses yönlendirme ilkelerini takip eden zengin, müzikal olarak tatmin edici akor seslendirmeleri oluşturmak için gelişmiş algoritmalar kullanır. Akorlar arasında yumuşak ses geçişlerini sağlamak için akor ilerlemelerini analiz eder, seslendirme genişliği, yoğunluk, çevirmeler ve armonik uzantılar için kontroller sunar. Ayarlar küresel olarak uygulanabilir veya kompozisyonunuzun belirli bölümleri için ayarlanabilir."
+      },
+      {
+        "question": "Bağımsız uygulama ve eklenti arasındaki farklar nelerdir?",
+        "answer": "Bağımsız uygulama ve eklenti sürümleri aynı temel özellikleri ve işlevselliği paylaşır. Bağımsız uygulama bağımsız çalışır, odaklanmış kompozisyon ve keşif için harikadır, eklenti ise sorunsuz prodüksiyon iş akışı için doğrudan DAW'ınıza entegre olur. Yaratıcı sürecinize en uygun sürümü seçebilir veya ihtiyaçlarınıza göre ikisini de kullanabilirsiniz."
+      },
+      {
+        "question": "Cymasphere eklentisi hangi DAW'larla uyumludur?",
+        "answer": "Cymasphere eklentisi (AU & VST3 formatlarında mevcut) Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig ve Digital Performer dahil çoğu büyük DAW ile uyumludur. Hem macOS hem de Windows platformları desteklenir."
+      },
+      {
+        "question": "Cymasphere yeni başlayanlar için uygun mudur?",
+        "answer": "Kesinlikle! Cymasphere deneyimli besteciler için gelişmiş işlevsellik sunarken, sezgisel arayüzü müzik teorisini yeni başlayanlar için erişilebilir kılar, armoni ve melodi kavramlarını görsel olarak anlamalarına yardımcı olur. Araçların etkileşimli doğası deneyimi ve yaparak öğrenmeyi teşvik eder, başlangıç noktanız ne olursa olsun kompozisyon becerilerini geliştirmek için mükemmel bir platform haline getirir."
+      },
+      {
+        "question": "Cymasphere'i kullanmak için müzik teorisi bilmem gerekir mi?",
+        "answer": "Hayır, bu Cymasphere'in güçlü yanlarından biri! Cymasphere, yaratım yaparken müzik teorisi anlayışınızı geliştirmek için tasarlanmış armonik bir oyun alanıdır. Görsel arayüzler kompozisyon yaparken müzikal ilişkileri anlamanıza yardımcı olur, karmaşık teori kavramlarını yeni başlayanlar için bile sezgisel hale getirir. Hem güçlü bir yaratım aracı hem de becerilerinizi geliştirdikçe sizinle birlikte büyüyen mükemmel bir öğrenme kaynağıdır."
+      },
+      {
+        "question": "Satın almadan önce Cymasphere'i nasıl deneyebilirim?",
+        "answer": "Ücretsiz deneme seçeneklerimizle Cymasphere'i deneyebilirsiniz. Kredi kartı gerektirmeyen 7 günlük ücretsiz deneme veya dosyada kart bulunan 14 günlük ücretsiz deneme (deneme bitene kadar ücretlendirilmez) sunuyoruz. Her iki seçenek de Cymasphere'in sunduğu her şeyi keşfedebilmeniz için tüm premium özelliklere tam erişim sağlar."
+      },
+      {
+        "question": "Güncellemeler için ödeme yapmam gerekir mi?",
+        "answer": "Hayır, tüm Cymasphere müşterileri yazılımın en son sürümüne ek ücret ödemeden erişebilir. Bu, tek seferlik satın alma işlemlerinin parçası olarak tüm gelecek güncellemeleri alan yaşam boyu lisans sahiplerini de içerir. Yazılımı sürekli iyileştirmeye ve tüm kullanıcıların tadını çıkarabileceği yeni özellikler eklemeye kararlıyız."
+      },
+      {
+        "question": "Cymasphere için kullanıcı kılavuzu mevcut mu?",
+        "answer": "Hayır, tüm yardım doğrudan uygulama içi yardım yöneticisine yerleştirilmiştir, yeni özellikleri keşfetmeyi ve öğrenmeyi zahmetsiz hale getirir. Sorular, hata raporları ve diğer sorular Discord sunucumuz aracılığıyla veya support@cymasphere.com adresine e-posta göndererek iletilebilir."
+      }
+    ]
+  },
+  "synth": {
+    "title": "Akıllı akor seslendirme oluşturucu",
+    "description": "Bir düğmeye basarak zengin ve güzel akorlar oluşturun.",
+    "chordSequence": "Akor dizisi",
+    "generateMelody": "Melodi oluştur",
+    "playChordSequence": "Akor dizisini çal",
+    "stopAll": "Hepsini durdur",
+    "playBoth": "İkisini de çal",
+    "generateRandomProgression": "Rastgele ilerleme",
+    "generateRandomSongName": "Rastgele isim",
+    "synthesizerTitle": "Sentezleyici",
+    "synthesizerDesc": "Müzikal desenler oluşturun ve çalın",
+    "songName": "Şarkı adı",
+    "trackName": "Parça adı",
+    "trackNamePlaceholder": "örn. Piyano, Melodi, Bas hattı",
+    "trackNameHint": "Her parça müziğinizdeki farklı bir enstrümanı veya sesi temsil eder",
+    "trackIllustration": "Parçaları müzikal düzenlemenizde katmanlar olarak düşünün - tam müziğinizi oluşturmak için birlikte çalacaklar.",
+    "chords": {
+      "cMajor": "Domaj7",
+      "dMinor": "Rem7",
+      "eMinor": "Mim7",
+      "fMajor": "Famaj7",
+      "g7sus4": "Sol7",
+      "aMinor": "Lam7",
+      "bm7b5": "Sim7b5"
+    },
+    "melodyGeneration": {
+      "title": "Melodi oluşturma",
+      "description": "Akor ilerlemenizie mükemmel uyum sağlayan melodiler oluşturun",
+      "generateButton": "Melodi oluştur",
+      "regenerateButton": "Yeniden oluştur",
+      "playButton": "Melodi çal",
+      "stopButton": "Melodiyi durdur"
+    },
+    "voicingControls": {
+      "title": "Seslendirme kontrolleri",
+      "density": "Yoğunluk",
+      "spread": "Yayılım",
+      "inversion": "Çevirme",
+      "extensions": "Uzantılar"
+    }
+  },
+  "testimonials": {
+    "title": "Kullanıcılarımız ne diyor",
+    "subtitle": "Cymasphere'in müzik yaratımını nasıl dönüştürdüğünü keşfedin",
+    "testimonial1": {
+      "quote": "Cymasphere kompozisyon sürecimi devrim niteliğinde değiştirdi. Akıllı ses yönlendirme, manuel olarak asla yapamayacağım karmaşık armoniler oluşturmama olanak tanıyor.",
+      "author": "Sarah Chen",
+      "role": "Besteci"
+    },
+    "testimonial2": {
+      "quote": "Müzik öğretmeni olarak, karmaşık teorik kavramları göstermek için Cymasphere kullanıyorum. Öğrencilerim sonunda akor ilerlemelerinin nasıl çalıştığını anlıyor!",
+      "author": "Dr. Michael Rodriguez",
+      "role": "Müzik öğretmeni"
+    },
+    "testimonial3": {
+      "quote": "Armoni paletleri için jestsel arayüz dahice. Akor ilişkilerini tamamen yeni ve sezgisel bir şekilde keşfedebiliyorum.",
+      "author": "Alex Thompson",
+      "role": "Müzik prodüktörü"
+    }
+  },
+  "login": {
+    "subtitle": "Hesabınıza erişmek için giriş yapın",
+    "forgotPassword": "Şifremi unuttum?",
+    "loggingIn": "Giriş yapılıyor...",
+    "loginButton": "Giriş Yap",
+    "noAccount": "Hesabınız yok mu?",
+    "signUp": "Kayıt ol",
+    "errors": {
+      "userNotFound": "Bu e-posta ile hesap bulunamadı. Lütfen önce kayıt olun.",
+      "invalidCredentials": "Yanlış şifre. Lütfen tekrar deneyin.",
+      "invalidEmail": "Geçersiz e-posta formatı.",
+      "rateLimit": "Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin veya şifrenizi sıfırlayın.",
+      "generic": "Giriş başarısız: {{message}}",
+      "unknown": "Giriş başarısız: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Bir",
+      "account": "hesap oluştur"
+    },
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "firstNamePlaceholder": "Adınız",
+    "lastNamePlaceholder": "Soyadınız",
+    "emailPlaceholder": "E-posta adresinizi girin",
+    "emailLinkedToPurchase": "Bu e-posta satın alma işleminizle bağlantılıdır ve değiştirilemez",
+    "passwordPlaceholder": "Güvenli bir şifre oluşturun",
+    "confirmPassword": "Şifreyi Onayla",
+    "confirmPasswordPlaceholder": "Şifrenizi onaylayın",
+    "agreeToTerms": "Kabul ediyorum",
+    "termsOfService": "Hizmet Şartları",
+    "and": "ve",
+    "privacyPolicy": "Gizlilik Politikası",
+    "creatingAccount": "Hesap Oluşturuluyor...",
+    "createAccount": "Hesap Oluştur",
+    "alreadyHaveAccount": "Zaten hesabınız var mı?",
+    "login": "Giriş yap",
+    "errors": {
+      "passwordsDoNotMatch": "Şifreler eşleşmiyor",
+      "passwordTooShort": "Şifre en az 6 karakter olmalıdır",
+      "agreeTerms": "Hizmet Şartları ve Gizlilik Politikasını kabul etmelisiniz",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
+  },
+  "resetPassword": {
+    "title": "Şifreyi Sıfırla",
+    "description": "E-posta adresinizi girin, şifrenizi sıfırlamak için talimatları size gönderelim.",
+    "backToLogin": "Giriş Sayfasına Dön",
+    "emailLabel": "E-posta Adresi",
+    "emailPlaceholder": "Kayıtlı e-postanızı girin",
+    "sendLink": "Sıfırlama Bağlantısı Gönder",
+    "sendingLink": "Gönderiliyor...",
+    "rememberPassword": "Şifrenizi hatırladınız mı?",
+    "login": "Giriş yap",
+    "successMessage": "Bu e-posta adresiyle bir hesap varsa, şifrenizi sıfırlamak için talimatları gönderdik. Lütfen gelen kutunuzu ve spam klasörünüzü kontrol edin.",
+    "errors": {
+      "userNotFound": "Bu e-posta adresiyle kullanıcı bulunamadı",
+      "invalidEmail": "Geçersiz e-posta adresi",
+      "rateLimit": "Çok fazla şifre sıfırlama denemesi. Lütfen tekrar denemeden önce birkaç dakika bekleyin.",
+      "generic": "Şifre sıfırlama e-postası gönderme başarısız. Lütfen tekrar deneyin."
+    }
+  },
+  "billing": {
+    "choosePlan": "Planınızı Seçin",
+    "limitedOffer": "Sınırlı Süreli Teklif",
+    "startWithTrial": "Herhangi bir planda {{days}} günlük ÜCRETSİZ deneme ile başlayın!",
+    "trialExperience": "Taahhüt olmadan tüm premium özellikleri deneyimleyin. Başlamak için kredi kartı gerekmez.",
+    "yearlyToMonthly": "Aboneliğiniz şu anda yıllık faturalandırılıyor. Aylık plana geçerseniz, değişiklik mevcut fatura döneminiz {{date}} tarihinde sona erdikten sonra geçerli olacaktır.",
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "save25": "%25 Tasarruf",
+    "lifetime": "Yaşam Boyu",
+    "bestValue": "En İyi Değer",
+    "enterCardNow": "Kart bilgilerini şimdi girin:",
+    "trialWithCard": "{{days}} günlük deneme - Dosyada kart ekle",
+    "trialWithoutCard": "{{days}} günlük deneme - Kredi kartı gerekmez",
+    "currentPlan": "Mevcut Plan",
+    "proBadge": "PRO",
+    "afterTrial": "{{days}} günlük ücretsiz denemenizden sonra",
+    "percentDiscount": "%{{percent}} indirim uygulandı!",
+    "amountDiscount": "₺{{amount}} indirim!",
+    "firstPayment": "İlk ödeme: {{date}}",
+    "nextBilling": "Sonraki faturalama: {{date}}",
+    "oneTimePurchase": "tek seferlik satın alma",
+    "purchased": "Satın Alındı",
+    "allPlansInclude": "Tüm Planlar Şunları İçerir:",
+    "confirmationNote": "Onaylayarak, yukarıda gösterilen şartları ve fiyatlandırmayı kabul ediyorsunuz.",
+    "provideCard": "{{days}} günlük deneme için şimdi ödeme yöntemi sağlayın",
+    "cardTooltip": "Ödeme yönteminizi şimdi eklemek denemenizi 7 gün yerine 14 güne uzatır. Denemeniz bitene kadar ücretlendirilmezsiniz.",
+    "chooseTrial": "Ücretsiz deneme seçeneğinizi seçin:",
+    "noCharge": "(deneme bitene kadar ücretlendirilmez)"
+  },
+  "legal": {
+    "termsOfService": "Hizmet Şartları",
+    "privacyPolicy": "Gizlilik Politikası",
+    "legalInformation": "Yasal Bilgiler",
+    "lastUpdated": "Son Güncelleme",
+    "lastUpdatedDate": "1 Mart 2023",
+    "terms": {
+      "acceptance": {
+        "title": "1. Şartların Kabulü",
+        "content": "Cymasphere'in hizmetlerine, web sitesine veya uygulamalarına erişerek veya bunları kullanarak, bu Hizmet Şartları'na bağlı olmayı kabul edersiniz. Bu şartları kabul etmiyorsanız, lütfen hizmetlerimizi kullanmayın."
+      },
+      "description": {
+        "title": "2. Hizmet Açıklaması",
+        "content": "Cymasphere, web ve masaüstü uygulamaları aracılığıyla müzik teorisi ve kompozisyon araçları sağlar. Bu hizmetler zaman zaman önceden haber verilmeden değişebilir."
+      },
+      "accounts": {
+        "title": "3. Kullanıcı Hesapları",
+        "content": "Hizmetlerimizin bazı özellikleri hesap oluşturmanızı gerektirir. Hesap bilgilerinizin gizliliğini korumak ve hesabınız altında gerçekleşen tüm faaliyetlerden sorumlusunuz."
+      },
+      "content": {
+        "title": "4. Kullanıcı İçeriği",
+        "content": "Hizmetlerimiz aracılığıyla oluşturduğunuz, yüklediğiniz veya paylaştığınız herhangi bir içeriğin tüm haklarını saklı tutarsınız. İçerik yükleyerek, Cymasphere'e içeriğinizi yalnızca size hizmet sağlamak için kullanma, çoğaltma ve dağıtma konusunda münhasır olmayan bir lisans verirsiniz."
+      },
+      "ip": {
+        "title": "5. Fikri Mülkiyet",
+        "content": "Cymasphere ve içeriği, özellikleri ve işlevselliği tarafımızca sahiplenilir ve telif hakkı, marka ve diğer fikri mülkiyet yasalarıyla korunur."
+      },
+      "subscription": {
+        "title": "6. Abonelik ve Ödemeler",
+        "content": "Cymasphere için çeşitli abonelik planları mevcuttur. Abone olarak, geçerli ücretleri ödemeyi kabul edersiniz. Abonelik ücretleri, yasaların gerektirdiği durumlar dışında iade edilmez."
+      },
+      "termination": {
+        "title": "7. Fesih",
+        "content": "Bu şartların ihlali veya takdirimize bağlı herhangi bir sebeple hesabınızı ve hizmetlerimize erişiminizi feshetme veya askıya alma hakkını saklı tutarız."
+      },
+      "disclaimer": {
+        "title": "8. Garanti Feragati",
+        "content": "Hizmetlerimiz \"olduğu gibi\" ve \"mevcut olduğu şekilde\" temelinde sağlanır. Hizmetlerimizin güvenilirliği, kullanılabilirliği veya doğruluğu konusunda açık veya zımni hiçbir garanti vermeyiz."
+      },
+      "limitation": {
+        "title": "9. Sorumluluk Sınırlaması",
+        "content": "Hiçbir durumda Cymasphere, hizmetlerimizi kullanımınızdan kaynaklanan veya bununla bağlantılı dolaylı, tesadüfi, özel veya sonuçsal zararlardan sorumlu olmayacaktır."
+      },
+      "changes": {
+        "title": "10. Şartlarda Değişiklik",
+        "content": "Bu şartları istediğimiz zaman değiştirebiliriz. Değişikliklerden sonra hizmetlerimizi kullanmaya devam etmek, değiştirilmiş şartları kabul etmek anlamına gelir."
+      },
+      "governing": {
+        "title": "11. Geçerli Hukuk",
+        "content": "Bu şartlar, Cymasphere'in faaliyet gösterdiği yargı alanının yasalarına tabi olacak ve kanun çatışması hükümlerine bakılmaksızın uygulanacaktır."
+      },
+      "contact": {
+        "title": "12. İletişim",
+        "content": "Bu şartlarla ilgili sorularınız için lütfen support@cymasphere.com adresinden bizimle iletişime geçin."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Giriş",
+        "content": "Bu Gizlilik Politikası, Cymasphere'in hizmetlerimizi kullandığınızda kişisel bilgilerinizi nasıl topladığını, kullandığını ve koruduğunu açıklar. Gizliliğinize saygı duyuyor ve kişisel verilerinizi korumaya kararlıyız."
+      },
+      "collect": {
+        "title": "2. Topladığımız Bilgiler",
+        "content": "Hesap kaydettiğinizde adınız, e-posta adresiniz ve ödeme bilgileriniz gibi bize doğrudan sağladığınız bilgileri topluyoruz. Ayrıca cihazınız ve hizmetlerimizle nasıl etkileşim kurduğunuz hakkında kullanım verileri ve teknik bilgiler topluyoruz."
+      },
+      "use": {
+        "title": "3. Bilgilerinizi Nasıl Kullanırız",
+        "content": "Bilgilerinizi hizmetlerimizi sağlamak ve iyileştirmek, işlemleri gerçekleştirmek, sizinle iletişim kurmak ve güvenliği sağlamak için kullanırız. Ayrıca kullanıcıların hizmetlerimizle nasıl etkileşim kurduğunu daha iyi anlamak için araştırma ve analitik için bilgilerinizi kullanabiliriz."
+      },
+      "sharing": {
+        "title": "4. Veri Paylaşımı ve Açıklaması",
+        "content": "Kişisel bilgilerinizi satmayız. Bilgilerinizi hizmetlerimizi işletmemize, ödemeleri işlememize veya verileri analiz etmemize yardımcı olan üçüncü taraf hizmet sağlayıcılarıyla paylaşabiliriz. Ayrıca yasaların gerektirdiği durumlarda bilgilerinizi açıklayabiliriz."
+      },
+      "security": {
+        "title": "5. Veri Güvenliği",
+        "content": "Kişisel bilgilerinizi korumak için uygun güvenlik önlemleri uyguluyoruz. Ancak, İnternet üzerinden aktarım veya elektronik depolama yönteminin %100 güvenli olmadığını unutmayın."
+      },
+      "rights": {
+        "title": "6. Haklarınız",
+        "content": "Konumunuza bağlı olarak, verilerinize erişim, düzeltme, silme veya işlemeyi kısıtlama hakkı dahil olmak üzere kişisel verilerinizle ilgili belirli haklarınız olabilir. Bu hakları kullanmak için lütfen bizimle iletişime geçin."
+      },
+      "cookies": {
+        "title": "7. Çerezler ve İzleme Teknolojileri",
+        "content": "Deneyiminizi geliştirmek, kullanımı analiz etmek ve hizmetlerimizle nasıl etkileşim kurduğunuz hakkında bilgi toplamak için çerezler ve benzer izleme teknolojilerini kullanırız. Çerezleri tarayıcı ayarlarınız aracılığıyla kontrol edebilirsiniz."
+      },
+      "children": {
+        "title": "8. Çocukların Gizliliği",
+        "content": "Hizmetlerimiz 13 yaşın altındaki çocuklara yönelik değildir. 13 yaşın altındaki çocuklardan bilerek bilgi toplamayız. 13 yaşın altındaki bir çocuktan bilgi topladığımızı öğrenirsek, bunu silmek için adımlar atarız."
+      },
+      "changes": {
+        "title": "9. Bu Gizlilik Politikasındaki Değişiklikler",
+        "content": "Bu Gizlilik Politikasını zaman zaman güncelleyebiliriz. Yeni politikayı bu sayfada yayımlayarak ve \"Son Güncelleme\" tarihini güncelleyerek herhangi bir değişiklik hakkında sizi bilgilendireceğiz."
+      },
+      "contact": {
+        "title": "10. Bizimle İletişime Geçin",
+        "content": "Bu Gizlilik Politikası hakkında sorularınız varsa, lütfen support@cymasphere.com adresinden bizimle iletişime geçin."
+      }
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "Misyonumuz",
+      "content": "Cymasphere'in misyonu, müzik teorisi ve müzikal yaratıcılık arasındaki köprüyü kurmaktır. Teorinin yaratıcı süreci kısıtlamaktan ziyade geliştirmesi ve yönlendirmesi gerektiğine inanıyoruz. Araçlarımız hem rehberlik hem de özgürlük sağlayacak şekilde tasarlanmış, ilham ve kompozisyonel bütünlük arasında mükemmel dengeyi kuruyor.",
+      "highlight": "Müzik teorisini sezgisel, etkileşimli ve ilham verici hale getirerek her seviyedeki müzisyeni güçlendirmeye kararlıyız. Amacımız, daha iyi kompozisyon araçları aracılığıyla yaratıcı vizyonunuzun gelişmesini görmektir."
+    },
+    "story": {
+      "title": "Hikayemiz",
+      "content1": "2022'de müzisyen, yazılım mühendisi ve müzik teorisyenlerinden oluşan kararlı bir ekip tarafından kurulan Cymasphere, müzisyenlerin armoni ve kompozisyonla nasıl etkileşim kurduğunu yeniden tasarlamak için iddialı bir proje olarak başladı.",
+      "content2": "Teorik sofistikasyondan yoksun veya sezgisel kullanım için çok karmaşık olan mevcut müzik yazılımlarıyla yıllarca süren hayal kırıklığından sonra, kurucularımız müzik teorisini pratik, görsel ve yaratıcı süreçte gerçekten yararlı hale getirecek bir araç yaratmaya karar verdi."
+    },
+    "team": {
+      "title": "Ekibimiz",
+      "member1": {
+        "name": "David Chen",
+        "role": "Kurucu & Baş Geliştirici"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Müzik Teorisi Uzmanı"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "UI/UX Tasarımcısı"
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Ürün Müdürü"
+      }
+    },
+    "values": {
+      "title": "Değerlerimiz",
+      "intro": "Cymasphere'de, yaptığımız her şeyi şekillendiren bir dizi temel değerle yönlendiriliyoruz:",
+      "integrity": {
+        "title": "Müzikal Bütünlük",
+        "content": "İnovasyonu benimserken müzik teorisinin ilkelerine saygı duyuyoruz"
+      },
+      "design": {
+        "title": "Sezgisel Tasarım",
+        "content": "Arayüzlerimiz görsel olarak açık ve anında anlaşılabilir"
+      },
+      "freedom": {
+        "title": "Yaratıcı Özgürlük",
+        "content": "İfadeyi sınırlamadan rehberlik sağlıyoruz"
+      },
+      "learning": {
+        "title": "Sürekli Öğrenme",
+        "content": "Araçlarımız kullanıcıların müzikal anlayışlarını geliştirmesine yardımcı olur"
+      }
+    },
+    "approach": {
+      "title": "Yaklaşımımız",
+      "intro": "Cymasphere, müzik kompozisyon yazılımına şunlara odaklanarak benzersiz bir yaklaşım getirir:",
+      "point1": "Armoni ve ses yönlendirmesini sezgisel yollarla görselleştirme",
+      "point2": "Yaratıcı yönünüze saygı gösterirken akıllı öneriler sağlama",
+      "point3": "Teorik kavramları yaratıcı iş akışına sorunsuz entegre etme",
+      "point4": "Kompozisyon, düzenleme ve prodüksiyon arasında köprüler kurma",
+      "conclusion": "Kullanıcı geri bildirimlerine ve müzik teknolojisindeki en son gelişmelere dayalı olarak yaklaşımımızı sürekli iyileştiriyoruz. Sizinle birlikte büyüyen ve gelişen yaratıcı ihtiyaçlarınıza uyum sağlayan araçlar yaratmaya inanıyoruz."
+    },
+    "future": {
+      "title": "Geleceğe Bakış",
+      "content1": "Cymasphere'i geliştirmeye devam ederken, müzik yaratımının geleceği konusunda heyecanlıyız. Yol haritamız büyük DAW'larla gelişmiş entegrasyon, genişletilmiş armonik paletler, daha derin AI destekli kompozisyon özellikleri ve çok daha fazlasını içeriyor.",
+      "content2": "Bu yolculukta bize katılmanızı ve akıllı müzik yaratım araçlarının geleceğini şekillendirmeye yardım etmenizi davet ediyoruz."
+    }
+  }
+} 

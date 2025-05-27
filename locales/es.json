@@ -334,7 +334,9 @@
     "en": "English",
     "es": "Español",
     "fr": "Français",
+    "it": "Italiano",
     "de": "Deutsch",
+    "pt": "Português",
     "ja": "日本語"
   },
   "pricing": {
@@ -357,7 +359,7 @@
     "perYear": "/año",
     "billed": "facturado anualmente",
     "oneTimePurchase": "compra única",
-    "proSolution": "Solución completa para productores musicales",
+    "proSolution": "Suite compositiva completa para músicos",
     "allPlansInclude": "Todos los Planes Incluyen:",
     "features": [
       "Creador de Canciones con Gestión Multi-Pista",
@@ -666,18 +668,7 @@
       "cardTooltip": "Agregar tu método de pago ahora extiende tu prueba a 14 días en lugar de 7. No se te cobrará hasta que termine tu prueba.",
       "chooseTrial": "Elige tu opción de prueba gratuita:",
       "noCharge": "(no se cobrará hasta que termine la prueba)",
-      "features": {
-        "interactive_harmony_palette": "Paleta de Armonía Interactiva",
-        "advanced_voice_leading_control": "Control Avanzado de Conducción de Voces",
-        "unlimited_saved_progressions": "Progresiones Guardadas Ilimitadas",
-        "premium_sound_libraries": "Bibliotecas de Sonido Premium",
-        "midi_export_&_import": "Exportación e Importación MIDI",
-        "dynamic_pattern_editor": "Editor de Patrones Dinámico",
-        "song_builder_tool": "Herramienta de Construcción de Canciones",
-        "cloud_storage_&_backup": "Almacenamiento en la Nube y Copias de Seguridad",
-        "priority_email_support": "Soporte por Email Prioritario",
-        "free_updates": "Actualizaciones Gratuitas"
-      },
+
       "paymentHistory": "Historial de Pagos",
       "upgradeDowngrade": "Mejorar/Reducir Plan",
       "cancelSubscription": "Cancelar Suscripción",
@@ -711,7 +702,20 @@
       "paymentMethodError": "Hubo un problema con tu método de pago. Por favor, actualiza tu información de pago e inténtalo nuevamente.",
       "permissionError": "No tienes permiso para realizar este cambio. Por favor, contacta al soporte para obtener asistencia.",
       "prorationError": "Hubo un problema calculando tu factura para el nuevo plan. Por favor, inténtalo más tarde o contacta al soporte.",
-      "specificError": "Error al actualizar tu suscripción: {{error}}"
+      "specificError": "Error al actualizar tu suscripción: {{error}}",
+      "withoutCardMessage": "Puedes usar funciones básicas sin proporcionar información de pago.",
+      "planChangeScheduled": "Cambio de Plan Programado",
+      "planChangeScheduledMessage": "Tu plan se cambiará a mensual al final de tu período de facturación actual el {{date}}.",
+      "planUpdated": "Plan Actualizado",
+      "planUpdatedMessage": "Tu suscripción ha sido cambiada al plan {{plan}}. Los cambios tomarán efecto inmediatamente.",
+      "subscriptionUpdateFailed": "Actualización de Suscripción Fallida",
+      "unexpectedError": "Ocurrió un error inesperado al actualizar tu suscripción.",
+      "noActiveSubscription": "No se encontró una suscripción activa en tu cuenta. Por favor contacta al soporte para asistencia.",
+      "billingCycleError": "No se pudo cambiar el ciclo de facturación. Por favor contacta al soporte para asistencia con cambios de planes mensuales y anuales.",
+      "cancelNotice": "Tu suscripción será cancelada el {{date}}. Tendrás acceso hasta entonces.",
+      "continueToCheckout": "Continuar al Pago",
+      "gotIt": "Entendido",
+      "showingDefaultPrices": "Mostrando precios por defecto."
     },
     "downloads": {
       "title": "Descargas",
@@ -821,19 +825,7 @@
     "provideCard": "Proporcionar método de pago ahora para una prueba de {{days}} días",
     "cardTooltip": "Agregar tu método de pago ahora extiende tu prueba a 14 días en lugar de 7. No se te cobrará hasta que termine tu prueba.",
     "chooseTrial": "Elige tu opción de prueba gratuita:",
-    "noCharge": "(no se cobrará hasta que termine la prueba)",
-    "features": {
-      "interactive_harmony_palette": "Paleta de Armonía Interactiva",
-      "advanced_voice_leading_control": "Control Avanzado de Conducción de Voces",
-      "unlimited_saved_progressions": "Progresiones Guardadas Ilimitadas",
-      "premium_sound_libraries": "Bibliotecas de Sonido Premium",
-      "midi_export_&_import": "Exportación e Importación MIDI",
-      "dynamic_pattern_editor": "Editor de Patrones Dinámico",
-      "song_builder_tool": "Herramienta de Construcción de Canciones",
-      "cloud_storage_&_backup": "Almacenamiento en la Nube y Copias de Seguridad",
-      "priority_email_support": "Soporte por Email Prioritario",
-      "free_updates": "Actualizaciones Gratuitas"
-    }
+    "noCharge": "(no se cobrará hasta que termine la prueba)"
   },
   "legal": {
     "termsOfService": "Términos de Servicio",
