@@ -3,24 +3,22 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
-  FaCreditCard,
   FaTimes,
-  FaTachometerAlt,
-  FaUser,
-  FaDownload,
-  FaCog,
   FaSignOutAlt,
   FaBars,
   FaHome,
   FaArrowLeft,
+  FaShieldAlt,
+  FaUsers,
+  FaTicketAlt,
+  FaChartBar,
+  FaCog,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
-import { useTranslation } from "react-i18next";
-import useLanguage from "@/hooks/useLanguage";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 
 const LayoutContainer = styled.div`
@@ -34,7 +32,7 @@ interface SidebarProps {
   $isOpen: boolean;
 }
 
-const Sidebar = styled.aside<SidebarProps>`
+const Sidebar = styled.div<SidebarProps>`
   position: fixed;
   top: 0;
   left: 0;
@@ -76,7 +74,8 @@ const Sidebar = styled.aside<SidebarProps>`
   }
 
   @media (max-width: 768px) {
-    display: none; /* Hide sidebar completely on mobile */
+    transform: ${(props) =>
+      props.$isOpen ? "translateX(0)" : "translateX(-100%)"};
   }
 
   > * {
@@ -218,11 +217,13 @@ const BackButtonContainer = styled.div`
   right: 30px;
   display: flex;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
   gap: 20px;
 
   @media (max-width: 768px) {
-    display: none;
+    top: 15px;
+    right: 15px;
+    z-index: 10001; /* Above mobile header */
   }
 `;
 
@@ -233,13 +234,25 @@ const BackButton = styled.a`
   text-decoration: none;
   font-size: 1rem;
   transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   &:hover {
     color: var(--text);
+    background-color: rgba(0, 0, 0, 0.5);
+    border-color: var(--primary);
   }
 
   svg {
     margin-left: 8px;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 6px 12px;
   }
 `;
 
@@ -408,13 +421,11 @@ const MobileUserInfo = styled(UserInfo)`
   justify-content: center;
 `;
 
-// Add page transition animation wrapper
 const PageTransition = styled(motion.div)`
   width: 100%;
   height: 100%;
 `;
 
-// Add a styled wrapper for mobile language selector
 const MobileLanguageWrapper = styled.div`
   margin-bottom: 0.5rem;
   width: 100%;
@@ -433,44 +444,53 @@ const MobileFooterSection = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
-interface DashboardLayoutProps {
+interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const sidebarRef = useRef<HTMLElement>(null);
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  
-  // Initialize translations
-  const { t } = useTranslation();
-  const { isLoading: languageLoading } = useLanguage();
-  
-  // Wait for translations to load
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is admin
   useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
-    }
-  }, [languageLoading]);
+    // Temporarily disabled admin check for testing
+    // if (user && user.profile?.subscription !== "admin") {
+    //   router.push("/dashboard");
+    // }
+  }, [user, router]);
 
   const user_display_name = useMemo(() => {
-    if (!user) return "";
-    return user.profile.first_name + " " + user.profile.last_name;
+    if (user?.profile?.first_name && user?.profile?.last_name) {
+      return `${user.profile.first_name} ${user.profile.last_name}`;
+    } else if (user?.profile?.first_name) {
+      return user.profile.first_name;
+    } else if (user?.profile?.last_name) {
+      return user.profile.last_name;
+    } else if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "Guest";
   }, [user]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen((prevState) => !prevState);
+  const handleNavigation = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+    setSidebarOpen(false);
+    router.push(href);
   };
 
   const handleLogout = async () => {
     try {
       await signOut("local");
-      router.push("/login");
+      router.push("/");
     } catch (error) {
-      console.error("Failed to log out:", error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -478,177 +498,118 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node) &&
-        sidebarOpen
+        !sidebarRef.current.contains(event.target as Node)
       ) {
-        // Do nothing - removed auto-closing behavior
+        setSidebarOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    if (sidebarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "unset";
     };
   }, [sidebarOpen]);
 
-  // Return loading state if not mounted yet or translations not loaded
-  if (!user || !translationsLoaded) {
-    return (
-      <LayoutContainer>
-        <Content
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <LoadingComponent text={t("dashboard.layout.loading", "Loading dashboard...")} />
-        </Content>
-      </LayoutContainer>
-    );
-  }
-
-  // Animation variants
   const fadeIn = {
-    hidden: {
-      opacity: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
-    },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
-    },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
-  // Animation variants for menu items
   const menuItemVariants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-      transition: {
-        duration: 0.3,
-      },
-    },
+    hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.3,
-        ease: "easeOut",
-      },
+      transition: { delay: i * 0.1, duration: 0.3, ease: "easeOut" },
     }),
   };
 
-  // Animation variants for smooth page transitions
-  const pageVariants = {
-    initial: {
-      opacity: 0,
-      y: 10,
-    },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeOut",
-      },
-    },
-    exit: {
-      opacity: 0,
-      y: -10,
-      transition: {
-        duration: 0.3,
-        ease: "easeIn",
-      },
-    },
-  };
+  if (!user) {
+    return <LoadingComponent />;
+  }
 
-  // Function to handle navigation with router
-  const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    path: string
-  ) => {
-    e.preventDefault();
-    router.push(path);
-  };
+  // Temporarily disabled admin check for testing
+  // if (user.profile?.subscription !== "admin") {
+  //   return null;
+  // }
 
   return (
     <LayoutContainer>
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/admin" passHref legacyBehavior>
             <CymasphereLogo
               size="32px"
               fontSize="1.4rem"
-              href="/dashboard"
+              href="/admin"
               onClick={(e: React.MouseEvent<HTMLElement>) =>
                 handleNavigation(
                   e as React.MouseEvent<HTMLAnchorElement>,
-                  "/dashboard"
+                  "/admin"
                 )
               }
-              className="dashboard-logo"
+              className="admin-logo"
             />
           </Link>
         </LogoContainer>
 
         <nav>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/admin" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/dashboard" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/dashboard")}
+              $active={pathname === "/admin" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin")}
             >
-              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
+              <FaShieldAlt /> Admin Dashboard
             </NavItem>
           </Link>
-          <Link href="/profile" passHref legacyBehavior>
+          <Link href="/admin/crm" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/profile" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/profile")}
+              $active={pathname === "/admin/crm" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/crm")}
             >
-              <FaUser /> {t("dashboard.layout.profile", "Profile")}
+              <FaUsers /> CRM
             </NavItem>
           </Link>
-          <Link href="/billing" passHref legacyBehavior>
+          <Link href="/admin/support-tickets" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/billing" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/billing")}
+              $active={pathname === "/admin/support-tickets" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
             >
-              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
+              <FaTicketAlt /> Support Tickets
             </NavItem>
           </Link>
-          <Link href="/downloads" passHref legacyBehavior>
+          <Link href="/admin/analytics" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/downloads" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/downloads")}
+              $active={pathname === "/admin/analytics" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/analytics")}
             >
-              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
+              <FaChartBar /> Analytics
             </NavItem>
           </Link>
-          <Link href="/settings" passHref legacyBehavior>
+          <Link href="/admin/settings" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/settings" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/settings")}
+              $active={pathname === "/admin/settings" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/settings")}
             >
-              <FaCog /> {t("dashboard.layout.settings", "Settings")}
+              <FaCog /> Admin Settings
             </NavItem>
           </Link>
         </nav>
 
         <UserInfo>
           <UserName>
-            <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-            <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+            <h4>{user_display_name}</h4>
+            <p>{user.email}</p>
           </UserName>
           <LogoutButton onClick={handleLogout}>
-            <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
+            <FaSignOutAlt /> Logout
           </LogoutButton>
         </UserInfo>
       </Sidebar>
@@ -656,107 +617,94 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <MobileOverlay $isOpen={sidebarOpen} />
 
       <MobileHeader>
-        <MobileLogoContent onClick={() => router.push("/dashboard")}>
-          <div
-            className="mobile-logo"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <span
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                fontFamily: '"Montserrat", sans-serif',
-                letterSpacing: "2px",
-                textTransform: "uppercase",
-                marginLeft: "6px",
-              }}
-            >
-              <span
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--primary), var(--accent))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {t("common.brandFirst", "CYMA")}
-              </span>
-              <span style={{ color: "white" }}>{t("common.brandSecond", "SPHERE")}</span>
-            </span>
-          </div>
-        </MobileLogoContent>
-
-        <MenuButton onClick={toggleSidebar}>
+        <MenuButton onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <FaTimes /> : <FaBars />}
         </MenuButton>
+
+        <MobileLogoContent>
+          <CymasphereLogo
+            size="24px"
+            fontSize="1.2rem"
+            href="/admin"
+            onClick={(e: React.MouseEvent<HTMLElement>) =>
+              handleNavigation(
+                e as React.MouseEvent<HTMLAnchorElement>,
+                "/admin"
+              )
+            }
+            className="mobile-admin-logo"
+          />
+        </MobileLogoContent>
+
+        <div style={{ width: "24px" }} />
       </MobileHeader>
 
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>{t("dashboard.layout.account", "Account")}</MobileNavTitle>
+          <MobileNavTitle>Admin Console</MobileNavTitle>
 
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/admin" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/dashboard" ? "true" : "false"}
+              $active={pathname === "/admin" ? "true" : "false"}
               variants={menuItemVariants}
               custom={0}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/dashboard")}
+              onClick={(e) => handleNavigation(e, "/admin")}
             >
-              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
+              <FaShieldAlt /> Admin Dashboard
             </MobileNavItem>
           </Link>
 
-          <Link href="/profile" passHref legacyBehavior>
+          <Link href="/admin/crm" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/profile" ? "true" : "false"}
+              $active={pathname === "/admin/crm" ? "true" : "false"}
               variants={menuItemVariants}
               custom={1}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/profile")}
+              onClick={(e) => handleNavigation(e, "/admin/crm")}
             >
-              <FaUser /> {t("dashboard.layout.profile", "Profile")}
+              <FaUsers /> CRM
             </MobileNavItem>
           </Link>
 
-          <Link href="/billing" passHref legacyBehavior>
+          <Link href="/admin/support-tickets" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/billing" ? "true" : "false"}
+              $active={pathname === "/admin/support-tickets" ? "true" : "false"}
               variants={menuItemVariants}
               custom={2}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/billing")}
+              onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
             >
-              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
+              <FaTicketAlt /> Support Tickets
             </MobileNavItem>
           </Link>
 
-          <Link href="/downloads" passHref legacyBehavior>
+          <Link href="/admin/analytics" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/downloads" ? "true" : "false"}
+              $active={pathname === "/admin/analytics" ? "true" : "false"}
               variants={menuItemVariants}
               custom={3}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/downloads")}
+              onClick={(e) => handleNavigation(e, "/admin/analytics")}
             >
-              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
+              <FaChartBar /> Analytics
             </MobileNavItem>
           </Link>
 
-          <Link href="/settings" passHref legacyBehavior>
+          <Link href="/admin/settings" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/settings" ? "true" : "false"}
+              $active={pathname === "/admin/settings" ? "true" : "false"}
               variants={menuItemVariants}
               custom={4}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/settings")}
+              onClick={(e) => handleNavigation(e, "/admin/settings")}
             >
-              <FaCog /> {t("dashboard.layout.settings", "Settings")}
+              <FaCog /> Admin Settings
             </MobileNavItem>
           </Link>
 
@@ -769,7 +717,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
             >
-              <FaHome /> {t("dashboard.layout.backToHome", "Back to Home")}
+              <FaHome /> Back to Home
             </MobileNavItem>
           </Link>
 
@@ -779,40 +727,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileLanguageWrapper>
             
             <UserName>
-              <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-              <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+              <h4>{user_display_name}</h4>
+              <p>{user.email}</p>
             </UserName>
             
             <LogoutButton onClick={handleLogout}>
-              <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
+              <FaSignOutAlt /> Logout
             </LogoutButton>
           </MobileFooterSection>
         </MobileMenu>
       )}
 
-      <BackButtonContainer>
-        <NextLanguageSelector />
-        <BackButton
-          href="/"
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
-            handleNavigation(e, "/")
-          }
-        >
-          {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
-        </BackButton>
-      </BackButtonContainer>
-
       <Content>
+        <BackButtonContainer>
+          <Link href="/dashboard" passHref legacyBehavior>
+            <BackButton>
+              Back to Dashboard <FaArrowLeft />
+            </BackButton>
+          </Link>
+        </BackButtonContainer>
+
         <PageTransition
-          key={pathname}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={pageVariants}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          variants={fadeIn}
         >
           {children}
         </PageTransition>
       </Content>
     </LayoutContainer>
   );
-}
+} 

@@ -12,6 +12,7 @@ import {
   FaQuestionCircle,
   FaRegLightbulb,
   FaRegCreditCard,
+  FaShieldAlt,
 } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -730,6 +731,12 @@ const NextHeader = () => {
                 {getTranslation("common.myAccount")}
               </UserMenuItem>
             </Link>
+            <Link href="/admin" passHref legacyBehavior>
+              <UserMenuItem onClick={() => setUserMenuOpen(false)}>
+                <FaShieldAlt />
+                {getTranslation("common.adminConsole")}
+              </UserMenuItem>
+            </Link>
             <UserMenuLogout onClick={handleLogout}>
               <FaSignOutAlt />
               {getTranslation("common.logout")}
@@ -872,6 +879,22 @@ const NextHeader = () => {
                     {getTranslation("common.myAccount")}
                   </MobileNavLink>
                 </Link>
+                <Link href="/admin" passHref legacyBehavior>
+                  <MobileNavLink
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      router.push("/admin");
+                    }}
+                    variants={menuItemVariants}
+                    custom={navItems.length + 1}
+                    initial="hidden"
+                    animate={menuOpen ? "visible" : "hidden"}
+                  >
+                    <FaShieldAlt />
+                    {getTranslation("common.adminConsole")}
+                  </MobileNavLink>
+                </Link>
                 <MobileNavLink
                   onClick={(e) => {
                     e.preventDefault();
@@ -879,7 +902,7 @@ const NextHeader = () => {
                     setMenuOpen(false);
                   }}
                   variants={menuItemVariants}
-                  custom={navItems.length + 1}
+                  custom={navItems.length + 2}
                   initial="hidden"
                   animate={menuOpen ? "visible" : "hidden"}
                 >

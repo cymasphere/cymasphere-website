@@ -20,7 +20,21 @@
     "locale": "en-US",
     "none": "None",
     "notAvailable": "N/A",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "adminConsole": "Admin Console",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
   },
   "header": {
     "home": "Home",
@@ -851,13 +865,13 @@
   "aboutUs": {
     "mission": {
       "title": "Our Mission",
-      "content": "Cymasphere's mission is to bridge the gap between music theory and musical creativity. We believe that theory should enhance and guide the creative process, not constrain it. Our tools are designed to provide both guidance and freedom, striking the perfect balance between inspiration and compositional integrity.",
-      "highlight": "We're committed to empowering musicians of all skill levels by making music theory intuitive, interactive, and inspiring. Our goal is to see your creative vision flourish through better compositional tools."
+      "content": "Cymasphere's mission is to make music theory accessible without requiring years of study or technical application to an instrument. We believe deep musical understanding should be within reach of all creators, not just classically trained musicians. Our tools are designed to remove traditional barriers to music creation while still offering creative freedom.",
+      "highlight": "We're committed to empowering creators of all levels by making the theoretical complexity of music intuitive and accessible. Our goal is to enable you to realize your creative vision without the years of study typically required."
     },
     "story": {
       "title": "Our Story",
       "content1": "Founded in 2022 by a team of dedicated musicians, software engineers, and music theorists, Cymasphere began as an ambitious project to reimagine how musicians interact with harmony and composition.",
-      "content2": "After years of frustration with existing music software that either lacked theoretical sophistication or was too complex for intuitive use, our founders set out to create a tool that would make music theory practical, visual, and genuinely helpful in the creative process."
+      "content2": "After years of frustration with existing music software that either lacked theoretical sophistication or were too complex for intuitive use, our founders set out to create a tool that would make music theory practical, visual, and genuinely useful in the creative process."
     },
     "team": {
       "title": "Our Team",
@@ -911,6 +925,87 @@
       "title": "Looking Forward",
       "content1": "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more.",
       "content2": "We invite you to join us on this journey and help shape the future of intelligent music creation tools."
+    }
+  },
+  "admin": {
+    "title": "Admin Console",
+    "dashboard": "Admin Dashboard",
+    "crm": "CRM",
+    "supportTickets": "Support Tickets",
+    "users": "Users",
+    "analytics": "Analytics",
+    "settings": "Admin Settings",
+    "crmPage": {
+      "title": "Customer Relationship Management",
+      "subtitle": "Manage customer relationships and interactions",
+      "totalUsers": "Total Users",
+      "activeSubscriptions": "Active Subscriptions",
+      "revenue": "Monthly Revenue",
+      "searchPlaceholder": "Search users by name, email, or ID...",
+      "filters": {
+        "all": "All Users",
+        "free": "Free Users",
+        "monthly": "Monthly Subscribers",
+        "annual": "Annual Subscribers",
+        "lifetime": "Lifetime Users",
+        "admin": "Admin Users"
+      },
+      "userTable": {
+        "name": "Name",
+        "email": "Email",
+        "subscription": "Subscription",
+        "joinDate": "Join Date",
+        "lastLogin": "Last Login",
+        "actions": "Actions"
+      },
+      "userActions": {
+        "viewProfile": "View Profile",
+        "editUser": "Edit User",
+        "sendEmail": "Send Email",
+        "changeSubscription": "Change Subscription",
+        "deleteUser": "Delete User"
+      }
+    },
+    "supportTickets": {
+      "title": "Support Tickets",
+      "subtitle": "Manage customer support requests and issues",
+      "totalTickets": "Total Tickets",
+      "openTickets": "Open Tickets",
+      "avgResponseTime": "Avg Response Time",
+      "createTicket": "Create Ticket",
+      "searchPlaceholder": "Search tickets by subject, user, or ticket ID...",
+      "filters": {
+        "all": "All Tickets",
+        "open": "Open",
+        "inProgress": "In Progress",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      },
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "ticketTable": {
+        "id": "Ticket ID",
+        "subject": "Subject",
+        "user": "User",
+        "status": "Status",
+        "priority": "Priority",
+        "created": "Created",
+        "lastUpdate": "Last Update",
+        "assignedTo": "Assigned To",
+        "actions": "Actions"
+      },
+      "ticketActions": {
+        "view": "View Ticket",
+        "reply": "Reply",
+        "assign": "Assign",
+        "changeStatus": "Change Status",
+        "changePriority": "Change Priority",
+        "close": "Close Ticket"
+      }
     }
   }
 } 

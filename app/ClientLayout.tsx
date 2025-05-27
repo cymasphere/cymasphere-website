@@ -107,8 +107,11 @@ export default function ClientLayout({
                           pathname?.includes('/downloads') || 
                           pathname?.includes('/settings');
 
-  // Hide header and footer for auth routes and dashboard routes
-  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute;
+  // Check if the route is in the admin section
+  const isAdminRoute = pathname?.includes('/admin');
+
+  // Hide header and footer for auth routes, dashboard routes, and admin routes
+  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute || isAdminRoute;
 
   return (
     <ThemeProvider theme={theme}>
