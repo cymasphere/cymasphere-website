@@ -342,7 +342,7 @@ function Downloads() {
                     {t("dashboard.downloads.quickStartDesc", "Get up and running with Cymasphere in minutes")}
                   </ResourceDescription>
                 </ResourceInfo>
-                <ResourceLink href="#">
+                <ResourceLink href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/documentation//Cymasphere-QuickStart-Guide.pdf" target="_blank" rel="noopener noreferrer">
                   {t("dashboard.downloads.downloadPdf", "Download PDF")} <FaDownload />
                 </ResourceLink>
               </ResourceItem>
