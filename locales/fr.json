@@ -685,6 +685,10 @@
       "permissionError": "Vous n'avez pas l'autorisation d'effectuer cette modification. Veuillez contacter le support pour obtenir de l'aide.",
       "prorationError": "Un problème est survenu lors du calcul de votre facture pour le nouveau forfait. Veuillez réessayer plus tard ou contacter le support.",
       "specificError": "Échec de la mise à jour de votre abonnement : {{error}}",
+      "freePlan": "Gratuit",
+      "freePlanDesc": "Accès limité aux fonctionnalités de base",
+      "noPlan": "Aucun",
+      "noPlanDesc": "Aucun abonnement actif",
       "features": {
         "interactive_harmony_palette": "Palette d'Harmonie Interactive",
         "advanced_voice_leading_control": "Contrôle Avancé de la Conduite des Voix",

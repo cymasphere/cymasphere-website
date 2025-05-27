@@ -692,6 +692,8 @@
       "subscribePlan": "Suscribirse a un Plan",
       "freePlan": "Gratis",
       "freePlanDesc": "Acceso limitado a funciones básicas",
+      "noPlan": "Ninguno",
+      "noPlanDesc": "Sin suscripción activa",
       "upgradingPlan": "Mejorando Tu Plan",
       "lifetimeUpgradeMessage": "Estás mejorando al plan de por vida. Serás redirigido al proceso de pago para completar tu compra.",
       "startingPlan": "Iniciando Tu Plan",

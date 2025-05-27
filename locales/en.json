@@ -568,6 +568,8 @@
       "status": "Status",
       "freePlan": "Free",
       "freePlanDesc": "Limited access to basic features",
+      "noPlan": "None",
+      "noPlanDesc": "No active subscription",
       "monthly": "Monthly",
       "yearly": "Yearly",
       "month": "month",

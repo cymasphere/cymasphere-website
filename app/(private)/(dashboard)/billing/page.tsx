@@ -959,9 +959,9 @@ export default function BillingPage() {
           <PlanDetails>
             {isSubscriptionNone(userSubscription.subscription) ? (
               <>
-                <PlanName>{t("dashboard.billing.freePlan", "Free")}</PlanName>
+                <PlanName>{t("dashboard.billing.noPlan", "None")}</PlanName>
                 <PlanDescription>
-                  {t("dashboard.billing.freePlanDesc", "Limited access to basic features")}
+                  {t("dashboard.billing.noPlanDesc", "No active subscription")}
                 </PlanDescription>
                 <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
                   {isLoadingPrices ? (
@@ -1000,7 +1000,7 @@ export default function BillingPage() {
                 </PlanPrice>
                 <PlanDescription>
                   {isSubscriptionNone(userSubscription.subscription)
-                    ? t("dashboard.billing.freePlanDesc", "Limited access to basic features")
+                    ? t("dashboard.billing.noPlanDesc", "No active subscription")
                     : isSubscriptionLifetime(userSubscription.subscription)
                     ? t("dashboard.billing.lifetimePlanDesc", "Full access to all features forever with free updates")
                     : t("dashboard.billing.paidPlanDesc", "Full access to all premium features and content")}

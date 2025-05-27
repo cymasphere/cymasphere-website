@@ -654,6 +654,8 @@
       "subscribePlan": "プランに登録する",
       "freePlan": "無料",
       "freePlanDesc": "基本機能への限定アクセス",
+      "noPlan": "なし",
+      "noPlanDesc": "アクティブなサブスクリプションなし",
       "upgradingPlan": "プランをアップグレード",
       "lifetimeUpgradeMessage": "ライフタイムプランにアップグレードしています。購入を完了するためにチェックアウトに移動します。",
       "startingPlan": "プランを開始",

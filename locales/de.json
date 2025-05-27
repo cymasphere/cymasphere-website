@@ -590,7 +590,11 @@
       "transactionId": "Transaktions-ID",
       "date": "Datum",
       "amount": "Betrag",
-      "status": "Status"
+      "status": "Status",
+      "freePlan": "Kostenlos",
+      "freePlanDesc": "Eingeschränkter Zugang zu Grundfunktionen",
+      "noPlan": "Keiner",
+      "noPlanDesc": "Kein aktives Abonnement"
     },
     "downloads": {
       "title": "Downloads",
