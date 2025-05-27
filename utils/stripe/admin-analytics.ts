@@ -47,6 +47,35 @@ export interface UserData {
   totalSpent: number;
 }
 
+export interface DetailedUserData extends UserData {
+  subscriptions: {
+    id: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    priceId: string;
+    amount: number;
+    interval: string;
+  }[];
+  purchases: {
+    id: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    description: string;
+  }[];
+  invoices: {
+    id: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    paidAt: string | null;
+    dueDate: string | null;
+    description: string;
+  }[];
+}
+
 /**
  * Fetches comprehensive admin dashboard statistics
  */
@@ -358,6 +387,22 @@ export async function getAllUsersForCRM(
         if (!matchesSearch) continue;
       }
 
+      // Get last active from user sessions
+      let lastActive: string | undefined;
+      const { data: userSessions } = await supabase
+        .from("user_sessions")
+        .select("refreshed_at, updated_at, created_at")
+        .eq("user_id", profile.id)
+        .order("refreshed_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false, nullsFirst: false })
+        .limit(1);
+
+      if (userSessions && userSessions.length > 0) {
+        const session = userSessions[0];
+        // Use the most recent timestamp available
+        lastActive = session.refreshed_at || session.updated_at || session.created_at || undefined;
+      }
+
       // Calculate total spent
       let totalSpent = 0;
       if (profile.customer_id) {
@@ -399,6 +444,7 @@ export async function getAllUsersForCRM(
         subscriptionExpiration: profile.subscription_expiration || undefined,
         trialExpiration: profile.trial_expiration || undefined,
         createdAt: profile.updated_at || new Date().toISOString(),
+        lastActive,
         totalSpent,
       });
     }

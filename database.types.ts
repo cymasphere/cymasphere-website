@@ -98,7 +98,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      subscription_type: "none" | "monthly" | "annual" | "lifetime" | "admin"
+      subscription_type: "none" | "monthly" | "annual" | "lifetime"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -677,7 +677,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      subscription_type: ["none", "monthly", "annual", "lifetime", "admin"],
+      subscription_type: ["none", "monthly", "annual", "lifetime"],
     },
   },
   stripe_tables: {

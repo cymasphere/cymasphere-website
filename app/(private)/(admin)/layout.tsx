@@ -569,12 +569,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <FaShieldAlt /> Admin Dashboard
             </NavItem>
           </Link>
-          <Link href="/admin/crm" passHref legacyBehavior>
+          <Link href="/admin/users" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/admin/crm" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/crm")}
+              $active={pathname === "/admin/users" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/users")}
             >
-              <FaUsers /> CRM
+              <FaUsers />
+              Users
             </NavItem>
           </Link>
           <Link href="/admin/support-tickets" passHref legacyBehavior>
@@ -656,16 +657,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/crm" passHref legacyBehavior>
+          <Link href="/admin/users" passHref legacyBehavior>
             <MobileNavItem
-              $active={pathname === "/admin/crm" ? "true" : "false"}
+              $active={pathname === "/admin/users" ? "true" : "false"}
               variants={menuItemVariants}
               custom={1}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/crm")}
+              onClick={(e) => handleNavigation(e, "/admin/users")}
             >
-              <FaUsers /> CRM
+              <FaUsers />
+              Users
             </MobileNavItem>
           </Link>
 
