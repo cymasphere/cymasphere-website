@@ -880,14 +880,14 @@ const NextHeader = () => {
                   </MobileNavLink>
                 </Link>
                 <Link href="/admin" passHref legacyBehavior>
-                  <MobileNavLink
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMenuOpen(false);
+                <MobileNavLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
                       router.push("/admin");
-                    }}
-                    variants={menuItemVariants}
-                    custom={navItems.length + 1}
+                  }}
+                  variants={menuItemVariants}
+                  custom={navItems.length + 1}
                     initial="hidden"
                     animate={menuOpen ? "visible" : "hidden"}
                   >

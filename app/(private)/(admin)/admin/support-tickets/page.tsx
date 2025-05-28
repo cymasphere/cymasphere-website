@@ -221,7 +221,6 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'succes
 const TableContainer = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
-  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.05);
 
   @media (max-width: 768px) {
@@ -276,7 +275,10 @@ const TableHeaderCell = styled.th`
   }
 `;
 
-const TableBody = styled.tbody``;
+const TableBody = styled.tbody`
+  /* Ensure dropdowns can extend outside table body */
+  overflow: visible;
+`;
 
 const TableRow = styled.tr`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -299,10 +301,12 @@ const TableCell = styled.td`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: relative;
 
-  /* Allow wrapping for action buttons */
+  /* Allow wrapping and overflow for action buttons */
   &:last-child {
     white-space: normal;
+    overflow: visible;
   }
 `;
 
@@ -494,6 +498,7 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
 const MoreMenuContainer = styled.div`
   position: relative;
   display: inline-block;
+  z-index: 10;
 `;
 
 const MoreMenuButton = styled.button`
@@ -507,6 +512,8 @@ const MoreMenuButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 11;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
@@ -525,10 +532,22 @@ const MoreMenuDropdown = styled(motion.div)`
   background-color: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   min-width: 160px;
-  overflow: hidden;
+  overflow: visible;
+  backdrop-filter: blur(10px);
+  transform: translateZ(0);
+  
+  /* Ensure dropdown appears above table content */
+  margin-top: 4px;
+  
+  /* Handle edge cases where dropdown might go off-screen */
+  @media (max-width: 768px) {
+    right: auto;
+    left: 0;
+    min-width: 140px;
+  }
 `;
 
 const MoreMenuItem = styled.button<{ variant?: 'danger' }>`

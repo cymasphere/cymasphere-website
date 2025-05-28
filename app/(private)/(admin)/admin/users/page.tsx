@@ -396,7 +396,7 @@ const SubscriptionBadge = styled.span<{ $color: string; $variant?: 'default' | '
   align-items: center;
   gap: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  
+    
   background-color: ${props => props.$color};
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1110,7 +1110,7 @@ export default function AdminCRM() {
       if (isSearchOperation) {
         setSearchLoading(true);
       } else {
-        setLoading(true);
+      setLoading(true);
       }
       
       const result = await getAllUsersForCRM(
@@ -1151,7 +1151,7 @@ export default function AdminCRM() {
       if (isSearchOperation) {
         setSearchLoading(false);
       } else {
-        setLoading(false);
+      setLoading(false);
       }
     }
   };
@@ -1573,38 +1573,38 @@ export default function AdminCRM() {
               {users.map((userData, index) => {
                 const supportTicketCount = getSupportTicketCount(userData.id);
                 return (
-                  <TableRow
-                    key={userData.id}
-                    as={motion.tr}
-                    variants={fadeIn}
-                    custom={index}
-                    initial="hidden"
-                    animate="visible"
+                <TableRow
+                  key={userData.id}
+                  as={motion.tr}
+                  variants={fadeIn}
+                  custom={index}
+                  initial="hidden"
+                  animate="visible"
                     onClick={() => handleViewUser(userData)}
-                  >
-                    <TableCell>
-                      <UserInfo>
-                        <UserAvatar $color={getAvatarColor(userData.email)}>
-                          {getInitials(userData)}
-                        </UserAvatar>
-                        <UserDetails>
-                          <UserName>{getDisplayName(userData)}</UserName>
-                        </UserDetails>
-                      </UserInfo>
-                    </TableCell>
-                    <TableCell>
-                      <UserEmail>{userData.email}</UserEmail>
-                    </TableCell>
-                    <TableCell>
+                >
+                  <TableCell>
+                    <UserInfo>
+                      <UserAvatar $color={getAvatarColor(userData.email)}>
+                        {getInitials(userData)}
+                      </UserAvatar>
+                      <UserDetails>
+                        <UserName>{getDisplayName(userData)}</UserName>
+                      </UserDetails>
+                    </UserInfo>
+                  </TableCell>
+                  <TableCell>
+                    <UserEmail>{userData.email}</UserEmail>
+                  </TableCell>
+                  <TableCell>
                       <SubscriptionBadge 
                         $color={getSubscriptionBadgeColor(userData.subscription)}
                         $variant={isSubscriptionPremium(userData.subscription) ? 'premium' : 'default'}
                       >
                         {getSubscriptionIcon(userData.subscription)}
-                        {userData.subscription}
-                      </SubscriptionBadge>
-                    </TableCell>
-                    <TableCell>{formatDate(userData.createdAt)}</TableCell>
+                      {userData.subscription}
+                    </SubscriptionBadge>
+                  </TableCell>
+                  <TableCell>{formatDate(userData.createdAt)}</TableCell>
                     <TableCell>{userData.lastActive ? formatDate(userData.lastActive) : 'Never'}</TableCell>
                     <TableCell>
                       <SupportTicketsCount>
@@ -1614,8 +1614,8 @@ export default function AdminCRM() {
                         </TicketBadge>
                       </SupportTicketsCount>
                     </TableCell>
-                    <TableCell>{formatCurrency(userData.totalSpent)}</TableCell>
-                    <TableCell>
+                  <TableCell>{formatCurrency(userData.totalSpent)}</TableCell>
+                  <TableCell>
                       <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
                         <MoreMenuButton 
                           onClick={(e) => handleMoreMenuClick(userData.id, e)}
@@ -1631,15 +1631,15 @@ export default function AdminCRM() {
                             transition={{ duration: 0.15 }}
                           >
                             <MoreMenuItem onClick={() => handleMoreMenuAction('view', userData)}>
-                              <FaEye />
+                        <FaEye />
                               View Profile
                             </MoreMenuItem>
                             <MoreMenuItem onClick={() => handleMoreMenuAction('edit', userData)}>
-                              <FaEdit />
+                        <FaEdit />
                               Edit User
                             </MoreMenuItem>
                             <MoreMenuItem onClick={() => handleMoreMenuAction('email', userData)}>
-                              <FaEnvelope />
+                        <FaEnvelope />
                               Send Email
                             </MoreMenuItem>
                             <MoreMenuItem onClick={() => handleMoreMenuAction('ban', userData)}>
@@ -1650,14 +1650,14 @@ export default function AdminCRM() {
                               variant="danger" 
                               onClick={() => handleMoreMenuAction('delete', userData)}
                             >
-                              <FaTrash />
+                        <FaTrash />
                               Delete User
                             </MoreMenuItem>
                           </MoreMenuDropdown>
                         )}
                       </MoreMenuContainer>
-                    </TableCell>
-                  </TableRow>
+                  </TableCell>
+                </TableRow>
                 );
               })}
             </TableBody>
