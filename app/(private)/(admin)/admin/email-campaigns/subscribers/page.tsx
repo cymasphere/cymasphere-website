@@ -21,12 +21,15 @@ import {
   FaTag,
   FaChartLine,
   FaFileExport,
-  FaFileImport
+  FaFileImport,
+  FaEllipsisV,
+  FaClone
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useRouter } from "next/navigation";
 
 const SubscribersContainer = styled.div`
   width: 100%;
@@ -201,13 +204,13 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
 
   ${(props) => {
     switch (props.variant) {
@@ -222,28 +225,26 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
         `;
       case 'danger':
         return `
-          background-color: #dc3545;
-          color: white;
+          background-color: rgba(220, 53, 69, 0.2);
+          color: #dc3545;
+          border: 1px solid rgba(220, 53, 69, 0.3);
           &:hover {
-            background-color: #c82333;
+            background-color: rgba(220, 53, 69, 0.3);
+            transform: translateY(-2px);
           }
         `;
       default:
         return `
           background-color: rgba(255, 255, 255, 0.1);
-          color: var(--text-secondary);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: var(--text);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           &:hover {
             background-color: rgba(255, 255, 255, 0.2);
-            color: var(--text);
+            transform: translateY(-2px);
           }
         `;
     }
   }}
-
-  svg {
-    font-size: 0.9rem;
-  }
 `;
 
 const SubscribersGrid = styled.div`
@@ -263,61 +264,42 @@ const TableHeader = styled.thead`
 `;
 
 const TableHeaderCell = styled.th`
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   text-align: left;
-  color: var(--text-secondary);
   font-weight: 600;
+  color: var(--text);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: var(--text);
-    background-color: rgba(255, 255, 255, 0.02);
-  }
-
-  &:last-child {
-    text-align: center;
-    cursor: default;
-    &:hover {
-      background-color: transparent;
-    }
-  }
 `;
 
 const TableBody = styled.tbody``;
 
 const TableRow = styled(motion.tr)`
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
+  cursor: pointer;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.02);
   }
 
-  &:last-child {
-    border-bottom: none;
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 `;
 
 const TableCell = styled.td`
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   color: var(--text);
   font-size: 0.9rem;
   vertical-align: middle;
-
-  &:last-child {
-    text-align: center;
-  }
 `;
 
 const SubscriberInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 `;
 
 const Avatar = styled.div<{ color: string }>`
@@ -329,8 +311,8 @@ const Avatar = styled.div<{ color: string }>`
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1rem;
 `;
 
 const SubscriberDetails = styled.div``;
@@ -342,17 +324,18 @@ const SubscriberName = styled.div`
 `;
 
 const SubscriberEmail = styled.div`
-  color: var(--text-secondary);
   font-size: 0.8rem;
+  color: var(--text-secondary);
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: capitalize;
-  
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
   ${(props) => {
     switch (props.status) {
       case 'active':
@@ -391,64 +374,86 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
   background-color: rgba(108, 99, 255, 0.2);
   color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 500;
 `;
 
 const ActionsContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
-  justify-content: center;
+  gap: 0.25rem;
   align-items: center;
+  position: relative;
 `;
 
-const TableActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 6px 10px;
+const MoreButton = styled.button`
+  padding: 8px;
   border: none;
   border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  min-width: 32px;
-  height: 32px;
   justify-content: center;
+  width: 32px;
+  height: 32px;
 
-  ${(props) => {
-    switch (props.variant) {
-      case 'primary':
-        return `
-          background-color: var(--primary);
-          color: white;
-          &:hover {
-            background-color: var(--accent);
-          }
-        `;
-      case 'danger':
-        return `
-          background-color: #dc3545;
-          color: white;
-          &:hover {
-            background-color: #c82333;
-          }
-        `;
-      default:
-        return `
-          background-color: rgba(255, 255, 255, 0.1);
-          color: var(--text-secondary);
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: var(--text);
-          }
-        `;
-    }
-  }}
+  &:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  &.active {
+    background-color: var(--primary);
+    color: white;
+  }
+`;
+
+const DropdownMenu = styled(motion.div)`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 180px;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  svg {
+    font-size: 0.9rem;
+    width: 16px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -542,15 +547,29 @@ function SubscribersPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown && !(event.target as Element).closest('[data-dropdown]')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -603,7 +622,17 @@ function SubscribersPage() {
 
   const handleSubscriberAction = (action: string, subscriberId: string) => {
     console.log(`${action} subscriber:`, subscriberId);
-    // Implement subscriber actions here
+    setOpenDropdown(null); // Close dropdown after action
+    // Here you would implement the actual actions like edit, delete, etc.
+  };
+
+  const handleDropdownToggle = (subscriberId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdown(openDropdown === subscriberId ? null : subscriberId);
+  };
+
+  const handleSubscriberClick = (subscriber: any) => {
+    router.push(`/admin/email-campaigns/subscribers/${subscriber.id}`);
   };
 
   return (
@@ -708,6 +737,7 @@ function SubscribersPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
+                    onClick={() => handleSubscriberClick(subscriber)}
                   >
                     <TableCell>
                       <SubscriberInfo>
@@ -747,19 +777,48 @@ function SubscribersPage() {
                       </TagsContainer>
                     </TableCell>
                     <TableCell>
-                      <ActionsContainer>
-                        <TableActionButton onClick={() => handleSubscriberAction('view', subscriber.id)}>
-                          <FaEye />
-                        </TableActionButton>
-                        <TableActionButton onClick={() => handleSubscriberAction('edit', subscriber.id)}>
-                          <FaEdit />
-                        </TableActionButton>
-                        <TableActionButton onClick={() => handleSubscriberAction('email', subscriber.id)}>
-                          <FaEnvelope />
-                        </TableActionButton>
-                        <TableActionButton variant="danger" onClick={() => handleSubscriberAction('delete', subscriber.id)}>
-                          <FaTrash />
-                        </TableActionButton>
+                      <ActionsContainer data-dropdown>
+                        <MoreButton 
+                          onClick={(e) => handleDropdownToggle(subscriber.id, e)}
+                          className={openDropdown === subscriber.id ? 'active' : ''}
+                        >
+                          <FaEllipsisV />
+                        </MoreButton>
+                        <AnimatePresence>
+                          {openDropdown === subscriber.id && (
+                            <DropdownMenu
+                              initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberClick(subscriber); }}>
+                                <FaEye />
+                                View Profile
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('edit', subscriber.id); }}>
+                                <FaEdit />
+                                Edit Subscriber
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('email', subscriber.id); }}>
+                                <FaEnvelope />
+                                Send Email
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('clone', subscriber.id); }}>
+                                <FaClone />
+                                Duplicate
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('export', subscriber.id); }}>
+                                <FaDownload />
+                                Export Data
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('delete', subscriber.id); }}>
+                                <FaTrash />
+                                Delete
+                              </DropdownItem>
+                            </DropdownMenu>
+                          )}
+                        </AnimatePresence>
                       </ActionsContainer>
                     </TableCell>
                   </TableRow>

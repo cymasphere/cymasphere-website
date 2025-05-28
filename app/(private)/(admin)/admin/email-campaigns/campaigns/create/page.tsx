@@ -22,7 +22,22 @@ import {
   FaImage,
   FaCode,
   FaClock,
-  FaPlay
+  FaPlay,
+  FaHeading,
+  FaFont,
+  FaMousePointer,
+  FaDivide,
+  FaShareAlt,
+  FaExpandArrowsAlt,
+  FaColumns,
+  FaVideo,
+  FaCog,
+  FaDesktop,
+  FaMobileAlt,
+  FaEnvelope,
+  FaPaintBrush,
+  FaTextHeight,
+  FaPuzzlePiece
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -1149,6 +1164,99 @@ const DroppableArea = styled.div<{ isDragOver: boolean }>`
   }
 `;
 
+const ContentElementsBar = styled.div`
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, var(--accent), var(--primary));
+  }
+`;
+
+const ContentElementButton = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  min-width: 80px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  cursor: grab;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.8rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 10px;
+  }
+
+  &:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(108, 99, 255, 0.3);
+    
+    &:before {
+      opacity: 0.1;
+    }
+  }
+
+  &:active {
+    cursor: grabbing;
+    transform: translateY(-1px) scale(0.98);
+  }
+
+  .icon {
+    font-size: 1.4rem;
+    color: var(--primary);
+    z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .label {
+    color: var(--text);
+    font-weight: 600;
+    z-index: 1;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+`;
+
 const DragPreview = styled.div`
   position: fixed;
   top: -1000px;
@@ -1164,33 +1272,70 @@ const DragPreview = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
-const EmailElement = styled.div`
+const EmailElement = styled.div<{ selected?: boolean; editing?: boolean }>`
   margin: 1rem 0;
   padding: 1rem;
-  border: 2px solid transparent;
+  border: 2px solid ${props => {
+    if (props.editing) return 'var(--accent)';
+    if (props.selected) return 'var(--primary)';
+    return 'transparent';
+  }};
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: ${props => {
+    if (props.editing) return 'rgba(255, 193, 7, 0.1)';
+    if (props.selected) return 'rgba(108, 99, 255, 0.1)';
+    return 'rgba(255, 255, 255, 0.02)';
+  }};
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
 
   &:hover {
-    border-color: var(--primary);
-    background: rgba(108, 99, 255, 0.05);
+    border-color: ${props => props.editing ? 'var(--accent)' : 'var(--primary)'};
+    background: ${props => {
+      if (props.editing) return 'rgba(255, 193, 7, 0.15)';
+      return 'rgba(108, 99, 255, 0.08)';
+    }};
   }
 
-  &:before {
-    content: '⚙️';
+  &:after {
+    content: ${props => {
+      if (props.editing) return '"✏️ Editing - Press Enter to save, Esc to cancel"';
+      if (props.selected) return '"🎯 Selected - Double-click to edit"';
+      return '"👆 Click to select, double-click to edit"';
+    }};
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    opacity: 0;
+    top: -30px;
+    left: 0;
+    right: 0;
+    font-size: 0.75rem;
+    color: ${props => {
+      if (props.editing) return 'var(--accent)';
+      if (props.selected) return 'var(--primary)';
+      return 'var(--text-secondary)';
+    }};
+    opacity: ${props => (props.selected || props.editing) ? '1' : '0'};
     transition: opacity 0.3s ease;
+    pointer-events: none;
+    text-align: center;
+    font-weight: 500;
   }
 
-  &:hover:before {
+  &:hover:after {
     opacity: 1;
   }
+`;
+
+// Editable Text Component
+const EditableText = styled.div<{ isEditing: boolean }>`
+  outline: none;
+  ${props => props.isEditing ? `
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #333;
+  ` : ''}
 `;
 
 // Mock data
@@ -1255,6 +1400,8 @@ const templates = [
 interface CampaignData {
   name: string;
   subject: string;
+  senderName: string;
+  preheader: string;
   description: string;
   audience: string;
   template: string;
@@ -1270,6 +1417,8 @@ const mockCampaigns = [
     id: "1",
     name: "Welcome Series",
     subject: "Welcome to Cymasphere! 🎵",
+    senderName: "Cymasphere Team",
+    preheader: "Let's get you started on your music creation journey",
     description: "Automated welcome email sequence for new subscribers",
     audience: "new",
     template: "welcome",
@@ -1292,6 +1441,8 @@ const mockCampaigns = [
     id: "2",
     name: "Product Launch Announcement",
     subject: "🚀 New Synthesizer Features Available Now!",
+    senderName: "Cymasphere Product Team",
+    preheader: "Revolutionary new features that will transform your music production",
     description: "Announcing our latest synthesizer features",
     audience: "active",
     template: "promotional",
@@ -1307,6 +1458,8 @@ const mockCampaigns = [
     id: "3",
     name: "Monthly Newsletter",
     subject: "🎵 This Month in Music Production",
+    senderName: "Cymasphere Newsletter",
+    preheader: "The latest tips, trends, and updates from the music production world",
     description: "Regular updates and tips for music producers",
     audience: "all",
     template: "newsletter",
@@ -1322,6 +1475,8 @@ const mockCampaigns = [
     id: "4",
     name: "Re-engagement Campaign",
     subject: "We Miss You! Come Back and Create 🎶",
+    senderName: "Cymasphere Support",
+    preheader: "Special offers and new features waiting for you",
     description: "Win back inactive subscribers",
     audience: "inactive",
     template: "custom",
@@ -1335,6 +1490,105 @@ const mockCampaigns = [
   }
 ];
 
+const SendingFeedback = styled(motion.div)<{ type?: 'success' | 'error' | 'info' }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  z-index: 1000;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  
+  ${props => {
+    switch (props.type) {
+      case 'success':
+        return 'background-color: #28a745;';
+      case 'error':
+        return 'background-color: #dc3545;';
+      default:
+        return 'background-color: var(--primary);';
+    }
+  }}
+`;
+
+const ResultModal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const ModalTitle = styled.h2`
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  svg {
+    color: var(--primary);
+  }
+`;
+
+const ModalStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+`;
+
+const StatItem = styled.div`
+  text-align: center;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+`;
+
+const StatValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+`;
+
+const StatLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+`;
+
+const LoadingSpinner = styled(motion.div)`
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+`;
+
 function CreateCampaignPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -1345,6 +1599,12 @@ function CreateCampaignPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
+  
+  // Campaign sending state
+  const [isSending, setIsSending] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState('');
+  const [campaignResult, setCampaignResult] = useState<any>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
   
   // Initialize email elements based on campaign content
   const getInitialEmailElements = () => {
@@ -1372,6 +1632,8 @@ function CreateCampaignPage() {
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [editingElementId, setEditingElementId] = useState<string | null>(null);
   
   // Initialize campaign data based on edit mode
   const getInitialCampaignData = () => {
@@ -1382,15 +1644,17 @@ function CreateCampaignPage() {
       }
     }
     return {
-      name: "",
-      subject: "",
-      description: "",
-      audience: "",
-      template: "",
-      content: "",
-      scheduleType: "",
-      scheduleDate: "",
-      scheduleTime: ""
+    name: "",
+    subject: "",
+    senderName: "",
+    preheader: "",
+    description: "",
+    audience: "",
+    template: "",
+    content: "",
+    scheduleType: "",
+    scheduleDate: "",
+    scheduleTime: ""
     };
   };
   
@@ -1431,15 +1695,109 @@ function CreateCampaignPage() {
     }
   };
 
-  const handleSave = () => {
-    console.log(isEditMode ? "Updating campaign:" : "Saving campaign:", campaignData);
-    // Implement save logic here
+  const handleSave = async () => {
+    console.log("Saving campaign:", campaignData);
+    
+    try {
+      const response = await fetch('/api/email-campaigns/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignId: editId,
+          name: campaignData.name,
+          subject: campaignData.subject,
+          audience: campaignData.audience,
+          emailElements,
+          scheduleType: 'draft'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Campaign saved as draft:', result);
+        // Show success message
+        setSendingMessage('Campaign saved as draft successfully!');
+        setTimeout(() => setSendingMessage(''), 3000);
+      } else {
+        console.error('Error saving campaign:', result.error);
+        setSendingMessage(`Error saving campaign: ${result.error}`);
+        setTimeout(() => setSendingMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error saving campaign:', error);
+      setSendingMessage('Error saving campaign. Please try again.');
+      setTimeout(() => setSendingMessage(''), 5000);
+    }
   };
 
-  const handleSend = () => {
-    console.log(isEditMode ? "Updating and sending campaign:" : "Sending campaign:", campaignData);
-    // Implement send logic here
-    router.push("/admin/email-campaigns/campaigns");
+  const handleSend = async () => {
+    // Validate required fields
+    if (!campaignData.name || !campaignData.subject || !campaignData.audience) {
+      setSendingMessage('Please fill in all required fields (name, subject, audience)');
+      setTimeout(() => setSendingMessage(''), 5000);
+      return;
+    }
+
+    if (emailElements.length === 0) {
+      setSendingMessage('Please add some content to your email before sending');
+      setTimeout(() => setSendingMessage(''), 5000);
+      return;
+    }
+
+    setIsSending(true);
+    setSendingMessage('Preparing to send campaign...');
+    setCampaignResult(null);
+
+    try {
+      const response = await fetch('/api/email-campaigns/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignId: editId,
+          name: campaignData.name,
+          subject: campaignData.subject,
+          audience: campaignData.audience,
+          emailElements,
+          scheduleType: campaignData.scheduleType,
+          scheduleDate: campaignData.scheduleDate,
+          scheduleTime: campaignData.scheduleTime
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Campaign result:', result);
+        setCampaignResult(result);
+        setShowResultModal(true);
+        
+        if (result.status === 'draft') {
+          setSendingMessage('Campaign saved as draft!');
+        } else if (result.status === 'scheduled') {
+          setSendingMessage(`Campaign scheduled successfully!`);
+        } else {
+          setSendingMessage(`Campaign sent to ${result.stats?.sent || 0} subscribers!`);
+        }
+      } else {
+        console.error('Error sending campaign:', result.error);
+        setSendingMessage(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending campaign:', error);
+      setSendingMessage('Error sending campaign. Please try again.');
+    } finally {
+      setIsSending(false);
+      setTimeout(() => {
+        if (!showResultModal) {
+          setSendingMessage('');
+        }
+      }, 5000);
+    }
   };
 
   const stepVariants = {
@@ -1448,8 +1806,43 @@ function CreateCampaignPage() {
     exit: { opacity: 0, x: -50, transition: { duration: 0.3 } }
   };
 
+  // Element editing functions
+  const updateElement = (elementId: string, updates: any) => {
+    setEmailElements(elements => 
+      elements.map(el => 
+        el.id === elementId ? { ...el, ...updates } : el
+      )
+    );
+  };
+
+  const selectElement = (elementId: string) => {
+    setSelectedElementId(elementId);
+    setEditingElementId(null);
+  };
+
+  const startEditing = (elementId: string) => {
+    setEditingElementId(elementId);
+    setSelectedElementId(elementId);
+  };
+
+  const stopEditing = () => {
+    setEditingElementId(null);
+  };
+
+  const handleElementDoubleClick = (elementId: string) => {
+    const element = emailElements.find(el => el.id === elementId);
+    if (element && (element.type === 'header' || element.type === 'text')) {
+      startEditing(elementId);
+    }
+  };
+
+  const handleContentChange = (elementId: string, newContent: string) => {
+    updateElement(elementId, { content: newContent });
+  };
+
   // Drag and Drop Handlers
   const handleDragStart = (e: React.DragEvent, elementType: string) => {
+    console.log('Drag started:', elementType);
     setDraggedElement(elementType);
     e.dataTransfer.setData('text/plain', elementType);
     e.dataTransfer.effectAllowed = 'copy';
@@ -1462,6 +1855,7 @@ function CreateCampaignPage() {
   };
 
   const handleDragEnd = () => {
+    console.log('Drag ended');
     setDraggedElement(null);
     setDragOverIndex(null);
   };
@@ -1481,18 +1875,23 @@ function CreateCampaignPage() {
   const handleDrop = (e: React.DragEvent, index?: number) => {
     e.preventDefault();
     const elementType = e.dataTransfer.getData('text/plain');
+    console.log('Drop detected:', { elementType, index, emailElements: emailElements.length });
     
     if (elementType) {
       const newElement = createNewElement(elementType);
+      console.log('Created new element:', newElement);
       const newElements = [...emailElements];
       
       if (index !== undefined) {
         newElements.splice(index, 0, newElement);
+        console.log('Inserted at index', index);
       } else {
         newElements.push(newElement);
+        console.log('Added to end');
       }
       
       setEmailElements(newElements);
+      console.log('Updated emailElements:', newElements);
     }
     
     setDragOverIndex(null);
@@ -1515,6 +1914,12 @@ function CreateCampaignPage() {
         return { id, type: 'divider' };
       case 'spacer':
         return { id, type: 'spacer', height: '20px' };
+      case 'social':
+        return { id, type: 'social', content: 'Social Media Links' };
+      case 'columns':
+        return { id, type: 'columns', content: 'Two Column Layout' };
+      case 'video':
+        return { id, type: 'video', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎬+Video+Placeholder', content: 'Video Content' };
       default:
         return { id, type: 'text', content: 'New Element' };
     }
@@ -1525,40 +1930,116 @@ function CreateCampaignPage() {
   };
 
   const renderEmailElement = (element: any, index: number) => {
+    const isSelected = selectedElementId === element.id;
+    const isEditing = editingElementId === element.id;
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        stopEditing();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        stopEditing();
+      }
+    };
+
+    const handleBlur = () => {
+      stopEditing();
+    };
+
+    const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+      const newContent = e.currentTarget.textContent || '';
+      handleContentChange(element.id, newContent);
+    };
+
     switch (element.type) {
       case 'header':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
-            <h1 style={{ 
-              fontSize: '2.5rem', 
-              color: '#333', 
-              marginBottom: '1rem', 
-              textAlign: 'center',
-              background: 'linear-gradient(135deg, #333, #666)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: '800'
-            }}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            editing={isEditing}
+            onClick={() => selectElement(element.id)}
+            onDoubleClick={() => handleElementDoubleClick(element.id)}
+          >
+            <EditableText
+              isEditing={isEditing}
+              contentEditable={isEditing}
+              suppressContentEditableWarning={true}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              onInput={handleInput}
+              style={{ 
+                fontSize: '2.5rem', 
+                color: '#333', 
+                marginBottom: '1rem', 
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #333, #666)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: isEditing ? '#333' : 'transparent',
+                fontWeight: '800',
+                cursor: isEditing ? 'text' : 'pointer'
+              }}
+            >
               {element.content}
-            </h1>
+            </EditableText>
           </EmailElement>
         );
       
       case 'text':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
-            <p style={{ fontSize: '1rem', lineHeight: '1.7', color: '#555', marginBottom: '1.5rem' }}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            editing={isEditing}
+            onClick={() => selectElement(element.id)}
+            onDoubleClick={() => handleElementDoubleClick(element.id)}
+          >
+            <EditableText
+              isEditing={isEditing}
+              contentEditable={isEditing}
+              suppressContentEditableWarning={true}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              onInput={handleInput}
+              style={{ 
+                fontSize: '1rem', 
+                lineHeight: '1.7', 
+                color: isEditing ? '#333' : '#555', 
+                marginBottom: '1.5rem',
+                cursor: isEditing ? 'text' : 'pointer'
+              }}
+            >
               {element.content}
-            </p>
+            </EditableText>
           </EmailElement>
         );
       
       case 'button':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            editing={isEditing}
+            onClick={() => selectElement(element.id)}
+            onDoubleClick={() => handleElementDoubleClick(element.id)}
+          >
             <div style={{ textAlign: 'center', margin: '2rem 0' }}>
               <EmailButton>
-                {element.content}
+                <EditableText
+                  isEditing={isEditing}
+                  contentEditable={isEditing}
+                  suppressContentEditableWarning={true}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleBlur}
+                  onInput={handleInput}
+                  style={{ 
+                    cursor: isEditing ? 'text' : 'pointer',
+                    color: isEditing ? '#333' : 'white'
+                  }}
+                >
+                  {element.content}
+                </EditableText>
               </EmailButton>
             </div>
           </EmailElement>
@@ -1566,7 +2047,11 @@ function CreateCampaignPage() {
       
       case 'image':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            onClick={() => selectElement(element.id)}
+          >
             <div style={{ 
               borderRadius: '16px', 
               overflow: 'hidden',
@@ -1583,7 +2068,11 @@ function CreateCampaignPage() {
       
       case 'divider':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            onClick={() => selectElement(element.id)}
+          >
             <hr style={{ 
               border: 'none', 
               height: '2px', 
@@ -1595,8 +2084,21 @@ function CreateCampaignPage() {
       
       case 'spacer':
         return (
-          <EmailElement key={element.id} onClick={() => console.log('Edit element:', element.id)}>
-            <div style={{ height: element.height || '20px', background: 'rgba(108, 99, 255, 0.1)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--primary)' }}>
+          <EmailElement 
+            key={element.id} 
+            selected={isSelected}
+            onClick={() => selectElement(element.id)}
+          >
+            <div style={{ 
+              height: element.height || '20px', 
+              background: 'rgba(108, 99, 255, 0.1)', 
+              borderRadius: '4px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '0.8rem', 
+              color: 'var(--primary)' 
+            }}>
               Spacer ({element.height || '20px'})
             </div>
           </EmailElement>
@@ -1646,6 +2148,26 @@ function CreateCampaignPage() {
                 />
               </FormGroup>
             </FormGrid>
+            <FormGrid>
+              <FormGroup>
+                <Label>Sender Name</Label>
+                <Input
+                  type="text"
+                  value={campaignData.senderName}
+                  onChange={(e) => setCampaignData({...campaignData, senderName: e.target.value})}
+                  placeholder="e.g. Cymasphere Team"
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>Preheader Text</Label>
+                <Input
+                  type="text"
+                  value={campaignData.preheader}
+                  onChange={(e) => setCampaignData({...campaignData, preheader: e.target.value})}
+                  placeholder="Preview text that appears next to subject line"
+                />
+              </FormGroup>
+            </FormGrid>
             <FormGroup>
               <Label>Campaign Description</Label>
               <TextArea
@@ -1660,50 +2182,44 @@ function CreateCampaignPage() {
             <div style={{ marginBottom: '2.5rem' }}>
               <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaUsers style={{ color: 'var(--primary)' }} />
-              Select Audience
+                Select Audience
               </h3>
-            <AudienceGrid>
-              {audienceSegments.map((segment) => (
-                <AudienceCard
-                  key={segment.id}
-                  selected={campaignData.audience === segment.id}
-                  onClick={() => setCampaignData({...campaignData, audience: segment.id})}
+              <FormGroup>
+                <Label>Target Audience</Label>
+                <Select
+                  value={campaignData.audience}
+                  onChange={(e) => setCampaignData({...campaignData, audience: e.target.value})}
                 >
-                  <AudienceTitle>
-                    <FaUsers />
-                    {segment.title}
-                  </AudienceTitle>
-                  <AudienceDescription>{segment.description}</AudienceDescription>
-                  <AudienceStats>
-                    <span>{segment.count.toLocaleString()} subscribers</span>
-                    <span>{segment.engagement} engagement</span>
-                  </AudienceStats>
-                </AudienceCard>
-              ))}
-            </AudienceGrid>
+                  <option value="">Choose an audience...</option>
+                  {audienceSegments.map((segment) => (
+                    <option key={segment.id} value={segment.id}>
+                      {segment.title} - {segment.count.toLocaleString()} subscribers ({segment.engagement} engagement)
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
             </div>
 
             {/* Template Selection Section */}
             <div>
               <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaPalette style={{ color: 'var(--primary)' }} />
-              Choose Template
+                Choose Template
               </h3>
-            <TemplateGrid>
-              {templates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  selected={campaignData.template === template.id}
-                  onClick={() => setCampaignData({...campaignData, template: template.id})}
+              <FormGroup>
+                <Label>Email Template</Label>
+                <Select
+                  value={campaignData.template}
+                  onChange={(e) => setCampaignData({...campaignData, template: e.target.value})}
                 >
-                  <TemplatePreview>{template.preview}</TemplatePreview>
-                  <TemplateInfo>
-                    <TemplateTitle>{template.title}</TemplateTitle>
-                    <TemplateDescription>{template.description}</TemplateDescription>
-                  </TemplateInfo>
-                </TemplateCard>
-              ))}
-            </TemplateGrid>
+                  <option value="">Choose a template...</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.title} - {template.description}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
             </div>
           </StepContent>
         );
@@ -1742,6 +2258,82 @@ function CreateCampaignPage() {
             
             <DragPreview ref={dragPreviewRef} />
             
+            {/* Content Elements Bar - Horizontal at Top */}
+            <ContentElementsBar>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'header')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaHeading className="icon" />
+                <span className="label">Header</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'text')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaFont className="icon" />
+                <span className="label">Text Block</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'button')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaMousePointer className="icon" />
+                <span className="label">Button</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'image')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaImage className="icon" />
+                <span className="label">Image</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'divider')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaDivide className="icon" />
+                <span className="label">Divider</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'social')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaShareAlt className="icon" />
+                <span className="label">Social Links</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'spacer')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaExpandArrowsAlt className="icon" />
+                <span className="label">Spacer</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'columns')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaColumns className="icon" />
+                <span className="label">Columns</span>
+              </ContentElementButton>
+              <ContentElementButton 
+                draggable 
+                onDragStart={(e) => handleDragStart(e, 'video')}
+                onDragEnd={handleDragEnd}
+              >
+                <FaVideo className="icon" />
+                <span className="label">Video</span>
+              </ContentElementButton>
+            </ContentElementsBar>
+            
             <div style={{ 
               display: 'flex',
               gap: '2rem', 
@@ -1763,13 +2355,16 @@ function CreateCampaignPage() {
               }}>
                 <ViewToggleContainer>
                   <ViewToggle active={true}>
-                    🖥️ Desktop
+                    <FaDesktop style={{ marginRight: '0.5rem' }} />
+                    Desktop
                   </ViewToggle>
                   <ViewToggle active={false}>
-                    📱 Mobile
+                    <FaMobileAlt style={{ marginRight: '0.5rem' }} />
+                    Mobile
                   </ViewToggle>
                   <ViewToggle active={false}>
-                    📧 Text Only
+                    <FaEnvelope style={{ marginRight: '0.5rem' }} />
+                    Text Only
                   </ViewToggle>
                 </ViewToggleContainer>
 
@@ -1831,7 +2426,7 @@ function CreateCampaignPage() {
                           <span>📦</span>
                           <span>Drop elements here to start building your email</span>
                           <small style={{ opacity: 0.7, fontSize: '0.85rem' }}>
-                            Drag any element from the sidebar to build your email
+                            Drag any element from the toolbar above to build your email
                           </small>
                         </DropZone>
                       )}
@@ -1861,7 +2456,7 @@ function CreateCampaignPage() {
                 </EmailCanvas>
               </div>
 
-              {/* All Settings Panels - Right */}
+              {/* Settings Panels - Right */}
               <div style={{ 
                 width: rightPanelExpanded ? '400px' : '60px',
                 display: 'flex', 
@@ -1884,10 +2479,10 @@ function CreateCampaignPage() {
                 }}>
                   <button
                     onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-                    style={{
+                  style={{ 
                       padding: '0.75rem',
                       background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                      border: 'none',
+                    border: 'none', 
                       borderRadius: '12px',
                       color: 'white',
                       cursor: 'pointer',
@@ -1915,92 +2510,10 @@ function CreateCampaignPage() {
 
                 {rightPanelExpanded && (
                   <>
-                    {/* Content Elements */}
-                    <SidebarPanel>
-                      <PanelHeader>
-                        <PanelIcon>🧩</PanelIcon>
-                        <PanelTitle>Content Elements</PanelTitle>
-                      </PanelHeader>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'header')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>📝</span>
-                          <span>Header</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'text')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>📄</span>
-                          <span>Text Block</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'button')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>🎯</span>
-                          <span>Button</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'image')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>🖼️</span>
-                          <span>Image</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'divider')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>➖</span>
-                          <span>Divider</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'social')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>📱</span>
-                          <span>Social Links</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'spacer')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>⬜</span>
-                          <span>Spacer</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'columns')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>📐</span>
-                          <span>Columns</span>
-                        </DragElement>
-                        <DragElement 
-                          draggable 
-                          onDragStart={(e) => handleDragStart(e, 'video')}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <span>🎬</span>
-                          <span>Video</span>
-                        </DragElement>
-                      </div>
-                    </SidebarPanel>
-
                     {/* Element Properties */}
                     <SidebarPanel>
                       <PanelHeader>
-                        <PanelIcon>⚙️</PanelIcon>
+                        <PanelIcon><FaCog /></PanelIcon>
                         <PanelTitle>Element Properties</PanelTitle>
                       </PanelHeader>
                       <EmptyState>
@@ -2012,7 +2525,7 @@ function CreateCampaignPage() {
                     {/* Design Settings */}
                     <SidebarPanel>
                       <PanelHeader>
-                        <PanelIcon>🎨</PanelIcon>
+                        <PanelIcon><FaPaintBrush /></PanelIcon>
                         <PanelTitle>Design Settings</PanelTitle>
                       </PanelHeader>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -2052,7 +2565,7 @@ function CreateCampaignPage() {
                     {/* Variables */}
                     <SidebarPanel>
                       <PanelHeader>
-                        <PanelIcon>🔤</PanelIcon>
+                        <PanelIcon><FaTextHeight /></PanelIcon>
                         <PanelTitle>Variables</PanelTitle>
                       </PanelHeader>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -2224,30 +2737,134 @@ function CreateCampaignPage() {
         </AnimatePresence>
 
         <NavigationButtons>
-          <NavButton onClick={prevStep} disabled={currentStep <= 1}>
+          <NavButton onClick={prevStep} disabled={currentStep <= 1 || isSending}>
             <FaArrowLeft />
             Previous
           </NavButton>
           
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <NavButton onClick={handleSave}>
+            <NavButton onClick={handleSave} disabled={isSending}>
               <FaSave />
               Save Draft
             </NavButton>
             
             {currentStep === steps.length ? (
-              <NavButton variant="primary" onClick={handleSend}>
+              <NavButton variant="primary" onClick={handleSend} disabled={isSending}>
+                {isSending && (
+                  <LoadingSpinner
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                )}
                 <FaPaperPlane />
-                {isEditMode ? 'Update Campaign' : 'Send Campaign'}
+                {isSending 
+                  ? 'Sending...' 
+                  : (isEditMode ? 'Update Campaign' : 'Send Campaign')
+                }
               </NavButton>
             ) : (
-              <NavButton variant="primary" onClick={nextStep}>
+              <NavButton variant="primary" onClick={nextStep} disabled={isSending}>
                 Next
                 <FaArrowRight />
               </NavButton>
             )}
           </div>
         </NavigationButtons>
+
+        {/* Sending Feedback Message */}
+        <AnimatePresence>
+          {sendingMessage && (
+            <SendingFeedback
+              type={sendingMessage.includes('Error') || sendingMessage.includes('Please') ? 'error' : 'success'}
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 300 }}
+              transition={{ duration: 0.3 }}
+            >
+              {sendingMessage}
+            </SendingFeedback>
+          )}
+        </AnimatePresence>
+
+        {/* Campaign Result Modal */}
+        <AnimatePresence>
+          {showResultModal && campaignResult && (
+            <ResultModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowResultModal(false)}
+            >
+              <ModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ModalTitle>
+                  <FaCheck />
+                  Campaign {campaignResult.status === 'draft' ? 'Saved' : 
+                           campaignResult.status === 'scheduled' ? 'Scheduled' : 'Sent'} Successfully!
+                </ModalTitle>
+                
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                  {campaignResult.message}
+                </p>
+
+                {campaignResult.stats && (
+                  <ModalStats>
+                    <StatItem>
+                      <StatValue>{campaignResult.stats.total}</StatValue>
+                      <StatLabel>Total Recipients</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                      <StatValue>{campaignResult.stats.sent}</StatValue>
+                      <StatLabel>Successfully Sent</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                      <StatValue>{campaignResult.stats.failed}</StatValue>
+                      <StatLabel>Failed</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                      <StatValue>{campaignResult.stats.successRate}%</StatValue>
+                      <StatLabel>Success Rate</StatLabel>
+                    </StatItem>
+                  </ModalStats>
+                )}
+
+                {campaignResult.status === 'scheduled' && (
+                  <div style={{ 
+                    background: 'rgba(108, 99, 255, 0.1)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    margin: '1rem 0'
+                  }}>
+                    <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
+                      <FaClock style={{ marginRight: '0.5rem' }} />
+                      Scheduled for: {campaignResult.scheduledFor ? 
+                        new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
+                    </p>
+                  </div>
+                )}
+
+                <ModalActions>
+                  <NavButton onClick={() => setShowResultModal(false)}>
+                    Close
+                  </NavButton>
+                  <NavButton 
+                    variant="primary" 
+                    onClick={() => {
+                      setShowResultModal(false);
+                      router.push("/admin/email-campaigns/campaigns");
+                    }}
+                  >
+                    View Campaigns
+                  </NavButton>
+                </ModalActions>
+              </ModalContent>
+            </ResultModal>
+          )}
+        </AnimatePresence>
       </CreateContainer>
     </>
   );

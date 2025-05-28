@@ -21,7 +21,8 @@ import {
   FaChevronDown,
   FaChevronRight,
   FaChartLine,
-  FaLifeRing
+  FaLifeRing,
+  FaUser
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -732,6 +733,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
+                <Link href="/admin/email-campaigns/subscribers" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={pathname === "/admin/email-campaigns/subscribers" ? "true" : "false"}
+                    onClick={(e) => handleNavigation(e, "/admin/email-campaigns/subscribers")}
+                  >
+                    <FaUser /> Subscribers
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/email-campaigns/audiences" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={pathname === "/admin/email-campaigns/audiences" ? "true" : "false"}
+                    onClick={(e) => handleNavigation(e, "/admin/email-campaigns/audiences")}
+                  >
+                    <FaUsers /> Audiences
+                  </SubNavItem>
+                </Link>
                 <Link href="/admin/email-campaigns/campaigns" passHref legacyBehavior>
                   <SubNavItem
                     $active={pathname === "/admin/email-campaigns/campaigns" ? "true" : "false"}
@@ -880,11 +897,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/admin/email-campaigns/subscribers" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/email-campaigns/subscribers" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={4}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/email-campaigns/subscribers")}
+            >
+              <FaUser /> Subscribers
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/email-campaigns/audiences" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/email-campaigns/audiences" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={5}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/email-campaigns/audiences")}
+            >
+              <FaUsers /> Audiences
+            </MobileNavItem>
+          </Link>
+
           <Link href="/admin/email-campaigns/campaigns" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/admin/email-campaigns/campaigns" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={4}
+              custom={6}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/email-campaigns/campaigns")}
@@ -897,7 +940,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/email-campaigns/templates" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={5}
+              custom={7}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/email-campaigns/templates")}
@@ -910,7 +953,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/email-campaigns/automations" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={6}
+              custom={8}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/email-campaigns/automations")}
@@ -923,7 +966,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/email-campaigns/deliverability" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={7}
+              custom={9}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/email-campaigns/deliverability")}
@@ -936,7 +979,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/analytics" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={8}
+              custom={10}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/analytics")}
@@ -949,7 +992,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={9}
+              custom={11}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/settings")}
@@ -962,7 +1005,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={10}
+              custom={12}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}

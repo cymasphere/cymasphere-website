@@ -15,11 +15,14 @@ import {
   FaChartLine,
   FaCalendarAlt,
   FaUsers,
-  FaEnvelope
+  FaEnvelope,
+  FaEllipsisV,
+  FaClone,
+  FaDownload
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter } from "next/navigation";
 
@@ -304,9 +307,76 @@ const MetricLabel = styled.div`
 
 const ActionsContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
-  justify-content: center;
+  gap: 0.25rem;
   align-items: center;
+  position: relative;
+`;
+
+const MoreButton = styled.button`
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+
+  &:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  &.active {
+    background-color: var(--primary);
+    color: white;
+  }
+`;
+
+const DropdownMenu = styled(motion.div)`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 180px;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  svg {
+    font-size: 0.9rem;
+    width: 16px;
+  }
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
@@ -423,6 +493,7 @@ function CampaignsPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -433,6 +504,18 @@ function CampaignsPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown && !(event.target as Element).closest('[data-dropdown]')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -477,12 +560,18 @@ function CampaignsPage() {
 
   const handleCampaignAction = (action: string, campaignId: string) => {
     console.log(`${action} campaign:`, campaignId);
+    setOpenDropdown(null); // Close dropdown after action
     if (action === 'create') {
       router.push('/admin/email-campaigns/campaigns/create');
     } else if (action === 'edit') {
       router.push(`/admin/email-campaigns/campaigns/create?edit=${campaignId}`);
     }
     // Other actions like pause, resume, delete can be implemented here
+  };
+
+  const handleDropdownToggle = (campaignId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdown(openDropdown === campaignId ? null : campaignId);
   };
 
   return (
@@ -589,19 +678,55 @@ function CampaignsPage() {
                       {new Date(campaign.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <ActionsContainer>
-                        {campaign.status === 'active' ? (
-                          <ActionButton onClick={() => handleCampaignAction('pause', campaign.id)}>
-                            <FaPause />
-                          </ActionButton>
-                        ) : campaign.status === 'paused' ? (
-                          <ActionButton variant="primary" onClick={() => handleCampaignAction('resume', campaign.id)}>
-                            <FaPlay />
-                          </ActionButton>
-                        ) : null}
-                        <ActionButton variant="danger" onClick={() => handleCampaignAction('delete', campaign.id)}>
-                          <FaTrash />
-                        </ActionButton>
+                      <ActionsContainer data-dropdown>
+                        <MoreButton 
+                          onClick={(e) => handleDropdownToggle(campaign.id, e)}
+                          className={openDropdown === campaign.id ? 'active' : ''}
+                        >
+                          <FaEllipsisV />
+                        </MoreButton>
+                        <AnimatePresence>
+                          {openDropdown === campaign.id && (
+                            <DropdownMenu
+                              initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('edit', campaign.id); }}>
+                                <FaEdit />
+                                Edit Campaign
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('view', campaign.id); }}>
+                                <FaEye />
+                                View Analytics
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('clone', campaign.id); }}>
+                                <FaClone />
+                                Duplicate
+                              </DropdownItem>
+                              {campaign.status === 'active' ? (
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('pause', campaign.id); }}>
+                                  <FaPause />
+                                  Pause Campaign
+                                </DropdownItem>
+                              ) : campaign.status === 'paused' ? (
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('resume', campaign.id); }}>
+                                  <FaPlay />
+                                  Resume Campaign
+                                </DropdownItem>
+                              ) : null}
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('export', campaign.id); }}>
+                                <FaDownload />
+                                Export Data
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('delete', campaign.id); }}>
+                                <FaTrash />
+                                Delete
+                              </DropdownItem>
+                            </DropdownMenu>
+                          )}
+                        </AnimatePresence>
                       </ActionsContainer>
                     </TableCell>
                   </TableRow>
