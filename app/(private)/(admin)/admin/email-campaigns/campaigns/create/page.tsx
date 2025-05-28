@@ -1344,6 +1344,7 @@ function CreateCampaignPage() {
   
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   
   // Initialize email elements based on campaign content
   const getInitialEmailElements = () => {
@@ -1750,14 +1751,15 @@ function CreateCampaignPage() {
               
               {/* Visual Email Canvas - Left */}
               <div style={{ 
-                flex: '1',
+                flex: rightPanelExpanded ? '1' : '1 1 auto',
                 display: 'flex', 
                 flexDirection: 'column',
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
                 borderRadius: '16px',
                 padding: '1rem',
                 border: '1px solid rgba(255, 255, 255, 0.05)',
-                alignSelf: 'flex-start'
+                alignSelf: 'flex-start',
+                transition: 'all 0.3s ease'
               }}>
                 <ViewToggleContainer>
                   <ViewToggle active={true}>
@@ -1861,166 +1863,209 @@ function CreateCampaignPage() {
 
               {/* All Settings Panels - Right */}
               <div style={{ 
-                width: '400px',
+                width: rightPanelExpanded ? '400px' : '60px',
                 display: 'flex', 
                 flexDirection: 'column', 
                 gap: '1.5rem', 
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
                 borderRadius: '16px',
-                padding: '1rem',
+                padding: rightPanelExpanded ? '1rem' : '0.5rem',
                 border: '1px solid rgba(255, 255, 255, 0.05)',
-                alignSelf: 'flex-start'
+                alignSelf: 'flex-start',
+                transition: 'all 0.3s ease',
+                overflow: 'hidden'
               }}>
                 
-                {/* Content Elements */}
-                <SidebarPanel>
-                  <PanelHeader>
-                    <PanelIcon>🧩</PanelIcon>
-                    <PanelTitle>Content Elements</PanelTitle>
-                  </PanelHeader>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'header')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>📝</span>
-                      <span>Header</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'text')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>📄</span>
-                      <span>Text Block</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'button')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>🎯</span>
-                      <span>Button</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'image')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>🖼️</span>
-                      <span>Image</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'divider')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>➖</span>
-                      <span>Divider</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'social')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>📱</span>
-                      <span>Social Links</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'spacer')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>⬜</span>
-                      <span>Spacer</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'columns')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>📐</span>
-                      <span>Columns</span>
-                    </DragElement>
-                    <DragElement 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, 'video')}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span>🎬</span>
-                      <span>Video</span>
-                    </DragElement>
-                  </div>
-                </SidebarPanel>
+                {/* Toggle Button */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: rightPanelExpanded ? 'flex-end' : 'center',
+                  marginBottom: rightPanelExpanded ? '0' : '1rem'
+                }}>
+                  <button
+                    onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
+                    style={{
+                      padding: '0.75rem',
+                      background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '40px',
+                      minHeight: '40px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(108, 99, 255, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.3)';
+                    }}
+                  >
+                    {rightPanelExpanded ? '→' : '←'}
+                  </button>
+                </div>
 
-                {/* Element Properties */}
-                <SidebarPanel>
-                  <PanelHeader>
-                    <PanelIcon>⚙️</PanelIcon>
-                    <PanelTitle>Element Properties</PanelTitle>
-                  </PanelHeader>
-                  <EmptyState>
-                    <span style={{ fontSize: '2rem', opacity: 0.5 }}>🔧</span>
-                    <span style={{ fontWeight: '500' }}>Select an element to edit its properties</span>
-                  </EmptyState>
-                </SidebarPanel>
+                {rightPanelExpanded && (
+                  <>
+                    {/* Content Elements */}
+                    <SidebarPanel>
+                      <PanelHeader>
+                        <PanelIcon>🧩</PanelIcon>
+                        <PanelTitle>Content Elements</PanelTitle>
+                      </PanelHeader>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'header')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>📝</span>
+                          <span>Header</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'text')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>📄</span>
+                          <span>Text Block</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'button')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>🎯</span>
+                          <span>Button</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'image')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>🖼️</span>
+                          <span>Image</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'divider')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>➖</span>
+                          <span>Divider</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'social')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>📱</span>
+                          <span>Social Links</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'spacer')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>⬜</span>
+                          <span>Spacer</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'columns')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>📐</span>
+                          <span>Columns</span>
+                        </DragElement>
+                        <DragElement 
+                          draggable 
+                          onDragStart={(e) => handleDragStart(e, 'video')}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <span>🎬</span>
+                          <span>Video</span>
+                        </DragElement>
+                      </div>
+                    </SidebarPanel>
 
-                {/* Design Settings */}
-                <SidebarPanel>
-                  <PanelHeader>
-                    <PanelIcon>🎨</PanelIcon>
-                    <PanelTitle>Design Settings</PanelTitle>
-                  </PanelHeader>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <ControlGroup>
-                      <ControlLabel>Background Color</ControlLabel>
-                      <ColorInput type="color" defaultValue="#ffffff" />
-                    </ControlGroup>
-                    <ControlGroup>
-                      <ControlLabel>Content Width</ControlLabel>
-                      <ControlSelect>
-                        <option>600px (Standard)</option>
-                        <option>500px (Narrow)</option>
-                        <option>700px (Wide)</option>
-                      </ControlSelect>
-                    </ControlGroup>
-                    <ControlGroup>
-                      <ControlLabel>Font Family</ControlLabel>
-                      <ControlSelect>
-                        <option>Arial</option>
-                        <option>Helvetica</option>
-                        <option>Georgia</option>
-                        <option>Times New Roman</option>
-                      </ControlSelect>
-                    </ControlGroup>
-                    <ControlGroup>
-                      <ControlLabel>Font Size</ControlLabel>
-                      <ControlSelect>
-                        <option>14px</option>
-                        <option>16px (Recommended)</option>
-                        <option>18px</option>
-                        <option>20px</option>
-                      </ControlSelect>
-                    </ControlGroup>
-                  </div>
-                </SidebarPanel>
+                    {/* Element Properties */}
+                    <SidebarPanel>
+                      <PanelHeader>
+                        <PanelIcon>⚙️</PanelIcon>
+                        <PanelTitle>Element Properties</PanelTitle>
+                      </PanelHeader>
+                      <EmptyState>
+                        <span style={{ fontSize: '2rem', opacity: 0.5 }}>🔧</span>
+                        <span style={{ fontWeight: '500' }}>Select an element to edit its properties</span>
+                      </EmptyState>
+                    </SidebarPanel>
 
-                {/* Variables */}
-                <SidebarPanel>
-                  <PanelHeader>
-                    <PanelIcon>🔤</PanelIcon>
-                    <PanelTitle>Variables</PanelTitle>
-                  </PanelHeader>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <VariableTag>{'{{firstName}}'}</VariableTag>
-                    <VariableTag>{'{{lastName}}'}</VariableTag>
-                    <VariableTag>{'{{email}}'}</VariableTag>
-                    <VariableTag>{'{{companyName}}'}</VariableTag>
-                    <VariableTag>{'{{unsubscribeUrl}}'}</VariableTag>
-                    <VariableTag>{'{{currentDate}}'}</VariableTag>
-                  </div>
-                </SidebarPanel>
+                    {/* Design Settings */}
+                    <SidebarPanel>
+                      <PanelHeader>
+                        <PanelIcon>🎨</PanelIcon>
+                        <PanelTitle>Design Settings</PanelTitle>
+                      </PanelHeader>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <ControlGroup>
+                          <ControlLabel>Background Color</ControlLabel>
+                          <ColorInput type="color" defaultValue="#ffffff" />
+                        </ControlGroup>
+                        <ControlGroup>
+                          <ControlLabel>Content Width</ControlLabel>
+                          <ControlSelect>
+                            <option>600px (Standard)</option>
+                            <option>500px (Narrow)</option>
+                            <option>700px (Wide)</option>
+                          </ControlSelect>
+                        </ControlGroup>
+                        <ControlGroup>
+                          <ControlLabel>Font Family</ControlLabel>
+                          <ControlSelect>
+                            <option>Arial</option>
+                            <option>Helvetica</option>
+                            <option>Georgia</option>
+                            <option>Times New Roman</option>
+                          </ControlSelect>
+                        </ControlGroup>
+                        <ControlGroup>
+                          <ControlLabel>Font Size</ControlLabel>
+                          <ControlSelect>
+                            <option>14px</option>
+                            <option>16px (Recommended)</option>
+                            <option>18px</option>
+                            <option>20px</option>
+                          </ControlSelect>
+                        </ControlGroup>
+                      </div>
+                    </SidebarPanel>
+
+                    {/* Variables */}
+                    <SidebarPanel>
+                      <PanelHeader>
+                        <PanelIcon>🔤</PanelIcon>
+                        <PanelTitle>Variables</PanelTitle>
+                      </PanelHeader>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <VariableTag>{'{{firstName}}'}</VariableTag>
+                        <VariableTag>{'{{lastName}}'}</VariableTag>
+                        <VariableTag>{'{{email}}'}</VariableTag>
+                        <VariableTag>{'{{companyName}}'}</VariableTag>
+                        <VariableTag>{'{{unsubscribeUrl}}'}</VariableTag>
+                        <VariableTag>{'{{currentDate}}'}</VariableTag>
+                      </div>
+                    </SidebarPanel>
+                  </>
+                )}
 
               </div>
 
