@@ -25,7 +25,7 @@ import {
   FaPlay
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -1264,32 +1264,136 @@ interface CampaignData {
   scheduleTime: string;
 }
 
+// Mock campaigns data for editing
+const mockCampaigns = [
+  {
+    id: "1",
+    name: "Welcome Series",
+    subject: "Welcome to Cymasphere! 🎵",
+    description: "Automated welcome email sequence for new subscribers",
+    audience: "new",
+    template: "welcome",
+    content: `
+      <h2>Welcome to Cymasphere!</h2>
+      <p>We're excited to have you join our community of music creators and synthesizer enthusiasts.</p>
+      <p>Here's what you can expect:</p>
+      <ul>
+        <li>Access to our powerful web-based synthesizer</li>
+        <li>Regular updates on new features and sounds</li>
+        <li>Tips and tutorials from our team</li>
+      </ul>
+      <p>Get started by exploring our synthesizer and creating your first track!</p>
+    `,
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
+  },
+  {
+    id: "2",
+    name: "Product Launch Announcement",
+    subject: "🚀 New Synthesizer Features Available Now!",
+    description: "Announcing our latest synthesizer features",
+    audience: "active",
+    template: "promotional",
+    content: `
+      <h2>Exciting New Features Just Launched! 🚀</h2>
+      <p>We've been working hard to bring you some amazing new synthesizer capabilities...</p>
+    `,
+    scheduleType: "scheduled",
+    scheduleDate: "2024-02-01",
+    scheduleTime: "10:00"
+  },
+  {
+    id: "3",
+    name: "Monthly Newsletter",
+    subject: "🎵 This Month in Music Production",
+    description: "Regular updates and tips for music producers",
+    audience: "all",
+    template: "newsletter",
+    content: `
+      <h2>This Month in Music Production</h2>
+      <p>Here are the latest tips, tricks, and updates from the world of electronic music...</p>
+    `,
+    scheduleType: "draft",
+    scheduleDate: "",
+    scheduleTime: ""
+  },
+  {
+    id: "4",
+    name: "Re-engagement Campaign",
+    subject: "We Miss You! Come Back and Create 🎶",
+    description: "Win back inactive subscribers",
+    audience: "inactive",
+    template: "custom",
+    content: `
+      <h2>We Miss You!</h2>
+      <p>It's been a while since we've seen you creating music with Cymasphere...</p>
+    `,
+    scheduleType: "trigger",
+    scheduleDate: "",
+    scheduleTime: ""
+  }
+];
+
 function CreateCampaignPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEditMode = Boolean(editId);
+  
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [emailElements, setEmailElements] = useState<any[]>([
-    { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
-    { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
-    { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' },
-    { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎵+Create+Amazing+Music' }
-  ]);
+  
+  // Initialize email elements based on campaign content
+  const getInitialEmailElements = () => {
+    if (isEditMode && editId) {
+      const existingCampaign = mockCampaigns.find(c => c.id === editId);
+      if (existingCampaign && existingCampaign.content) {
+        // Convert HTML content to email elements for the visual editor
+        // This is a simplified version - in a real app you'd parse the HTML properly
+        return [
+          { id: 'header', type: 'header', content: existingCampaign.subject },
+          { id: 'text1', type: 'text', content: existingCampaign.content.replace(/<[^>]*>/g, '') },
+          { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' }
+        ];
+      }
+    }
+    return [
+      { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
+      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
+      { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' },
+      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎵+Create+Amazing+Music' }
+    ];
+  };
+
+  const [emailElements, setEmailElements] = useState<any[]>(getInitialEmailElements());
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
   
-  const [campaignData, setCampaignData] = useState<CampaignData>({
-    name: "",
-    subject: "",
-    description: "",
-    audience: "",
-    template: "",
-    content: "",
-    scheduleType: "",
-    scheduleDate: "",
-    scheduleTime: ""
-  });
+  // Initialize campaign data based on edit mode
+  const getInitialCampaignData = () => {
+    if (isEditMode && editId) {
+      const existingCampaign = mockCampaigns.find(c => c.id === editId);
+      if (existingCampaign) {
+        return existingCampaign;
+      }
+    }
+    return {
+      name: "",
+      subject: "",
+      description: "",
+      audience: "",
+      template: "",
+      content: "",
+      scheduleType: "",
+      scheduleDate: "",
+      scheduleTime: ""
+    };
+  };
+  
+  const [campaignData, setCampaignData] = useState<CampaignData>(getInitialCampaignData());
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -1327,12 +1431,12 @@ function CreateCampaignPage() {
   };
 
   const handleSave = () => {
-    console.log("Saving campaign:", campaignData);
+    console.log(isEditMode ? "Updating campaign:" : "Saving campaign:", campaignData);
     // Implement save logic here
   };
 
   const handleSend = () => {
-    console.log("Sending campaign:", campaignData);
+    console.log(isEditMode ? "Updating and sending campaign:" : "Sending campaign:", campaignData);
     // Implement send logic here
     router.push("/admin/email-campaigns/campaigns");
   };
@@ -1608,13 +1712,13 @@ function CreateCampaignPage() {
           <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
-                <StepTitle>
-                  <FaEdit />
+            <StepTitle>
+              <FaEdit />
                   Design Your Email
-                </StepTitle>
-                <StepDescription>
+            </StepTitle>
+            <StepDescription>
                   Drag and drop elements to build your email. See live preview as you design.
-                </StepDescription>
+            </StepDescription>
               </div>
               
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
@@ -2033,26 +2137,21 @@ function CreateCampaignPage() {
   return (
     <>
       <NextSEO
-        title="Create Campaign"
-        description="Create a new email marketing campaign"
+        title={isEditMode ? "Edit Campaign" : "Create Campaign"}
+        description={isEditMode ? "Edit email campaign details and content" : "Create a new email marketing campaign"}
       />
       
       <CreateContainer>
-        <Breadcrumbs>
-          <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
-          <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/campaigns">Email Campaigns</BreadcrumbLink>
-          <FaChevronRight />
-          <BreadcrumbCurrent>Create Campaign</BreadcrumbCurrent>
-        </Breadcrumbs>
-
         <Header>
           <Title>
             <FaEnvelopeOpen />
-            Create New Campaign
+            {isEditMode ? 'Edit Campaign' : 'Create New Campaign'}
           </Title>
           <Subtitle>
-            Follow the steps below to create and send your email campaign
+            {isEditMode 
+              ? 'Update your email campaign settings and content'
+              : 'Follow the steps below to create and send your email campaign'
+            }
           </Subtitle>
         </Header>
 
@@ -2094,7 +2193,7 @@ function CreateCampaignPage() {
             {currentStep === steps.length ? (
               <NavButton variant="primary" onClick={handleSend}>
                 <FaPaperPlane />
-                Send Campaign
+                {isEditMode ? 'Update Campaign' : 'Send Campaign'}
               </NavButton>
             ) : (
               <NavButton variant="primary" onClick={nextStep}>

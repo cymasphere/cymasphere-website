@@ -477,12 +477,12 @@ function CampaignsPage() {
 
   const handleCampaignAction = (action: string, campaignId: string) => {
     console.log(`${action} campaign:`, campaignId);
-    if (action === 'view' || action === 'edit') {
-      router.push(`/admin/email-campaigns/campaigns/${campaignId}`);
-    } else if (action === 'create') {
+    if (action === 'create') {
       router.push('/admin/email-campaigns/campaigns/create');
+    } else if (action === 'edit') {
+      router.push(`/admin/email-campaigns/campaigns/create?edit=${campaignId}`);
     }
-    // Implement other campaign actions here
+    // Other actions like pause, resume, delete can be implemented here
   };
 
   return (
@@ -567,7 +567,7 @@ function CampaignsPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() => handleCampaignAction('view', campaign.id)}
+                    onClick={() => handleCampaignAction('edit', campaign.id)}
                   >
                     <TableCell>
                       <CampaignTitle>{campaign.title}</CampaignTitle>
@@ -590,12 +590,6 @@ function CampaignsPage() {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer>
-                        <ActionButton onClick={() => handleCampaignAction('view', campaign.id)}>
-                          <FaEye />
-                        </ActionButton>
-                        <ActionButton onClick={() => handleCampaignAction('edit', campaign.id)}>
-                          <FaEdit />
-                        </ActionButton>
                         {campaign.status === 'active' ? (
                           <ActionButton onClick={() => handleCampaignAction('pause', campaign.id)}>
                             <FaPause />
