@@ -625,7 +625,9 @@ const DragElement = styled.div`
   }
 `;
 
-const ViewToggle = styled.button<{ active: boolean }>`
+const ViewToggle = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
@@ -1142,7 +1144,9 @@ const ToggleSwitch = styled.div`
   }
 `;
 
-const DroppableArea = styled.div<{ isDragOver: boolean }>`
+const DroppableArea = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isDragOver',
+})<{ isDragOver: boolean }>`
   min-height: 50px;
   border: 2px dashed ${props => props.isDragOver ? 'var(--primary)' : 'transparent'};
   border-radius: 12px;
@@ -1272,7 +1276,9 @@ const DragPreview = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
-const EmailElement = styled.div<{ selected?: boolean; editing?: boolean }>`
+const EmailElement = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['selected', 'editing'].includes(prop),
+})<{ selected?: boolean; editing?: boolean }>`
   margin: 1rem 0;
   padding: 1rem;
   border: 2px solid ${props => {
@@ -1327,7 +1333,9 @@ const EmailElement = styled.div<{ selected?: boolean; editing?: boolean }>`
 `;
 
 // Editable Text Component
-const EditableText = styled.div<{ isEditing: boolean }>`
+const EditableText = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isEditing',
+})<{ isEditing: boolean }>`
   outline: none;
   ${props => props.isEditing ? `
     background: rgba(255, 255, 255, 0.9);
