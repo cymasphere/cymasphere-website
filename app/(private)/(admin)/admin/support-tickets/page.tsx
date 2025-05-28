@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -22,11 +22,20 @@ import {
   FaClock,
   FaChevronLeft,
   FaChevronRight,
-  FaEllipsisV
+  FaEllipsisV,
+  FaChevronDown,
+  FaChevronUp,
+  FaPaperPlane,
+  FaPaperclip,
+  FaImage,
+  FaVideo,
+  FaFile,
+  FaUser,
+  FaUserTie
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 
 const TicketsContainer = styled.div`
@@ -574,6 +583,307 @@ const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
   }
 `;
 
+// Expandable Row Components
+const ExpandButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
+
+  svg {
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+  }
+`;
+
+const ExpandableRow = styled(motion.tr)`
+  background-color: rgba(255, 255, 255, 0.02);
+`;
+
+const ExpandableCell = styled.td`
+  padding: 0;
+  border: none;
+`;
+
+const ConversationContainer = styled(motion.div)`
+  padding: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.01);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const ConversationHeader = styled.div`
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const ConversationTitle = styled.h4`
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const ConversationMeta = styled.div`
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: flex;
+  gap: 1rem;
+`;
+
+const MessagesContainer = styled.div`
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 8px;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const Message = styled.div<{ isAdmin?: boolean }>`
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-direction: ${props => props.isAdmin ? 'row-reverse' : 'row'};
+`;
+
+const MessageAvatar = styled.div<{ isAdmin?: boolean }>`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ${props => props.isAdmin ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'linear-gradient(135deg, #6c757d, #495057)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+`;
+
+const MessageBubble = styled.div<{ isAdmin?: boolean }>`
+  max-width: 70%;
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  background-color: ${props => props.isAdmin ? 'var(--primary)' : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.isAdmin ? 'white' : 'var(--text)'};
+  position: relative;
+  word-wrap: break-word;
+
+  /* Message tail */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    ${props => props.isAdmin ? `
+      right: -12px;
+      border-left-color: var(--primary);
+    ` : `
+      left: -12px;
+      border-right-color: rgba(255, 255, 255, 0.08);
+    `}
+  }
+`;
+
+const MessageContent = styled.div`
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+`;
+
+const MessageTime = styled.div`
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+`;
+
+const MessageAttachment = styled.div`
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const AttachmentPreview = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const AttachmentIcon = styled.div`
+  color: var(--primary);
+  font-size: 1rem;
+`;
+
+const AttachmentInfo = styled.div`
+  flex: 1;
+`;
+
+const AttachmentName = styled.div`
+  font-size: 0.8rem;
+  font-weight: 500;
+`;
+
+const AttachmentSize = styled.div`
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+`;
+
+const ImagePreview = styled.img`
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const VideoPreview = styled.video`
+  max-width: 250px;
+  max-height: 180px;
+  border-radius: 8px;
+  cursor: pointer;
+`;
+
+const MessageInput = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const MessageTextArea = styled.textarea`
+  flex: 1;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  resize: none;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const MessageActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
+const AttachButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const SendButton = styled.button`
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
 // Mock data - in a real app, this would come from your API
 const mockTickets = [
   {
@@ -585,6 +895,37 @@ const mockTickets = [
     created: "2024-01-20",
     lastUpdate: "2024-01-20",
     assignedTo: "Support Team",
+    messages: [
+      {
+        id: "msg-1",
+        content: "I'm having trouble logging into my account when using Chrome browser. It keeps saying 'Invalid credentials' even though I'm sure my password is correct.",
+        timestamp: "2024-01-20T10:30:00Z",
+        isAdmin: false,
+        sender: "john.doe@example.com"
+      },
+      {
+        id: "msg-2",
+        content: "Hi John, thanks for reaching out. Can you please try clearing your browser cache and cookies? Also, please share a screenshot of the error message you're seeing.",
+        timestamp: "2024-01-20T11:15:00Z",
+        isAdmin: true,
+        sender: "Support Team"
+      },
+      {
+        id: "msg-3",
+        content: "I cleared the cache but still having the same issue. Here's the screenshot:",
+        timestamp: "2024-01-20T11:45:00Z",
+        isAdmin: false,
+        sender: "john.doe@example.com",
+        attachments: [
+          {
+            type: "image",
+            name: "login-error.png",
+            size: "245 KB",
+            url: "/images/mock-screenshot.jpg"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "T-002",
@@ -595,6 +936,37 @@ const mockTickets = [
     created: "2024-01-19",
     lastUpdate: "2024-01-20",
     assignedTo: "John Admin",
+    messages: [
+      {
+        id: "msg-4",
+        content: "I was charged twice for my monthly subscription. Can you please check my billing history?",
+        timestamp: "2024-01-19T14:20:00Z",
+        isAdmin: false,
+        sender: "jane.smith@example.com"
+      },
+      {
+        id: "msg-5",
+        content: "I've reviewed your account and found the duplicate charge. I'm processing a refund now. You should see it in 3-5 business days.",
+        timestamp: "2024-01-20T09:30:00Z",
+        isAdmin: true,
+        sender: "John Admin"
+      },
+      {
+        id: "msg-6",
+        content: "Thank you! Here's my bank statement showing the duplicate charges:",
+        timestamp: "2024-01-20T10:00:00Z",
+        isAdmin: false,
+        sender: "jane.smith@example.com",
+        attachments: [
+          {
+            type: "file",
+            name: "bank-statement.pdf",
+            size: "1.2 MB",
+            url: "/documents/bank-statement.pdf"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "T-003",
@@ -605,6 +977,37 @@ const mockTickets = [
     created: "2024-01-18",
     lastUpdate: "2024-01-19",
     assignedTo: "Development Team",
+    messages: [
+      {
+        id: "msg-7",
+        content: "Would love to see a dark mode option in the app. The current bright theme strains my eyes during long sessions.",
+        timestamp: "2024-01-18T16:45:00Z",
+        isAdmin: false,
+        sender: "pro@example.com"
+      },
+      {
+        id: "msg-8",
+        content: "Great suggestion! Dark mode is actually already available. You can enable it in Settings > Appearance > Theme. Here's a quick video showing how:",
+        timestamp: "2024-01-19T10:20:00Z",
+        isAdmin: true,
+        sender: "Development Team",
+        attachments: [
+          {
+            type: "video",
+            name: "dark-mode-tutorial.mp4",
+            size: "5.8 MB",
+            url: "/videos/dark-mode-tutorial.mp4"
+          }
+        ]
+      },
+      {
+        id: "msg-9",
+        content: "Perfect! Found it and enabled. Thanks for the quick help!",
+        timestamp: "2024-01-19T10:35:00Z",
+        isAdmin: false,
+        sender: "pro@example.com"
+      }
+    ]
   },
   {
     id: "T-004",
@@ -615,6 +1018,22 @@ const mockTickets = [
     created: "2024-01-20",
     lastUpdate: "2024-01-20",
     assignedTo: "Tech Lead",
+    messages: [
+      {
+        id: "msg-10",
+        content: "The audio synthesis engine is producing distorted output when using certain filter combinations. This is blocking my work completely.",
+        timestamp: "2024-01-20T08:15:00Z",
+        isAdmin: false,
+        sender: "musician@example.com"
+      },
+      {
+        id: "msg-11",
+        content: "This is indeed critical. Can you share the specific filter settings and a sample of the distorted audio? Our engineering team needs to reproduce this immediately.",
+        timestamp: "2024-01-20T08:30:00Z",
+        isAdmin: true,
+        sender: "Tech Lead"
+      }
+    ]
   },
   {
     id: "T-005",
@@ -625,6 +1044,29 @@ const mockTickets = [
     created: "2024-01-17",
     lastUpdate: "2024-01-18",
     assignedTo: "Support Team",
+    messages: [
+      {
+        id: "msg-12",
+        content: "I can't figure out how to export my compositions as MIDI files. Is this feature available?",
+        timestamp: "2024-01-17T13:20:00Z",
+        isAdmin: false,
+        sender: "newbie@example.com"
+      },
+      {
+        id: "msg-13",
+        content: "Yes! You can export MIDI files by going to File > Export > MIDI. Make sure your composition is selected first.",
+        timestamp: "2024-01-18T09:15:00Z",
+        isAdmin: true,
+        sender: "Support Team"
+      },
+      {
+        id: "msg-14",
+        content: "Got it! Thanks for the help.",
+        timestamp: "2024-01-18T09:30:00Z",
+        isAdmin: false,
+        sender: "newbie@example.com"
+      }
+    ]
   },
 ];
 
@@ -637,10 +1079,14 @@ function SupportTicketsPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
+  const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
   const itemsPerPage = 10;
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
   useEffect(() => {
     if (!languageLoading) {
@@ -794,6 +1240,103 @@ function SupportTicketsPage() {
     }
   };
 
+  // Expandable row handlers
+  const toggleRowExpansion = (ticketId: string) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(ticketId)) {
+      newExpandedRows.delete(ticketId);
+    } else {
+      newExpandedRows.add(ticketId);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
+  // Message handlers
+  const handleSendMessage = (ticketId: string) => {
+    const message = newMessages[ticketId]?.trim();
+    if (!message) return;
+
+    // In a real app, this would send to your API
+    console.log('Sending message for ticket:', ticketId, 'Message:', message);
+    
+    // Clear the input
+    setNewMessages(prev => ({
+      ...prev,
+      [ticketId]: ''
+    }));
+  };
+
+  const handleFileUpload = (ticketId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setUploadingFiles(prev => ({ ...prev, [ticketId]: true }));
+
+    // Simulate file upload
+    setTimeout(() => {
+      console.log('Files uploaded for ticket:', ticketId, files);
+      setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
+    }, 2000);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, ticketId: string) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(ticketId);
+    }
+  };
+
+  const formatMessageTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const renderAttachment = (attachment: any) => {
+    const { type, name, size, url } = attachment;
+
+    switch (type) {
+      case 'image':
+        return (
+          <MessageAttachment key={name}>
+            <ImagePreview src={url} alt={name} />
+            <AttachmentPreview>
+              <AttachmentIcon><FaImage /></AttachmentIcon>
+              <AttachmentInfo>
+                <AttachmentName>{name}</AttachmentName>
+                <AttachmentSize>{size}</AttachmentSize>
+              </AttachmentInfo>
+            </AttachmentPreview>
+          </MessageAttachment>
+        );
+      case 'video':
+        return (
+          <MessageAttachment key={name}>
+            <VideoPreview controls>
+              <source src={url} type="video/mp4" />
+            </VideoPreview>
+            <AttachmentPreview>
+              <AttachmentIcon><FaVideo /></AttachmentIcon>
+              <AttachmentInfo>
+                <AttachmentName>{name}</AttachmentName>
+                <AttachmentSize>{size}</AttachmentSize>
+              </AttachmentInfo>
+            </AttachmentPreview>
+          </MessageAttachment>
+        );
+      case 'file':
+      default:
+        return (
+          <MessageAttachment key={name}>
+            <AttachmentPreview>
+              <AttachmentIcon><FaFile /></AttachmentIcon>
+              <AttachmentInfo>
+                <AttachmentName>{name}</AttachmentName>
+                <AttachmentSize>{size}</AttachmentSize>
+              </AttachmentInfo>
+            </AttachmentPreview>
+          </MessageAttachment>
+        );
+    }
+  };
+
   const stats = [
     {
       value: mockTickets.length.toString(),
@@ -916,80 +1459,173 @@ function SupportTicketsPage() {
             </TableHeader>
             <TableBody>
               {paginatedTickets.map((ticket) => (
-                <TableRow key={ticket.id}>
-                  <TableCell>
-                    <TicketId>{ticket.id}</TicketId>
-                  </TableCell>
-                  <TableCell>
-                    <TicketSubject>{ticket.subject}</TicketSubject>
-                    <TicketUser>by {ticket.user}</TicketUser>
-                  </TableCell>
-                  <TableCell>
-                    <TicketUser>{ticket.user}</TicketUser>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={ticket.status}>
-                      {getStatusIcon(ticket.status)}
-                      {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>
-                    <PriorityBadge priority={ticket.priority}>
-                      {getPriorityIcon(ticket.priority)}
-                      {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
-                    </PriorityBadge>
-                  </TableCell>
-                  <TableCell>{formatDate(ticket.created)}</TableCell>
-                  <TableCell>
-                    <AssignedTo>{ticket.assignedTo}</AssignedTo>
-                  </TableCell>
-                  <TableCell>
-                    <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
-                      <MoreMenuButton
-                        onClick={(e) => handleMoreMenuClick(ticket.id, e)}
-                      >
-                        <FaEllipsisV />
-                      </MoreMenuButton>
-
-                      {openMoreMenu === ticket.id && (
-                        <MoreMenuDropdown
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ duration: 0.1 }}
+                <React.Fragment key={ticket.id}>
+                  <TableRow>
+                    <TableCell>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
+                          {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
+                        </ExpandButton>
+                        <TicketId>{ticket.id}</TicketId>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <TicketSubject>{ticket.subject}</TicketSubject>
+                      <TicketUser>by {ticket.user}</TicketUser>
+                    </TableCell>
+                    <TableCell>
+                      <TicketUser>{ticket.user}</TicketUser>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={ticket.status}>
+                        {getStatusIcon(ticket.status)}
+                        {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell>
+                      <PriorityBadge priority={ticket.priority}>
+                        {getPriorityIcon(ticket.priority)}
+                        {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
+                      </PriorityBadge>
+                    </TableCell>
+                    <TableCell>{formatDate(ticket.created)}</TableCell>
+                    <TableCell>
+                      <AssignedTo>{ticket.assignedTo}</AssignedTo>
+                    </TableCell>
+                    <TableCell>
+                      <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
+                        <MoreMenuButton
+                          onClick={(e) => handleMoreMenuClick(ticket.id, e)}
                         >
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
-                            <FaEye />
-                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
-                            <FaReply />
-                            {t("admin.supportTickets.ticketActions.reply", "Reply")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
-                            <FaEdit />
-                            {t("admin.supportTickets.ticketActions.edit", "Edit")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
-                            <FaUserCog />
-                            {t("admin.supportTickets.ticketActions.assign", "Assign")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
-                            <FaTimes />
-                            {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
-                          </MoreMenuItem>
-                          <MoreMenuItem 
-                            variant="danger"
-                            onClick={() => handleMoreMenuAction('delete', ticket)}
+                          <FaEllipsisV />
+                        </MoreMenuButton>
+
+                        {openMoreMenu === ticket.id && (
+                          <MoreMenuDropdown
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.1 }}
                           >
-                            <FaTimes />
-                            {t("admin.supportTickets.ticketActions.delete", "Delete")}
-                          </MoreMenuItem>
-                        </MoreMenuDropdown>
-                      )}
-                    </MoreMenuContainer>
-                  </TableCell>
-                </TableRow>
+                            <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
+                              <FaEye />
+                              {t("admin.supportTickets.ticketActions.view", "View Ticket")}
+                            </MoreMenuItem>
+                            <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
+                              <FaReply />
+                              {t("admin.supportTickets.ticketActions.reply", "Reply")}
+                            </MoreMenuItem>
+                            <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
+                              <FaEdit />
+                              {t("admin.supportTickets.ticketActions.edit", "Edit")}
+                            </MoreMenuItem>
+                            <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
+                              <FaUserCog />
+                              {t("admin.supportTickets.ticketActions.assign", "Assign")}
+                            </MoreMenuItem>
+                            <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
+                              <FaTimes />
+                              {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
+                            </MoreMenuItem>
+                            <MoreMenuItem 
+                              variant="danger"
+                              onClick={() => handleMoreMenuAction('delete', ticket)}
+                            >
+                              <FaTimes />
+                              {t("admin.supportTickets.ticketActions.delete", "Delete")}
+                            </MoreMenuItem>
+                          </MoreMenuDropdown>
+                        )}
+                      </MoreMenuContainer>
+                    </TableCell>
+                  </TableRow>
+
+                  <AnimatePresence>
+                    {expandedRows.has(ticket.id) && (
+                      <ExpandableRow
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                      >
+                        <ExpandableCell colSpan={8}>
+                          <ConversationContainer
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1, duration: 0.3 }}
+                          >
+                            <ConversationHeader>
+                              <ConversationTitle>
+                                Conversation: {ticket.subject}
+                              </ConversationTitle>
+                              <ConversationMeta>
+                                <span>Messages: {ticket.messages?.length || 0}</span>
+                                <span>Last updated: {formatDate(ticket.lastUpdate)}</span>
+                              </ConversationMeta>
+                            </ConversationHeader>
+
+                            <MessagesContainer>
+                              {ticket.messages?.map((message) => (
+                                <Message key={message.id} isAdmin={message.isAdmin}>
+                                  <MessageAvatar isAdmin={message.isAdmin}>
+                                    {message.isAdmin ? <FaUserTie /> : <FaUser />}
+                                  </MessageAvatar>
+                                  <div style={{ flex: 1 }}>
+                                    <MessageBubble isAdmin={message.isAdmin}>
+                                      <MessageContent>{message.content}</MessageContent>
+                                      <MessageTime>
+                                        {message.sender} • {formatMessageTime(message.timestamp)}
+                                      </MessageTime>
+                                    </MessageBubble>
+                                    {message.attachments?.map(renderAttachment)}
+                                  </div>
+                                </Message>
+                              ))}
+                            </MessagesContainer>
+
+                            <MessageInput>
+                              <MessageTextArea
+                                placeholder={t("admin.supportTickets.conversation.placeholder", "Type your message...")}
+                                value={newMessages[ticket.id] || ''}
+                                onChange={(e) => setNewMessages(prev => ({
+                                  ...prev,
+                                  [ticket.id]: e.target.value
+                                }))}
+                                onKeyPress={(e) => handleKeyPress(e, ticket.id)}
+                                rows={1}
+                              />
+                              <MessageActions>
+                                <AttachButton
+                                  onClick={() => fileInputRefs.current[ticket.id]?.click()}
+                                  disabled={uploadingFiles[ticket.id]}
+                                >
+                                  <FaPaperclip />
+                                </AttachButton>
+                                <SendButton
+                                  onClick={() => handleSendMessage(ticket.id)}
+                                  disabled={!newMessages[ticket.id]?.trim() || uploadingFiles[ticket.id]}
+                                >
+                                  <FaPaperPlane />
+                                </SendButton>
+                              </MessageActions>
+                              <FileInput
+                                ref={(el) => {
+                                  if (el) {
+                                    fileInputRefs.current[ticket.id] = el;
+                                  }
+                                }}
+                                type="file"
+                                multiple
+                                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                                onChange={(e) => handleFileUpload(ticket.id, e.target.files)}
+                              />
+                            </MessageInput>
+                          </ConversationContainer>
+                        </ExpandableCell>
+                      </ExpandableRow>
+                    )}
+                  </AnimatePresence>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>
