@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
       <Container>
         <motion.div initial="hidden" animate="visible" variants={fadeIn}>
           <Title>{t("legal.privacyPolicy", "Privacy Policy")}</Title>
-          <LastUpdated>Last Updated: December 1, 2024</LastUpdated>
+          <LastUpdated>Last Updated: May 28, 2025</LastUpdated>
 
           <Section>
             <SectionTitle>{t("legal.privacy.intro.title", "1. Introduction")}</SectionTitle>
@@ -151,8 +151,7 @@ export default function PrivacyPolicyPage() {
 
           <ContactInfo>
             <strong>Contact Information</strong><br />
-            Email: support@cymasphere.com<br />
-            Website: cymasphere.com
+            Email: support@cymasphere.com
           </ContactInfo>
         </motion.div>
       </Container>
