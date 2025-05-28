@@ -360,12 +360,12 @@ const Footer = () => {
           <FooterButton onClick={() => setShowAboutModal(true)}>
             {getTranslation("footer.aboutUs", "About Us")}
           </FooterButton>
-          <FooterButton onClick={() => setShowPrivacyModal(true)}>
-            {getTranslation("footer.privacyPolicy", "Privacy Policy")}
-          </FooterButton>
-          <FooterButton onClick={() => setShowTermsModal(true)}>
-            {getTranslation("footer.termsConditions", "Terms & Conditions")}
-          </FooterButton>
+          <Link href="/privacy-policy" passHref legacyBehavior>
+            <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
+          </Link>
+          <Link href="/terms-of-service" passHref legacyBehavior>
+            <FooterLink>{getTranslation("footer.termsConditions", "Terms & Conditions")}</FooterLink>
+          </Link>
         </FooterColumn>
       </FooterContent>
 

@@ -13,6 +13,7 @@ import {
   FaTicketAlt,
   FaChartBar,
   FaCog,
+  FaTag,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -578,6 +579,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Users
             </NavItem>
           </Link>
+          <Link href="/admin/coupons" passHref legacyBehavior>
+            <NavItem
+              $active={pathname === "/admin/coupons" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/coupons")}
+            >
+              <FaTag />
+              Coupons
+            </NavItem>
+          </Link>
           <Link href="/admin/support-tickets" passHref legacyBehavior>
             <NavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
@@ -671,11 +681,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/admin/coupons" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/coupons" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={2}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/coupons")}
+            >
+              <FaTag />
+              Coupons
+            </MobileNavItem>
+          </Link>
+
           <Link href="/admin/support-tickets" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={2}
+              custom={3}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
@@ -688,7 +712,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/analytics" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={3}
+              custom={4}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/analytics")}
@@ -701,7 +725,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={4}
+              custom={5}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/settings")}
@@ -714,7 +738,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={5}
+              custom={6}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}

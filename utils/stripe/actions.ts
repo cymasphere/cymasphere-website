@@ -684,7 +684,7 @@ export async function refundPaymentIntent(
   paymentIntentId: string,
   amount?: number,
   reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
-): Promise<{ success: boolean; refund?: Stripe.Refund; error?: string }> {
+): Promise<{ success: boolean; refund?: any; error?: string }> {
   try {
     const refundData: Stripe.RefundCreateParams = {
       payment_intent: paymentIntentId,
@@ -698,9 +698,26 @@ export async function refundPaymentIntent(
 
     const refund = await stripe.refunds.create(refundData);
 
+    // Serialize the refund object
+    const serializedRefund = {
+      id: refund.id,
+      object: refund.object,
+      amount: refund.amount,
+      charge: refund.charge,
+      created: refund.created,
+      currency: refund.currency,
+      metadata: refund.metadata,
+      payment_intent: refund.payment_intent,
+      reason: refund.reason,
+      receipt_number: refund.receipt_number,
+      source_transfer_reversal: refund.source_transfer_reversal,
+      status: refund.status,
+      transfer_reversal: refund.transfer_reversal,
+    };
+
     return {
       success: true,
-      refund,
+      refund: serializedRefund,
     };
   } catch (error) {
     console.error("Error refunding payment intent:", error);
@@ -721,7 +738,7 @@ export async function refundInvoice(
   invoiceId: string,
   amount?: number,
   reason?: Stripe.CreditNoteCreateParams.Reason
-): Promise<{ success: boolean; creditNote?: Stripe.CreditNote; error?: string }> {
+): Promise<{ success: boolean; creditNote?: any; error?: string }> {
   try {
     // First, get the invoice to check its status and amount
     const invoice = await stripe.invoices.retrieve(invoiceId);
@@ -745,9 +762,41 @@ export async function refundInvoice(
 
     const creditNote = await stripe.creditNotes.create(creditNoteData);
 
+    // Serialize the credit note object
+    const serializedCreditNote = {
+      id: creditNote.id,
+      object: creditNote.object,
+      amount: creditNote.amount,
+      created: creditNote.created,
+      currency: creditNote.currency,
+      customer: typeof creditNote.customer === 'string' ? creditNote.customer : {
+        id: creditNote.customer.id,
+        email: 'email' in creditNote.customer ? creditNote.customer.email : null,
+      },
+      customer_balance_transaction: creditNote.customer_balance_transaction,
+      discount_amount: creditNote.discount_amount,
+      discount_amounts: creditNote.discount_amounts,
+      invoice: creditNote.invoice,
+      lines: creditNote.lines,
+      livemode: creditNote.livemode,
+      memo: creditNote.memo,
+      metadata: creditNote.metadata,
+      number: creditNote.number,
+      out_of_band_amount: creditNote.out_of_band_amount,
+      pdf: creditNote.pdf,
+      reason: creditNote.reason,
+      refund: creditNote.refund,
+      status: creditNote.status,
+      subtotal: creditNote.subtotal,
+      tax_amounts: creditNote.tax_amounts,
+      total: creditNote.total,
+      type: creditNote.type,
+      voided_at: creditNote.voided_at,
+    };
+
     return {
       success: true,
-      creditNote,
+      creditNote: serializedCreditNote,
     };
   } catch (error) {
     console.error("Error refunding invoice:", error);
@@ -764,14 +813,31 @@ export async function refundInvoice(
  */
 export async function getPaymentIntentRefunds(
   paymentIntentId: string
-): Promise<{ refunds: Stripe.Refund[]; error?: string }> {
+): Promise<{ refunds: any[]; error?: string }> {
   try {
     const refunds = await stripe.refunds.list({
       payment_intent: paymentIntentId,
     });
 
+    // Serialize the refunds
+    const serializedRefunds = refunds.data.map(refund => ({
+      id: refund.id,
+      object: refund.object,
+      amount: refund.amount,
+      charge: refund.charge,
+      created: refund.created,
+      currency: refund.currency,
+      metadata: refund.metadata,
+      payment_intent: refund.payment_intent,
+      reason: refund.reason,
+      receipt_number: refund.receipt_number,
+      source_transfer_reversal: refund.source_transfer_reversal,
+      status: refund.status,
+      transfer_reversal: refund.transfer_reversal,
+    }));
+
     return {
-      refunds: refunds.data,
+      refunds: serializedRefunds,
     };
   } catch (error) {
     console.error("Error fetching refunds:", error);
@@ -788,20 +854,629 @@ export async function getPaymentIntentRefunds(
  */
 export async function getInvoiceCreditNotes(
   invoiceId: string
-): Promise<{ creditNotes: Stripe.CreditNote[]; error?: string }> {
+): Promise<{ creditNotes: any[]; error?: string }> {
   try {
     const creditNotes = await stripe.creditNotes.list({
       invoice: invoiceId,
     });
 
+    // Serialize the credit notes
+    const serializedCreditNotes = creditNotes.data.map(creditNote => ({
+      id: creditNote.id,
+      object: creditNote.object,
+      amount: creditNote.amount,
+      created: creditNote.created,
+      currency: creditNote.currency,
+      customer: typeof creditNote.customer === 'string' ? creditNote.customer : {
+        id: creditNote.customer.id,
+        email: 'email' in creditNote.customer ? creditNote.customer.email : null,
+      },
+      customer_balance_transaction: creditNote.customer_balance_transaction,
+      discount_amount: creditNote.discount_amount,
+      discount_amounts: creditNote.discount_amounts,
+      invoice: creditNote.invoice,
+      lines: creditNote.lines,
+      livemode: creditNote.livemode,
+      memo: creditNote.memo,
+      metadata: creditNote.metadata,
+      number: creditNote.number,
+      out_of_band_amount: creditNote.out_of_band_amount,
+      pdf: creditNote.pdf,
+      reason: creditNote.reason,
+      refund: creditNote.refund,
+      status: creditNote.status,
+      subtotal: creditNote.subtotal,
+      tax_amounts: creditNote.tax_amounts,
+      total: creditNote.total,
+      type: creditNote.type,
+      voided_at: creditNote.voided_at,
+    }));
+
     return {
-      creditNotes: creditNotes.data,
+      creditNotes: serializedCreditNotes,
     };
   } catch (error) {
     console.error("Error fetching credit notes:", error);
     return {
       creditNotes: [],
       error: error instanceof Error ? error.message : "Failed to fetch credit notes",
+    };
+  }
+}
+
+/**
+ * Create a one-time use coupon
+ * @param discountType Type of discount ('percent' or 'amount')
+ * @param discountValue Value of the discount (percentage or amount in cents)
+ * @param name Optional name for the coupon
+ * @param currency Currency for amount-based coupons (required if discountType is 'amount')
+ */
+export async function createOneTimeCoupon(
+  discountType: 'percent' | 'amount',
+  discountValue: number,
+  name?: string,
+  currency: string = 'usd'
+): Promise<{ success: boolean; coupon?: any; error?: string }> {
+  try {
+    const couponData: Stripe.CouponCreateParams = {
+      duration: 'once', // One-time use
+      name: name || `${discountType === 'percent' ? discountValue + '%' : '$' + (discountValue / 100)} off`,
+    };
+
+    // Set discount value based on type
+    if (discountType === 'percent') {
+      couponData.percent_off = discountValue;
+    } else {
+      couponData.amount_off = discountValue;
+      couponData.currency = currency;
+    }
+
+    const coupon = await stripe.coupons.create(couponData);
+
+    // Serialize the coupon object to plain object
+    const serializedCoupon = {
+      id: coupon.id,
+      object: coupon.object,
+      amount_off: coupon.amount_off,
+      created: coupon.created,
+      currency: coupon.currency,
+      duration: coupon.duration,
+      duration_in_months: coupon.duration_in_months,
+      livemode: coupon.livemode,
+      max_redemptions: coupon.max_redemptions,
+      metadata: coupon.metadata,
+      name: coupon.name,
+      percent_off: coupon.percent_off,
+      redeem_by: coupon.redeem_by,
+      times_redeemed: coupon.times_redeemed,
+      valid: coupon.valid,
+    };
+
+    return {
+      success: true,
+      coupon: serializedCoupon,
+    };
+  } catch (error) {
+    console.error("Error creating coupon:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create coupon",
+    };
+  }
+}
+
+/**
+ * Create a promotion code for a coupon
+ * @param couponId The coupon ID to create a promotion code for
+ * @param code Optional custom code (if not provided, Stripe generates one)
+ * @param maxRedemptions Maximum number of times this code can be used (default: 1)
+ * @param expiresAt Optional expiration timestamp
+ */
+export async function createPromotionCode(
+  couponId: string,
+  code?: string,
+  maxRedemptions: number = 1,
+  expiresAt?: number
+): Promise<{ success: boolean; promotionCode?: any; error?: string }> {
+  try {
+    const promotionCodeData: Stripe.PromotionCodeCreateParams = {
+      coupon: couponId,
+      max_redemptions: maxRedemptions,
+    };
+
+    // Add custom code if provided
+    if (code) {
+      promotionCodeData.code = code.toUpperCase();
+    }
+
+    // Add expiration if provided
+    if (expiresAt) {
+      promotionCodeData.expires_at = expiresAt;
+    }
+
+    const promotionCode = await stripe.promotionCodes.create(promotionCodeData);
+
+    // Serialize the promotion code object to plain object
+    const serializedPromotionCode = {
+      id: promotionCode.id,
+      object: promotionCode.object,
+      active: promotionCode.active,
+      code: promotionCode.code,
+      coupon: typeof promotionCode.coupon === 'string' ? promotionCode.coupon : {
+        id: promotionCode.coupon.id,
+        object: promotionCode.coupon.object,
+        amount_off: promotionCode.coupon.amount_off,
+        created: promotionCode.coupon.created,
+        currency: promotionCode.coupon.currency,
+        duration: promotionCode.coupon.duration,
+        duration_in_months: promotionCode.coupon.duration_in_months,
+        livemode: promotionCode.coupon.livemode,
+        max_redemptions: promotionCode.coupon.max_redemptions,
+        metadata: promotionCode.coupon.metadata,
+        name: promotionCode.coupon.name,
+        percent_off: promotionCode.coupon.percent_off,
+        redeem_by: promotionCode.coupon.redeem_by,
+        times_redeemed: promotionCode.coupon.times_redeemed,
+        valid: promotionCode.coupon.valid,
+      },
+      created: promotionCode.created,
+      customer: promotionCode.customer,
+      expires_at: promotionCode.expires_at,
+      livemode: promotionCode.livemode,
+      max_redemptions: promotionCode.max_redemptions,
+      metadata: promotionCode.metadata,
+      restrictions: promotionCode.restrictions,
+      times_redeemed: promotionCode.times_redeemed,
+    };
+
+    return {
+      success: true,
+      promotionCode: serializedPromotionCode,
+    };
+  } catch (error) {
+    console.error("Error creating promotion code:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create promotion code",
+    };
+  }
+}
+
+/**
+ * Create a complete one-time use discount code (coupon + promotion code)
+ * @param discountType Type of discount ('percent' or 'amount')
+ * @param discountValue Value of the discount
+ * @param options Additional options for the discount code
+ */
+export async function createOneTimeDiscountCode(
+  discountType: 'percent' | 'amount',
+  discountValue: number,
+  options?: {
+    code?: string;
+    name?: string;
+    currency?: string;
+    expiresAt?: number;
+    maxRedemptions?: number;
+  }
+): Promise<{ 
+  success: boolean; 
+  coupon?: any; 
+  promotionCode?: any;
+  code?: string;
+  error?: string;
+}> {
+  try {
+    // Create the coupon first
+    const couponResult = await createOneTimeCoupon(
+      discountType,
+      discountValue,
+      options?.name,
+      options?.currency
+    );
+
+    if (!couponResult.success || !couponResult.coupon) {
+      return {
+        success: false,
+        error: couponResult.error || "Failed to create coupon",
+      };
+    }
+
+    // Create the promotion code
+    const promotionCodeResult = await createPromotionCode(
+      couponResult.coupon.id,
+      options?.code,
+      options?.maxRedemptions || 1,
+      options?.expiresAt
+    );
+
+    if (!promotionCodeResult.success || !promotionCodeResult.promotionCode) {
+      return {
+        success: false,
+        error: promotionCodeResult.error || "Failed to create promotion code",
+      };
+    }
+
+    return {
+      success: true,
+      coupon: couponResult.coupon,
+      promotionCode: promotionCodeResult.promotionCode,
+      code: promotionCodeResult.promotionCode.code,
+    };
+  } catch (error) {
+    console.error("Error creating discount code:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create discount code",
+    };
+  }
+}
+
+/**
+ * List all promotion codes with optional filters
+ * @param options Filter options
+ */
+export async function listPromotionCodes(options?: {
+  active?: boolean;
+  coupon?: string;
+  limit?: number;
+}): Promise<{ promotionCodes: any[]; error?: string }> {
+  try {
+    const listParams: Stripe.PromotionCodeListParams = {
+      limit: options?.limit || 100,
+      expand: ['data.coupon'], // Expand coupon data
+    };
+
+    if (options?.active !== undefined) {
+      listParams.active = options.active;
+    }
+
+    if (options?.coupon) {
+      listParams.coupon = options.coupon;
+    }
+
+    const promotionCodes = await stripe.promotionCodes.list(listParams);
+
+    // Serialize the promotion codes to plain objects
+    const serializedPromotionCodes = promotionCodes.data.map(promotionCode => ({
+      id: promotionCode.id,
+      object: promotionCode.object,
+      active: promotionCode.active,
+      code: promotionCode.code,
+      coupon: typeof promotionCode.coupon === 'string' ? promotionCode.coupon : {
+        id: promotionCode.coupon.id,
+        object: promotionCode.coupon.object,
+        amount_off: promotionCode.coupon.amount_off,
+        created: promotionCode.coupon.created,
+        currency: promotionCode.coupon.currency,
+        duration: promotionCode.coupon.duration,
+        duration_in_months: promotionCode.coupon.duration_in_months,
+        livemode: promotionCode.coupon.livemode,
+        max_redemptions: promotionCode.coupon.max_redemptions,
+        metadata: promotionCode.coupon.metadata,
+        name: promotionCode.coupon.name,
+        percent_off: promotionCode.coupon.percent_off,
+        redeem_by: promotionCode.coupon.redeem_by,
+        times_redeemed: promotionCode.coupon.times_redeemed,
+        valid: promotionCode.coupon.valid,
+      },
+      created: promotionCode.created,
+      customer: promotionCode.customer,
+      expires_at: promotionCode.expires_at,
+      livemode: promotionCode.livemode,
+      max_redemptions: promotionCode.max_redemptions,
+      metadata: promotionCode.metadata,
+      restrictions: promotionCode.restrictions,
+      times_redeemed: promotionCode.times_redeemed,
+    }));
+
+    return {
+      promotionCodes: serializedPromotionCodes,
+    };
+  } catch (error) {
+    console.error("Error listing promotion codes:", error);
+    return {
+      promotionCodes: [],
+      error: error instanceof Error ? error.message : "Failed to list promotion codes",
+    };
+  }
+}
+
+/**
+ * Deactivate a promotion code
+ * @param promotionCodeId The promotion code ID to deactivate
+ */
+export async function deactivatePromotionCode(
+  promotionCodeId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await stripe.promotionCodes.update(promotionCodeId, {
+      active: false,
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error deactivating promotion code:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to deactivate promotion code",
+    };
+  }
+}
+
+/**
+ * Cancel a subscription immediately (admin function)
+ * @param subscriptionId The subscription ID to cancel
+ * @param reason Optional reason for cancellation
+ */
+export async function cancelSubscriptionAdmin(
+  subscriptionId: string,
+  reason?: string
+): Promise<{ success: boolean; subscription?: any; error?: string }> {
+  try {
+    const subscription = await stripe.subscriptions.cancel(subscriptionId, {
+      invoice_now: false,
+      prorate: false,
+    });
+
+    // Serialize the subscription object
+    const serializedSubscription = {
+      id: subscription.id,
+      object: subscription.object,
+      cancel_at: subscription.cancel_at,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.canceled_at,
+      created: subscription.created,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start,
+      customer: typeof subscription.customer === 'string' ? subscription.customer : {
+        id: subscription.customer.id,
+        email: 'email' in subscription.customer ? subscription.customer.email : null,
+      },
+      status: subscription.status,
+      metadata: subscription.metadata,
+    };
+
+    return {
+      success: true,
+      subscription: serializedSubscription,
+    };
+  } catch (error) {
+    console.error("Error canceling subscription:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to cancel subscription",
+    };
+  }
+}
+
+/**
+ * Reactivate a canceled subscription (admin function)
+ * @param subscriptionId The subscription ID to reactivate
+ */
+export async function reactivateSubscription(
+  subscriptionId: string
+): Promise<{ success: boolean; subscription?: any; error?: string }> {
+  try {
+    // Update the subscription to remove the cancellation
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: false,
+    });
+
+    // Serialize the subscription object
+    const serializedSubscription = {
+      id: subscription.id,
+      object: subscription.object,
+      cancel_at: subscription.cancel_at,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.canceled_at,
+      created: subscription.created,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start,
+      customer: typeof subscription.customer === 'string' ? subscription.customer : {
+        id: subscription.customer.id,
+        email: 'email' in subscription.customer ? subscription.customer.email : null,
+      },
+      status: subscription.status,
+      metadata: subscription.metadata,
+    };
+
+    return {
+      success: true,
+      subscription: serializedSubscription,
+    };
+  } catch (error) {
+    console.error("Error reactivating subscription:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to reactivate subscription",
+    };
+  }
+}
+
+/**
+ * Change subscription plan (admin function)
+ * @param subscriptionId The subscription ID to modify
+ * @param newPriceId The new price ID to change to
+ */
+export async function changeSubscriptionPlan(
+  subscriptionId: string,
+  newPriceId: string
+): Promise<{ success: boolean; subscription?: any; error?: string }> {
+  try {
+    // Get the current subscription
+    const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    if (!currentSubscription.items.data.length) {
+      return {
+        success: false,
+        error: "No subscription items found",
+      };
+    }
+
+    // Update the subscription with the new price
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+      items: [
+        {
+          id: currentSubscription.items.data[0].id,
+          price: newPriceId,
+        },
+      ],
+      proration_behavior: 'create_prorations', // Create prorations for the change
+    });
+
+    // Serialize the subscription object
+    const serializedSubscription = {
+      id: subscription.id,
+      object: subscription.object,
+      cancel_at: subscription.cancel_at,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.canceled_at,
+      created: subscription.created,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start,
+      customer: typeof subscription.customer === 'string' ? subscription.customer : {
+        id: subscription.customer.id,
+        email: 'email' in subscription.customer ? subscription.customer.email : null,
+      },
+      status: subscription.status,
+      metadata: subscription.metadata,
+      items: subscription.items.data.map(item => ({
+        id: item.id,
+        price: {
+          id: item.price.id,
+          unit_amount: item.price.unit_amount,
+          currency: item.price.currency,
+          recurring: item.price.recurring,
+        },
+        quantity: item.quantity,
+      })),
+    };
+
+    return {
+      success: true,
+      subscription: serializedSubscription,
+    };
+  } catch (error) {
+    console.error("Error changing subscription plan:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to change subscription plan",
+    };
+  }
+}
+
+/**
+ * Get subscription details (admin function)
+ * @param subscriptionId The subscription ID to retrieve
+ */
+export async function getSubscriptionDetails(
+  subscriptionId: string
+): Promise<{ success: boolean; subscription?: any; error?: string }> {
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['items.data.price', 'customer'],
+    });
+
+    // Serialize the subscription object
+    const serializedSubscription = {
+      id: subscription.id,
+      object: subscription.object,
+      cancel_at: subscription.cancel_at,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.canceled_at,
+      created: subscription.created,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start,
+      customer: typeof subscription.customer === 'string' ? subscription.customer : {
+        id: subscription.customer.id,
+        email: 'email' in subscription.customer ? subscription.customer.email : null,
+      },
+      status: subscription.status,
+      metadata: subscription.metadata,
+      items: subscription.items.data.map(item => ({
+        id: item.id,
+        price: {
+          id: item.price.id,
+          unit_amount: item.price.unit_amount,
+          currency: item.price.currency,
+          recurring: item.price.recurring,
+          nickname: item.price.nickname,
+        },
+        quantity: item.quantity,
+      })),
+      trial_end: subscription.trial_end,
+      trial_start: subscription.trial_start,
+    };
+
+    return {
+      success: true,
+      subscription: serializedSubscription,
+    };
+  } catch (error) {
+    console.error("Error getting subscription details:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to get subscription details",
+    };
+  }
+}
+
+/**
+ * List all subscriptions for a customer (admin function)
+ * @param customerId The customer ID
+ */
+export async function getCustomerSubscriptions(
+  customerId: string
+): Promise<{ success: boolean; subscriptions?: any[]; error?: string }> {
+  try {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      expand: ['data.items.data.price'],
+    });
+
+    // Serialize the subscriptions
+    const serializedSubscriptions = subscriptions.data.map(subscription => ({
+      id: subscription.id,
+      object: subscription.object,
+      cancel_at: subscription.cancel_at,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.canceled_at,
+      created: subscription.created,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start,
+      customer: typeof subscription.customer === 'string' ? subscription.customer : {
+        id: subscription.customer.id,
+        email: 'email' in subscription.customer ? subscription.customer.email : null,
+      },
+      status: subscription.status,
+      metadata: subscription.metadata,
+      items: subscription.items.data.map(item => ({
+        id: item.id,
+        price: {
+          id: item.price.id,
+          unit_amount: item.price.unit_amount,
+          currency: item.price.currency,
+          recurring: item.price.recurring,
+          nickname: item.price.nickname,
+        },
+        quantity: item.quantity,
+      })),
+      trial_end: subscription.trial_end,
+      trial_start: subscription.trial_start,
+    }));
+
+    return {
+      success: true,
+      subscriptions: serializedSubscriptions,
+    };
+  } catch (error) {
+    console.error("Error getting customer subscriptions:", error);
+    return {
+      success: false,
+      subscriptions: [],
+      error: error instanceof Error ? error.message : "Failed to get customer subscriptions",
     };
   }
 }

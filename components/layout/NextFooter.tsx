@@ -346,26 +346,12 @@ const NextFooter = () => {
           <Link href="/contact" passHref legacyBehavior>
             <FooterLink>Contact</FooterLink>
           </Link>
-          <FooterLink
-            as="a"
-            href="#"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              setShowTermsModal(true);
-            }}
-          >
-            Terms of Service
-          </FooterLink>
-          <FooterLink
-            as="a"
-            href="#"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              setShowPrivacyModal(true);
-            }}
-          >
-            Privacy Policy
-          </FooterLink>
+          <Link href="/terms-of-service" passHref legacyBehavior>
+            <FooterLink>Terms of Service</FooterLink>
+          </Link>
+          <Link href="/privacy-policy" passHref legacyBehavior>
+            <FooterLink>Privacy Policy</FooterLink>
+          </Link>
         </FooterColumn>
       </FooterContent>
 

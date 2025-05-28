@@ -1,6 +1,5 @@
 import React from "react";
 import { Metadata } from "next";
-import ClientLayout from "@/components/layout/ClientLayout";
 
 export const metadata: Metadata = {
   title: "Cymasphere",
@@ -13,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClientLayout>
+    <>
       {children}
-    </ClientLayout>
+    </>
   );
 } 

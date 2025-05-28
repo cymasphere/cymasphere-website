@@ -19,7 +19,10 @@ import {
   FaExclamationTriangle,
   FaExclamationCircle,
   FaCheckCircle,
-  FaClock
+  FaClock,
+  FaChevronLeft,
+  FaChevronRight,
+  FaEllipsisV
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -220,11 +223,30 @@ const TableContainer = styled.div`
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.05);
+
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    
+    table {
+      min-width: 1200px;
+    }
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+
+  /* Define column widths */
+  th:nth-child(1), td:nth-child(1) { width: 100px; } /* Ticket ID */
+  th:nth-child(2), td:nth-child(2) { width: 250px; } /* Subject */
+  th:nth-child(3), td:nth-child(3) { width: 180px; } /* User */
+  th:nth-child(4), td:nth-child(4) { width: 120px; } /* Status */
+  th:nth-child(5), td:nth-child(5) { width: 120px; } /* Priority */
+  th:nth-child(6), td:nth-child(6) { width: 110px; } /* Created */
+  th:nth-child(7), td:nth-child(7) { width: 140px; } /* Assigned To */
+  th:nth-child(8), td:nth-child(8) { width: 160px; } /* Actions */
 `;
 
 const TableHeader = styled.thead`
@@ -240,18 +262,17 @@ const TableHeaderCell = styled.th`
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
+  position: relative;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.02);
   }
 
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
   svg {
     color: var(--text-secondary);
     font-size: 0.8rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
   }
 `;
 
@@ -275,6 +296,14 @@ const TableCell = styled.td`
   color: var(--text);
   font-size: 0.9rem;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  /* Allow wrapping for action buttons */
+  &:last-child {
+    white-space: normal;
+  }
 `;
 
 const TicketId = styled.span`
@@ -284,13 +313,13 @@ const TicketId = styled.span`
   border-radius: 4px;
   font-size: 0.8rem;
   color: var(--text-secondary);
+  font-weight: 600;
 `;
 
 const TicketSubject = styled.div`
   font-weight: 600;
   color: var(--text);
   margin-bottom: 0.25rem;
-  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -299,158 +328,120 @@ const TicketSubject = styled.div`
 const TicketUser = styled.div`
   font-size: 0.8rem;
   color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
+  text-transform: capitalize;
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  width: fit-content;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   
   ${(props) => {
     switch (props.status) {
       case 'open':
         return `
-          background-color: rgba(40, 167, 69, 0.1);
-          color: #28a745;
-          border: 1px solid rgba(40, 167, 69, 0.2);
+          background-color: #28a745;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         `;
       case 'inProgress':
         return `
-          background-color: rgba(255, 193, 7, 0.1);
-          color: #ffc107;
-          border: 1px solid rgba(255, 193, 7, 0.2);
+          background-color: #ffc107;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         `;
       case 'resolved':
         return `
-          background-color: rgba(108, 99, 255, 0.1);
-          color: var(--primary);
-          border: 1px solid rgba(108, 99, 255, 0.2);
+          background-color: var(--primary);
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         `;
       case 'closed':
         return `
-          background-color: rgba(128, 128, 128, 0.1);
-          color: #888;
-          border: 1px solid rgba(128, 128, 128, 0.2);
+          background-color: #6c757d;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         `;
       default:
         return `
-          background-color: rgba(128, 128, 128, 0.1);
-          color: #888;
-          border: 1px solid rgba(128, 128, 128, 0.2);
-        `;
-    }
-  }}
-`;
-
-const PriorityBadge = styled.span<{ priority: string }>`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: fit-content;
-  
-  ${(props) => {
-    switch (props.priority) {
-      case 'urgent':
-        return `
-          background-color: rgba(220, 53, 69, 0.1);
-          color: #dc3545;
-          border: 1px solid rgba(220, 53, 69, 0.2);
-        `;
-      case 'high':
-        return `
-          background-color: rgba(255, 102, 0, 0.1);
-          color: #ff6600;
-          border: 1px solid rgba(255, 102, 0, 0.2);
-        `;
-      case 'medium':
-        return `
-          background-color: rgba(255, 193, 7, 0.1);
-          color: #ffc107;
-          border: 1px solid rgba(255, 193, 7, 0.2);
-        `;
-      case 'low':
-        return `
-          background-color: rgba(40, 167, 69, 0.1);
-          color: #28a745;
-          border: 1px solid rgba(40, 167, 69, 0.2);
-        `;
-      default:
-        return `
-          background-color: rgba(128, 128, 128, 0.1);
-          color: #888;
-          border: 1px solid rgba(128, 128, 128, 0.2);
-        `;
-    }
-  }}
-`;
-
-const AssignedTo = styled.div`
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-style: italic;
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const TicketActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 6px 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  ${(props) => {
-    switch (props.variant) {
-      case 'primary':
-        return `
-          background-color: rgba(108, 99, 255, 0.1);
-          color: var(--primary);
-          &:hover {
-            background-color: rgba(108, 99, 255, 0.2);
-          }
-        `;
-      case 'danger':
-        return `
-          background-color: rgba(220, 53, 69, 0.1);
-          color: #dc3545;
-          &:hover {
-            background-color: rgba(220, 53, 69, 0.2);
-          }
-        `;
-      default:
-        return `
-          background-color: rgba(255, 255, 255, 0.05);
-          color: var(--text-secondary);
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: var(--text);
-          }
+          background-color: #6c757d;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         `;
     }
   }}
 
   svg {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
   }
+`;
+
+const PriorityBadge = styled.span<{ priority: string }>`
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  
+  ${(props) => {
+    switch (props.priority) {
+      case 'urgent':
+        return `
+          background-color: #dc3545;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+      case 'high':
+        return `
+          background-color: #ff6600;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+      case 'medium':
+        return `
+          background-color: #ffc107;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+      case 'low':
+        return `
+          background-color: #28a745;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+      default:
+        return `
+          background-color: #6c757d;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+    }
+  }}
+
+  svg {
+    font-size: 0.7rem;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  }
+`;
+
+const AssignedTo = styled.div`
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
 `;
 
 const Pagination = styled.div`
@@ -473,27 +464,94 @@ const PaginationButtons = styled.div`
   margin-left: auto;
 `;
 
-const PaginationButton = styled.button<{ active?: boolean }>`
-  padding: 8px 12px;
-  border: none;
+const PaginationEllipsis = styled.span`
+  padding: 0.5rem;
+  color: var(--text-secondary);
+`;
+
+const PaginationButton = styled.button<{ $active?: boolean }>`
+  padding: 0.5rem 1rem;
+  margin: 0 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+  background-color: ${props => props.$active ? 'var(--primary)' : 'transparent'};
+  color: ${props => props.$active ? 'white' : 'var(--text)'};
   cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+// More Menu Components
+const MoreMenuContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const MoreMenuButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const MoreMenuDropdown = styled(motion.div)`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 160px;
+  overflow: hidden;
+`;
+
+const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: ${props => props.variant === 'danger' ? '#e74c3c' : 'var(--text)'};
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-size: 0.9rem;
-  
-  ${(props) => props.active 
-    ? `
-      background-color: var(--primary);
-      color: white;
-    `
-    : `
-      background-color: rgba(255, 255, 255, 0.05);
-      color: var(--text-secondary);
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: var(--text);
-      }
-    `
+
+  &:hover {
+    background-color: ${props => props.variant === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  }
+
+  svg {
+    font-size: 0.8rem;
+    width: 16px;
   }
 `;
 
@@ -559,6 +617,7 @@ function SupportTicketsPage() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
   const itemsPerPage = 10;
   
   const { t } = useTranslation();
@@ -569,6 +628,20 @@ function SupportTicketsPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Only close if clicking outside of any more menu container
+      if (!target.closest('[data-more-menu]')) {
+        setOpenMoreMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -667,6 +740,39 @@ function SupportTicketsPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // More menu handlers
+  const handleMoreMenuClick = (ticketId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMoreMenu(openMoreMenu === ticketId ? null : ticketId);
+  };
+
+  const handleMoreMenuAction = (action: string, ticket: any) => {
+    setOpenMoreMenu(null);
+    
+    switch (action) {
+      case 'view':
+        console.log('View ticket:', ticket);
+        break;
+      case 'edit':
+        console.log('Edit ticket:', ticket);
+        break;
+      case 'reply':
+        console.log('Reply to ticket:', ticket);
+        break;
+      case 'assign':
+        console.log('Assign ticket:', ticket);
+        break;
+      case 'close':
+        console.log('Close ticket:', ticket);
+        break;
+      case 'delete':
+        console.log('Delete ticket:', ticket);
+        break;
+      default:
+        break;
+    }
   };
 
   const stats = [
@@ -819,20 +925,50 @@ function SupportTicketsPage() {
                     <AssignedTo>{ticket.assignedTo}</AssignedTo>
                   </TableCell>
                   <TableCell>
-                    <ActionButtons>
-                      <TicketActionButton variant="primary" title={t("admin.supportTickets.ticketActions.view", "View Ticket")}>
-                        <FaEye />
-                      </TicketActionButton>
-                      <TicketActionButton title={t("admin.supportTickets.ticketActions.reply", "Reply")}>
-                        <FaReply />
-                      </TicketActionButton>
-                      <TicketActionButton title={t("admin.supportTickets.ticketActions.assign", "Assign")}>
-                        <FaUserCog />
-                      </TicketActionButton>
-                      <TicketActionButton variant="danger" title={t("admin.supportTickets.ticketActions.close", "Close Ticket")}>
-                        <FaTimes />
-                      </TicketActionButton>
-                    </ActionButtons>
+                    <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
+                      <MoreMenuButton
+                        onClick={(e) => handleMoreMenuClick(ticket.id, e)}
+                      >
+                        <FaEllipsisV />
+                      </MoreMenuButton>
+
+                      {openMoreMenu === ticket.id && (
+                        <MoreMenuDropdown
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
+                            <FaEye />
+                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
+                            <FaReply />
+                            {t("admin.supportTickets.ticketActions.reply", "Reply")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
+                            <FaEdit />
+                            {t("admin.supportTickets.ticketActions.edit", "Edit")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
+                            <FaUserCog />
+                            {t("admin.supportTickets.ticketActions.assign", "Assign")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem 
+                            variant="danger"
+                            onClick={() => handleMoreMenuAction('delete', ticket)}
+                          >
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.delete", "Delete")}
+                          </MoreMenuItem>
+                        </MoreMenuDropdown>
+                      )}
+                    </MoreMenuContainer>
                   </TableCell>
                 </TableRow>
               ))}
@@ -848,22 +984,32 @@ function SupportTicketsPage() {
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
-                {t("common.previous", "Previous")}
+                <FaChevronLeft />
               </PaginationButton>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <PaginationButton
-                  key={page}
-                  active={page === currentPage}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </PaginationButton>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => 
+                  page === 1 || 
+                  page === totalPages || 
+                  Math.abs(page - currentPage) <= 2
+                )
+                .map((page, index, array) => (
+                  <React.Fragment key={page}>
+                    {index > 0 && array[index - 1] !== page - 1 && (
+                      <PaginationEllipsis>...</PaginationEllipsis>
+                    )}
+                    <PaginationButton
+                      onClick={() => setCurrentPage(page)}
+                      $active={currentPage === page}
+                    >
+                      {page}
+                    </PaginationButton>
+                  </React.Fragment>
+                ))}
               <PaginationButton 
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >
-                {t("common.next", "Next")}
+                <FaChevronRight />
               </PaginationButton>
             </PaginationButtons>
           </Pagination>

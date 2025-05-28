@@ -34,7 +34,15 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { getAllUsersForCRM, UserData } from "@/utils/stripe/admin-analytics";
-import { refundPaymentIntent, refundInvoice } from "@/utils/stripe/actions";
+import { 
+  refundPaymentIntent, 
+  refundInvoice,
+  cancelSubscriptionAdmin,
+  reactivateSubscription,
+  changeSubscriptionPlan,
+  getCustomerSubscriptions,
+  getPrices
+} from "@/utils/stripe/actions";
 
 const Container = styled.div`
   width: 100%;
@@ -1075,6 +1083,15 @@ export default function AdminCRM() {
     description: string;
   } | null>(null);
 
+  // Subscription management state
+  const [subscriptionLoading, setSubscriptionLoading] = useState<string | null>(null);
+  const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<any>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
+  const [newPlanType, setNewPlanType] = useState<'monthly' | 'annual'>('monthly');
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1154,8 +1171,12 @@ export default function AdminCRM() {
 
   // Close more menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
-      setOpenMoreMenu(null);
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Only close if clicking outside of any more menu container
+      if (!target.closest('[data-more-menu]')) {
+        setOpenMoreMenu(null);
+      }
     };
 
     document.addEventListener('click', handleClickOutside);
@@ -1595,7 +1616,7 @@ export default function AdminCRM() {
                     </TableCell>
                     <TableCell>{formatCurrency(userData.totalSpent)}</TableCell>
                     <TableCell>
-                      <MoreMenuContainer onClick={(e) => e.stopPropagation()}>
+                      <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
                         <MoreMenuButton 
                           onClick={(e) => handleMoreMenuClick(userData.id, e)}
                         >
