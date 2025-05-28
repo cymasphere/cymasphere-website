@@ -1607,6 +1607,7 @@ function CreateCampaignPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
+  const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
   
   // Campaign sending state
   const [isSending, setIsSending] = useState(false);
@@ -2362,104 +2363,149 @@ function CreateCampaignPage() {
                 transition: 'all 0.3s ease'
               }}>
                 <ViewToggleContainer>
-                  <ViewToggle active={true}>
+                  <ViewToggle 
+                    active={currentView === 'desktop'}
+                    onClick={() => setCurrentView('desktop')}
+                  >
                     <FaDesktop style={{ marginRight: '0.5rem' }} />
                     Desktop
                   </ViewToggle>
-                  <ViewToggle active={false}>
+                  <ViewToggle 
+                    active={currentView === 'mobile'}
+                    onClick={() => setCurrentView('mobile')}
+                  >
                     <FaMobileAlt style={{ marginRight: '0.5rem' }} />
                     Mobile
                   </ViewToggle>
-                  <ViewToggle active={false}>
+                  <ViewToggle 
+                    active={currentView === 'text'}
+                    onClick={() => setCurrentView('text')}
+                  >
                     <FaEnvelope style={{ marginRight: '0.5rem' }} />
                     Text Only
                   </ViewToggle>
                 </ViewToggleContainer>
 
                 <EmailCanvas>
-                  <EmailContainer>
-                    <EmailHeader>
-                      <div style={{ textAlign: 'center', padding: '2rem' }}>
-                        <div style={{ 
-                          width: '60px', 
-                          height: '60px', 
-                          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                          borderRadius: '50%',
-                          margin: '0 auto 1rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1.5rem',
-                          color: 'white'
-                        }}>
-                          🎵
+                  <EmailContainer style={{
+                    width: currentView === 'mobile' ? '375px' : currentView === 'text' ? '100%' : '600px',
+                    maxWidth: currentView === 'text' ? '500px' : 'none',
+                    backgroundColor: currentView === 'text' ? '#f8f9fa' : 'white',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {currentView === 'text' ? (
+                      // Text-only view
+                      <div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                        <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #ddd' }}>
+                          <strong>From:</strong> {campaignData.senderName || 'Sender Name'}<br/>
+                          <strong>Subject:</strong> {campaignData.subject || 'Email Subject'}<br/>
+                          {campaignData.preheader && (
+                            <>
+                              <strong>Preheader:</strong> {campaignData.preheader}<br/>
+                            </>
+                          )}
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>
-                          Having trouble viewing this email? <a href="#" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '600' }}>View in browser</a>
+                        {emailElements.map((element, index) => (
+                          <div key={element.id} style={{ marginBottom: '1rem' }}>
+                            {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{element.content}</div>}
+                            {element.type === 'text' && <div>{element.content}</div>}
+                            {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {element.content}]</div>}
+                            {element.type === 'image' && <div style={{ fontStyle: 'italic' }}>[IMAGE: {element.src}]</div>}
+                            {element.type === 'divider' && <div>{'─'.repeat(50)}</div>}
+                            {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
+                          </div>
+                        ))}
+                        <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
+                          Cymasphere Inc. | Unsubscribe | Privacy Policy
                         </div>
                       </div>
-                    </EmailHeader>
+                    ) : (
+                      // Visual view (desktop/mobile)
+                      <>
+                        <EmailHeader>
+                          <div style={{ textAlign: 'center', padding: '2rem' }}>
+                            <div style={{ 
+                              width: '60px', 
+                              height: '60px', 
+                              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                              borderRadius: '50%',
+                              margin: '0 auto 1rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.5rem',
+                              color: 'white'
+                            }}>
+                              🎵
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>
+                              Having trouble viewing this email? <a href="#" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '600' }}>View in browser</a>
+                            </div>
+                          </div>
+                        </EmailHeader>
 
-                    <EmailBody
-                      onDragOver={(e) => handleDragOver(e)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e)}
-                    >
-                      {/* Drop zone at the beginning */}
-                      <DroppableArea 
-                        isDragOver={draggedElement !== null && dragOverIndex === 0}
-                        onDragOver={(e) => handleDragOver(e, 0)}
-                        onDrop={(e) => handleDrop(e, 0)}
-                      />
-                      
-                      {emailElements.map((element, index) => (
-                        <React.Fragment key={element.id}>
-                          {renderEmailElement(element, index)}
-                          
-                          {/* Drop zone between elements */}
-                          <DroppableArea 
-                            isDragOver={draggedElement !== null && dragOverIndex === index + 1}
-                            onDragOver={(e) => handleDragOver(e, index + 1)}
-                            onDrop={(e) => handleDrop(e, index + 1)}
-                          />
-                        </React.Fragment>
-                      ))}
-                      
-                      {/* Final drop zone */}
-                      {emailElements.length === 0 && (
-                        <DropZone
+                        <EmailBody
                           onDragOver={(e) => handleDragOver(e)}
+                          onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e)}
                         >
-                          <span>📦</span>
-                          <span>Drop elements here to start building your email</span>
-                          <small style={{ opacity: 0.7, fontSize: '0.85rem' }}>
-                            Drag any element from the toolbar above to build your email
-                          </small>
-                        </DropZone>
-                      )}
-                    </EmailBody>
+                          {/* Drop zone at the beginning */}
+                          <DroppableArea 
+                            isDragOver={draggedElement !== null && dragOverIndex === 0}
+                            onDragOver={(e) => handleDragOver(e, 0)}
+                            onDrop={(e) => handleDrop(e, 0)}
+                          />
+                          
+                          {emailElements.map((element, index) => (
+                            <React.Fragment key={element.id}>
+                              {renderEmailElement(element, index)}
+                              
+                              {/* Drop zone between elements */}
+                              <DroppableArea 
+                                isDragOver={draggedElement !== null && dragOverIndex === index + 1}
+                                onDragOver={(e) => handleDragOver(e, index + 1)}
+                                onDrop={(e) => handleDrop(e, index + 1)}
+                              />
+                            </React.Fragment>
+                          ))}
+                          
+                          {/* Final drop zone */}
+                          {emailElements.length === 0 && (
+                            <DropZone
+                              onDragOver={(e) => handleDragOver(e)}
+                              onDrop={(e) => handleDrop(e)}
+                            >
+                              <span>📦</span>
+                              <span>Drop elements here to start building your email</span>
+                              <small style={{ opacity: 0.7, fontSize: '0.85rem' }}>
+                                Drag any element from the toolbar above to build your email
+                              </small>
+                            </DropZone>
+                          )}
+                        </EmailBody>
 
-                    <EmailFooter>
-                      <div style={{ padding: '2.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#999' }}>
-                        <div style={{ marginBottom: '1.5rem' }}>
-                          <SocialLink href="#">📘 Facebook</SocialLink>
-                          <SocialLink href="#">🐦 Twitter</SocialLink>
-                          <SocialLink href="#">📷 Instagram</SocialLink>
-                          <SocialLink href="#">🎵 YouTube</SocialLink>
-                        </div>
-                        <div style={{ marginBottom: '1rem', fontWeight: '600', color: '#666' }}>
-                          Cymasphere Inc. | 123 Music Street, Audio City, AC 12345
-                        </div>
-                        <div>
-                          <FooterLink href="#">Unsubscribe</FooterLink>
-                          <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
-                          <FooterLink href="#">Update Preferences</FooterLink>
-                          <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
-                          <FooterLink href="#">Privacy Policy</FooterLink>
-                        </div>
-                      </div>
-                    </EmailFooter>
+                        <EmailFooter>
+                          <div style={{ padding: '2.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#999' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                              <SocialLink href="#">📘 Facebook</SocialLink>
+                              <SocialLink href="#">🐦 Twitter</SocialLink>
+                              <SocialLink href="#">📷 Instagram</SocialLink>
+                              <SocialLink href="#">🎵 YouTube</SocialLink>
+                            </div>
+                            <div style={{ marginBottom: '1rem', fontWeight: '600', color: '#666' }}>
+                              Cymasphere Inc. | 123 Music Street, Audio City, AC 12345
+                            </div>
+                            <div>
+                              <FooterLink href="#">Unsubscribe</FooterLink>
+                              <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
+                              <FooterLink href="#">Update Preferences</FooterLink>
+                              <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
+                              <FooterLink href="#">Privacy Policy</FooterLink>
+                            </div>
+                          </div>
+                        </EmailFooter>
+                      </>
+                    )}
                   </EmailContainer>
                 </EmailCanvas>
               </div>
