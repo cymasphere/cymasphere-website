@@ -857,5 +857,106 @@
     "enterEmail": "Geben Sie Ihre E-Mail-Adresse ein, um Ihre {{days}}-tägige kostenlose Testversion zu starten {{requirement}}.",
     "cardRequired": "(Kreditkarte erforderlich)",
     "noCardRequired": "(keine Kreditkarte erforderlich)"
+  },
+  "legal": {
+    "termsOfService": "Nutzungsbedingungen",
+    "privacyPolicy": "Datenschutzerklärung",
+    "legalInformation": "Rechtliche Informationen",
+    "lastUpdated": "Zuletzt aktualisiert",
+    "lastUpdatedDate": "28. Mai 2025",
+    "contactInformation": "Kontaktinformationen",
+    "email": "E-Mail",
+    "terms": {
+      "acceptance": {
+        "title": "1. Annahme der Bedingungen",
+        "content": "Durch den Zugriff auf oder die Nutzung von Cymaspheres Diensten, Website oder Anwendungen stimmen Sie zu, an diese Nutzungsbedingungen gebunden zu sein. Wenn Sie diesen Bedingungen nicht zustimmen, verwenden Sie bitte unsere Dienste nicht."
+      },
+      "description": {
+        "title": "2. Beschreibung des Dienstes",
+        "content": "Cymasphere bietet Musiktheorie- und Kompositionstools über Web- und Desktop-Anwendungen. Diese Dienste können sich von Zeit zu Zeit ohne Vorankündigung ändern."
+      },
+      "accounts": {
+        "title": "3. Benutzerkonten",
+        "content": "Einige Funktionen unserer Dienste erfordern, dass Sie ein Konto erstellen. Sie sind verantwortlich für die Wahrung der Vertraulichkeit Ihrer Kontoinformationen und für alle Aktivitäten, die unter Ihrem Konto auftreten."
+      },
+      "content": {
+        "title": "4. Benutzerinhalte",
+        "content": "Sie behalten alle Rechte an Inhalten, die Sie über unsere Dienste erstellen, hochladen oder teilen. Durch das Hochladen von Inhalten gewähren Sie Cymasphere eine nicht-exklusive Lizenz zur Nutzung, Reproduktion und Verteilung Ihrer Inhalte ausschließlich zur Bereitstellung von Diensten für Sie."
+      },
+      "ip": {
+        "title": "5. Geistiges Eigentum",
+        "content": "Cymasphere und seine Inhalte, Funktionen und Funktionalität gehören uns und sind durch Urheberrechte, Markenrechte und andere Gesetze zum geistigen Eigentum geschützt."
+      },
+      "subscription": {
+        "title": "6. Abonnement und Zahlungen",
+        "content": "Verschiedene Abonnementpläne sind für Cymasphere verfügbar. Durch das Abonnieren stimmen Sie zu, die anfallenden Gebühren zu zahlen. Abonnementgebühren sind nicht erstattungsfähig, außer wenn gesetzlich vorgeschrieben."
+      },
+      "termination": {
+        "title": "7. Kündigung",
+        "content": "Wir behalten uns das Recht vor, Ihr Konto und den Zugang zu unseren Diensten bei Verstößen gegen diese Bedingungen oder aus anderen Gründen nach unserem Ermessen zu kündigen oder zu sperren."
+      },
+      "disclaimer": {
+        "title": "8. Gewährleistungsausschluss",
+        "content": "Unsere Dienste werden \"wie besehen\" und \"wie verfügbar\" bereitgestellt. Wir geben keine Garantien, ausdrücklich oder stillschweigend, bezüglich der Zuverlässigkeit, Verfügbarkeit oder Genauigkeit unserer Dienste ab."
+      },
+      "limitation": {
+        "title": "9. Haftungsbeschränkung",
+        "content": "In keinem Fall haftet Cymasphere für indirekte, zufällige, besondere oder Folgeschäden, die aus oder in Verbindung mit Ihrer Nutzung unserer Dienste entstehen."
+      },
+      "changes": {
+        "title": "10. Änderungen der Bedingungen",
+        "content": "Wir können diese Bedingungen jederzeit ändern. Die fortgesetzte Nutzung unserer Dienste nach Änderungen stellt die Annahme der geänderten Bedingungen dar."
+      },
+      "governing": {
+        "title": "11. Geltendes Recht",
+        "content": "Diese Bedingungen unterliegen den Gesetzen der Gerichtsbarkeit, in der Cymasphere tätig ist, ohne Berücksichtigung ihrer Kollisionsnormen."
+      },
+      "contact": {
+        "title": "12. Kontakt",
+        "content": "Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte unter support@cymasphere.com."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Einführung",
+        "content": "Diese Datenschutzerklärung erklärt, wie Cymasphere Ihre persönlichen Informationen sammelt, verwendet und schützt, wenn Sie unsere Dienste nutzen. Wir respektieren Ihre Privatsphäre und verpflichten uns zum Schutz Ihrer persönlichen Daten."
+      },
+      "collect": {
+        "title": "2. Informationen, die wir sammeln",
+        "content": "Wir sammeln Informationen, die Sie uns direkt zur Verfügung stellen, wie Ihren Namen, E-Mail-Adresse und Zahlungsinformationen, wenn Sie sich für ein Konto registrieren. Wir sammeln auch Nutzungsdaten und technische Informationen über Ihr Gerät und wie Sie mit unseren Diensten interagieren."
+      },
+      "use": {
+        "title": "3. Wie wir Ihre Informationen verwenden",
+        "content": "Wir verwenden Ihre Informationen, um unsere Dienste bereitzustellen und zu verbessern, Transaktionen zu verarbeiten, mit Ihnen zu kommunizieren und die Sicherheit zu gewährleisten. Wir können Ihre Informationen auch für Forschung und Analyse verwenden, um besser zu verstehen, wie Benutzer mit unseren Diensten interagieren."
+      },
+      "sharing": {
+        "title": "4. Datenweitergabe und -offenlegung",
+        "content": "Wir verkaufen Ihre persönlichen Informationen nicht. Wir können Ihre Informationen mit Drittanbietern teilen, die uns beim Betrieb unserer Dienste, der Verarbeitung von Zahlungen oder der Datenanalyse helfen. Wir können Ihre Informationen auch offenlegen, wenn dies gesetzlich vorgeschrieben ist."
+      },
+      "security": {
+        "title": "5. Datensicherheit",
+        "content": "Wir implementieren angemessene Sicherheitsmaßnahmen zum Schutz Ihrer persönlichen Informationen. Keine Übertragungsmethode über das Internet oder elektronische Speicherung ist jedoch 100% sicher."
+      },
+      "rights": {
+        "title": "6. Ihre Rechte",
+        "content": "Je nach Ihrem Standort haben Sie möglicherweise bestimmte Rechte bezüglich Ihrer persönlichen Daten, einschließlich des Rechts auf Zugang, Berichtigung, Löschung oder Einschränkung der Verarbeitung Ihrer Daten. Bitte kontaktieren Sie uns, um diese Rechte auszuüben."
+      },
+      "cookies": {
+        "title": "7. Cookies und Tracking-Technologien",
+        "content": "Wir verwenden Cookies und ähnliche Tracking-Technologien, um Ihre Erfahrung zu verbessern, die Nutzung zu analysieren und Informationen darüber zu sammeln, wie Sie mit unseren Diensten interagieren. Sie können Cookies über Ihre Browsereinstellungen steuern."
+      },
+      "children": {
+        "title": "8. Privatsphäre von Kindern",
+        "content": "Unsere Dienste sind nicht für Kinder unter 13 Jahren bestimmt. Wir sammeln wissentlich keine Informationen von Kindern unter 13 Jahren. Wenn wir erfahren, dass wir Informationen von einem Kind unter 13 Jahren gesammelt haben, werden wir Schritte unternehmen, um diese zu löschen."
+      },
+      "changes": {
+        "title": "9. Änderungen dieser Datenschutzerklärung",
+        "content": "Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Wir werden Sie über Änderungen informieren, indem wir die neue Richtlinie auf dieser Seite veröffentlichen und das Datum der \"Letzten Aktualisierung\" aktualisieren."
+      },
+      "contact": {
+        "title": "10. Kontaktieren Sie uns",
+        "content": "Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte unter support@cymasphere.com."
+      }
+    }
   }
 } 

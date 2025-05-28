@@ -638,14 +638,14 @@
       "tooManyAttempts": "Trop de tentatives de réinitialisation de mot de passe. Veuillez attendre quelques minutes avant de réessayer.",
       "errorSendingReset": "Erreur lors de l'envoi de l'e-mail de réinitialisation : {{error}}",
       "unexpectedError": "Une erreur inattendue s'est produite : {{error}}"
-      },
-  "freeTrial": {
-    "startTrial": "Commencez Votre Essai Gratuit",
-    "enterEmail": "Entrez votre adresse e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
-    "cardRequired": "(carte de crédit requise)",
-    "noCardRequired": "(aucune carte de crédit requise)"
-  },
-  "billing": {
+    },
+    "freeTrial": {
+      "startTrial": "Commencez Votre Essai Gratuit",
+      "enterEmail": "Entrez votre adresse e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
+      "cardRequired": "(carte de crédit requise)",
+      "noCardRequired": "(aucune carte de crédit requise)"
+    },
+    "billing": {
       "title": "Facturation et abonnement",
       "choosePlan": "Choisissez Votre Forfait",
       "limitedOffer": "Offre à Durée Limitée",
@@ -695,7 +695,7 @@
       "specificError": "Échec de la mise à jour de votre abonnement : {{error}}",
       "freePlan": "Gratuit",
       "freePlanDesc": "Accès limité aux fonctionnalités de base",
-            "noPlan": "Aucun",
+      "noPlan": "Aucun",
       "noPlanDesc": "Aucun abonnement actif",
       "subscribePlan": "S'abonner à un forfait",
       "cancelNotice": "Votre abonnement sera annulé le {{date}}. Vous aurez accès jusqu'à cette date.",
@@ -851,5 +851,106 @@
     "enterEmail": "Saisissez votre adresse e-mail pour commencer votre essai gratuit de {{days}} jours {{requirement}}.",
     "cardRequired": "(carte de crédit requise)",
     "noCardRequired": "(aucune carte de crédit requise)"
+  },
+  "legal": {
+    "termsOfService": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité",
+    "legalInformation": "Informations légales",
+    "lastUpdated": "Dernière mise à jour",
+    "lastUpdatedDate": "28 mai 2025",
+    "contactInformation": "Informations de contact",
+    "email": "E-mail",
+    "terms": {
+      "acceptance": {
+        "title": "1. Acceptation des conditions",
+        "content": "En accédant ou en utilisant les services, le site web ou les applications de Cymasphere, vous acceptez d'être lié par ces Conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser nos services."
+      },
+      "description": {
+        "title": "2. Description du service",
+        "content": "Cymasphere fournit des outils de théorie musicale et de composition via des applications web et de bureau. Ces services peuvent changer de temps à autre sans préavis."
+      },
+      "accounts": {
+        "title": "3. Comptes utilisateur",
+        "content": "Certaines fonctionnalités de nos services nécessitent que vous créiez un compte. Vous êtes responsable du maintien de la confidentialité des informations de votre compte et de toutes les activités qui se produisent sous votre compte."
+      },
+      "content": {
+        "title": "4. Contenu utilisateur",
+        "content": "Vous conservez tous les droits sur tout contenu que vous créez, téléchargez ou partagez via nos services. En téléchargeant du contenu, vous accordez à Cymasphere une licence non exclusive pour utiliser, reproduire et distribuer votre contenu uniquement pour vous fournir des services."
+      },
+      "ip": {
+        "title": "5. Propriété intellectuelle",
+        "content": "Cymasphere et son contenu, ses fonctionnalités et ses fonctionnalités nous appartiennent et sont protégés par les droits d'auteur, les marques de commerce et autres lois de propriété intellectuelle."
+      },
+      "subscription": {
+        "title": "6. Abonnement et paiements",
+        "content": "Différents plans d'abonnement sont disponibles pour Cymasphere. En vous abonnant, vous acceptez de payer les frais applicables. Les frais d'abonnement ne sont pas remboursables sauf si requis par la loi."
+      },
+      "termination": {
+        "title": "7. Résiliation",
+        "content": "Nous nous réservons le droit de résilier ou de suspendre votre compte et l'accès à nos services pour violation de ces conditions ou pour toute autre raison à notre discrétion."
+      },
+      "disclaimer": {
+        "title": "8. Exclusion de garanties",
+        "content": "Nos services sont fournis « en l'état » et « selon la disponibilité ». Nous ne donnons aucune garantie, expresse ou implicite, concernant la fiabilité, la disponibilité ou l'exactitude de nos services."
+      },
+      "limitation": {
+        "title": "9. Limitation de responsabilité",
+        "content": "En aucun cas Cymasphere ne sera responsable de dommages indirects, accessoires, spéciaux ou consécutifs découlant de ou en relation avec votre utilisation de nos services."
+      },
+      "changes": {
+        "title": "10. Modifications des conditions",
+        "content": "Nous pouvons modifier ces conditions à tout moment. L'utilisation continue de nos services après les changements constitue l'acceptation des conditions modifiées."
+      },
+      "governing": {
+        "title": "11. Droit applicable",
+        "content": "Ces conditions seront régies par les lois de la juridiction dans laquelle Cymasphere opère, sans égard à ses dispositions de conflit de lois."
+      },
+      "contact": {
+        "title": "12. Contact",
+        "content": "Pour des questions concernant ces conditions, veuillez nous contacter à support@cymasphere.com."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Introduction",
+        "content": "Cette Politique de confidentialité explique comment Cymasphere collecte, utilise et protège vos informations personnelles lorsque vous utilisez nos services. Nous respectons votre vie privée et nous nous engageons à protéger vos données personnelles."
+      },
+      "collect": {
+        "title": "2. Informations que nous collectons",
+        "content": "Nous collectons les informations que vous nous fournissez directement, telles que votre nom, adresse e-mail et informations de paiement lorsque vous vous inscrivez pour un compte. Nous collectons également des données d'utilisation et des informations techniques sur votre appareil et la façon dont vous interagissez avec nos services."
+      },
+      "use": {
+        "title": "3. Comment nous utilisons vos informations",
+        "content": "Nous utilisons vos informations pour fournir et améliorer nos services, traiter les transactions, communiquer avec vous et assurer la sécurité. Nous pouvons également utiliser vos informations pour la recherche et l'analyse afin de mieux comprendre comment les utilisateurs interagissent avec nos services."
+      },
+      "sharing": {
+        "title": "4. Partage et divulgation des données",
+        "content": "Nous ne vendons pas vos informations personnelles. Nous pouvons partager vos informations avec des fournisseurs de services tiers qui nous aident à exploiter nos services, traiter les paiements ou analyser les données. Nous pouvons également divulguer vos informations si requis par la loi."
+      },
+      "security": {
+        "title": "5. Sécurité des données",
+        "content": "Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos informations personnelles. Cependant, aucune méthode de transmission sur Internet ou de stockage électronique n'est sécurisée à 100%."
+      },
+      "rights": {
+        "title": "6. Vos droits",
+        "content": "Selon votre localisation, vous pouvez avoir certains droits concernant vos données personnelles, y compris le droit d'accéder, corriger, supprimer ou restreindre le traitement de vos données. Veuillez nous contacter pour exercer ces droits."
+      },
+      "cookies": {
+        "title": "7. Cookies et technologies de suivi",
+        "content": "Nous utilisons des cookies et des technologies de suivi similaires pour améliorer votre expérience, analyser l'utilisation et collecter des informations sur la façon dont vous interagissez avec nos services. Vous pouvez contrôler les cookies via les paramètres de votre navigateur."
+      },
+      "children": {
+        "title": "8. Confidentialité des enfants",
+        "content": "Nos services ne sont pas destinés aux enfants de moins de 13 ans. Nous ne collectons pas sciemment d'informations d'enfants de moins de 13 ans. Si nous apprenons que nous avons collecté des informations d'un enfant de moins de 13 ans, nous prendrons des mesures pour les supprimer."
+      },
+      "changes": {
+        "title": "9. Modifications de cette politique de confidentialité",
+        "content": "Nous pouvons mettre à jour cette Politique de confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle politique sur cette page et en mettant à jour la date de « Dernière mise à jour »."
+      },
+      "contact": {
+        "title": "10. Nous contacter",
+        "content": "Si vous avez des questions concernant cette Politique de confidentialité, veuillez nous contacter à support@cymasphere.com."
+      }
+    }
   }
 } 

@@ -768,7 +768,9 @@
     "privacyPolicy": "Privacy Policy",
     "legalInformation": "Legal Information",
     "lastUpdated": "Last Updated",
-    "lastUpdatedDate": "March 1, 2023",
+    "lastUpdatedDate": "May 28, 2025",
+    "contactInformation": "Contact Information",
+    "email": "Email",
     "terms": {
       "acceptance": {
         "title": "1. Acceptance of Terms",

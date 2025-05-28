@@ -77,7 +77,7 @@ export default function TermsOfServicePage() {
       <Container>
         <motion.div initial="hidden" animate="visible" variants={fadeIn}>
           <Title>{t("legal.termsOfService", "Terms of Service")}</Title>
-          <LastUpdated>Last Updated: May 28, 2025</LastUpdated>
+          <LastUpdated>{t("legal.lastUpdated")}: {t("legal.lastUpdatedDate")}</LastUpdated>
 
           <Section>
             <SectionTitle>{t("legal.terms.acceptance.title", "1. Acceptance of Terms")}</SectionTitle>
@@ -164,8 +164,8 @@ export default function TermsOfServicePage() {
           </Section>
 
           <ContactInfo>
-            <strong>Contact Information</strong><br />
-            Email: support@cymasphere.com
+            <strong>{t("legal.contactInformation")}</strong><br />
+            {t("legal.email")}: support@cymasphere.com
           </ContactInfo>
         </motion.div>
       </Container>
