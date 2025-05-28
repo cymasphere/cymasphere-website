@@ -1461,84 +1461,84 @@ function SupportTicketsPage() {
               {paginatedTickets.map((ticket) => (
                 <React.Fragment key={ticket.id}>
                   <TableRow>
-                    <TableCell>
+                  <TableCell>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
                           {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
                         </ExpandButton>
-                        <TicketId>{ticket.id}</TicketId>
+                    <TicketId>{ticket.id}</TicketId>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <TicketSubject>{ticket.subject}</TicketSubject>
-                      <TicketUser>by {ticket.user}</TicketUser>
-                    </TableCell>
-                    <TableCell>
-                      <TicketUser>{ticket.user}</TicketUser>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={ticket.status}>
-                        {getStatusIcon(ticket.status)}
-                        {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
-                      </StatusBadge>
-                    </TableCell>
-                    <TableCell>
-                      <PriorityBadge priority={ticket.priority}>
-                        {getPriorityIcon(ticket.priority)}
-                        {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
-                      </PriorityBadge>
-                    </TableCell>
-                    <TableCell>{formatDate(ticket.created)}</TableCell>
-                    <TableCell>
-                      <AssignedTo>{ticket.assignedTo}</AssignedTo>
-                    </TableCell>
-                    <TableCell>
-                      <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
-                        <MoreMenuButton
-                          onClick={(e) => handleMoreMenuClick(ticket.id, e)}
-                        >
-                          <FaEllipsisV />
-                        </MoreMenuButton>
+                  </TableCell>
+                  <TableCell>
+                    <TicketSubject>{ticket.subject}</TicketSubject>
+                    <TicketUser>by {ticket.user}</TicketUser>
+                  </TableCell>
+                  <TableCell>
+                    <TicketUser>{ticket.user}</TicketUser>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={ticket.status}>
+                      {getStatusIcon(ticket.status)}
+                      {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell>
+                    <PriorityBadge priority={ticket.priority}>
+                      {getPriorityIcon(ticket.priority)}
+                      {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
+                    </PriorityBadge>
+                  </TableCell>
+                  <TableCell>{formatDate(ticket.created)}</TableCell>
+                  <TableCell>
+                    <AssignedTo>{ticket.assignedTo}</AssignedTo>
+                  </TableCell>
+                  <TableCell>
+                    <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
+                      <MoreMenuButton
+                        onClick={(e) => handleMoreMenuClick(ticket.id, e)}
+                      >
+                        <FaEllipsisV />
+                      </MoreMenuButton>
 
-                        {openMoreMenu === ticket.id && (
-                          <MoreMenuDropdown
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.1 }}
+                      {openMoreMenu === ticket.id && (
+                        <MoreMenuDropdown
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
+                            <FaEye />
+                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
+                            <FaReply />
+                            {t("admin.supportTickets.ticketActions.reply", "Reply")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
+                            <FaEdit />
+                            {t("admin.supportTickets.ticketActions.edit", "Edit")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
+                            <FaUserCog />
+                            {t("admin.supportTickets.ticketActions.assign", "Assign")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem 
+                            variant="danger"
+                            onClick={() => handleMoreMenuAction('delete', ticket)}
                           >
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
-                              <FaEye />
-                              {t("admin.supportTickets.ticketActions.view", "View Ticket")}
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
-                              <FaReply />
-                              {t("admin.supportTickets.ticketActions.reply", "Reply")}
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
-                              <FaEdit />
-                              {t("admin.supportTickets.ticketActions.edit", "Edit")}
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
-                              <FaUserCog />
-                              {t("admin.supportTickets.ticketActions.assign", "Assign")}
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
-                              <FaTimes />
-                              {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
-                            </MoreMenuItem>
-                            <MoreMenuItem 
-                              variant="danger"
-                              onClick={() => handleMoreMenuAction('delete', ticket)}
-                            >
-                              <FaTimes />
-                              {t("admin.supportTickets.ticketActions.delete", "Delete")}
-                            </MoreMenuItem>
-                          </MoreMenuDropdown>
-                        )}
-                      </MoreMenuContainer>
-                    </TableCell>
-                  </TableRow>
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.delete", "Delete")}
+                          </MoreMenuItem>
+                        </MoreMenuDropdown>
+                      )}
+                    </MoreMenuContainer>
+                  </TableCell>
+                </TableRow>
 
                   <AnimatePresence>
                     {expandedRows.has(ticket.id) && (

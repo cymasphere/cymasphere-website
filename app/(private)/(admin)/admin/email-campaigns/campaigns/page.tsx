@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useRouter } from "next/navigation";
 
 const CampaignsContainer = styled.div`
   width: 100%;
@@ -173,44 +174,87 @@ const CreateButton = styled.button`
 `;
 
 const CampaignsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CampaignCard = styled(motion.div)`
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
+  overflow: hidden;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const TableHeader = styled.thead`
+  background-color: rgba(255, 255, 255, 0.02);
+`;
+
+const TableHeaderCell = styled.th`
+  padding: 1rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    text-align: center;
+    cursor: default;
+    &:hover {
+      background-color: transparent;
+    }
   }
 `;
 
-const CampaignHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+const TableBody = styled.tbody``;
+
+const TableRow = styled(motion.tr)`
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
-const CampaignTitle = styled.h3`
-  font-size: 1.2rem;
+const TableCell = styled.td`
+  padding: 1rem;
   color: var(--text);
-  margin: 0;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+
+  &:last-child {
+    text-align: center;
+  }
 `;
 
-const CampaignStatus = styled.span<{ status: string }>`
+const CampaignTitle = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+`;
+
+const CampaignDescription = styled.div`
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+`;
+
+const StatusBadge = styled.span<{ status: string }>`
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -248,53 +292,36 @@ const CampaignStatus = styled.span<{ status: string }>`
   }}
 `;
 
-const CampaignDescription = styled.p`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
-`;
-
-const CampaignStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const CampaignStat = styled.div`
-  text-align: center;
-`;
-
-const CampaignStatValue = styled.div`
-  font-size: 1.1rem;
+const MetricValue = styled.div`
   font-weight: 600;
   color: var(--text);
 `;
 
-const CampaignStatLabel = styled.div`
-  font-size: 0.7rem;
+const MetricLabel = styled.div`
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 `;
 
-const CampaignActions = styled.div`
+const ActionsContainer = styled.div`
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 32px;
+  height: 32px;
+  justify-content: center;
 
   ${(props) => {
     switch (props.variant) {
@@ -325,6 +352,23 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
         `;
     }
   }}
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  
+  svg {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
 `;
 
 // Mock data
@@ -382,6 +426,7 @@ function CampaignsPage() {
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     if (!languageLoading) {
@@ -432,7 +477,12 @@ function CampaignsPage() {
 
   const handleCampaignAction = (action: string, campaignId: string) => {
     console.log(`${action} campaign:`, campaignId);
-    // Implement campaign actions here
+    if (action === 'view' || action === 'edit') {
+      router.push(`/admin/email-campaigns/campaigns/${campaignId}`);
+    } else if (action === 'create') {
+      router.push('/admin/email-campaigns/campaigns/create');
+    }
+    // Implement other campaign actions here
   };
 
   return (
@@ -479,71 +529,92 @@ function CampaignsPage() {
             />
           </SearchContainer>
           
-          <CreateButton onClick={() => handleCampaignAction('create', '')}>
+          <ActionButton variant="primary" onClick={() => handleCampaignAction('create', '')}>
             <FaPlus />
             Create Campaign
-          </CreateButton>
+          </ActionButton>
         </ActionsRow>
 
         <CampaignsGrid>
-          {filteredCampaigns.map((campaign, index) => (
-            <CampaignCard
-              key={campaign.id}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-            >
-              <CampaignHeader>
-                <div>
-                  <CampaignTitle>{campaign.title}</CampaignTitle>
-                  <CampaignStatus status={campaign.status}>
-                    {campaign.status}
-                  </CampaignStatus>
-                </div>
-              </CampaignHeader>
-
-              <CampaignDescription>
-                {campaign.description}
-              </CampaignDescription>
-
-              <CampaignStats>
-                <CampaignStat>
-                  <CampaignStatValue>{campaign.recipients.toLocaleString()}</CampaignStatValue>
-                  <CampaignStatLabel>Recipients</CampaignStatLabel>
-                </CampaignStat>
-                <CampaignStat>
-                  <CampaignStatValue>{campaign.openRate}%</CampaignStatValue>
-                  <CampaignStatLabel>Open Rate</CampaignStatLabel>
-                </CampaignStat>
-                <CampaignStat>
-                  <CampaignStatValue>{campaign.clickRate}%</CampaignStatValue>
-                  <CampaignStatLabel>Click Rate</CampaignStatLabel>
-                </CampaignStat>
-              </CampaignStats>
-
-              <CampaignActions>
-                <ActionButton onClick={() => handleCampaignAction('view', campaign.id)}>
-                  <FaEye />
-                </ActionButton>
-                <ActionButton onClick={() => handleCampaignAction('edit', campaign.id)}>
-                  <FaEdit />
-                </ActionButton>
-                {campaign.status === 'active' ? (
-                  <ActionButton onClick={() => handleCampaignAction('pause', campaign.id)}>
-                    <FaPause />
-                  </ActionButton>
-                ) : campaign.status === 'paused' ? (
-                  <ActionButton variant="primary" onClick={() => handleCampaignAction('resume', campaign.id)}>
-                    <FaPlay />
-                  </ActionButton>
-                ) : null}
-                <ActionButton variant="danger" onClick={() => handleCampaignAction('delete', campaign.id)}>
-                  <FaTrash />
-                </ActionButton>
-              </CampaignActions>
-            </CampaignCard>
-          ))}
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHeaderCell>Campaign</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Recipients</TableHeaderCell>
+                <TableHeaderCell>Open Rate</TableHeaderCell>
+                <TableHeaderCell>Click Rate</TableHeaderCell>
+                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredCampaigns.length === 0 ? (
+                <tr>
+                  <TableCell colSpan={7}>
+                    <EmptyState>
+                      <FaEnvelopeOpen />
+                      <h3>No campaigns found</h3>
+                      <p>Try adjusting your search criteria or create a new campaign.</p>
+                    </EmptyState>
+                  </TableCell>
+                </tr>
+              ) : (
+                filteredCampaigns.map((campaign, index) => (
+                  <TableRow
+                    key={campaign.id}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index}
+                    onClick={() => handleCampaignAction('view', campaign.id)}
+                  >
+                    <TableCell>
+                      <CampaignTitle>{campaign.title}</CampaignTitle>
+                      <CampaignDescription>{campaign.description}</CampaignDescription>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={campaign.status}>{campaign.status}</StatusBadge>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{campaign.recipients.toLocaleString()}</MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{campaign.openRate}%</MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{campaign.clickRate}%</MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(campaign.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ActionsContainer>
+                        <ActionButton onClick={() => handleCampaignAction('view', campaign.id)}>
+                          <FaEye />
+                        </ActionButton>
+                        <ActionButton onClick={() => handleCampaignAction('edit', campaign.id)}>
+                          <FaEdit />
+                        </ActionButton>
+                        {campaign.status === 'active' ? (
+                          <ActionButton onClick={() => handleCampaignAction('pause', campaign.id)}>
+                            <FaPause />
+                          </ActionButton>
+                        ) : campaign.status === 'paused' ? (
+                          <ActionButton variant="primary" onClick={() => handleCampaignAction('resume', campaign.id)}>
+                            <FaPlay />
+                          </ActionButton>
+                        ) : null}
+                        <ActionButton variant="danger" onClick={() => handleCampaignAction('delete', campaign.id)}>
+                          <FaTrash />
+                        </ActionButton>
+                      </ActionsContainer>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CampaignsGrid>
       </CampaignsContainer>
     </>

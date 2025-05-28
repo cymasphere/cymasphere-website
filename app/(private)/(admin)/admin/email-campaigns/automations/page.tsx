@@ -21,6 +21,7 @@ import {
   FaEnvelope
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -176,44 +177,87 @@ const CreateButton = styled.button`
 `;
 
 const AutomationsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const AutomationCard = styled(motion.div)`
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
+  overflow: hidden;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const TableHeader = styled.thead`
+  background-color: rgba(255, 255, 255, 0.02);
+`;
+
+const TableHeaderCell = styled.th`
+  padding: 1rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    text-align: center;
+    cursor: default;
+    &:hover {
+      background-color: transparent;
+    }
   }
 `;
 
-const AutomationHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+const TableBody = styled.tbody``;
+
+const TableRow = styled(motion.tr)`
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
-const AutomationTitle = styled.h3`
-  font-size: 1.2rem;
+const TableCell = styled.td`
+  padding: 1rem;
   color: var(--text);
-  margin: 0;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+
+  &:last-child {
+    text-align: center;
+  }
 `;
 
-const AutomationStatus = styled.span<{ status: string }>`
+const AutomationTitle = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+`;
+
+const AutomationDescription = styled.div`
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+`;
+
+const StatusBadge = styled.span<{ status: string }>`
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -251,40 +295,21 @@ const AutomationStatus = styled.span<{ status: string }>`
   }}
 `;
 
-const AutomationDescription = styled.p`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
-`;
-
-const AutomationFlow = styled.div`
+const WorkflowSteps = styled.div`
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-`;
-
-const FlowStep = styled.div`
-  display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  flex: 1;
+  flex-wrap: wrap;
 `;
 
-const FlowIcon = styled.div<{ type: string }>`
-  width: 32px;
-  height: 32px;
+const StepIcon = styled.span<{ type: string }>`
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   
   ${(props) => {
     switch (props.type) {
@@ -312,57 +337,37 @@ const FlowIcon = styled.div<{ type: string }>`
   }}
 `;
 
-const FlowLabel = styled.span`
+const StepArrow = styled.span`
+  color: var(--text-secondary);
   font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-align: center;
+  margin: 0 0.25rem;
 `;
 
-const FlowArrow = styled.div`
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-`;
-
-const AutomationStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const AutomationStat = styled.div`
-  text-align: center;
-`;
-
-const AutomationStatValue = styled.div`
-  font-size: 1.1rem;
+const MetricValue = styled.div`
   font-weight: 600;
   color: var(--text);
 `;
 
-const AutomationStatLabel = styled.div`
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const AutomationActions = styled.div`
+const ActionsContainer = styled.div`
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 32px;
+  height: 32px;
+  justify-content: center;
 
   ${(props) => {
     switch (props.variant) {
@@ -401,6 +406,23 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
         `;
     }
   }}
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  
+  svg {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
 `;
 
 // Mock data
@@ -494,6 +516,7 @@ function AutomationsPage() {
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     if (!languageLoading) {
@@ -545,7 +568,10 @@ function AutomationsPage() {
 
   const handleAutomationAction = (action: string, automationId: string) => {
     console.log(`${action} automation:`, automationId);
-    // Implement automation actions here
+    if (action === 'view' || action === 'edit') {
+      router.push(`/admin/email-campaigns/automations/${automationId}`);
+    }
+    // Implement other automation actions here
   };
 
   return (
@@ -599,89 +625,109 @@ function AutomationsPage() {
         </ActionsRow>
 
         <AutomationsGrid>
-          {filteredAutomations.map((automation, index) => (
-            <AutomationCard
-              key={automation.id}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-            >
-              <AutomationHeader>
-                <div>
-                  <AutomationTitle>{automation.title}</AutomationTitle>
-                  <AutomationStatus status={automation.status}>
-                    {automation.status}
-                  </AutomationStatus>
-                </div>
-              </AutomationHeader>
-
-              <AutomationDescription>
-                {automation.description}
-              </AutomationDescription>
-
-              <AutomationFlow>
-                {automation.steps.map((step, stepIndex) => (
-                  <React.Fragment key={stepIndex}>
-                    <FlowStep>
-                      <FlowIcon type={step.type}>
-                        {step.icon}
-                      </FlowIcon>
-                      <FlowLabel>{step.label}</FlowLabel>
-                    </FlowStep>
-                    {stepIndex < automation.steps.length - 1 && (
-                      <FlowArrow>→</FlowArrow>
-                    )}
-                  </React.Fragment>
-                ))}
-              </AutomationFlow>
-
-              <AutomationStats>
-                <AutomationStat>
-                  <AutomationStatValue>{automation.subscribers.toLocaleString()}</AutomationStatValue>
-                  <AutomationStatLabel>Subscribers</AutomationStatLabel>
-                </AutomationStat>
-                <AutomationStat>
-                  <AutomationStatValue>{automation.sent.toLocaleString()}</AutomationStatValue>
-                  <AutomationStatLabel>Emails Sent</AutomationStatLabel>
-                </AutomationStat>
-                <AutomationStat>
-                  <AutomationStatValue>{automation.openRate}%</AutomationStatValue>
-                  <AutomationStatLabel>Open Rate</AutomationStatLabel>
-                </AutomationStat>
-              </AutomationStats>
-
-              <AutomationActions>
-                <ActionButton onClick={() => handleAutomationAction('view', automation.id)}>
-                  <FaEye />
-                </ActionButton>
-                <ActionButton onClick={() => handleAutomationAction('edit', automation.id)}>
-                  <FaEdit />
-                </ActionButton>
-                {automation.status === 'active' ? (
-                  <ActionButton variant="warning" onClick={() => handleAutomationAction('pause', automation.id)}>
-                    <FaPause />
-                  </ActionButton>
-                ) : automation.status === 'paused' ? (
-                  <ActionButton variant="primary" onClick={() => handleAutomationAction('resume', automation.id)}>
-                    <FaPlay />
-                  </ActionButton>
-                ) : automation.status === 'draft' ? (
-                  <ActionButton variant="primary" onClick={() => handleAutomationAction('start', automation.id)}>
-                    <FaPlay />
-                  </ActionButton>
-                ) : null}
-                {automation.status === 'active' && (
-                  <ActionButton variant="danger" onClick={() => handleAutomationAction('stop', automation.id)}>
-                    <FaStop />
-                  </ActionButton>
-                )}
-                <ActionButton variant="danger" onClick={() => handleAutomationAction('delete', automation.id)}>
-                  <FaTrash />
-                </ActionButton>
-              </AutomationActions>
-            </AutomationCard>
-          ))}
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHeaderCell>Automation</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Trigger</TableHeaderCell>
+                <TableHeaderCell>Workflow</TableHeaderCell>
+                <TableHeaderCell>Subscribers</TableHeaderCell>
+                <TableHeaderCell>Open Rate</TableHeaderCell>
+                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredAutomations.length === 0 ? (
+                <tr>
+                  <TableCell colSpan={8}>
+                    <EmptyState>
+                      <FaCogs />
+                      <h3>No automations found</h3>
+                      <p>Try adjusting your search criteria or create a new automation.</p>
+                    </EmptyState>
+                  </TableCell>
+                </tr>
+              ) : (
+                filteredAutomations.map((automation, index) => (
+                  <TableRow
+                    key={automation.id}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index}
+                    onClick={() => handleAutomationAction('view', automation.id)}
+                  >
+                    <TableCell>
+                      <AutomationTitle>{automation.title}</AutomationTitle>
+                      <AutomationDescription>{automation.description}</AutomationDescription>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={automation.status}>
+                        {automation.status}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell>{automation.trigger}</TableCell>
+                    <TableCell>
+                      <WorkflowSteps>
+                        {automation.steps.map((step, stepIndex) => (
+                          <React.Fragment key={stepIndex}>
+                            <StepIcon type={step.type}>
+                              {step.icon}
+                            </StepIcon>
+                            {stepIndex < automation.steps.length - 1 && (
+                              <StepArrow>→</StepArrow>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </WorkflowSteps>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{automation.subscribers.toLocaleString()}</MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{automation.openRate}%</MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(automation.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ActionsContainer>
+                        <ActionButton onClick={() => handleAutomationAction('view', automation.id)}>
+                          <FaEye />
+                        </ActionButton>
+                        <ActionButton onClick={() => handleAutomationAction('edit', automation.id)}>
+                          <FaEdit />
+                        </ActionButton>
+                        {automation.status === 'active' ? (
+                          <ActionButton variant="warning" onClick={() => handleAutomationAction('pause', automation.id)}>
+                            <FaPause />
+                          </ActionButton>
+                        ) : automation.status === 'paused' ? (
+                          <ActionButton variant="primary" onClick={() => handleAutomationAction('resume', automation.id)}>
+                            <FaPlay />
+                          </ActionButton>
+                        ) : automation.status === 'draft' ? (
+                          <ActionButton variant="primary" onClick={() => handleAutomationAction('start', automation.id)}>
+                            <FaPlay />
+                          </ActionButton>
+                        ) : null}
+                        {automation.status === 'active' && (
+                          <ActionButton variant="danger" onClick={() => handleAutomationAction('stop', automation.id)}>
+                            <FaStop />
+                          </ActionButton>
+                        )}
+                        <ActionButton variant="danger" onClick={() => handleAutomationAction('delete', automation.id)}>
+                          <FaTrash />
+                        </ActionButton>
+                      </ActionsContainer>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </AutomationsGrid>
       </AutomationsContainer>
     </>

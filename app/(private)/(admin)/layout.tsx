@@ -19,7 +19,9 @@ import {
   FaFileAlt,
   FaCogs,
   FaChevronDown,
-  FaChevronRight
+  FaChevronRight,
+  FaChartLine,
+  FaLifeRing
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -715,14 +717,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <NavSectionHeader 
               $expanded={emailCampaignsExpanded}
               onClick={() => setEmailCampaignsExpanded(!emailCampaignsExpanded)}
+              style={{ cursor: 'pointer' }}
             >
-              <div className="section-content">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <FaEnvelope />
                 Email Campaigns
               </div>
-              <FaChevronRight className="chevron" />
+              {emailCampaignsExpanded ? <FaChevronDown /> : <FaChevronRight />}
             </NavSectionHeader>
-            
             {emailCampaignsExpanded && (
               <SubNavItems
                 initial={{ height: 0, opacity: 0 }}
@@ -752,6 +754,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     onClick={(e) => handleNavigation(e, "/admin/email-campaigns/automations")}
                   >
                     <FaCogs /> Automations
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/email-campaigns/deliverability" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={pathname === "/admin/email-campaigns/deliverability" ? "true" : "false"}
+                    onClick={(e) => handleNavigation(e, "/admin/email-campaigns/deliverability")}
+                  >
+                    <FaShieldAlt /> Deliverability
                   </SubNavItem>
                 </Link>
               </SubNavItems>
@@ -909,11 +919,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/admin/email-campaigns/deliverability" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/email-campaigns/deliverability" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={7}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/email-campaigns/deliverability")}
+            >
+              <FaShieldAlt /> Deliverability
+            </MobileNavItem>
+          </Link>
+
           <Link href="/admin/analytics" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/admin/analytics" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={7}
+              custom={8}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/analytics")}
@@ -926,7 +949,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={8}
+              custom={9}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/settings")}
@@ -939,7 +962,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={9}
+              custom={10}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}

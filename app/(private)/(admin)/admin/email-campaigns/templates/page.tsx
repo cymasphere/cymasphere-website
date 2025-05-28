@@ -17,6 +17,7 @@ import {
   FaCalendarAlt
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -172,77 +173,87 @@ const CreateButton = styled.button`
 `;
 
 const TemplatesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const TemplateCard = styled(motion.div)`
   background-color: var(--card-bg);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
   overflow: hidden;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const TableHeader = styled.thead`
+  background-color: rgba(255, 255, 255, 0.02);
+`;
+
+const TableHeaderCell = styled.th`
+  padding: 1rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    text-align: center;
+    cursor: default;
+    &:hover {
+      background-color: transparent;
+    }
   }
 `;
 
-const TemplatePreview = styled.div<{ bgColor: string }>`
-  height: 200px;
-  background: ${props => props.bgColor};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+const TableBody = styled.tbody``;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%), 
-                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 10px 10px;
+const TableRow = styled(motion.tr)`
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
-const PreviewIcon = styled.div`
-  font-size: 3rem;
-  color: rgba(255, 255, 255, 0.8);
-  z-index: 1;
-`;
-
-const TemplateContent = styled.div`
-  padding: 1.5rem;
-`;
-
-const TemplateHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const TemplateTitle = styled.h3`
-  font-size: 1.2rem;
+const TableCell = styled.td`
+  padding: 1rem;
   color: var(--text);
-  margin: 0;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+
+  &:last-child {
+    text-align: center;
+  }
 `;
 
-const TemplateType = styled.span<{ type: string }>`
+const TemplateTitle = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+`;
+
+const TemplateDescription = styled.div`
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+`;
+
+const TypeBadge = styled.span<{ type: string }>`
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -280,53 +291,31 @@ const TemplateType = styled.span<{ type: string }>`
   }}
 `;
 
-const TemplateDescription = styled.p`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
-`;
-
-const TemplateStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const TemplateStat = styled.div`
-  text-align: center;
-`;
-
-const TemplateStatValue = styled.div`
-  font-size: 1.1rem;
+const MetricValue = styled.div`
   font-weight: 600;
   color: var(--text);
 `;
 
-const TemplateStatLabel = styled.div`
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const TemplateActions = styled.div`
+const ActionsContainer = styled.div`
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 32px;
+  height: 32px;
+  justify-content: center;
 
   ${(props) => {
     switch (props.variant) {
@@ -357,6 +346,23 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
         `;
     }
   }}
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  
+  svg {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
 `;
 
 // Mock data
@@ -430,6 +436,7 @@ function TemplatesPage() {
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     if (!languageLoading) {
@@ -486,7 +493,12 @@ function TemplatesPage() {
 
   const handleTemplateAction = (action: string, templateId: string) => {
     console.log(`${action} template:`, templateId);
-    // Implement template actions here
+    if (action === 'view' || action === 'edit') {
+      router.push(`/admin/email-campaigns/templates/${templateId}`);
+    } else if (action === 'browse') {
+      router.push('/admin/email-campaigns/templates/library');
+    }
+    // Implement other template actions here
   };
 
   return (
@@ -533,74 +545,93 @@ function TemplatesPage() {
             />
           </SearchContainer>
           
-          <CreateButton onClick={() => handleTemplateAction('create', '')}>
-            <FaPlus />
-            Create Template
-          </CreateButton>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <CreateButton onClick={() => handleTemplateAction('browse', '')}>
+              <FaImage />
+              Browse Templates
+            </CreateButton>
+            <CreateButton onClick={() => handleTemplateAction('create', '')}>
+              <FaPlus />
+              Create Template
+            </CreateButton>
+          </div>
         </ActionsRow>
 
         <TemplatesGrid>
-          {filteredTemplates.map((template, index) => (
-            <TemplateCard
-              key={template.id}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-            >
-              <TemplatePreview bgColor={template.bgColor}>
-                <PreviewIcon>
-                  <FaEnvelope />
-                </PreviewIcon>
-              </TemplatePreview>
-
-              <TemplateContent>
-                <TemplateHeader>
-                  <div>
-                    <TemplateTitle>{template.title}</TemplateTitle>
-                    <TemplateType type={template.type}>
-                      {template.type}
-                    </TemplateType>
-                  </div>
-                </TemplateHeader>
-
-                <TemplateDescription>
-                  {template.description}
-                </TemplateDescription>
-
-                <TemplateStats>
-                  <TemplateStat>
-                    <TemplateStatValue>{template.usageCount}</TemplateStatValue>
-                    <TemplateStatLabel>Times Used</TemplateStatLabel>
-                  </TemplateStat>
-                  <TemplateStat>
-                    <TemplateStatValue>
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHeaderCell>Template</TableHeaderCell>
+                <TableHeaderCell>Type</TableHeaderCell>
+                <TableHeaderCell>Usage Count</TableHeaderCell>
+                <TableHeaderCell>Last Used</TableHeaderCell>
+                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredTemplates.length === 0 ? (
+                <tr>
+                  <TableCell colSpan={6}>
+                    <EmptyState>
+                      <FaFileAlt />
+                      <h3>No templates found</h3>
+                      <p>Try adjusting your search criteria or create a new template.</p>
+                    </EmptyState>
+                  </TableCell>
+                </tr>
+              ) : (
+                filteredTemplates.map((template, index) => (
+                  <TableRow
+                    key={template.id}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index}
+                    onClick={() => handleTemplateAction('view', template.id)}
+                  >
+                    <TableCell>
+                      <TemplateTitle>{template.title}</TemplateTitle>
+                      <TemplateDescription>{template.description}</TemplateDescription>
+                    </TableCell>
+                    <TableCell>
+                      <TypeBadge type={template.type}>
+                        {template.type}
+                      </TypeBadge>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>{template.usageCount}</MetricValue>
+                    </TableCell>
+                    <TableCell>
                       {new Date(template.lastUsed).toLocaleDateString()}
-                    </TemplateStatValue>
-                    <TemplateStatLabel>Last Used</TemplateStatLabel>
-                  </TemplateStat>
-                </TemplateStats>
-
-                <TemplateActions>
-                  <ActionButton onClick={() => handleTemplateAction('preview', template.id)}>
-                    <FaEye />
-                  </ActionButton>
-                  <ActionButton onClick={() => handleTemplateAction('edit', template.id)}>
-                    <FaEdit />
-                  </ActionButton>
-                  <ActionButton onClick={() => handleTemplateAction('duplicate', template.id)}>
-                    <FaCopy />
-                  </ActionButton>
-                  <ActionButton onClick={() => handleTemplateAction('code', template.id)}>
-                    <FaCode />
-                  </ActionButton>
-                  <ActionButton variant="danger" onClick={() => handleTemplateAction('delete', template.id)}>
-                    <FaTrash />
-                  </ActionButton>
-                </TemplateActions>
-              </TemplateContent>
-            </TemplateCard>
-          ))}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(template.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ActionsContainer>
+                        <ActionButton onClick={() => handleTemplateAction('preview', template.id)}>
+                          <FaEye />
+                        </ActionButton>
+                        <ActionButton onClick={() => handleTemplateAction('edit', template.id)}>
+                          <FaEdit />
+                        </ActionButton>
+                        <ActionButton onClick={() => handleTemplateAction('duplicate', template.id)}>
+                          <FaCopy />
+                        </ActionButton>
+                        <ActionButton onClick={() => handleTemplateAction('code', template.id)}>
+                          <FaCode />
+                        </ActionButton>
+                        <ActionButton variant="danger" onClick={() => handleTemplateAction('delete', template.id)}>
+                          <FaTrash />
+                        </ActionButton>
+                      </ActionsContainer>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </TemplatesGrid>
       </TemplatesContainer>
     </>
