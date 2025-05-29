@@ -900,63 +900,67 @@ export default function VisualEditor({
             <div
               style={{ display: "flex", justifyContent: "center", gap: "1rem" }}
             >
-              {element.links?.map((link: any, idx: number) => (
-                <a
-                  key={idx}
-                  href={link.url}
-                  style={{
-                    display: "flex",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    background: "#6c63ff",
-                    color: "white",
-                    textDecoration: "none",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.2rem",
-                  }}
-                >
-                  {link.platform === "facebook" && "📘"}
-                  {link.platform === "twitter" && "🐦"}
-                  {link.platform === "instagram" && "📷"}
-                </a>
-              ))}
+              {element.links?.map(
+                (link: { platform: string; url: string }, idx: number) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    style={{
+                      display: "flex",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      background: "#6c63ff",
+                      color: "white",
+                      textDecoration: "none",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.2rem",
+                    }}
+                  >
+                    {link.platform === "facebook" && "📘"}
+                    {link.platform === "twitter" && "🐦"}
+                    {link.platform === "instagram" && "📷"}
+                  </a>
+                )
+              )}
             </div>
           </div>
         )}
 
         {element.type === "columns" && (
           <div style={{ display: "flex", gap: "2rem", margin: "2rem 0" }}>
-            {element.columns?.map((column: any, idx: number) => (
-              <div
-                key={idx}
-                style={{
-                  flex: 1,
-                  padding: "1rem",
-                  background: "#f8f9fa",
-                  borderRadius: "8px",
-                }}
-              >
-                <EditableText
-                  editing={isEditing}
-                  contentEditable={isEditing}
-                  suppressContentEditableWarning={true}
-                  onKeyDown={handleKeyDown}
-                  onBlur={handleBlur}
-                  onInput={(e) => {
-                    const newColumns = [...element.columns];
-                    newColumns[idx] = {
-                      ...newColumns[idx],
-                      content: e.currentTarget.textContent || "",
-                    };
-                    updateElement(element.id, { columns: newColumns });
+            {element.columns?.map(
+              (column: { content: string; width?: string }, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    flex: 1,
+                    padding: "1rem",
+                    background: "#f8f9fa",
+                    borderRadius: "8px",
                   }}
                 >
-                  {column.content}
-                </EditableText>
-              </div>
-            ))}
+                  <EditableText
+                    editing={isEditing}
+                    contentEditable={isEditing}
+                    suppressContentEditableWarning={true}
+                    onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
+                    onInput={(e) => {
+                      const newColumns = [...(element.columns || [])];
+                      newColumns[idx] = {
+                        ...newColumns[idx],
+                        content: e.currentTarget.textContent || "",
+                      };
+                      updateElement(element.id, { columns: newColumns });
+                    }}
+                  >
+                    {column.content}
+                  </EditableText>
+                </div>
+              )
+            )}
           </div>
         )}
 
@@ -1169,7 +1173,7 @@ export default function VisualEditor({
                       </>
                     )}
                   </div>
-                  {emailElements.map((element, index) => (
+                  {emailElements.map((element) => (
                     <div key={element.id} style={{ marginBottom: "1rem" }}>
                       {element.type === "header" && (
                         <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
@@ -1271,7 +1275,7 @@ export default function VisualEditor({
                       onDrop={(e) => handleDrop(e, 0)}
                     />
 
-                    {emailElements.map((element, index) => (
+                    {emailElements.map((element) => (
                       <React.Fragment key={element.id}>
                         {renderEmailElement(element)}
 
@@ -1279,10 +1283,17 @@ export default function VisualEditor({
                         <DroppableArea
                           isDragOver={
                             draggedElement !== null &&
-                            dragOverIndex === index + 1
+                            dragOverIndex === emailElements.indexOf(element) + 1
                           }
-                          onDragOver={(e) => handleDragOver(e, index + 1)}
-                          onDrop={(e) => handleDrop(e, index + 1)}
+                          onDragOver={(e) =>
+                            handleDragOver(
+                              e,
+                              emailElements.indexOf(element) + 1
+                            )
+                          }
+                          onDrop={(e) =>
+                            handleDrop(e, emailElements.indexOf(element) + 1)
+                          }
                         />
                       </React.Fragment>
                     ))}

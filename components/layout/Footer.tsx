@@ -218,7 +218,11 @@ const CopyrightLink = styled.a`
 `;
 
 // Simple i18n wrapper functions to avoid hook ordering issues
-function getTranslation(key: string, defaultValue: string, options?: Record<string, any>): string {
+function getTranslation(
+  key: string,
+  defaultValue: string,
+  options?: Record<string, string | number>
+): string {
   return i18next.t(key, { defaultValue, ...options }) as string;
 }
 
@@ -227,20 +231,20 @@ const Footer = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
-  const [language, setLanguage] = useState(() => 
-    typeof window !== 'undefined' ? i18next.language : 'en'
+  const [language, setLanguage] = useState(() =>
+    typeof window !== "undefined" ? i18next.language : "en"
   );
-  
+
   // Effect to listen for language changes
   useEffect(() => {
     const handleLanguageChanged = (lng: string) => {
       setLanguage(lng);
     };
-    
-    if (typeof window !== 'undefined') {
-      i18next.on('languageChanged', handleLanguageChanged);
+
+    if (typeof window !== "undefined") {
+      i18next.on("languageChanged", handleLanguageChanged);
       return () => {
-        i18next.off('languageChanged', handleLanguageChanged);
+        i18next.off("languageChanged", handleLanguageChanged);
       };
     }
     return undefined;
@@ -275,9 +279,14 @@ const Footer = () => {
               </LogoText>
             </FooterLogo>
           </Link>
-          <BrandCredit href="https://nnaud.io">{getTranslation("footer.byNNAudio", "by NNAudio")}</BrandCredit>
+          <BrandCredit href="https://nnaud.io">
+            {getTranslation("footer.byNNAudio", "by NNAudio")}
+          </BrandCredit>
           <FooterDescription>
-            {getTranslation("footer.description", "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.")}
+            {getTranslation(
+              "footer.description",
+              "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students."
+            )}
           </FooterDescription>
           <SocialLinks>
             <SocialIcon
@@ -324,7 +333,9 @@ const Footer = () => {
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>{getTranslation("footer.navigation", "Navigation")}</FooterHeading>
+          <FooterHeading>
+            {getTranslation("footer.navigation", "Navigation")}
+          </FooterHeading>
           <Link href="/" passHref legacyBehavior>
             <FooterLink>{getTranslation("header.home", "Home")}</FooterLink>
           </Link>
@@ -343,35 +354,51 @@ const Footer = () => {
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>{getTranslation("footer.account", "Account")}</FooterHeading>
+          <FooterHeading>
+            {getTranslation("footer.account", "Account")}
+          </FooterHeading>
           <Link href="/login" passHref legacyBehavior>
             <FooterLink>{getTranslation("common.login", "Login")}</FooterLink>
           </Link>
           <Link href="/signup" passHref legacyBehavior>
-            <FooterLink>{getTranslation("common.signUp", "Sign Up")}</FooterLink>
+            <FooterLink>
+              {getTranslation("common.signUp", "Sign Up")}
+            </FooterLink>
           </Link>
           <Link href="/dashboard" passHref legacyBehavior>
-            <FooterLink>{getTranslation("footer.accountDashboard", "Account Dashboard")}</FooterLink>
+            <FooterLink>
+              {getTranslation("footer.accountDashboard", "Account Dashboard")}
+            </FooterLink>
           </Link>
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>{getTranslation("footer.company", "Company")}</FooterHeading>
+          <FooterHeading>
+            {getTranslation("footer.company", "Company")}
+          </FooterHeading>
           <FooterButton onClick={() => setShowAboutModal(true)}>
             {getTranslation("footer.aboutUs", "About Us")}
           </FooterButton>
           <Link href="/privacy-policy" passHref legacyBehavior>
-            <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
+            <FooterLink>
+              {getTranslation("footer.privacyPolicy", "Privacy Policy")}
+            </FooterLink>
           </Link>
           <Link href="/terms-of-service" passHref legacyBehavior>
-            <FooterLink>{getTranslation("footer.termsConditions", "Terms & Conditions")}</FooterLink>
+            <FooterLink>
+              {getTranslation("footer.termsConditions", "Terms & Conditions")}
+            </FooterLink>
           </Link>
         </FooterColumn>
       </FooterContent>
 
       <Copyright>
         <p>
-          {getTranslation("footer.copyright", `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`, { year: new Date().getFullYear() })}
+          {getTranslation(
+            "footer.copyright",
+            `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`,
+            { year: new Date().getFullYear() }
+          )}
           <span>
             <CopyrightLink
               href="https://nnaud.io"

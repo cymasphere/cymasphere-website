@@ -9,22 +9,7 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import {
-  FaCrown,
-  FaCheckCircle,
-  FaCheck,
-  FaInfoCircle,
-  FaSparkles,
-  FaBolt,
-  FaStar,
-  FaRocket,
-  FaTrophy,
-  FaGift,
-  FaShoppingCart,
-  FaUnlock,
-  FaTimes,
-  FaCreditCard,
-} from "react-icons/fa";
+import { FaCheck, FaGift, FaUnlock } from "react-icons/fa";
 import { IoInformationCircle } from "react-icons/io5";
 // Import Stripe actions
 import {
@@ -515,9 +500,7 @@ const ChordWeb = React.memo(() => {
       noteName: string,
       color: string,
       time: number,
-      index: number,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      totalNotes: number
+      index: number
     ) => {
       // Scale based on z-depth (perspective)
       const scale = 400 / (400 + z);
@@ -858,8 +841,7 @@ const ChordWeb = React.memo(() => {
           notePos.note,
           chord.color,
           time,
-          index,
-          noteCount
+          index
         );
       });
 
@@ -1670,13 +1652,7 @@ const CardTrialBadge = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
-const InfoButton = ({
-  onClick,
-  isActive,
-}: {
-  onClick: () => void;
-  isActive: boolean;
-}) => {
+const InfoButton = ({ onClick }: { onClick: () => void }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const iconRef = useRef<HTMLDivElement>(null);
@@ -1738,7 +1714,7 @@ const InfoButton = ({
 
 const PricingSection = () => {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   // Get authentication context
   const { user } = useAuth();
 
@@ -2254,7 +2230,7 @@ const PricingSection = () => {
                             "pricing.freeTrial.withCard",
                             "14-day trial - Add card on file"
                           )}{" "}
-                          <InfoButton onClick={() => {}} isActive={false} />
+                          <InfoButton onClick={() => {}} />
                           <br />
                           {t(
                             "pricing.freeTrial.noCharge",
