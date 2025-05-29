@@ -400,14 +400,6 @@ const MobileNavTitle = styled.h3`
   width: 100%;
 `;
 
-const MobileUserInfo = styled(UserInfo)`
-  margin-top: 1rem;
-  width: 80%;
-  max-width: 400px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  justify-content: center;
-`;
-
 // Add page transition animation wrapper
 const PageTransition = styled(motion.div)`
   width: 100%;
@@ -444,11 +436,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  
+
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  
+
   // Wait for translations to load
   useEffect(() => {
     if (!languageLoading) {
@@ -502,7 +494,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             alignItems: "center",
           }}
         >
-          <LoadingComponent text={t("dashboard.layout.loading", "Loading dashboard...")} />
+          <LoadingComponent
+            text={t("dashboard.layout.loading", "Loading dashboard...")}
+          />
         </Content>
       </LayoutContainer>
     );
@@ -644,8 +638,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <UserInfo>
           <UserName>
-            <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-            <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+            <h4>
+              {t("dashboard.layout.welcomeUser", "{{name}}", {
+                name: user_display_name,
+              })}
+            </h4>
+            <p>
+              {t("dashboard.layout.emailLabel", "{{email}}", {
+                email: user.email,
+              })}
+            </p>
           </UserName>
           <LogoutButton onClick={handleLogout}>
             <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
@@ -681,7 +683,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 {t("common.brandFirst", "CYMA")}
               </span>
-              <span style={{ color: "white" }}>{t("common.brandSecond", "SPHERE")}</span>
+              <span style={{ color: "white" }}>
+                {t("common.brandSecond", "SPHERE")}
+              </span>
             </span>
           </div>
         </MobileLogoContent>
@@ -693,7 +697,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>{t("dashboard.layout.account", "Account")}</MobileNavTitle>
+          <MobileNavTitle>
+            {t("dashboard.layout.account", "Account")}
+          </MobileNavTitle>
 
           <Link href="/dashboard" passHref legacyBehavior>
             <MobileNavItem
@@ -777,12 +783,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <MobileLanguageWrapper>
               <NextLanguageSelector />
             </MobileLanguageWrapper>
-            
+
             <UserName>
-              <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-              <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+              <h4>
+                {t("dashboard.layout.welcomeUser", "{{name}}", {
+                  name: user_display_name,
+                })}
+              </h4>
+              <p>
+                {t("dashboard.layout.emailLabel", "{{email}}", {
+                  email: user.email,
+                })}
+              </p>
             </UserName>
-            
+
             <LogoutButton onClick={handleLogout}>
               <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
             </LogoutButton>

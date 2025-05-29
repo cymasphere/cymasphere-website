@@ -895,7 +895,8 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [activeFeatureIndex, setActiveFeatureIndex] = useState(0);
+  const [activeFeature, setActiveFeature] = useState<Feature | null>(null);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
@@ -906,15 +907,27 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(
     null
   );
-  const [prevIndex, setPrevIndex] = useState(initialIndex);
   const modalRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { t, i18n } = useTranslation();
 
+  useEffect(() => {
+    if (initialIndex) {
+      const index = features.findIndex((f) => f.id === initialIndex);
+      if (index !== -1) {
+        setActiveFeatureIndex(index);
+      }
+    }
+  }, [initialIndex]);
+
+  useEffect(() => {
+    setActiveFeature(features[activeFeatureIndex]);
+  }, [activeFeatureIndex]);
+
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
     if (isOpen) {
-      setCurrentIndex(initialIndex);
+      setActiveFeatureIndex(initialIndex);
     }
   }, [initialIndex, isOpen]);
 
@@ -939,18 +952,6 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     if (modalRef.current) {
       modalRef.current.scrollTop = 0;
     }
-  }, [i18n.language]);
-
-  // Reset current index when initial index changes
-  useEffect(() => {
-    setCurrentIndex(initialIndex);
-    setPrevIndex(initialIndex);
-  }, [initialIndex]);
-
-  // Ensure content refreshes when language changes
-  useEffect(() => {
-    // Force a re-render when language changes
-    setCurrentIndex((prev) => prev);
   }, [i18n.language]);
 
   // Enhanced touch handlers with visual feedback
@@ -984,7 +985,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     if (direction !== 0) return;
 
     setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % features.length);
+    setActiveFeatureIndex((prev) => (prev + 1) % features.length);
   }, [features.length, direction]);
 
   const handlePrevious = useCallback(() => {
@@ -992,7 +993,9 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     if (direction !== 0) return;
 
     setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
+    setActiveFeatureIndex(
+      (prev) => (prev - 1 + features.length) % features.length
+    );
   }, [features.length, direction]);
 
   const handleSwipe = useCallback(() => {
@@ -1014,7 +1017,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
 
   // Preload images for better mobile experience
   const preloadNextImages = useCallback(() => {
-    const currentIdx = currentIndex;
+    const currentIdx = activeFeatureIndex;
     const nextIdx = (currentIdx + 1) % features.length;
     const prevIdx = (currentIdx - 1 + features.length) % features.length;
 
@@ -1037,14 +1040,14 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
         img.src = imagePath;
       }
     });
-  }, [features, currentIndex, imagesLoaded, imageErrors]);
+  }, [features, activeFeatureIndex, imagesLoaded, imageErrors]);
 
   // Call the preload function when currentIndex changes
   useEffect(() => {
     if (isOpen) {
       preloadNextImages();
     }
-  }, [currentIndex, isOpen, preloadNextImages]);
+  }, [activeFeatureIndex, isOpen, preloadNextImages]);
 
   // Toggle debug mode with Shift + D
   useEffect(() => {
@@ -1067,7 +1070,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
       }, 500); // Match this with your animation duration
       return () => clearTimeout(timer);
     }
-  }, [direction, currentIndex]);
+  }, [direction, activeFeatureIndex]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1083,8 +1086,8 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   );
 
   const handleDotClick = (index: number) => {
-    setDirection(index > currentIndex ? 1 : -1);
-    setCurrentIndex(index);
+    setDirection(index > activeFeatureIndex ? 1 : -1);
+    setActiveFeatureIndex(index);
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1098,7 +1101,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     setInfoVisible(!infoVisible);
   };
 
-  const currentFeature = features[currentIndex] || {};
+  const currentFeature = features[activeFeatureIndex] || {};
   const { title, detailedDescription, image: featureImage } = currentFeature;
 
   // Use the provided image or get one based on title
@@ -1164,7 +1167,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
 
               <AnimatePresence initial={false} custom={direction}>
                 <Slide
-                  key={currentIndex}
+                  key={activeFeatureIndex}
                   custom={direction}
                   initial={{ x: direction > 0 ? "100%" : "-100%", opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -1201,7 +1204,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                     >
                       {
                         (!imagePath || hasImageError) &&
-                          features[currentIndex]
+                          features[activeFeatureIndex]
                             ?.title /* Add optional chaining */
                       }
                     </FeatureImage>
@@ -1216,7 +1219,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                         >
                           {
                             (!imagePath || hasImageError) &&
-                              features[currentIndex]
+                              features[activeFeatureIndex]
                                 ?.title /* Add optional chaining */
                           }
                         </InfoFeatureImage>
@@ -1252,7 +1255,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                   ) => (
                     <IndicatorDot
                       key={index}
-                      $active={index === currentIndex}
+                      $active={index === activeFeatureIndex}
                       onClick={() => handleDotClick(index)}
                       aria-label={`Go to feature ${index + 1}`}
                     />

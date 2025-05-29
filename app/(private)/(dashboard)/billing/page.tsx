@@ -28,10 +28,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
-import NextSEO from "@/components/NextSEO";
-import useLanguage from "@/hooks/useLanguage";
-import { loadStripe } from "@stripe/stripe-js";
-import { createCheckoutSession } from "@/utils/stripe/actions";
 
 // Extended profile interface with additional fields we need
 interface ProfileWithSubscriptionDetails extends Profile {
@@ -261,23 +257,6 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
-const BillingInfo = styled.div`
-  display: flex;
-  align-items: center;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: rgba(108, 99, 255, 0.1);
-  border-radius: 6px;
-  font-size: 0.9rem;
-
-  svg {
-    color: var(--primary);
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-  }
-`;
-
 const AlertBanner = styled.div`
   background-color: rgba(255, 72, 66, 0.1);
   border: 1px solid rgba(255, 72, 66, 0.3);
@@ -300,25 +279,6 @@ const AlertBanner = styled.div`
     line-height: 1.5;
   }
 `;
-
-interface PlanOption {
-  name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice?: number;
-  description: string;
-  features: string[];
-}
-
-interface ProPlanOption extends PlanOption {
-  lifetimePrice: number;
-}
-
-interface PlanOptions {
-  basic: PlanOption;
-  pro: ProPlanOption;
-  team: PlanOption;
-}
 
 // Add these styled components for the loading overlay
 const LoadingOverlay = styled.div`
@@ -424,14 +384,6 @@ export default function BillingPage() {
 
   // Add state for portal redirect loading
   const [isPortalLoading, setIsPortalLoading] = useState(false);
-
-  // Helper function to format currency
-  const formatCurrency = (amount: number, currency: string = "usd") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
-  };
 
   // Check if user has completed a trial
   const hasCompletedTrial = useMemo(() => {

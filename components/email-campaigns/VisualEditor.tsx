@@ -746,7 +746,7 @@ export default function VisualEditor({
     setEmailElements(newElements);
   };
 
-  const renderEmailElement = (element: EmailElement, index: number) => {
+  const renderEmailElement = (element: EmailElement) => {
     const isSelected = selectedElementId === element.id;
     const isEditing = editingElementId === element.id;
 
@@ -1273,7 +1273,7 @@ export default function VisualEditor({
 
                     {emailElements.map((element, index) => (
                       <React.Fragment key={element.id}>
-                        {renderEmailElement(element, index)}
+                        {renderEmailElement(element)}
 
                         {/* Drop zone between elements */}
                         <DroppableArea
