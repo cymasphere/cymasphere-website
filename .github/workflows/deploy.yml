@@ -1,168 +1,120 @@
+# version 1
 name: Deploy to AWS Lightsail
 
 on:
   push:
     branches:
-      - main
-
-permissions:
-  contents: read
-  packages: write
+      - main # Trigger deployment on push to main branch
+  workflow_dispatch: # Allow manual triggering from GitHub UI
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '19'
-          cache: 'npm'
+          node-version: "22.15.1"
+
+      - name: Set npm version
+        run: npm install -g npm@10.9.2
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.13
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
-      - name: Build Next.js application
-        run: npm run build
+      - name: Build application
         env:
-          # Add any required environment variables for build
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: bun run build
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set lowercase repo owner
-        run: echo "REPO_OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Dockerfile for Next.js
+      - name: Configure SSH
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          cat > Dockerfile << EOL
-          FROM node:19-alpine AS base
+          # SSH configuration
+          cat >> ~/.ssh/config << EOF
+          Host $LIGHTSAIL_HOST
+            User $LIGHTSAIL_USER
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+          EOF
 
-          # Install dependencies only when needed
-          FROM base AS deps
-          RUN apk add --no-cache libc6-compat
-          WORKDIR /app
-          COPY package.json package-lock.json* ./
-          RUN npm ci
-
-          # Rebuild the source code only when needed
-          FROM base AS builder
-          WORKDIR /app
-          COPY --from=deps /app/node_modules ./node_modules
-          COPY . .
-          RUN npm run build
-
-          # Production image, copy all the files and run next
-          FROM base AS runner
-          WORKDIR /app
-
-          ENV NODE_ENV production
-
-          RUN addgroup --system --gid 1001 nodejs
-          RUN adduser --system --uid 1001 nextjs
-
-          COPY --from=builder /app/public ./public
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-          COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-          USER nextjs
-
-          EXPOSE 3000
-
-          ENV PORT 3000
-          ENV HOSTNAME "0.0.0.0"
-
-          CMD ["node", "server.js"]
-          EOL
-
-      - name: Update next.config.ts for standalone output
+      - name: Stop running application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          cat > next.config.ts << EOL
-          import { NextConfig } from 'next';
+          # Stop the current application
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "pm2 stop cymasphere || true"
 
-          const config: NextConfig = {
-            output: 'standalone',
-          };
-
-          export default config;
-          EOL
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Setup SSH key
+      - name: Copy files to server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Create config file to disable strict host checking
-          echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-          
-          # Create deploy script
-          cat > deploy.sh << EOL
-          #!/bin/bash
-          
-          # Install Docker if not already installed
-          if ! command -v docker &> /dev/null; then
-            echo "Docker not found. Installing Docker..."
-            sudo apt-get update
-            sudo apt-get install -y ca-certificates curl gnupg
-            sudo install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            sudo chmod a+r /etc/apt/keyrings/docker.gpg
-            echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(. /etc/os-release && echo \$VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-            sudo usermod -aG docker ubuntu
-            sudo systemctl enable docker
-            sudo systemctl start docker
+          # Create directories if they don't exist
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
+
+          # Copy application files with proper directory structure
+          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+            .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
+
+          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+            public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
+
+          # Copy package.json and other config files
+          scp package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Create environment file
+          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.production
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.production
+          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
+          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
+          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
+          scp .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Copy next.config.js if it exists
+          if [ -f "next.config.js" ]; then
+            scp next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
           fi
-          
-          # Ensure the ubuntu user is in the docker group and permissions are correct
-          sudo usermod -aG docker ubuntu
-          sudo chmod 666 /var/run/docker.sock
-          
-          # Login to GitHub Container Registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
-          
-          # Pull the latest image
-          docker pull ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          
-          # Stop and remove any existing container
-          docker stop cymasphere-container || true
-          docker rm cymasphere-container || true
-          
-          # Run the new container
-          docker run -d --restart unless-stopped --name cymasphere-container -p 80:3000 ghcr.io/${{ env.REPO_OWNER_LC }}/cymasphere-website:latest
-          
-          # Clean up
-          docker system prune -af
-          EOL
-          
-          chmod +x deploy.sh
 
-      - name: Deploy to Lightsail
+      - name: Install dependencies on server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Try SCP and SSH
-          scp deploy.sh ubuntu@${{ secrets.LIGHTSAIL_IP }}:~/deploy.sh
-          ssh ubuntu@${{ secrets.LIGHTSAIL_IP }} "chmod +x ~/deploy.sh && ~/deploy.sh" 
+          # Install dependencies
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && bun install"
+
+      - name: Start application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Check if process exists in PM2 and start/restart accordingly
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && source ~/.nvm/nvm.sh && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name 'cymasphere' -- start"
