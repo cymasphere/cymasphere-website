@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import NextSEO from "@/components/NextSEO";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -28,8 +28,8 @@ import {
   FaFont,
   FaHeading,
 } from "react-icons/fa";
-import VisualEditor from "@/components/email-campaigns/VisualEditor";
 import Link from "next/link";
+import VisualEditor from "@/components/email-campaigns/VisualEditor";
 
 // Copy all the styled components from campaign creation
 const CreateContainer = styled.div`
@@ -240,9 +240,7 @@ const NavButton = styled.button<{ variant?: "primary" | "secondary" }>`
 `;
 
 // Copy visual editor components from campaign creation
-const ViewToggle = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== "active",
-})<{ active: boolean }>`
+const ViewToggle = styled.button<{ active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
@@ -428,9 +426,7 @@ const DragPreview = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
-const DroppableArea = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isDragOver",
-})<{ isDragOver: boolean }>`
+const DroppableArea = styled.div<{ isDragOver: boolean }>`
   min-height: 50px;
   border: 2px dashed
     ${(props) => (props.isDragOver ? "var(--primary)" : "transparent")};
@@ -455,9 +451,7 @@ const DroppableArea = styled.div.withConfig({
   }
 `;
 
-const EmailElement = styled.div.withConfig({
-  shouldForwardProp: (prop) => !["selected", "editing"].includes(prop),
-})<{ selected?: boolean; editing?: boolean }>`
+const EmailElement = styled.div<{ selected?: boolean; editing?: boolean }>`
   margin: 1rem 0;
   padding: 1rem;
   border: 2px solid
@@ -486,9 +480,7 @@ const EmailElement = styled.div.withConfig({
   }
 `;
 
-const EditableText = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isEditing",
-})<{ isEditing: boolean }>`
+const EditableText = styled.div<{ isEditing: boolean }>`
   outline: none;
   ${(props) =>
     props.isEditing
@@ -587,6 +579,21 @@ const FooterLink = styled.a`
   }
 `;
 
+interface EmailElement {
+  id: string;
+  type: string;
+  content?: string;
+  src?: string;
+  alt?: string;
+  url?: string;
+  style?: React.CSSProperties;
+  links?: Array<{ platform: string; url: string }>;
+  height?: string;
+  columns?: Array<{ content: string; width?: string }>;
+  thumbnail?: string;
+  title?: string;
+}
+
 interface TemplateData {
   name: string;
   subject: string;
@@ -596,7 +603,7 @@ interface TemplateData {
   type: string;
   audience: string;
   content: string;
-  emailElements: any[];
+  emailElements: EmailElement[];
 }
 
 // Content elements for drag and drop
@@ -621,7 +628,6 @@ function CreateTemplatePage() {
   const [currentView, setCurrentView] = useState<"desktop" | "mobile" | "text">(
     "desktop"
   );
-  const [isDragging, setIsDragging] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [editingElement, setEditingElement] = useState<string | null>(null);
@@ -661,7 +667,6 @@ function CreateTemplatePage() {
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, elementType: string) => {
-    setIsDragging(true);
     e.dataTransfer.setData("text/plain", elementType);
     e.dataTransfer.effectAllowed = "copy";
 
@@ -672,7 +677,6 @@ function CreateTemplatePage() {
   };
 
   const handleDragEnd = () => {
-    setIsDragging(false);
     setDragOverIndex(null);
   };
 
@@ -703,11 +707,10 @@ function CreateTemplatePage() {
       setTemplateData({ ...templateData, emailElements: newElements });
     }
 
-    setIsDragging(false);
     setDragOverIndex(null);
   };
 
-  const createNewElement = (type: string) => {
+  const createNewElement = (type: string): EmailElement => {
     const id = `${type}_${Date.now()}`;
 
     switch (type) {
@@ -716,7 +719,11 @@ function CreateTemplatePage() {
           id,
           type,
           content: "New Header",
-          style: { fontSize: "32px", fontWeight: "bold", textAlign: "center" },
+          style: {
+            fontSize: "32px",
+            fontWeight: "bold",
+            textAlign: "center" as const,
+          },
         };
       case "text":
         return {
@@ -789,7 +796,7 @@ function CreateTemplatePage() {
     }
   };
 
-  const updateElement = (elementId: string, updates: any) => {
+  const updateElement = (elementId: string, updates: Partial<EmailElement>) => {
     const newElements = templateData.emailElements.map((el) =>
       el.id === elementId ? { ...el, ...updates } : el
     );
@@ -829,7 +836,7 @@ function CreateTemplatePage() {
     if (editingElement === elementId) setEditingElement(null);
   };
 
-  const renderEmailElement = (element: any, index: number) => {
+  const renderEmailElement = (element: EmailElement, index: number) => {
     const isSelected = selectedElement === element.id;
     const isEditing = editingElement === element.id;
 
@@ -991,7 +998,7 @@ function CreateTemplatePage() {
                   gap: "1rem",
                 }}
               >
-                {element.links?.map((link: any, linkIndex: number) => (
+                {element.links?.map((link, linkIndex: number) => (
                   <SocialLink key={linkIndex} href={link.url}>
                     {link.platform}
                   </SocialLink>
@@ -1043,7 +1050,7 @@ function CreateTemplatePage() {
 
           {element.type === "columns" && (
             <div style={{ display: "flex", gap: "1rem", margin: "1.5rem 0" }}>
-              {element.columns?.map((column: any, colIndex: number) => (
+              {element.columns?.map((column, colIndex: number) => (
                 <div
                   key={colIndex}
                   style={{
@@ -1061,7 +1068,7 @@ function CreateTemplatePage() {
                       suppressContentEditableWarning={true}
                       onBlur={handleBlur}
                       onInput={(e) => {
-                        const newColumns = [...element.columns];
+                        const newColumns = [...element.columns!];
                         newColumns[colIndex] = {
                           ...newColumns[colIndex],
                           content:
@@ -1362,7 +1369,7 @@ function CreateTemplatePage() {
 
           {/* Content Elements Bar */}
           <ContentElementsBar>
-            {contentElements.map((element, index) => {
+            {contentElements.map((element) => {
               const IconComponent = element.icon;
               return (
                 <ContentElementButton
@@ -1449,7 +1456,7 @@ function CreateTemplatePage() {
                       </>
                     )}
                   </div>
-                  {templateData.emailElements.map((element, index) => (
+                  {templateData.emailElements.map((element) => (
                     <div key={element.id} style={{ marginBottom: "1rem" }}>
                       {element.type === "header" && (
                         <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>

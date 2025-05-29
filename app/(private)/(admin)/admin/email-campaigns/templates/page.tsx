@@ -303,9 +303,7 @@ const ActionsContainer = styled.div`
   align-items: center;
 `;
 
-const DropdownMenu = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isOpen",
-})<{ isOpen: boolean }>`
+const DropdownMenu = styled.div<{ isOpen: boolean }>`
   position: relative;
   display: inline-block;
 `;
@@ -330,9 +328,7 @@ const DropdownButton = styled.button`
   }
 `;
 
-const DropdownContent = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isOpen",
-})<{ isOpen: boolean }>`
+const DropdownContent = styled.div<{ isOpen: boolean }>`
   position: absolute;
   right: 0;
   top: 100%;

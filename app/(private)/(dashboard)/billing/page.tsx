@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaReceipt,
   FaHistory,
   FaTimes,
   FaCheck,
