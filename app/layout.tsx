@@ -1,9 +1,42 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google";
+import { Metadata } from "next";
 import StyledComponentsRegistry from "./registry";
 import ClientLayout from "./ClientLayout";
 import I18nProvider from "@/app/i18n/I18nProvider";
 import "./globals.css";
+
+// Metadata configuration
+export const metadata: Metadata = {
+  title: "Cymasphere",
+  description: "Advanced Chord Generation",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "any",
+      },
+      {
+        url: "/images/cm-logo-icon.png",
+        type: "image/png",
+        sizes: "32x32",
+      },
+      {
+        url: "/images/cm-logo-icon.png",
+        type: "image/png",
+        sizes: "16x16",
+      },
+    ],
+    apple: [
+      {
+        url: "/images/cm-logo-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/favicon.ico",
+  },
+};
 
 // Theme configuration
 const theme = {
