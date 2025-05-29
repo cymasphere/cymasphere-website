@@ -155,24 +155,25 @@ interface FormState {
 }
 
 const ContactSection = () => {
-  const { t, i18n } = useTranslation();
-  
+  const { t } = useTranslation();
+
   // Track language to force re-render on language change
-  const [language, setLanguage] = useState(() => 
-    typeof window !== 'undefined' ? i18next.language : 'en'
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [language, setLanguage] = useState(() =>
+    typeof window !== "undefined" ? i18next.language : "en"
   );
-  
+
   // Effect to listen for language changes
   useEffect(() => {
     const handleLanguageChanged = (lng: string) => {
       console.log(`Language changed to: ${lng}`);
       setLanguage(lng);
     };
-    
-    if (typeof window !== 'undefined') {
-      i18next.on('languageChanged', handleLanguageChanged);
+
+    if (typeof window !== "undefined") {
+      i18next.on("languageChanged", handleLanguageChanged);
       return () => {
-        i18next.off('languageChanged', handleLanguageChanged);
+        i18next.off("languageChanged", handleLanguageChanged);
       };
     }
     return undefined;
@@ -199,26 +200,26 @@ const ContactSection = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       // Set the submitting state to true
       setIsSubmitting(true);
-      
+
       // Send the contact form data to our API
-      const response = await fetch('/api/contact', {
-        method: 'POST',
+      const response = await fetch("/api/contact", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formState),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         // Show success message
         setIsSubmitted(true);
-        
+
         // Reset form fields
         setFormState({
           name: "",
@@ -226,7 +227,7 @@ const ContactSection = () => {
           subject: "",
           message: "",
         });
-        
+
         // Reset the success message after 5 seconds
         setTimeout(() => {
           setIsSubmitted(false);
@@ -238,7 +239,12 @@ const ContactSection = () => {
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      alert(t("contact.errorMessage", "An error occurred while submitting the form. Please try again."));
+      alert(
+        t(
+          "contact.errorMessage",
+          "An error occurred while submitting the form. Please try again."
+        )
+      );
     } finally {
       // Reset the submitting state
       setIsSubmitting(false);
@@ -265,12 +271,21 @@ const ContactSection = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true, amount: 0.2 }}
             >
-              <InfoTitle>{t("contact.subtitle", "Have questions or feedback? We'd love to hear from you")}</InfoTitle>
+              <InfoTitle>
+                {t(
+                  "contact.subtitle",
+                  "Have questions or feedback? We'd love to hear from you"
+                )}
+              </InfoTitle>
               <InfoText>
-                {t("contact.description", "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible.")}
+                {t(
+                  "contact.description",
+                  "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible."
+                )}
               </InfoText>
               <InfoText>
-                {t("contact.emailInfo", "You can also reach us directly at")} <strong>support@cymasphere.com</strong>
+                {t("contact.emailInfo", "You can also reach us directly at")}{" "}
+                <strong>support@cymasphere.com</strong>
               </InfoText>
             </motion.div>
           </ContactInfo>
@@ -288,12 +303,17 @@ const ContactSection = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                {t("contact.successMessage", "Thank you for your message! We'll get back to you soon.")}
+                {t(
+                  "contact.successMessage",
+                  "Thank you for your message! We'll get back to you soon."
+                )}
               </SuccessMessage>
             )}
 
             <FormGroup>
-              <Label htmlFor="name">{t("contact.nameLabel", "Your Name")}</Label>
+              <Label htmlFor="name">
+                {t("contact.nameLabel", "Your Name")}
+              </Label>
               <Input
                 type="text"
                 id="name"
@@ -305,7 +325,9 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="email">{t("contact.emailLabel", "Email Address")}</Label>
+              <Label htmlFor="email">
+                {t("contact.emailLabel", "Email Address")}
+              </Label>
               <Input
                 type="email"
                 id="email"
@@ -317,7 +339,9 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="subject">{t("contact.subjectLabel", "Subject")}</Label>
+              <Label htmlFor="subject">
+                {t("contact.subjectLabel", "Subject")}
+              </Label>
               <Input
                 type="text"
                 id="subject"
@@ -329,7 +353,9 @@ const ContactSection = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="message">{t("contact.messageLabel", "Message")}</Label>
+              <Label htmlFor="message">
+                {t("contact.messageLabel", "Message")}
+              </Label>
               <TextArea
                 id="message"
                 name="message"
@@ -340,7 +366,9 @@ const ContactSection = () => {
             </FormGroup>
 
             <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t("contact.sending", "Sending...") : t("contact.submitButton", "Send Message")}
+              {isSubmitting
+                ? t("contact.sending", "Sending...")
+                : t("contact.submitButton", "Send Message")}
             </SubmitButton>
           </ContactForm>
         </ContactFlexContainer>
