@@ -13,7 +13,6 @@ import {
 } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
-import { useParams } from "next/navigation";
 
 // Dynamically import modal to avoid SSR issues
 const FeatureModal = dynamic(() => import("../modals/FeatureModal"), {
@@ -206,8 +205,6 @@ const FeaturesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(0);
   const { t, i18n } = useTranslation();
-  const params = useParams();
-  const currentLocale = (params?.locale as string) || 'en';
 
   // Force re-render when language changes
   const [, forceUpdate] = useState({});
@@ -217,38 +214,48 @@ const FeaturesSection = () => {
       forceUpdate({});
     };
 
-    i18n.on('languageChanged', handleLanguageChange);
-    
+    i18n.on("languageChanged", handleLanguageChange);
+
     // Cleanup
     return () => {
-      i18n.off('languageChanged', handleLanguageChange);
+      i18n.off("languageChanged", handleLanguageChange);
     };
   }, [i18n]);
 
-  const formatDetailedDescription = (feature: string) => {
-    // Get the features array and ensure it's properly typed
-    const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
-    
-    // Create list items for each feature
-    const featuresList = featureItems.map((item: string) => {
-      const hasDash = item.includes(' - ');
-      const [title, description] = hasDash ? item.split(' - ', 2) : [item, ''];
-      return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
-    }).join('');
+  const featuresData = React.useMemo(() => {
+    const formatDetailedDescription = (feature: string) => {
+      // Get the features array and ensure it's properly typed
+      const featureItems = t(`features.${feature}.features`, {
+        returnObjects: true,
+      }) as string[];
 
-    return `
-      <h3>${t(`features.${feature}.modalTitle`)}</h3>
-      <p>${t(`features.${feature}.modalDescription`)}</p>
-      
-      <h3 style="margin-bottom: 0.5rem;">${t(`features.${feature}.keyFeatures`)}</h3>
-      <ul style="margin-top: 0.5rem;">
-        ${featuresList}
-      </ul>
-    `;
-  };
+      // Create list items for each feature
+      const featuresList = featureItems
+        .map((item: string) => {
+          const hasDash = item.includes(" - ");
+          const [title, description] = hasDash
+            ? item.split(" - ", 2)
+            : [item, ""];
+          return `<li><strong>${title}</strong>${
+            hasDash ? ` - ${description}` : ""
+          }</li>`;
+        })
+        .join("");
 
-  const featuresData = React.useMemo(
-    () => [
+      return `
+          <h3>${t(`features.${feature}.modalTitle`)}</h3>
+          <p>${t(`features.${feature}.modalDescription`)}</p>
+          
+          <h3 style="margin-bottom: 0.5rem;">${t(
+            `features.${feature}.keyFeatures`
+          )}</h3>
+          <ul style="margin-top: 0.5rem;">
+            ${featuresList}
+          </ul>
+        `;
+    };
+
+    return [
       {
         icon: <FaLayerGroup />,
         title: t("features.songBuilder.title"),
@@ -291,9 +298,8 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("voiceHandling"),
         color: "#4CAF50",
       },
-    ],
-    [t, currentLocale, i18n.language]
-  );
+    ];
+  }, [t]);
 
   return (
     <FeaturesContainer id="features">

@@ -349,6 +349,22 @@ const audienceSegments = [
   },
 ];
 
+// Define EmailElement interface to match the one in VisualEditor
+interface EmailElement {
+  id: string;
+  type: string;
+  content?: string;
+  url?: string;
+  src?: string;
+  alt?: string;
+  style?: React.CSSProperties;
+  height?: string;
+  links?: Array<{ platform: string; url: string }>;
+  columns?: Array<{ content: string; width?: string }>;
+  thumbnail?: string;
+  title?: string;
+}
+
 function EditTemplatePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -370,7 +386,7 @@ function EditTemplatePage() {
   });
 
   // Email elements for the visual editor
-  const [emailElements, setEmailElements] = useState([
+  const [emailElements, setEmailElements] = useState<EmailElement[]>([
     {
       id: "header_" + Date.now(),
       type: "header",

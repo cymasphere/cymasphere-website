@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -950,9 +951,11 @@ function CreateTemplatePage() {
 
           {element.type === "image" && (
             <div style={{ textAlign: "center", margin: "1.5rem 0" }}>
-              <img
+              <Image
                 src={element.src || "https://via.placeholder.com/600x300"}
                 alt={element.alt || "Email Image"}
+                width={600}
+                height={300}
                 style={{
                   maxWidth: "100%",
                   height: "auto",
@@ -1087,11 +1090,13 @@ function CreateTemplatePage() {
           {element.type === "video" && (
             <div style={{ textAlign: "center", margin: "2rem 0" }}>
               <div style={{ position: "relative", display: "inline-block" }}>
-                <img
+                <Image
                   src={
                     element.thumbnail || "https://via.placeholder.com/600x300"
                   }
                   alt={element.title || "Video Thumbnail"}
+                  width={600}
+                  height={300}
                   style={{ maxWidth: "100%", borderRadius: "8px" }}
                 />
                 <div
