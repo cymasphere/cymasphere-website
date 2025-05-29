@@ -7,7 +7,6 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-RUN npm install null-loader --save-dev
 
 # Build stage: build the application
 FROM node:20-alpine AS builder
