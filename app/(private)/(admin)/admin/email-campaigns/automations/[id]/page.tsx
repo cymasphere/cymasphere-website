@@ -1,32 +1,27 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaCogs, 
+import {
+  FaCogs,
   FaArrowLeft,
   FaEdit,
   FaSave,
   FaEye,
   FaPlay,
   FaPause,
-  FaStop,
   FaTrash,
   FaChevronRight,
   FaInfoCircle,
   FaProjectDiagram,
-  FaCalendarAlt,
   FaUsers,
   FaChartLine,
   FaPlus,
   FaTimes,
   FaEnvelope,
   FaClock,
-  FaFilter
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -115,25 +110,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-  
+
   ${(props) => {
     switch (props.status) {
-      case 'active':
+      case "active":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'paused':
+      case "paused":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'draft':
+      case "draft":
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case 'stopped':
+      case "stopped":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -169,7 +164,9 @@ const HeaderActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger" | "warning";
+}>`
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
@@ -183,7 +180,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background-color: var(--primary);
           color: white;
@@ -191,7 +188,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             background-color: var(--accent);
           }
         `;
-      case 'warning':
+      case "warning":
         return `
           background-color: #ffc107;
           color: #212529;
@@ -199,7 +196,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             background-color: #e0a800;
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: #dc3545;
           color: white;
@@ -247,11 +244,13 @@ const TabButton = styled.button<{ active: boolean }>`
   padding: 1rem 1.5rem;
   border: none;
   background: none;
-  color: ${props => props.active ? 'var(--primary)' : 'var(--text-secondary)'};
-  font-weight: ${props => props.active ? '600' : '500'};
+  color: ${(props) =>
+    props.active ? "var(--primary)" : "var(--text-secondary)"};
+  font-weight: ${(props) => (props.active ? "600" : "500")};
   cursor: pointer;
   transition: all 0.2s ease;
-  border-bottom: 2px solid ${props => props.active ? 'var(--primary)' : 'transparent'};
+  border-bottom: 2px solid
+    ${(props) => (props.active ? "var(--primary)" : "transparent")};
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -389,20 +388,29 @@ const WorkflowStep = styled.div<{ type: string }>`
   gap: 1rem;
   padding: 1.5rem;
   border-radius: 8px;
-  border: 2px solid ${props => {
+  border: 2px solid
+    ${(props) => {
+      switch (props.type) {
+        case "trigger":
+          return "rgba(40, 167, 69, 0.3)";
+        case "condition":
+          return "rgba(255, 193, 7, 0.3)";
+        case "action":
+          return "rgba(108, 99, 255, 0.3)";
+        default:
+          return "rgba(255, 255, 255, 0.1)";
+      }
+    }};
+  background-color: ${(props) => {
     switch (props.type) {
-      case 'trigger': return 'rgba(40, 167, 69, 0.3)';
-      case 'condition': return 'rgba(255, 193, 7, 0.3)';
-      case 'action': return 'rgba(108, 99, 255, 0.3)';
-      default: return 'rgba(255, 255, 255, 0.1)';
-    }
-  }};
-  background-color: ${props => {
-    switch (props.type) {
-      case 'trigger': return 'rgba(40, 167, 69, 0.1)';
-      case 'condition': return 'rgba(255, 193, 7, 0.1)';
-      case 'action': return 'rgba(108, 99, 255, 0.1)';
-      default: return 'rgba(255, 255, 255, 0.02)';
+      case "trigger":
+        return "rgba(40, 167, 69, 0.1)";
+      case "condition":
+        return "rgba(255, 193, 7, 0.1)";
+      case "action":
+        return "rgba(108, 99, 255, 0.1)";
+      default:
+        return "rgba(255, 255, 255, 0.02)";
     }
   }};
   position: relative;
@@ -417,20 +425,20 @@ const StepIcon = styled.div<{ type: string }>`
   justify-content: center;
   font-size: 1.2rem;
   flex-shrink: 0;
-  
+
   ${(props) => {
     switch (props.type) {
-      case 'trigger':
+      case "trigger":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'condition':
+      case "condition":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'action':
+      case "action":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
@@ -517,9 +525,15 @@ const ConnectorLine = styled.div`
 `;
 
 // Type definitions
+interface Condition {
+  field: string;
+  operator: string;
+  value: string;
+}
+
 interface TriggerConfig {
   event: string;
-  conditions: any[];
+  conditions: Condition[];
 }
 
 interface ConditionConfig {
@@ -534,7 +548,7 @@ interface ActionConfig {
 
 interface AutomationStep {
   id: string;
-  type: 'trigger' | 'condition' | 'action';
+  type: "trigger" | "condition" | "action";
   title: string;
   description: string;
   config: TriggerConfig | ConditionConfig | ActionConfig;
@@ -572,8 +586,8 @@ const mockAutomation: Automation = {
       description: "When a new user creates an account",
       config: {
         event: "user_signup",
-        conditions: []
-      } as TriggerConfig
+        conditions: [],
+      } as TriggerConfig,
     },
     {
       id: "2",
@@ -582,8 +596,8 @@ const mockAutomation: Automation = {
       description: "Delay before sending first email",
       config: {
         delay: "1h",
-        delayType: "time"
-      } as ConditionConfig
+        delayType: "time",
+      } as ConditionConfig,
     },
     {
       id: "3",
@@ -592,8 +606,8 @@ const mockAutomation: Automation = {
       description: "Send the first welcome email",
       config: {
         template: "welcome-email-1",
-        subject: "Welcome to Cymasphere!"
-      } as ActionConfig
+        subject: "Welcome to Cymasphere!",
+      } as ActionConfig,
     },
     {
       id: "4",
@@ -602,8 +616,8 @@ const mockAutomation: Automation = {
       description: "Wait before sending follow-up",
       config: {
         delay: "3d",
-        delayType: "time"
-      } as ConditionConfig
+        delayType: "time",
+      } as ConditionConfig,
     },
     {
       id: "5",
@@ -612,21 +626,18 @@ const mockAutomation: Automation = {
       description: "Send tutorial and tips email",
       config: {
         template: "tutorial-email",
-        subject: "Get started with your first track"
-      } as ActionConfig
-    }
-  ]
+        subject: "Get started with your first track",
+      } as ActionConfig,
+    },
+  ],
 };
 
 function AutomationEditPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const params = useParams();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [automation, setAutomation] = useState(mockAutomation);
-  
-  const { t } = useTranslation();
+
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
@@ -653,12 +664,12 @@ function AutomationEditPage() {
     // Implement action logic here
   };
 
-  const addStep = (type: 'trigger' | 'condition' | 'action') => {
+  const addStep = (type: "trigger" | "condition" | "action") => {
     let config: TriggerConfig | ConditionConfig | ActionConfig;
-    
-    if (type === 'trigger') {
+
+    if (type === "trigger") {
       config = { event: "user_signup", conditions: [] };
-    } else if (type === 'condition') {
+    } else if (type === "condition") {
       config = { delay: "1h", delayType: "time" };
     } else {
       config = { template: "default-template", subject: "Default Subject" };
@@ -669,19 +680,19 @@ function AutomationEditPage() {
       type,
       title: `New ${type}`,
       description: `Configure this ${type}`,
-      config
+      config,
     };
-    
+
     setAutomation({
       ...automation,
-      steps: [...automation.steps, newStep]
+      steps: [...automation.steps, newStep],
     });
   };
 
   const removeStep = (stepId: string) => {
     setAutomation({
       ...automation,
-      steps: automation.steps.filter(step => step.id !== stepId)
+      steps: automation.steps.filter((step) => step.id !== stepId),
     });
   };
 
@@ -696,7 +707,7 @@ function AutomationEditPage() {
         title={`Edit Automation: ${automation.title}`}
         description="Edit email automation workflow, triggers, and actions"
       />
-      
+
       <EditContainer>
         <BackButton href="/admin/email-campaigns/automations">
           <FaArrowLeft />
@@ -706,7 +717,9 @@ function AutomationEditPage() {
         <Breadcrumbs>
           <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
           <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/automations">Email Automations</BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns/automations">
+            Email Automations
+          </BreadcrumbLink>
           <FaChevronRight />
           <BreadcrumbCurrent>{automation.title}</BreadcrumbCurrent>
         </Breadcrumbs>
@@ -718,10 +731,13 @@ function AutomationEditPage() {
               {automation.title}
             </AutomationTitle>
             <AutomationMeta>
-              <StatusBadge status={automation.status}>{automation.status}</StatusBadge>
+              <StatusBadge status={automation.status}>
+                {automation.status}
+              </StatusBadge>
               <MetricItem>
                 <FaUsers />
-                <strong>{automation.subscribers.toLocaleString()}</strong> subscribers
+                <strong>{automation.subscribers.toLocaleString()}</strong>{" "}
+                subscribers
               </MetricItem>
               <MetricItem>
                 <FaChartLine />
@@ -730,17 +746,23 @@ function AutomationEditPage() {
             </AutomationMeta>
           </HeaderLeft>
           <HeaderActions>
-            <ActionButton onClick={() => handleAction('test')}>
+            <ActionButton onClick={() => handleAction("test")}>
               <FaEye />
               Test
             </ActionButton>
-            {automation.status === 'active' ? (
-              <ActionButton variant="warning" onClick={() => handleAction('pause')}>
+            {automation.status === "active" ? (
+              <ActionButton
+                variant="warning"
+                onClick={() => handleAction("pause")}
+              >
                 <FaPause />
                 Pause
               </ActionButton>
             ) : (
-              <ActionButton variant="primary" onClick={() => handleAction('start')}>
+              <ActionButton
+                variant="primary"
+                onClick={() => handleAction("start")}
+              >
                 <FaPlay />
                 Start
               </ActionButton>
@@ -749,7 +771,10 @@ function AutomationEditPage() {
               <FaSave />
               Save
             </ActionButton>
-            <ActionButton variant="danger" onClick={() => handleAction('delete')}>
+            <ActionButton
+              variant="danger"
+              onClick={() => handleAction("delete")}
+            >
               <FaTrash />
               Delete
             </ActionButton>
@@ -757,22 +782,22 @@ function AutomationEditPage() {
         </Header>
 
         <TabNavigation>
-          <TabButton 
-            active={activeTab === "details"} 
+          <TabButton
+            active={activeTab === "details"}
             onClick={() => setActiveTab("details")}
           >
             <FaInfoCircle />
             Details
           </TabButton>
-          <TabButton 
-            active={activeTab === "workflow"} 
+          <TabButton
+            active={activeTab === "workflow"}
             onClick={() => setActiveTab("workflow")}
           >
             <FaProjectDiagram />
             Workflow
           </TabButton>
-          <TabButton 
-            active={activeTab === "analytics"} 
+          <TabButton
+            active={activeTab === "analytics"}
             onClick={() => setActiveTab("analytics")}
           >
             <FaChartLine />
@@ -798,7 +823,9 @@ function AutomationEditPage() {
                   <Input
                     type="text"
                     value={automation.title}
-                    onChange={(e) => setAutomation({...automation, title: e.target.value})}
+                    onChange={(e) =>
+                      setAutomation({ ...automation, title: e.target.value })
+                    }
                     placeholder="Enter automation name"
                   />
                 </FormGroup>
@@ -806,7 +833,9 @@ function AutomationEditPage() {
                   <Label>Status</Label>
                   <Select
                     value={automation.status}
-                    onChange={(e) => setAutomation({...automation, status: e.target.value})}
+                    onChange={(e) =>
+                      setAutomation({ ...automation, status: e.target.value })
+                    }
                   >
                     <option value="draft">Draft</option>
                     <option value="active">Active</option>
@@ -818,7 +847,9 @@ function AutomationEditPage() {
                   <Label>Trigger Event</Label>
                   <Select
                     value={automation.trigger}
-                    onChange={(e) => setAutomation({...automation, trigger: e.target.value})}
+                    onChange={(e) =>
+                      setAutomation({ ...automation, trigger: e.target.value })
+                    }
                   >
                     <option value="User signup">User Signup</option>
                     <option value="Purchase made">Purchase Made</option>
@@ -832,7 +863,12 @@ function AutomationEditPage() {
                 <Label>Description</Label>
                 <TextArea
                   value={automation.description}
-                  onChange={(e) => setAutomation({...automation, description: e.target.value})}
+                  onChange={(e) =>
+                    setAutomation({
+                      ...automation,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Automation description for internal use"
                 />
               </FormGroup>
@@ -851,9 +887,9 @@ function AutomationEditPage() {
                     <React.Fragment key={step.id}>
                       <WorkflowStep type={step.type}>
                         <StepIcon type={step.type}>
-                          {step.type === 'trigger' && <FaPlay />}
-                          {step.type === 'condition' && <FaClock />}
-                          {step.type === 'action' && <FaEnvelope />}
+                          {step.type === "trigger" && <FaPlay />}
+                          {step.type === "condition" && <FaClock />}
+                          {step.type === "action" && <FaEnvelope />}
                         </StepIcon>
                         <StepContent>
                           <StepTitle>{step.title}</StepTitle>
@@ -875,17 +911,24 @@ function AutomationEditPage() {
                       )}
                     </React.Fragment>
                   ))}
-                  
+
                   <StepConnector>
                     <ConnectorLine />
                   </StepConnector>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                    <AddStepButton onClick={() => addStep('condition')}>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "1rem",
+                    }}
+                  >
+                    <AddStepButton onClick={() => addStep("condition")}>
                       <FaPlus />
                       Add Condition
                     </AddStepButton>
-                    <AddStepButton onClick={() => addStep('action')}>
+                    <AddStepButton onClick={() => addStep("action")}>
                       <FaPlus />
                       Add Action
                     </AddStepButton>
@@ -902,79 +945,156 @@ function AutomationEditPage() {
                 Automation Analytics
               </SectionTitle>
               <FormGrid>
-                <div style={{ 
-                  background: 'rgba(40, 167, 69, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(40, 167, 69, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>Total Subscribers</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+                <div
+                  style={{
+                    background: "rgba(40, 167, 69, 0.1)",
+                    padding: "1.5rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(40, 167, 69, 0.2)",
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#28a745" }}>
+                    Total Subscribers
+                  </h4>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      color: "var(--text)",
+                    }}
+                  >
                     {automation.subscribers.toLocaleString()}
                   </p>
                 </div>
-                <div style={{ 
-                  background: 'rgba(108, 99, 255, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(108, 99, 255, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>Emails Sent</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+                <div
+                  style={{
+                    background: "rgba(108, 99, 255, 0.1)",
+                    padding: "1.5rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(108, 99, 255, 0.2)",
+                  }}
+                >
+                  <h4
+                    style={{ margin: "0 0 0.5rem 0", color: "var(--primary)" }}
+                  >
+                    Emails Sent
+                  </h4>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      color: "var(--text)",
+                    }}
+                  >
                     {automation.sent.toLocaleString()}
                   </p>
                 </div>
-                <div style={{ 
-                  background: 'rgba(255, 193, 7, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 193, 7, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#ffc107' }}>Open Rate</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+                <div
+                  style={{
+                    background: "rgba(255, 193, 7, 0.1)",
+                    padding: "1.5rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 193, 7, 0.2)",
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#ffc107" }}>
+                    Open Rate
+                  </h4>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      color: "var(--text)",
+                    }}
+                  >
                     {automation.openRate}%
                   </p>
                 </div>
-                <div style={{ 
-                  background: 'rgba(23, 162, 184, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(23, 162, 184, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#17a2b8' }}>Conversion Rate</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+                <div
+                  style={{
+                    background: "rgba(23, 162, 184, 0.1)",
+                    padding: "1.5rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(23, 162, 184, 0.2)",
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#17a2b8" }}>
+                    Conversion Rate
+                  </h4>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "2rem",
+                      fontWeight: "bold",
+                      color: "var(--text)",
+                    }}
+                  >
                     3.2%
                   </p>
                 </div>
               </FormGrid>
-              
-              <div style={{ 
-                background: 'rgba(255, 255, 255, 0.02)', 
-                padding: '1.5rem', 
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                marginTop: '1.5rem'
-              }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text)' }}>Step Performance</h4>
-                {automation.steps.filter(step => step.type === 'action').map((step, index) => (
-                  <div key={step.id} style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '0.75rem 0',
-                    borderBottom: index < automation.steps.filter(s => s.type === 'action').length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
-                  }}>
-                    <span style={{ color: 'var(--text)' }}>{step.title}</span>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        {Math.floor(Math.random() * 1000 + 500)} sent
-                      </span>
-                      <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>
-                        {(Math.random() * 30 + 15).toFixed(1)}% open
-                      </span>
+
+              <div
+                style={{
+                  background: "rgba(255, 255, 255, 0.02)",
+                  padding: "1.5rem",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(255, 255, 255, 0.05)",
+                  marginTop: "1.5rem",
+                }}
+              >
+                <h4 style={{ margin: "0 0 1rem 0", color: "var(--text)" }}>
+                  Step Performance
+                </h4>
+                {automation.steps
+                  .filter((step) => step.type === "action")
+                  .map((step, index) => (
+                    <div
+                      key={step.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "0.75rem 0",
+                        borderBottom:
+                          index <
+                          automation.steps.filter((s) => s.type === "action")
+                            .length -
+                            1
+                            ? "1px solid rgba(255, 255, 255, 0.05)"
+                            : "none",
+                      }}
+                    >
+                      <span style={{ color: "var(--text)" }}>{step.title}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "1rem",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          {Math.floor(Math.random() * 1000 + 500)} sent
+                        </span>
+                        <span
+                          style={{
+                            color: "var(--primary)",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {(Math.random() * 30 + 15).toFixed(1)}% open
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </Section>
           )}
@@ -984,4 +1104,4 @@ function AutomationEditPage() {
   );
 }
 
-export default AutomationEditPage; 
+export default AutomationEditPage;

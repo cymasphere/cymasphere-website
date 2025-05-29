@@ -4,7 +4,6 @@ import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
 import { FaCog, FaServer, FaShieldAlt, FaUsers } from "react-icons/fa";
-import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -113,7 +112,6 @@ const FeatureDescription = styled.p`
 `;
 
 function AdminSettingsPage() {
-  const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();

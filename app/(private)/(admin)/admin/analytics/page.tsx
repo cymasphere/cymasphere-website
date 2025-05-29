@@ -4,7 +4,6 @@ import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
 import { FaChartBar, FaChartLine, FaChartPie } from "react-icons/fa";
-import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -113,7 +112,6 @@ const FeatureDescription = styled.p`
 `;
 
 function AnalyticsPage() {
-  const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -190,7 +188,7 @@ function AnalyticsPage() {
             Coming Soon
           </ComingSoonTitle>
           <ComingSoonText>
-            We're working hard to bring you comprehensive analytics and
+            We are working hard to bring you comprehensive analytics and
             insights. This section will provide detailed metrics about user
             engagement, revenue trends, and platform performance.
           </ComingSoonText>

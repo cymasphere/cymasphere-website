@@ -1,37 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaUsers, 
+import {
+  FaUsers,
   FaSearch,
   FaPlus,
   FaEdit,
   FaTrash,
   FaEye,
   FaDownload,
-  FaUpload,
-  FaFilter,
-  FaTag,
-  FaChartLine,
   FaFileExport,
   FaFileImport,
-  FaUserPlus,
-  FaUserMinus,
   FaEnvelope,
-  FaCalendarAlt,
-  FaMapMarkerAlt,
-  FaCog,
-  FaSync,
-  FaShare,
   FaClone,
-  FaPalette,
-  FaDatabase,
   FaEllipsisV,
-  FaTimes,
-  FaSave,
-  FaCheck
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -175,7 +158,9 @@ const RightActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -189,7 +174,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
@@ -198,7 +183,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: #dc3545;
           color: white;
@@ -282,7 +267,7 @@ const AudienceDescription = styled.div`
   line-height: 1.3;
 `;
 
-const StatusBadge = styled.span<{ type: 'dynamic' | 'static' }>`
+const StatusBadge = styled.span<{ type: "dynamic" | "static" }>`
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.75rem;
@@ -292,14 +277,14 @@ const StatusBadge = styled.span<{ type: 'dynamic' | 'static' }>`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
-  ${props => {
+  ${(props) => {
     switch (props.type) {
-      case 'dynamic':
+      case "dynamic":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'static':
+      case "static":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
@@ -314,7 +299,7 @@ const TagsList = styled.div`
   gap: 0.25rem;
 `;
 
-const Tag = styled.span<{ type?: 'status' | 'segment' | 'behavior' }>`
+const Tag = styled.span<{ type?: "status" | "segment" | "behavior" }>`
   padding: 0.125rem 0.5rem;
   border-radius: 8px;
   font-size: 0.7rem;
@@ -322,19 +307,19 @@ const Tag = styled.span<{ type?: 'status' | 'segment' | 'behavior' }>`
   text-transform: uppercase;
   letter-spacing: 0.3px;
 
-  ${props => {
+  ${(props) => {
     switch (props.type) {
-      case 'status':
+      case "status":
         return `
           background-color: rgba(40, 167, 69, 0.15);
           color: #28a745;
         `;
-      case 'segment':
+      case "segment":
         return `
           background-color: rgba(108, 99, 255, 0.15);
           color: var(--primary);
         `;
-      case 'behavior':
+      case "behavior":
         return `
           background-color: rgba(255, 193, 7, 0.15);
           color: #ffc107;
@@ -426,13 +411,13 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-  
+
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-  
+
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -467,7 +452,7 @@ const ModalTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  
+
   svg {
     color: var(--primary);
   }
@@ -563,7 +548,8 @@ const mockAudiences = [
   {
     id: "1",
     name: "Highly Engaged Users",
-    description: "Users who opened emails in the last 30 days and clicked at least once",
+    description:
+      "Users who opened emails in the last 30 days and clicked at least once",
     subscribers: 4567,
     growthRate: "+12.3%",
     engagementRate: "42.5%",
@@ -571,10 +557,10 @@ const mockAudiences = [
     tags: [
       { text: "Active", type: "status" as const },
       { text: "High Value", type: "segment" as const },
-      { text: "Engaged", type: "behavior" as const }
+      { text: "Engaged", type: "behavior" as const },
     ],
     criteria: "Opened email in last 30 days AND clicked at least 1 link",
-    type: "dynamic" as const
+    type: "dynamic" as const,
   },
   {
     id: "2",
@@ -586,10 +572,10 @@ const mockAudiences = [
     lastActive: "2024-01-22",
     tags: [
       { text: "New", type: "status" as const },
-      { text: "Onboarding", type: "segment" as const }
+      { text: "Onboarding", type: "segment" as const },
     ],
     criteria: "Subscribed in the last 7 days",
-    type: "dynamic" as const
+    type: "dynamic" as const,
   },
   {
     id: "3",
@@ -601,13 +587,13 @@ const mockAudiences = [
     lastActive: "2024-01-21",
     tags: [
       { text: "Professional", type: "segment" as const },
-      { text: "Producer", type: "behavior" as const }
+      { text: "Producer", type: "behavior" as const },
     ],
     criteria: "Tagged as 'Producer' OR purchased Pro features",
-    type: "static" as const
+    type: "static" as const,
   },
   {
-    id: "4", 
+    id: "4",
     name: "Inactive Users",
     description: "Users who haven't opened emails in 60+ days",
     subscribers: 2156,
@@ -616,10 +602,10 @@ const mockAudiences = [
     lastActive: "2023-11-15",
     tags: [
       { text: "Inactive", type: "status" as const },
-      { text: "Re-engagement", type: "segment" as const }
+      { text: "Re-engagement", type: "segment" as const },
     ],
     criteria: "No email opens in the last 60 days",
-    type: "dynamic" as const
+    type: "dynamic" as const,
   },
   {
     id: "5",
@@ -631,10 +617,10 @@ const mockAudiences = [
     lastActive: "2024-01-22",
     tags: [
       { text: "Premium", type: "segment" as const },
-      { text: "High Value", type: "behavior" as const }
+      { text: "High Value", type: "behavior" as const },
     ],
     criteria: "Has active premium subscription",
-    type: "dynamic" as const
+    type: "dynamic" as const,
   },
   {
     id: "6",
@@ -646,11 +632,11 @@ const mockAudiences = [
     lastActive: "2024-01-22",
     tags: [
       { text: "Beta", type: "segment" as const },
-      { text: "Early Adopter", type: "behavior" as const }
+      { text: "Early Adopter", type: "behavior" as const },
     ],
     criteria: "Manually added to beta testing list",
-    type: "static" as const
-  }
+    type: "static" as const,
+  },
 ];
 
 function AudiencesPage() {
@@ -663,10 +649,9 @@ function AudiencesPage() {
   const [newAudience, setNewAudience] = useState({
     name: "",
     description: "",
-    type: "dynamic" as "dynamic" | "static"
+    type: "dynamic" as "dynamic" | "static",
   });
-  
-  const { t } = useTranslation();
+
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
@@ -679,13 +664,16 @@ function AudiencesPage() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown && !(event.target as Element).closest('[data-dropdown]')) {
+      if (
+        openDropdown &&
+        !(event.target as Element).closest("[data-dropdown]")
+      ) {
         setOpenDropdown(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openDropdown]);
 
   if (languageLoading || !translationsLoaded) {
@@ -696,10 +684,12 @@ function AudiencesPage() {
     return <LoadingComponent />;
   }
 
-  const filteredAudiences = mockAudiences.filter(audience => {
-    const matchesSearch = audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         audience.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = statusFilter === "all" || audience.type === statusFilter;
+  const filteredAudiences = mockAudiences.filter((audience) => {
+    const matchesSearch =
+      audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      audience.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter =
+      statusFilter === "all" || audience.type === statusFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -716,23 +706,27 @@ function AudiencesPage() {
     console.log(`${action} audience:`, audienceId);
     setOpenDropdown(null);
     switch (action) {
-      case 'edit':
+      case "edit":
         // Handle edit action
         break;
-      case 'view':
-        router.push(`/admin/email-campaigns/subscribers?audience=${audienceId}`);
+      case "view":
+        router.push(
+          `/admin/email-campaigns/subscribers?audience=${audienceId}`
+        );
         break;
-      case 'export':
+      case "export":
         // Handle export action
         break;
-      case 'delete':
+      case "delete":
         // Handle delete action
         break;
-      case 'clone':
+      case "clone":
         // Handle clone action
         break;
-      case 'email':
-        router.push(`/admin/email-campaigns/campaigns/create?audience=${audienceId}`);
+      case "email":
+        router.push(
+          `/admin/email-campaigns/campaigns/create?audience=${audienceId}`
+        );
         break;
     }
   };
@@ -759,14 +753,15 @@ function AudiencesPage() {
         title="Email Audiences"
         description="Manage and segment your email audiences for targeted campaigns"
       />
-      
+
       <AudiencesContainer>
         <AudiencesTitle>
           <FaUsers />
           Email Audiences
         </AudiencesTitle>
         <AudiencesSubtitle>
-          Create, manage, and analyze your audience segments for targeted email campaigns
+          Create, manage, and analyze your audience segments for targeted email
+          campaigns
         </AudiencesSubtitle>
 
         <ActionsRow>
@@ -782,14 +777,17 @@ function AudiencesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchContainer>
-            
-            <FilterSelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+
+            <FilterSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all">All Types</option>
               <option value="dynamic">Dynamic Audiences</option>
               <option value="static">Static Audiences</option>
             </FilterSelect>
           </LeftActions>
-          
+
           <RightActions>
             <ActionButton>
               <FaFileImport />
@@ -799,7 +797,10 @@ function AudiencesPage() {
               <FaFileExport />
               Export All
             </ActionButton>
-            <ActionButton variant="primary" onClick={() => setShowCreateModal(true)}>
+            <ActionButton
+              variant="primary"
+              onClick={() => setShowCreateModal(true)}
+            >
               <FaPlus />
               Create Audience
             </ActionButton>
@@ -826,7 +827,10 @@ function AudiencesPage() {
                     <EmptyState>
                       <FaUsers />
                       <h3>No audiences found</h3>
-                      <p>Try adjusting your search criteria or create a new audience.</p>
+                      <p>
+                        Try adjusting your search criteria or create a new
+                        audience.
+                      </p>
                     </EmptyState>
                   </TableCell>
                 </tr>
@@ -842,16 +846,25 @@ function AudiencesPage() {
                   >
                     <TableCell>
                       <AudienceName>{audience.name}</AudienceName>
-                      <AudienceDescription>{audience.description}</AudienceDescription>
+                      <AudienceDescription>
+                        {audience.description}
+                      </AudienceDescription>
                     </TableCell>
                     <TableCell>
                       <StatusBadge type={audience.type}>
-                        {audience.type === 'dynamic' ? '🔄 Dynamic' : '📌 Static'}
+                        {audience.type === "dynamic"
+                          ? "🔄 Dynamic"
+                          : "📌 Static"}
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
                       <strong>{audience.subscribers.toLocaleString()}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
                         {audience.growthRate}
                       </div>
                     </TableCell>
@@ -875,9 +888,11 @@ function AudiencesPage() {
                     </TableCell>
                     <TableCell>
                       <ActionsCell data-dropdown>
-                        <MoreButton 
+                        <MoreButton
                           onClick={(e) => handleDropdownToggle(audience.id, e)}
-                          className={openDropdown === audience.id ? 'active' : ''}
+                          className={
+                            openDropdown === audience.id ? "active" : ""
+                          }
                         >
                           <FaEllipsisV />
                         </MoreButton>
@@ -889,27 +904,57 @@ function AudiencesPage() {
                               exit={{ opacity: 0, scale: 0.8, y: -10 }}
                               transition={{ duration: 0.15 }}
                             >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('view', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("view", audience.id);
+                                }}
+                              >
                                 <FaEye />
                                 View Details
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('edit', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("edit", audience.id);
+                                }}
+                              >
                                 <FaEdit />
                                 Edit Audience
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('email', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("email", audience.id);
+                                }}
+                              >
                                 <FaEnvelope />
                                 Send Campaign
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('clone', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("clone", audience.id);
+                                }}
+                              >
                                 <FaClone />
                                 Duplicate
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('export', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("export", audience.id);
+                                }}
+                              >
                                 <FaDownload />
                                 Export Data
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('delete', audience.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAudienceAction("delete", audience.id);
+                                }}
+                              >
                                 <FaTrash />
                                 Delete
                               </DropdownItem>
@@ -944,14 +989,16 @@ function AudiencesPage() {
                   <FaUsers />
                   Create New Audience
                 </ModalTitle>
-                
+
                 <FormGroup>
                   <Label>Audience Name</Label>
                   <Input
                     type="text"
                     placeholder="Enter audience name"
                     value={newAudience.name}
-                    onChange={(e) => setNewAudience({...newAudience, name: e.target.value})}
+                    onChange={(e) =>
+                      setNewAudience({ ...newAudience, name: e.target.value })
+                    }
                   />
                 </FormGroup>
 
@@ -960,7 +1007,12 @@ function AudiencesPage() {
                   <TextArea
                     placeholder="Describe this audience..."
                     value={newAudience.description}
-                    onChange={(e) => setNewAudience({...newAudience, description: e.target.value})}
+                    onChange={(e) =>
+                      setNewAudience({
+                        ...newAudience,
+                        description: e.target.value,
+                      })
+                    }
                     required
                   />
                 </FormGroup>
@@ -969,9 +1021,16 @@ function AudiencesPage() {
                   <Label>Type</Label>
                   <Select
                     value={newAudience.type}
-                    onChange={(e) => setNewAudience({...newAudience, type: e.target.value as "dynamic" | "static"})}
+                    onChange={(e) =>
+                      setNewAudience({
+                        ...newAudience,
+                        type: e.target.value as "dynamic" | "static",
+                      })
+                    }
                   >
-                    <option value="dynamic">Dynamic - Updates automatically</option>
+                    <option value="dynamic">
+                      Dynamic - Updates automatically
+                    </option>
                     <option value="static">Static - Manual management</option>
                   </Select>
                 </FormGroup>
@@ -980,7 +1039,10 @@ function AudiencesPage() {
                   <ActionButton onClick={() => setShowCreateModal(false)}>
                     Cancel
                   </ActionButton>
-                  <ActionButton variant="primary" onClick={handleCreateAudience}>
+                  <ActionButton
+                    variant="primary"
+                    onClick={handleCreateAudience}
+                  >
                     <FaPlus />
                     Create Audience
                   </ActionButton>
@@ -994,4 +1056,4 @@ function AudiencesPage() {
   );
 }
 
-export default AudiencesPage; 
+export default AudiencesPage;

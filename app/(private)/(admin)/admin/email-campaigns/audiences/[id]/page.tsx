@@ -1,39 +1,47 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaUsers, 
+import {
+  FaUsers,
   FaSearch,
   FaPlus,
   FaEdit,
   FaTrash,
-  FaEye,
   FaArrowLeft,
   FaSave,
   FaTimes,
   FaFilter,
   FaUserPlus,
-  FaUserMinus,
-  FaEnvelope,
   FaCalendarAlt,
-  FaMapMarkerAlt,
-  FaTag,
-  FaChartLine,
-  FaEllipsisV,
-  FaCheck,
-  FaCog,
   FaHistory,
   FaClone,
-  FaDownload
+  FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+
+interface FilterRule {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+  timeframe?: string;
+}
+
+interface AudienceData {
+  id: string;
+  name: string;
+  description: string;
+  type: "dynamic" | "static";
+  subscribers: number;
+  createdAt: string;
+  lastUpdated: string;
+  filters: FilterRule[];
+}
 
 const AudienceContainer = styled.div`
   width: 100%;
@@ -149,7 +157,7 @@ const MetaItem = styled.div`
   }
 `;
 
-const TypeBadge = styled.span<{ type: 'dynamic' | 'static' }>`
+const TypeBadge = styled.span<{ type: "dynamic" | "static" }>`
   padding: 0.5rem 1rem;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -157,14 +165,14 @@ const TypeBadge = styled.span<{ type: 'dynamic' | 'static' }>`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
-  ${props => {
+  ${(props) => {
     switch (props.type) {
-      case 'dynamic':
+      case "dynamic":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'static':
+      case "static":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
@@ -183,7 +191,9 @@ const ActionButtons = styled.div`
   }
 `;
 
-const HeaderActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const HeaderActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -197,7 +207,7 @@ const HeaderActionButton = styled.button<{ variant?: 'primary' | 'secondary' | '
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
@@ -206,7 +216,7 @@ const HeaderActionButton = styled.button<{ variant?: 'primary' | 'secondary' | '
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: #dc3545;
           color: white;
@@ -418,7 +428,7 @@ const Avatar = styled.div<{ color: string }>`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${props => props.color};
+  background: ${(props) => props.color};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -446,25 +456,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-  
+
   ${(props) => {
     switch (props.status) {
-      case 'active':
+      case "active":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'unsubscribed':
+      case "unsubscribed":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
         `;
-      case 'bounced':
+      case "bounced":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'pending':
+      case "pending":
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
@@ -517,20 +527,20 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-  
+
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-  
+
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
   }
 `;
 
-const SourceBadge = styled.span<{ source: 'filter' | 'manual' }>`
+const SourceBadge = styled.span<{ source: "filter" | "manual" }>`
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -540,15 +550,15 @@ const SourceBadge = styled.span<{ source: 'filter' | 'manual' }>`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  
-  ${props => {
+
+  ${(props) => {
     switch (props.source) {
-      case 'manual':
+      case "manual":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case 'filter':
+      case "filter":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
@@ -573,7 +583,9 @@ const ActionsContainer = styled.div`
   align-items: center;
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -587,7 +599,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background-color: var(--primary);
           color: white;
@@ -595,7 +607,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             background-color: var(--accent);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: #dc3545;
           color: white;
@@ -621,12 +633,13 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 `;
 
 // Mock audience data
-const getAudienceData = (id: string) => {
-  const audiences: Record<string, any> = {
+const getAudienceData = (id: string): AudienceData => {
+  const audiences: Record<string, AudienceData> = {
     "1": {
       id: "1",
       name: "Highly Engaged Users",
-      description: "Users who opened emails in the last 30 days and clicked at least once",
+      description:
+        "Users who opened emails in the last 30 days and clicked at least once",
       type: "dynamic" as const,
       subscribers: 4567,
       createdAt: "2024-01-10",
@@ -637,16 +650,16 @@ const getAudienceData = (id: string) => {
           field: "email_opens",
           operator: "greater_than",
           value: "0",
-          timeframe: "30_days"
+          timeframe: "30_days",
         },
         {
-          id: "2", 
+          id: "2",
           field: "email_clicks",
           operator: "greater_than",
           value: "0",
-          timeframe: "30_days"
-        }
-      ]
+          timeframe: "30_days",
+        },
+      ],
     },
     "3": {
       id: "3",
@@ -656,10 +669,10 @@ const getAudienceData = (id: string) => {
       subscribers: 1890,
       createdAt: "2024-01-05",
       lastUpdated: "2024-01-20",
-      filters: []
-    }
+      filters: [],
+    },
   };
-  
+
   return audiences[id] || audiences["1"];
 };
 
@@ -673,17 +686,17 @@ const mockSubscribers = [
     subscribeDate: "2024-01-15",
     lastActivity: "2024-01-20",
     engagement: "High",
-    source: "filter" as const
+    source: "filter" as const,
   },
   {
     id: "2",
     name: "Sarah Chen",
-    email: "sarah.chen@example.com", 
+    email: "sarah.chen@example.com",
     status: "active",
     subscribeDate: "2024-01-10",
     lastActivity: "2024-01-22",
     engagement: "Medium",
-    source: "filter" as const
+    source: "filter" as const,
   },
   {
     id: "3",
@@ -693,7 +706,7 @@ const mockSubscribers = [
     subscribeDate: "2023-12-20",
     lastActivity: "2024-01-18",
     engagement: "Low",
-    source: "manual" as const
+    source: "manual" as const,
   },
   {
     id: "4",
@@ -703,7 +716,7 @@ const mockSubscribers = [
     subscribeDate: "2024-01-18",
     lastActivity: "2024-01-21",
     engagement: "High",
-    source: "filter" as const
+    source: "filter" as const,
   },
   {
     id: "5",
@@ -713,8 +726,8 @@ const mockSubscribers = [
     subscribeDate: "2024-01-12",
     lastActivity: "2024-01-19",
     engagement: "Medium",
-    source: "manual" as const
-  }
+    source: "manual" as const,
+  },
 ];
 
 function AudienceDetailPage() {
@@ -722,9 +735,8 @@ function AudienceDetailPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [audienceData, setAudienceData] = useState<any>(null);
-  
-  const { t } = useTranslation();
+  const [audienceData, setAudienceData] = useState<AudienceData | null>(null);
+
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
   const params = useParams();
@@ -750,63 +762,86 @@ function AudienceDetailPage() {
     return <LoadingComponent />;
   }
 
-  const filteredSubscribers = mockSubscribers.filter(subscriber =>
-    subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subscriber.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSubscribers = mockSubscribers.filter(
+    (subscriber) =>
+      subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subscriber.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getAvatarColor = (name: string) => {
-    const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+    const colors = [
+      "#6c63ff",
+      "#4ecdc4",
+      "#45b7d1",
+      "#96ceb4",
+      "#feca57",
+      "#ff9ff3",
+      "#54a0ff",
+    ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
 
   const handleSave = () => {
-    console.log('Saving audience:', audienceData);
+    console.log("Saving audience:", audienceData);
     setEditMode(false);
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this audience?')) {
-      console.log('Deleting audience:', audienceId);
-      router.push('/admin/email-campaigns/audiences');
+    if (window.confirm("Are you sure you want to delete this audience?")) {
+      console.log("Deleting audience:", audienceId);
+      router.push("/admin/email-campaigns/audiences");
     }
   };
 
   const addFilterRule = () => {
-    const newRule = {
+    const newRule: FilterRule = {
       id: Date.now().toString(),
       field: "email_opens",
-      operator: "greater_than", 
+      operator: "greater_than",
       value: "",
-      timeframe: "30_days"
+      timeframe: "30_days",
     };
-    
-    setAudienceData((prev: any) => ({
-      ...prev,
-      filters: [...prev.filters, newRule]
-    }));
+
+    setAudienceData((prev: AudienceData | null) =>
+      prev
+        ? {
+            ...prev,
+            filters: [...prev.filters, newRule],
+          }
+        : null
+    );
   };
 
   const removeFilterRule = (ruleId: string) => {
-    setAudienceData((prev: any) => ({
-      ...prev,
-      filters: prev.filters.filter((filter: any) => filter.id !== ruleId)
-    }));
+    setAudienceData((prev: AudienceData | null) =>
+      prev
+        ? {
+            ...prev,
+            filters: prev.filters.filter(
+              (filter: FilterRule) => filter.id !== ruleId
+            ),
+          }
+        : null
+    );
   };
 
   const updateFilterRule = (ruleId: string, field: string, value: string) => {
-    setAudienceData((prev: any) => ({
-      ...prev,
-      filters: prev.filters.map((filter: any) =>
-        filter.id === ruleId ? { ...filter, [field]: value } : filter
-      )
-    }));
+    setAudienceData((prev: AudienceData | null) =>
+      prev
+        ? {
+            ...prev,
+            filters: prev.filters.map((filter: FilterRule) =>
+              filter.id === ruleId ? { ...filter, [field]: value } : filter
+            ),
+          }
+        : null
+    );
   };
 
   const handleRemoveSubscriber = (subscriberId: string) => {
     // Implement the logic to remove a subscriber from the audience
-    console.log('Removing subscriber:', subscriberId);
+    console.log("Removing subscriber:", subscriberId);
   };
 
   return (
@@ -815,7 +850,7 @@ function AudienceDetailPage() {
         title={`Audience: ${audienceData.name}`}
         description={`Manage ${audienceData.name} audience and subscribers`}
       />
-      
+
       <AudienceContainer>
         <Header>
           <BackButton href="/admin/email-campaigns/audiences">
@@ -832,11 +867,15 @@ function AudienceDetailPage() {
           <AudienceHeader>
             <AudienceDetails>
               <AudienceName>{audienceData.name}</AudienceName>
-              <AudienceDescription>{audienceData.description}</AudienceDescription>
+              <AudienceDescription>
+                {audienceData.description}
+              </AudienceDescription>
               <AudienceMeta>
                 <MetaItem>
                   <TypeBadge type={audienceData.type}>
-                    {audienceData.type === 'dynamic' ? '🔄 Dynamic' : '📌 Static'}
+                    {audienceData.type === "dynamic"
+                      ? "🔄 Dynamic"
+                      : "📌 Static"}
                   </TypeBadge>
                 </MetaItem>
                 <MetaItem>
@@ -845,11 +884,13 @@ function AudienceDetailPage() {
                 </MetaItem>
                 <MetaItem>
                   <FaCalendarAlt />
-                  Created {new Date(audienceData.createdAt).toLocaleDateString()}
+                  Created{" "}
+                  {new Date(audienceData.createdAt).toLocaleDateString()}
                 </MetaItem>
                 <MetaItem>
                   <FaHistory />
-                  Updated {new Date(audienceData.lastUpdated).toLocaleDateString()}
+                  Updated{" "}
+                  {new Date(audienceData.lastUpdated).toLocaleDateString()}
                 </MetaItem>
               </AudienceMeta>
             </AudienceDetails>
@@ -871,11 +912,15 @@ function AudienceDetailPage() {
                     <FaEdit />
                     Edit
                   </HeaderActionButton>
-                  <HeaderActionButton onClick={() => console.log('Duplicate audience')}>
+                  <HeaderActionButton
+                    onClick={() => console.log("Duplicate audience")}
+                  >
                     <FaClone />
                     Duplicate
                   </HeaderActionButton>
-                  <HeaderActionButton onClick={() => console.log('Export audience')}>
+                  <HeaderActionButton
+                    onClick={() => console.log("Export audience")}
+                  >
                     <FaDownload />
                     Export
                   </HeaderActionButton>
@@ -889,7 +934,7 @@ function AudienceDetailPage() {
           </AudienceHeader>
         </AudienceInfo>
 
-        {audienceData.type === 'dynamic' ? (
+        {audienceData.type === "dynamic" ? (
           <>
             <ContentSection>
               <SectionTitle>
@@ -907,24 +952,36 @@ function AudienceDetailPage() {
                       </AddRuleButton>
                     )}
                   </FilterHeader>
-                  
-                  {audienceData.filters.map((filter: any) => (
+
+                  {audienceData.filters.map((filter: FilterRule) => (
                     <FilterRule key={filter.id}>
                       <Select
                         value={filter.field}
-                        onChange={(e) => updateFilterRule(filter.id, 'field', e.target.value)}
+                        onChange={(e) =>
+                          updateFilterRule(filter.id, "field", e.target.value)
+                        }
                         disabled={!editMode}
                       >
                         <option value="email_opens">Email Opens</option>
                         <option value="email_clicks">Email Clicks</option>
                         <option value="last_activity">Last Activity</option>
-                        <option value="subscription_date">Subscription Date</option>
-                        <option value="engagement_score">Engagement Score</option>
+                        <option value="subscription_date">
+                          Subscription Date
+                        </option>
+                        <option value="engagement_score">
+                          Engagement Score
+                        </option>
                       </Select>
-                      
+
                       <Select
                         value={filter.operator}
-                        onChange={(e) => updateFilterRule(filter.id, 'operator', e.target.value)}
+                        onChange={(e) =>
+                          updateFilterRule(
+                            filter.id,
+                            "operator",
+                            e.target.value
+                          )
+                        }
                         disabled={!editMode}
                       >
                         <option value="greater_than">Greater Than</option>
@@ -932,28 +989,34 @@ function AudienceDetailPage() {
                         <option value="equals">Equals</option>
                         <option value="contains">Contains</option>
                       </Select>
-                      
+
                       <Input
                         type="text"
                         value={filter.value}
-                        onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
+                        onChange={(e) =>
+                          updateFilterRule(filter.id, "value", e.target.value)
+                        }
                         disabled={!editMode}
                         placeholder="Value"
                       />
-                      
+
                       {editMode && (
-                        <RemoveButton onClick={() => removeFilterRule(filter.id)}>
+                        <RemoveButton
+                          onClick={() => removeFilterRule(filter.id)}
+                        >
                           <FaTimes />
                         </RemoveButton>
                       )}
                     </FilterRule>
                   ))}
-                  
+
                   {audienceData.filters.length === 0 && (
                     <EmptyState>
                       <FaFilter />
                       <h3>No filter conditions</h3>
-                      <p>Add filter conditions to define this dynamic audience.</p>
+                      <p>
+                        Add filter conditions to define this dynamic audience.
+                      </p>
                     </EmptyState>
                   )}
                 </FilterGroup>
@@ -964,17 +1027,26 @@ function AudienceDetailPage() {
               <SectionTitle>
                 <FaUsers />
                 Subscribers ({filteredSubscribers.length})
-                <span style={{ 
-                  fontSize: '0.9rem', 
-                  color: 'var(--text-secondary)', 
-                  fontWeight: 'normal',
-                  marginLeft: '0.5rem'
-                }}>
+                <span
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "var(--text-secondary)",
+                    fontWeight: "normal",
+                    marginLeft: "0.5rem",
+                  }}
+                >
                   - Based on filter criteria + manual additions/exclusions
                 </span>
               </SectionTitle>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1rem",
+                }}
+              >
                 <SearchContainer style={{ marginBottom: 0 }}>
                   <SearchIcon>
                     <FaSearch />
@@ -986,11 +1058,11 @@ function AudienceDetailPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </SearchContainer>
-                
-                <HeaderActionButton 
-                  variant="primary" 
-                  onClick={() => console.log('Add subscriber manually')}
-                  style={{ marginLeft: '1rem' }}
+
+                <HeaderActionButton
+                  variant="primary"
+                  onClick={() => console.log("Add subscriber manually")}
+                  style={{ marginLeft: "1rem" }}
                 >
                   <FaUserPlus />
                   Add Subscriber
@@ -1017,7 +1089,10 @@ function AudienceDetailPage() {
                           <EmptyState>
                             <FaUsers />
                             <h3>No subscribers found</h3>
-                            <p>Try adjusting your search criteria or filter conditions.</p>
+                            <p>
+                              Try adjusting your search criteria or filter
+                              conditions.
+                            </p>
                           </EmptyState>
                         </TableCell>
                       </tr>
@@ -1027,35 +1102,54 @@ function AudienceDetailPage() {
                           <TableCell>
                             <SubscriberInfo>
                               <Avatar color={getAvatarColor(subscriber.name)}>
-                                {subscriber.name.split(' ').map(n => n[0]).join('')}
+                                {subscriber.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
                               </Avatar>
                               <SubscriberDetails>
-                                <SubscriberName>{subscriber.name}</SubscriberName>
-                                <SubscriberEmail>{subscriber.email}</SubscriberEmail>
+                                <SubscriberName>
+                                  {subscriber.name}
+                                </SubscriberName>
+                                <SubscriberEmail>
+                                  {subscriber.email}
+                                </SubscriberEmail>
                               </SubscriberDetails>
                             </SubscriberInfo>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={subscriber.status}>{subscriber.status}</StatusBadge>
+                            <StatusBadge status={subscriber.status}>
+                              {subscriber.status}
+                            </StatusBadge>
                           </TableCell>
                           <TableCell>
-                            {new Date(subscriber.subscribeDate).toLocaleDateString()}
+                            {new Date(
+                              subscriber.subscribeDate
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            {new Date(subscriber.lastActivity).toLocaleDateString()}
+                            {new Date(
+                              subscriber.lastActivity
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <span style={{ 
-                              color: subscriber.engagement === 'High' ? '#28a745' : 
-                                     subscriber.engagement === 'Medium' ? '#ffc107' : '#dc3545',
-                              fontWeight: '600'
-                            }}>
+                            <span
+                              style={{
+                                color:
+                                  subscriber.engagement === "High"
+                                    ? "#28a745"
+                                    : subscriber.engagement === "Medium"
+                                    ? "#ffc107"
+                                    : "#dc3545",
+                                fontWeight: "600",
+                              }}
+                            >
                               {subscriber.engagement}
                             </span>
                           </TableCell>
                           <TableCell>
-                            <SourceBadge source={subscriber.source || 'filter'}>
-                              {subscriber.source === 'manual' ? (
+                            <SourceBadge source={subscriber.source || "filter"}>
+                              {subscriber.source === "manual" ? (
                                 <>
                                   <FaUserPlus />
                                   Manual
@@ -1070,9 +1164,11 @@ function AudienceDetailPage() {
                           </TableCell>
                           <TableCell>
                             <ActionsContainer>
-                              <ActionButton 
-                                variant="danger" 
-                                onClick={() => handleRemoveSubscriber(subscriber.id)}
+                              <ActionButton
+                                variant="danger"
+                                onClick={() =>
+                                  handleRemoveSubscriber(subscriber.id)
+                                }
                                 title="Remove from audience"
                               >
                                 <FaTimes />
@@ -1093,7 +1189,7 @@ function AudienceDetailPage() {
               <FaUsers />
               Subscribers ({filteredSubscribers.length})
             </SectionTitle>
-            
+
             <SearchContainer>
               <SearchIcon>
                 <FaSearch />
@@ -1135,37 +1231,56 @@ function AudienceDetailPage() {
                         <TableCell>
                           <SubscriberInfo>
                             <Avatar color={getAvatarColor(subscriber.name)}>
-                              {subscriber.name.split(' ').map(n => n[0]).join('')}
+                              {subscriber.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
                             </Avatar>
                             <SubscriberDetails>
                               <SubscriberName>{subscriber.name}</SubscriberName>
-                              <SubscriberEmail>{subscriber.email}</SubscriberEmail>
+                              <SubscriberEmail>
+                                {subscriber.email}
+                              </SubscriberEmail>
                             </SubscriberDetails>
                           </SubscriberInfo>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={subscriber.status}>{subscriber.status}</StatusBadge>
+                          <StatusBadge status={subscriber.status}>
+                            {subscriber.status}
+                          </StatusBadge>
                         </TableCell>
                         <TableCell>
-                          {new Date(subscriber.subscribeDate).toLocaleDateString()}
+                          {new Date(
+                            subscriber.subscribeDate
+                          ).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          {new Date(subscriber.lastActivity).toLocaleDateString()}
+                          {new Date(
+                            subscriber.lastActivity
+                          ).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <span style={{ 
-                            color: subscriber.engagement === 'High' ? '#28a745' : 
-                                   subscriber.engagement === 'Medium' ? '#ffc107' : '#dc3545',
-                            fontWeight: '600'
-                          }}>
+                          <span
+                            style={{
+                              color:
+                                subscriber.engagement === "High"
+                                  ? "#28a745"
+                                  : subscriber.engagement === "Medium"
+                                  ? "#ffc107"
+                                  : "#dc3545",
+                              fontWeight: "600",
+                            }}
+                          >
                             {subscriber.engagement}
                           </span>
                         </TableCell>
                         <TableCell>
                           <ActionsContainer>
-                            <ActionButton 
-                              variant="danger" 
-                              onClick={() => handleRemoveSubscriber(subscriber.id)}
+                            <ActionButton
+                              variant="danger"
+                              onClick={() =>
+                                handleRemoveSubscriber(subscriber.id)
+                              }
                               title="Remove from audience"
                             >
                               <FaTimes />
@@ -1185,4 +1300,4 @@ function AudienceDetailPage() {
   );
 }
 
-export default AudienceDetailPage; 
+export default AudienceDetailPage;

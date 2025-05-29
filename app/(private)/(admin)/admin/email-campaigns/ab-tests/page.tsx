@@ -1,24 +1,18 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaFlask, 
+import {
+  FaFlask,
   FaPlus,
-  FaSearch,
-  FaFilter,
   FaSort,
   FaEye,
   FaEdit,
   FaTrash,
   FaPlay,
   FaPause,
-  FaStop,
   FaChartLine,
   FaUsers,
-  FaEnvelopeOpen,
-  FaMousePointer,
   FaCalendarAlt,
   FaCrown,
   FaArrowUp,
@@ -26,11 +20,9 @@ import {
   FaEquals,
   FaChevronRight,
   FaDownload,
-  FaCopy,
   FaCheckCircle,
   FaTimesCircle,
   FaClock,
-  FaExclamationTriangle
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -124,7 +116,9 @@ const HeaderActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
@@ -138,7 +132,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background-color: var(--primary);
           color: white;
@@ -146,7 +140,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             background-color: var(--accent);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: #dc3545;
           color: white;
@@ -343,30 +337,30 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-  
+
   ${(props) => {
     switch (props.status) {
-      case 'running':
+      case "running":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'completed':
+      case "completed":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case 'paused':
+      case "paused":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'draft':
+      case "draft":
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case 'failed':
+      case "failed":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -404,8 +398,10 @@ const VariantsGrid = styled.div`
 const VariantCard = styled.div<{ isWinner?: boolean }>`
   padding: 1rem;
   border-radius: 8px;
-  border: 2px solid ${props => props.isWinner ? '#28a745' : 'rgba(255, 255, 255, 0.1)'};
-  background-color: ${props => props.isWinner ? 'rgba(40, 167, 69, 0.05)' : 'rgba(255, 255, 255, 0.02)'};
+  border: 2px solid
+    ${(props) => (props.isWinner ? "#28a745" : "rgba(255, 255, 255, 0.1)")};
+  background-color: ${(props) =>
+    props.isWinner ? "rgba(40, 167, 69, 0.05)" : "rgba(255, 255, 255, 0.02)"};
   position: relative;
 `;
 
@@ -488,7 +484,7 @@ const ProgressBar = styled.div`
 
 const ProgressFill = styled.div<{ percentage: number }>`
   height: 100%;
-  width: ${props => props.percentage}%;
+  width: ${(props) => props.percentage}%;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   transition: width 0.3s ease;
 `;
@@ -525,14 +521,17 @@ const ComparisonLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
-const ComparisonValue = styled.div<{ trend?: 'up' | 'down' | 'neutral' }>`
+const ComparisonValue = styled.div<{ trend?: "up" | "down" | "neutral" }>`
   font-size: 1.2rem;
   font-weight: 600;
-  color: ${props => {
+  color: ${(props) => {
     switch (props.trend) {
-      case 'up': return '#28a745';
-      case 'down': return '#dc3545';
-      default: return 'var(--text)';
+      case "up":
+        return "#28a745";
+      case "down":
+        return "#dc3545";
+      default:
+        return "var(--text)";
     }
   }};
   display: flex;
@@ -546,14 +545,15 @@ const mockStats = [
   { label: "Active Tests", value: "12" },
   { label: "Completed Tests", value: "47" },
   { label: "Total Variants", value: "94" },
-  { label: "Avg. Improvement", value: "+23%" }
+  { label: "Avg. Improvement", value: "+23%" },
 ];
 
 const mockTests = [
   {
     id: "1",
     title: "Subject Line Optimization",
-    description: "Testing different subject line approaches for the product launch campaign",
+    description:
+      "Testing different subject line approaches for the product launch campaign",
     status: "running",
     type: "Subject Line",
     startDate: "2024-01-15",
@@ -570,7 +570,7 @@ const mockTests = [
         clicks: 156,
         openRate: 31.2,
         clickRate: 6.2,
-        isWinner: false
+        isWinner: false,
       },
       {
         id: "B",
@@ -581,9 +581,9 @@ const mockTests = [
         clicks: 203,
         openRate: 37.0,
         clickRate: 8.1,
-        isWinner: true
-      }
-    ]
+        isWinner: true,
+      },
+    ],
   },
   {
     id: "2",
@@ -605,7 +605,7 @@ const mockTests = [
         clicks: 128,
         openRate: 32.0,
         clickRate: 4.8,
-        isWinner: false
+        isWinner: false,
       },
       {
         id: "B",
@@ -616,7 +616,7 @@ const mockTests = [
         clicks: 167,
         openRate: 37.0,
         clickRate: 6.3,
-        isWinner: true
+        isWinner: true,
       },
       {
         id: "C",
@@ -627,14 +627,15 @@ const mockTests = [
         clicks: 116,
         openRate: 29.0,
         clickRate: 4.4,
-        isWinner: false
-      }
-    ]
+        isWinner: false,
+      },
+    ],
   },
   {
     id: "3",
     title: "CTA Button Color Test",
-    description: "Testing different call-to-action button colors for conversion optimization",
+    description:
+      "Testing different call-to-action button colors for conversion optimization",
     status: "paused",
     type: "Design",
     startDate: "2024-01-20",
@@ -651,7 +652,7 @@ const mockTests = [
         clicks: 43,
         openRate: 30.0,
         clickRate: 4.2,
-        isWinner: false
+        isWinner: false,
       },
       {
         id: "B",
@@ -662,9 +663,9 @@ const mockTests = [
         clicks: 57,
         openRate: 31.0,
         clickRate: 5.6,
-        isWinner: false
-      }
-    ]
+        isWinner: false,
+      },
+    ],
   },
   {
     id: "4",
@@ -686,7 +687,7 @@ const mockTests = [
         clicks: 0,
         openRate: 0,
         clickRate: 0,
-        isWinner: false
+        isWinner: false,
       },
       {
         id: "B",
@@ -697,10 +698,10 @@ const mockTests = [
         clicks: 0,
         openRate: 0,
         clickRate: 0,
-        isWinner: false
-      }
-    ]
-  }
+        isWinner: false,
+      },
+    ],
+  },
 ];
 
 function ABTestsPage() {
@@ -711,8 +712,7 @@ function ABTestsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  
-  const { t } = useTranslation();
+
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
@@ -729,12 +729,16 @@ function ABTestsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredTests = mockTests.filter(test => {
-    const matchesSearch = test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         test.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || test.status === statusFilter;
-    const matchesType = typeFilter === "all" || test.type.toLowerCase() === typeFilter.toLowerCase();
-    
+  const filteredTests = mockTests.filter((test) => {
+    const matchesSearch =
+      test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      test.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || test.status === statusFilter;
+    const matchesType =
+      typeFilter === "all" ||
+      test.type.toLowerCase() === typeFilter.toLowerCase();
+
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -745,20 +749,29 @@ function ABTestsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'running': return <FaPlay />;
-      case 'completed': return <FaCheckCircle />;
-      case 'paused': return <FaPause />;
-      case 'draft': return <FaClock />;
-      case 'failed': return <FaTimesCircle />;
-      default: return <FaClock />;
+      case "running":
+        return <FaPlay />;
+      case "completed":
+        return <FaCheckCircle />;
+      case "paused":
+        return <FaPause />;
+      case "draft":
+        return <FaClock />;
+      case "failed":
+        return <FaTimesCircle />;
+      default:
+        return <FaClock />;
     }
   };
 
-  const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
+  const getTrendIcon = (trend: "up" | "down" | "neutral") => {
     switch (trend) {
-      case 'up': return <FaArrowUp />;
-      case 'down': return <FaArrowDown />;
-      default: return <FaEquals />;
+      case "up":
+        return <FaArrowUp />;
+      case "down":
+        return <FaArrowDown />;
+      default:
+        return <FaEquals />;
     }
   };
 
@@ -777,12 +790,14 @@ function ABTestsPage() {
         title="A/B Tests"
         description="Manage and analyze email campaign A/B tests"
       />
-      
+
       <ABTestContainer>
         <Breadcrumbs>
           <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
           <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/campaigns">Email Campaigns</BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns/campaigns">
+            Email Campaigns
+          </BreadcrumbLink>
           <FaChevronRight />
           <BreadcrumbCurrent>A/B Tests</BreadcrumbCurrent>
         </Breadcrumbs>
@@ -798,11 +813,16 @@ function ABTestsPage() {
             </Subtitle>
           </HeaderLeft>
           <HeaderActions>
-            <ActionButton onClick={() => handleAction('export', '')}>
+            <ActionButton onClick={() => handleAction("export", "")}>
               <FaDownload />
               Export
             </ActionButton>
-            <ActionButton variant="primary" onClick={() => router.push('/admin/email-campaigns/ab-tests/create')}>
+            <ActionButton
+              variant="primary"
+              onClick={() =>
+                router.push("/admin/email-campaigns/ab-tests/create")
+              }
+            >
               <FaPlus />
               Create Test
             </ActionButton>
@@ -832,7 +852,10 @@ function ABTestsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all">All Statuses</option>
               <option value="running">Running</option>
               <option value="completed">Completed</option>
@@ -840,7 +863,10 @@ function ABTestsPage() {
               <option value="draft">Draft</option>
               <option value="failed">Failed</option>
             </Select>
-            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            <Select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
               <option value="all">All Types</option>
               <option value="subject line">Subject Line</option>
               <option value="send time">Send Time</option>
@@ -849,7 +875,7 @@ function ABTestsPage() {
             </Select>
           </FilterGroup>
           <FilterGroup>
-            <FaSort style={{ color: 'var(--text-secondary)' }} />
+            <FaSort style={{ color: "var(--text-secondary)" }} />
             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -877,7 +903,9 @@ function ABTestsPage() {
                   <TestDescription>{test.description}</TestDescription>
                   <TestMeta>
                     <MetaItem>
-                      <StatusBadge status={test.status}>{test.status}</StatusBadge>
+                      <StatusBadge status={test.status}>
+                        {test.status}
+                      </StatusBadge>
                     </MetaItem>
                     <MetaItem>
                       <FaFlask />
@@ -885,39 +913,48 @@ function ABTestsPage() {
                     </MetaItem>
                     <MetaItem>
                       <FaCalendarAlt />
-                      {new Date(test.startDate).toLocaleDateString()} - {new Date(test.endDate).toLocaleDateString()}
+                      {new Date(test.startDate).toLocaleDateString()} -{" "}
+                      {new Date(test.endDate).toLocaleDateString()}
                     </MetaItem>
                     <MetaItem>
                       <FaUsers />
-                      <strong>{test.totalSent.toLocaleString()}</strong> recipients
+                      <strong>{test.totalSent.toLocaleString()}</strong>{" "}
+                      recipients
                     </MetaItem>
                   </TestMeta>
                 </TestInfo>
                 <TestActions>
-                  <ActionButton onClick={() => handleAction('view', test.id)}>
+                  <ActionButton onClick={() => handleAction("view", test.id)}>
                     <FaEye />
                   </ActionButton>
-                  <ActionButton onClick={() => handleAction('edit', test.id)}>
+                  <ActionButton onClick={() => handleAction("edit", test.id)}>
                     <FaEdit />
                   </ActionButton>
-                  {test.status === 'running' && (
-                    <ActionButton onClick={() => handleAction('pause', test.id)}>
+                  {test.status === "running" && (
+                    <ActionButton
+                      onClick={() => handleAction("pause", test.id)}
+                    >
                       <FaPause />
                     </ActionButton>
                   )}
-                  {test.status === 'paused' && (
-                    <ActionButton onClick={() => handleAction('resume', test.id)}>
+                  {test.status === "paused" && (
+                    <ActionButton
+                      onClick={() => handleAction("resume", test.id)}
+                    >
                       <FaPlay />
                     </ActionButton>
                   )}
-                  <ActionButton variant="danger" onClick={() => handleAction('delete', test.id)}>
+                  <ActionButton
+                    variant="danger"
+                    onClick={() => handleAction("delete", test.id)}
+                  >
                     <FaTrash />
                   </ActionButton>
                 </TestActions>
               </TestHeader>
 
               <TestBody>
-                {test.status !== 'draft' && (
+                {test.status !== "draft" && (
                   <TestProgress>
                     <ProgressLabel>
                       <span>Test Progress</span>
@@ -943,19 +980,27 @@ function ABTestsPage() {
                           )}
                         </VariantTitle>
                       </VariantHeader>
-                      <VariantSubject>"{variant.subject}"</VariantSubject>
-                      {test.status !== 'draft' && (
+                      <VariantSubject>
+                        &quot;{variant.subject}&quot;
+                      </VariantSubject>
+                      {test.status !== "draft" && (
                         <VariantStats>
                           <VariantStat>
-                            <VariantStatValue>{variant.sent.toLocaleString()}</VariantStatValue>
+                            <VariantStatValue>
+                              {variant.sent.toLocaleString()}
+                            </VariantStatValue>
                             <VariantStatLabel>Sent</VariantStatLabel>
                           </VariantStat>
                           <VariantStat>
-                            <VariantStatValue>{variant.openRate}%</VariantStatValue>
+                            <VariantStatValue>
+                              {variant.openRate}%
+                            </VariantStatValue>
                             <VariantStatLabel>Open Rate</VariantStatLabel>
                           </VariantStat>
                           <VariantStat>
-                            <VariantStatValue>{variant.clickRate}%</VariantStatValue>
+                            <VariantStatValue>
+                              {variant.clickRate}%
+                            </VariantStatValue>
                             <VariantStatLabel>Click Rate</VariantStatLabel>
                           </VariantStat>
                         </VariantStats>
@@ -964,7 +1009,7 @@ function ABTestsPage() {
                   ))}
                 </VariantsGrid>
 
-                {test.status === 'completed' && test.variants.length === 2 && (
+                {test.status === "completed" && test.variants.length === 2 && (
                   <ResultsSection>
                     <ResultsTitle>
                       <FaChartLine />
@@ -974,21 +1019,31 @@ function ABTestsPage() {
                       <ComparisonItem>
                         <ComparisonLabel>Open Rate Difference</ComparisonLabel>
                         <ComparisonValue trend="up">
-                          {getTrendIcon('up')}
-                          +{(test.variants[1].openRate - test.variants[0].openRate).toFixed(1)}%
+                          {getTrendIcon("up")}+
+                          {(
+                            test.variants[1].openRate -
+                            test.variants[0].openRate
+                          ).toFixed(1)}
+                          %
                         </ComparisonValue>
                       </ComparisonItem>
                       <ComparisonItem>
                         <ComparisonLabel>Click Rate Difference</ComparisonLabel>
                         <ComparisonValue trend="up">
-                          {getTrendIcon('up')}
-                          +{(test.variants[1].clickRate - test.variants[0].clickRate).toFixed(1)}%
+                          {getTrendIcon("up")}+
+                          {(
+                            test.variants[1].clickRate -
+                            test.variants[0].clickRate
+                          ).toFixed(1)}
+                          %
                         </ComparisonValue>
                       </ComparisonItem>
                       <ComparisonItem>
-                        <ComparisonLabel>Statistical Significance</ComparisonLabel>
+                        <ComparisonLabel>
+                          Statistical Significance
+                        </ComparisonLabel>
                         <ComparisonValue trend="up">
-                          {getTrendIcon('up')}
+                          {getTrendIcon("up")}
                           95%
                         </ComparisonValue>
                       </ComparisonItem>
@@ -1001,21 +1056,32 @@ function ABTestsPage() {
         </TestsGrid>
 
         {filteredTests.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '3rem', 
-            color: 'var(--text-secondary)',
-            background: 'var(--card-bg)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.05)'
-          }}>
-            <FaFlask style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }} />
-            <h3 style={{ color: 'var(--text)', marginBottom: '0.5rem' }}>No A/B tests found</h3>
-            <p>Create your first A/B test to start optimizing your email campaigns.</p>
-            <ActionButton 
-              variant="primary" 
-              onClick={() => router.push('/admin/email-campaigns/ab-tests/create')}
-              style={{ marginTop: '1rem' }}
+          <div
+            style={{
+              textAlign: "center",
+              padding: "3rem",
+              color: "var(--text-secondary)",
+              background: "var(--card-bg)",
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 255, 255, 0.05)",
+            }}
+          >
+            <FaFlask
+              style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}
+            />
+            <h3 style={{ color: "var(--text)", marginBottom: "0.5rem" }}>
+              No A/B tests found
+            </h3>
+            <p>
+              Create your first A/B test to start optimizing your email
+              campaigns.
+            </p>
+            <ActionButton
+              variant="primary"
+              onClick={() =>
+                router.push("/admin/email-campaigns/ab-tests/create")
+              }
+              style={{ marginTop: "1rem" }}
             >
               <FaPlus />
               Create Your First Test
@@ -1027,4 +1093,4 @@ function ABTestsPage() {
   );
 }
 
-export default ABTestsPage; 
+export default ABTestsPage;

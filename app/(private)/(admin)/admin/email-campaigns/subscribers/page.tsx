@@ -1,35 +1,26 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaUsers, 
+import {
+  FaUsers,
   FaSearch,
-  FaPlus,
+  FaEye,
   FaEdit,
   FaTrash,
-  FaEye,
-  FaDownload,
-  FaUpload,
-  FaFilter,
   FaUserPlus,
-  FaUserMinus,
   FaEnvelope,
-  FaCalendarAlt,
-  FaMapMarkerAlt,
-  FaTag,
-  FaChartLine,
-  FaFileExport,
   FaFileImport,
+  FaFileExport,
   FaEllipsisV,
-  FaClone
+  FaClone,
+  FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
-import { useRouter } from "next/navigation";
 
 const SubscribersContainer = styled.div`
   width: 100%;
@@ -200,7 +191,9 @@ const RightActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -214,7 +207,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
@@ -223,7 +216,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -306,7 +299,7 @@ const Avatar = styled.div<{ color: string }>`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: ${props => props.color};
+  background: ${(props) => props.color};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,22 +331,22 @@ const StatusBadge = styled.span<{ status: string }>`
 
   ${(props) => {
     switch (props.status) {
-      case 'active':
+      case "active":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'unsubscribed':
+      case "unsubscribed":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
         `;
-      case 'bounced':
+      case "bounced":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'pending':
+      case "pending":
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
@@ -460,13 +453,13 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-  
+
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-  
+
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -486,7 +479,7 @@ const mockSubscribers = [
     tags: ["VIP", "Producer"],
     engagement: "High",
     totalOpens: 45,
-    totalClicks: 12
+    totalClicks: 12,
   },
   {
     id: "2",
@@ -499,7 +492,7 @@ const mockSubscribers = [
     tags: ["Beginner"],
     engagement: "Medium",
     totalOpens: 23,
-    totalClicks: 5
+    totalClicks: 5,
   },
   {
     id: "3",
@@ -512,7 +505,7 @@ const mockSubscribers = [
     tags: ["DJ", "Professional"],
     engagement: "Low",
     totalOpens: 8,
-    totalClicks: 1
+    totalClicks: 1,
   },
   {
     id: "4",
@@ -525,7 +518,7 @@ const mockSubscribers = [
     tags: ["Student"],
     engagement: "High",
     totalOpens: 34,
-    totalClicks: 9
+    totalClicks: 9,
   },
   {
     id: "5",
@@ -538,8 +531,8 @@ const mockSubscribers = [
     tags: ["Producer", "Advanced"],
     engagement: "Medium",
     totalOpens: 18,
-    totalClicks: 3
-  }
+    totalClicks: 3,
+  },
 ];
 
 function SubscribersPage() {
@@ -548,8 +541,7 @@ function SubscribersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
-  const { t } = useTranslation();
+
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
@@ -562,13 +554,16 @@ function SubscribersPage() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown && !(event.target as Element).closest('[data-dropdown]')) {
+      if (
+        openDropdown &&
+        !(event.target as Element).closest("[data-dropdown]")
+      ) {
         setOpenDropdown(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openDropdown]);
 
   if (languageLoading || !translationsLoaded) {
@@ -579,10 +574,12 @@ function SubscribersPage() {
     return <LoadingComponent />;
   }
 
-  const filteredSubscribers = mockSubscribers.filter(subscriber => {
-    const matchesSearch = subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         subscriber.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || subscriber.status === statusFilter;
+  const filteredSubscribers = mockSubscribers.filter((subscriber) => {
+    const matchesSearch =
+      subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subscriber.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || subscriber.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -592,11 +589,15 @@ function SubscribersPage() {
       label: "Total Subscribers",
     },
     {
-      value: mockSubscribers.filter(s => s.status === "active").length.toString(),
+      value: mockSubscribers
+        .filter((s) => s.status === "active")
+        .length.toString(),
       label: "Active Subscribers",
     },
     {
-      value: mockSubscribers.filter(s => s.engagement === "High").length.toString(),
+      value: mockSubscribers
+        .filter((s) => s.engagement === "High")
+        .length.toString(),
       label: "High Engagement",
     },
     {
@@ -615,7 +616,15 @@ function SubscribersPage() {
   };
 
   const getAvatarColor = (name: string) => {
-    const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+    const colors = [
+      "#6c63ff",
+      "#4ecdc4",
+      "#45b7d1",
+      "#96ceb4",
+      "#feca57",
+      "#ff9ff3",
+      "#54a0ff",
+    ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
@@ -631,7 +640,7 @@ function SubscribersPage() {
     setOpenDropdown(openDropdown === subscriberId ? null : subscriberId);
   };
 
-  const handleSubscriberClick = (subscriber: any) => {
+  const handleSubscriberClick = (subscriber: { id: string }) => {
     router.push(`/admin/email-campaigns/subscribers/${subscriber.id}`);
   };
 
@@ -641,7 +650,7 @@ function SubscribersPage() {
         title="Subscribers"
         description="Manage and analyze your email subscribers"
       />
-      
+
       <SubscribersContainer>
         <SubscribersTitle>
           <FaUsers />
@@ -679,8 +688,11 @@ function SubscribersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchContainer>
-            
-            <FilterSelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+
+            <FilterSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="unsubscribed">Unsubscribed</option>
@@ -688,17 +700,20 @@ function SubscribersPage() {
               <option value="pending">Pending</option>
             </FilterSelect>
           </LeftActions>
-          
+
           <RightActions>
-            <ActionButton onClick={() => handleSubscriberAction('import', '')}>
+            <ActionButton onClick={() => handleSubscriberAction("import", "")}>
               <FaFileImport />
               Import
             </ActionButton>
-            <ActionButton onClick={() => handleSubscriberAction('export', '')}>
+            <ActionButton onClick={() => handleSubscriberAction("export", "")}>
               <FaFileExport />
               Export
             </ActionButton>
-            <ActionButton variant="primary" onClick={() => handleSubscriberAction('add', '')}>
+            <ActionButton
+              variant="primary"
+              onClick={() => handleSubscriberAction("add", "")}
+            >
               <FaUserPlus />
               Add Subscriber
             </ActionButton>
@@ -725,7 +740,10 @@ function SubscribersPage() {
                     <EmptyState>
                       <FaUsers />
                       <h3>No subscribers found</h3>
-                      <p>Try adjusting your search criteria or add new subscribers.</p>
+                      <p>
+                        Try adjusting your search criteria or add new
+                        subscribers.
+                      </p>
                     </EmptyState>
                   </TableCell>
                 </tr>
@@ -742,7 +760,10 @@ function SubscribersPage() {
                     <TableCell>
                       <SubscriberInfo>
                         <Avatar color={getAvatarColor(subscriber.name)}>
-                          {subscriber.name.split(' ').map(n => n[0]).join('')}
+                          {subscriber.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </Avatar>
                         <SubscriberDetails>
                           <SubscriberName>{subscriber.name}</SubscriberName>
@@ -751,7 +772,9 @@ function SubscribersPage() {
                       </SubscriberInfo>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={subscriber.status}>{subscriber.status}</StatusBadge>
+                      <StatusBadge status={subscriber.status}>
+                        {subscriber.status}
+                      </StatusBadge>
                     </TableCell>
                     <TableCell>
                       {new Date(subscriber.subscribeDate).toLocaleDateString()}
@@ -760,12 +783,20 @@ function SubscribersPage() {
                       {new Date(subscriber.lastActivity).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontWeight: 'bold', color: 'var(--text)' }}>
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          style={{ fontWeight: "bold", color: "var(--text)" }}
+                        >
                           {subscriber.engagement}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          {subscriber.totalOpens} opens, {subscriber.totalClicks} clicks
+                        <div
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {subscriber.totalOpens} opens,{" "}
+                          {subscriber.totalClicks} clicks
                         </div>
                       </div>
                     </TableCell>
@@ -778,9 +809,13 @@ function SubscribersPage() {
                     </TableCell>
                     <TableCell>
                       <ActionsContainer data-dropdown>
-                        <MoreButton 
-                          onClick={(e) => handleDropdownToggle(subscriber.id, e)}
-                          className={openDropdown === subscriber.id ? 'active' : ''}
+                        <MoreButton
+                          onClick={(e) =>
+                            handleDropdownToggle(subscriber.id, e)
+                          }
+                          className={
+                            openDropdown === subscriber.id ? "active" : ""
+                          }
                         >
                           <FaEllipsisV />
                         </MoreButton>
@@ -792,27 +827,69 @@ function SubscribersPage() {
                               exit={{ opacity: 0, scale: 0.8, y: -10 }}
                               transition={{ duration: 0.15 }}
                             >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberClick(subscriber); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberClick(subscriber);
+                                }}
+                              >
                                 <FaEye />
                                 View Profile
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('edit', subscriber.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberAction("edit", subscriber.id);
+                                }}
+                              >
                                 <FaEdit />
                                 Edit Subscriber
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('email', subscriber.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberAction(
+                                    "email",
+                                    subscriber.id
+                                  );
+                                }}
+                              >
                                 <FaEnvelope />
                                 Send Email
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('clone', subscriber.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberAction(
+                                    "clone",
+                                    subscriber.id
+                                  );
+                                }}
+                              >
                                 <FaClone />
                                 Duplicate
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('export', subscriber.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberAction(
+                                    "export",
+                                    subscriber.id
+                                  );
+                                }}
+                              >
                                 <FaDownload />
                                 Export Data
                               </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleSubscriberAction('delete', subscriber.id); }}>
+                              <DropdownItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubscriberAction(
+                                    "delete",
+                                    subscriber.id
+                                  );
+                                }}
+                              >
                                 <FaTrash />
                                 Delete
                               </DropdownItem>
@@ -832,4 +909,4 @@ function SubscribersPage() {
   );
 }
 
-export default SubscribersPage; 
+export default SubscribersPage;

@@ -1,19 +1,42 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 import {
   FaEnvelopeOpen,
   FaArrowLeft,
   FaArrowRight,
+  FaCheck,
   FaUsers,
   FaPalette,
   FaEdit,
+  FaSave,
   FaPaperPlane,
+  FaInfoCircle,
+  FaImage,
   FaClock,
+  FaHeading,
+  FaFont,
+  FaMousePointer,
+  FaDivide,
+  FaShareAlt,
+  FaExpandArrowsAlt,
+  FaColumns,
+  FaVideo,
+  FaDesktop,
+  FaMobileAlt,
+  FaEnvelope,
+  FaCalendarAlt,
+  FaCog,
+  FaPaintBrush,
+  FaTextHeight,
 } from "react-icons/fa";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { AnimatePresence } from "framer-motion";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 interface EmailElement {
   id: string;
@@ -27,6 +50,20 @@ interface EmailElement {
 interface ElementUpdate {
   content?: string;
   style?: Record<string, string>;
+}
+
+interface CampaignData {
+  name: string;
+  subject: string;
+  senderName: string;
+  preheader: string;
+  description: string;
+  audience: string;
+  template: string;
+  content: string;
+  scheduleType: string;
+  scheduleDate: string;
+  scheduleTime: string;
 }
 
 // Styled components
@@ -160,6 +197,41 @@ const StepDescription = styled.p`
   line-height: 1.6;
 `;
 
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+  color: var(--text);
+  font-size: 0.9rem;
+`;
+
+const Input = styled.input`
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
 const NavigationButtons = styled.div`
   display: flex;
   justify-content: space-between;
@@ -215,12 +287,14 @@ const NavButton = styled.button<{ variant?: "primary" | "secondary" }>`
 
 function CreateCampaignPage() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [emailElements, setEmailElements] = useState<EmailElement[]>([]);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(
-    null
-  );
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggedElement, setDraggedElement] = useState<string | null>(null);
 
   const createNewElement = (type: string): EmailElement => {
     return {
@@ -236,16 +310,47 @@ function CreateCampaignPage() {
     );
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDragStart = (e: React.DragEvent, elementType: string) => {
+    e.dataTransfer.setData("elementType", elementType);
+    setDraggedElement(elementType);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedElement(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index?: number) => {
+    e.preventDefault();
+    if (index !== undefined) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, index?: number) => {
     e.preventDefault();
     const elementType = e.dataTransfer.getData("elementType");
     if (elementType) {
       const newElement = createNewElement(elementType);
-      setEmailElements((elements) => [...elements, newElement]);
+      if (index !== undefined) {
+        setEmailElements((elements) => {
+          const newElements = [...elements];
+          newElements.splice(index, 0, newElement);
+          return newElements;
+        });
+      } else {
+        setEmailElements((elements) => [...elements, newElement]);
+      }
     }
+    setDragOverIndex(null);
+    setDraggedElement(null);
   };
 
-  const renderEmailElement = (element: EmailElement) => {
+  const renderEmailElement = (element: EmailElement, index: number) => {
     const isSelected = selectedElementId === element.id;
     const isEditing = editingElementId === element.id;
 
@@ -266,9 +371,7 @@ function CreateCampaignPage() {
             contentEditable={isEditing}
             suppressContentEditableWarning
             onBlur={(e) => {
-              updateElement(element.id, {
-                content: e.currentTarget.textContent || "",
-              });
+              updateElement(element.id, { content: e.currentTarget.textContent || "" });
               setEditingElementId(null);
             }}
             style={{
@@ -303,9 +406,7 @@ function CreateCampaignPage() {
             <StepTitle>
               <FaUsers /> {t("Select Audience")}
             </StepTitle>
-            <StepDescription>
-              {t("Choose who will receive this campaign")}
-            </StepDescription>
+            <StepDescription>{t("Choose who will receive this campaign")}</StepDescription>
             {/* Audience selection content */}
           </div>
         );
@@ -315,9 +416,7 @@ function CreateCampaignPage() {
             <StepTitle>
               <FaPalette /> {t("Choose Template")}
             </StepTitle>
-            <StepDescription>
-              {t("Select a template or start from scratch")}
-            </StepDescription>
+            <StepDescription>{t("Select a template or start from scratch")}</StepDescription>
             {/* Template selection content */}
           </div>
         );
@@ -327,15 +426,15 @@ function CreateCampaignPage() {
             <StepTitle>
               <FaEdit /> {t("Edit Content")}
             </StepTitle>
-            <StepDescription>
-              {t("Customize your email content")}
-            </StepDescription>
+            <StepDescription>{t("Customize your email content")}</StepDescription>
             {/* Content editor */}
             <div
+              onDragOver={(e) => handleDragOver(e)}
+              onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e)}
               style={{ minHeight: "400px", padding: "1rem" }}
             >
-              {emailElements.map((element) => renderEmailElement(element))}
+              {emailElements.map((element, index) => renderEmailElement(element, index))}
             </div>
           </div>
         );
@@ -345,9 +444,7 @@ function CreateCampaignPage() {
             <StepTitle>
               <FaClock /> {t("Schedule")}
             </StepTitle>
-            <StepDescription>
-              {t("Choose when to send your campaign")}
-            </StepDescription>
+            <StepDescription>{t("Choose when to send your campaign")}</StepDescription>
             {/* Schedule content */}
           </div>
         );
@@ -385,7 +482,9 @@ function CreateCampaignPage() {
       </StepIndicator>
 
       <StepContent>
-        <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
+        <AnimatePresence mode="wait">
+          {renderStepContent()}
+        </AnimatePresence>
       </StepContent>
 
       <NavigationButtons>
@@ -395,10 +494,7 @@ function CreateCampaignPage() {
           </NavButton>
         )}
         {currentStep < 4 ? (
-          <NavButton
-            variant="primary"
-            onClick={() => setCurrentStep(currentStep + 1)}
-          >
+          <NavButton variant="primary" onClick={() => setCurrentStep(currentStep + 1)}>
             {t("Next")} <FaArrowRight />
           </NavButton>
         ) : (
@@ -411,4 +507,4 @@ function CreateCampaignPage() {
   );
 }
 
-export default CreateCampaignPage;
+export default CreateCampaignPage; 

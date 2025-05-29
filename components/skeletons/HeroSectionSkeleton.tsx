@@ -1,6 +1,10 @@
 import React from "react";
 import styled from "styled-components";
-import skeletonComponents, { CardSkeleton, TextSkeleton, ButtonSkeleton } from "@/components/common/LoadingSkeleton";
+import {
+  CardSkeleton,
+  TextSkeleton,
+  ButtonSkeleton,
+} from "@/components/common/LoadingSkeleton";
 
 const HeroSkeletonContainer = styled.section`
   min-height: 100vh;
@@ -48,17 +52,25 @@ const HeroSectionSkeleton = () => {
     <HeroSkeletonContainer>
       <HeroSkeletonContent>
         {/* Title Skeleton */}
-        <TextSkeleton lines={1} width="60%" style={{ height: "60px", marginBottom: "1.5rem" }} />
-        
+        <TextSkeleton
+          lines={1}
+          width="60%"
+          style={{ height: "60px", marginBottom: "1.5rem" }}
+        />
+
         {/* Subtitle Skeleton */}
-        <TextSkeleton lines={2} width={["80%", "70%"]} style={{ marginBottom: "3rem" }} />
-        
+        <TextSkeleton
+          lines={2}
+          width={["80%", "70%"]}
+          style={{ marginBottom: "3rem" }}
+        />
+
         {/* Buttons Skeleton */}
         <ButtonGroup>
           <ButtonSkeleton width="180px" height="45px" />
           <ButtonSkeleton width="180px" height="45px" />
         </ButtonGroup>
-        
+
         {/* Visualizer Skeleton */}
         <VisualizerSkeleton />
       </HeroSkeletonContent>
@@ -66,4 +78,4 @@ const HeroSectionSkeleton = () => {
   );
 };
 
-export default HeroSectionSkeleton; 
+export default HeroSectionSkeleton;

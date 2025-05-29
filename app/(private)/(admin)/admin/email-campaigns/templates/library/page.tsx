@@ -1,31 +1,23 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaFileAlt, 
+import {
+  FaPalette,
   FaSearch,
-  FaFilter,
   FaEye,
-  FaEdit,
-  FaCopy,
-  FaDownload,
-  FaArrowLeft,
-  FaChevronRight,
-  FaHeart,
-  FaRegHeart,
+  FaUsers,
+  FaEnvelope,
   FaStar,
   FaStarHalfAlt,
   FaRegStar,
-  FaTag,
+  FaArrowLeft,
+  FaChevronRight,
+  FaCopy,
+  FaHeart,
+  FaRegHeart,
   FaCalendarAlt,
-  FaUser,
-  FaShoppingCart,
-  FaNewspaper,
-  FaGift,
-  FaBullhorn,
-  FaHandshake
+  FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -211,24 +203,24 @@ const ViewButton = styled.button<{ active: boolean }>`
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
-  background-color: ${props => props.active ? 'var(--primary)' : 'transparent'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  background-color: ${(props) =>
+    props.active ? "var(--primary)" : "transparent"};
+  color: ${(props) => (props.active ? "white" : "var(--text-secondary)")};
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    color: ${props => props.active ? 'white' : 'var(--text)'};
+    color: ${(props) => (props.active ? "white" : "var(--text)")};
   }
 `;
 
 const TemplatesGrid = styled.div<{ viewMode: string }>`
   display: grid;
-  grid-template-columns: ${props => 
-    props.viewMode === 'grid' 
-      ? 'repeat(auto-fill, minmax(300px, 1fr))' 
-      : '1fr'
-  };
+  grid-template-columns: ${(props) =>
+    props.viewMode === "grid"
+      ? "repeat(auto-fill, minmax(300px, 1fr))"
+      : "1fr"};
   gap: 1.5rem;
 
   @media (max-width: 768px) {
@@ -243,8 +235,8 @@ const TemplateCard = styled(motion.div)<{ viewMode: string }>`
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  display: ${props => props.viewMode === 'list' ? 'flex' : 'block'};
-  align-items: ${props => props.viewMode === 'list' ? 'center' : 'stretch'};
+  display: ${(props) => (props.viewMode === "list" ? "flex" : "block")};
+  align-items: ${(props) => (props.viewMode === "list" ? "center" : "stretch")};
 
   &:hover {
     transform: translateY(-4px);
@@ -256,8 +248,8 @@ const TemplateCard = styled(motion.div)<{ viewMode: string }>`
 const TemplatePreview = styled.div<{ viewMode: string }>`
   position: relative;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  height: ${props => props.viewMode === 'list' ? '120px' : '200px'};
-  width: ${props => props.viewMode === 'list' ? '200px' : '100%'};
+  height: ${(props) => (props.viewMode === "list" ? "120px" : "200px")};
+  width: ${(props) => (props.viewMode === "list" ? "200px" : "100%")};
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -265,7 +257,7 @@ const TemplatePreview = styled.div<{ viewMode: string }>`
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -324,7 +316,7 @@ const OverlayButton = styled.button`
 `;
 
 const TemplateContent = styled.div<{ viewMode: string }>`
-  padding: ${props => props.viewMode === 'list' ? '1rem' : '1.5rem'};
+  padding: ${(props) => (props.viewMode === "list" ? "1rem" : "1.5rem")};
   flex: 1;
 `;
 
@@ -345,7 +337,7 @@ const TemplateTitle = styled.h3`
 const FavoriteButton = styled.button<{ isFavorite: boolean }>`
   background: none;
   border: none;
-  color: ${props => props.isFavorite ? '#ff6b6b' : 'var(--text-secondary)'};
+  color: ${(props) => (props.isFavorite ? "#ff6b6b" : "var(--text-secondary)")};
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 1.1rem;
@@ -377,30 +369,30 @@ const TemplateCategory = styled.span<{ category: string }>`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  
+
   ${(props) => {
     switch (props.category) {
-      case 'welcome':
+      case "welcome":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'newsletter':
+      case "newsletter":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case 'promotional':
+      case "promotional":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'transactional':
+      case "transactional":
         return `
           background-color: rgba(23, 162, 184, 0.2);
           color: #17a2b8;
         `;
-      case 'ecommerce':
+      case "ecommerce":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -447,13 +439,13 @@ const EmptyState = styled.div`
   padding: 3rem;
   color: var(--text-secondary);
   grid-column: 1 / -1;
-  
+
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-  
+
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -465,7 +457,8 @@ const mockTemplates = [
   {
     id: "1",
     title: "Welcome Series Starter",
-    description: "A warm welcome email template perfect for new subscribers. Includes company introduction and next steps.",
+    description:
+      "A warm welcome email template perfect for new subscribers. Includes company introduction and next steps.",
     category: "welcome",
     rating: 4.8,
     downloads: 1250,
@@ -474,12 +467,13 @@ const mockTemplates = [
     author: "Cymasphere Team",
     createdAt: "2024-01-15",
     gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    icon: FaHandshake
+    icon: FaUsers,
   },
   {
     id: "2",
     title: "Product Launch Announcement",
-    description: "Eye-catching template for announcing new products or features. Includes product showcase and CTA buttons.",
+    description:
+      "Eye-catching template for announcing new products or features. Includes product showcase and CTA buttons.",
     category: "promotional",
     rating: 4.6,
     downloads: 890,
@@ -488,12 +482,13 @@ const mockTemplates = [
     author: "Design Studio",
     createdAt: "2024-01-12",
     gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    icon: FaBullhorn
+    icon: FaEnvelope,
   },
   {
     id: "3",
     title: "Monthly Newsletter",
-    description: "Clean and professional newsletter template with sections for news, updates, and featured content.",
+    description:
+      "Clean and professional newsletter template with sections for news, updates, and featured content.",
     category: "newsletter",
     rating: 4.9,
     downloads: 2100,
@@ -502,12 +497,13 @@ const mockTemplates = [
     author: "Newsletter Pro",
     createdAt: "2024-01-10",
     gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    icon: FaNewspaper
+    icon: FaEnvelope,
   },
   {
     id: "4",
     title: "E-commerce Cart Recovery",
-    description: "Persuasive template to recover abandoned carts. Includes product images and urgency elements.",
+    description:
+      "Persuasive template to recover abandoned carts. Includes product images and urgency elements.",
     category: "ecommerce",
     rating: 4.7,
     downloads: 1560,
@@ -516,12 +512,13 @@ const mockTemplates = [
     author: "E-comm Expert",
     createdAt: "2024-01-08",
     gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-    icon: FaShoppingCart
+    icon: FaEnvelope,
   },
   {
     id: "5",
     title: "Holiday Special Offer",
-    description: "Festive template for holiday promotions and special offers. Customizable for any holiday season.",
+    description:
+      "Festive template for holiday promotions and special offers. Customizable for any holiday season.",
     category: "promotional",
     rating: 4.5,
     downloads: 780,
@@ -530,12 +527,13 @@ const mockTemplates = [
     author: "Holiday Designs",
     createdAt: "2024-01-05",
     gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-    icon: FaGift
+    icon: FaEnvelope,
   },
   {
     id: "6",
     title: "User Onboarding Guide",
-    description: "Step-by-step onboarding template to help new users get started with your product or service.",
+    description:
+      "Step-by-step onboarding template to help new users get started with your product or service.",
     category: "welcome",
     rating: 4.8,
     downloads: 1340,
@@ -544,8 +542,8 @@ const mockTemplates = [
     author: "UX Team",
     createdAt: "2024-01-03",
     gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-    icon: FaUser
-  }
+    icon: FaEnvelope,
+  },
 ];
 
 function TemplateLibraryPage() {
@@ -554,10 +552,9 @@ function TemplateLibraryPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [favorites, setFavorites] = useState<string[]>(['2', '5']);
-  
-  const { t } = useTranslation();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [favorites, setFavorites] = useState<string[]>(["2", "5"]);
+
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
@@ -574,28 +571,32 @@ function TemplateLibraryPage() {
     return <LoadingComponent />;
   }
 
-  const filteredTemplates = mockTemplates.filter(template => {
-    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;
+  const filteredTemplates = mockTemplates.filter((template) => {
+    const matchesSearch =
+      template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      categoryFilter === "all" || template.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   const toggleFavorite = (templateId: string) => {
-    setFavorites(prev => 
-      prev.includes(templateId) 
-        ? prev.filter(id => id !== templateId)
+    setFavorites((prev) =>
+      prev.includes(templateId)
+        ? prev.filter((id) => id !== templateId)
         : [...prev, templateId]
     );
   };
 
   const handleTemplateAction = (action: string, templateId: string) => {
     console.log(`${action} template:`, templateId);
-    if (action === 'use') {
-      router.push(`/admin/email-campaigns/campaigns/create?template=${templateId}`);
-    } else if (action === 'preview') {
+    if (action === "use") {
+      router.push(
+        `/admin/email-campaigns/campaigns/create?template=${templateId}`
+      );
+    } else if (action === "preview") {
       // Open preview modal
-    } else if (action === 'edit') {
+    } else if (action === "edit") {
       router.push(`/admin/email-campaigns/templates/${templateId}`);
     }
   };
@@ -604,20 +605,20 @@ function TemplateLibraryPage() {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<FaStar key={i} />);
     }
-    
+
     if (hasHalfStar) {
       stars.push(<FaStarHalfAlt key="half" />);
     }
-    
+
     const emptyStars = 5 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
       stars.push(<FaRegStar key={`empty-${i}`} />);
     }
-    
+
     return stars;
   };
 
@@ -636,7 +637,7 @@ function TemplateLibraryPage() {
         title="Template Library"
         description="Browse and select from our collection of professional email templates"
       />
-      
+
       <LibraryContainer>
         <BackButton href="/admin/email-campaigns/templates">
           <FaArrowLeft />
@@ -646,13 +647,15 @@ function TemplateLibraryPage() {
         <Breadcrumbs>
           <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
           <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/templates">Email Templates</BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns/templates">
+            Email Templates
+          </BreadcrumbLink>
           <FaChevronRight />
           <BreadcrumbCurrent>Template Library</BreadcrumbCurrent>
         </Breadcrumbs>
 
         <LibraryTitle>
-          <FaFileAlt />
+          <FaPalette />
           Template Library
         </LibraryTitle>
         <LibrarySubtitle>
@@ -672,8 +675,11 @@ function TemplateLibraryPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchContainer>
-            
-            <FilterSelect value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+
+            <FilterSelect
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
               <option value="all">All Categories</option>
               <option value="welcome">Welcome</option>
               <option value="newsletter">Newsletter</option>
@@ -682,17 +688,17 @@ function TemplateLibraryPage() {
               <option value="ecommerce">E-commerce</option>
             </FilterSelect>
           </LeftFilters>
-          
+
           <ViewToggle>
-            <ViewButton 
-              active={viewMode === 'grid'} 
-              onClick={() => setViewMode('grid')}
+            <ViewButton
+              active={viewMode === "grid"}
+              onClick={() => setViewMode("grid")}
             >
               Grid
             </ViewButton>
-            <ViewButton 
-              active={viewMode === 'list'} 
-              onClick={() => setViewMode('list')}
+            <ViewButton
+              active={viewMode === "list"}
+              onClick={() => setViewMode("list")}
             >
               List
             </ViewButton>
@@ -702,9 +708,12 @@ function TemplateLibraryPage() {
         <TemplatesGrid viewMode={viewMode}>
           {filteredTemplates.length === 0 ? (
             <EmptyState>
-              <FaFileAlt />
+              <FaPalette />
               <h3>No templates found</h3>
-              <p>Try adjusting your search criteria or browse different categories.</p>
+              <p>
+                Try adjusting your search criteria or browse different
+                categories.
+              </p>
             </EmptyState>
           ) : (
             filteredTemplates.map((template, index) => (
@@ -715,49 +724,69 @@ function TemplateLibraryPage() {
                 initial="hidden"
                 animate="visible"
                 custom={index}
-                onClick={() => handleTemplateAction('use', template.id)}
+                onClick={() => handleTemplateAction("use", template.id)}
               >
-                <TemplatePreview viewMode={viewMode} style={{ background: template.gradient }}>
+                <TemplatePreview
+                  viewMode={viewMode}
+                  style={{ background: template.gradient }}
+                >
                   <PreviewIcon>
                     <template.icon />
                   </PreviewIcon>
                   <TemplateOverlay>
-                    <OverlayButton onClick={(e) => { e.stopPropagation(); handleTemplateAction('preview', template.id); }}>
+                    <OverlayButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTemplateAction("preview", template.id);
+                      }}
+                    >
                       <FaEye /> Preview
                     </OverlayButton>
-                    <OverlayButton onClick={(e) => { e.stopPropagation(); handleTemplateAction('use', template.id); }}>
+                    <OverlayButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTemplateAction("use", template.id);
+                      }}
+                    >
                       <FaCopy /> Use Template
                     </OverlayButton>
                   </TemplateOverlay>
                 </TemplatePreview>
-                
+
                 <TemplateContent viewMode={viewMode}>
                   <TemplateHeader>
                     <TemplateTitle>{template.title}</TemplateTitle>
-                    <FavoriteButton 
+                    <FavoriteButton
                       isFavorite={favorites.includes(template.id)}
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(template.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(template.id);
+                      }}
                     >
-                      {favorites.includes(template.id) ? <FaHeart /> : <FaRegHeart />}
+                      {favorites.includes(template.id) ? (
+                        <FaHeart />
+                      ) : (
+                        <FaRegHeart />
+                      )}
                     </FavoriteButton>
                   </TemplateHeader>
-                  
-                  <TemplateDescription>{template.description}</TemplateDescription>
-                  
+
+                  <TemplateDescription>
+                    {template.description}
+                  </TemplateDescription>
+
                   <TemplateFooter>
                     <TemplateCategory category={template.category}>
                       {template.category}
                     </TemplateCategory>
-                    
+
                     <TemplateRating>
-                      <StarRating>
-                        {renderStars(template.rating)}
-                      </StarRating>
+                      <StarRating>{renderStars(template.rating)}</StarRating>
                       <span>{template.rating}</span>
                     </TemplateRating>
                   </TemplateFooter>
-                  
-                  {viewMode === 'list' && (
+
+                  {viewMode === "list" && (
                     <TemplateStats>
                       <StatItem>
                         <FaDownload />
@@ -783,4 +812,4 @@ function TemplateLibraryPage() {
   );
 }
 
-export default TemplateLibraryPage; 
+export default TemplateLibraryPage;
