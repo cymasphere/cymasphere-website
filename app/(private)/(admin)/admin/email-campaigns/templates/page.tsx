@@ -14,7 +14,10 @@ import {
   FaCode,
   FaImage,
   FaEnvelope,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaEllipsisV,
+  FaDownload,
+  FaShare
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -303,49 +306,97 @@ const ActionsContainer = styled.div`
   align-items: center;
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 6px 10px;
+const DropdownMenu = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isOpen'
+})<{ isOpen: boolean }>`
+  position: relative;
+  display: inline-block;
+`;
+
+const DropdownButton = styled.button`
+  padding: 8px;
   border: none;
   border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
   min-width: 32px;
   height: 32px;
-  justify-content: center;
 
-  ${(props) => {
-    switch (props.variant) {
-      case 'primary':
-        return `
-          background-color: var(--primary);
-          color: white;
-          &:hover {
-            background-color: var(--accent);
-          }
-        `;
-      case 'danger':
-        return `
-          background-color: #dc3545;
-          color: white;
-          &:hover {
-            background-color: #c82333;
-          }
-        `;
-      default:
-        return `
-          background-color: rgba(255, 255, 255, 0.1);
-          color: var(--text-secondary);
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: var(--text);
-          }
-        `;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--text);
+  }
+`;
+
+const DropdownContent = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isOpen'
+})<{ isOpen: boolean }>`
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 200px;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all 0.2s ease;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled.button<{ variant?: 'primary' | 'danger' }>`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  text-align: left;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  ${props => props.variant === 'primary' && `
+    color: var(--primary);
+    font-weight: 600;
+    
+    &:hover {
+      background-color: rgba(108, 99, 255, 0.1);
     }
-  }}
+  `}
+
+  ${props => props.variant === 'danger' && `
+    color: #dc3545;
+    
+    &:hover {
+      background-color: rgba(220, 53, 69, 0.1);
+    }
+  `}
+
+  svg {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+`;
+
+const DropdownDivider = styled.div`
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
 `;
 
 const EmptyState = styled.div`
@@ -369,63 +420,156 @@ const EmptyState = styled.div`
 const mockTemplates = [
   {
     id: "1",
-    title: "Welcome Email",
+    name: "Welcome Email",
+    subject: "Welcome to Cymasphere! 🎵",
+    senderName: "Cymasphere Team",
+    preheader: "Let's get you started on your music creation journey",
     description: "A warm welcome message for new subscribers",
     type: "welcome",
     usageCount: 45,
     lastUsed: "2024-01-18",
     bgColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     createdAt: "2024-01-10",
+    audience: "new",
+    template: "welcome",
+    content: `Welcome to Cymasphere! We're excited to have you join our community of music creators.`,
+    emailElements: [
+      { id: 'header1', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
+      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
+      { id: 'button1', type: 'button', content: '🚀 Get Started Now', url: '/dashboard' },
+      { id: 'image1', type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=🎵+Welcome+to+Cymasphere' }
+    ],
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
   },
   {
     id: "2",
-    title: "Monthly Newsletter",
+    name: "Monthly Newsletter",
+    subject: "🎵 This Month in Music Production",
+    senderName: "Cymasphere Newsletter",
+    preheader: "The latest tips, trends, and updates from the music production world",
     description: "Regular newsletter template with featured content",
     type: "newsletter",
     usageCount: 12,
     lastUsed: "2024-01-15",
     bgColor: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
     createdAt: "2024-01-05",
+    audience: "all",
+    template: "newsletter",
+    content: `This Month in Music Production - Latest tips and updates`,
+    emailElements: [
+      { id: 'header2', type: 'header', content: 'This Month in Music Production' },
+      { id: 'text2', type: 'text', content: 'Here are the latest tips, tricks, and updates from the world of electronic music production.' },
+      { id: 'divider1', type: 'divider' },
+      { id: 'text3', type: 'text', content: 'Featured content and tutorials this month...' },
+      { id: 'button2', type: 'button', content: 'Read More', url: '/blog' }
+    ],
+    scheduleType: "scheduled",
+    scheduleDate: "",
+    scheduleTime: ""
   },
   {
     id: "3",
-    title: "Product Launch",
+    name: "Product Launch",
+    subject: "🚀 New Synthesizer Features Available Now!",
+    senderName: "Cymasphere Product Team",
+    preheader: "Revolutionary new features that will transform your music production",
     description: "Promotional template for new product announcements",
     type: "promotional",
     usageCount: 8,
     lastUsed: "2024-01-12",
     bgColor: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     createdAt: "2024-01-08",
+    audience: "active",
+    template: "promotional",
+    content: `Exciting New Features Just Launched!`,
+    emailElements: [
+      { id: 'header3', type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
+      { id: 'image2', type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=🚀+New+Features' },
+      { id: 'text4', type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
+      { id: 'button3', type: 'button', content: 'Explore New Features', url: '/features' },
+      { id: 'spacer1', type: 'spacer', height: '30px' }
+    ],
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
   },
   {
     id: "4",
-    title: "Order Confirmation",
+    name: "Order Confirmation",
+    subject: "Order Confirmed: Your Cymasphere Purchase",
+    senderName: "Cymasphere Orders",
+    preheader: "Thank you for your purchase! Here are your order details",
     description: "Transactional email for order confirmations",
     type: "transactional",
     usageCount: 156,
     lastUsed: "2024-01-20",
     bgColor: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
     createdAt: "2024-01-01",
+    audience: "customers",
+    template: "custom",
+    content: `Order Confirmation - Thank you for your purchase`,
+    emailElements: [
+      { id: 'header4', type: 'header', content: 'Order Confirmed ✅' },
+      { id: 'text5', type: 'text', content: 'Hi {{firstName}}, Thank you for your purchase! Your order has been confirmed and is being processed.' },
+      { id: 'text6', type: 'text', content: 'Order Number: {{orderNumber}}\nTotal: {{orderTotal}}' },
+      { id: 'button4', type: 'button', content: 'View Order Details', url: '/orders/{{orderNumber}}' }
+    ],
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
   },
   {
     id: "5",
-    title: "Password Reset",
+    name: "Password Reset",
+    subject: "Reset Your Cymasphere Password",
+    senderName: "Cymasphere Security",
+    preheader: "Click here to securely reset your password",
     description: "Security template for password reset requests",
     type: "transactional",
     usageCount: 23,
     lastUsed: "2024-01-19",
     bgColor: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
     createdAt: "2024-01-03",
+    audience: "users",
+    template: "custom",
+    content: `Password Reset Request`,
+    emailElements: [
+      { id: 'header5', type: 'header', content: 'Password Reset Request 🔒' },
+      { id: 'text7', type: 'text', content: 'Hi {{firstName}}, We received a request to reset your password for your Cymasphere account.' },
+      { id: 'button5', type: 'button', content: 'Reset Password', url: '/reset-password/{{resetToken}}' },
+      { id: 'text8', type: 'text', content: 'If you did not request this, please ignore this email.' }
+    ],
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
   },
   {
     id: "6",
-    title: "Special Offer",
+    name: "Special Offer",
+    subject: "Limited Time: 50% Off Premium Features! 🎉",
+    senderName: "Cymasphere Offers",
+    preheader: "Don't miss out on this exclusive discount",
     description: "Eye-catching template for special promotions",
     type: "promotional",
     usageCount: 34,
     lastUsed: "2024-01-16",
     bgColor: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
     createdAt: "2024-01-12",
+    audience: "active",
+    template: "promotional",
+    content: `Special Limited Time Offer`,
+    emailElements: [
+      { id: 'header6', type: 'header', content: 'Limited Time Offer! 🎉' },
+      { id: 'text9', type: 'text', content: 'Hi {{firstName}}, For a limited time only, get 50% off all premium features!' },
+      { id: 'image3', type: 'image', src: 'https://via.placeholder.com/600x200/a8edea/333333?text=50%25+OFF' },
+      { id: 'button6', type: 'button', content: 'Claim Offer Now', url: '/upgrade?offer=50off' },
+      { id: 'text10', type: 'text', content: 'Offer expires in 48 hours. Don\'t miss out!' }
+    ],
+    scheduleType: "immediate",
+    scheduleDate: "",
+    scheduleTime: ""
   },
 ];
 
@@ -433,6 +577,7 @@ function TemplatesPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -444,6 +589,19 @@ function TemplatesPage() {
     }
   }, [languageLoading]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('[data-dropdown]')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
@@ -453,7 +611,7 @@ function TemplatesPage() {
   }
 
   const filteredTemplates = mockTemplates.filter(template =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -494,11 +652,52 @@ function TemplatesPage() {
   const handleTemplateAction = (action: string, templateId: string) => {
     console.log(`${action} template:`, templateId);
     if (action === 'view' || action === 'edit') {
-      router.push(`/admin/email-campaigns/templates/${templateId}`);
+      // Navigate to edit page with proper route
+      router.push(`/admin/email-campaigns/templates/edit/${templateId}`);
     } else if (action === 'browse') {
       router.push('/admin/email-campaigns/templates/library');
+    } else if (action === 'use') {
+      // Create a new campaign from this template
+      const template = mockTemplates.find(t => t.id === templateId);
+      if (template) {
+        // Navigate to create campaign with template data
+        const queryParams = new URLSearchParams({
+          template: templateId,
+          prefill: 'true'
+        });
+        router.push(`/admin/email-campaigns/campaigns/create?${queryParams.toString()}`);
+      }
+    } else if (action === 'create') {
+      router.push('/admin/email-campaigns/templates/create');
+    } else if (action === 'preview') {
+      // Open preview modal or page
+      console.log('Preview template:', templateId);
+    } else if (action === 'duplicate') {
+      // Duplicate template and navigate to create page with pre-filled data
+      const template = mockTemplates.find(t => t.id === templateId);
+      if (template) {
+        const queryParams = new URLSearchParams({
+          duplicate: templateId
+        });
+        router.push(`/admin/email-campaigns/templates/create?${queryParams.toString()}`);
+      }
+    } else if (action === 'download' || action === 'export') {
+      // Export template
+      console.log('Export template:', templateId);
+    } else if (action === 'share') {
+      // Share template
+      console.log('Share template:', templateId);
+    } else if (action === 'code') {
+      // View template code
+      console.log('View template code:', templateId);
+    } else if (action === 'delete') {
+      // Delete template with confirmation
+      if (window.confirm('Are you sure you want to delete this template?')) {
+        console.log('Delete template:', templateId);
+      }
     }
-    // Implement other template actions here
+    // Close dropdown after action
+    setOpenDropdown(null);
   };
 
   return (
@@ -591,7 +790,7 @@ function TemplatesPage() {
                     onClick={() => handleTemplateAction('view', template.id)}
                   >
                     <TableCell>
-                      <TemplateTitle>{template.title}</TemplateTitle>
+                      <TemplateTitle>{template.name}</TemplateTitle>
                       <TemplateDescription>{template.description}</TemplateDescription>
                     </TableCell>
                     <TableCell>
@@ -610,21 +809,106 @@ function TemplatesPage() {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer>
-                        <ActionButton onClick={() => handleTemplateAction('preview', template.id)}>
-                          <FaEye />
-                        </ActionButton>
-                        <ActionButton onClick={() => handleTemplateAction('edit', template.id)}>
-                          <FaEdit />
-                        </ActionButton>
-                        <ActionButton onClick={() => handleTemplateAction('duplicate', template.id)}>
-                          <FaCopy />
-                        </ActionButton>
-                        <ActionButton onClick={() => handleTemplateAction('code', template.id)}>
-                          <FaCode />
-                        </ActionButton>
-                        <ActionButton variant="danger" onClick={() => handleTemplateAction('delete', template.id)}>
-                          <FaTrash />
-                        </ActionButton>
+                        <DropdownMenu 
+                          isOpen={openDropdown === template.id}
+                          data-dropdown
+                        >
+                          <DropdownButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdown(openDropdown === template.id ? null : template.id);
+                            }}
+                          >
+                            <FaEllipsisV />
+                          </DropdownButton>
+                          <DropdownContent isOpen={openDropdown === template.id}>
+                            <DropdownItem 
+                              variant="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('use', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaEnvelope />
+                              Use Template
+                            </DropdownItem>
+                            <DropdownDivider />
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('preview', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaEye />
+                              Preview
+                            </DropdownItem>
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('edit', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaEdit />
+                              Edit Template
+                            </DropdownItem>
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('duplicate', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaCopy />
+                              Duplicate
+                            </DropdownItem>
+                            <DropdownDivider />
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('download', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaDownload />
+                              Export
+                            </DropdownItem>
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('share', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaShare />
+                              Share
+                            </DropdownItem>
+                            <DropdownItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('code', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaCode />
+                              View Code
+                            </DropdownItem>
+                            <DropdownDivider />
+                            <DropdownItem 
+                              variant="danger"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTemplateAction('delete', template.id);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <FaTrash />
+                              Delete
+                            </DropdownItem>
+                          </DropdownContent>
+                        </DropdownMenu>
                       </ActionsContainer>
                     </TableCell>
                   </TableRow>

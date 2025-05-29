@@ -1405,6 +1405,71 @@ const templates = [
   }
 ];
 
+// Template presets that match the template structure
+const templatePresets = {
+  newsletter: {
+    name: "Monthly Newsletter",
+    subject: "🎵 This Month in Music Production",
+    senderName: "Cymasphere Newsletter",
+    preheader: "The latest tips, trends, and updates from the music production world",
+    description: "Regular newsletter template with featured content",
+    audience: "all",
+    content: `This Month in Music Production - Latest tips and updates`,
+    emailElements: [
+      { id: 'header_' + Date.now(), type: 'header', content: 'This Month in Music Production' },
+      { id: 'text_' + Date.now() + 1, type: 'text', content: 'Here are the latest tips, tricks, and updates from the world of electronic music production.' },
+      { id: 'divider_' + Date.now(), type: 'divider' },
+      { id: 'text_' + Date.now() + 2, type: 'text', content: 'Featured content and tutorials this month...' },
+      { id: 'button_' + Date.now(), type: 'button', content: 'Read More', url: '#' }
+    ]
+  },
+  promotional: {
+    name: "Product Launch",
+    subject: "🚀 New Synthesizer Features Available Now!",
+    senderName: "Cymasphere Product Team", 
+    preheader: "Revolutionary new features that will transform your music production",
+    description: "Promotional template for new product announcements",
+    audience: "active",
+    content: `Exciting New Features Just Launched!`,
+    emailElements: [
+      { id: 'header_' + Date.now(), type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
+      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=🚀+New+Features' },
+      { id: 'text_' + Date.now(), type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
+      { id: 'button_' + Date.now(), type: 'button', content: 'Explore New Features', url: '#' },
+      { id: 'spacer_' + Date.now(), type: 'spacer', height: '30px' }
+    ]
+  },
+  welcome: {
+    name: "Welcome Email",
+    subject: "Welcome to Cymasphere! 🎵",
+    senderName: "Cymasphere Team",
+    preheader: "Let's get you started on your music creation journey",
+    description: "A warm welcome message for new subscribers",
+    audience: "new",
+    content: `Welcome to Cymasphere! We're excited to have you join our community of music creators.`,
+    emailElements: [
+      { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
+      { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
+      { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' },
+      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=🎵+Welcome+to+Cymasphere' }
+    ]
+  },
+  custom: {
+    name: "",
+    subject: "",
+    senderName: "",
+    preheader: "",
+    description: "",
+    audience: "",
+    content: "",
+    emailElements: [
+      { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
+      { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
+      { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' }
+    ]
+  }
+};
+
 interface CampaignData {
   name: string;
   subject: string;
@@ -1602,6 +1667,8 @@ function CreateCampaignPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
+  const templateId = searchParams.get('template');
+  const shouldPrefill = searchParams.get('prefill') === 'true';
   const isEditMode = Boolean(editId);
   
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
@@ -1615,7 +1682,7 @@ function CreateCampaignPage() {
   const [campaignResult, setCampaignResult] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   
-  // Initialize email elements based on campaign content
+  // Initialize email elements based on campaign content or template
   const getInitialEmailElements = () => {
     if (isEditMode && editId) {
       const existingCampaign = mockCampaigns.find(c => c.id === editId);
@@ -1628,6 +1695,13 @@ function CreateCampaignPage() {
           { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' }
         ];
       }
+    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
+      // Initialize from template
+      const preset = templatePresets[templateId as keyof typeof templatePresets];
+      return preset.emailElements.map(element => ({
+        ...element,
+        id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+      }));
     }
     return [
       { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
@@ -1644,13 +1718,29 @@ function CreateCampaignPage() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   
-  // Initialize campaign data based on edit mode
+  // Initialize campaign data based on edit mode or template
   const getInitialCampaignData = () => {
     if (isEditMode && editId) {
       const existingCampaign = mockCampaigns.find(c => c.id === editId);
       if (existingCampaign) {
         return existingCampaign;
       }
+    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
+      // Initialize from template
+      const preset = templatePresets[templateId as keyof typeof templatePresets];
+      return {
+        name: preset.name,
+        subject: preset.subject,
+        senderName: preset.senderName,
+        preheader: preset.preheader,
+        description: preset.description,
+        audience: preset.audience,
+        template: templateId,
+        content: preset.content,
+        scheduleType: "",
+        scheduleDate: "",
+        scheduleTime: ""
+      };
     }
     return {
     name: "",
@@ -1938,6 +2028,34 @@ function CreateCampaignPage() {
     setEmailElements(emailElements.filter(el => el.id !== elementId));
   };
 
+  const handleTemplateSelect = (templateId: string) => {
+    const preset = templatePresets[templateId as keyof typeof templatePresets];
+    if (preset) {
+      // Copy template data to campaign
+      setCampaignData({
+        ...campaignData,
+        template: templateId,
+        name: preset.name || campaignData.name,
+        subject: preset.subject || campaignData.subject,
+        senderName: preset.senderName || campaignData.senderName,
+        preheader: preset.preheader || campaignData.preheader,
+        description: preset.description || campaignData.description,
+        audience: preset.audience || campaignData.audience,
+        content: preset.content || campaignData.content
+      });
+      
+      // Copy email elements with new IDs to avoid conflicts
+      const newElements = preset.emailElements.map(element => ({
+        ...element,
+        id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+      }));
+      setEmailElements(newElements);
+    } else {
+      // Just set the template without copying data
+      setCampaignData({...campaignData, template: templateId});
+    }
+  };
+
   const renderEmailElement = (element: any, index: number) => {
     const isSelected = selectedElementId === element.id;
     const isEditing = editingElementId === element.id;
@@ -2219,7 +2337,7 @@ function CreateCampaignPage() {
                 <Label>Email Template</Label>
                 <Select
                   value={campaignData.template}
-                  onChange={(e) => setCampaignData({...campaignData, template: e.target.value})}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
                 >
                   <option value="">Choose a template...</option>
                   {templates.map((template) => (
