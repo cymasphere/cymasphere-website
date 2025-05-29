@@ -4,6 +4,7 @@ import React, { useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -203,6 +204,9 @@ const LegalModal: React.FC<LegalModalProps> = ({
   onClose,
   modalType,
 }) => {
+  // Add translation hook
+  const { t } = useTranslation();
+
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -228,240 +232,188 @@ const LegalModal: React.FC<LegalModalProps> = ({
   const getTitle = useCallback(() => {
     switch (modalType) {
       case "terms":
-        return "Terms of Service";
+        return t("legal.termsOfService", "Terms of Service");
       case "privacy":
-        return "Privacy Policy";
+        return t("legal.privacyPolicy", "Privacy Policy");
       default:
-        return "Legal Information";
+        return t("legal.legalInformation", "Legal Information");
     }
-  }, [modalType]);
+  }, [modalType, t]);
 
   // Memoize the content to prevent expensive DOM creation on each render
   const getContent = useCallback(() => {
     if (modalType === "terms") {
       return (
         <LegalContent>
-          <h2>Terms of Service</h2>
+          <h2>{t("legal.termsOfService", "Terms of Service")}</h2>
 
           <section>
-            <h3>1. Acceptance of Terms</h3>
+            <h3>{t("legal.terms.acceptance.title", "1. Acceptance of Terms")}</h3>
             <p>
-              By accessing or using Cymasphere&apos;s services, website, or
-              applications, you agree to be bound by these Terms of Service. If
-              you do not agree to these terms, please do not use our services.
+              {t("legal.terms.acceptance.content", "By accessing or using Cymasphere's services, website, or applications, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.")}
             </p>
           </section>
 
           <section>
-            <h3>2. Description of Service</h3>
+            <h3>{t("legal.terms.description.title", "2. Description of Service")}</h3>
             <p>
-              Cymasphere provides music theory and composition tools through web
-              and desktop applications. These services may change from time to
-              time without prior notice.
+              {t("legal.terms.description.content", "Cymasphere provides music theory and composition tools through web and desktop applications. These services may change from time to time without prior notice.")}
             </p>
           </section>
 
           <section>
-            <h3>3. User Accounts</h3>
+            <h3>{t("legal.terms.accounts.title", "3. User Accounts")}</h3>
             <p>
-              Some features of our services require you to create an account.
-              You are responsible for maintaining the confidentiality of your
-              account information and for all activities that occur under your
-              account.
+              {t("legal.terms.accounts.content", "Some features of our services require you to create an account. You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account.")}
             </p>
           </section>
 
           <section>
-            <h3>4. User Content</h3>
+            <h3>{t("legal.terms.content.title", "4. User Content")}</h3>
             <p>
-              You retain all rights to any content you create, upload, or share
-              through our services. By uploading content, you grant Cymasphere a
-              non-exclusive license to use, reproduce, and distribute your
-              content solely to provide services to you.
+              {t("legal.terms.content.content", "You retain all rights to any content you create, upload, or share through our services. By uploading content, you grant Cymasphere a non-exclusive license to use, reproduce, and distribute your content solely to provide services to you.")}
             </p>
           </section>
 
           <section>
-            <h3>5. Intellectual Property</h3>
+            <h3>{t("legal.terms.ip.title", "5. Intellectual Property")}</h3>
             <p>
-              Cymasphere and its content, features, and functionality are owned
-              by us and are protected by copyright, trademark, and other
-              intellectual property laws.
+              {t("legal.terms.ip.content", "Cymasphere and its content, features, and functionality are owned by us and are protected by copyright, trademark, and other intellectual property laws.")}
             </p>
           </section>
 
           <section>
-            <h3>6. Subscription and Payments</h3>
+            <h3>{t("legal.terms.subscription.title", "6. Subscription and Payments")}</h3>
             <p>
-              Various subscription plans are available for Cymasphere. By
-              subscribing, you agree to pay the applicable fees. Subscription
-              fees are non-refundable except as required by law.
+              {t("legal.terms.subscription.content", "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees. Subscription fees are non-refundable except as required by law.")}
             </p>
           </section>
 
           <section>
-            <h3>7. Termination</h3>
+            <h3>{t("legal.terms.termination.title", "7. Termination")}</h3>
             <p>
-              We reserve the right to terminate or suspend your account and
-              access to our services for violations of these terms or for any
-              other reason at our discretion.
+              {t("legal.terms.termination.content", "We reserve the right to terminate or suspend your account and access to our services for violations of these terms or for any other reason at our discretion.")}
             </p>
           </section>
 
           <section>
-            <h3>8. Disclaimer of Warranties</h3>
+            <h3>{t("legal.terms.disclaimer.title", "8. Disclaimer of Warranties")}</h3>
             <p>
-              Our services are provided on an &quot;as is&quot; and &quot;as
-              available&quot; basis. We make no warranties, expressed or
-              implied, regarding the reliability, availability, or accuracy of
-              our services.
+              {t("legal.terms.disclaimer.content", "Our services are provided on an \"as is\" and \"as available\" basis. We make no warranties, expressed or implied, regarding the reliability, availability, or accuracy of our services.")}
             </p>
           </section>
 
           <section>
-            <h3>9. Limitation of Liability</h3>
+            <h3>{t("legal.terms.limitation.title", "9. Limitation of Liability")}</h3>
             <p>
-              In no event shall Cymasphere be liable for any indirect,
-              incidental, special, or consequential damages arising out of or in
-              connection with your use of our services.
+              {t("legal.terms.limitation.content", "In no event shall Cymasphere be liable for any indirect, incidental, special, or consequential damages arising out of or in connection with your use of our services.")}
             </p>
           </section>
 
           <section>
-            <h3>10. Changes to Terms</h3>
+            <h3>{t("legal.terms.changes.title", "10. Changes to Terms")}</h3>
             <p>
-              We may modify these terms at any time. Continued use of our
-              services after changes constitutes acceptance of the modified
-              terms.
+              {t("legal.terms.changes.content", "We may modify these terms at any time. Continued use of our services after changes constitutes acceptance of the modified terms.")}
             </p>
           </section>
 
           <section>
-            <h3>11. Governing Law</h3>
+            <h3>{t("legal.terms.governing.title", "11. Governing Law")}</h3>
             <p>
-              These terms shall be governed by the laws of the jurisdiction in
-              which Cymasphere operates, without regard to its conflict of law
-              provisions.
+              {t("legal.terms.governing.content", "These terms shall be governed by the laws of the jurisdiction in which Cymasphere operates, without regard to its conflict of law provisions.")}
             </p>
           </section>
 
           <section>
-            <h3>12. Contact</h3>
+            <h3>{t("legal.terms.contact.title", "12. Contact")}</h3>
             <p>
-              For questions about these terms, please contact us at
-              support@cymasphere.com.
+              {t("legal.terms.contact.content", "For questions about these terms, please contact us at support@cymasphere.com.")}
             </p>
           </section>
 
-          <p className="last-updated">Last Updated: March 1, 2023</p>
+          <p className="last-updated">{t("legal.lastUpdated", "Last Updated")}: {t("legal.lastUpdatedDate", "March 1, 2023")}</p>
         </LegalContent>
       );
     } else {
       return (
         <LegalContent>
-          <h2>Privacy Policy</h2>
+          <h2>{t("legal.privacyPolicy", "Privacy Policy")}</h2>
 
           <section>
-            <h3>1. Introduction</h3>
+            <h3>{t("legal.privacy.intro.title", "1. Introduction")}</h3>
             <p>
-              This Privacy Policy explains how Cymasphere collects, uses, and
-              protects your personal information when you use our services. We
-              respect your privacy and are committed to protecting your personal
-              data.
+              {t("legal.privacy.intro.content", "This Privacy Policy explains how Cymasphere collects, uses, and protects your personal information when you use our services. We respect your privacy and are committed to protecting your personal data.")}
             </p>
           </section>
 
           <section>
-            <h3>2. Information We Collect</h3>
+            <h3>{t("legal.privacy.collect.title", "2. Information We Collect")}</h3>
             <p>
-              We collect information you provide directly to us, such as your
-              name, email address, and payment information when you register for
-              an account. We also collect usage data and technical information
-              about your device and how you interact with our services.
+              {t("legal.privacy.collect.content", "We collect information you provide directly to us, such as your name, email address, and payment information when you register for an account. We also collect usage data and technical information about your device and how you interact with our services.")}
             </p>
           </section>
 
           <section>
-            <h3>3. How We Use Your Information</h3>
+            <h3>{t("legal.privacy.use.title", "3. How We Use Your Information")}</h3>
             <p>
-              We use your information to provide and improve our services,
-              process transactions, communicate with you, and ensure security.
-              We may also use your information for research and analytics to
-              better understand how users interact with our services.
+              {t("legal.privacy.use.content", "We use your information to provide and improve our services, process transactions, communicate with you, and ensure security. We may also use your information for research and analytics to better understand how users interact with our services.")}
             </p>
           </section>
 
           <section>
-            <h3>4. Data Sharing and Disclosure</h3>
+            <h3>{t("legal.privacy.sharing.title", "4. Data Sharing and Disclosure")}</h3>
             <p>
-              We do not sell your personal information. We may share your
-              information with third-party service providers who help us operate
-              our services, process payments, or analyze data. We may also
-              disclose your information if required by law.
+              {t("legal.privacy.sharing.content", "We do not sell your personal information. We may share your information with third-party service providers who help us operate our services, process payments, or analyze data. We may also disclose your information if required by law.")}
             </p>
           </section>
 
           <section>
-            <h3>5. Data Security</h3>
+            <h3>{t("legal.privacy.security.title", "5. Data Security")}</h3>
             <p>
-              We implement appropriate security measures to protect your
-              personal information. However, no method of transmission over the
-              Internet or electronic storage is 100% secure.
+              {t("legal.privacy.security.content", "We implement appropriate security measures to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure.")}
             </p>
           </section>
 
           <section>
-            <h3>6. Your Rights</h3>
+            <h3>{t("legal.privacy.rights.title", "6. Your Rights")}</h3>
             <p>
-              Depending on your location, you may have certain rights regarding
-              your personal data, including the right to access, correct,
-              delete, or restrict processing of your data. Please contact us to
-              exercise these rights.
+              {t("legal.privacy.rights.content", "Depending on your location, you may have certain rights regarding your personal data, including the right to access, correct, delete, or restrict processing of your data. Please contact us to exercise these rights.")}
             </p>
           </section>
 
           <section>
-            <h3>7. Cookies and Tracking Technologies</h3>
+            <h3>{t("legal.privacy.cookies.title", "7. Cookies and Tracking Technologies")}</h3>
             <p>
-              We use cookies and similar tracking technologies to enhance your
-              experience, analyze usage, and collect information about how you
-              interact with our services. You can control cookies through your
-              browser settings.
+              {t("legal.privacy.cookies.content", "We use cookies and similar tracking technologies to enhance your experience, analyze usage, and collect information about how you interact with our services. You can control cookies through your browser settings.")}
             </p>
           </section>
 
           <section>
-            <h3>8. Children&apos;s Privacy</h3>
+            <h3>{t("legal.privacy.children.title", "8. Children's Privacy")}</h3>
             <p>
-              Our services are not intended for children under 13. We do not
-              knowingly collect information from children under 13. If we learn
-              that we have collected information from a child under 13, we will
-              take steps to delete it.
+              {t("legal.privacy.children.content", "Our services are not intended for children under 13. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child under 13, we will take steps to delete it.")}
             </p>
           </section>
 
           <section>
-            <h3>9. Changes to This Privacy Policy</h3>
+            <h3>{t("legal.privacy.changes.title", "9. Changes to This Privacy Policy")}</h3>
             <p>
-              We may update this Privacy Policy from time to time. We will
-              notify you of any changes by posting the new policy on this page
-              and updating the &quot;Last Updated&quot; date.
+              {t("legal.privacy.changes.content", "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the \"Last Updated\" date.")}
             </p>
           </section>
 
           <section>
-            <h3>10. Contact Us</h3>
+            <h3>{t("legal.privacy.contact.title", "10. Contact Us")}</h3>
             <p>
-              If you have questions about this Privacy Policy, please contact us
-              at support@cymasphere.com.
+              {t("legal.privacy.contact.content", "If you have questions about this Privacy Policy, please contact us at support@cymasphere.com.")}
             </p>
           </section>
 
-          <p className="last-updated">Last Updated: March 1, 2023</p>
+          <p className="last-updated">{t("legal.lastUpdated", "Last Updated")}: {t("legal.lastUpdatedDate", "March 1, 2023")}</p>
         </LegalContent>
       );
     }
-  }, [modalType]);
+  }, [modalType, t]);
 
   return (
     <AnimatePresence>
@@ -488,7 +440,7 @@ const LegalModal: React.FC<LegalModalProps> = ({
               <ModalTitle>{getTitle()}</ModalTitle>
             </TitleContainer>
 
-            <CloseButton onClick={onClose} aria-label="Close modal">
+            <CloseButton onClick={onClose} aria-label={t("common.close", "Close modal")}>
               <FaTimes />
             </CloseButton>
 

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 const SectionContainer = styled.section`
   width: 100%;
@@ -244,144 +245,169 @@ const imageVariants = {
   }),
 };
 
-// Create song workflow data
-const createSongWorkflow = [
-  {
-    title: "Start with Chord Progressions",
-    description:
-      "Begin with our pre-created song template and build your chord progressions by dragging voicings from the Harmony palette. The app automatically analyzes scales and modes, ensuring your music follows proper theory principles.",
-    image:
-      "https://images.unsplash.com/photo-1513883049090-d0b7439799bf?q=80&w=1000",
-  },
-  {
-    title: "Layer Multiple Tracks",
-    description:
-      "Create rich compositions with multiple tracks that intelligently work together. Add harmony, melodies, and rhythms—all synchronized and harmonically compatible with your chord progression.",
-    image:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000",
-  },
-  {
-    title: "Customize with Precision",
-    description:
-      "Fine-tune your sound with detailed customization. Adjust inversions, voicing density, tension notes, and harmonic extensions to craft everything from simple triads to complex jazz harmonies.",
-    image:
-      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1000",
-  },
-  {
-    title: "Intelligent Musicality",
-    description:
-      "Our advanced algorithms provide professional-level musicality with intelligent voice leading that ensures smooth chord transitions. Experience composition tools previously available only to trained musicians.",
-    image:
-      "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1000",
-  },
-];
-
-// Learn song workflow data
-const learnSongWorkflow = [
-  {
-    title: "Import Your Favorite Songs",
-    description:
-      "Upload your music or connect to streaming services to import songs you want to learn. Our AI analyzes the track, identifying chords, progressions, and key elements.",
-    image:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1000",
-  },
-  {
-    title: "Visual Chord Breakdowns",
-    description:
-      "See chord progressions visualized in real-time as the song plays. Our interactive interface highlights each chord and shows proper finger positions for your instrument.",
-    image:
-      "https://images.unsplash.com/photo-1558968406-1598644958132?q=80&w=1000",
-  },
-  {
-    title: "Practice at Your Pace",
-    description:
-      "Slow down complex sections without changing pitch, loop difficult passages, and use our step-by-step tutorials to master challenging parts of the song.",
-    image:
-      "https://images.unsplash.com/photo-1514119412350-e174d90d280e?q=80&w=1000",
-  },
-  {
-    title: "Track Your Progress",
-    description:
-      "Our smart learning system tracks your improvement and suggests personalized practice exercises. Earn achievements as you master different songs and techniques.",
-    image:
-      "https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=1000",
-  },
-];
-
-// Integrate workflow data
-const integrateWorkflow = [
-  {
-    title: "Connect with DAWs",
-    description:
-      "Seamlessly bridge Cymasphere with your favorite digital audio workstations. Export your compositions as MIDI or audio files for further production.",
-    image:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1000",
-  },
-  {
-    title: "Collaborate in Real-Time",
-    description:
-      "Share your projects with collaborators and work together synchronously. Changes are instantly visible to all participants, making remote collaboration effortless.",
-    image:
-      "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1000",
-  },
-  {
-    title: "Hardware Compatibility",
-    description:
-      "Connect MIDI controllers, keyboards, and other hardware to enhance your workflow. Cymasphere automatically detects connected devices for plug-and-play functionality.",
-    image:
-      "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?q=80&w=1000",
-  },
-  {
-    title: "Third-Party Plugins",
-    description:
-      "Expand Cymasphere's capabilities with our growing ecosystem of plugins. Access additional instruments, effects, and workflow tools from our marketplace.",
-    image:
-      "https://images.unsplash.com/photo-1563330232-57114bb0823c?q=80&w=1000",
-  },
-];
-
 const HowItWorksSection = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState("create"); // 'create', 'learn', or 'integrate'
+  
+  // Force re-render when language changes
+  const [, forceUpdate] = useState({});
+  useEffect(() => {
+    const handleLanguageChanged = () => {
+      forceUpdate({});
+    };
+    
+    i18next.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18next.off('languageChanged', handleLanguageChanged);
+    };
+  }, []);
 
-  const sectionTitle = t("sections.howItWorks.title", "How It Works");
+  const sectionTitle = t("howItWorks.title", "How It Works");
 
   // Get subtitle based on the selected tab
   const getSubtitle = () => {
     switch (activeTab) {
       case "create":
         return t(
-          "sections.howItWorks.createSubtitle",
+          "howItWorks.createSubtitle",
           "Compose music with powerful tools"
         );
       case "learn":
         return t(
-          "sections.howItWorks.learnSubtitle",
+          "howItWorks.learnSubtitle",
           "Master your favorite songs effortlessly"
         );
       case "integrate":
         return t(
-          "sections.howItWorks.integrateSubtitle",
+          "howItWorks.integrateSubtitle",
           "Connect with your existing workflow"
         );
       default:
-        return t("sections.howItWorks.subtitle", "Music creation made simple");
+        return t("howItWorks.subtitle", "Music creation made simple");
     }
   };
 
   const sectionDescription = getSubtitle();
 
+  // Get create workflow with translations
+  const getCreateWorkflow = () => [
+    {
+      title: t("howItWorks.createWorkflow.step1.title", "Start with Chord Progressions"),
+      description: t(
+        "howItWorks.createWorkflow.step1.description",
+        "Begin with pre-crafted templates or effortlessly build your own chord progressions by dragging voicings from the Harmony palette. The app automatically analyzes scales and modes, ensuring your music follows proper theory principles."
+      ),
+      image: "https://images.unsplash.com/photo-1513883049090-d0b7439799bf?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.createWorkflow.step2.title", "Layer Multiple Tracks"),
+      description: t(
+        "howItWorks.createWorkflow.step2.description",
+        "Create rich compositions with multiple tracks that intelligently work together. Add harmony, melodies, and rhythms—all synchronized and harmonically compatible with your chord progression."
+      ),
+      image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.createWorkflow.step3.title", "Customize with Precision"),
+      description: t(
+        "howItWorks.createWorkflow.step3.description",
+        "Fine-tune your sound with detailed customization. Adjust inversions, voicing density, tension notes, and harmonic extensions to craft everything from simple triads to complex jazz harmonies."
+      ),
+      image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.createWorkflow.step4.title", "Intelligent Musicality"),
+      description: t(
+        "howItWorks.createWorkflow.step4.description",
+        "Experience professional-level musicality with intelligent voice leading that ensures smooth chord transitions. Access composition tools previously available only to trained musicians, empowering you to create sophisticated harmonies with confidence."
+      ),
+      image: "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1000",
+    },
+  ];
+
+  // Get learn workflow with translations
+  const getLearnWorkflow = () => [
+    {
+      title: t("howItWorks.learnWorkflow.step1.title", "Ghost Track Learning"),
+      description: t(
+        "howItWorks.learnWorkflow.step1.description",
+        "Master chord progressions through interactive ghost tracks that guide your playing. Experiment with reharmonization in real-time, watching as the app adapts to your creative choices while maintaining musical coherence."
+      ),
+      image: "https://images.unsplash.com/photo-1558968406-1598644958132?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.learnWorkflow.step2.title", "Interactive Harmonic Analysis"),
+      description: t(
+        "howItWorks.learnWorkflow.step2.description",
+        "Explore comprehensive harmonic displays that reveal the theory behind your music. Visualize voicings, patterns, scales, and chords in real-time, gaining deep insights into the musical structure of your creations."
+      ),
+      image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.learnWorkflow.step3.title", "Pattern-Based Learning"),
+      description: t(
+        "howItWorks.learnWorkflow.step3.description",
+        "Start with a simple pattern and watch it evolve as you explore different scales and chord qualities. The app's visual feedback helps you understand how each note contributes to the overall harmony, while the pattern editor lets you experiment with variations and build your musical intuition."
+      ),
+      image: "https://images.unsplash.com/photo-1514119412350-e174d90d280e?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.learnWorkflow.step4.title", "Refine Your Skills"),
+      description: t(
+        "howItWorks.learnWorkflow.step4.description",
+        "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
+      ),
+      image: "https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=1000",
+    },
+  ];
+
+  // Get integrate workflow with translations
+  const getIntegrateWorkflow = () => [
+    {
+      title: t("howItWorks.integrateWorkflow.step1.title", "DAW Compatibility"),
+      description: t(
+        "howItWorks.integrateWorkflow.step1.description",
+        "Use Cymasphere as a standalone application or as a VST/AU plugin within your DAW. Whether you're sketching ideas independently or integrating directly into your production, the app adapts to your preferred workflow."
+      ),
+      image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.integrateWorkflow.step2.title", "Multi-Track Control"),
+      description: t(
+        "howItWorks.integrateWorkflow.step2.description",
+        "Manage multiple tracks simultaneously, each with its own independent voice settings and patterns. Create rich, layered arrangements by assigning different musical elements to separate tracks within your DAW."
+      ),
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.integrateWorkflow.step3.title", "Voice Channel Matrix"),
+      description: t(
+        "howItWorks.integrateWorkflow.step3.description",
+        "Precisely control where each voice is sent using the channel matrix. Route individual voices to specific MIDI channels in your DAW, giving you complete control over instrument assignment and voice distribution."
+      ),
+      image: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?q=80&w=1000",
+    },
+    {
+      title: t("howItWorks.integrateWorkflow.step4.title", "Seamless Workflow"),
+      description: t(
+        "howItWorks.integrateWorkflow.step4.description",
+        "Integrate Cymasphere into your production process as a powerful harmony and pattern generator. Use it to quickly sketch ideas, develop complex progressions, and create musical patterns that feed directly into your DAW's instruments."
+      ),
+      image: "https://images.unsplash.com/photo-1563330232-57114bb0823c?q=80&w=1000",
+    },
+  ];
+
   // Select the workflow data based on active tab
   const getWorkflow = () => {
     switch (activeTab) {
       case "create":
-        return createSongWorkflow;
+        return getCreateWorkflow();
       case "learn":
-        return learnSongWorkflow;
+        return getLearnWorkflow();
       case "integrate":
-        return integrateWorkflow;
+        return getIntegrateWorkflow();
       default:
-        return createSongWorkflow;
+        return getCreateWorkflow();
     }
   };
 
@@ -408,19 +434,19 @@ const HowItWorksSection = () => {
           $active={activeTab === "create"}
           onClick={() => setActiveTab("create")}
         >
-          CREATE
+          {t("howItWorks.tabs.create", "CREATE")}
         </Tab>
         <Tab
           $active={activeTab === "learn"}
           onClick={() => setActiveTab("learn")}
         >
-          LEARN
+          {t("howItWorks.tabs.learn", "LEARN")}
         </Tab>
         <Tab
           $active={activeTab === "integrate"}
           onClick={() => setActiveTab("integrate")}
         >
-          INTEGRATE
+          {t("howItWorks.tabs.integrate", "INTEGRATE")}
         </Tab>
       </TabsContainer>
 

@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -218,12 +220,40 @@ const ButtonContent = styled.div`
 `;
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const auth = useAuth() || {};
   const router = useRouter();
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
+
+  // Render a loading indicator if translations aren't loaded yet
+  if (!translationsLoaded) {
+    return (
+      <div style={{ 
+        height: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        backgroundColor: "var(--background)"
+      }}>
+        <LoadingComponent size="40px" />
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -242,28 +272,29 @@ function Login() {
 
         // Handle specific error codes
         if (result.error.code === "user_not_found") {
-          setError("No account found with this email. Please sign up first.");
+          setError(t("login.errors.userNotFound", "No account found with this email. Please sign up first."));
         } else if (result.error.code === "invalid_credentials") {
-          setError("Incorrect password. Please try again.");
+          setError(t("login.errors.invalidCredentials", "Incorrect password. Please try again."));
         } else if (result.error.code === "email_address_invalid") {
-          setError("Invalid email format.");
+          setError(t("login.errors.invalidEmail", "Invalid email format."));
         } else if (result.error.code === "over_request_rate_limit") {
           setError(
-            "Too many failed login attempts. Please try again later or reset your password."
+            t("login.errors.rateLimit", "Too many failed login attempts. Please try again later or reset your password.")
           );
         } else {
-          setError(`Failed to log in: ${result.error.message}`);
+          setError(t("login.errors.generic", "Failed to log in: {{message}}", { message: result.error.message }));
         }
       } else {
         console.log("User logged in successfully");
-        router.push("/dashboard");
+        // After successful login, redirect to dashboard
+        router.push(`/dashboard`);
       }
     } catch (error: unknown) {
       console.error("Login error:", error);
       setError(
-        `Failed to log in: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        t("login.errors.unknown", "Failed to log in: {{message}}", { 
+          message: error instanceof Error ? error.message : String(error)
+        })
       );
     } finally {
       setLoading(false);
@@ -286,9 +317,9 @@ function Login() {
 
   return (
     <AuthContainer>
-      <Link href="/" passHref>
+      <Link href={`/`} legacyBehavior>
         <BackButton>
-          <FaArrowLeft /> Back to Home
+          <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
         </BackButton>
       </Link>
 
@@ -313,7 +344,7 @@ function Login() {
           />
         </div>
 
-        <Subtitle>Login to access your account</Subtitle>
+        <Subtitle>{t("login.subtitle", "Login to access your account")}</Subtitle>
 
         {error && (
           <ErrorMessage
@@ -327,7 +358,7 @@ function Login() {
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("common.email", "Email")}</Label>
             <Input
               type="email"
               id="email"
@@ -338,7 +369,7 @@ function Login() {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("common.password", "Password")}</Label>
             <Input
               type="password"
               id="password"
@@ -349,7 +380,7 @@ function Login() {
           </FormGroup>
 
           <ForgotPassword>
-            <Link href="/reset-password">Forgot password?</Link>
+            <Link href="/reset-password">{t("login.forgotPassword", "Forgot password?")}</Link>
           </ForgotPassword>
 
           <Button type="submit" disabled={loading}>
@@ -359,17 +390,17 @@ function Login() {
                   <div style={{ marginRight: "10px" }}>
                     <LoadingComponent size="20px" />
                   </div>
-                  Logging in...
+                  {t("login.loggingIn", "Logging in...")}
                 </>
               ) : (
-                "Log In"
+                t("login.loginButton", "Log In")
               )}
             </ButtonContent>
           </Button>
         </Form>
 
         <LinkText>
-          Don&apos;t have an account? <Link href="/signup">Sign up</Link>
+          {t("login.noAccount", "Don't have an account?")} <Link href={`/signup`}>{t("login.signUp", "Sign up")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

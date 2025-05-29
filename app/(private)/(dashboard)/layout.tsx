@@ -19,6 +19,9 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
+import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -32,22 +35,53 @@ interface SidebarProps {
 }
 
 const Sidebar = styled.aside<SidebarProps>`
-  width: 280px;
-  background-color: var(--card-bg);
-  color: var(--text);
-  padding: 1.5rem 0;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
-  z-index: 100;
+  height: 100vh;
+  width: 280px;
+  background: linear-gradient(
+    165deg,
+    rgba(15, 14, 23, 0.98) 0%,
+    rgba(27, 25, 40, 0.98) 50%,
+    rgba(35, 32, 52, 0.98) 100%
+  );
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0;
+  z-index: 1000;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: transform 0.3s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at 30% 50%,
+        rgba(108, 99, 255, 0.1),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 30%,
+        rgba(78, 205, 196, 0.1),
+        transparent 50%
+      );
+    z-index: 0;
+    pointer-events: none;
+  }
 
   @media (max-width: 768px) {
     display: none; /* Hide sidebar completely on mobile */
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
   }
 `;
 
@@ -132,15 +166,15 @@ const MobileLogoContent = styled.div`
 
 const UserInfo = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 1rem 1.5rem;
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
 const UserName = styled.div`
-  flex: 1;
+  margin-bottom: 1rem;
+  text-align: center;
 
   h4 {
     font-size: 0.95rem;
@@ -157,28 +191,47 @@ const UserName = styled.div`
 
 const LogoutButton = styled.button`
   background: none;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  padding: 8px 12px;
+  width: 100%;
+  justify-content: center;
+  font-size: 0.9rem;
 
   &:hover {
-    color: var(--error);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  svg {
+    margin-right: 8px;
   }
 `;
 
-const BackButton = styled.a`
+const BackButtonContainer = styled.div`
   position: fixed;
   top: 25px;
   right: 30px;
   display: flex;
   align-items: center;
+  z-index: 1000;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const BackButton = styled.a`
+  display: flex;
+  align-items: center;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 1rem;
-  z-index: 1000;
   transition: all 0.3s ease;
 
   &:hover {
@@ -187,10 +240,6 @@ const BackButton = styled.a`
 
   svg {
     margin-left: 8px;
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
@@ -244,26 +293,49 @@ interface NavItemProps {
 const NavItem = styled.a<NavItemProps>`
   display: flex;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0.875rem 1.5rem;
   color: ${(props) =>
-    props.$active === "true" ? "var(--primary)" : "var(--text-secondary)"};
-  font-weight: ${(props) => (props.$active === "true" ? "600" : "400")};
+    props.$active === "true" ? "var(--primary)" : "rgba(255, 255, 255, 0.7)"};
+  font-weight: ${(props) => (props.$active === "true" ? "600" : "500")};
+  letter-spacing: 0.3px;
   text-decoration: none;
-  transition: all 0.2s ease;
-  background-color: ${(props) =>
-    props.$active === "true" ? "rgba(108, 99, 255, 0.1)" : "transparent"};
-  border-left: 3px solid
-    ${(props) => (props.$active === "true" ? "var(--primary)" : "transparent")};
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin: 0.25rem 1.5rem;
+  border-radius: 8px;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 44px;
 
   &:hover {
-    background-color: rgba(108, 99, 255, 0.05);
-    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
   }
 
   svg {
-    margin-right: 1rem;
-    font-size: 1.2rem;
+    margin-right: 0.875rem;
+    font-size: 1.1rem;
+    flex-shrink: 0;
   }
+
+  ${(props) =>
+    props.$active === "true" &&
+    `
+    background-color: rgba(108, 99, 255, 0.1);
+    
+    &:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--primary), var(--accent));
+      border-radius: 0 2px 2px 0;
+    }
+  `}
 `;
 
 interface MobileNavItemProps {
@@ -286,6 +358,10 @@ const MobileNavItem = styled(motion.a)<MobileNavItemProps>`
   margin: 0.5rem 0;
   position: relative;
   font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 50px;
 
   &:hover {
     color: white;
@@ -294,6 +370,7 @@ const MobileNavItem = styled(motion.a)<MobileNavItemProps>`
   svg {
     margin-right: 1rem;
     font-size: 1.2rem;
+    flex-shrink: 0;
   }
 
   &:after {
@@ -337,6 +414,25 @@ const PageTransition = styled(motion.div)`
   height: 100%;
 `;
 
+// Add a styled wrapper for mobile language selector
+const MobileLanguageWrapper = styled.div`
+  margin-bottom: 0.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+const MobileFooterSection = styled.div`
+  width: 80%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -347,6 +443,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   const user_display_name = useMemo(() => {
     if (!user) return "";
@@ -383,8 +491,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [sidebarOpen]);
 
-  // Return loading state if not mounted yet
-  if (!user) {
+  // Return loading state if not mounted yet or translations not loaded
+  if (!user || !translationsLoaded) {
     return (
       <LayoutContainer>
         <Content
@@ -394,7 +502,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             alignItems: "center",
           }}
         >
-          <LoadingComponent text="Loading dashboard..." />
+          <LoadingComponent text={t("dashboard.layout.loading", "Loading dashboard...")} />
         </Content>
       </LayoutContainer>
     );
@@ -497,7 +605,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/dashboard" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/dashboard")}
             >
-              <FaTachometerAlt /> Dashboard
+              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
             </NavItem>
           </Link>
           <Link href="/profile" passHref legacyBehavior>
@@ -505,7 +613,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/profile" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/profile")}
             >
-              <FaUser /> Profile
+              <FaUser /> {t("dashboard.layout.profile", "Profile")}
             </NavItem>
           </Link>
           <Link href="/billing" passHref legacyBehavior>
@@ -513,7 +621,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/billing" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/billing")}
             >
-              <FaCreditCard /> Billing
+              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
             </NavItem>
           </Link>
           <Link href="/downloads" passHref legacyBehavior>
@@ -521,7 +629,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/downloads" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/downloads")}
             >
-              <FaDownload /> Downloads
+              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </NavItem>
           </Link>
           <Link href="/settings" passHref legacyBehavior>
@@ -529,18 +637,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               $active={pathname === "/settings" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/settings")}
             >
-              <FaCog /> Settings
+              <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </NavItem>
           </Link>
         </nav>
 
         <UserInfo>
           <UserName>
-            <h4>{user_display_name}</h4>
-            <p>{user.email}</p>
+            <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
+            <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
           </UserName>
-          <LogoutButton onClick={handleLogout} title="Logout">
-            <FaSignOutAlt />
+          <LogoutButton onClick={handleLogout}>
+            <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
           </LogoutButton>
         </UserInfo>
       </Sidebar>
@@ -571,9 +679,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                CYMA
+                {t("common.brandFirst", "CYMA")}
               </span>
-              <span style={{ color: "white" }}>SPHERE</span>
+              <span style={{ color: "white" }}>{t("common.brandSecond", "SPHERE")}</span>
             </span>
           </div>
         </MobileLogoContent>
@@ -585,7 +693,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>Account</MobileNavTitle>
+          <MobileNavTitle>{t("dashboard.layout.account", "Account")}</MobileNavTitle>
 
           <Link href="/dashboard" passHref legacyBehavior>
             <MobileNavItem
@@ -596,7 +704,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/dashboard")}
             >
-              <FaTachometerAlt /> Dashboard
+              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
             </MobileNavItem>
           </Link>
 
@@ -609,7 +717,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/profile")}
             >
-              <FaUser /> Profile
+              <FaUser /> {t("dashboard.layout.profile", "Profile")}
             </MobileNavItem>
           </Link>
 
@@ -622,7 +730,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/billing")}
             >
-              <FaCreditCard /> Billing
+              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
             </MobileNavItem>
           </Link>
 
@@ -635,7 +743,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/downloads")}
             >
-              <FaDownload /> Downloads
+              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </MobileNavItem>
           </Link>
 
@@ -648,7 +756,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/settings")}
             >
-              <FaCog /> Settings
+              <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </MobileNavItem>
           </Link>
 
@@ -661,30 +769,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
             >
-              <FaHome /> Back to Home
+              <FaHome /> {t("dashboard.layout.backToHome", "Back to Home")}
             </MobileNavItem>
           </Link>
 
-          <MobileUserInfo>
+          <MobileFooterSection>
+            <MobileLanguageWrapper>
+              <NextLanguageSelector />
+            </MobileLanguageWrapper>
+            
             <UserName>
-              <h4>{user_display_name}</h4>
-              <p>{user.email}</p>
+              <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
+              <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
             </UserName>
-            <LogoutButton onClick={handleLogout} title="Logout">
-              <FaSignOutAlt />
+            
+            <LogoutButton onClick={handleLogout}>
+              <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
             </LogoutButton>
-          </MobileUserInfo>
+          </MobileFooterSection>
         </MobileMenu>
       )}
 
-      <BackButton
-        href="/"
-        onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
-          handleNavigation(e, "/")
-        }
-      >
-        Back to Site <FaArrowLeft />
-      </BackButton>
+      <BackButtonContainer>
+        <NextLanguageSelector />
+        <BackButton
+          href="/"
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
+            handleNavigation(e, "/")
+          }
+        >
+          {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
+        </BackButton>
+      </BackButtonContainer>
 
       <Content>
         <PageTransition

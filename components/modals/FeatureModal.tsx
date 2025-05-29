@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
 
 // Interfaces for styled-component props
 interface FeatureImageProps {
@@ -757,52 +758,18 @@ const parseHtml = (
     return htmlContent;
   }
 
-  // If it's a string that might contain HTML
+  // Otherwise sanitize the HTML string
   if (typeof htmlContent === "string") {
-    // Clean up HTML before sanitizing (fix common issues)
-    let cleanHtml = htmlContent
-      .replace(/&nbsp;/g, " ")
-      .replace(/<br>/g, "<br />")
-      .replace(/<p>\s*<\/p>/g, "");
-
-    // Ensure headings are properly formatted
-    if (!cleanHtml.includes("<h3>") && !cleanHtml.includes("<h2>")) {
-      // Extract first sentence as title if no heading exists
-      const firstPeriod = cleanHtml.indexOf(".");
-      if (firstPeriod > 10 && firstPeriod < 100) {
-        const title = cleanHtml.substring(0, firstPeriod + 1);
-        const rest = cleanHtml.substring(firstPeriod + 1);
-        cleanHtml = `<h3>${title}</h3>${rest}`;
-      }
-    }
-
-    // Sanitize the HTML to prevent XSS
-    const sanitizedHtml = DOMPurify.sanitize(cleanHtml, {
-      USE_PROFILES: { html: true },
-      ALLOWED_TAGS: [
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "p",
-        "br",
-        "ul",
-        "ol",
-        "li",
-        "strong",
-        "em",
-        "b",
-        "i",
-        "a",
-      ],
-      ALLOWED_ATTR: ["href", "target", "rel"],
-    });
-
-    return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+    return (
+      <div
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(htmlContent),
+        }}
+      />
+    );
   }
 
-  return "";
+  return null;
 };
 
 // Add this new component for better image debugging
@@ -928,43 +895,21 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  // Find the Advanced Voice Handling feature and update its description before rendering
-  const updatedFeatures: Feature[] = features.map((feature: Feature) => {
-    if (feature.title === "Advanced Voice Handling") {
-      return {
-        ...feature,
-        detailedDescription: `
-          <h3>Complete Control Over Every Voice</h3>
-          <p>Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.</p>
-          
-          <h3 style="margin-bottom: 0.5rem;">Key Features:</h3>
-          <ul style="margin-top: 0.5rem;">
-            <li><strong>Dynamic Voice Count</strong> for arrangement flexibility - Add or remove voices for different textures</li>
-            <li><strong>Smooth Voice Leading</strong> to control how voices move together - Options for parallel, contrary, or independent motion</li>
-            <li><strong>Per-Voice MIDI Channel Routing</strong> for multi-instrument setups - Send voices to different instruments</li>
-            <li><strong>Voice Range Constraints</strong> for instrument-appropriate writing - Set upper and lower limits for each voice</li>
-            <li><strong>Designated Bass Channel</strong> for foundation control - Discrete controls for pedal tones and voice leading</li>
-            <li><strong>Voice / Channel Matrix</strong> for effortless MIDI routing - Visually map voices to MIDI channels and instruments</li>
-          </ul>
-        `,
-      };
-    }
-    return feature;
-  });
-
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({}); // Typed state
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({}); // Typed state
+  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [debugMode, setDebugMode] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null); // Typed state
-  const [touchEnd, setTouchEnd] = useState<number | null>(null); // Typed state
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(
     null
-  ); // Typed state
+  );
+  const [prevIndex, setPrevIndex] = useState(initialIndex);
   const modalRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t, i18n } = useTranslation();
 
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
@@ -987,6 +932,26 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
       document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
+
+  // Update when language changes
+  useEffect(() => {
+    // Force reflow of HTML content when language changes
+    if (modalRef.current) {
+      modalRef.current.scrollTop = 0;
+    }
+  }, [i18n.language]);
+
+  // Reset current index when initial index changes
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+    setPrevIndex(initialIndex);
+  }, [initialIndex]);
+
+  // Ensure content refreshes when language changes
+  useEffect(() => {
+    // Force a re-render when language changes
+    setCurrentIndex((prev) => prev);
+  }, [i18n.language]);
 
   // Enhanced touch handlers with visual feedback
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -1133,7 +1098,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     setInfoVisible(!infoVisible);
   };
 
-  const currentFeature = updatedFeatures[currentIndex] || {};
+  const currentFeature = features[currentIndex] || {};
   const { title, detailedDescription, image: featureImage } = currentFeature;
 
   // Use the provided image or get one based on title

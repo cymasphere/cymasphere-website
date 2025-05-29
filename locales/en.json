@@ -6,7 +6,35 @@
     "save": "Save",
     "cancel": "Cancel",
     "loading": "Loading...",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "myAccount": "My Account",
+    "navigation": "Navigation",
+    "backToHome": "Back to Home",
+    "email": "Email",
+    "password": "Password",
+    "close": "Close",
+    "confirm": "Confirm",
+    "locale": "en-US",
+    "none": "None",
+    "notAvailable": "N/A",
+    "unknownError": "Unknown error",
+    "adminConsole": "Admin Console",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
   },
   "header": {
     "home": "Home",
@@ -24,7 +52,7 @@
     "title": "Generate Music With AI",
     "titlePartA": "Intelligent",
     "titlePartB": "Creation",
-    "subtitle": "Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.",
+    "subtitle": "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.",
     "cta": "Try It Now",
     "titleWords": {
       "music": "Music",
@@ -57,93 +85,929 @@
     "livePerformance": "Live Performance",
     "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
     "customSounds": "Custom Sounds",
-    "customSoundsDesc": "Create and save your own custom sound presets"
-  },
-  "synth": {
-    "title": "Intelligent Chord Voicing Generator",
-    "description": "Create lush, beautiful chords with the press of a button.",
-    "chordSequence": "Chord Sequence",
-    "generateMelody": "Generate Melody",
-    "playChordSequence": "Play Chord Sequence",
-    "stopAll": "Stop",
-    "playBoth": "Play Both",
-    "generateRandomProgression": "Random Progression",
-    "generateRandomSongName": "Random Name",
-    "synthesizerTitle": "Synthesizer",
-    "synthesizerDesc": "Create and play musical patterns",
-    "songName": "Song Name",
-    "trackName": "Track Name",
-    "trackNamePlaceholder": "e.g., Piano, Melody, Bassline",
-    "trackNameHint": "Each track represents a different instrument or sound in your song",
-    "trackIllustration": "Think of tracks like layers in your musical arrangement - they'll play together to create your full song.",
-    "chords": {
-      "cMajor": "Cmaj7",
-      "dMinor": "Dmin7",
-      "eMinor": "Emin7",
-      "fMajor": "Fmaj7",
-      "g7sus4": "G7",
-      "aMinor": "Amin7",
-      "bm7b5": "Bm7b5"
+    "customSoundsDesc": "Create and save your own custom sound presets",
+    "sectionTitle": "Powerful Features",
+    "songBuilder": {
+      "title": "Song Builder",
+      "description": "Combine tracks, progressions, and harmony palettes in one intuitive workspace for seamless composition.",
+      "modalTitle": "Central Music Creation Hub",
+      "modalDescription": "The Song Builder is your central creative hub where all musical elements come together. Create, arrange, and refine your music with an intuitive interface designed for both beginners and professionals.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Professional Transport Controls with play, stop, record, loop functionality, BPM, meter, metronome and DAW sync",
+        "Interactive Timeline with grid snapping, zoom controls, and countoff capabilities",
+        "Multi-Track Management with per-track mute/solo, volume controls, and routing options",
+        "Comprehensive Arrangement View providing a holistic perspective of all voicings and patterns",
+        "Chord Progression Framework serving as the harmonic foundation for your compositions",
+        "Informative Keyboard Display showing chord voicings and voice leading"
+      ]
     },
-    "wizard": {
-      "step1": {
-        "title": "Step 1: Song Creation",
-        "description": "Start your creative journey by naming your musical piece.",
-        "namePlaceholder": "Enter a name for your song",
-        "nameHint": "This will be the title of your musical creation",
-        "illustration": "Every great piece of music starts with a name. What will you call yours?"
-      },
-      "step2": {
-        "title": "Step 2: Chord Progression",
-        "description": "Create the harmonic foundation for your song \"{songName}\".",
-        "chordSequence": "Chord Sequence",
-        "instruction": "Choose chords from the bank below and add them to your progression."
-      },
-      "step3": {
-        "title": "Step 3: Track Creation",
-        "description": "Name your first instrument track within \"{songName}\".",
-        "progression": "Your Progression:"
-      },
-      "step4": {
-        "title": "Step 4: Pattern Creation",
-        "description": "Create a melody pattern for your \"{trackName}\" track in \"{songName}\"."
-      },
-      "nextToProgression": "Continue to Chord Progression",
-      "nextToTrack": "Continue to Track Creation",
-      "nextToPattern": "Continue to Pattern Creation",
-      "backToSong": "Back to Song Creation",
-      "backToProgression": "Back to Chord Progression",
-      "backToTrack": "Back to Track Creation",
-      "finish": "Finish",
-      "congratsMessage": "Congratulations! You've just scratched the surface of Cymasphere's powerful music creation capabilities. Your song \"{songName}\" with the \"{trackName}\" track is just the beginning. Explore the full platform to unlock advanced features, AI-powered composition tools, and professional audio production capabilities that will transform your musical ideas into reality."
+    "harmonyPalettes": {
+      "title": "Harmony Palettes",
+      "description": "Shape melodies and chords through an intuitive gestural interface for fluid musical expression.",
+      "modalTitle": "Visualize Chord Relationships",
+      "modalDescription": "Control harmony like a physical instrument with our intuitive gestural interface. Manipulate, arrange, and explore chord relationships through a tactile experience that makes complex music theory accessible and expressive.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Customizable Bank Arrangement to organize your chord collections through drag and drop",
+        "Drag and Drop Voicings directly from palettes to your progression timeline",
+        "Curated Collection Library with pre-selected scales and chord relationships",
+        "One-Click Transposition for instantly shifting keys across your entire composition",
+        "Voicing Parameter Dashboard for quick adjustments to chord characteristics",
+        "Custom Bank Creation for building your personal chord vocabulary"
+      ]
     },
-    "notes": {
-      "C": "C",
-      "D": "D",
-      "E": "E",
-      "F": "F",
-      "G": "G",
-      "A": "A",
-      "B": "B"
+    "patternEditor": {
+      "title": "Dynamic Pattern Editor",
+      "description": "Create intelligent musical patterns that adapt to chord changes in real time.",
+      "modalTitle": "Adaptive Musical Patterns",
+      "modalDescription": "The Dynamic Pattern Editor enables you to create complex musical motifs that respond intelligently to changes in your chord progressions. Build melodies and rhythmic sequences that maintain musical coherence even as the harmony shifts.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Intelligent Adaptation to chord progression changes in real-time",
+        "Advanced Piano Roll Interface with powerful editing tools",
+        "Context-Aware Note Entry with scale, chord, and voicing intelligence to prevent harmonic clashes",
+        "Dual Mode Operation with relative and absolute patterns for both contextual and fixed melodic content",
+        "Melodic Essence Extraction that captures the intent of any melody for reuse in different harmonic contexts"
+      ]
     },
-    "chordTypes": {
-      "major": "Major",
-      "minor": "Minor",
-      "diminished": "Diminished",
-      "augmented": "Augmented",
-      "seventh": "Seventh"
+    "voicingGenerator": {
+      "title": "Voicing Generator",
+      "description": "Transform chord progressions into expressive voicings with professional voice leading and harmonic control.",
+      "modalTitle": "Limitless Harmonic Possibilities",
+      "modalDescription": "The Voicing Generator transforms simple chord symbols into complex, expressive harmonic structures. Fine-tune every aspect of your chord voicings from global styles to individual note placement, creating professional arrangements that breathe life into your music.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Advanced Chord Editor with comprehensive scale and chord configuration tools for complete harmonic customization",
+        "Intelligent Voice Leading with automatic smooth transitions between chord changes based on proximity, common tones, and voice direction",
+        "Texture Controls including voicing width, density, inversions, octave distribution, and register placement",
+        "Harmonic Extensions with configurable 7ths, 9ths, 11ths and 13ths to add richness and color to your progressions",
+        "Multi-Level Settings allowing global changes to entire songs or focused edits to specific chord voicings with a single adjustment"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "Progression Timeline",
+      "description": "Learn from ghost tracks and transform existing songs with powerful reharmonization tools.",
+      "modalTitle": "Master Chord Progression Creation",
+      "modalDescription": "The Progression Timeline streamlines the process of building, refining, and transforming chord progressions. With educational ghost tracks and powerful reharmonization tools, you can both learn from and reinvent your favorite music.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Intuitive Timeline Interface for visual progression building",
+        "Ghost Track Learning System that teaches progression structure",
+        "Real-time Reharmonization to transform existing progressions",
+        "Section-based Organization for structured composition",
+        "Drag and Drop Chord Arrangement for easily rearranging chords and adjusting their length by dragging boundaries",
+        "Display Toggling to show chord names as letters, Roman numerals, or solfege based on preference",
+        "Dynamic Pattern Updates where patterns and voicings automatically adapt when changes are made to the progression"
+      ]
+    },
+    "voiceHandling": {
+      "title": "Advanced Voice Handling",
+      "description": "Control voice count, interactions, and MIDI routing for complete arrangement flexibility.",
+      "modalTitle": "Complete Control Over Every Voice",
+      "modalDescription": "Advanced Voice Handling provides granular control over each individual voice in your composition. Manage voice count, behavior, interaction, and routing to create complex arrangements with complete creative freedom.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Dynamic Voice Count for arrangement flexibility - Add or remove voices for different textures",
+        "Smooth Voice Leading to control how voices move together - Options for parallel, contrary, or independent motion",
+        "Per-Voice MIDI Channel Routing for multi-instrument setups - Send voices to different instruments",
+        "Voice Range Constraints for instrument-appropriate writing - Set upper and lower limits for each voice",
+        "Designated Bass Channel for foundation control - Discrete controls for pedal tones and voice leading",
+        "Voice / Channel Matrix for effortless MIDI routing - Visually map voices to MIDI channels and instruments"
+      ]
     }
   },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "Music creation made simple",
+    "createSubtitle": "Compose music with powerful tools",
+    "learnSubtitle": "Master your favorite songs effortlessly",
+    "integrateSubtitle": "Connect with your existing workflow",
+    "tabs": {
+      "create": "CREATE",
+      "learn": "LEARN",
+      "integrate": "INTEGRATE"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "Start with Chord Progressions",
+        "description": "Begin with pre-crafted templates or effortlessly build your own chord progressions by dragging voicings from the Harmony palette. The app automatically analyzes scales and modes, ensuring your music follows proper theory principles."
+      },
+      "step2": {
+        "title": "Layer Multiple Tracks",
+        "description": "Create rich compositions with multiple tracks that intelligently work together. Add harmony, melodies, and rhythms—all synchronized and harmonically compatible with your chord progression."
+      },
+      "step3": {
+        "title": "Customize with Precision",
+        "description": "Fine-tune your sound with detailed customization. Adjust inversions, voicing density, tension notes, and harmonic extensions to craft everything from simple triads to complex jazz harmonies."
+      },
+      "step4": {
+        "title": "Intelligent Musicality",
+        "description": "Experience professional-level musicality with intelligent voice leading that ensures smooth chord transitions. Access composition tools previously available only to trained musicians, empowering you to create sophisticated harmonies with confidence."
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "Ghost Track Learning",
+        "description": "Master chord progressions through interactive ghost tracks that guide your playing. Experiment with reharmonization in real-time, watching as the app adapts to your creative choices while maintaining musical coherence."
+      },
+      "step2": {
+        "title": "Interactive Harmonic Analysis",
+        "description": "Explore comprehensive harmonic displays that reveal the theory behind your music. Visualize voicings, patterns, scales, and chords in real-time, gaining deep insights into the musical structure of your creations."
+      },
+      "step3": {
+        "title": "Pattern-Based Learning",
+        "description": "Start with a simple pattern and watch it evolve as you explore different scales and chord qualities. The app's visual feedback helps you understand how each note contributes to the overall harmony, while the pattern editor lets you experiment with variations and build your musical intuition."
+      },
+      "step4": {
+        "title": "Refine Your Skills",
+        "description": "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "DAW Compatibility",
+        "description": "Use Cymasphere as a standalone application or as a VST/AU plugin within your DAW. Whether you're sketching ideas independently or integrating directly into your production, the app adapts to your preferred workflow."
+      },
+      "step2": {
+        "title": "Multi-Track Control",
+        "description": "Manage multiple tracks simultaneously, each with its own independent voice settings and patterns. Create rich, layered arrangements by assigning different musical elements to separate tracks within your DAW."
+      },
+      "step3": {
+        "title": "Voice Channel Matrix",
+        "description": "Precisely control where each voice is sent using the channel matrix. Route individual voices to specific MIDI channels in your DAW, giving you complete control over instrument assignment and voice distribution."
+      },
+      "step4": {
+        "title": "Seamless Workflow",
+        "description": "Integrate Cymasphere into your production process as a powerful harmony and pattern generator. Use it to quickly sketch ideas, develop complex progressions, and create musical patterns that feed directly into your DAW's instruments."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Pricing & Plans",
+    "subtitle": "Flexible options to fit your needs",
+    "simpleTransparent": "Simple, Transparent Pricing",
+    "chooseOption": "Choose the billing option that works best for you.",
+    "allFeatures": "All options include full access to all features.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "lifetime": "Lifetime",
+    "mostFlexible": "Most Flexible",
+    "payMonthly": "Pay month-to-month, cancel anytime",
+    "save": "Save",
+    "withYearlyBilling": "with yearly billing",
+    "bestValue": "Best Value",
+    "oneTimePayment": "One-time payment, lifetime access",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "billed": "billed annually",
+    "oneTimePurchase": "one-time purchase",
+    "proSolution": "Complete compositional suite for musicians",
+    "currencySymbol": "$",
+    "allPlansInclude": "All Plans Include:",
+    "features": [
+      "Song Builder with Multi-Track Management",
+      "Intelligent Pattern Editor & Chord Adaptation",
+      "Gestural Harmony Palette Interface",
+      "Advanced Voice Leading & Chord Voicings",
+      "Interactive Chord Progression Timeline",
+      "Complete Voice and Range Control",
+      "Standalone App & DAW Plugin Support",
+      "Real-Time Chord Reharmonization Tools",
+      "Comprehensive Arrangement View",
+      "Custom Voicing Generation Engine",
+      "Cloud Storage & Project Backups",
+      "Premium Support & All Future Updates"
+    ],
+    "freeTrial": {
+      "title": "Try FREE for up to 14 days",
+      "description": "Experience all premium features with two trial options.",
+      "options": "Choose 7 days with no card or 14 days with card on file.",
+      "chooseFree": "Choose your free trial option:",
+      "withCard": "14-day trial - Add card on file",
+      "noCharge": "(won't be charged until trial ends)",
+      "noCard": "7-day trial - No credit card required",
+      "startNow": "Start Now",
+      "startTrial": "Start Trial",
+      "or": "or"
+    },
+    "processing": "Processing",
+    "upgradeNow": "Upgrade Now",
+    "buyNow": "Buy Now"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about Cymasphere",
+    "questions": [
+      {
+        "question": "What is Cymasphere?",
+        "answer": "Cymasphere is a complete song creation suite available both as a standalone application and as a plugin (AU & VST3) for your DAW. It provides integrated tools for composing both harmony and melody, featuring intelligent chord voicing, melody pattern construction, and interactive visualization that makes music theory accessible and intuitive for all skill levels."
+      },
+      {
+        "question": "What problems does Cymasphere solve for musicians?",
+        "answer": "Cymasphere addresses common compositional challenges like creating compelling chord progressions, developing complementary melodies, crafting smooth voice leading, and finding musical inspiration. It bridges the gap between music theory knowledge and practical application, making the entire composition process more intuitive and accessible for producers at any skill level."
+      },
+      {
+        "question": "How does the Song Builder help with composition?",
+        "answer": "The Song Builder is your central creative hub where all musical elements come together. You can arrange chord progressions, create melody patterns, and build complete song structures with multiple tracks. The system features professional transport controls, an interactive timeline, multi-track management with per-track settings, and a comprehensive arrangement view that gives you a holistic perspective of your composition as it develops."
+      },
+      {
+        "question": "How does the Interactive Harmony Palette work?",
+        "answer": "The Interactive Harmony Palette provides a visual, gestural interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions. You can drag and drop voicings directly to your timeline, instantly transpose keys, and create custom chord banks to develop your personal harmonic vocabulary."
+      },
+      {
+        "question": "What makes the Melody Pattern Constructor special?",
+        "answer": "The Melody Pattern Constructor helps you develop compelling melodies that complement your chord progressions. It suggests contextually appropriate melodic patterns based on your harmonic choices, allows you to experiment with different rhythmic variations, and provides intuitive tools for crafting memorable themes. The system intelligently adapts your melodic content when chord changes occur, maintaining musical coherence throughout your composition."
+      },
+      {
+        "question": "How do patterns adapt to chord changes?",
+        "answer": "Cymasphere's Dynamic Pattern Editor uses intelligent algorithms to adapt melodic patterns to your chord progressions in real-time. When you change a chord, the system automatically adjusts the pattern to maintain harmonic coherence while preserving the musical intent of your melody. This works in both relative and absolute modes, giving you flexibility to create context-aware melodies or fixed melodic content as needed."
+      },
+      {
+        "question": "What makes the Voicing Generator special?",
+        "answer": "The Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes chord progressions to ensure smooth voice transitions between chords, with controls for voicing width, density, inversions, and harmonic extensions. Settings can be applied globally or adjusted for specific sections of your composition."
+      },
+      {
+        "question": "What are the differences between the standalone app and the plugin?",
+        "answer": "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for focused composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs."
+      },
+      {
+        "question": "Which DAWs are compatible with the Cymasphere plugin?",
+        "answer": "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported."
+      },
+      {
+        "question": "Is Cymasphere suitable for beginners?",
+        "answer": "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony and melody concepts visually. The interactive nature of the tools encourages experimentation and learning by doing, making it an excellent platform for developing composition skills regardless of your starting point."
+      },
+      {
+        "question": "Do I need to know music theory to use Cymasphere?",
+        "answer": "No, that's one of Cymasphere's strengths! Cymasphere is a harmonic playground designed to enhance your understanding of music theory while you create. The visual interfaces help you understand musical relationships as you compose, making complex theory concepts intuitive even for beginners. It's both a powerful creation tool and an excellent learning resource that grows with you as you develop your skills."
+      },
+      {
+        "question": "How can I try Cymasphere before purchasing?",
+        "answer": "You can try Cymasphere with our free trial options. We offer a 7-day free trial without requiring a credit card, or a 14-day free trial with a card on file (which won't be charged until the trial ends). Both options give you full access to all premium features so you can explore everything Cymasphere has to offer before deciding on a subscription plan."
+      },
+      {
+        "question": "Do I have to pay for updates?",
+        "answer": "No, all Cymasphere customers have access to the most recent version of the software at no additional cost. This includes lifetime license holders, who receive all future updates as part of their one-time purchase. We're committed to continuously improving the software and adding new features that all users can enjoy."
+      },
+      {
+        "question": "Is there a user manual available for Cymasphere?",
+        "answer": "No, all help is directly built into the in-app help manager, making it effortless to explore and learn about new features. Questions, bug reports and other inquiries can be directed to our Discord server or by emailing support@cymasphere.com."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have questions or feedback? We'd love to hear from you",
+    "description": "We'd love to hear from you! Whether you have questions about features, pricing, or just want to share your feedback, our team is here to help. Fill out the form and we'll get back to you as soon as possible.",
+    "emailInfo": "You can also reach us directly at",
+    "nameLabel": "Your Name",
+    "emailLabel": "Email Address",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "submitButton": "Send Message",
+    "sending": "Sending...",
+    "successMessage": "Thanks! Your message has been sent successfully.",
+    "errorMessage": "Oops! Something went wrong. Please try again."
+  },
   "footer": {
-    "copyright": "© 2023 Cymasphere. All rights reserved.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "support": "Support",
+    "copyright": "© {{year}} Cymasphere. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "description": "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.",
+    "navigation": "Navigation",
+    "account": "Account",
+    "accountDashboard": "Account Dashboard",
+    "aboutUs": "About Us",
+    "termsConditions": "Terms & Conditions",
+    "byNNAudio": "by NNAudio"
   },
   "language": {
     "en": "English",
     "es": "Español",
     "fr": "Français",
+    "it": "Italiano",
     "de": "Deutsch",
+    "pt": "Português",
+    "tr": "Türkçe",
+    "zh": "中文",
     "ja": "日本語"
+  },
+  "login": {
+    "subtitle": "Login to access your account",
+    "forgotPassword": "Forgot password?",
+    "loggingIn": "Logging in...",
+    "loginButton": "Log In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "errors": {
+      "userNotFound": "No account found with this email. Please sign up first.",
+      "invalidCredentials": "Incorrect password. Please try again.",
+      "invalidEmail": "Invalid email format.",
+      "rateLimit": "Too many failed login attempts. Please try again later or reset your password.",
+      "generic": "Failed to log in: {{message}}",
+      "unknown": "Failed to log in: {{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "Create an",
+      "account": "account"
+    },
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "firstNamePlaceholder": "First Name",
+    "lastNamePlaceholder": "Last Name",
+    "emailPlaceholder": "Enter your email address",
+    "emailLinkedToPurchase": "This email is linked to your purchase and cannot be changed",
+    "passwordPlaceholder": "Create a secure password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "agreeToTerms": "I agree to the",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "creatingAccount": "Creating Account...",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Log in",
+    "errors": {
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "agreeTerms": "You must agree to the Terms of Service and Privacy Policy",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "description": "Enter your email address and we'll send you instructions to reset your password.",
+    "backToLogin": "Back to Login",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Enter your registered email",
+    "sendLink": "Send Reset Link",
+    "sendingLink": "Sending...",
+    "rememberPassword": "Remember your password?",
+    "login": "Log in",
+    "successMessage": "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.",
+    "errors": {
+      "userNotFound": "No user found with this email address",
+      "invalidEmail": "Invalid email address",
+      "rateLimit": "Too many password reset attempts. Please wait a few minutes before trying again.",
+      "generic": "Failed to send password reset email. Please try again."
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "billing": "Billing",
+      "downloads": "Downloads",
+      "settings": "Settings",
+      "backToSite": "Back to Site",
+      "backToHome": "Back to Home",
+      "logout": "Logout",
+      "loading": "Loading dashboard...",
+      "account": "Account",
+      "welcomeUser": "{{name}}",
+      "emailLabel": "{{email}}"
+    },
+    "main": {
+      "welcome": "Welcome back, {{name}}!",
+      "welcomeSubtitle": "Here's an overview of your CYMASPHERE account",
+      "pleaseSignIn": "Please sign in to access your dashboard",
+      "deviceConnections": "Device Connections",
+      "activeDevices": "Active device connections",
+      "subscriptionStatus": "Subscription Status",
+      "memberSince": "Member since",
+      "nextBilling": "Next billing",
+      "accountInfo": "Account Info",
+      "yourAccount": "Your Account",
+      "trialEnding": "Your free trial ends in",
+      "days": "days",
+      "subscribeNow": "Subscribe Now",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "statusTrial": "Trial",
+      "freeTrialBadge": "{{trialDays}}-Day Trial",
+      "manageSubscription": "Manage Subscription",
+      "contactSupport": "Contact Support",
+      "needHelp": "Need help with your account or have questions?",
+      "contactHelpText": "Our support team is here to assist you with any questions or issues you might have.",
+      "supportHelpText": "Our support team is here to assist you with any questions or issues you might have.",
+      "sendMessage": "Send Message",
+      "messageSent": "Message Sent",
+      "messageReceived": "We've received your message and will respond shortly.",
+      "close": "Close",
+      "error": "Error",
+      "fillAllFields": "Please fill in all fields",
+      "messageError": "Failed to send your message. Please try again later.",
+      "gotIt": "Got It",
+      "subscription": "Subscription",
+      "membership": "Membership",
+      "free": "Free",
+      "upgradeToPro": "Upgrade to Pro for full access",
+      "lifetimeAccess": "Includes free updates for life",
+      "nextPayment": "Next Payment",
+      "futurePayments": "Future Payments",
+      "amountOnDate": "${{amount}} {{date}}",
+      "onDate": "on {{date}}",
+      "firstPayment": "${{amount}}.00 on {{date}}",
+      "devices": "Connected Devices",
+      "devicesCount": "{{count}} of 5 devices connected",
+      "trial": "TRIAL",
+      "trialActive": "Your Trial is Active",
+      "trialDaysLeft": "{{days}} days left in your free trial",
+      "trialStatus": "Trial Status",
+      "daysRemaining": "{{days}} days remaining",
+      "renewalDate": "Renewal Date",
+      "trialMessage": "You're currently on a {{trialDays}}-day free trial with full access to all premium features. No payment until your trial ends.",
+      "lifetimeMessage": "You have a lifetime membership with free updates for life. Enjoy all premium features and benefits permanently.",
+      "activeSubscriptionMessage": "Your {{plan}} subscription is active. Enjoy all premium features and benefits.",
+      "upgradeMessage": "Upgrade to unlock premium features and advanced audio processing capabilities.",
+      "fullAccess": "You currently have full access to all premium features:",
+      "featureAdvancedChords": "Advanced Chord Progressions",
+      "featureUnlimitedSaves": "Unlimited Saved Progressions",
+      "featureMIDI": "MIDI Export & Import",
+      "featureCloudStorage": "Cloud Storage",
+      "noPaymentNeeded": "No payment needed to continue using basic features when your trial ends.",
+      "plan": "Current Plan",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "lifetime": "Lifetime",
+      "price": "Price",
+      "purchasedOn": "Purchase Date",
+      "freeAccountBasicFeatures": "Your free account includes basic features. Upgrade to get full access:",
+      "premiumFeatures": "Your account includes these premium features:",
+      "upgradeNow": "Upgrade Now",
+      "getStarted": "Get Started",
+      "manageBilling": "Manage Subscription",
+      "support": "Support",
+      "supportAvailability": "24/7",
+      "premiumSupport": "Premium support available",
+      "supportIntro": "Need help with your account or have questions about Cymasphere? Send us a message and we'll get back to you as soon as possible.",
+      "yourName": "Your Name",
+      "yourEmail": "Your Email",
+      "message": "Your Message",
+      "sending": "Sending..."
+    },
+    "profile": {
+      "title": "My Profile",
+      "personalInfo": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "saveChanges": "Save Changes",
+      "passwordSection": "Change Password",
+      "sendResetEmail": "Send Password Reset Email",
+      "profileUpdated": "Profile information updated successfully!",
+      "errorUpdating": "Error updating profile: {{error}}",
+      "passwordResetSent": "Password reset email sent! Please check your inbox.",
+      "noEmailFound": "No email address found for password reset",
+      "tooManyAttempts": "Too many password reset attempts. Please wait a few minutes before trying again.",
+      "errorSendingReset": "Error sending reset email: {{error}}",
+      "unexpectedError": "An unexpected error occurred: {{error}}"
+    },
+    "billing": {
+      "title": "Billing & Subscription",
+      "currentPlan": "Current Plan",
+      "paymentHistory": "Payment History",
+      "upgradeDowngrade": "Upgrade/Downgrade",
+      "cancelSubscription": "Cancel Subscription",
+      "reactivateSubscription": "Reactivate Subscription",
+      "paymentMethods": "Payment Methods",
+      "addPaymentMethod": "Add Payment Method",
+      "noPaymentHistory": "No payment history available",
+      "transactionId": "Transaction ID",
+      "date": "Date",
+      "amount": "Amount",
+      "status": "Status",
+      "freePlan": "Free",
+      "freePlanDesc": "Limited access to basic features",
+      "noPlan": "None",
+      "noPlanDesc": "No active subscription",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "month": "month",
+      "year": "year",
+      "lifetimePlan": "Lifetime",
+      "lifetimePlanDesc": "Full access to all features forever with free updates",
+      "paidPlanDesc": "Full access to all premium features and content",
+      "subscribePlan": "Subscribe to a Plan",
+      "changePlan": "Change Plan",
+      "manageBilling": "Manage Billing",
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "viewReceipt": "View",
+      "noTransactions": "No transaction history available",
+      "redirectingPortal": "Redirecting to billing portal...",
+      "error": "Error",
+      "portalAccessError": "Failed to access billing portal: {{error}}",
+      "errorOccurred": "An error occurred: {{error}}",
+      "upgradingPlan": "Upgrading Your Plan",
+      "lifetimeUpgradeMessage": "You're upgrading to the lifetime plan. You'll be redirected to checkout to complete your purchase.",
+      "startingPlan": "Starting Your Plan",
+      "startingPlanMessage": "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}",
+      "withCardMessage": "You'll be asked to provide your payment details, but won't be charged until your trial ends.",
+      "withoutCardMessage": "You can use basic features without providing payment information.",
+      "planChangeScheduled": "Plan Change Scheduled",
+      "planChangeScheduledMessage": "Your plan will be changed to monthly at the end of your current billing period on {{date}}.",
+      "planUpdated": "Plan Updated",
+      "planUpdatedMessage": "Your subscription has been changed to the {{plan}} plan. The changes will take effect immediately.",
+      "subscriptionUpdateFailed": "Subscription Update Failed",
+      "unexpectedError": "An unexpected error occurred while updating your subscription.",
+      "noActiveSubscription": "No active subscription found on your account. Please contact support for assistance.",
+      "billingCycleError": "Unable to change billing cycle. Please contact support for assistance with monthly and yearly plan changes.",
+      "paymentMethodError": "There was an issue with your payment method. Please update your payment information and try again.",
+      "permissionError": "You don't have permission to make this change. Please contact support for assistance.",
+      "prorationError": "There was an issue calculating your bill for the new plan. Please try again later or contact support.",
+      "specificError": "Failed to update your subscription: {{error}}",
+      "cancelNotice": "Your subscription will be canceled on {{date}}. You will have access until then.",
+      "continueToCheckout": "Continue to Checkout",
+      "gotIt": "Got It",
+      "nextBilling": "Next billing date",
+      "planDescription": "Complete solution for music producers",
+      "trialBanner": "You're currently on a {{trialDays}}-day free trial with full access to all premium features. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.",
+      "showingDefaultPrices": "Showing default prices.",
+      "loadingInvoices": "Loading invoices...",
+      "planChangeScheduled": "Plan Change Scheduled",
+      "planChangeScheduledMessage": "Your plan will be changed to monthly at the end of your current billing period on {{date}}.",
+      "planUpdated": "Plan Updated",
+      "planUpdatedMessage": "Your subscription has been changed to the {{plan}} plan. The changes will take effect immediately.",
+      "subscriptionUpdateFailed": "Subscription Update Failed",
+      "unexpectedError": "An unexpected error occurred while updating your subscription.",
+      "noActiveSubscription": "We couldn't find an active subscription for your account. Please contact support for assistance.",
+      "billingCycleError": "We couldn't change your billing cycle. Please contact support for assistance with changing between monthly and annual plans.",
+      "paymentMethodError": "There was an issue with your payment method. Please update your payment information and try again.",
+      "permissionError": "You don't have permission to make this change. Please contact support for assistance.",
+      "prorationError": "There was an issue calculating your bill for the new plan. Please try again later or contact support.",
+      "specificError": "Failed to update your subscription: {{error}}"
+    },
+    "downloads": {
+      "title": "Downloads",
+      "availableDownloads": "Available Downloads",
+      "version": "Version",
+      "platform": "Platform",
+      "size": "Size",
+      "releaseDate": "Release Date",
+      "downloadButton": "Download",
+      "noDownloads": "No downloads available",
+      "downloadingTitle": "Downloading...",
+      "downloadComplete": "Download Complete",
+      "installationInstructions": "Installation Instructions",
+      "systemRequirements": "System Requirements",
+      "installers": "Cymasphere Installers",
+      "macosTitle": "Cymasphere for macOS",
+      "macosDesc": "Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.",
+      "windowsTitle": "Cymasphere for Windows",
+      "windowsDesc": "Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).",
+      "updated": "Updated",
+      "updateDate": "March 10, 2023",
+      "downloadMacos": "Download for macOS",
+      "downloadWindows": "Download for Windows",
+      "resources": "Resources",
+      "quickStart": "Quick Start Guide",
+      "quickStartDesc": "Get up and running with Cymasphere in minutes",
+      "downloadPdf": "Download PDF"
+    },
+    "settings": {
+      "title": "Settings",
+      "preferences": "Preferences",
+      "theme": "Theme",
+      "language": "Language",
+      "notifications": "Notifications",
+      "emailNotifications": "Email Notifications",
+      "security": "Security",
+      "twoFactorAuth": "Two-Factor Authentication",
+      "changePassword": "Change Password",
+      "deleteAccount": "Delete Account",
+      "deleteWarning": "Delete Account Permanently",
+      "deleteDesc": "This action cannot be undone. All of your data will be permanently deleted.",
+      "dangerZone": "Danger Zone",
+      "saveSettings": "Save Settings",
+      "settingsUpdated": "Settings updated successfully",
+      "interfaceLanguage": "Interface Language",
+      "languageDesc": "Change the language used throughout the application",
+      "devices": "Active Devices",
+      "noDevices": "No active devices found",
+      "currentDevice": "Current Device",
+      "devicesInfo": "You're using {{current}} of {{max}} allowed devices",
+      "logoutAll": "Logout from All Other Devices",
+      "confirmLogout": "Confirm Logout",
+      "logoutFailed": "Logout Failed",
+      "logoutMessage": "You have been logged out from all devices.",
+      "logoutConfirmation": "Are you sure you want to sign out from all devices? This will end all your active sessions.",
+      "signOut": "Sign Out",
+      "logoutSuccess": "Logged Out Successfully",
+      "logoutError": "There was an error logging out from all devices. Please try again.",
+      "typeDelete": "Type \"DELETE\" to confirm:",
+      "timeNow": "Now",
+      "timeMinutes": "{{count}} min ago",
+      "timeHours": "{{count}} hr ago",
+      "timeDays": "{{count}} day ago",
+      "hour": "hr",
+      "hours": "hrs",
+      "day": "day",
+      "days": "days",
+      "deviceMobile": "Mobile",
+      "deviceTablet": "Tablet",
+      "deviceDesktop": "Desktop",
+      "deletionFailed": "Deletion Failed",
+      "deletionFailedError": "Account deletion failed: {{error}}",
+      "deletionProcessingError": "There was an error processing your account deletion. Please try again later.",
+      "confirmationRequired": "Confirmation Required",
+      "confirmationMessage": "Please type \"DELETE\" to confirm account deletion.",
+      "processingDeletion": "Processing Deletion Request",
+      "processingMessage": "Please wait while we process your account deletion request...",
+      "accountDeleted": "Account Deleted",
+      "accountDeletedMessage": "Your account has been successfully deleted. You will be redirected to the homepage."
+    }
+  },
+  "freeTrial": {
+    "startTrial": "Start Your Free Trial",
+    "enterEmail": "Enter your email address to start your {{days}}-day free trial {{requirement}}.",
+    "cardRequired": "(credit card required)",
+    "noCardRequired": "(no credit card required)"
+  },
+  "billing": {
+    "choosePlan": "Choose Your Plan",
+    "limitedOffer": "Limited Time Offer",
+    "startWithTrial": "Start with a {{days}}-day FREE trial on any plan!",
+    "trialExperience": "Experience all premium features without commitment. No credit card required to start.",
+    "yearlyToMonthly": "Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {{date}}.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save25": "Save 25%",
+    "lifetime": "Lifetime",
+    "bestValue": "Best Value",
+    "enterCardNow": "Enter card info now:",
+    "trialWithCard": "{{days}}-day trial - Add card on file",
+    "trialWithoutCard": "{{days}}-day trial - No credit card required",
+    "currentPlan": "Current Plan",
+    "proBadge": "PRO",
+    "afterTrial": "After your {{days}}-day free trial",
+    "percentDiscount": "{{percent}}% discount applied!",
+    "amountDiscount": "${{amount}} off!",
+    "firstPayment": "First payment: {{date}}",
+    "nextBilling": "Next billing: {{date}}",
+    "oneTimePurchase": "one-time purchase",
+    "purchased": "Purchased",
+    "allPlansInclude": "All Plans Include:",
+    "confirmationNote": "By confirming, you agree to the terms and pricing displayed above.",
+    "provideCard": "Provide payment method now for a {{days}}-day trial",
+    "cardTooltip": "Adding your payment method now extends your trial to 14 days instead of 7. You won't be charged until your trial ends.",
+    "chooseTrial": "Choose your free trial option:",
+    "noCharge": "(won't be charged until trial ends)"
+  },
+  "legal": {
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "legalInformation": "Legal Information",
+    "lastUpdated": "Last Updated",
+    "lastUpdatedDate": "May 28, 2025",
+    "contactInformation": "Contact Information",
+    "email": "Email",
+    "terms": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "content": "By accessing or using Cymasphere's services, website, or applications, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services."
+      },
+      "description": {
+        "title": "2. Description of Service",
+        "content": "Cymasphere provides music theory and composition tools through web and desktop applications. These services may change from time to time without prior notice."
+      },
+      "accounts": {
+        "title": "3. User Accounts",
+        "content": "Some features of our services require you to create an account. You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account."
+      },
+      "content": {
+        "title": "4. User Content",
+        "content": "You retain all rights to any content you create, upload, or share through our services. By uploading content, you grant Cymasphere a non-exclusive license to use, reproduce, and distribute your content solely to provide services to you."
+      },
+      "ip": {
+        "title": "5. Intellectual Property",
+        "content": "Cymasphere and its content, features, and functionality are owned by us and are protected by copyright, trademark, and other intellectual property laws."
+      },
+      "subscription": {
+        "title": "6. Subscription and Payments",
+        "content": "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees. Subscription fees are non-refundable except as required by law."
+      },
+      "termination": {
+        "title": "7. Termination",
+        "content": "We reserve the right to terminate or suspend your account and access to our services for violations of these terms or for any other reason at our discretion."
+      },
+      "disclaimer": {
+        "title": "8. Disclaimer of Warranties",
+        "content": "Our services are provided on an \"as is\" and \"as available\" basis. We make no warranties, expressed or implied, regarding the reliability, availability, or accuracy of our services."
+      },
+      "limitation": {
+        "title": "9. Limitation of Liability",
+        "content": "In no event shall Cymasphere be liable for any indirect, incidental, special, or consequential damages arising out of or in connection with your use of our services."
+      },
+      "changes": {
+        "title": "10. Changes to Terms",
+        "content": "We may modify these terms at any time. Continued use of our services after changes constitutes acceptance of the modified terms."
+      },
+      "governing": {
+        "title": "11. Governing Law",
+        "content": "These terms shall be governed by the laws of the jurisdiction in which Cymasphere operates, without regard to its conflict of law provisions."
+      },
+      "contact": {
+        "title": "12. Contact",
+        "content": "For questions about these terms, please contact us at support@cymasphere.com."
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. Introduction",
+        "content": "This Privacy Policy explains how Cymasphere collects, uses, and protects your personal information when you use our services. We respect your privacy and are committed to protecting your personal data."
+      },
+      "collect": {
+        "title": "2. Information We Collect",
+        "content": "We collect information you provide directly to us, such as your name, email address, and payment information when you register for an account. We also collect usage data and technical information about your device and how you interact with our services."
+      },
+      "use": {
+        "title": "3. How We Use Your Information",
+        "content": "We use your information to provide and improve our services, process transactions, communicate with you, and ensure security. We may also use your information for research and analytics to better understand how users interact with our services."
+      },
+      "sharing": {
+        "title": "4. Data Sharing and Disclosure",
+        "content": "We do not sell your personal information. We may share your information with third-party service providers who help us operate our services, process payments, or analyze data. We may also disclose your information if required by law."
+      },
+      "security": {
+        "title": "5. Data Security",
+        "content": "We implement appropriate security measures to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure."
+      },
+      "rights": {
+        "title": "6. Your Rights",
+        "content": "Depending on your location, you may have certain rights regarding your personal data, including the right to access, correct, delete, or restrict processing of your data. Please contact us to exercise these rights."
+      },
+      "cookies": {
+        "title": "7. Cookies and Tracking Technologies",
+        "content": "We use cookies and similar tracking technologies to enhance your experience, analyze usage, and collect information about how you interact with our services. You can control cookies through your browser settings."
+      },
+      "children": {
+        "title": "8. Children's Privacy",
+        "content": "Our services are not intended for children under 13. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child under 13, we will take steps to delete it."
+      },
+      "changes": {
+        "title": "9. Changes to This Privacy Policy",
+        "content": "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the \"Last Updated\" date."
+      },
+      "contact": {
+        "title": "10. Contact Us",
+        "content": "If you have questions about this Privacy Policy, please contact us at support@cymasphere.com."
+      }
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "Our Mission",
+      "content": "Cymasphere's mission is to make music theory accessible without requiring years of study or technical application to an instrument. We believe deep musical understanding should be within reach of all creators, not just classically trained musicians. Our tools are designed to remove traditional barriers to music creation while still offering creative freedom.",
+      "highlight": "We're committed to empowering creators of all levels by making the theoretical complexity of music intuitive and accessible. Our goal is to enable you to realize your creative vision without the years of study typically required."
+    },
+    "story": {
+      "title": "Our Story",
+      "content1": "Founded in 2022 by a team of dedicated musicians, software engineers, and music theorists, Cymasphere began as an ambitious project to reimagine how musicians interact with harmony and composition.",
+      "content2": "After years of frustration with existing music software that either lacked theoretical sophistication or were too complex for intuitive use, our founders set out to create a tool that would make music theory practical, visual, and genuinely useful in the creative process."
+    },
+    "team": {
+      "title": "Our Team",
+      "member1": {
+        "name": "David Chen",
+        "role": "Founder & Lead Developer"
+      },
+      "member2": {
+        "name": "Sarah Nguyen",
+        "role": "Music Theory Specialist"
+      },
+      "member3": {
+        "name": "Michael Park",
+        "role": "UI/UX Designer" 
+      },
+      "member4": {
+        "name": "Emma Rodriguez",
+        "role": "Product Manager"
+      }
+    },
+    "values": {
+      "title": "Our Values",
+      "intro": "At Cymasphere, we're guided by a set of core values that shape everything we do:",
+      "integrity": {
+        "title": "Musical Integrity",
+        "content": "We respect the principles of music theory while embracing innovation"
+      },
+      "design": {
+        "title": "Intuitive Design",
+        "content": "Our interfaces are visually clear and immediately understandable"
+      },
+      "freedom": {
+        "title": "Creative Freedom",
+        "content": "We provide guidance without limiting expression"
+      },
+      "learning": {
+        "title": "Continuous Learning",
+        "content": "Our tools help users develop their musical understanding"
+      }
+    },
+    "approach": {
+      "title": "Our Approach",
+      "intro": "Cymasphere takes a unique approach to music composition software by focusing on:",
+      "point1": "Visualizing harmony and voice leading in intuitive ways",
+      "point2": "Providing intelligent suggestions while respecting your creative direction",
+      "point3": "Integrating theoretical concepts seamlessly into the creative workflow",
+      "point4": "Building bridges between composition, arrangement, and production",
+      "conclusion": "We're constantly refining our approach based on user feedback and the latest developments in music technology. We believe in creating tools that grow with you and adapt to your evolving creative needs."
+    },
+    "future": {
+      "title": "Looking Forward",
+      "content1": "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more.",
+      "content2": "We invite you to join us on this journey and help shape the future of intelligent music creation tools."
+    }
+  },
+  "admin": {
+    "title": "Admin Console",
+    "dashboard": "Admin Dashboard",
+    "crm": "CRM",
+    "supportTickets": "Support Tickets",
+    "users": "Users",
+    "analytics": "Analytics",
+    "settings": "Admin Settings",
+    "crmPage": {
+      "title": "Customer Relationship Management",
+      "subtitle": "Manage customer relationships and interactions",
+      "totalUsers": "Total Users",
+      "activeSubscriptions": "Active Subscriptions",
+      "revenue": "Monthly Revenue",
+      "searchPlaceholder": "Search users by name, email, or ID...",
+      "filters": {
+        "all": "All Users",
+        "free": "Free Users",
+        "monthly": "Monthly Subscribers",
+        "annual": "Annual Subscribers",
+        "lifetime": "Lifetime Users",
+        "admin": "Admin Users"
+      },
+      "userTable": {
+        "name": "Name",
+        "email": "Email",
+        "subscription": "Subscription",
+        "joinDate": "Join Date",
+        "lastLogin": "Last Login",
+        "actions": "Actions"
+      },
+      "userActions": {
+        "viewProfile": "View Profile",
+        "editUser": "Edit User",
+        "sendEmail": "Send Email",
+        "changeSubscription": "Change Subscription",
+        "deleteUser": "Delete User"
+      }
+    },
+    "supportTickets": {
+      "title": "Support Tickets",
+      "subtitle": "Manage customer support requests and issues",
+      "totalTickets": "Total Tickets",
+      "openTickets": "Open Tickets",
+      "avgResponseTime": "Avg Response Time",
+      "createTicket": "Create Ticket",
+      "searchPlaceholder": "Search tickets by subject, user, or ticket ID...",
+      "filters": {
+        "all": "All Tickets",
+        "open": "Open",
+        "inProgress": "In Progress",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      },
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "ticketTable": {
+        "id": "Ticket ID",
+        "subject": "Subject",
+        "user": "User",
+        "status": "Status",
+        "priority": "Priority",
+        "created": "Created",
+        "lastUpdate": "Last Update",
+        "assignedTo": "Assigned To",
+        "actions": "Actions"
+      },
+      "ticketActions": {
+        "view": "View Ticket",
+        "reply": "Reply",
+        "assign": "Assign",
+        "changeStatus": "Change Status",
+        "changePriority": "Change Priority",
+        "close": "Close Ticket"
+      }
+    }
   }
 } 

@@ -1,39 +1,63 @@
 {
   "common": {
-    "play": "Play",
-    "stop": "Stop",
-    "generate": "Generate",
-    "save": "Save",
-    "cancel": "Cancel",
-    "loading": "Loading...",
-    "learnMore": "Learn More"
+    "play": "再生",
+    "stop": "停止",
+    "generate": "生成",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "loading": "読み込み中...",
+    "learnMore": "詳細",
+    "login": "ログイン",
+    "signUp": "登録",
+    "logout": "ログアウト",
+    "myAccount": "マイアカウント",
+    "navigation": "ナビゲーション",
+    "backToHome": "ホームに戻る",
+    "email": "メール",
+    "password": "パスワード",
+    "close": "閉じる",
+    "confirm": "確認",
+    "locale": "ja-JP",
+    "unknownError": "不明なエラー",
+    "notAvailable": "利用不可",
+    "none": "なし",
+    "continue": "続ける",
+    "processing": "処理中...",
+    "emailAddress": "メールアドレス",
+    "emailPlaceholder": "あなたの@メール.com",
+    "goToLogin": "ログインへ",
+    "errors": {
+      "emailRequired": "メールアドレスを入力してください",
+      "invalidEmail": "有効なメールアドレスを入力してください",
+      "unexpectedError": "予期せぬエラーが発生しました。もう一度お試しください。"
+    }
   },
   "header": {
-    "home": "Home",
-    "features": "Features",
-    "howItWorks": "How It Works",
-    "testimonials": "Testimonials",
-    "demo": "Demo",
-    "pricing": "Pricing",
-    "faq": "FAQ",
-    "contact": "Contact",
-    "download": "Download",
-    "tryDemo": "Try Demo"
+    "home": "ホーム",
+    "features": "機能",
+    "howItWorks": "使い方",
+    "testimonials": "お客様の声",
+    "demo": "デモ",
+    "pricing": "料金",
+    "faq": "よくある質問",
+    "contact": "お問い合わせ",
+    "download": "ダウンロード",
+    "tryDemo": "デモを試す"
   },
   "hero": {
-    "title": "Generate Music With AI",
-    "titlePartA": "Intelligent",
-    "titlePartB": "Creation",
-    "subtitle": "Revitalize your music production with powerful tools that inspire creativity and elevate your sound. The all-in-one suite for producers who demand professional results.",
-    "cta": "Try It Now",
+    "title": "AIで音楽を作成",
+    "titlePartA": "インテリジェント",
+    "titlePartB": "クリエーション",
+    "subtitle": "音楽制作の次なる進化へ。理論的基盤が目に見えずにワークフローを導き、コードとメロディが目的を持って結びつき、あなた独自の音楽的ビジョンを強化します。",
+    "cta": "今すぐ試す",
     "titleWords": {
-      "music": "Music",
-      "song": "Song",
-      "chord": "Chord",
-      "pattern": "Pattern",
-      "progression": "Progression",
-      "voicing": "Voicing",
-      "harmony": "Harmony"
+      "music": "音楽",
+      "song": "曲",
+      "chord": "コード",
+      "pattern": "パターン",
+      "progression": "進行",
+      "voicing": "ボイシング",
+      "harmony": "ハーモニー"
     },
     "chords": {
       "cMajor": "C Major",
@@ -45,37 +69,128 @@
       "gMajor": "G Major"
     },
     "tooltips": {
-      "playNote": "Click to play this note",
-      "playChord": "Click to play the chord"
+      "playNote": "クリックして音を再生",
+      "playChord": "クリックしてコードを再生"
     }
   },
   "features": {
-    "title": "Features",
-    "subtitle": "Discover what Cymasphere can do for you",
-    "aiComposition": "AI Composition",
-    "aiCompositionDesc": "Generate music with the click of a button using our advanced AI",
-    "livePerformance": "Live Performance",
-    "livePerformanceDesc": "Play and perform with the synthesizer in real-time",
-    "customSounds": "Custom Sounds",
-    "customSoundsDesc": "Create and save your own custom sound presets"
+    "title": "機能",
+    "subtitle": "Cymasphereがあなたにできることを発見しよう",
+    "aiComposition": "AI作曲",
+    "aiCompositionDesc": "高度なAIを使ってボタン一つで音楽を生成",
+    "livePerformance": "ライブパフォーマンス",
+    "livePerformanceDesc": "シンセサイザーでリアルタイムに演奏",
+    "customSounds": "カスタムサウンド",
+    "customSoundsDesc": "独自のサウンドプリセットを作成して保存",
+    "sectionTitle": "パワフルな機能",
+    "songBuilder": {
+      "title": "ソングビルダー",
+      "description": "トラック、進行、ハーモニーパレットをひとつの直感的なワークスペースで組み合わせ、スムーズな作曲を実現します。",
+      "modalTitle": "ソングビルダー - 中心的なワークスペース",
+      "modalDescription": "ソングビルダーはCymasphereの中心部分で、音楽のすべての要素を整理して組み合わせることができます。トラック、進行、ハーモニーパレットがどのように連携して完全な作曲物を作り上げるかを見てみましょう。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "直感的なインターフェース - 曲のすべての要素を視覚的に明確に整理",
+        "柔軟な組み合わせ - トラック、コード、パターンを自由に組み合わせ",
+        "アレンジツール - 曲の構造を簡単に操作",
+        "DAW互換性 - 作品を他のプラットフォームに簡単にエクスポート",
+        "テンポコントロール - スピードとリズムをリアルタイムで調整",
+        "セクション構成 - 明確なバース、コーラス、ブリッジを作成"
+      ]
+    },
+    "harmonyPalettes": {
+      "title": "ハーモニーパレット",
+      "description": "流動的な音楽表現のための触覚的なジェスチャーインターフェースを通じて、メロディとコードを形作ります。",
+      "modalTitle": "ハーモニーパレット - 直感的な音楽表現",
+      "modalDescription": "ハーモニーパレットは、音楽を探索し形作るための触覚的かつ視覚的なアプローチを提供します。直感的なジェスチャーを使って、視覚的に豊かな環境でコード進行とメロディを作成しましょう。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "ジェスチャーインターフェース - 自然な動きでコードと音符を操作",
+        "和声の視覚化 - コードと調性の関係を視覚的に確認",
+        "スタイルプリセット - 様々なジャンルに合わせて音楽的雰囲気を素早く調整",
+        "AIベースの提案 - インテリジェントな和声の推奨を受ける",
+        "簡単な転調 - 調性を容易に変更",
+        "音楽分析 - 音楽の理論的基盤を視覚的に理解"
+      ]
+    },
+    "patternEditor": {
+      "title": "ダイナミックパターンエディター",
+      "description": "コード変更にリアルタイムで適応するインテリジェントな音楽パターンを作成します。",
+      "modalTitle": "ダイナミックパターンエディター - リアルタイム適応",
+      "modalDescription": "ダイナミックパターンエディターは音楽パターン作成を再定義します。従来のシーケンサーとは異なり、パターンがコードや進行に対して知的に適応し、基礎となる和声に関わらず一貫した音楽を可能にします。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "和声適応 - 音符がコード変更に自動的に調整される",
+        "相対的パターン - 固定音符ではなくスケール度数に基づいて作成",
+        "リズム変化 - タイミングとダイナミクスを動的に変更",
+        "インテリジェントな音楽規則 - 理論的原則を自動的に尊重",
+        "ジャンル別プリセット - スタイル固有のリズムテンプレートにアクセス",
+        "グラフィカル編集 - パターン作成のための直感的な視覚インターフェース"
+      ]
+    },
+    "voicingGenerator": {
+      "title": "ボイシングジェネレーター",
+      "description": "コード進行を、プロフェッショナルな声部進行と和声制御による豊かで表現力豊かなボイシングに変換します。",
+      "modalTitle": "ボイシングジェネレーター - 和声の豊かさ",
+      "modalDescription": "ボイシングジェネレーターは、シンプルなコード進行を豊かでニュアンスのある和声アレンジに変換します。スタイルと和声テクスチャーに対する精密な制御でプロフェッショナルな声部進行を即座に実現します。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "プロフェッショナルな声部進行 - コード間の滑らかで自然な音符の動き",
+        "複数のスタイル - ジャズ、クラシック、ポップなど様々な和声アプローチを探求",
+        "制御された緊張感 - ボイシングの複雑さと不協和音を調整",
+        "適応型音域 - 異なる楽器に合わせて音域を最適化",
+        "インテリジェントな転回 - より良いサウンドのための自動的な音符の配置",
+        "カスタムボイシング - お気に入りのボイシングを将来の使用のために保存"
+      ]
+    },
+    "progressionTimeline": {
+      "title": "進行タイムライン",
+      "description": "ゴーストトラックから学び、強力な再和声化ツールで既存の曲を変換します。",
+      "modalTitle": "進行タイムライン - 時間的和声構造",
+      "modalDescription": "進行タイムラインでは、音楽の和声構造を時間の流れの中で視覚化し操作することができます。既存の曲から学び、進行を再和声化し、和声のバリエーションを精密に探索します。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "時間的視覚化 - 時間経過に伴うコード変更の明確な表現",
+        "ガイドトラック - 既存の曲の進行から学ぶ",
+        "再和声化ツール - 代替コードで既存の進行を変換",
+        "コード提案 - 進行のためのインテリジェントな推奨を受ける",
+        "セクションマーカー - 構造的な目印で曲を整理",
+        "機能分析 - 進行内の各コードの役割を理解"
+      ]
+    },
+    "voiceHandling": {
+      "title": "高度な声部処理",
+      "description": "声部数、相互作用、MIDI ルーティングを制御して、アレンジの柔軟性を完全に確保します。",
+      "modalTitle": "高度な声部処理 - アレンジの完全制御",
+      "modalDescription": "高度な声部処理では、音楽内の個々の声部のあらゆる側面に対する精密な制御を提供します。声部の数、相互作用、ルーティングなどを定義し、前例のないアレンジの柔軟性を実現します。",
+      "keyFeatures": "主な機能",
+      "features": [
+        "柔軟な声部構成 - 声部の数とタイプを正確に制御",
+        "インテリジェントMIDIルーティング - 異なる声部を異なるチャンネルと楽器に送信",
+        "相互作用ルール - 声部同士がどのように相互作用するかを定義",
+        "自動対位法 - 補完的なメロディラインを作成",
+        "音符フィルタリング - 声部を特定の音域や音符に制限",
+        "アンサンブル構成 - 異なる編成のためのプリセットアレンジ"
+      ]
+    }
   },
   "synth": {
-    "title": "Intelligent Chord Voicing Generator",
-    "description": "Create lush, beautiful chords with the press of a button.",
-    "chordSequence": "Chord Sequence",
-    "generateMelody": "Generate Melody",
-    "playChordSequence": "Play Chord Sequence",
-    "stopAll": "Stop All",
-    "playBoth": "Play Both",
-    "generateRandomProgression": "Random Progression",
-    "generateRandomSongName": "Random Name",
-    "synthesizerTitle": "Synthesizer",
-    "synthesizerDesc": "Create and play musical patterns",
-    "songName": "Song Name",
-    "trackName": "Track Name",
-    "trackNamePlaceholder": "e.g., Piano, Melody, Bassline",
-    "trackNameHint": "Each track represents a different instrument or sound in your song",
-    "trackIllustration": "Think of tracks like layers in your musical arrangement - they'll play together to create your full song.",
+    "title": "インテリジェントコードボイシングジェネレーター",
+    "description": "ボタン一つで豊かで美しいコードを作成。",
+    "chordSequence": "コード進行",
+    "generateMelody": "メロディを生成",
+    "playChordSequence": "コード進行を再生",
+    "stopAll": "すべて停止",
+    "playBoth": "両方を再生",
+    "generateRandomProgression": "ランダム進行",
+    "generateRandomSongName": "ランダム名",
+    "synthesizerTitle": "シンセサイザー",
+    "synthesizerDesc": "音楽パターンを作成して演奏",
+    "songName": "曲名",
+    "trackName": "トラック名",
+    "trackNamePlaceholder": "例: ピアノ、メロディ、ベースライン",
+    "trackNameHint": "各トラックは曲の中の異なる楽器や音を表します",
+    "trackIllustration": "トラックは音楽アレンジのレイヤーのように考えてください - それらが一緒に演奏されてフルの曲を作ります。",
     "chords": {
       "cMajor": "Cmaj7",
       "dMinor": "Dmin7",
@@ -87,34 +202,34 @@
     },
     "wizard": {
       "step1": {
-        "title": "Step 1: Song Creation",
-        "description": "Start your creative journey by naming your musical piece.",
-        "namePlaceholder": "Enter a name for your song",
-        "nameHint": "This will be the title of your musical creation",
-        "illustration": "Every great piece of music starts with a name. What will you call yours?"
+        "title": "ステップ1: 曲の作成",
+        "description": "音楽作品に名前をつけて創造的な旅を始めましょう。",
+        "namePlaceholder": "曲名を入力してください",
+        "nameHint": "これはあなたの音楽作品のタイトルになります",
+        "illustration": "すべての偉大な音楽は名前から始まります。あなたの作品には何という名前をつけますか？"
       },
       "step2": {
-        "title": "Step 2: Chord Progression",
-        "description": "Create the harmonic foundation for your song \"{songName}\".",
-        "chordSequence": "Chord Sequence",
-        "instruction": "Choose chords from the bank below and add them to your progression."
+        "title": "ステップ2: コード進行",
+        "description": "あなたの曲「{songName}」のための和声の基礎を作りましょう。",
+        "chordSequence": "コード進行",
+        "instruction": "下のコードバンクからコードを選んで進行に追加してください。"
       },
       "step3": {
-        "title": "Step 3: Track Creation",
-        "description": "Name your first instrument track within \"{songName}\".",
-        "progression": "Your Progression:"
+        "title": "ステップ3: トラック作成",
+        "description": "「{songName}」の中の最初の楽器トラックに名前をつけてください。",
+        "progression": "あなたの進行:"
       },
       "step4": {
-        "title": "Step 4: Pattern Creation",
-        "description": "Create a melody pattern for your \"{trackName}\" track in \"{songName}\"."
+        "title": "ステップ4: パターン作成",
+        "description": "「{songName}」の「{trackName}」トラックのメロディパターンを作成してください。"
       },
-      "nextToProgression": "Continue to Chord Progression",
-      "nextToTrack": "Continue to Track Creation",
-      "nextToPattern": "Continue to Pattern Creation",
-      "backToSong": "Back to Song Creation",
-      "backToProgression": "Back to Chord Progression",
-      "backToTrack": "Back to Track Creation",
-      "finish": "Finish",
+      "nextToProgression": "コード進行へ進む",
+      "nextToTrack": "トラック作成へ進む",
+      "nextToPattern": "パターン作成へ進む",
+      "backToSong": "曲作成に戻る",
+      "backToProgression": "コード進行に戻る",
+      "backToTrack": "トラック作成に戻る",
+      "finish": "完了",
       "congratsMessage": "おめでとうございます！Cymasphereの強力な音楽作成機能の一部を体験いただきました。\"{songName}\"という曲名と\"{trackName}\"というトラックは始まりに過ぎません。プラットフォーム全体を探索して、高度な機能、AI駆動の作曲ツール、そしてあなたの音楽的アイデアを現実に変える専門的なオーディオ制作機能をお試しください。"
     },
     "notes": {
@@ -127,23 +242,854 @@
       "B": "B"
     },
     "chordTypes": {
-      "major": "Major",
-      "minor": "Minor",
-      "diminished": "Diminished",
-      "augmented": "Augmented",
-      "seventh": "Seventh"
+      "major": "メジャー",
+      "minor": "マイナー",
+      "diminished": "ディミニッシュ",
+      "augmented": "オーギュメント",
+      "seventh": "セブンス"
+    }
+  },
+  "howItWorks": {
+    "title": "使い方",
+    "subtitle": "簡単な音楽作成",
+    "createSubtitle": "パワフルなツールで音楽を作曲",
+    "learnSubtitle": "お気に入りの曲を簡単にマスター",
+    "integrateSubtitle": "既存のワークフローと連携",
+    "tabs": {
+      "create": "作成",
+      "learn": "学習",
+      "integrate": "統合"
+    },
+    "createWorkflow": {
+      "step1": {
+        "title": "コード進行から始める",
+        "description": "事前に作成されたテンプレートから始めるか、ハーモニーパレットからボイシングをドラッグして、簡単に独自のコード進行を構築します。アプリは自動的にスケールとモードを分析し、音楽が適切な理論原則に従うことを保証します。"
+      },
+      "step2": {
+        "title": "複数のトラックをレイヤー化",
+        "description": "インテリジェントに連携する複数のトラックで豊かな作曲を作成します。ハーモニー、メロディ、リズムを追加 - すべてがコード進行と同期し、調和的に互換性があります。"
+      },
+      "step3": {
+        "title": "精密にカスタマイズ",
+        "description": "詳細なカスタマイズであなたのサウンドを微調整します。転回、ボイシング密度、テンションノート、和声拡張を調整して、シンプルな三和音から複雑なジャズハーモニーまであらゆるものを作成します。"
+      },
+      "step4": {
+        "title": "インテリジェントな音楽性",
+        "description": "スムーズなコード移行を確保するインテリジェントな声部進行により、プロレベルの音楽性を体験します。以前は訓練された音楽家のみが利用できた作曲ツールにアクセスし、自信を持って洗練されたハーモニーを作成することができます。"
+      }
+    },
+    "learnWorkflow": {
+      "step1": {
+        "title": "ゴーストトラック学習",
+        "description": "あなたの演奏をガイドするインタラクティブなゴーストトラックを通じてコード進行をマスターします。リアルタイムでリハーモナイゼーションを試し、アプリがあなたの創造的な選択に適応しながら音楽的な一貫性を維持するのを観察します。"
+      },
+      "step2": {
+        "title": "インタラクティブな和声分析",
+        "description": "あなたの音楽の背後にある理論を明らかにする包括的な和声ディスプレイを探索します。ボイシング、パターン、スケール、コードをリアルタイムで視覚化し、あなたの創作物の音楽構造への深い洞察を得ます。"
+      },
+      "step3": {
+        "title": "パターンベースの学習",
+        "description": "シンプルなパターンから始めて、異なるスケールとコードの質を探索しながら、それが発展するのを観察します。アプリの視覚的フィードバックは、各音符が全体のハーモニーにどのように貢献するかを理解するのに役立ち、パターンエディターは変化を試し、音楽的直感を構築することができます。"
+      },
+      "step4": {
+        "title": "スキルを磨く",
+        "description": "異なるコード代替とモードインターチェンジを試すことで音楽的耳を向上させます。和声の選択を洗練させるにつれて、コードの質感と進行についてより深い理解を発展させ、自然に技術的スキルと創造的な声の両方を築きます。"
+      }
+    },
+    "integrateWorkflow": {
+      "step1": {
+        "title": "DAW互換性",
+        "description": "CymasphereをスタンドアロンアプリケーションとしてまたはDAW内のVST/AUプラグインとして使用します。独立してアイデアをスケッチするか、プロダクションに直接統合するかにかかわらず、アプリはあなたの好みのワークフローに適応します。"
+      },
+      "step2": {
+        "title": "マルチトラックコントロール",
+        "description": "複数のトラックを同時に管理し、それぞれが独自の独立した声部設定とパターンを持ちます。DAW内の別々のトラックに異なる音楽要素を割り当てることで、豊かな階層化されたアレンジメントを作成します。"
+      },
+      "step3": {
+        "title": "ボイスチャンネルマトリックス",
+        "description": "チャンネルマトリックスを使用して各声部がどこに送信されるかを正確に制御します。個々の声部を特定のMIDIチャンネルにルーティングし、楽器の割り当てと声部の配分について完全な制御を提供します。"
+      },
+      "step4": {
+        "title": "シームレスなワークフロー",
+        "description": "Cymasphereを強力な和声とパターンジェネレーターとしてプロダクションプロセスに統合します。これを使用して素早くアイデアをスケッチし、複雑な進行を開発し、DAWの楽器に直接供給される音楽パターンを作成します。"
+      }
     }
   },
   "footer": {
-    "copyright": "© 2023 Cymasphere. All rights reserved.",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service"
+    "product": "製品",
+    "company": "企業情報",
+    "legal": "法的情報",
+    "support": "サポート",
+    "copyright": "© {{year}} Cymasphere. すべての権利を保有。",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "description": "Cymasphereは、プロデューサー、作曲家、ミュージシャン、教育者、学生のためのインタラクティブな音楽作曲ツールです。",
+    "navigation": "ナビゲーション",
+    "account": "アカウント",
+    "accountDashboard": "アカウントダッシュボード",
+    "aboutUs": "会社概要",
+    "termsConditions": "利用規約と条件",
+    "byNNAudio": "NNAudio製"
   },
   "language": {
     "en": "English",
     "es": "Español",
     "fr": "Français",
+    "it": "Italiano",
     "de": "Deutsch",
+    "pt": "Português",
     "ja": "日本語"
+  },
+  "pricing": {
+    "title": "価格とプラン",
+    "currencySymbol": "$",
+    "subtitle": "あなたのニーズに合わせた柔軟なオプション",
+    "simpleTransparent": "シンプルで透明性のある価格設定",
+    "chooseOption": "最適な請求オプションを選択してください。",
+    "allFeatures": "すべてのオプションで全機能へのアクセスが含まれています。",
+    "monthly": "月額",
+    "yearly": "年額",
+    "lifetime": "生涯",
+    "mostFlexible": "最も柔軟",
+    "payMonthly": "月払い、いつでもキャンセル可能",
+    "save": "節約",
+    "withYearlyBilling": "年間請求で",
+    "bestValue": "最高の価値",
+    "oneTimePayment": "一回払い、生涯アクセス",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "billed": "年間請求",
+    "oneTimePurchase": "一回購入",
+    "proSolution": "ミュージシャンのための完全な作曲スイート",
+    "allPlansInclude": "すべてのプランに含まれるもの：",
+    "features": [
+      "マルチトラック管理を備えたソングビルダー",
+      "インテリジェントパターンエディタとコード適応",
+      "ジェスチャー式ハーモニーパレットインターフェース",
+      "高度な声部進行とコードボイシング",
+      "インタラクティブなコード進行タイムライン",
+      "完全な声部とレンジコントロール",
+      "スタンドアロンアプリとDAWプラグインサポート",
+      "リアルタイムコード再和声化ツール",
+      "総合的なアレンジメントビュー",
+      "カスタムボイシング生成エンジン",
+      "クラウドストレージとプロジェクトバックアップ",
+      "プレミアムサポートと将来のすべてのアップデート"
+    ],
+    "freeTrial": {
+      "title": "最大14日間無料で試す",
+      "description": "2つの試用オプションですべてのプレミアム機能を体験してください。",
+      "options": "カードなしで7日間、またはカード登録で14日間を選択できます。",
+      "chooseFree": "無料トライアルオプションを選択：",
+      "withCard": "14日間トライアル - カード登録",
+      "noCharge": "（トライアル終了まで課金されません）",
+      "noCard": "7日間トライアル - クレジットカード不要",
+      "startNow": "今すぐ始める",
+      "startTrial": "トライアル開始",
+      "or": "または"
+    },
+    "processing": "処理中",
+    "upgradeNow": "今すぐアップグレード",
+    "buyNow": "今すぐ購入"
+  },
+  "faq": {
+    "title": "よくある質問",
+    "subtitle": "Cymasphereに関する一般的な質問への回答",
+    "questions": [
+      {
+        "question": "Cymasphereとは何ですか？",
+        "answer": "Cymasphereは、スタンドアロンアプリケーションとしてもDAW用プラグイン（AU＆VST3）としても利用可能な完全な楽曲制作スイートです。和声とメロディの両方を作曲するための統合ツールを提供し、インテリジェントなコードボイシング、メロディパターン構築、インタラクティブな視覚化機能を備え、あらゆるスキルレベルの人が音楽理論に直感的にアクセスできるようにしています。"
+      },
+      {
+        "question": "Cymasphereはミュージシャンにどのような問題を解決しますか？",
+        "answer": "Cymasphereは、説得力のあるコード進行の作成、補完的なメロディの開発、スムーズな声部進行の構築、音楽的なインスピレーションの発見など、一般的な作曲上の課題に対応します。音楽理論の知識と実践的な応用の間のギャップを埋め、作曲プロセス全体をあらゆるスキルレベルのプロデューサーにとってより直感的でアクセスしやすいものにします。"
+      },
+      {
+        "question": "ソングビルダーはどのように作曲を支援しますか？",
+        "answer": "ソングビルダーは、すべての音楽要素が集まる中心的な創造的ハブです。コード進行を配置し、メロディパターンを作成し、複数のトラックを持つ完全な曲構造を構築できます。このシステムには、プロフェッショナルなトランスポートコントロール、インタラクティブなタイムライン、トラックごとの設定を持つマルチトラック管理、そして発展する作曲の全体的な視点を提供する包括的なアレンジメントビューが含まれています。"
+      },
+      {
+        "question": "インタラクティブハーモニーパレットはどのように機能しますか？",
+        "answer": "インタラクティブハーモニーパレットは、コードの関係を探索するための視覚的で直感的なインターフェースを提供します。開始コードを選択するだけで、パレットは調和的に関連するオプションを表示し、説得力のある進行を作成することが簡単になります。ボイシングをタイムラインに直接ドラッグアンドドロップし、瞬時にキーを移調し、個人的な和声ボキャブラリーを開発するためのカスタムコードバンクを作成できます。"
+      },
+      {
+        "question": "メロディパターンコンストラクターの特徴は何ですか？",
+        "answer": "メロディパターンコンストラクターは、コード進行を補完する説得力のあるメロディを開発するのに役立ちます。和声的な選択に基づいて文脈的に適切なメロディパターンを提案し、異なるリズムバリエーションを試すことができ、記憶に残るテーマを作成するための直感的なツールを提供します。システムはコード変更が発生した時にメロディコンテンツをインテリジェントに適応させ、作曲全体を通して音楽的一貫性を維持します。"
+      },
+      {
+        "question": "パターンはどのようにコード変更に適応しますか？",
+        "answer": "Cymasphereのダイナミックパターンエディターは、インテリジェントなアルゴリズムを使用してメロディパターンをコード進行にリアルタイムで適応させます。コードを変更すると、システムは自動的にパターンを調整して和声的な一貫性を維持しながらメロディの音楽的意図を保持します。これは相対モードと絶対モードの両方で機能し、コンテキストを意識したメロディや必要に応じて固定されたメロディコンテンツを作成する柔軟性を提供します。"
+      },
+      {
+        "question": "ボイシングジェネレーターの特徴は何ですか？",
+        "answer": "ボイシングジェネレーターは、適切な声部進行の原則に従った豊かで音楽的に満足のいくコードボイシングを作成するための高度なアルゴリズムを使用しています。コード進行を分析して、ボイシングの幅、密度、転回、ハーモニック拡張のコントロールを備えたコード間のスムーズな声部遷移を確保します。設定はグローバルに適用したり、作曲の特定のセクションに合わせて調整したりすることができます。"
+      },
+      {
+        "question": "スタンドアロンアプリとプラグインの違いは何ですか？",
+        "answer": "スタンドアロンアプリとプラグインバージョンは同じコア機能と機能性を共有しています。スタンドアロンアプリは独立して動作し、集中的な作曲と探索に最適である一方、プラグインはDAWに直接統合されてシームレスな制作ワークフローを提供します。創造的なプロセスに最適なバージョンを選択したり、ニーズに応じて両方を使用したりできます。"
+      },
+      {
+        "question": "Cymasphereプラグインと互換性のあるDAWは何ですか？",
+        "answer": "Cymasphereプラグイン（AU＆VST3形式で利用可能）は、Logic Pro、Ableton Live、FL Studio、Cubase、Studio One、Reaper、Bitwig、Digital Performerなど、ほとんどの主要DAWと互換性があります。macOSとWindowsの両方のプラットフォームがサポートされています。"
+      },
+      {
+        "question": "Cymasphereは初心者に適していますか？",
+        "answer": "もちろんです！Cymasphereは経験豊富な作曲家のための高度な機能を提供する一方で、直感的なインターフェースにより音楽理論を初心者にもアクセスしやすくし、和声とメロディの概念を視覚的に理解するのに役立ちます。ツールのインタラクティブな性質は実験と実践による学習を奨励し、出発点に関係なく作曲スキルを開発するための優れたプラットフォームになります。"
+      },
+      {
+        "question": "Cymasphereを使用するには音楽理論の知識が必要ですか？",
+        "answer": "いいえ、それがCymasphereの強みの一つです！Cymasphereは、創作しながら音楽理論の理解を深めるためのハーモニックプレイグラウンドとして設計されています。視覚的なインターフェースは、作曲時に音楽的関係を理解するのに役立ち、複雑な理論的概念を初心者にも直感的に理解しやすくします。これは強力な創造ツールであると同時に、スキルを開発するにつれて成長する優れた学習リソースでもあります。"
+      },
+      {
+        "question": "購入前にCymasphereを試すにはどうすればいいですか？",
+        "answer": "Cymasphereは無料トライアルオプションで試すことができます。クレジットカードを必要としない7日間の無料トライアル、または登録したカード（トライアル終了まで課金されません）で14日間の無料トライアルを提供しています。どちらのオプションも、サブスクリプションプランを決定する前にCymasphereが提供するすべてを探索できるよう、すべてのプレミアム機能への完全なアクセスを提供します。"
+      },
+      {
+        "question": "アップデートに追加料金はかかりますか？",
+        "answer": "いいえ、すべてのCymasphereのお客様は、追加料金なしで最新バージョンのソフトウェアにアクセスできます。これには、一回の購入の一部として将来のすべてのアップデートを受け取るライフタイムライセンス保持者も含まれます。私たちは、すべてのユーザーが楽しめるソフトウェアを継続的に改善し、新機能を追加することに取り組んでいます。"
+      },
+      {
+        "question": "Cymasphereのユーザーマニュアルはありますか？",
+        "answer": "いいえ、すべてのヘルプはアプリ内のヘルプマネージャーに直接組み込まれており、新機能を簡単に探索して学ぶことができます。質問、バグレポート、その他のお問い合わせは、Discordサーバーまたはsupport@cymasphere.comにメールでお問い合わせください。"
+      }
+    ]
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "subtitle": "ご質問やご意見をお寄せください。お聞かせいただけると幸いです",
+    "description": "ぜひご連絡ください！機能や料金についてのご質問、またはフィードバックを共有したい場合など、弊社チームがお手伝いします。フォームにご記入いただければ、できるだけ早くご返信いたします。",
+    "emailInfo": "また、直接メールでもお問い合わせいただけます",
+    "nameLabel": "お名前",
+    "emailLabel": "メールアドレス",
+    "subjectLabel": "件名",
+    "messageLabel": "メッセージ",
+    "submitButton": "メッセージを送信",
+    "sending": "送信中...",
+    "successMessage": "ありがとうございます！メッセージが正常に送信されました。",
+    "errorMessage": "申し訳ありません！問題が発生しました。もう一度お試しください。"
+  },
+  "login": {
+    "subtitle": "アカウントにアクセスするにはログインしてください",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "loggingIn": "ログイン中...",
+    "loginButton": "ログイン",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "signUp": "登録する",
+    "errors": {
+      "userNotFound": "このメールアドレスでアカウントが見つかりません。まず登録してください。",
+      "invalidCredentials": "パスワードが正しくありません。もう一度お試しください。",
+      "invalidEmail": "無効なメールフォーマットです。",
+      "rateLimit": "ログイン試行回数が多すぎます。後でもう一度お試しいただくか、パスワードをリセットしてください。",
+      "generic": "ログインに失敗しました：{{message}}",
+      "unknown": "ログインに失敗しました：{{message}}"
+    }
+  },
+  "signup": {
+    "title": {
+      "createAn": "アカウントを",
+      "account": "作成"
+    },
+    "firstName": "名",
+    "lastName": "姓",
+    "firstNamePlaceholder": "名",
+    "lastNamePlaceholder": "姓",
+    "emailPlaceholder": "メールアドレスを入力してください",
+    "emailLinkedToPurchase": "このメールはあなたの購入に紐づいており、変更できません",
+    "passwordPlaceholder": "安全なパスワードを作成してください",
+    "confirmPassword": "パスワードの確認",
+    "confirmPasswordPlaceholder": "パスワードを確認してください",
+    "agreeToTerms": "私は",
+    "termsOfService": "利用規約",
+    "and": "と",
+    "privacyPolicy": "プライバシーポリシーに同意します",
+    "creatingAccount": "アカウント作成中...",
+    "createAccount": "アカウントを作成",
+    "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
+    "login": "ログイン",
+    "errors": {
+      "passwordsDoNotMatch": "パスワードが一致しません",
+      "passwordTooShort": "パスワードは少なくとも6文字必要です",
+      "agreeTerms": "利用規約とプライバシーポリシーに同意する必要があります",
+      "generic": "{{message}}",
+      "unknown": "{{message}}"
+    }
+  },
+  "resetPassword": {
+    "title": "パスワードをリセット",
+    "description": "メールアドレスを入力すると、パスワードリセットの手順をお送りします。",
+    "backToLogin": "ログインに戻る",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "登録済みのメールアドレスを入力",
+    "sendLink": "リセットリンクを送信",
+    "sendingLink": "送信中...",
+    "rememberPassword": "パスワードを思い出しましたか？",
+    "login": "ログイン",
+    "successMessage": "このメールアドレスでアカウントが存在する場合、パスワードリセットの手順を送信しました。受信トレイとスパムフォルダを確認してください。",
+    "errors": {
+      "userNotFound": "このメールアドレスを持つユーザーが見つかりません",
+      "invalidEmail": "無効なメールアドレス形式です",
+      "rateLimit": "パスワードリセットの試行回数が多すぎます。数分待ってから再試行してください。",
+      "generic": "パスワードリセットメールの送信に失敗しました。もう一度お試しください。"
+    }
+  },
+  "dashboard": {
+    "layout": {
+      "dashboard": "ダッシュボード",
+      "profile": "プロフィール",
+      "billing": "請求",
+      "downloads": "ダウンロード",
+      "settings": "設定",
+      "backToSite": "サイトに戻る",
+      "backToHome": "ホームに戻る",
+      "logout": "ログアウト",
+      "loading": "ダッシュボードを読み込み中..."
+    },
+    "main": {
+      "welcome": "おかえりなさい、{{name}}様",
+      "welcomeSubtitle": "CYMASPHEREアカウントの概要はこちらです",
+      "pleaseSignIn": "ダッシュボードにアクセスするにはログインしてください",
+      "deviceConnections": "デバイス接続",
+      "activeDevices": "アクティブなデバイス接続",
+      "subscriptionStatus": "サブスクリプション状態",
+      "memberSince": "登録日",
+      "nextBilling": "次回請求日",
+      "accountInfo": "アカウント情報",
+      "yourAccount": "あなたのアカウント",
+      "trialEnding": "無料トライアル期間終了まで",
+      "days": "日",
+      "subscribeNow": "今すぐ登録",
+      "statusActive": "アクティブ",
+      "statusInactive": "非アクティブ",
+      "statusTrial": "トライアル",
+      "freeTrialBadge": "{{trialDays}}日間トライアル",
+      "manageSubscription": "サブスクリプション管理",
+      "contactSupport": "サポートに問い合わせ",
+      "needHelp": "アカウントに関するヘルプが必要ですか？質問がありますか？",
+      "contactHelpText": "サポートチームがお客様のご質問や問題を解決するためにお手伝いします。",
+      "supportHelpText": "サポートチームがお客様のご質問や問題を解決するためにお手伝いします。",
+      "sendMessage": "メッセージを送信",
+      "messageSent": "メッセージ送信完了",
+      "messageReceived": "メッセージを受け取りました。まもなくご返信いたします。",
+      "close": "閉じる",
+      "error": "エラー",
+      "fillAllFields": "すべてのフィールドを入力してください",
+      "messageError": "メッセージの送信に失敗しました。後でもう一度お試しください。",
+      "gotIt": "了解",
+      "subscription": "サブスクリプション",
+      "membership": "メンバーシップ",
+      "free": "無料",
+      "upgradeToPro": "プロにアップグレードして全機能にアクセス",
+      "lifetimeAccess": "生涯無料アップデート付き",
+      "nextPayment": "次回支払い",
+      "futurePayments": "今後の支払い",
+      "amountOnDate": "${{amount}} {{date}}",
+      "onDate": "{{date}}に",
+      "firstPayment": "${{amount}}.00（{{date}}）",
+      "devices": "接続デバイス",
+      "devicesCount": "{{count}}／5台のデバイスが接続されています",
+      "trial": "トライアル",
+      "trialActive": "トライアルが有効です",
+      "trialDaysLeft": "無料トライアル期間はあと{{days}}日です",
+      "trialStatus": "トライアル状態",
+      "daysRemaining": "残り{{days}}日",
+      "renewalDate": "更新日",
+      "trialMessage": "現在、{{trialDays}}日間の無料トライアルですべてのプレミアム機能に完全にアクセスできます。トライアル終了まで支払いはありません。",
+      "lifetimeMessage": "生涯メンバーシップと生涯無料アップデートをお持ちです。すべてのプレミアム機能と特典を永続的にお楽しみください。",
+      "activeSubscriptionMessage": "{{plan}}サブスクリプションはアクティブです。すべてのプレミアム機能と特典をお楽しみください。",
+      "upgradeMessage": "アップグレードしてプレミアム機能と高度なオーディオ処理機能をご利用ください。",
+      "fullAccess": "現在、すべてのプレミアム機能に完全にアクセスできます：",
+      "featureAdvancedChords": "高度なコード進行",
+      "featureUnlimitedSaves": "無制限の進行保存",
+      "featureMIDI": "MIDIエクスポート＆インポート",
+      "featureCloudStorage": "クラウドストレージ",
+      "noPaymentNeeded": "トライアル終了後も基本機能を使用するのに支払いは不要です。",
+      "plan": "現在のプラン",
+      "monthly": "月額",
+      "annual": "年額",
+      "lifetime": "生涯",
+      "price": "価格",
+      "purchasedOn": "購入日",
+      "freeAccountBasicFeatures": "無料アカウントには基本機能が含まれています。アップグレードして完全なアクセスを取得：",
+      "premiumFeatures": "アカウントに含まれるプレミアム機能：",
+      "upgradeNow": "今すぐアップグレード",
+      "getStarted": "始める",
+      "manageBilling": "サブスクリプション管理",
+      "support": "サポート",
+      "supportAvailability": "24時間365日",
+      "premiumSupport": "プレミアムサポート利用可能",
+      "supportIntro": "アカウントのヘルプが必要ですか？Cymasphereについて質問がありますか？メッセージをお送りください。できるだけ早くご返信します。",
+      "yourName": "お名前",
+      "yourEmail": "メールアドレス",
+      "message": "メッセージ",
+      "sending": "送信中..."
+    },
+    "profile": {
+      "title": "マイプロフィール",
+      "personalInfo": "個人情報",
+      "firstName": "名",
+      "lastName": "姓",
+      "saveChanges": "変更を保存",
+      "passwordSection": "パスワード変更",
+      "sendResetEmail": "パスワードリセットメールを送信",
+      "profileUpdated": "プロフィール情報が正常に更新されました！",
+      "errorUpdating": "プロフィールの更新中にエラーが発生しました：{{error}}",
+      "passwordResetSent": "パスワードリセットメールを送信しました！受信ボックスを確認してください。",
+      "noEmailFound": "パスワードリセット用のメールアドレスが見つかりません",
+      "tooManyAttempts": "パスワードリセットの試行回数が多すぎます。数分待ってから再試行してください。",
+      "errorSendingReset": "リセットメール送信中にエラーが発生しました：{{error}}",
+      "unexpectedError": "予期しないエラーが発生しました：{{error}}"
+    }
+  },
+  "billing": {
+    "choosePlan": "プランを選択",
+    "limitedOffer": "期間限定オファー",
+    "startWithTrial": "どのプランでも{{days}}日間の無料トライアルから始めましょう！",
+    "trialExperience": "コミットメントなしですべてのプレミアム機能を体験できます。開始にクレジットカードは不要です。",
+    "yearlyToMonthly": "現在年間請求でサブスクリプションをご利用いただいています。月額プランに変更する場合、変更は現在の請求期間が{{date}}に終了した後に有効になります。",
+    "monthly": "月額",
+    "yearly": "年額",
+    "save25": "25%節約",
+    "lifetime": "ライフタイム",
+    "bestValue": "最もお得",
+    "currentPlan": "現在のプラン",
+    "proBadge": "PRO",
+    "afterTrial": "{{days}}日間の無料トライアル後",
+    "firstPayment": "初回支払い: {{date}}",
+    "nextBilling": "次回請求日: {{date}}",
+    "purchased": "購入済み",
+    "allPlansInclude": "すべてのプランに含まれるもの:",
+    "confirmationNote": "確認することで、上記に表示された条件と価格に同意したことになります。",
+    "chooseTrial": "無料トライアルオプションを選択:",
+    "trialWithCard": "{{days}}日間トライアル - カード情報を登録",
+    "noCharge": "(トライアル終了まで請求されません)",
+    "trialWithoutCard": "{{days}}日間トライアル - クレジットカード不要",
+    "withoutCardMessage": "支払い情報を提供せずに基本機能を使用できます。",
+    "planChangeScheduled": "プラン変更のスケジュール",
+    "planChangeScheduledMessage": "プランは現在の請求期間の終了時、{{date}}に月額に変更されます。",
+    "planUpdated": "プラン更新完了",
+    "planUpdatedMessage": "サブスクリプションが{{plan}}プランに変更されました。変更はすぐに有効になります。",
+    "subscriptionUpdateFailed": "サブスクリプションの更新に失敗しました",
+    "unexpectedError": "サブスクリプションの更新中に予期しないエラーが発生しました。",
+    "noActiveSubscription": "アカウントにアクティブなサブスクリプションが見つかりません。サポートにお問い合わせください。",
+    "billingCycleError": "請求サイクルを変更できませんでした。月額と年額プランの変更についてはサポートにお問い合わせください。",
+    "paymentMethodError": "お支払い方法に問題がありました。お支払い情報を更新して再試行してください。",
+    "permissionError": "この変更を行う権限がありません。サポートにお問い合わせください。",
+    "prorationError": "新しいプランの請求計算に問題がありました。後でもう一度試すか、サポートにお問い合わせください。",
+    "specificError": "サブスクリプションの更新に失敗しました: {{error}}",
+    "cancelNotice": "サブスクリプションは{{date}}にキャンセルされます。それまでアクセスできます。",
+    "continueToCheckout": "チェックアウトに進む",
+    "gotIt": "了解"
+  },
+  "dashboard": {
+    "layout": {
+      "dashboard": "ダッシュボード",
+      "profile": "プロフィール",
+      "billing": "請求",
+      "downloads": "ダウンロード",
+      "settings": "設定",
+      "backToSite": "サイトに戻る",
+      "backToHome": "ホームに戻る",
+      "logout": "ログアウト",
+      "loading": "ダッシュボードを読み込み中...",
+      "account": "アカウント",
+      "welcomeUser": "{{name}}",
+      "emailLabel": "{{email}}"
+    },
+    "main": {
+      "welcome": "おかえりなさい、{{name}}さん！",
+      "welcomeSubtitle": "CYMASPHEREアカウントの概要です",
+      "pleaseSignIn": "ダッシュボードにアクセスするにはサインインしてください",
+      "deviceConnections": "デバイス接続",
+      "activeDevices": "アクティブなデバイス接続",
+      "subscriptionStatus": "サブスクリプション状況",
+      "memberSince": "メンバー登録日",
+      "nextBilling": "次回請求日",
+      "accountInfo": "アカウント情報",
+      "yourAccount": "あなたのアカウント",
+      "trialEnding": "無料トライアル終了まで",
+      "days": "日",
+      "subscribeNow": "今すぐ登録",
+      "statusActive": "アクティブ",
+      "statusInactive": "非アクティブ",
+      "statusTrial": "トライアル",
+      "freeTrialBadge": "{{trialDays}}日間トライアル",
+      "manageSubscription": "サブスクリプション管理",
+      "contactSupport": "サポートに連絡",
+      "needHelp": "アカウントのヘルプが必要ですか？",
+      "contactHelpText": "サポートチームがご質問や問題についてサポートいたします。",
+      "supportHelpText": "サポートチームがご質問や問題についてサポートいたします。",
+      "sendMessage": "メッセージを送信",
+      "messageSent": "メッセージ送信完了",
+      "messageReceived": "メッセージを受信しました。すぐに返信いたします。",
+      "close": "閉じる",
+      "error": "エラー",
+      "fillAllFields": "すべてのフィールドを入力してください",
+      "messageError": "メッセージの送信に失敗しました。後でもう一度お試しください。",
+      "gotIt": "了解",
+      "subscription": "サブスクリプション",
+      "membership": "メンバーシップ",
+      "free": "無料",
+      "upgradeToPro": "フルアクセスのためにProにアップグレード",
+      "lifetimeAccess": "生涯無料アップデート付き",
+      "nextPayment": "次回支払い",
+      "futurePayments": "今後の支払い",
+      "amountOnDate": "${{amount}} {{date}}",
+      "onDate": "{{date}}に",
+      "firstPayment": "${{amount}}.00 {{date}}に",
+      "devices": "接続デバイス",
+      "devicesCount": "5台中{{count}}台のデバイスが接続中",
+      "trial": "トライアル",
+      "trialActive": "トライアルがアクティブです",
+      "trialDaysLeft": "無料トライアル残り{{days}}日",
+      "trialStatus": "トライアル状況",
+      "daysRemaining": "残り{{days}}日",
+      "renewalDate": "更新日",
+      "trialMessage": "現在{{trialDays}}日間の無料トライアル中で、すべてのプレミアム機能にフルアクセスできます。トライアル終了まで支払いはありません。",
+      "lifetimeMessage": "生涯無料アップデート付きのライフタイムメンバーシップをお持ちです。すべてのプレミアム機能と特典を永続的にお楽しみください。",
+      "activeSubscriptionMessage": "{{plan}}サブスクリプションがアクティブです。すべてのプレミアム機能と特典をお楽しみください。",
+      "upgradeMessage": "プレミアム機能と高度なオーディオ処理機能のロックを解除するためにアップグレードしてください。",
+      "fullAccess": "現在、すべてのプレミアム機能にフルアクセスできます：",
+      "featureAdvancedChords": "高度なコード進行",
+      "featureUnlimitedSaves": "無制限の進行保存",
+      "featureMIDI": "MIDIエクスポート＆インポート",
+      "featureCloudStorage": "クラウドストレージ",
+      "noPaymentNeeded": "トライアル終了後も基本機能を使用するのに支払いは不要です。",
+      "plan": "現在のプラン",
+      "monthly": "月額",
+      "annual": "年額",
+      "lifetime": "ライフタイム",
+      "price": "価格",
+      "purchasedOn": "購入日",
+      "freeAccountBasicFeatures": "無料アカウントには基本機能が含まれています。アップグレードして完全なアクセスを取得：",
+      "premiumFeatures": "アカウントに含まれるプレミアム機能：",
+      "upgradeNow": "今すぐアップグレード",
+      "getStarted": "始める",
+      "manageBilling": "サブスクリプション管理",
+      "support": "サポート",
+      "supportAvailability": "24時間365日",
+      "premiumSupport": "プレミアムサポート利用可能",
+      "supportIntro": "アカウントのヘルプが必要ですか？Cymasphereについて質問がありますか？メッセージをお送りください。できるだけ早くご返信します。",
+      "yourName": "お名前",
+      "yourEmail": "メールアドレス",
+      "message": "メッセージ",
+      "sending": "送信中..."
+    },
+    "profile": {
+      "title": "マイプロフィール",
+      "personalInfo": "個人情報",
+      "firstName": "名",
+      "lastName": "姓",
+      "saveChanges": "変更を保存",
+      "passwordSection": "パスワード変更",
+      "sendResetEmail": "パスワードリセットメールを送信",
+      "profileUpdated": "プロフィール情報が正常に更新されました！",
+      "errorUpdating": "プロフィールの更新中にエラーが発生しました：{{error}}",
+      "passwordResetSent": "パスワードリセットメールを送信しました！受信ボックスを確認してください。",
+      "noEmailFound": "パスワードリセット用のメールアドレスが見つかりません",
+      "tooManyAttempts": "パスワードリセットの試行回数が多すぎます。数分待ってから再試行してください。",
+      "errorSendingReset": "リセットメール送信中にエラーが発生しました：{{error}}",
+      "unexpectedError": "予期しないエラーが発生しました：{{error}}"
+    },
+    "billing": {
+      "title": "請求とサブスクリプション",
+      "currentPlan": "現在のプラン",
+      "paymentHistory": "支払い履歴",
+      "upgradeDowngrade": "アップグレード/ダウングレード",
+      "cancelSubscription": "サブスクリプションをキャンセル",
+      "reactivateSubscription": "サブスクリプションを再開",
+      "paymentMethods": "支払い方法",
+      "addPaymentMethod": "支払い方法を追加",
+      "noPaymentHistory": "支払い履歴はありません",
+      "transactionId": "取引ID",
+      "date": "日付",
+      "amount": "金額",
+      "status": "状態",
+      "freePlan": "無料",
+      "freePlanDesc": "基本機能への限定アクセス",
+      "noPlan": "なし",
+      "noPlanDesc": "アクティブなサブスクリプションなし",
+      "monthly": "月額",
+      "yearly": "年額",
+      "month": "月",
+      "year": "年",
+      "lifetimePlan": "ライフタイム",
+      "lifetimePlanDesc": "生涯無料アップデート付きですべての機能に永続アクセス",
+      "paidPlanDesc": "すべてのプレミアム機能とコンテンツへのフルアクセス",
+      "subscribePlan": "プランに登録する",
+      "changePlan": "プラン変更",
+      "manageBilling": "請求管理",
+      "paid": "支払い済み",
+      "unpaid": "未払い",
+      "viewReceipt": "表示",
+      "noTransactions": "取引履歴はありません",
+      "redirectingPortal": "請求ポータルにリダイレクト中...",
+      "error": "エラー",
+      "portalAccessError": "請求ポータルへのアクセスに失敗しました：{{error}}",
+      "errorOccurred": "エラーが発生しました：{{error}}",
+      "upgradingPlan": "プランをアップグレード",
+      "lifetimeUpgradeMessage": "ライフタイムプランにアップグレードしています。購入を完了するためにチェックアウトに移動します。",
+      "startingPlan": "プランを開始",
+      "startingPlanMessage": "{{plan}}プランの{{trialDays}}日間無料トライアルを開始します。{{paymentMessage}}",
+      "withCardMessage": "お支払い情報の入力が求められますが、トライアル終了まで請求されません。",
+      "withoutCardMessage": "支払い情報を提供しなくても基本機能を使用できます。",
+      "planChangeScheduled": "プラン変更のスケジュール",
+      "planChangeScheduledMessage": "プランは現在の請求期間の終了時、{{date}}に月額に変更されます。",
+      "planUpdated": "プラン更新完了",
+      "planUpdatedMessage": "サブスクリプションが{{plan}}プランに変更されました。変更はすぐに有効になります。",
+      "subscriptionUpdateFailed": "サブスクリプションの更新に失敗しました",
+      "unexpectedError": "サブスクリプションの更新中に予期しないエラーが発生しました。",
+      "noActiveSubscription": "アカウントにアクティブなサブスクリプションが見つかりません。サポートにお問い合わせください。",
+      "billingCycleError": "請求サイクルを変更できませんでした。月額と年額プランの変更についてはサポートにお問い合わせください。",
+      "paymentMethodError": "お支払い方法に問題がありました。お支払い情報を更新して再試行してください。",
+      "permissionError": "この変更を行う権限がありません。サポートにお問い合わせください。",
+      "prorationError": "新しいプランの請求計算に問題がありました。後でもう一度試すか、サポートにお問い合わせください。",
+      "specificError": "サブスクリプションの更新に失敗しました: {{error}}",
+      "cancelNotice": "サブスクリプションは{{date}}にキャンセルされます。それまでアクセスできます。",
+      "continueToCheckout": "チェックアウトに進む",
+      "gotIt": "了解",
+      "nextBilling": "次回請求日",
+      "planDescription": "音楽プロデューサー向けの完全ソリューション",
+      "trialBanner": "現在{{trialDays}}日間の無料トライアル中で、すべてのプレミアム機能にフルアクセスできます。残り{{daysLeft}}日。初回支払い${{amount}}は{{date}}です。",
+      "showingDefaultPrices": "デフォルト価格を表示中。"
+    },
+    "downloads": {
+      "title": "ダウンロード",
+      "availableDownloads": "利用可能なダウンロード",
+      "version": "バージョン",
+      "platform": "プラットフォーム",
+      "size": "サイズ",
+      "releaseDate": "リリース日",
+      "downloadButton": "ダウンロード",
+      "noDownloads": "利用可能なダウンロードはありません",
+      "downloadingTitle": "ダウンロード中...",
+      "downloadComplete": "ダウンロード完了",
+      "installationInstructions": "インストール手順",
+      "systemRequirements": "システム要件",
+      "installers": "Cymasphereインストーラー",
+      "macosTitle": "macOS用Cymasphere",
+      "macosDesc": "Apple SiliconとIntelプロセッサの両方に対応したmacOS用ユニバーサルインストーラー（スタンドアロンアプリとプラグイン：AU、VST3）",
+      "windowsTitle": "Windows用Cymasphere",
+      "windowsDesc": "Windows 10/11用の完全インストーラー（スタンドアロンアプリとVST3プラグイン形式を含む）",
+      "updated": "更新日",
+      "updateDate": "2023年3月10日",
+      "downloadMacos": "macOS版をダウンロード",
+      "downloadWindows": "Windows版をダウンロード",
+      "resources": "リソース",
+      "quickStart": "クイックスタートガイド",
+      "quickStartDesc": "Cymasphereを数分で使い始める",
+      "downloadPdf": "PDFをダウンロード"
+    },
+    "settings": {
+      "title": "設定",
+      "preferences": "設定",
+      "theme": "テーマ",
+      "language": "言語",
+      "notifications": "通知",
+      "emailNotifications": "メール通知",
+      "security": "セキュリティ",
+      "twoFactorAuth": "二要素認証",
+      "changePassword": "パスワード変更",
+      "deleteAccount": "アカウント削除",
+      "deleteWarning": "アカウントを完全に削除",
+      "deleteDesc": "この操作は元に戻せません。すべてのデータが完全に削除されます。",
+      "dangerZone": "危険ゾーン",
+      "saveSettings": "設定を保存",
+      "settingsUpdated": "設定が正常に更新されました",
+      "interfaceLanguage": "インターフェース言語",
+      "languageDesc": "アプリケーション全体で使用される言語を変更する",
+      "devices": "アクティブなデバイス",
+      "noDevices": "アクティブなデバイスが見つかりません",
+      "currentDevice": "現在のデバイス",
+      "devicesInfo": "許可されている{{max}}台中{{current}}台のデバイスを使用中",
+      "logoutAll": "他のすべてのデバイスからログアウト",
+      "confirmLogout": "ログアウトの確認",
+      "logoutFailed": "ログアウト失敗",
+      "logoutMessage": "すべてのデバイスからログアウトしました。",
+      "logoutConfirmation": "すべてのデバイスからサインアウトしますか？これによりすべてのアクティブなセッションが終了します。",
+      "signOut": "サインアウト",
+      "logoutSuccess": "正常にログアウトしました",
+      "logoutError": "すべてのデバイスからのログアウト中にエラーが発生しました。もう一度お試しください。",
+      "typeDelete": "確認のために「DELETE」と入力してください：",
+      "timeNow": "今",
+      "timeMinutes": "{{count}}分前",
+      "timeHours": "{{count}}時間前",
+      "timeDays": "{{count}}日前",
+      "hour": "時間",
+      "hours": "時間",
+      "day": "日",
+      "days": "日",
+      "deviceMobile": "モバイル",
+      "deviceTablet": "タブレット",
+      "deviceDesktop": "デスクトップ",
+      "deletionFailed": "削除に失敗しました",
+      "deletionFailedError": "アカウント削除に失敗しました: {{error}}",
+      "deletionProcessingError": "アカウント削除の処理中にエラーが発生しました。後でもう一度お試しください。",
+      "confirmationRequired": "確認が必要です",
+      "confirmationMessage": "アカウント削除を確認するには「DELETE」と入力してください。",
+      "processingDeletion": "削除リクエストを処理中",
+      "processingMessage": "アカウント削除リクエストを処理している間お待ちください...",
+      "accountDeleted": "アカウントが削除されました",
+      "accountDeletedMessage": "アカウントは正常に削除されました。ホームページにリダイレクトされます。"
+    }
+  },
+  "legal": {
+    "termsOfService": "利用規約",
+    "privacyPolicy": "プライバシーポリシー",
+    "legalInformation": "法的情報",
+    "lastUpdated": "最終更新日",
+    "lastUpdatedDate": "2025年5月28日",
+    "terms": {
+      "acceptance": {
+        "title": "1. 規約の同意",
+        "content": "Cymasphereのサービス、ウェブサイト、またはアプリケーションにアクセスまたは使用することにより、あなたはこれらの利用規約に拘束されることに同意するものとします。これらの条件に同意しない場合は、当社のサービスを使用しないでください。"
+      },
+      "description": {
+        "title": "2. サービスの説明",
+        "content": "Cymasphereは、ウェブおよびデスクトップアプリケーションを通じて音楽理論と作曲ツールを提供しています。これらのサービスは、予告なく変更される場合があります。"
+      },
+      "accounts": {
+        "title": "3. ユーザーアカウント",
+        "content": "当社のサービスの一部の機能を使用するには、アカウントを作成する必要があります。あなたは、アカウント情報の機密性を維持し、アカウント下で発生するすべての活動に責任を負います。"
+      },
+      "content": {
+        "title": "4. ユーザーコンテンツ",
+        "content": "あなたは、当社のサービスを通じて作成、アップロード、または共有するコンテンツのすべての権利を保持します。コンテンツをアップロードすることにより、あなたはCymasphereに対し、あなたにサービスを提供する目的のみにあなたのコンテンツを使用、複製、配布する非独占的ライセンスを付与します。"
+      },
+      "ip": {
+        "title": "5. 知的財産",
+        "content": "Cymasphereおよびそのコンテンツ、機能、機能性は当社が所有し、著作権、商標、その他の知的財産法によって保護されています。"
+      },
+      "subscription": {
+        "title": "6. サブスクリプションと支払い",
+        "content": "Cymasphereには様々なサブスクリプションプランがあります。サブスクリプションに登録することにより、適用される料金を支払うことに同意するものとします。サブスクリプション料金は、法律で要求される場合を除き、返金されません。"
+      },
+      "termination": {
+        "title": "7. 終了",
+        "content": "当社は、これらの条件に違反した場合や当社の裁量によるその他の理由で、あなたのアカウントおよび当社のサービスへのアクセスを終了または停止する権利を留保します。"
+      },
+      "disclaimer": {
+        "title": "8. 保証の免責",
+        "content": "当社のサービスは「現状のまま」および「利用可能な状態で」提供されます。当社は、当社のサービスの信頼性、可用性、または正確性に関して、明示的または黙示的を問わず、いかなる保証も行いません。"
+      },
+      "limitation": {
+        "title": "9. 責任の制限",
+        "content": "いかなる場合も、Cymasphereは、当社のサービスの使用に起因または関連して生じる間接的、偶発的、特別、または結果的損害について責任を負いません。"
+      },
+      "changes": {
+        "title": "10. 規約の変更",
+        "content": "当社はいつでもこれらの条件を変更することがあります。変更後も当社のサービスを継続して使用することは、変更された条件の承諾を構成します。"
+      },
+      "governing": {
+        "title": "11. 準拠法",
+        "content": "これらの条件は、その抵触法の規定にかかわらず、Cymasphereが運営する管轄の法律に準拠するものとします。"
+      },
+      "contact": {
+        "title": "12. お問い合わせ",
+        "content": "これらの条件に関するご質問は、support@cymasphere.comまでお問い合わせください。"
+      }
+    },
+    "privacy": {
+      "intro": {
+        "title": "1. はじめに",
+        "content": "このプライバシーポリシーは、Cymasphereが当社のサービスを使用する際にあなたの個人情報をどのように収集、使用、保護するかを説明しています。当社はあなたのプライバシーを尊重し、個人データの保護に取り組んでいます。"
+      },
+      "collect": {
+        "title": "2. 収集する情報",
+        "content": "当社は、アカウント登録時にあなたが直接提供する名前、メールアドレス、支払い情報などの情報を収集します。また、あなたのデバイスや当社のサービスとの対話方法に関する使用データや技術情報も収集します。"
+      },
+      "use": {
+        "title": "3. 情報の使用方法",
+        "content": "当社は、サービスの提供と改善、取引の処理、あなたとのコミュニケーション、セキュリティの確保のためにあなたの情報を使用します。また、ユーザーが当社のサービスとどのように対話するかをより理解するために、調査と分析にあなたの情報を使用することもあります。"
+      },
+      "sharing": {
+        "title": "4. データの共有と開示",
+        "content": "当社はあなたの個人情報を販売しません。当社は、サービスの運営、支払いの処理、データの分析を支援するサードパーティサービスプロバイダーとあなたの情報を共有する場合があります。また、法律で要求される場合にもあなたの情報を開示することがあります。"
+      },
+      "security": {
+        "title": "5. データセキュリティ",
+        "content": "当社はあなたの個人情報を保護するための適切なセキュリティ対策を実施しています。ただし、インターネットを介した送信や電子ストレージの方法は100%安全ではありません。"
+      },
+      "rights": {
+        "title": "6. あなたの権利",
+        "content": "あなたの所在地によっては、あなたの個人データに関して、データへのアクセス、修正、削除、処理の制限などの特定の権利を持つ場合があります。これらの権利を行使するには、当社までお問い合わせください。"
+      },
+      "cookies": {
+        "title": "7. クッキーとトラッキング技術",
+        "content": "当社は、あなたの体験を向上させ、利用状況を分析し、当社のサービスとの対話方法に関する情報を収集するために、クッキーや類似のトラッキング技術を使用しています。ブラウザの設定を通じてクッキーを制御することができます。"
+      },
+      "children": {
+        "title": "8. 子どものプライバシー",
+        "content": "当社のサービスは13歳未満の子どもを対象としていません。当社は、13歳未満の子どもから意図的に情報を収集することはありません。13歳未満の子どもから情報を収集したことが判明した場合、当社はその削除のための措置を講じます。"
+      },
+      "changes": {
+        "title": "9. このプライバシーポリシーの変更",
+        "content": "当社は随時このプライバシーポリシーを更新する場合があります。変更がある場合は、このページに新しいポリシーを掲載し、「最終更新日」を更新することであなたに通知します。"
+      },
+      "contact": {
+        "title": "10. お問い合わせ",
+        "content": "このプライバシーポリシーに関するご質問は、support@cymasphere.comまでお問い合わせください。"
+      }
+    }
+  },
+  "aboutUs": {
+    "mission": {
+      "title": "私たちの使命",
+      "content": "Cymasphereの使命は、何年もの勉強や楽器への技術的応用を必要とせずに音楽理論を誰もが利用できるようにすることです。私たちは、深い音楽的理解は訓練された音楽家だけでなく、すべてのクリエイターにとって手の届くものであるべきだと考えています。当社のツールは、創造的自由を提供しながら、音楽制作における伝統的な障壁を取り除くように設計されています。",
+      "highlight": "私たちは、音楽の理論的複雑さを直感的でアクセスしやすいものにすることで、あらゆるレベルのクリエイターに力を与えることに取り組んでいます。私たちの目標は、通常必要とされる長年の勉強なしにあなたの創造的なビジョンを実現できるようにすることです。"
+    },
+    "story": {
+      "title": "私たちの物語",
+      "content1": "2022年に熱心な音楽家、ソフトウェアエンジニア、音楽理論家のチームによって設立されたCymasphereは、音楽家がハーモニーと作曲とどのように関わるかを再構想する野心的なプロジェクトとして始まりました。",
+      "content2": "既存の音楽ソフトウェアが理論的な洗練さを欠いていたり、直感的な使用には複雑すぎたりすることへの長年の不満から、私たちの創設者たちは音楽理論を実践的、視覚的、そして創造的プロセスの中で本当に役立つものにするツールを作ることを決意しました。"
+    },
+    "values": {
+      "title": "私たちの価値観",
+      "intro": "Cymasphereでは、私たちの行動すべてを形作る一連の核となる価値観によって導かれています：",
+      "integrity": {
+        "title": "音楽的誠実さ",
+        "content": "私たちは音楽理論の原則を尊重しながらも革新を受け入れています"
+      },
+      "design": {
+        "title": "直感的なデザイン",
+        "content": "私たちのインターフェースは視覚的に明確で即座に理解できます"
+      },
+      "freedom": {
+        "title": "創造的自由",
+        "content": "私たちは表現を制限することなくガイダンスを提供します"
+      },
+      "learning": {
+        "title": "継続的な学習",
+        "content": "私たちのツールはユーザーが音楽的理解を発展させるのを助けます"
+      }
+    },
+    "approach": {
+      "title": "私たちのアプローチ",
+      "intro": "Cymasphereは以下に焦点を当てることで、音楽作曲ソフトウェアに対するユニークなアプローチを採用しています：",
+      "point1": "ハーモニーと声部進行を直感的に可視化する",
+      "point2": "あなたの創造的な方向性を尊重しながらインテリジェントな提案を提供する",
+      "point3": "理論的概念をクリエイティブなワークフローにシームレスに統合する",
+      "point4": "作曲、アレンジ、制作の間に橋を築く",
+      "conclusion": "私たちは、ユーザーからのフィードバックと音楽技術の最新の発展に基づいて、常にアプローチを洗練させています。私たちは、あなたと共に成長し、進化するクリエイティブなニーズに適応するツールを作ることを信じています。"
+    },
+    "future": {
+      "title": "未来への展望",
+      "intro": "Cymasphereは以下に焦点を当てた音楽作曲ソフトウェアに独自のアプローチを取っています：",
+      "point1": "ハーモニーとボイスリーディングを直感的に視覚化する",
+      "point2": "あなたの創造的方向性を尊重しながら、知的な提案を提供する",
+      "point3": "理論的概念をクリエイティブワークフローにシームレスに統合する",
+      "point4": "作曲、編曲、制作の間の橋を築く",
+      "conclusion": "私たちは、ユーザーフィードバックや最新の音楽技術の発展に基づいて、常にアプローチを洗練させています。私たちは、あなたと共に成長し、あなたの進化する創造的ニーズに適応するツールを作成することを信じています。"
+    },
+    "future": {
+      "title": "未来を見据えて",
+      "content1": "Cymasphereの開発を続ける中で、私たちは音楽創造の未来に興奮しています。私たちのロードマップには、主要なDAWとの高度な統合、拡張されたハーモニーパレット、より深いAIアシスト作曲機能などが含まれています。",
+      "content2": "私たちはあなたをこの旅に招待し、インテリジェントな音楽創造ツールの未来を形作るのを助けることを歓迎します。"
+    }
+  },
+  "freeTrial": {
+    "startTrial": "無料トライアルを開始",
+    "enterEmail": "{{days}}日間の無料トライアルを開始するには、メールアドレスを入力してください{{requirement}}。",
+    "cardRequired": "(クレジットカードが必要)",
+    "noCardRequired": "(クレジットカード不要)"
   }
 } 

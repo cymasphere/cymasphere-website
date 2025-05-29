@@ -124,6 +124,7 @@ function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
+  const isTrial = searchParams.get("isTrial") === "true";
 
   const handleContinue = () => {
     if (isSignedUp) {
@@ -154,13 +155,28 @@ function CheckoutSuccessContent() {
         transition={{ duration: 0.5 }}
       >
         <SuccessIcon />
-        <Title>Payment Successful!</Title>
-        <Subtitle>Thank you for your purchase</Subtitle>
-        <Message>
-          {isSignedUp
-            ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
-            : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
-        </Message>
+        
+        {isTrial ? (
+          <>
+            <Title>Trial Started!</Title>
+            <Subtitle>Welcome to Cymasphere Pro</Subtitle>
+            <Message>
+              {isSignedUp
+                ? "Your free trial has been successfully activated. You can now explore all the premium features of Cymasphere Pro."
+                : "Your free trial has been successfully activated. To start using Cymasphere Pro, you'll need to create your account."}
+            </Message>
+          </>
+        ) : (
+          <>
+            <Title>Payment Successful!</Title>
+            <Subtitle>Thank you for your purchase</Subtitle>
+            <Message>
+              {isSignedUp
+                ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
+                : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
+            </Message>
+          </>
+        )}
 
         <BackButton onClick={handleContinue}>
           {isSignedUp ? "Go to Downloads" : "Create Your Account"}
@@ -177,7 +193,7 @@ export default function CheckoutSuccess() {
         <LoadingSpinner
           size="large"
           fullScreen={true}
-          text="Processing payment..."
+          text="Processing checkout..."
         />
       }
     >

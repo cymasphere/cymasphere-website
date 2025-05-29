@@ -1,8 +1,14 @@
 "use client";
 
+import React from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import NextHeader from "@/components/layout/NextHeader";
+import Footer from "@/components/layout/Footer";
+import { usePathname } from "next/navigation";
 
 // Theme configuration
 const theme = {
@@ -33,15 +39,92 @@ const theme = {
   },
 };
 
-export default function ClientLayout({
-  children,
-}: Readonly<{
+const LayoutWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background);
+`;
+
+const Main = styled(motion.main)`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  /* Content within can set their own max-width if needed */
+  > * {
+    margin: 0 auto;
+    width: 100%;
+  }
+`;
+
+// Animation variants
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 20,
+  },
+  in: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.3,
+      ease: [0.43, 0.13, 0.23, 0.96],
+    },
+  },
+};
+
+interface ClientLayoutProps {
   children: React.ReactNode;
-}>) {
+}
+
+export default function ClientLayout({
+  children
+}: ClientLayoutProps) {
+  const pathname = usePathname();
+  
+  // Check if the route is in the auth directory
+  const isAuthRoute = pathname?.startsWith('/login') || 
+                      pathname?.startsWith('/signup') || 
+                      pathname?.startsWith('/reset-password') || 
+                      pathname?.startsWith('/create-password') ||
+                      pathname?.startsWith('/checkout-success') ||
+                      pathname?.startsWith('/checkout-canceled');
+                      
+  // Check if the route is in the dashboard section
+  const isDashboardRoute = pathname?.includes('/dashboard') || 
+                          pathname?.includes('/profile') || 
+                          pathname?.includes('/billing') || 
+                          pathname?.includes('/downloads') || 
+                          pathname?.includes('/settings');
+
+  // Check if the route is in the admin section
+  const isAdminRoute = pathname?.includes('/admin');
+
+  // Hide header and footer for auth routes, dashboard routes, and admin routes
+  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute || isAdminRoute;
+
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <LayoutWrapper>
+            {!shouldHideHeaderFooter && <NextHeader />}
+            <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
+              {children}
+            </Main>
+            {!shouldHideHeaderFooter && <Footer />}
+          </LayoutWrapper>
+        </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );

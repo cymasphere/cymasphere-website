@@ -3,6 +3,7 @@
 import { SubscriptionType } from "@/utils/supabase/types";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { cancelSubscription } from "./actions";
+import Stripe from "stripe";
 
 export type CustomerPurchasedProResponse = {
   success: boolean;
@@ -44,30 +45,43 @@ export async function customerPurchasedProFromSupabase(
     let hasLifetime = false;
     let activeSubscriptionId: string | undefined;
 
-    // First check for lifetime purchase
-    // Check charges for one-time lifetime purchase
-    const { data: charges, error: chargesError } = await supabase
+    // First check for lifetime purchase directly from payment intents
+    const { data: paymentIntents, error: piError } = await supabase
       .schema("stripe_tables")
-      .from("stripe_charges")
+      .from("stripe_payment_intents")
       .select("*")
       .eq("customer", customer_id)
-      .order("created", { ascending: false })
-      .limit(1);
+      .order("created", { ascending: false });
 
-    console.log("charges", charges);
-
-    if (chargesError) {
-      console.error("Error querying stripe_charges:", chargesError);
+    if (piError) {
+      console.error("Error querying payment intents:", piError);
       return {
         success: false,
         subscription: "none",
-        error: chargesError,
+        error: piError,
       };
     }
 
-    if (charges.length > 0 && charges[0].status === "succeeded") {
-      hasLifetime = true;
-      subscriptionType = "lifetime";
+    // Check payment intents for lifetime purchase
+    for (const paymentIntent of paymentIntents) {
+      const attrs =
+        (paymentIntent.attrs as {
+          metadata?: { purchase_type?: string };
+          status?: string;
+          dispute?: unknown | null;
+          refunded?: boolean;
+        }) || {};
+
+      if (attrs?.metadata?.purchase_type === "lifetime") {
+        // If this is a lifetime purchase, check its status
+        if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
+          hasLifetime = true;
+          subscriptionType = "lifetime";
+        } else {
+          // If this lifetime purchase was refunded or disputed, they no longer have lifetime access
+          hasLifetime = false;
+        }
+      }
     }
 
     // Check for active subscriptions (even if we found a lifetime purchase)
@@ -77,8 +91,6 @@ export async function customerPurchasedProFromSupabase(
       .select("*")
       .eq("customer", customer_id)
       .order("current_period_end", { ascending: false });
-
-    console.log("subscriptions", subscriptions);
 
     if (subscriptionsError) {
       console.error("Error querying stripe_subscriptions:", subscriptionsError);
@@ -175,6 +187,7 @@ export async function customerPurchasedProFromSupabase(
  */
 export interface InvoiceData {
   id: string;
+  number?: string;
   amount: number;
   status: string;
   created: string;
@@ -223,10 +236,12 @@ export async function getCustomerInvoices(
         hosted_invoice_url?: string;
         invoice_pdf?: string;
         created?: number;
+        number?: string;
       } | null;
 
       return {
         id: invoice.id || "",
+        number: attrs?.number,
         amount: (invoice.total || 0) / 100, // Convert cents to dollars
         status: invoice.status || "unknown",
         created: new Date(
@@ -243,5 +258,77 @@ export async function getCustomerInvoices(
     console.error("Error fetching customer invoices:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { invoices: [], error: errorMessage };
+  }
+}
+
+/**
+ * Deletes a user account by first canceling any active subscriptions,
+ * then deleting their Supabase user account
+ */
+export async function deleteUserAccount(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  "use server";
+
+  try {
+    // Get the Stripe customer ID for this user
+    const supabase = await createSupabaseServiceRole();
+
+    // First, get the Stripe customer ID from the profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("customer_id")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      return { success: false, error: "Could not find user profile" };
+    }
+
+    const stripeCustomerId = profile?.customer_id;
+
+    if (stripeCustomerId) {
+      // Get Stripe instance
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+      try {
+        // Get all subscriptions for this customer
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: "all",
+        });
+
+        // Cancel all subscriptions that aren't already canceled
+        for (const subscription of subscriptions.data) {
+          if (subscription.status !== "canceled") {
+            await stripe.subscriptions.cancel(subscription.id);
+            console.log(
+              `Canceled subscription: ${subscription.id} for customer: ${stripeCustomerId}`
+            );
+          }
+        }
+      } catch (stripeError) {
+        console.error("Error canceling subscriptions:", stripeError);
+        // Do not continue with user deletion if subscription cancellation fails
+        return {
+          success: false,
+          error: "Failed to cancel subscription. Account deletion aborted.",
+        };
+      }
+    }
+
+    // Delete the user from Supabase
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+
+    if (deleteError) {
+      console.error("Error deleting user:", deleteError);
+      return { success: false, error: "Failed to delete user account" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteUserAccount:", error);
+    return { success: false, error: "An unexpected error occurred" };
   }
 }

@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable text selection across the site */
+html, body, div, span, p, h1, h2, h3, h4, h5, h6, a, button {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for specific elements where it's needed (like input fields) */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 /* Basic Reset */
 html,
 body {
@@ -219,4 +235,27 @@ html {
 
 .dashboard-logo .sphere {
   color: white;
+}
+
+/* Global button hover effect */
+button:hover, 
+.button:hover,
+a.button:hover,
+a:hover,
+[role="button"]:hover,
+button:hover *,
+a:hover *,
+[role="button"]:hover *,
+*[class*="Button"]:hover,
+*[class*="button"]:hover {
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+  filter: brightness(1.05) !important;
+}
+
+/* Override any green/accent color on button hover */
+button:hover, 
+a:hover,
+[role="button"]:hover {
+  color: white !important;
 }

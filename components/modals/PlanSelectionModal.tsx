@@ -9,9 +9,11 @@ import {
   FaInfoCircle,
   FaCrown,
   FaGift,
+  FaUnlock,
 } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import { Profile, SubscriptionType } from "@/utils/supabase/types";
+import { useTranslation } from "react-i18next";
 
 // Modal components
 const ModalOverlay = styled(motion.div)`
@@ -39,14 +41,6 @@ const ModalContent = styled(motion.div)`
   box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(108, 99, 255, 0.2);
   will-change: transform, opacity;
-`;
-
-const ModalHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 `;
 
 const ModalTitle = styled.h2`
@@ -134,29 +128,31 @@ const PlanDescription = styled.p`
   margin: 0.5rem 0;
 `;
 
-const PlanFeatures = styled.div`
+const PlanFeatures = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem 1rem;
-  margin: 1.5rem 0;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const PlanFeature = styled.div`
+const PlanFeature = styled.li`
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
-  color: var(--text);
-  font-size: 0.9rem;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+`;
 
-  svg {
-    color: var(--primary);
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-  }
+const FeatureIcon = styled.span`
+  margin-right: 10px;
+  color: var(--success);
+  font-size: 1rem;
 `;
 
 const CurrentPlanIndicator = styled.div`
@@ -192,8 +188,44 @@ const Button = styled.button`
 const BillingToggleContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-bottom: 2rem;
   gap: 0.5rem;
+`;
+
+const ModalHeader = styled.div`
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  
+  ${BillingToggleContainer} {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    
+    ${BillingToggleContainer} {
+      position: static;
+      transform: none;
+      order: 2;
+      align-self: stretch;
+      justify-content: center;
+    }
+    
+    ${CloseButton} {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      order: 3;
+    }
+  }
 `;
 
 interface BillingToggleButtonProps {
@@ -328,64 +360,153 @@ const PlanNameContainer = styled.div`
   }
 `;
 
+// Add price display components matching the landing page
+const PriceDisplay = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+  text-align: center;
+`;
+
 const OriginalPrice = styled.span`
   text-decoration: line-through;
-  font-size: 1.3rem;
-  color: var(--text-secondary);
-  opacity: 0.7;
-  margin-right: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  text-align: center;
 `;
 
-// Add a styled component for the toggle control
-const CardInfoToggleContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1rem 0;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+const DiscountTag = styled.span`
+  background: linear-gradient(135deg, #f9c846, #f96e46);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 10px;
 `;
 
-const ToggleLabel = styled.label`
+// Add radio button styled components for trial options
+const RadioButtonGroup = styled.div`
   display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 12px;
+  margin: 15px 0;
+`;
+
+const RadioOptionsContainer = styled.div`
+  background: rgba(108, 99, 255, 0.05);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 0 auto 20px;
+  max-width: 80%;
+  text-align: left;
+`;
+
+const RadioOptionTitle = styled.div`
   font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
   color: var(--text);
-`;
-
-const ToggleSwitch = styled.div<{ $checked: boolean }>`
-  position: relative;
-  width: 42px;
-  height: 22px;
-  background: ${(props) =>
-    props.$checked
-      ? "linear-gradient(90deg, var(--primary), var(--accent))"
-      : "rgba(255, 255, 255, 0.2)"};
-  border-radius: 34px;
-  transition: 0.3s;
   display: flex;
   align-items: center;
-  padding: 0 2px;
-
-  &::after {
-    content: "";
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: white;
-    transition: 0.3s;
-    transform: translateX(${(props) => (props.$checked ? "20px" : "0")});
+  
+  svg {
+    margin-right: 6px;
+    color: var(--primary);
   }
 `;
 
-const TrialInfoText = styled.span`
-  font-size: 0.8rem;
+const RadioOption = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-left: 5px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: 5px;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const RadioInput = styled.input`
+  position: relative;
+  cursor: pointer;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(108, 99, 255, 0.4);
+  border-radius: 50%;
+  margin-right: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+
+  &:checked {
+    border-color: var(--primary);
+    background-color: transparent;
+    
+    &:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+    }
+  }
+
+  &:hover {
+    border-color: var(--primary);
+  }
+`;
+
+const TrialIcon = styled.span`
+  margin-right: 8px;
+  font-size: 0.9rem;
+`;
+
+const TrialDescription = styled.span`
+  margin-left: 8px;
+  flex: 1;
+`;
+
+// Add back the missing styled components
+const ConfirmationNote = styled.p`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  text-align: center;
+`;
+
+// Add loading spinner component
+const LoadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 interface PlanSelectionModalProps {
@@ -400,7 +521,6 @@ interface PlanSelectionModalProps {
   yearlyPrice: number;
   lifetimePrice: number;
   planDescription: string;
-  trialDays: number;
   planFeatures: string[];
   monthlyDiscount?: {
     percent_off?: number;
@@ -428,30 +548,21 @@ const PlanSelectionModal = ({
   onIntervalChange,
   onConfirm,
   formatDate,
-  planName = "Cymasphere Pro",
+  planName,
   monthlyPrice = 8,
   yearlyPrice = 69,
   lifetimePrice = 199,
-  planDescription = "Complete solution for music producers",
-  trialDays = 14,
-  planFeatures = [
-    "Interactive Harmony Palette",
-    "Advanced Voice Leading Control",
-    "Unlimited Saved Progressions",
-    "Premium Sound Libraries",
-    "MIDI Export & Import",
-    "Dynamic Pattern Editor",
-    "Song Builder Tool",
-    "Cloud Storage & Backup",
-    "Priority Email Support",
-    "Free Updates",
-  ],
+  planDescription,
+  planFeatures,
   monthlyDiscount,
   yearlyDiscount,
   lifetimeDiscount,
   onCardToggleChange,
   isPlanChangeLoading = false,
 }: PlanSelectionModalProps) => {
+  // Initialize translation hook
+  const { t } = useTranslation();
+  
   // State for client-side rendering
   const [isMounted, setIsMounted] = useState(false);
 
@@ -464,10 +575,17 @@ const PlanSelectionModal = ({
   const [willProvideCard, setWillProvideCard] = useState(true);
 
   // Check if user has no active subscription
-  const isNewUser = profile.subscription === "none";
+  const isNewUser = React.useMemo(() => {
+    // A user is considered "new" if they have no subscription history at all
+    return (
+      profile.subscription === "none" &&
+      !profile.subscription_expiration &&
+      !profile.trial_expiration
+    );
+  }, [profile]);
 
   // Actual trial days based on toggle state
-  const effectiveTrialDays = willProvideCard ? trialDays : 7;
+  const effectiveTrialDays = willProvideCard ? 14 : 7;
 
   // Update local state when the modal opens with the current subscription
   useEffect(() => {
@@ -480,14 +598,7 @@ const PlanSelectionModal = ({
 
   // Handle interval change locally and propagate to parent
   const handleSubscriptionChange = (subscription: SubscriptionType) => {
-    // Don't allow selecting the current plan if they already have one
-    if (
-      profile.subscription !== "none" &&
-      subscription === profile.subscription
-    ) {
-      return;
-    }
-
+    // Allow selecting the current plan to view its details
     console.log(`Setting subscription to: ${subscription} (local modal state)`);
     setSelectedSubscription(subscription);
     onIntervalChange(subscription);
@@ -526,13 +637,13 @@ const PlanSelectionModal = ({
       if (!date) return "";
       return formatDate
         ? formatDate(date)
-        : new Date(date).toLocaleDateString("en-US", {
+        : new Date(date).toLocaleDateString(t("common.locale", "en-US"), {
             year: "numeric",
             month: "long",
             day: "numeric",
           });
     },
-    [formatDate]
+    [formatDate, t]
   );
 
   // Don't render anything on the server
@@ -545,6 +656,7 @@ const PlanSelectionModal = ({
     <AnimatePresence>
       {isOpen && (
         <ModalOverlay
+          key="modal-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -557,52 +669,16 @@ const PlanSelectionModal = ({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>Choose Your Plan</ModalTitle>
-              <CloseButton onClick={onClose}>
-                <FaTimes />
-              </CloseButton>
-            </ModalHeader>
-            <ModalBody>
-              {/* Only show trial promotion banner for new users */}
-              {isNewUser && (
-                <PromotionBanner>
-                  <TrialBadge>
-                    <FaGift /> Limited Time Offer
-                  </TrialBadge>
-                  <PromotionText>
-                    Start with a{" "}
-                    <span>{effectiveTrialDays}-day FREE trial</span> on any
-                    plan!
-                  </PromotionText>
-                  <PromotionSubtext>
-                    Experience all premium features without commitment. No
-                    credit card required to start.
-                  </PromotionSubtext>
-                </PromotionBanner>
-              )}
-
-              {profile.subscription === "annual" && (
-                <PlanChangeInfo>
-                  <FaInfoCircle />
-                  <p>
-                    Your subscription is currently billed yearly. If you switch
-                    to a monthly plan, the change will take effect after your
-                    current billing period ends on{" "}
-                    {formatDateHelper(profile.subscription_expiration)}.
-                  </p>
-                </PlanChangeInfo>
-              )}
-
-              <BillingToggleContainer>
+              <ModalTitle>{t("billing.choosePlan", "Choose Your Plan")}</ModalTitle>
+              <BillingToggleContainer style={{ margin: 0, gap: '0.5rem' }}>
                 <BillingToggleButton
                   $active={selectedSubscription === "monthly"}
                   onClick={() => {
                     console.log("Monthly plan selected");
                     handleSubscriptionChange("monthly");
                   }}
-                  disabled={profile.subscription === "monthly"}
                 >
-                  Monthly
+                  {t("billing.monthly", "Monthly")}
                 </BillingToggleButton>
 
                 <BillingToggleButton
@@ -611,10 +687,9 @@ const PlanSelectionModal = ({
                     console.log("Yearly plan selected");
                     handleSubscriptionChange("annual");
                   }}
-                  disabled={profile.subscription === "annual"}
                 >
-                  Yearly
-                  <SaveLabel>Save 25%</SaveLabel>
+                  {t("billing.yearly", "Yearly")}
+                  <SaveLabel>{t("billing.save25", "Save 25%")}</SaveLabel>
                 </BillingToggleButton>
 
                 <BillingToggleButton
@@ -623,40 +698,49 @@ const PlanSelectionModal = ({
                     console.log("Lifetime plan selected");
                     handleSubscriptionChange("lifetime");
                   }}
-                  disabled={profile.subscription === "lifetime"}
                 >
-                  Lifetime
-                  <SaveLabel>Best Value</SaveLabel>
+                  {t("billing.lifetime", "Lifetime")}
+                  <SaveLabel>{t("billing.bestValue", "Best Value")}</SaveLabel>
                 </BillingToggleButton>
               </BillingToggleContainer>
-
-              {/* Add card toggle control only for new users and if not lifetime plan */}
-              {isNewUser && selectedSubscription !== "lifetime" && (
-                <CardInfoToggleContainer>
-                  <ToggleLabel>
-                    <span>Enter card info now:</span>
-                    <ToggleSwitch $checked={willProvideCard}>
-                      <input
-                        type="checkbox"
-                        checked={willProvideCard}
-                        onChange={handleCardToggleChange}
-                        style={{ opacity: 0, width: 0, height: 0 }}
-                      />
-                    </ToggleSwitch>
-                    <TrialInfoText>
-                      {willProvideCard
-                        ? `Get ${effectiveTrialDays}-day trial (card required)`
-                        : `Get ${effectiveTrialDays}-day trial (no card required)`}
-                    </TrialInfoText>
-                  </ToggleLabel>
-                </CardInfoToggleContainer>
+              <CloseButton onClick={onClose}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            <ModalBody>
+              {/* Only show trial promotion banner for truly new users */}
+              {isNewUser && (
+                <PromotionBanner>
+                  <TrialBadge>
+                    <FaGift /> {t("billing.limitedOffer", "Limited Time Offer")}
+                  </TrialBadge>
+                  <PromotionText>
+                    {t("billing.startWithTrial", "Start with a {{days}}-day FREE trial on any plan!", { days: effectiveTrialDays })}
+                  </PromotionText>
+                  <PromotionSubtext>
+                    {t("billing.trialExperience", "Experience all premium features without commitment. No credit card required to start.")}
+                  </PromotionSubtext>
+                </PromotionBanner>
               )}
+
+              {profile.subscription === "annual" && (
+                <PlanChangeInfo>
+                  <FaInfoCircle />
+                  <p>
+                    {t("billing.yearlyToMonthly", "Your subscription is currently billed yearly. If you switch to a monthly plan, the change will take effect after your current billing period ends on {{date}}.", {
+                      date: formatDateHelper(profile.subscription_expiration)
+                    })}
+                  </p>
+                </PlanChangeInfo>
+              )}
+
+              
 
               <PlanGrid>
                 <PlanCard style={{ position: "relative" }}>
                   {selectedSubscription === profile.subscription && (
                     <CurrentPlanIndicator>
-                      <FaCrown /> Current Plan
+                      <FaCrown /> {t("billing.currentPlan", "Current Plan")}
                     </CurrentPlanIndicator>
                   )}
                   <PlanHeader>
@@ -673,36 +757,52 @@ const PlanSelectionModal = ({
                             href="#"
                             className=""
                           />
-                          <span className="pro-label">PRO</span>
+                          <span className="pro-label">{t("billing.proBadge", "PRO")}</span>
                         </div>
                       </PlanNameContainer>
                     ) : (
                       <PlanNameStyled>{planName}</PlanNameStyled>
                     )}
                     {selectedSubscription === "monthly" && (
-                      <PlanPriceStyled>
+                      <PriceDisplay>
                         {monthlyDiscount &&
                         (monthlyDiscount.percent_off ||
                           monthlyDiscount.amount_off) ? (
                           <>
-                            <OriginalPrice>${monthlyPrice}</OriginalPrice>$
-                            {monthlyDiscount.percent_off
-                              ? Math.round(
-                                  monthlyPrice *
-                                    (1 - monthlyDiscount.percent_off / 100)
-                                )
-                              : monthlyDiscount.amount_off
-                              ? Math.max(
-                                  0,
-                                  monthlyPrice -
-                                    Math.round(monthlyDiscount.amount_off / 100)
-                                )
-                              : monthlyPrice}
+                            <OriginalPrice>
+                              {t("pricing.currencySymbol", "$")}{monthlyPrice}{t("pricing.perMonth", "/month")}
+                            </OriginalPrice>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <PlanPriceStyled>
+                                {t("pricing.currencySymbol", "$")}
+                                {monthlyDiscount.percent_off
+                                  ? Math.round(
+                                      monthlyPrice *
+                                        (1 - monthlyDiscount.percent_off / 100)
+                                    )
+                                  : monthlyDiscount.amount_off
+                                  ? Math.max(
+                                      0,
+                                      monthlyPrice -
+                                        Math.round(monthlyDiscount.amount_off / 100)
+                                    )
+                                  : monthlyPrice}
+                                <span>{t("pricing.perMonth", "/month")}</span>
+                              </PlanPriceStyled>
+                              <DiscountTag>
+                                {monthlyDiscount.percent_off
+                                  ? `${monthlyDiscount.percent_off}% OFF`
+                                  : `$${Math.round(monthlyDiscount.amount_off! / 100)} OFF`}
+                              </DiscountTag>
+                            </div>
                           </>
                         ) : (
-                          `$${monthlyPrice}`
-                        )}{" "}
-                        <span>/month</span>
+                          <PlanPriceStyled>
+                            {t("pricing.currencySymbol", "$")}{monthlyPrice}
+                            <span>{t("pricing.perMonth", "/month")}</span>
+                          </PlanPriceStyled>
+                        )}
+                        
                         {/* Only show trial info for new users */}
                         {isNewUser && (
                           <div
@@ -711,76 +811,56 @@ const PlanSelectionModal = ({
                               marginTop: "5px",
                               color: "var(--primary)",
                               fontWeight: "bold",
+                              textAlign: "center"
                             }}
                           >
-                            After your {effectiveTrialDays}-day free trial
+                            {t("billing.afterTrial", "After your {{days}}-day free trial", { days: effectiveTrialDays })}
                           </div>
                         )}
-                        {monthlyDiscount &&
-                          (monthlyDiscount.percent_off ||
-                            monthlyDiscount.amount_off) && (
-                            <div
-                              style={{
-                                fontSize: "0.9rem",
-                                marginTop: "5px",
-                                color: "#f96e46",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {monthlyDiscount.percent_off
-                                ? `${monthlyDiscount.percent_off}% discount applied!`
-                                : `$${Math.round(
-                                    monthlyDiscount.amount_off! / 100
-                                  )} off!`}
-                            </div>
-                          )}
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          {profile.trial_expiration
-                            ? `First payment: ${formatDateHelper(
-                                profile.trial_expiration
-                              )}`
-                            : `Next billing: ${formatDateHelper(
-                                profile.subscription_expiration ||
-                                  new Date(
-                                    Date.now() +
-                                      1000 * 60 * 60 * 24 * effectiveTrialDays
-                                  ).toISOString()
-                              )}`}
-                        </div>
-                      </PlanPriceStyled>
+                      </PriceDisplay>
                     )}
                     {selectedSubscription === "annual" && (
-                      <PlanPriceStyled>
+                      <PriceDisplay>
                         {yearlyDiscount &&
                         (yearlyDiscount.percent_off ||
                           yearlyDiscount.amount_off) ? (
                           <>
-                            <OriginalPrice>${yearlyPrice}</OriginalPrice>$
-                            {yearlyDiscount.percent_off
-                              ? Math.round(
-                                  yearlyPrice *
-                                    (1 - yearlyDiscount.percent_off / 100)
-                                )
-                              : yearlyDiscount.amount_off
-                              ? Math.max(
-                                  0,
-                                  yearlyPrice -
-                                    Math.round(yearlyDiscount.amount_off / 100)
-                                )
-                              : yearlyPrice}
+                            <OriginalPrice>
+                              {t("pricing.currencySymbol", "$")}{yearlyPrice}{t("pricing.perYear", "/year")}
+                            </OriginalPrice>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <PlanPriceStyled>
+                                {t("pricing.currencySymbol", "$")}
+                                {yearlyDiscount.percent_off
+                                  ? Math.round(
+                                      yearlyPrice *
+                                        (1 - yearlyDiscount.percent_off / 100)
+                                    )
+                                  : yearlyDiscount.amount_off
+                                  ? Math.max(
+                                      0,
+                                      yearlyPrice -
+                                        Math.round(yearlyDiscount.amount_off / 100)
+                                    )
+                                  : yearlyPrice}
+                                <span>{t("pricing.perYear", "/year")}</span>
+                              </PlanPriceStyled>
+                              <DiscountTag>
+                                {yearlyDiscount.percent_off
+                                  ? `${yearlyDiscount.percent_off}% OFF`
+                                  : `$${Math.round(yearlyDiscount.amount_off! / 100)} OFF`}
+                              </DiscountTag>
+                            </div>
                           </>
                         ) : (
-                          `$${yearlyPrice}`
-                        )}{" "}
-                        <span>/year</span>
+                          <PlanPriceStyled>
+                            {t("pricing.currencySymbol", "$")}{yearlyPrice}
+                            <span>{t("pricing.perYear", "/year")}</span>
+                          </PlanPriceStyled>
+                        )}
+                        
                         <div style={{ fontSize: "1rem", marginTop: "5px" }}>
-                          $
+                          {t("pricing.currencySymbol", "$")}
                           {(() => {
                             // Calculate the actual monthly price based on annual price
                             let effectiveYearlyPrice = yearlyPrice;
@@ -806,8 +886,9 @@ const PlanSelectionModal = ({
                             // Convert to monthly and format
                             return (effectiveYearlyPrice / 12).toFixed(2);
                           })()}
-                          /month billed annually
+                          {t("pricing.perMonth", "/month")} {t("pricing.billed", "billed annually")}
                         </div>
+                        
                         {/* Only show trial info for new users */}
                         {isNewUser && (
                           <div
@@ -816,96 +897,56 @@ const PlanSelectionModal = ({
                               marginTop: "5px",
                               color: "var(--primary)",
                               fontWeight: "bold",
+                              textAlign: "center"
                             }}
                           >
-                            After your {effectiveTrialDays}-day free trial
+                            {t("billing.afterTrial", "After your {{days}}-day free trial", { days: effectiveTrialDays })}
                           </div>
                         )}
-                        {yearlyDiscount &&
-                          (yearlyDiscount.percent_off ||
-                            yearlyDiscount.amount_off) && (
-                            <div
-                              style={{
-                                fontSize: "0.9rem",
-                                marginTop: "5px",
-                                color: "#f96e46",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {yearlyDiscount.percent_off
-                                ? `${yearlyDiscount.percent_off}% discount applied!`
-                                : `$${Math.round(
-                                    yearlyDiscount.amount_off! / 100
-                                  )} off!`}
-                            </div>
-                          )}
-                        <div
-                          style={{
-                            fontSize: "0.9rem",
-                            marginTop: "5px",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          {profile.trial_expiration
-                            ? `First payment: ${formatDateHelper(
-                                profile.trial_expiration
-                              )}`
-                            : `Next billing: ${formatDateHelper(
-                                profile.subscription_expiration ||
-                                  new Date(
-                                    Date.now() +
-                                      1000 * 60 * 60 * 24 * effectiveTrialDays
-                                  ).toISOString()
-                              )}`}
-                        </div>
-                      </PlanPriceStyled>
+                      </PriceDisplay>
                     )}
                     {selectedSubscription === "lifetime" && (
-                      <PlanPriceStyled>
+                      <PriceDisplay>
                         {lifetimeDiscount &&
                         (lifetimeDiscount.percent_off ||
                           lifetimeDiscount.amount_off) ? (
                           <>
-                            <OriginalPrice>${lifetimePrice}</OriginalPrice>$
-                            {lifetimeDiscount.percent_off
-                              ? Math.round(
-                                  lifetimePrice *
-                                    (1 - lifetimeDiscount.percent_off / 100)
-                                )
-                              : lifetimeDiscount.amount_off
-                              ? Math.max(
-                                  0,
-                                  lifetimePrice -
-                                    Math.round(
-                                      lifetimeDiscount.amount_off / 100
+                            <OriginalPrice>
+                              {t("pricing.currencySymbol", "$")}{lifetimePrice}
+                            </OriginalPrice>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <PlanPriceStyled>
+                                {t("pricing.currencySymbol", "$")}
+                                {lifetimeDiscount.percent_off
+                                  ? Math.round(
+                                      lifetimePrice *
+                                        (1 - lifetimeDiscount.percent_off / 100)
                                     )
-                                )
-                              : lifetimePrice}
+                                  : lifetimeDiscount.amount_off
+                                  ? Math.max(
+                                      0,
+                                      lifetimePrice -
+                                        Math.round(lifetimeDiscount.amount_off / 100)
+                                    )
+                                  : lifetimePrice}
+                              </PlanPriceStyled>
+                              <DiscountTag>
+                                {lifetimeDiscount.percent_off
+                                  ? `${lifetimeDiscount.percent_off}% OFF`
+                                  : `$${Math.round(lifetimeDiscount.amount_off! / 100)} OFF`}
+                              </DiscountTag>
+                            </div>
                           </>
                         ) : (
-                          `$${lifetimePrice}`
+                          <PlanPriceStyled>
+                            {t("pricing.currencySymbol", "$")}{lifetimePrice}
+                          </PlanPriceStyled>
                         )}
-                        <div style={{ fontSize: "1rem", marginTop: "5px" }}>
-                          one-time purchase
+                        
+                        <div style={{ fontSize: "1rem", marginTop: "5px", opacity: 0.8 }}>
+                          {t("pricing.oneTimePurchase", "one-time purchase")}
                         </div>
-                        {lifetimeDiscount &&
-                          (lifetimeDiscount.percent_off ||
-                            lifetimeDiscount.amount_off) && (
-                            <div
-                              style={{
-                                fontSize: "0.9rem",
-                                marginTop: "5px",
-                                color: "#f96e46",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {lifetimeDiscount.percent_off
-                                ? `${lifetimeDiscount.percent_off}% discount applied!`
-                                : `$${Math.round(
-                                    lifetimeDiscount.amount_off! / 100
-                                  )} off!`}
-                            </div>
-                          )}
+
                         {profile.subscription === "lifetime" && (
                           <div
                             style={{
@@ -914,115 +955,128 @@ const PlanSelectionModal = ({
                               color: "var(--text-secondary)",
                             }}
                           >
-                            Purchased:{" "}
+                            {t("billing.purchased", "Purchased")}: {" "}
                             {formatDateHelper(profile.subscription_expiration)}
                           </div>
                         )}
-                      </PlanPriceStyled>
+                      </PriceDisplay>
                     )}
                     <PlanDescription>{planDescription}</PlanDescription>
                   </PlanHeader>
 
                   <h4 style={{ marginBottom: "0.5rem", color: "var(--text)" }}>
-                    All Plans Include:
+                    {t("billing.allPlansInclude", "All Plans Include:")}
                   </h4>
                   <PlanFeatures>
                     {planFeatures.map((feature, index) => (
                       <PlanFeature key={index}>
-                        <FaCheck /> {feature}
+                        <FeatureIcon>
+                          <FaCheck />
+                        </FeatureIcon>
+                        {feature}
                       </PlanFeature>
                     ))}
                   </PlanFeatures>
                 </PlanCard>
               </PlanGrid>
+
+              {/* Add card toggle control only for new users and if not lifetime plan */}
+              {isNewUser && selectedSubscription !== "lifetime" && (
+                <RadioOptionsContainer>
+                  <RadioOptionTitle>
+                    <FaGift /> {t("billing.chooseTrial", "Choose your free trial option:")}
+                  </RadioOptionTitle>
+                  <RadioButtonGroup>
+                    <RadioOption>
+                      <RadioInput
+                        type="radio"
+                        name="trialOption"
+                        value="14day"
+                        checked={willProvideCard}
+                        onChange={() => setWillProvideCard(true)}
+                      />
+                      <TrialIcon>
+                        <FaUnlock />
+                      </TrialIcon>
+                      <TrialDescription>
+                        {t("billing.trialWithCard", "{{days}}-day trial - Add card on file", { days: 14 })}
+                        <br />
+                        {t("billing.noCharge", "(won't be charged until trial ends)")}
+                      </TrialDescription>
+                    </RadioOption>
+
+                    <RadioOption>
+                      <RadioInput
+                        type="radio"
+                        name="trialOption"
+                        value="7day"
+                        checked={!willProvideCard}
+                        onChange={() => setWillProvideCard(false)}
+                      />
+                      <TrialIcon>
+                        <FaUnlock />
+                      </TrialIcon>
+                      <TrialDescription>
+                        {t("billing.trialWithoutCard", "{{days}}-day trial - No credit card required", { days: 7 })}
+                      </TrialDescription>
+                    </RadioOption>
+                  </RadioButtonGroup>
+                  
+                  {/* Billing date positioned at bottom right */}
+                  <div
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-secondary)",
+                      textAlign: "right",
+                      marginTop: "12px",
+                      fontStyle: "italic"
+                    }}
+                  >
+                    {profile.trial_expiration
+                      ? t("billing.firstPayment", "First payment: {{date}}", { 
+                          date: formatDateHelper(profile.trial_expiration) 
+                        })
+                      : t("billing.nextBilling", "Next billing: {{date}}", { 
+                          date: formatDateHelper(
+                            profile.subscription_expiration ||
+                              new Date(
+                                Date.now() +
+                                  1000 * 60 * 60 * 24 * effectiveTrialDays
+                              ).toISOString()
+                          )
+                        })}
+                  </div>
+                </RadioOptionsContainer>
+              )}
+
+              <ConfirmationNote>
+                {t("billing.confirmationNote", "By confirming, you agree to the terms and pricing displayed above.")}
+              </ConfirmationNote>
             </ModalBody>
+            
             <ModalFooter>
               <Button
-                onClick={onClose}
                 style={{
-                  marginRight: "0.5rem",
                   background: "rgba(255, 255, 255, 0.1)",
+                  marginRight: "0.5rem",
+                }}
+                onClick={onClose}
+              >
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                onClick={() => onConfirm(selectedSubscription)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
                 disabled={isPlanChangeLoading}
               >
-                Cancel
-              </Button>
-              <Button
-                disabled={
-                  profile.subscription === selectedSubscription ||
-                  isPlanChangeLoading
-                }
-                onClick={() => {
-                  console.log("Confirming plan: pro");
-                  onConfirm("pro");
-                }}
-                style={{
-                  position: "relative",
-                  overflow: "hidden",
-                  opacity:
-                    profile.subscription === selectedSubscription ||
-                    isPlanChangeLoading
-                      ? 0.5
-                      : 1,
-                  cursor:
-                    profile.subscription === selectedSubscription ||
-                    isPlanChangeLoading
-                      ? "not-allowed"
-                      : "pointer",
-                }}
-                onMouseDown={(e) => {
-                  const btn = e.currentTarget;
-                  const circle = document.createElement("span");
-                  const diameter = Math.max(btn.clientWidth, btn.clientHeight);
-
-                  circle.style.width = circle.style.height = `${diameter}px`;
-                  circle.style.position = "absolute";
-                  circle.style.top = `${
-                    e.clientY - btn.offsetTop - diameter / 2
-                  }px`;
-                  circle.style.left = `${
-                    e.clientX - btn.offsetLeft - diameter / 2
-                  }px`;
-                  circle.style.background = "rgba(255, 255, 255, 0.3)";
-                  circle.style.borderRadius = "50%";
-                  circle.style.transform = "scale(0)";
-                  circle.style.animation = "ripple 0.6s linear";
-
-                  btn.appendChild(circle);
-
-                  setTimeout(() => {
-                    circle.remove();
-                  }, 600);
-                }}
-              >
                 {isPlanChangeLoading ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <div
-                      className="spinner"
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        border: "2px solid rgba(255,255,255,0.2)",
-                        borderTop: "2px solid white",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite",
-                        marginRight: "8px",
-                      }}
-                    />
-                    Processing...
-                  </div>
-                ) : profile.subscription === "none" ? (
-                  "Start Free Trial"
-                ) : selectedSubscription === "lifetime" ? (
-                  "Upgrade to Lifetime"
+                  <LoadingSpinner />
                 ) : (
-                  "Change Plan"
+                  t("common.confirm", "Confirm")
                 )}
               </Button>
             </ModalFooter>

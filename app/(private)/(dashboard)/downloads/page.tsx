@@ -8,6 +8,7 @@ import {
   FaFilePdf,
   FaInfoCircle,
 } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 const DownloadsContainer = styled.div`
   width: 100%;
@@ -253,13 +254,15 @@ const ResourceLink = styled.a`
 `;
 
 function Downloads() {
+  const { t } = useTranslation();
+  
   return (
     <DownloadsContainer>
-      <SectionTitle>Downloads</SectionTitle>
+      <SectionTitle>{t("dashboard.downloads.title", "Downloads")}</SectionTitle>
 
       <DownloadCard>
         <CardTitle>
-          <FaDownload /> Cymasphere Installers
+          <FaDownload /> {t("dashboard.downloads.installers", "Cymasphere Installers")}
         </CardTitle>
         <CardContent>
           <DownloadsGrid>
@@ -269,25 +272,23 @@ function Downloads() {
                   <FaApple />
                 </DownloadIcon>
                 <DownloadInfo>
-                  <DownloadName>Cymasphere for macOS</DownloadName>
-                  <DownloadVersion>Version 1.2.3</DownloadVersion>
+                  <DownloadName>{t("dashboard.downloads.macosTitle", "Cymasphere for macOS")}</DownloadName>
+                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
                 <div>
                   <DownloadDescription>
-                    Universal installer for macOS with standalone app and
-                    plugins (AU, VST3) for both Apple Silicon and Intel
-                    processors.
+                    {t("dashboard.downloads.macosDesc", "Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.")}
                   </DownloadDescription>
                   <DownloadMeta>
                     <DownloadSize>162 MB</DownloadSize>
-                    <DownloadDate>Updated: March 10, 2023</DownloadDate>
+                    <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
                   <DownloadButton href="#">
-                    <FaDownload /> Download for macOS
+                    <FaDownload /> {t("dashboard.downloads.downloadMacos", "Download for macOS")}
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
@@ -299,24 +300,23 @@ function Downloads() {
                   <FaWindows />
                 </DownloadIcon>
                 <DownloadInfo>
-                  <DownloadName>Cymasphere for Windows</DownloadName>
-                  <DownloadVersion>Version 1.2.3</DownloadVersion>
+                  <DownloadName>{t("dashboard.downloads.windowsTitle", "Cymasphere for Windows")}</DownloadName>
+                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
                 <div>
                   <DownloadDescription>
-                    Complete installer for Windows 10/11 including standalone
-                    app and plugin formats (VST3).
+                    {t("dashboard.downloads.windowsDesc", "Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).")}
                   </DownloadDescription>
                   <DownloadMeta>
-                    <DownloadSize>145 MB</DownloadSize>
-                    <DownloadDate>Updated: March 10, 2023</DownloadDate>
+                    <DownloadSize>{t("dashboard.downloads.size", "145 MB")}</DownloadSize>
+                    <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
                   <DownloadButton href="#">
-                    <FaDownload /> Download for Windows
+                    <FaDownload /> {t("dashboard.downloads.downloadWindows", "Download for Windows")}
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
@@ -327,7 +327,7 @@ function Downloads() {
 
       <DownloadCard>
         <CardTitle>
-          <FaInfoCircle /> Resources
+          <FaInfoCircle /> {t("dashboard.downloads.resources", "Resources")}
         </CardTitle>
         <CardContent>
           <ResourcesSection>
@@ -337,13 +337,13 @@ function Downloads() {
                   <FaFilePdf />
                 </ResourceIcon>
                 <ResourceInfo>
-                  <ResourceTitle>Quick Start Guide</ResourceTitle>
+                  <ResourceTitle>{t("dashboard.downloads.quickStart", "Quick Start Guide")}</ResourceTitle>
                   <ResourceDescription>
-                    Get up and running with Cymasphere in minutes
+                    {t("dashboard.downloads.quickStartDesc", "Get up and running with Cymasphere in minutes")}
                   </ResourceDescription>
                 </ResourceInfo>
-                <ResourceLink href="#">
-                  Download PDF <FaDownload />
+                <ResourceLink href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/documentation//Cymasphere-QuickStart-Guide.pdf" target="_blank" rel="noopener noreferrer">
+                  {t("dashboard.downloads.downloadPdf", "Download PDF")} <FaDownload />
                 </ResourceLink>
               </ResourceItem>
             </ResourcesList>

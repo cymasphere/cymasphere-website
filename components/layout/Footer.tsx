@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Link from "next/link";
 import {
@@ -12,6 +12,7 @@ import LegalModal from "@/components/modals/LegalModal";
 import AboutUsModal from "@/components/modals/AboutUsModal";
 import EnergyBall from "@/components/common/EnergyBall";
 import { playLydianMaj7Chord } from "@/utils/audioUtils";
+import i18next from "i18next";
 
 const FooterContainer = styled.footer`
   background-color: var(--surface);
@@ -117,6 +118,7 @@ const FooterLink = styled.span`
   transition: color 0.2s ease;
   cursor: pointer;
   display: block;
+  line-height: 1.5;
 
   &:hover {
     color: var(--primary);
@@ -132,6 +134,7 @@ const FooterAnchor = styled.span`
   transition: color 0.2s ease;
   display: block;
   cursor: pointer;
+  line-height: 1.5;
 
   &:hover {
     color: var(--primary);
@@ -149,10 +152,14 @@ const FooterButton = styled.button`
   margin-bottom: 0.75rem;
   cursor: pointer;
   transition: color 0.2s ease;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  line-height: 1.5;
+  font-family: inherit;
 
   &:hover {
-    color: var(--primary);
+    color: #6c63ff;
+    text-decoration: none;
   }
 `;
 
@@ -210,10 +217,39 @@ const CopyrightLink = styled.a`
   }
 `;
 
+// Simple i18n wrapper functions to avoid hook ordering issues
+function getTranslation(key: string, defaultValue: string, options?: Record<string, any>): string {
+  return i18next.t(key, { defaultValue, ...options }) as string;
+}
+
 const Footer = () => {
+  // All hooks at the top in consistent order
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
+  // When language changes, this will re-render the component
+  // using the _ variable to ensure ESLint doesn't complain about unused vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _ = language;
 
   return (
     <FooterContainer>
@@ -239,10 +275,9 @@ const Footer = () => {
               </LogoText>
             </FooterLogo>
           </Link>
-          <BrandCredit href="https://nnaud.io">by NNAudio</BrandCredit>
+          <BrandCredit href="https://nnaud.io">{getTranslation("footer.byNNAudio", "by NNAudio")}</BrandCredit>
           <FooterDescription>
-            Cymasphere is an interactive music compositional tool for producers,
-            composers, performing musicians, educators, and students.
+            {getTranslation("footer.description", "Cymasphere is an interactive music compositional tool for producers, composers, performing musicians, educators, and students.")}
           </FooterDescription>
           <SocialLinks>
             <SocialIcon
@@ -289,61 +324,61 @@ const Footer = () => {
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Navigation</FooterHeading>
+          <FooterHeading>{getTranslation("footer.navigation", "Navigation")}</FooterHeading>
           <Link href="/" passHref legacyBehavior>
-            <FooterLink>Home</FooterLink>
+            <FooterLink>{getTranslation("header.home", "Home")}</FooterLink>
           </Link>
           <FooterAnchor as="a" href="#features">
-            Features
+            {getTranslation("header.features", "Features")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#how-it-works">
-            How It Works
+            {getTranslation("header.howItWorks", "How It Works")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#pricing">
-            Pricing
+            {getTranslation("header.pricing", "Pricing")}
           </FooterAnchor>
           <FooterAnchor as="a" href="#faq">
-            FAQ
+            {getTranslation("header.faq", "FAQ")}
           </FooterAnchor>
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Account</FooterHeading>
+          <FooterHeading>{getTranslation("footer.account", "Account")}</FooterHeading>
           <Link href="/login" passHref legacyBehavior>
-            <FooterLink>Login</FooterLink>
+            <FooterLink>{getTranslation("common.login", "Login")}</FooterLink>
           </Link>
           <Link href="/signup" passHref legacyBehavior>
-            <FooterLink>Sign Up</FooterLink>
+            <FooterLink>{getTranslation("common.signUp", "Sign Up")}</FooterLink>
           </Link>
           <Link href="/dashboard" passHref legacyBehavior>
-            <FooterLink>Account Dashboard</FooterLink>
+            <FooterLink>{getTranslation("footer.accountDashboard", "Account Dashboard")}</FooterLink>
           </Link>
         </FooterColumn>
 
         <FooterColumn>
-          <FooterHeading>Company</FooterHeading>
+          <FooterHeading>{getTranslation("footer.company", "Company")}</FooterHeading>
           <FooterButton onClick={() => setShowAboutModal(true)}>
-            About Us
+            {getTranslation("footer.aboutUs", "About Us")}
           </FooterButton>
-          <FooterButton onClick={() => setShowPrivacyModal(true)}>
-            Privacy Policy
-          </FooterButton>
-          <FooterButton onClick={() => setShowTermsModal(true)}>
-            Terms & Conditions
-          </FooterButton>
+          <Link href="/privacy-policy" passHref legacyBehavior>
+            <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
+          </Link>
+          <Link href="/terms-of-service" passHref legacyBehavior>
+            <FooterLink>{getTranslation("footer.termsConditions", "Terms & Conditions")}</FooterLink>
+          </Link>
         </FooterColumn>
       </FooterContent>
 
       <Copyright>
         <p>
-          &copy; {new Date().getFullYear()} Cymasphere. All rights reserved.
+          {getTranslation("footer.copyright", `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`, { year: new Date().getFullYear() })}
           <span>
             <CopyrightLink
               href="https://nnaud.io"
               target="_blank"
               rel="noopener noreferrer"
             >
-              by NNAudio
+              {getTranslation("footer.byNNAudio", "by NNAudio")}
             </CopyrightLink>
           </span>
         </p>

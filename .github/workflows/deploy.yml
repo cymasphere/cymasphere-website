@@ -1,239 +1,120 @@
+# version 1
 name: Deploy to AWS Lightsail
 
 on:
   push:
     branches:
-      - main
-
-permissions:
-  contents: read
-  packages: write
+      - main # Trigger deployment on push to main branch
+  workflow_dispatch: # Allow manual triggering from GitHub UI
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      NEXT_SKIP_ESL: 1
-      NEXT_TELEMETRY_DISABLED: 1
-      NEXT_SKIP_LINT: 1
-      NEXTJS_DISABLE_LINT: 1
-      # Add Supabase environment variables
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      # Add Stripe environment variables
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-      STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
-      STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
-      STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-      # Add site URL
-      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "22.15.1"
 
-      - name: Ensure public directory exists
-        run: |
-          # Create public directory and subdirectories if they don't exist
-          mkdir -p public/styles
-          mkdir -p public/images
-          mkdir -p public/audio
-          
-          # Create empty files in each directory to ensure they exist
-          touch public/styles/.gitkeep
-          touch public/images/.gitkeep
-          touch public/audio/.gitkeep
-          
-          # Verify directory structure
-          ls -la public/
-          ls -la public/styles/
-          ls -la public/images/
-          ls -la public/audio/
+      - name: Set npm version
+        run: npm install -g npm@10.9.2
 
-      - name: Create null-loader module
-        run: |
-          # Create a null-loader to handle CSS
-          npm install --save-dev null-loader
-
-      - name: Remove CSS imports from layout.tsx
-        run: |
-          # Remove CSS imports from layout to avoid build issues
-          sed -i '/import.*globals.css/d' app/layout.tsx
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.13
 
       - name: Install dependencies
-        run: |
-          # Install dependencies without optional packages
-          npm ci --omit=optional
+        run: bun install
 
-      - name: Create .eslintrc.json to disable ESLint
-        run: |
-          cat > .eslintrc.json << 'EOL'
-          {
-            "extends": "next/core-web-vitals",
-            "rules": {
-              "@typescript-eslint/no-unused-vars": "off",
-              "react-hooks/exhaustive-deps": "off"
-            }
-          }
-          EOL
-
-      - name: Modify package.json to skip ESLint
-        run: |
-          # Update package.json to skip lint during build
-          sed -i 's/"build": "next build"/"build": "NEXTJS_DISABLE_LINT=1 NEXT_SKIP_LINT=1 NEXT_SKIP_ESL=1 next build --no-lint"/g' package.json
-
-      - name: Create next.config.js for production
-        run: |
-          cat > next.config.js << 'EOL'
-          /** @type {import('next').NextConfig} */
-          
-          const nextConfig = {
-            output: 'standalone',
-            eslint: {
-              ignoreDuringBuilds: true,
-            },
-            compiler: {
-              styledComponents: true,
-            },
-            webpack: (config) => {
-              // Add null-loader for CSS files
-              config.module.rules.push({
-                test: /\.css$/,
-                use: 'null-loader'
-              });
-              
-              return config;
-            }
-          };
-          
-          module.exports = nextConfig;
-          EOL
-
-      - name: Build Next.js application
+      - name: Build application
         env:
-          NEXT_SKIP_LINT: 1
-          NEXTJS_DISABLE_LINT: 1
-          NEXT_SKIP_ESL: 1
-        run: npm run build
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: bun run build
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-            STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
-            STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
-            STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
-            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          file: ./Dockerfile
-
-      - name: Format SSH Key
+      - name: Configure SSH
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail_key
-          chmod 600 ~/.ssh/lightsail_key
-          ssh-keygen -y -f ~/.ssh/lightsail_key > ~/.ssh/lightsail_key.pub
-          cat ~/.ssh/lightsail_key
+          # SSH configuration
+          cat >> ~/.ssh/config << EOF
+          Host $LIGHTSAIL_HOST
+            User $LIGHTSAIL_USER
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+          EOF
 
-      - name: Deploy to AWS Lightsail
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.LIGHTSAIL_IP }}
-          username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          port: 22
-          script_stop: true
-          debug: true
-          script: |
-            # Debug information
-            echo "Connected to host successfully!"
-            whoami
-            hostname
-            
-            # Install Docker if not already installed
-            if ! command -v docker &> /dev/null; then
-              echo "Installing Docker..."
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sudo sh get-docker.sh
-            fi
-            
-            # Login to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u cymasphere --password-stdin
-            
-            # Pull the latest image
-            docker pull ghcr.io/cymasphere/cymasphere-website:latest
-            
-            # Stop and remove existing container
-            if [ "$(docker ps -a -q -f name=cymasphere-website)" ]; then
-              docker stop cymasphere-website
-              docker rm cymasphere-website
-            fi
-            
-            # Run the new container with environment variables
-            docker run -d \
-              --name cymasphere-website \
-              --restart always \
-              -p 80:3000 \
-              -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
-              -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-              -e SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              -e STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
-              -e STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
-              -e STRIPE_PRICE_ID_MONTHLY="${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" \
-              -e STRIPE_PRICE_ID_ANNUAL="${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" \
-              -e STRIPE_PRICE_ID_LIFETIME="${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" \
-              -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" \
-              -e NEXT_PUBLIC_SITE_URL="${{ secrets.NEXT_PUBLIC_SITE_URL }}" \
-              ghcr.io/cymasphere/cymasphere-website:latest
-            
-            # Clean up
-            docker system prune -f
-          
-      - name: Verify deployment
+      - name: Stop running application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          echo "Waiting for service to fully initialize..."
-          sleep 30
-          
-          # Check if site is accessible (5 retries with 10s intervals)
-          for i in {1..5}; do
-            if curl -s --head --fail http://${{ secrets.LIGHTSAIL_IP }}:80; then
-              echo "✅ Service verified! Site is accessible."
-              exit 0
-            else
-              echo "Attempt $i: Site not accessible yet, waiting 10 seconds..."
-              sleep 10
-            fi
-          done
-          
-          echo "⚠️ Warning: Could not verify site accessibility within timeout period."
-          echo "Please manually check the site and server logs."
-          # Don't fail the workflow as the deployment may still be initializing 
+          # Stop the current application
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "pm2 stop cymasphere || true"
+
+      - name: Copy files to server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Create directories if they don't exist
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
+
+          # Copy application files with proper directory structure
+          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+            .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
+
+          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+            public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
+
+          # Copy package.json and other config files
+          scp package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Create environment file
+          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.production
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.production
+          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
+          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
+          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
+          scp .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Copy next.config.js if it exists
+          if [ -f "next.config.js" ]; then
+            scp next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+          fi
+
+      - name: Install dependencies on server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Install dependencies
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && bun install"
+
+      - name: Start application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Check if process exists in PM2 and start/restart accordingly
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && source ~/.nvm/nvm.sh && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name 'cymasphere' -- start"

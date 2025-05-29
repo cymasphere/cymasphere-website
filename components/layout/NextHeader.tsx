@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styled from "styled-components";
 import {
   FaBars,
@@ -12,6 +12,7 @@ import {
   FaQuestionCircle,
   FaRegLightbulb,
   FaRegCreditCard,
+  FaShieldAlt,
 } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -19,6 +20,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
+import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
+// Import translations directly to avoid hook ordering issues
+import i18next from "i18next";
 
 // Dynamically import components with browser-only APIs
 const DynamicLanguageSelector = dynamic(
@@ -34,6 +38,29 @@ const playSound = async () => {
     const { playLydianMaj7Chord } = await import("../../utils/audioUtils");
     playLydianMaj7Chord();
   }
+};
+
+// Function to get translations without using hooks
+const getTranslation = (key: string): string => {
+  // Safe access to i18next - if it's not initialized yet, return a fallback
+  if (i18next.isInitialized) {
+    return i18next.t(key);
+  }
+  
+  // Fallback values for common keys
+  const fallbacks: Record<string, string> = {
+    'common.navigation': 'Navigation',
+    'common.myAccount': 'My Account',
+    'common.logout': 'Logout',
+    'common.login': 'Login',
+    'common.signUp': 'Sign Up',
+    'header.features': 'Features',
+    'header.howItWorks': 'How It Works',
+    'header.pricing': 'Pricing',
+    'header.faq': 'FAQ'
+  };
+  
+  return fallbacks[key] || key;
 };
 
 // Animation variants
@@ -586,6 +613,35 @@ const NextHeader = () => {
   const [activeSection, setActiveSection] = useState("");
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes - with proper cleanup
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
+  // Define nav items using the non-hook translation function
+  const navItems = useMemo(() => [
+    { name: getTranslation("header.features"), path: "/#features" },
+    { name: getTranslation("header.howItWorks"), path: "/#how-it-works" },
+    { name: getTranslation("header.pricing"), path: "/#pricing" },
+    { name: getTranslation("header.faq"), path: "/#faq" },
+  ], [language]); // Re-compute when language changes
 
   useEffect(() => {
     const handleScroll = () => {
@@ -652,20 +708,13 @@ const NextHeader = () => {
 
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push("/login");
+    router.push(`/login`);
   };
 
   const handleSignupClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push("/signup");
+    router.push(`/signup`);
   };
-
-  const navItems = [
-    { name: "Features", path: "/#features" },
-    { name: "How It Works", path: "/#how-it-works" },
-    { name: "Pricing", path: "/#pricing" },
-    { name: "FAQ", path: "/#faq" },
-  ];
 
   const renderAuthSection = () => {
     if (user) {
@@ -679,12 +728,18 @@ const NextHeader = () => {
             <Link href="/dashboard" passHref legacyBehavior>
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                 <FaUser />
-                My Account
+                {getTranslation("common.myAccount")}
+              </UserMenuItem>
+            </Link>
+            <Link href="/admin" passHref legacyBehavior>
+              <UserMenuItem onClick={() => setUserMenuOpen(false)}>
+                <FaShieldAlt />
+                {getTranslation("common.adminConsole")}
               </UserMenuItem>
             </Link>
             <UserMenuLogout onClick={handleLogout}>
               <FaSignOutAlt />
-              Logout
+              {getTranslation("common.logout")}
             </UserMenuLogout>
           </UserDropdown>
         </UserMenuContainer>
@@ -693,9 +748,9 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>Login</AuthButton>
+        <AuthButton onClick={handleLoginClick}>{getTranslation("common.login")}</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
-          Sign Up
+          {getTranslation("common.signUp")}
         </AuthButton>
       </>
     );
@@ -765,7 +820,7 @@ const NextHeader = () => {
               </Link>
             ))}
             <div className="language-selector">
-              <DynamicLanguageSelector />
+              <NextLanguageSelector />
             </div>
             <AuthSection>{renderAuthSection()}</AuthSection>
           </Nav>
@@ -785,7 +840,7 @@ const NextHeader = () => {
         variants={fadeIn}
       >
         <MobileMenuContent>
-          <MobileNavTitle>Navigation</MobileNavTitle>
+          <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
           <MobileNavLinks>
             {navItems.map((item, index) => (
               <Link key={item.name} href={item.path} passHref legacyBehavior>
@@ -821,7 +876,23 @@ const NextHeader = () => {
                     animate={menuOpen ? "visible" : "hidden"}
                   >
                     <FaUser />
-                    My Account
+                    {getTranslation("common.myAccount")}
+                  </MobileNavLink>
+                </Link>
+                <Link href="/admin" passHref legacyBehavior>
+                <MobileNavLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                      router.push("/admin");
+                  }}
+                  variants={menuItemVariants}
+                  custom={navItems.length + 1}
+                    initial="hidden"
+                    animate={menuOpen ? "visible" : "hidden"}
+                  >
+                    <FaShieldAlt />
+                    {getTranslation("common.adminConsole")}
                   </MobileNavLink>
                 </Link>
                 <MobileNavLink
@@ -831,12 +902,12 @@ const NextHeader = () => {
                     setMenuOpen(false);
                   }}
                   variants={menuItemVariants}
-                  custom={navItems.length + 1}
+                  custom={navItems.length + 2}
                   initial="hidden"
                   animate={menuOpen ? "visible" : "hidden"}
                 >
                   <FaSignOutAlt />
-                  Logout
+                  {getTranslation("common.logout")}
                 </MobileNavLink>
               </MobileUserSection>
             )}
@@ -853,7 +924,7 @@ const NextHeader = () => {
                   handleLoginClick(e);
                 }}
               >
-                Login
+                {getTranslation("common.login")}
               </AuthButton>
               <AuthButton
                 $isMobile
@@ -863,7 +934,7 @@ const NextHeader = () => {
                   handleSignupClick(e);
                 }}
               >
-                Sign Up
+                {getTranslation("common.signUp")}
               </AuthButton>
             </MobileAuthSection>
           )}
@@ -871,7 +942,7 @@ const NextHeader = () => {
 
         <MobileFooter>
           <div className="language-selector">
-            <DynamicLanguageSelector />
+            <NextLanguageSelector />
           </div>
         </MobileFooter>
       </MobileMenu>

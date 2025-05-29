@@ -1,13 +1,14 @@
 "use server";
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from '@supabase/supabase-js';
-import { updateStripe } from "@/utils/supabase/actions";
 
-interface ProfileWithEmail {
-  id: string;
+import { Profile } from "@/utils/supabase/types";
+import { createServerClient } from "@supabase/ssr";
+import { updateStripe } from "@/utils/supabase/actions";
+import { Database } from "@/database.types";
+
+interface ProfileWithEmail extends Profile {
   email: string;
-  [key: string]: any;
 }
 
 type LoginResponse = {
@@ -48,6 +49,7 @@ export async function POST(
 ): Promise<NextResponse<LoginResponse>> {
   try {
     const body = await request.formData();
+
     const email = body.get("email")?.toString();
     const password = body.get("password")?.toString();
 
@@ -57,10 +59,44 @@ export async function POST(
         "email and password fields are required"
       );
 
-    // Initialize Supabase client directly with environment variables
-    const supabase = createClient(
+    // Extract client IP and device info from request headers for security tracking
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip");
+    const userAgent = request.headers.get("user-agent");
+
+    console.log("clientIp", clientIp);
+    console.log("userAgent", userAgent);
+
+    // Reject login attempts not from the Cymasphere app
+    if (!userAgent || !userAgent.startsWith("cymasphere:")) {
+      return err("invalid_credentials", "Invalid credentials");
+    }
+
+    const allHeaders: Record<string, string> = {};
+    if (clientIp) {
+      allHeaders["X-Forwarded-For"] = clientIp;
+    }
+    if (userAgent) {
+      allHeaders["User-Agent"] = userAgent;
+    }
+
+    // Add all headers to the request for Supabase to use
+    const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return [];
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          setAll(_cookiesToSet) {},
+        },
+        global: {
+          headers: allHeaders,
+        },
+      }
     );
 
     const {
@@ -76,6 +112,34 @@ export async function POST(
     }
 
     if (session && user && user.email) {
+      // Check for maximum devices
+      const { data: userSessions, error: sessionsError } = await supabase
+        .from("user_sessions")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (sessionsError) {
+        console.error("Error fetching user sessions:", sessionsError);
+      } else {
+        // Count sessions with user agent starting with "cymasphere:"
+        const deviceCount =
+          userSessions?.filter(
+            (session) =>
+              session.user_agent && session.user_agent.startsWith("cymasphere:")
+          ).length || 0;
+
+        console.log("deviceCount", deviceCount);
+
+        // If device count exceeds limit, sign out and return error
+        if (deviceCount > 5) {
+          await supabase.auth.signOut();
+          return err(
+            "maximum_devices",
+            "Maximum number of devices already logged in"
+          );
+        }
+      }
+
       const { data: profile, error: profile_error } = await supabase
         .from("profiles")
         .select()
@@ -90,7 +154,7 @@ export async function POST(
         // Check and update Stripe subscription status
         try {
           const { success, profile: updatedProfile } = await updateStripe(
-            user.email,
+            user.email!,
             profile
           );
 
@@ -117,9 +181,9 @@ export async function POST(
       }
     }
 
-    return err("unexpected_failure", "An unexpected error occurred");
+    return err("unexpected_failure", "An unexpected error occured");
   } catch (error) {
-    console.error("Unexpected error during login:", error);
-    return err("unexpected_failure", "An unexpected error occurred");
+    console.log(error);
+    return err("unexpected_failure", "An unexpected error occured");
   }
 }

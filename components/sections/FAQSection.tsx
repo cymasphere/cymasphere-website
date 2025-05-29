@@ -3,6 +3,20 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { 
+  FaMusic, 
+  FaQuestion, 
+  FaPuzzlePiece, 
+  FaSlidersH, 
+  FaPlug, 
+  FaPalette, 
+  FaWaveSquare, 
+  FaLayerGroup, 
+  FaSyncAlt, 
+  FaUserGraduate, 
+  FaBook 
+} from "react-icons/fa";
 
 const FAQContainer = styled.section`
   padding: 100px 20px;
@@ -62,6 +76,15 @@ const Question = styled.h3`
   font-size: 1.2rem;
   color: var(--text);
   flex: 1;
+  display: flex;
+  align-items: center;
+  
+  svg {
+    margin-right: 12px;
+    color: var(--primary);
+    font-size: 1.4rem;
+    min-width: 24px;
+  }
 `;
 
 interface ToggleButtonProps {
@@ -94,8 +117,14 @@ interface ExpandedFaqs {
   [key: number]: boolean;
 }
 
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
 const FAQSection = () => {
   const [expandedFaqs, setExpandedFaqs] = useState<ExpandedFaqs>({});
+  const { t } = useTranslation();
 
   const toggleFaq = (index: number) => {
     setExpandedFaqs((prev) => ({
@@ -104,54 +133,28 @@ const FAQSection = () => {
     }));
   };
 
-  const faqItems = [
-    {
-      question: "What is Cymasphere?",
-      answer:
-        "Cymasphere is an advanced music theory and composition tool available both as a standalone application and as a plugin (AU & VST3) for your DAW. It helps musicians create better chord progressions with intelligent voice leading and harmony visualization.",
-    },
-    {
-      question: "What problems does Cymasphere solve for musicians?",
-      answer:
-        "Cymasphere solves common compositional challenges like creating interesting chord progressions, developing smooth voice leading, and finding harmonic inspiration. It helps bridge the gap between music theory knowledge and practical application, making composition more intuitive and accessible.",
-    },
-    {
-      question:
-        "What are the differences between the standalone app and the plugin?",
-      answer:
-        "The standalone app and plugin versions share the same core features and functionality. The standalone app works independently, making it great for composition and exploration, while the plugin integrates directly with your DAW for seamless production workflow. You can choose which version works best for your creative process, or use both depending on your needs.",
-    },
-    {
-      question: "Which DAWs are compatible with the Cymasphere plugin?",
-      answer:
-        "The Cymasphere plugin (available in AU & VST3 formats) is compatible with most major DAWs including Logic Pro, Ableton Live, FL Studio, Cubase, Studio One, Reaper, Bitwig, and Digital Performer. Both macOS and Windows platforms are supported.",
-    },
-    {
-      question: "How does the Interactive Harmony Palette work?",
-      answer:
-        "The Interactive Harmony Palette provides a visual interface for exploring chord relationships. Simply select a starting chord and the palette will show you harmonically related options, making it easy to craft compelling progressions in both the standalone app and plugin versions.",
-    },
-    {
-      question: "What makes the Voicing Generator special?",
-      answer:
-        "Our Voicing Generator uses advanced algorithms to create rich, musically satisfying chord voicings that follow proper voice leading principles. It analyzes your chord progression to ensure smooth voice transitions between chords, whether you're using the standalone app or plugin version.",
-    },
-    {
-      question: "How does the Song Builder help with composition?",
-      answer:
-        "The Song Builder allows you to arrange chord progressions into complete song structures. You can experiment with different sections, try various arrangements, and build a cohesive composition from your chord ideas. This feature works seamlessly in both the standalone app and DAW plugin versions of Cymasphere.",
-    },
-    {
-      question: "Is Cymasphere suitable for beginners?",
-      answer:
-        "Absolutely! While Cymasphere offers advanced functionality for experienced composers, its intuitive interface makes music theory accessible to beginners, helping them understand harmony concepts visually. Both the standalone app and DAW plugin versions are designed to be user-friendly for all skill levels.",
-    },
-    {
-      question: "Do I need to know music theory to use Cymasphere?",
-      answer:
-        "No, that's one of Cymasphere's strengths! While music theory knowledge can enhance your experience, Cymasphere is designed to be intuitive even for those with limited theory background. The visual interface helps you understand musical relationships as you compose, making it an excellent learning tool.",
-    },
+  const faqIcons = [
+    <FaMusic key="music" />,
+    <FaQuestion key="question" />,
+    <FaLayerGroup key="layer" />,
+    <FaPalette key="palette" />,
+    <FaWaveSquare key="wave" />,
+    <FaSyncAlt key="sync" />,
+    <FaSlidersH key="sliders" />,
+    <FaPuzzlePiece key="puzzle" />,
+    <FaPlug key="plug" />,
+    <FaUserGraduate key="graduate" />,
+    <FaBook key="book" />
   ];
+
+  // Get questions and answers from translation files
+  const questionsData = t("faq.questions", { returnObjects: true }) as FAQItem[] || [];
+  
+  const faqItems = questionsData.map((question: FAQItem, index: number) => ({
+    icon: faqIcons[index % faqIcons.length],
+    question: question.question,
+    answer: question.answer
+  }));
 
   return (
     <FAQContainer id="faq">
@@ -162,7 +165,7 @@ const FAQSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <SectionTitle>Frequently Asked Questions</SectionTitle>
+          <SectionTitle>{t("faq.title")}</SectionTitle>
         </motion.div>
 
         {faqItems.map((faq, index) => (
@@ -175,7 +178,7 @@ const FAQSection = () => {
           >
             <FAQItem>
               <FAQHeader onClick={() => toggleFaq(index)}>
-                <Question>{faq.question}</Question>
+                <Question>{faq.icon} {faq.question}</Question>
                 <ToggleButton isOpen={expandedFaqs[index]}>+</ToggleButton>
               </FAQHeader>
 

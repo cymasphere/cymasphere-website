@@ -4,6 +4,7 @@ import React, { useEffect, memo } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -252,133 +253,80 @@ const CompanyHighlight = styled.div`
 `;
 
 // Memoize the about us content since it's static
-const AboutUsContentSection = memo(() => (
-  <AboutUsContent>
-    <h3>Our Mission</h3>
-    <p>
-      {
-        "Cymasphere's mission is to bridge the gap between music theory and musical creativity. We believe that theory should enhance and guide the creative process, not constrain it. Our tools are designed to provide both guidance and freedom, striking the perfect balance between inspiration and compositional integrity."
-      }
-    </p>
+const AboutUsContentSection = memo(() => {
+  const { t } = useTranslation();
 
-    <CompanyHighlight>
-      {
-        "We're committed to empowering musicians of all skill levels by making music theory intuitive, interactive, and inspiring. Our goal is to see your creative vision flourish through better compositional tools."
-      }
-    </CompanyHighlight>
+  return (
+    <AboutUsContent>
+      <h3>{t("aboutUs.mission.title", "Our Mission")}</h3>
+      <p>
+        {t("aboutUs.mission.content", "Cymasphere's mission is to make music theory accessible without requiring years of study or technical application to an instrument. We believe that deep musical understanding should be within reach of all creators, not just trained musicians. Our tools are designed to remove traditional barriers to music creation while offering creative freedom.")}
+      </p>
 
-    <h3>Our Story</h3>
-    <p>
-      Founded in 2022 by a team of dedicated musicians, software engineers, and
-      music theorists, Cymasphere began as an ambitious project to reimagine how
-      musicians interact with harmony and composition.
-    </p>
+      <CompanyHighlight>
+        {t("aboutUs.mission.highlight", "We're committed to empowering creators of all levels by making music's theoretical complexity intuitive and accessible. Our goal is to enable you to realize your creative vision without the years of study normally required.")}
+      </CompanyHighlight>
 
-    <p>
-      After years of frustration with existing music software that either lacked
-      theoretical sophistication or was too complex for intuitive use, our
-      founders set out to create a tool that would make music theory practical,
-      visual, and genuinely helpful in the creative process.
-    </p>
+      <h3>{t("aboutUs.story.title", "Our Story")}</h3>
+      <p>
+        {t("aboutUs.story.content1", "Founded by Ryan Johnson, a passionate musician, and Garrett Fleischer, an experienced software engineer, Cymasphere was born from a shared vision: to democratize music creation by eliminating the requirement of deep theoretical knowledge.")}
+      </p>
 
-    <h3>Our Team</h3>
-    <TeamSection>
-      <TeamMember>
-        <TeamMemberImage>
-          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
-        </TeamMemberImage>
-        <TeamMemberName>David Chen</TeamMemberName>
-        <TeamMemberRole>Founder & Lead Developer</TeamMemberRole>
-      </TeamMember>
+      <p>
+        {t("aboutUs.story.content2", "After observing that existing music software either required advanced theoretical understanding or severely limited creativity, our founders set out to create a tool that would make musical sophistication accessible to everyone, without requiring years of theoretical study or technical mastery of an instrument.")}
+      </p>
 
-      <TeamMember>
-        <TeamMemberImage>
-          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
-        </TeamMemberImage>
-        <TeamMemberName>Sarah Nguyen</TeamMemberName>
-        <TeamMemberRole>Music Theory Specialist</TeamMemberRole>
-      </TeamMember>
+      <h3>{t("aboutUs.values.title", "Our Values")}</h3>
+      <p>
+        {t("aboutUs.values.intro", "At Cymasphere, we're guided by a set of core values that shape everything we do:")}
+      </p>
 
-      <TeamMember>
-        <TeamMemberImage>
-          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
-        </TeamMemberImage>
-        <TeamMemberName>Michael Park</TeamMemberName>
-        <TeamMemberRole>UI/UX Designer</TeamMemberRole>
-      </TeamMember>
+      <ul>
+        <li>
+          <strong>{t("aboutUs.values.integrity.title", "Musical Integrity")}</strong> - {t("aboutUs.values.integrity.content", "We respect the principles of music theory while embracing innovation")}
+        </li>
+        <li>
+          <strong>{t("aboutUs.values.design.title", "Intuitive Design")}</strong> - {t("aboutUs.values.design.content", "Our interfaces are visually clear and immediately understandable")}
+        </li>
+        <li>
+          <strong>{t("aboutUs.values.freedom.title", "Creative Freedom")}</strong> - {t("aboutUs.values.freedom.content", "We provide guidance without limiting expression")}
+        </li>
+        <li>
+          <strong>{t("aboutUs.values.learning.title", "Continuous Learning")}</strong> - {t("aboutUs.values.learning.content", "Our tools help users develop their musical understanding")}
+        </li>
+      </ul>
 
-      <TeamMember>
-        <TeamMemberImage>
-          {/* <img src="/path/to/team-member.jpg" alt="Team Member" /> */}
-        </TeamMemberImage>
-        <TeamMemberName>Emma Rodriguez</TeamMemberName>
-        <TeamMemberRole>Product Manager</TeamMemberRole>
-      </TeamMember>
-    </TeamSection>
+      <h3>{t("aboutUs.approach.title", "Our Approach")}</h3>
+      <p>
+        {t("aboutUs.approach.intro", "Cymasphere takes a unique approach to music composition software by focusing on:")}
+      </p>
 
-    <h3>Our Values</h3>
-    <p>
-      {
-        "At Cymasphere, we're guided by a set of core values that shape everything we do:"
-      }
-    </p>
+      <ol>
+        <li>{t("aboutUs.approach.point1", "Visualizing harmony and voice leading in intuitive ways")}</li>
+        <li>
+          {t("aboutUs.approach.point2", "Providing intelligent suggestions while respecting your creative direction")}
+        </li>
+        <li>
+          {t("aboutUs.approach.point3", "Integrating theoretical concepts seamlessly into the creative workflow")}
+        </li>
+        <li>{t("aboutUs.approach.point4", "Building bridges between composition, arrangement, and production")}</li>
+      </ol>
 
-    <ul>
-      <li>
-        <strong>Musical Integrity</strong> - We respect the principles of music
-        theory while embracing innovation
-      </li>
-      <li>
-        <strong>Intuitive Design</strong> - Our interfaces are visually clear
-        and immediately understandable
-      </li>
-      <li>
-        <strong>Creative Freedom</strong> - We provide guidance without limiting
-        expression
-      </li>
-      <li>
-        <strong>Continuous Learning</strong> - Our tools help users develop
-        their musical understanding
-      </li>
-    </ul>
+      <p>
+        {t("aboutUs.approach.conclusion", "We're constantly refining our approach based on user feedback and the latest developments in music technology. We believe in creating tools that grow with you and adapt to your evolving creative needs.")}
+      </p>
 
-    <h3>Our Approach</h3>
-    <p>
-      Cymasphere takes a unique approach to music composition software by
-      focusing on:
-    </p>
+      <h3>{t("aboutUs.future.title", "Looking Forward")}</h3>
+      <p>
+        {t("aboutUs.future.content1", "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more.")}
+      </p>
 
-    <ol>
-      <li>Visualizing harmony and voice leading in intuitive ways</li>
-      <li>
-        Providing intelligent suggestions while respecting your creative
-        direction
-      </li>
-      <li>
-        Integrating theoretical concepts seamlessly into the creative workflow
-      </li>
-      <li>Building bridges between composition, arrangement, and production</li>
-    </ol>
-
-    <p>
-      {
-        "We're constantly refining our approach based on user feedback and the latest developments in music technology. We believe in creating tools that grow with you and adapt to your evolving creative needs."
-      }
-    </p>
-
-    <h3>Looking Forward</h3>
-    <p>
-      {
-        "As we continue to develop Cymasphere, we're excited about the future of music creation. Our roadmap includes advanced integration with major DAWs, expanded harmonic palettes, deeper AI-assisted composition features, and much more."
-      }
-    </p>
-
-    <p>
-      We invite you to join us on this journey and help shape the future of
-      intelligent music creation tools.
-    </p>
-  </AboutUsContent>
-));
+      <p>
+        {t("aboutUs.future.content2", "We invite you to join us on this journey and help shape the future of intelligent music creation tools.")}
+      </p>
+    </AboutUsContent>
+  );
+});
 
 // Add display name to memoized component
 AboutUsContentSection.displayName = "AboutUsContentSection";
@@ -389,6 +337,9 @@ interface AboutUsModalProps {
 }
 
 const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
+  // Add translation hook
+  const { t } = useTranslation();
+
   // Improved body overflow management to prevent memory leaks
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -432,10 +383,10 @@ const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
             tabIndex={-1}
           >
             <TitleContainer>
-              <ModalTitle>About Us</ModalTitle>
+              <ModalTitle>{t("footer.aboutUs", "About Us")}</ModalTitle>
             </TitleContainer>
 
-            <CloseButton onClick={onClose} aria-label="Close modal">
+            <CloseButton onClick={onClose} aria-label={t("common.close", "Close modal")}>
               <FaTimes />
             </CloseButton>
 

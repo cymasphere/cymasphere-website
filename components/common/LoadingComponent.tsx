@@ -23,7 +23,7 @@ const LoadingContainer = styled.div<LoadingContainerProps>`
 const LoadingText = styled.p`
   margin-top: 1rem;
   font-size: 1rem;
-  color: #6c63ff;
+  color: white;
   text-align: center;
 `;
 

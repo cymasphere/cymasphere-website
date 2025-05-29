@@ -1,81 +1,105 @@
-// No CSS imports to avoid build issues
-import StyledComponentsRegistry from './registry'
-import ClientLayout from './ClientLayout'
-// The ClientScript component will be created during CI build
-// import ClientScript from './head-script/client-script'
-import './globals.css'
-import { Metadata } from 'next'
+import { Geist, Geist_Mono } from "next/font/google";
+import { Montserrat } from "next/font/google";
+import { Metadata } from "next";
+import StyledComponentsRegistry from "./registry";
+import ClientLayout from "./ClientLayout";
+import I18nProvider from "@/app/i18n/I18nProvider";
+import "./globals.css";
 
-// Commented out font configuration
-/*
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
-
-const roboto_mono = Roboto_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-roboto-mono',
-})
-*/
+// Metadata configuration
+export const metadata: Metadata = {
+  title: "Cymasphere",
+  description: "Advanced Chord Generation",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "any",
+      },
+      {
+        url: "/images/cm-logo-icon.png",
+        type: "image/png",
+        sizes: "32x32",
+      },
+      {
+        url: "/images/cm-logo-icon.png",
+        type: "image/png",
+        sizes: "16x16",
+      },
+    ],
+    apple: [
+      {
+        url: "/images/cm-logo-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/favicon.ico",
+  },
+};
 
 // Theme configuration
-export const theme = {
+const theme = {
   colors: {
-    primary: '#4f46e5',
-    primaryLight: '#6366f1',
-    primaryDark: '#4338ca',
-    secondary: '#06b6d4',
-    secondaryLight: '#22d3ee',
-    secondaryDark: '#0891b2',
-    accent: '#f97316',
-    accentLight: '#fb923c',
-    accentDark: '#ea580c',
-    background: '#0f172a',
-    foreground: '#f8fafc',
-    card: '#1e293b',
-    cardForeground: '#f8fafc',
-    popover: '#1e293b',
-    popoverForeground: '#f8fafc',
-    muted: '#334155',
-    mutedForeground: '#94a3b8',
-    border: '#334155',
-    input: '#334155',
-    ring: '#4f46e5',
+    primary: "#6c63ff",
+    accent: "#4ecdc4",
+    background: "#121212",
+    cardBg: "#1e1e1e",
+    inputBg: "#2a2a2a",
+    text: "#ffffff",
+    textSecondary: "rgba(255, 255, 255, 0.7)",
+    textTertiary: "rgba(255, 255, 255, 0.4)",
+    border: "rgba(255, 255, 255, 0.1)",
+    success: "#00c9a7",
+    error: "#ff5e62",
+    warning: "#ffc107",
   },
   breakpoints: {
-    sm: '640px',
-    md: '768px',
-    lg: '1024px',
-    xl: '1280px',
-    '2xl': '1536px',
+    mobile: "576px",
+    tablet: "768px",
+    desktop: "1024px",
+    largeDesktop: "1200px",
   },
   shadows: {
-    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    small: "0 2px 8px rgba(0, 0, 0, 0.15)",
+    medium: "0 4px 12px rgba(0, 0, 0, 0.2)",
+    large: "0 8px 20px rgba(0, 0, 0, 0.25)",
   },
-}
+};
 
-export const metadata: Metadata = {
-  title: 'CymaSphere',
-  description: 'CymaSphere - Music Analysis Platform'
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+// Define the interface for the RootLayout props
+interface RootLayoutProps {
+  children: React.ReactNode;
 }
 
 export default function RootLayout({
   children
-}: {
-  children: React.ReactNode
-}) {
+}: RootLayoutProps) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
         <StyledComponentsRegistry>
+          <I18nProvider>
           <ClientLayout>{children}</ClientLayout>
+          </I18nProvider>
         </StyledComponentsRegistry>
       </body>
     </html>
-  )
+  );
 }

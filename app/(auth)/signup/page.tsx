@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -245,6 +247,16 @@ const CheckboxLabel = styled.label`
   }
 `;
 
+const ModalLink = styled.span`
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const buttonVariants = {
   hover: {
     scale: 1.03,
@@ -258,28 +270,6 @@ const buttonVariants = {
     scale: 0.98,
   },
 };
-
-// Add Success Message styled components here, outside of the component function
-const SuccessMessage = styled(motion.div)`
-  background-color: rgba(0, 201, 167, 0.1);
-  border: 2px solid var(--success);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const SuccessTitle = styled.h3`
-  color: var(--success);
-  font-size: 24px;
-  margin-bottom: 16px;
-`;
-
-const SuccessText = styled.div`
-  color: var(--text);
-  line-height: 1.6;
-  font-size: 16px;
-`;
 
 // Add styled component for name fields container
 const NameFieldsContainer = styled.div`
@@ -335,6 +325,7 @@ function SearchParamsHandler({
 function SignUp() {
   const { signUp, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -344,10 +335,21 @@ function SignUp() {
   });
   const [error, setError] = useState("");
   const [loadingState, setLoadingState] = useState(false);
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [redirectAfterLogin, setRedirectAfterLogin] = useState("");
   const [isCheckoutComplete, setIsCheckoutComplete] = useState(false);
+  
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -356,7 +358,7 @@ function SignUp() {
       if (redirectAfterLogin) {
         router.push(redirectAfterLogin);
       } else {
-        router.push("/dashboard");
+        router.push(`/dashboard`);
       }
     }
   }, [user, router, redirectAfterLogin]);
@@ -390,45 +392,102 @@ function SignUp() {
 
     // Validate form
     if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match");
+      return setError(t("signup.errors.passwordsDoNotMatch", "Passwords do not match"));
     }
 
     if (formData.password.length < 6) {
-      return setError("Password must be at least 6 characters");
+      return setError(t("signup.errors.passwordTooShort", "Password must be at least 6 characters"));
     }
 
     if (!agreeToTerms) {
       return setError(
-        "You must agree to the Terms of Service and Privacy Policy"
+        t("signup.errors.agreeTerms", "You must agree to the Terms of Service and Privacy Policy")
       );
     }
 
     try {
       setLoadingState(true);
       // Combine first and last name for the API call
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const result = await signUp(fullName, formData.email, formData.password);
+      const result = await signUp(
+        formData.firstName.trim(),
+        formData.lastName.trim(),
+        formData.email.trim(),
+        formData.password
+      );
 
+      // When a user already exists in Supabase Auth:
+      // 1. If identities array is empty, it means the user exists and has confirmed their email
+      // 2. If there's an error with "already registered" in the message, that's also a clear sign
+
+      // Check for existing account
       if (result.error) {
         console.error("Sign up error:", result.error.message);
-        setError(result.error.message);
-      } else {
-        // Show success message
-        setSuccess(true);
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+
+        // Check if the error is about an existing account
+        if (
+          result.error.message
+            .toLowerCase()
+            .includes("user already registered") ||
+          result.error.message.toLowerCase().includes("email already") ||
+          result.error.message.toLowerCase().includes("account already exists")
+        ) {
+          // Redirect to the account exists page
+          router.push(
+            `/signup-account-exists?email=${encodeURIComponent(
+              formData.email.trim()
+            )}`
+          );
+          return;
+        }
+
+        // For other errors, show the error message
+        setError(t("signup.errors.generic", "{{message}}", { message: result.error.message }));
+      } else if (result.data && result.data.user) {
+        // Check for empty identities array which indicates an existing confirmed user
+        if (
+          !result.data.user.identities ||
+          result.data.user.identities.length === 0
+        ) {
+          // User already exists - redirect to account exists page
+          router.push(
+            `/signup-account-exists?email=${encodeURIComponent(
+              formData.email.trim()
+            )}`
+          );
+          return;
+        }
+
+        // New user successfully created
+        router.push(
+          `/signup-success?name=${encodeURIComponent(
+            formData.firstName.trim()
+          )}&email=${encodeURIComponent(formData.email.trim())}`
+        );
       }
     } catch (err: unknown) {
       console.error("Sign up error:", err);
       // Handle specific errors
       const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
+      setError(t("signup.errors.unknown", "{{message}}", { message: errorMessage }));
     } finally {
       setLoadingState(false);
     }
   };
+
+  // Render a loading indicator if translations aren't loaded yet
+  if (!translationsLoaded) {
+    return (
+      <div style={{ 
+        height: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        backgroundColor: "var(--background)"
+      }}>
+        <LoadingComponent size="40px" />
+      </div>
+    );
+  }
 
   return (
     <AuthContainer>
@@ -439,9 +498,9 @@ function SignUp() {
         />
       </Suspense>
 
-      <Link href="/" passHref legacyBehavior={false}>
+      <Link href={`/`} passHref legacyBehavior={false}>
         <BackButton>
-          <FaArrowLeft /> Back to Home
+          <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
         </BackButton>
       </Link>
 
@@ -468,34 +527,8 @@ function SignUp() {
         </div>
 
         <Title>
-          Create an <span>account</span>
+          {t("signup.title.createAn", "Create an")} <span>{t("signup.title.account", "account")}</span>
         </Title>
-
-        {/* Display success message if signup was successful */}
-        {success && (
-          <SuccessMessage
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <SuccessTitle>Account Created Successfully!</SuccessTitle>
-            <SuccessText>
-              <strong style={{ fontSize: "1.1em", color: "var(--success)" }}>
-                Hi {formData.firstName}! A verification email has been sent to{" "}
-                {formData.email}.
-              </strong>
-              <br />
-              <br />
-              Please check your inbox (and spam folder) and click the link to
-              verify your account.
-              <br />
-              <br />
-              <strong>
-                You must verify your email before accessing all features.
-              </strong>
-            </SuccessText>
-          </SuccessMessage>
-        )}
 
         {/* Display error message if there was an error */}
         {error && (
@@ -511,43 +544,43 @@ function SignUp() {
         <Form onSubmit={handleSubmit}>
           <NameFieldsContainer>
             <FormGroup>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">{t("signup.firstName", "First Name")}</Label>
               <Input
                 type="text"
                 id="firstName"
                 name="firstName"
-                value={formData.firstName}
+                value={formData.firstName.trim()}
                 onChange={handleChange}
                 required
-                placeholder="First Name"
+                placeholder={t("signup.firstNamePlaceholder", "First Name")}
               />
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">{t("signup.lastName", "Last Name")}</Label>
               <Input
                 type="text"
                 id="lastName"
                 name="lastName"
-                value={formData.lastName}
+                value={formData.lastName.trim()}
                 onChange={handleChange}
                 required
-                placeholder="Last Name"
+                placeholder={t("signup.lastNamePlaceholder", "Last Name")}
               />
             </FormGroup>
           </NameFieldsContainer>
 
           <FormGroup>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("common.email", "Email")}</Label>
             <Input
               type="email"
               id="email"
               name="email"
-              value={formData.email}
+              value={formData.email.trim()}
               onChange={handleChange}
               required
               readOnly={isCheckoutComplete}
-              placeholder="Enter your email address"
+              placeholder={t("signup.emailPlaceholder", "Enter your email address")}
               style={
                 isCheckoutComplete
                   ? {
@@ -565,13 +598,13 @@ function SignUp() {
                   marginTop: "0.5rem",
                 }}
               >
-                This email is linked to your purchase and cannot be changed
+                {t("signup.emailLinkedToPurchase", "This email is linked to your purchase and cannot be changed")}
               </div>
             )}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("common.password", "Password")}</Label>
             <Input
               type="password"
               id="password"
@@ -579,12 +612,12 @@ function SignUp() {
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Create a secure password"
+              placeholder={t("signup.passwordPlaceholder", "Create a secure password")}
             />
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("signup.confirmPassword", "Confirm Password")}</Label>
             <Input
               type="password"
               id="confirmPassword"
@@ -592,7 +625,7 @@ function SignUp() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Confirm your password"
+              placeholder={t("signup.confirmPasswordPlaceholder", "Confirm your password")}
             />
           </FormGroup>
 
@@ -605,8 +638,8 @@ function SignUp() {
               required
             />
             <CheckboxLabel htmlFor="terms">
-              I agree to the <Link href="/terms">Terms of Service</Link> and{" "}
-              <Link href="/privacy">Privacy Policy</Link>
+              {t("signup.agreeToTerms", "I agree to the")} <Link href="/terms-of-service" target="_blank" rel="noopener noreferrer"><ModalLink as="span">{t("signup.termsOfService", "Terms of Service")}</ModalLink></Link> {t("signup.and", "and")}{" "}
+              <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer"><ModalLink as="span">{t("signup.privacyPolicy", "Privacy Policy")}</ModalLink></Link>
             </CheckboxLabel>
           </CheckboxContainer>
 
@@ -623,17 +656,17 @@ function SignUp() {
                   <div style={{ marginRight: "10px" }}>
                     <LoadingComponent size="20px" />
                   </div>
-                  Creating Account...
+                  {t("signup.creatingAccount", "Creating Account...")}
                 </>
               ) : (
-                "Create Account"
+                t("signup.createAccount", "Create Account")
               )}
             </ButtonContent>
           </Button>
         </Form>
 
         <LinkText>
-          Already have an account? <Link href="/login">Log in</Link>
+          {t("signup.alreadyHaveAccount", "Already have an account?")} <Link href={`/login`}>{t("signup.login", "Log in")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>
