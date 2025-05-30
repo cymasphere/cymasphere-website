@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import EmailCollectionModal from "../modals/EmailCollectionModal";
 import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1088,11 +1089,8 @@ const ChordWeb = React.memo(() => {
 
     // Clean up when component unmounts
     return () => {
-      // Capture the current timeoutIds value
-      const currentTimeoutIds = timeoutIds.current;
-
       // Clean up all timeouts
-      Object.values(currentTimeoutIds).forEach((id) => clearTimeout(id));
+      Object.values(timeoutIds.current).forEach((id) => clearTimeout(id));
 
       // Clean up other resources
       canvas.removeEventListener("click", handleCanvasClick);
@@ -1103,7 +1101,7 @@ const ChordWeb = React.memo(() => {
       window.removeEventListener("resize", resizeCanvas);
       clearTimeout(resizeTimeout);
     };
-  }, [chords, playChord]); // Add missing dependencies
+  }, []); // Empty dependency array means this effect runs once on mount
 
   return <ChordWebCanvas ref={canvasRef} />;
 });
@@ -1720,6 +1718,27 @@ const PricingSection = () => {
   // Get authentication context
   const { user } = useAuth();
 
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() =>
+    typeof window !== "undefined" ? i18next.language : "en"
+  );
+
+  // Effect to listen for language changes
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+
+    if (typeof window !== "undefined") {
+      i18next.on("languageChanged", handleLanguageChanged);
+      return () => {
+        i18next.off("languageChanged", handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
   // State to track the selected billing period
   const [billingPeriod, setBillingPeriod] = useState<PlanType>("monthly");
   const [checkoutLoading, setCheckoutLoading] = useState<
@@ -1912,7 +1931,7 @@ const PricingSection = () => {
   };
 
   // Translate features
-  const features = useMemo(() => {
+  const features = React.useMemo(() => {
     // If translations exist for features, use them, otherwise use English defaults
     try {
       // Use the correct type for the t function with returnObjects
@@ -1943,7 +1962,7 @@ const PricingSection = () => {
       "Cloud Storage & Project Backups",
       "Premium Support & All Future Updates",
     ];
-  }, [t]);
+  }, [t, language]);
 
   // Get price details for the current plan
   const priceDetails = getDisplayPrice(currentPlan);
