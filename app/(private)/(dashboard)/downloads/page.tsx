@@ -202,6 +202,12 @@ const ResourceItem = styled.div`
   &:hover {
     transform: translateX(5px);
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 `;
 
 const ResourceIcon = styled.div`
@@ -218,10 +224,21 @@ const ResourceIcon = styled.div`
     color: var(--primary);
     font-size: 1.5rem;
   }
+
+  @media (max-width: 768px) {
+    margin-right: 0;
+    margin-bottom: 1rem;
+    align-self: center;
+  }
 `;
 
 const ResourceInfo = styled.div`
   flex: 1;
+
+  @media (max-width: 768px) {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
 `;
 
 const ResourceTitle = styled.div`
@@ -250,6 +267,11 @@ const ResourceLink = styled.a`
 
   &:hover {
     text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    justify-content: center;
+    align-self: center;
   }
 `;
 
