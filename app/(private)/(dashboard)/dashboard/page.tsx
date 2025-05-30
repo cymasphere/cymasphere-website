@@ -358,9 +358,9 @@ function DashboardPage() {
   // State for prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
-  const [monthlyPrice, setMonthlyPrice] = useState(8);
-  const [yearlyPrice, setYearlyPrice] = useState(69);
-  const [lifetimePrice, setLifetimePrice] = useState(199);
+  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
+  const [yearlyPrice, setYearlyPrice] = useState<number | null>(null);
+  const [lifetimePrice, setLifetimePrice] = useState<number | null>(null);
 
   // State for upcoming invoice
   const [upcomingInvoice, setUpcomingInvoice] = useState<{

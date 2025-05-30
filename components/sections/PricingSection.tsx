@@ -1927,7 +1927,7 @@ const PricingSection = () => {
 
   // Calculate the discounted price if a discount exists
   const getDisplayPrice = (plan: PriceData | undefined) => {
-    if (!plan) return { display: "$0" };
+    if (!plan) return { display: "--" };
 
     const baseAmount = plan.amount / 100;
     let discountedAmount = baseAmount;

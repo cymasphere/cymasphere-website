@@ -376,9 +376,9 @@ export default function BillingPage() {
   // State for plan prices and discounts
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
-  const [monthlyPrice, setMonthlyPrice] = useState(8);
-  const [yearlyPrice, setYearlyPrice] = useState(69);
-  const [lifetimePrice, setLifetimePrice] = useState(199);
+  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
+  const [yearlyPrice, setYearlyPrice] = useState<number | null>(null);
+  const [lifetimePrice, setLifetimePrice] = useState<number | null>(null);
 
   // Add a variable to determine the subscription interval
   const subscriptionInterval = useMemo(() => {
@@ -808,12 +808,14 @@ export default function BillingPage() {
   };
 
   // Get the price for the current subscription
-  const getCurrentPrice = () => {
-    return userSubscription.subscription === "monthly"
+  const getCurrentPrice = (): string => {
+    const price = userSubscription.subscription === "monthly"
       ? monthlyPrice
       : userSubscription.subscription === "annual"
       ? yearlyPrice
       : lifetimePrice;
+    
+    return price !== null ? price.toString() : "--";
   };
 
   const handlePlanChange = () => {
@@ -976,8 +978,8 @@ export default function BillingPage() {
                   {isSubscriptionNone(userSubscription.subscription)
                     ? "$0.00"
                     : isSubscriptionLifetime(userSubscription.subscription)
-                    ? "$" + getCurrentPrice() || "299.00"
-                    : `$${getCurrentPrice() || "0.00"} / ${
+                    ? getCurrentPrice() === "--" ? "--" : "$" + getCurrentPrice()
+                    : `$${getCurrentPrice()} / ${
                         subscriptionInterval === "month"
                           ? t("dashboard.billing.month", "month")
                           : t("dashboard.billing.year", "year")
@@ -1140,9 +1142,9 @@ export default function BillingPage() {
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
             planName="Cymasphere Pro"
-            monthlyPrice={monthlyPrice}
-            yearlyPrice={yearlyPrice}
-            lifetimePrice={lifetimePrice}
+            monthlyPrice={monthlyPrice ?? 0}
+            yearlyPrice={yearlyPrice ?? 0}
+            lifetimePrice={lifetimePrice ?? 0}
             planDescription={t("pricing.proSolution")}
             planFeatures={(() => {
               // Use the same features array as the main pricing section

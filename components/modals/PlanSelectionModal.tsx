@@ -513,8 +513,8 @@ interface PlanSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: Profile;
-  onIntervalChange: (interval: SubscriptionType) => void;
-  onConfirm: (plan: string) => void;
+  onIntervalChange: (interval: string) => void;
+  onConfirm: () => void;
   formatDate?: (date: string | number | null | undefined) => string;
   planName: string;
   monthlyPrice: number;
@@ -549,9 +549,9 @@ const PlanSelectionModal = ({
   onConfirm,
   formatDate,
   planName,
-  monthlyPrice = 8,
-  yearlyPrice = 69,
-  lifetimePrice = 199,
+  monthlyPrice = 0,
+  yearlyPrice = 0,
+  lifetimePrice = 0,
   planDescription,
   planFeatures,
   monthlyDiscount,
@@ -774,20 +774,26 @@ const PlanSelectionModal = ({
                             </OriginalPrice>
                             <div style={{ display: "flex", alignItems: "center" }}>
                               <PlanPriceStyled>
-                                {t("pricing.currencySymbol", "$")}
-                                {monthlyDiscount.percent_off
-                                  ? Math.round(
-                                      monthlyPrice *
-                                        (1 - monthlyDiscount.percent_off / 100)
-                                    )
-                                  : monthlyDiscount.amount_off
-                                  ? Math.max(
-                                      0,
-                                      monthlyPrice -
-                                        Math.round(monthlyDiscount.amount_off / 100)
-                                    )
-                                  : monthlyPrice}
-                                <span>{t("pricing.perMonth", "/month")}</span>
+                                {monthlyPrice > 0 ? (
+                                  <>
+                                    {t("pricing.currencySymbol", "$")}
+                                    {monthlyDiscount?.percent_off
+                                      ? Math.round(
+                                          monthlyPrice *
+                                            (1 - monthlyDiscount.percent_off / 100)
+                                        )
+                                      : monthlyDiscount?.amount_off
+                                      ? Math.max(
+                                          0,
+                                          monthlyPrice -
+                                            Math.round(monthlyDiscount.amount_off / 100)
+                                        )
+                                      : monthlyPrice}
+                                    <span>{t("pricing.perMonth", "/month")}</span>
+                                  </>
+                                ) : (
+                                  "--"
+                                )}
                               </PlanPriceStyled>
                               <DiscountTag>
                                 {monthlyDiscount.percent_off
@@ -798,8 +804,14 @@ const PlanSelectionModal = ({
                           </>
                         ) : (
                           <PlanPriceStyled>
-                            {t("pricing.currencySymbol", "$")}{monthlyPrice}
-                            <span>{t("pricing.perMonth", "/month")}</span>
+                            {monthlyPrice > 0 ? (
+                              <>
+                                {t("pricing.currencySymbol", "$")}{monthlyPrice}
+                                <span>{t("pricing.perMonth", "/month")}</span>
+                              </>
+                            ) : (
+                              "--"
+                            )}
                           </PlanPriceStyled>
                         )}
                         
@@ -1065,7 +1077,7 @@ const PlanSelectionModal = ({
                 {t("common.cancel", "Cancel")}
               </Button>
               <Button
-                onClick={() => onConfirm(selectedSubscription)}
+                onClick={() => onConfirm()}
                 style={{
                   display: "flex",
                   alignItems: "center",

@@ -1289,7 +1289,7 @@ export default function AdminCRM() {
         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         cancelAtPeriodEnd: false,
         priceId: `price_${user.subscription}`,
-        amount: user.subscription === "monthly" ? 9.99 : user.subscription === "annual" ? 99.99 : 199.99,
+        amount: user.subscription === "monthly" ? 0 : user.subscription === "annual" ? 0 : 0,
         interval: user.subscription === "monthly" ? "month" : user.subscription === "annual" ? "year" : "lifetime",
       }
     ] : [];
@@ -1308,7 +1308,7 @@ export default function AdminCRM() {
       {
         id: `in_${user.id.slice(0, 8)}`,
         number: `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-        amount: user.subscription === "monthly" ? 9.99 : user.subscription === "annual" ? 99.99 : 199.99,
+        amount: user.subscription === "monthly" ? 0 : user.subscription === "annual" ? 0 : 0,
         status: "paid",
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         paidAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString(),
