@@ -268,6 +268,61 @@ const CloseButton = styled.button`
   }
 `;
 
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  margin-bottom: 7px;
+  font-size: 0.95rem;
+  color: var(--text);
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font-size: 1rem;
+  min-height: 120px;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+`;
+
 const formatName = (
   firstName: string | null,
   lastName: string | null
@@ -298,13 +353,15 @@ function DashboardPage() {
   });
   const [isContactSubmitting, setIsContactSubmitting] = useState(false);
   const [deviceCount, setDeviceCount] = useState(0);
-  const maxDevices = 5;
+  const [maxDevices, setMaxDevices] = useState(5);
   const [isLoadingDevices, setIsLoadingDevices] = useState(true);
 
   // State for prices
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState(8);
+  const [yearlyPrice, setYearlyPrice] = useState(69);
+  const [lifetimePrice, setLifetimePrice] = useState(199);
 
   // State for upcoming invoice
   const [upcomingInvoice, setUpcomingInvoice] = useState<{
@@ -317,6 +374,14 @@ function DashboardPage() {
     error: null,
   });
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
+
+  // Trial duration in days
+  const trialDays = 7; // Default value
+
+  // Get trial duration based on plan
+  const getTrialDuration = () => {
+    return trialDays;
+  };
 
   // Format date for display
   const formatDate = (date: string | number | null | undefined) => {
@@ -479,6 +544,8 @@ function DashboardPage() {
 
         if (prices) {
           setMonthlyPrice(Math.round(prices.monthly.amount / 100));
+          setYearlyPrice(Math.round(prices.annual.amount / 100));
+          setLifetimePrice(Math.round(prices.lifetime.amount / 100));
         }
       } catch (err) {
         console.error("Error fetching prices:", err);
@@ -541,7 +608,7 @@ function DashboardPage() {
         fetchUpcomingInvoice();
       }
     }
-  }, [user, t]);
+  }, [user]);
 
   const handleModalClose = () => {
     setShowConfirmationModal(false);
@@ -672,7 +739,7 @@ function DashboardPage() {
           {shouldShowTrialContent() && (
             <TrialBadge>
               {t("dashboard.main.freeTrialBadge", "{{trialDays}}-Day Trial", {
-                trialDays: 7,
+                trialDays,
               })}
             </TrialBadge>
           )}
@@ -777,8 +844,8 @@ function DashboardPage() {
               {shouldShowTrialContent()
                 ? t(
                     "dashboard.main.trialMessage",
-                    "You're currently on a 7-day free trial with full access to all premium features. No payment until your trial ends.",
-                    { trialDays: 7 }
+                    "You're currently on a {{trialDays}}-day free trial with full access to all premium features. No payment until your trial ends.",
+                    { trialDays }
                   )
                 : user.profile.subscription === "lifetime"
                 ? t(

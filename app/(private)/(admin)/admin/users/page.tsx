@@ -55,6 +55,57 @@ const PaginationEllipsis = styled.span`
   color: var(--text-secondary);
 `;
 
+const CRMContainer = styled.div`
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+
+  @media (max-width: 768px) {
+    padding: 20px 15px;
+  }
+`;
+
+const CRMTitle = styled.h1`
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  svg {
+    color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const CRMSubtitle = styled.p`
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const StatsRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const StatCard = styled(motion.div)`
   background-color: var(--card-bg);
   border-radius: 8px;

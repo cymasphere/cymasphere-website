@@ -7,7 +7,7 @@ import NextSEO from "@/components/NextSEO";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import useLanguage from "@/hooks/useLanguage";
-import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import {
   FaArrowLeft,
   FaSave,
@@ -28,6 +28,8 @@ import {
   FaFont,
   FaHeading,
 } from "react-icons/fa";
+import Link from "next/link";
+import VisualEditor from "@/components/email-campaigns/VisualEditor";
 
 // Copy all the styled components from campaign creation
 const CreateContainer = styled.div`
@@ -654,6 +656,7 @@ function CreateTemplatePage() {
     ],
   });
 
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
