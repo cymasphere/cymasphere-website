@@ -1,19 +1,22 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaChartBar,
-  FaEnvelope,
-  FaUsers,
+import { 
+  FaChartLine, 
+  FaEnvelopeOpen,
   FaMousePointer,
-  FaPercentage,
+  FaUsers,
+  FaCalendarAlt,
   FaArrowUp,
   FaArrowDown,
   FaFilter,
   FaDownload,
   FaEye,
-  FaExternalLinkAlt,
+  FaEnvelope,
+  FaUserTimes,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -143,24 +146,19 @@ const MetricCard = styled(motion.div)<{ variant?: string }>`
   overflow: hidden;
 
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 3px;
-    background: ${(props) => {
+    background: ${props => {
       switch (props.variant) {
-        case "success":
-          return "linear-gradient(90deg, #28a745, #20c997)";
-        case "warning":
-          return "linear-gradient(90deg, #ffc107, #fd7e14)";
-        case "danger":
-          return "linear-gradient(90deg, #dc3545, #e83e8c)";
-        case "info":
-          return "linear-gradient(90deg, #17a2b8, #6f42c1)";
-        default:
-          return "linear-gradient(90deg, var(--primary), var(--accent))";
+        case 'success': return 'linear-gradient(90deg, #28a745, #20c997)';
+        case 'warning': return 'linear-gradient(90deg, #ffc107, #fd7e14)';
+        case 'danger': return 'linear-gradient(90deg, #dc3545, #e83e8c)';
+        case 'info': return 'linear-gradient(90deg, #17a2b8, #6f42c1)';
+        default: return 'linear-gradient(90deg, var(--primary), var(--accent))';
       }
     }};
   }
@@ -181,32 +179,22 @@ const MetricIcon = styled.div<{ variant?: string }>`
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  background-color: ${(props) => {
+  background-color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "rgba(40, 167, 69, 0.1)";
-      case "warning":
-        return "rgba(255, 193, 7, 0.1)";
-      case "danger":
-        return "rgba(220, 53, 69, 0.1)";
-      case "info":
-        return "rgba(23, 162, 184, 0.1)";
-      default:
-        return "rgba(108, 99, 255, 0.1)";
+      case 'success': return 'rgba(40, 167, 69, 0.1)';
+      case 'warning': return 'rgba(255, 193, 7, 0.1)';
+      case 'danger': return 'rgba(220, 53, 69, 0.1)';
+      case 'info': return 'rgba(23, 162, 184, 0.1)';
+      default: return 'rgba(108, 99, 255, 0.1)';
     }
   }};
-  color: ${(props) => {
+  color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "#28a745";
-      case "warning":
-        return "#ffc107";
-      case "danger":
-        return "#dc3545";
-      case "info":
-        return "#17a2b8";
-      default:
-        return "var(--primary)";
+      case 'success': return '#28a745';
+      case 'warning': return '#ffc107';
+      case 'danger': return '#dc3545';
+      case 'info': return '#17a2b8';
+      default: return 'var(--primary)';
     }
   }};
 `;
@@ -216,7 +204,7 @@ const MetricChange = styled.div<{ positive: boolean }>`
   align-items: center;
   gap: 0.25rem;
   font-size: 0.8rem;
-  color: ${(props) => (props.positive ? "#28a745" : "#dc3545")};
+  color: ${props => props.positive ? '#28a745' : '#dc3545'};
   font-weight: 600;
 `;
 
@@ -263,11 +251,7 @@ const ChartTitle = styled.h3`
 
 const ChartPlaceholder = styled.div`
   height: 300px;
-  background: linear-gradient(
-    135deg,
-    rgba(108, 99, 255, 0.1),
-    rgba(78, 205, 196, 0.1)
-  );
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(78, 205, 196, 0.1));
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -360,25 +344,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "sent":
+      case 'sent':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "sending":
+      case 'sending':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "draft":
+      case 'draft':
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case "failed":
+      case 'failed':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -404,12 +388,7 @@ const MetricNumber = styled.div`
 
 const MetricPercent = styled.div<{ positive?: boolean }>`
   font-size: 0.8rem;
-  color: ${(props) =>
-    props.positive
-      ? "#28a745"
-      : props.positive === false
-      ? "#dc3545"
-      : "var(--text-secondary)"};
+  color: ${props => props.positive ? '#28a745' : props.positive === false ? '#dc3545' : 'var(--text-secondary)'};
   margin-top: 0.25rem;
 `;
 
@@ -421,15 +400,15 @@ const mockMetrics = [
     change: "+12.5%",
     positive: true,
     icon: FaEnvelope,
-    variant: "primary",
+    variant: "primary"
   },
   {
     label: "Open Rate",
     value: "28.4%",
     change: "+2.1%",
     positive: true,
-    icon: FaEnvelope,
-    variant: "success",
+    icon: FaEnvelopeOpen,
+    variant: "success"
   },
   {
     label: "Click Rate",
@@ -437,23 +416,23 @@ const mockMetrics = [
     change: "-0.3%",
     positive: false,
     icon: FaMousePointer,
-    variant: "warning",
+    variant: "warning"
   },
   {
     label: "Unsubscribe Rate",
     value: "0.8%",
     change: "+0.1%",
     positive: false,
-    icon: FaExternalLinkAlt,
-    variant: "danger",
+    icon: FaUserTimes,
+    variant: "danger"
   },
   {
     label: "Bounce Rate",
     value: "2.1%",
     change: "-0.5%",
     positive: true,
-    icon: FaPercentage,
-    variant: "info",
+    icon: FaExclamationTriangle,
+    variant: "info"
   },
   {
     label: "Active Subscribers",
@@ -461,8 +440,8 @@ const mockMetrics = [
     change: "+156",
     positive: true,
     icon: FaUsers,
-    variant: "success",
-  },
+    variant: "success"
+  }
 ];
 
 const mockCampaigns = [
@@ -477,7 +456,7 @@ const mockCampaigns = [
     clicks: 45,
     openRate: 25.3,
     clickRate: 3.6,
-    sentDate: "2024-01-20",
+    sentDate: "2024-01-20"
   },
   {
     id: "2",
@@ -490,7 +469,7 @@ const mockCampaigns = [
     clicks: 312,
     openRate: 31.2,
     clickRate: 5.8,
-    sentDate: "2024-01-18",
+    sentDate: "2024-01-18"
   },
   {
     id: "3",
@@ -503,7 +482,7 @@ const mockCampaigns = [
     clicks: 19,
     openRate: 18.7,
     clickRate: 2.1,
-    sentDate: "2024-01-22",
+    sentDate: "2024-01-22"
   },
   {
     id: "4",
@@ -516,7 +495,7 @@ const mockCampaigns = [
     clicks: 89,
     openRate: 28.9,
     clickRate: 4.2,
-    sentDate: "2024-01-19",
+    sentDate: "2024-01-19"
   },
   {
     id: "5",
@@ -529,8 +508,8 @@ const mockCampaigns = [
     clicks: 0,
     openRate: 0,
     clickRate: 0,
-    sentDate: "2024-01-25",
-  },
+    sentDate: "2024-01-25"
+  }
 ];
 
 function AnalyticsPage() {
@@ -538,7 +517,8 @@ function AnalyticsPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [timeRange, setTimeRange] = useState("30d");
   const [campaignType, setCampaignType] = useState("all");
-
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
@@ -570,33 +550,26 @@ function AnalyticsPage() {
         title="Email Analytics"
         description="Comprehensive analytics and performance metrics for email campaigns"
       />
-
+      
       <AnalyticsContainer>
         <AnalyticsTitle>
-          <FaChartBar />
+          <FaChartLine />
           Email Analytics
         </AnalyticsTitle>
         <AnalyticsSubtitle>
-          Track performance, engagement, and ROI of your email marketing
-          campaigns
+          Track performance, engagement, and ROI of your email marketing campaigns
         </AnalyticsSubtitle>
 
         <FiltersRow>
           <FilterGroup>
-            <FaFilter style={{ color: "var(--text-secondary)" }} />
-            <Select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-            >
+            <FaFilter style={{ color: 'var(--text-secondary)' }} />
+            <Select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
               <option value="90d">Last 90 days</option>
               <option value="1y">Last year</option>
             </Select>
-            <Select
-              value={campaignType}
-              onChange={(e) => setCampaignType(e.target.value)}
-            >
+            <Select value={campaignType} onChange={(e) => setCampaignType(e.target.value)}>
               <option value="all">All Campaigns</option>
               <option value="campaigns">Campaigns Only</option>
               <option value="automations">Automations Only</option>
@@ -636,15 +609,14 @@ function AnalyticsPage() {
         <ChartsGrid>
           <ChartCard>
             <ChartTitle>
-              <FaChartBar />
+              <FaChartLine />
               Email Performance Over Time
             </ChartTitle>
             <ChartPlaceholder>
-              📊 Interactive chart showing email metrics over time would be
-              rendered here
+              📊 Interactive chart showing email metrics over time would be rendered here
             </ChartPlaceholder>
           </ChartCard>
-
+          
           <ChartCard>
             <ChartTitle>
               <FaUsers />
@@ -699,11 +671,7 @@ function AnalyticsPage() {
                     <PerformanceMetric>
                       <MetricNumber>{campaign.openRate}%</MetricNumber>
                       <MetricPercent positive={campaign.openRate > 25}>
-                        {campaign.openRate > 25
-                          ? "Good"
-                          : campaign.openRate > 15
-                          ? "Average"
-                          : "Low"}
+                        {campaign.openRate > 25 ? 'Good' : campaign.openRate > 15 ? 'Average' : 'Low'}
                       </MetricPercent>
                     </PerformanceMetric>
                   </TableCell>
@@ -711,11 +679,7 @@ function AnalyticsPage() {
                     <PerformanceMetric>
                       <MetricNumber>{campaign.clickRate}%</MetricNumber>
                       <MetricPercent positive={campaign.clickRate > 3}>
-                        {campaign.clickRate > 3
-                          ? "Good"
-                          : campaign.clickRate > 1.5
-                          ? "Average"
-                          : "Low"}
+                        {campaign.clickRate > 3 ? 'Good' : campaign.clickRate > 1.5 ? 'Average' : 'Low'}
                       </MetricPercent>
                     </PerformanceMetric>
                   </TableCell>
@@ -732,4 +696,4 @@ function AnalyticsPage() {
   );
 }
 
-export default AnalyticsPage;
+export default AnalyticsPage; 

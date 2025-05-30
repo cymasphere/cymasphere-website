@@ -1,23 +1,29 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import NextSEO from "@/components/NextSEO";
-import {
-  FaTicketAlt,
+import { 
+  FaTicketAlt, 
   FaPlus,
   FaSearch,
+  FaEye,
+  FaTrash,
   FaBan,
   FaCopy,
   FaCheck,
   FaExclamationTriangle,
+  FaPercent,
+  FaDollarSign,
+  FaCalendarAlt,
+  FaHashtag,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
-import {
-  createOneTimeDiscountCode,
-  listPromotionCodes,
-  deactivatePromotionCode,
+import { 
+  createOneTimeDiscountCode, 
+  listPromotionCodes, 
+  deactivatePromotionCode 
 } from "@/utils/stripe/actions";
 
 const Container = styled.div`
@@ -175,7 +181,7 @@ const CouponCode = styled.div`
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--primary);
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   background-color: rgba(108, 99, 255, 0.1);
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
@@ -188,14 +194,11 @@ const CouponStatus = styled.span<{ $active: boolean }>`
   font-size: 0.8rem;
   font-weight: 500;
   text-transform: uppercase;
-
-  ${(props) =>
-    props.$active
-      ? `
+  
+  ${props => props.$active ? `
     background-color: rgba(46, 204, 113, 0.2);
     color: #2ecc71;
-  `
-      : `
+  ` : `
     background-color: rgba(231, 76, 60, 0.2);
     color: #e74c3c;
   `}
@@ -232,9 +235,7 @@ const CouponActions = styled.div`
   margin-top: 1rem;
 `;
 
-const ActionButton = styled.button<{
-  variant?: "primary" | "secondary" | "danger";
-}>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
@@ -245,10 +246,10 @@ const ActionButton = styled.button<{
   gap: 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
-
+  
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background-color: rgba(108, 99, 255, 0.1);
           color: var(--primary);
@@ -256,7 +257,7 @@ const ActionButton = styled.button<{
             background-color: rgba(108, 99, 255, 0.2);
           }
         `;
-      case "danger":
+      case 'danger':
         return `
           background-color: rgba(220, 53, 69, 0.1);
           color: #dc3545;
@@ -438,18 +439,14 @@ const LoadingSpinner = styled.div`
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-
+  
   @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 `;
 
-const Notification = styled(motion.div)<{ type: "success" | "error" }>`
+const Notification = styled(motion.div)<{ type: 'success' | 'error' }>`
   position: fixed;
   top: 20px;
   right: 20px;
@@ -462,18 +459,15 @@ const Notification = styled(motion.div)<{ type: "success" | "error" }>`
   align-items: center;
   gap: 0.5rem;
   max-width: 400px;
-
-  ${(props) =>
-    props.type === "success"
-      ? `
+  
+  ${props => props.type === 'success' ? `
     background-color: #2ecc71;
     border: 1px solid #27ae60;
-  `
-      : `
+  ` : `
     background-color: #e74c3c;
     border: 1px solid #c0392b;
   `}
-
+  
   svg {
     font-size: 1rem;
   }
@@ -503,91 +497,86 @@ export default function AdminCoupons() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
-
+  
   // Form state
-  const [discountType, setDiscountType] = useState<"percent" | "amount">(
-    "percent"
-  );
-  const [discountValue, setDiscountValue] = useState("");
-  const [customCode, setCustomCode] = useState("");
-  const [couponName, setCouponName] = useState("");
-  const [expirationDays, setExpirationDays] = useState("");
-
+  const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
+  const [discountValue, setDiscountValue] = useState('');
+  const [customCode, setCustomCode] = useState('');
+  const [couponName, setCouponName] = useState('');
+  const [expirationDays, setExpirationDays] = useState('');
+  
   // Notification state
   const [notification, setNotification] = useState<{
-    type: "success" | "error";
+    type: 'success' | 'error';
     message: string;
   } | null>(null);
 
-  const fetchPromotionCodes = useCallback(async () => {
+  const fetchPromotionCodes = async () => {
     try {
       setLoading(true);
       const result = await listPromotionCodes({ active: true });
-
+      
       if (result.error) {
         setError(result.error);
       } else {
         setPromotionCodes(result.promotionCodes as PromotionCodeData[]);
       }
-    } catch {
-      showNotification("error", "An unexpected error occurred");
+    } catch (err) {
+      console.error("Error fetching promotion codes:", err);
+      setError("Failed to load promotion codes");
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (user) {
       fetchPromotionCodes();
     }
-  }, [user, fetchPromotionCodes]);
+  }, [user]);
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!discountValue) {
-      showNotification("error", "Please enter a discount value");
+      showNotification('error', 'Please enter a discount value');
       return;
     }
 
     try {
       setCreateLoading(true);
-
+      
       const value = parseFloat(discountValue);
-      const options: { code?: string; name?: string; expiresAt?: number } = {};
-
+      const options: any = {};
+      
       if (customCode) options.code = customCode;
       if (couponName) options.name = couponName;
       if (expirationDays) {
-        const expiresAt =
-          Math.floor(Date.now() / 1000) +
-          parseInt(expirationDays) * 24 * 60 * 60;
+        const expiresAt = Math.floor(Date.now() / 1000) + (parseInt(expirationDays) * 24 * 60 * 60);
         options.expiresAt = expiresAt;
       }
-
+      
       const result = await createOneTimeDiscountCode(
         discountType,
-        discountType === "amount" ? Math.round(value * 100) : value, // Convert dollars to cents for amount
+        discountType === 'amount' ? Math.round(value * 100) : value, // Convert dollars to cents for amount
         options
       );
-
+      
       if (result.success) {
-        showNotification(
-          "success",
-          `Coupon created successfully! Code: ${result.code}`
-        );
+        showNotification('success', `Coupon created successfully! Code: ${result.code}`);
         setShowCreateModal(false);
         resetForm();
         fetchPromotionCodes();
       } else {
-        showNotification("error", result.error || "Failed to create coupon");
+        showNotification('error', result.error || 'Failed to create coupon');
       }
-    } catch {
-      showNotification("error", "An unexpected error occurred");
+    } catch (error) {
+      showNotification('error', 'An unexpected error occurred');
+      console.error('Create coupon error:', error);
     } finally {
       setCreateLoading(false);
     }
@@ -596,61 +585,57 @@ export default function AdminCoupons() {
   const handleDeactivateCoupon = async (promotionCodeId: string) => {
     try {
       const result = await deactivatePromotionCode(promotionCodeId);
-
+      
       if (result.success) {
-        showNotification("success", "Coupon deactivated successfully");
+        showNotification('success', 'Coupon deactivated successfully');
         fetchPromotionCodes();
       } else {
-        showNotification(
-          "error",
-          result.error || "Failed to deactivate coupon"
-        );
+        showNotification('error', result.error || 'Failed to deactivate coupon');
       }
-    } catch {
-      showNotification("error", "An unexpected error occurred");
+    } catch (error) {
+      showNotification('error', 'An unexpected error occurred');
+      console.error('Deactivate coupon error:', error);
     }
   };
 
   const handleCopyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
-      showNotification("success", "Code copied to clipboard!");
-    } catch {
-      showNotification("error", "Failed to copy code");
+      showNotification('success', 'Code copied to clipboard!');
+    } catch (error) {
+      showNotification('error', 'Failed to copy code');
     }
   };
 
-  const showNotification = (type: "success" | "error", message: string) => {
+  const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
 
   const resetForm = () => {
-    setDiscountType("percent");
-    setDiscountValue("");
-    setCustomCode("");
-    setCouponName("");
-    setExpirationDays("");
+    setDiscountType('percent');
+    setDiscountValue('');
+    setCustomCode('');
+    setCouponName('');
+    setExpirationDays('');
   };
 
-  const formatDiscount = (coupon: PromotionCodeData["coupon"]) => {
+  const formatDiscount = (coupon: PromotionCodeData['coupon']) => {
     if (coupon.percent_off) {
       return `${coupon.percent_off}% off`;
     } else if (coupon.amount_off && coupon.currency) {
       return `$${(coupon.amount_off / 100).toFixed(2)} off`;
     }
-    return "Unknown discount";
+    return 'Unknown discount';
   };
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString();
   };
 
-  const filteredCoupons = promotionCodes.filter(
-    (code) =>
-      code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (code.coupon.name &&
-        code.coupon.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCoupons = promotionCodes.filter(code =>
+    code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (code.coupon.name && code.coupon.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (!user) {
@@ -663,26 +648,20 @@ export default function AdminCoupons() {
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
   return (
     <Container>
       <NextSEO title="Coupon Management - Admin" />
-
+      
       <motion.div initial="hidden" animate="visible" variants={fadeIn}>
         <Header>
           <Title>
             <FaTicketAlt />
             Coupon Management
           </Title>
-          <Subtitle>
-            Create and manage discount codes and promotion coupons
-          </Subtitle>
+          <Subtitle>Create and manage discount codes and promotion coupons</Subtitle>
         </Header>
 
         <ActionsBar>
@@ -697,7 +676,7 @@ export default function AdminCoupons() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </SearchContainer>
-
+          
           <CreateButton onClick={() => setShowCreateModal(true)}>
             <FaPlus />
             Create Coupon
@@ -705,13 +684,7 @@ export default function AdminCoupons() {
         </ActionsBar>
 
         {error && (
-          <div
-            style={{
-              color: "var(--error)",
-              textAlign: "center",
-              padding: "2rem",
-            }}
-          >
+          <div style={{ color: 'var(--error)', textAlign: 'center', padding: '2rem' }}>
             {error}
           </div>
         )}
@@ -728,10 +701,10 @@ export default function AdminCoupons() {
               <CouponHeader>
                 <CouponCode>{code.code}</CouponCode>
                 <CouponStatus $active={code.active}>
-                  {code.active ? "Active" : "Inactive"}
+                  {code.active ? 'Active' : 'Inactive'}
                 </CouponStatus>
               </CouponHeader>
-
+              
               <CouponDetails>
                 <CouponDetail>
                   <CouponLabel>Discount:</CouponLabel>
@@ -740,7 +713,7 @@ export default function AdminCoupons() {
                 <CouponDetail>
                   <CouponLabel>Used:</CouponLabel>
                   <CouponValue>
-                    {code.times_redeemed} / {code.max_redemptions || "∞"}
+                    {code.times_redeemed} / {code.max_redemptions || '∞'}
                   </CouponValue>
                 </CouponDetail>
                 <CouponDetail>
@@ -754,7 +727,7 @@ export default function AdminCoupons() {
                   </CouponDetail>
                 )}
               </CouponDetails>
-
+              
               <CouponActions>
                 <ActionButton
                   variant="primary"
@@ -778,16 +751,8 @@ export default function AdminCoupons() {
         </CouponsGrid>
 
         {filteredCoupons.length === 0 && !loading && (
-          <div
-            style={{
-              textAlign: "center",
-              color: "var(--text-secondary)",
-              padding: "3rem",
-            }}
-          >
-            {searchTerm
-              ? "No coupons found matching your search."
-              : "No coupons created yet."}
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '3rem' }}>
+            {searchTerm ? 'No coupons found matching your search.' : 'No coupons created yet.'}
           </div>
         )}
 
@@ -820,9 +785,7 @@ export default function AdminCoupons() {
                   <FormLabel>Discount Type</FormLabel>
                   <FormSelect
                     value={discountType}
-                    onChange={(e) =>
-                      setDiscountType(e.target.value as "percent" | "amount")
-                    }
+                    onChange={(e) => setDiscountType(e.target.value as 'percent' | 'amount')}
                   >
                     <option value="percent">Percentage</option>
                     <option value="amount">Fixed Amount</option>
@@ -832,22 +795,20 @@ export default function AdminCoupons() {
                 <FormRow>
                   <FormGroup>
                     <FormLabel>
-                      {discountType === "percent"
-                        ? "Percentage (%)"
-                        : "Amount ($)"}
+                      {discountType === 'percent' ? 'Percentage (%)' : 'Amount ($)'}
                     </FormLabel>
                     <FormInput
                       type="number"
-                      step={discountType === "percent" ? "1" : "0.01"}
+                      step={discountType === 'percent' ? '1' : '0.01'}
                       min="0"
-                      max={discountType === "percent" ? "100" : undefined}
-                      placeholder={discountType === "percent" ? "10" : "5.00"}
+                      max={discountType === 'percent' ? '100' : undefined}
+                      placeholder={discountType === 'percent' ? '10' : '5.00'}
                       value={discountValue}
                       onChange={(e) => setDiscountValue(e.target.value)}
                       required
                     />
                   </FormGroup>
-
+                  
                   <FormGroup>
                     <FormLabel>Expiration (Days)</FormLabel>
                     <FormInput
@@ -866,9 +827,7 @@ export default function AdminCoupons() {
                     type="text"
                     placeholder="SAVE20 (leave empty for auto-generated)"
                     value={customCode}
-                    onChange={(e) =>
-                      setCustomCode(e.target.value.toUpperCase())
-                    }
+                    onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
                   />
                 </FormGroup>
 
@@ -906,15 +865,11 @@ export default function AdminCoupons() {
             exit={{ opacity: 0, x: 300 }}
             onClick={() => setNotification(null)}
           >
-            {notification.type === "success" ? (
-              <FaCheck />
-            ) : (
-              <FaExclamationTriangle />
-            )}
+            {notification.type === 'success' ? <FaCheck /> : <FaExclamationTriangle />}
             {notification.message}
           </Notification>
         )}
       </motion.div>
     </Container>
   );
-}
+} 

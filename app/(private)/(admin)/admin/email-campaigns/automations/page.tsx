@@ -1,23 +1,29 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaCogs,
-  FaPlus,
+import { 
+  FaCogs, 
   FaSearch,
-  FaEye,
+  FaPlus,
   FaEdit,
   FaTrash,
+  FaEye,
   FaPlay,
   FaPause,
-  FaChartLine,
   FaStop,
-  FaDownload,
+  FaChartLine,
+  FaCalendarAlt,
+  FaUsers,
+  FaRobot,
+  FaClock,
+  FaEnvelope,
   FaEllipsisV,
   FaCopy,
-  FaHistory,
+  FaDownload,
   FaShare,
+  FaHistory
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -262,25 +268,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "active":
+      case 'active':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "paused":
+      case 'paused':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "draft":
+      case 'draft':
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case "stopped":
+      case 'stopped':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -309,20 +315,20 @@ const StepIcon = styled.span<{ type: string }>`
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
-
+  
   ${(props) => {
     switch (props.type) {
-      case "trigger":
+      case 'trigger':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "condition":
+      case 'condition':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "action":
+      case 'action':
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
@@ -354,17 +360,70 @@ const ActionsContainer = styled.div`
   align-items: center;
 `;
 
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 32px;
+  height: 32px;
+  justify-content: center;
+
+  ${(props) => {
+    switch (props.variant) {
+      case 'primary':
+        return `
+          background-color: var(--primary);
+          color: white;
+          &:hover {
+            background-color: var(--accent);
+          }
+        `;
+      case 'warning':
+        return `
+          background-color: #ffc107;
+          color: #212529;
+          &:hover {
+            background-color: #e0a800;
+          }
+        `;
+      case 'danger':
+        return `
+          background-color: #dc3545;
+          color: white;
+          &:hover {
+            background-color: #c82333;
+          }
+        `;
+      default:
+        return `
+          background-color: rgba(255, 255, 255, 0.1);
+          color: var(--text-secondary);
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+          }
+        `;
+    }
+  }}
+`;
+
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-
+  
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-
+  
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -406,17 +465,14 @@ const DropdownContent = styled.div<{ isOpen: boolean }>`
   border-radius: 8px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  opacity: ${(props) => (props.isOpen ? 1 : 0)};
-  visibility: ${(props) => (props.isOpen ? "visible" : "hidden")};
-  transform: ${(props) =>
-    props.isOpen ? "translateY(0)" : "translateY(-10px)"};
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
   transition: all 0.2s ease;
   overflow: hidden;
 `;
 
-const DropdownItem = styled.button<{
-  variant?: "primary" | "danger" | "warning";
-}>`
+const DropdownItem = styled.button<{ variant?: 'primary' | 'danger' | 'warning' }>`
   width: 100%;
   padding: 12px 16px;
   border: none;
@@ -434,9 +490,7 @@ const DropdownItem = styled.button<{
     background-color: rgba(255, 255, 255, 0.05);
   }
 
-  ${(props) =>
-    props.variant === "primary" &&
-    `
+  ${props => props.variant === 'primary' && `
     color: var(--primary);
     font-weight: 600;
     
@@ -445,9 +499,7 @@ const DropdownItem = styled.button<{
     }
   `}
 
-  ${(props) =>
-    props.variant === "warning" &&
-    `
+  ${props => props.variant === 'warning' && `
     color: #ffc107;
     
     &:hover {
@@ -455,9 +507,7 @@ const DropdownItem = styled.button<{
     }
   `}
 
-  ${(props) =>
-    props.variant === "danger" &&
-    `
+  ${props => props.variant === 'danger' && `
     color: #dc3545;
     
     &:hover {
@@ -566,7 +616,8 @@ function AutomationsPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
@@ -580,13 +631,13 @@ function AutomationsPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest("[data-dropdown]")) {
+      if (!target.closest('[data-dropdown]')) {
         setOpenDropdown(null);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (languageLoading || !translationsLoaded) {
@@ -597,11 +648,10 @@ function AutomationsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredAutomations = mockAutomations.filter(
-    (automation) =>
-      automation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      automation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      automation.trigger.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAutomations = mockAutomations.filter(automation =>
+    automation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    automation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    automation.trigger.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
@@ -610,15 +660,11 @@ function AutomationsPage() {
       label: "Total Automations",
     },
     {
-      value: mockAutomations
-        .filter((a) => a.status === "active")
-        .length.toString(),
+      value: mockAutomations.filter(a => a.status === "active").length.toString(),
       label: "Active Automations",
     },
     {
-      value: mockAutomations
-        .reduce((sum, a) => sum + a.subscribers, 0)
-        .toLocaleString(),
+      value: mockAutomations.reduce((sum, a) => sum + a.subscribers, 0).toLocaleString(),
       label: "Total Subscribers",
     },
     {
@@ -638,29 +684,29 @@ function AutomationsPage() {
 
   const handleAutomationAction = (action: string, automationId: string) => {
     console.log(`${action} automation:`, automationId);
-    if (action === "view" || action === "edit") {
+    if (action === 'view' || action === 'edit') {
       router.push(`/admin/email-campaigns/automations/${automationId}`);
-    } else if (action === "create") {
-      router.push("/admin/email-campaigns/automations/create");
-    } else if (action === "duplicate") {
-      console.log("Duplicate automation:", automationId);
-    } else if (action === "pause") {
-      console.log("Pause automation:", automationId);
-    } else if (action === "resume" || action === "start") {
-      console.log("Start/Resume automation:", automationId);
-    } else if (action === "stop") {
-      console.log("Stop automation:", automationId);
-    } else if (action === "analytics") {
-      console.log("View analytics for automation:", automationId);
-    } else if (action === "export") {
-      console.log("Export automation:", automationId);
-    } else if (action === "share") {
-      console.log("Share automation:", automationId);
-    } else if (action === "history") {
-      console.log("View automation history:", automationId);
-    } else if (action === "delete") {
-      if (window.confirm("Are you sure you want to delete this automation?")) {
-        console.log("Delete automation:", automationId);
+    } else if (action === 'create') {
+      router.push('/admin/email-campaigns/automations/create');
+    } else if (action === 'duplicate') {
+      console.log('Duplicate automation:', automationId);
+    } else if (action === 'pause') {
+      console.log('Pause automation:', automationId);
+    } else if (action === 'resume' || action === 'start') {
+      console.log('Start/Resume automation:', automationId);
+    } else if (action === 'stop') {
+      console.log('Stop automation:', automationId);
+    } else if (action === 'analytics') {
+      console.log('View analytics for automation:', automationId);
+    } else if (action === 'export') {
+      console.log('Export automation:', automationId);
+    } else if (action === 'share') {
+      console.log('Share automation:', automationId);
+    } else if (action === 'history') {
+      console.log('View automation history:', automationId);
+    } else if (action === 'delete') {
+      if (window.confirm('Are you sure you want to delete this automation?')) {
+        console.log('Delete automation:', automationId);
       }
     }
     // Implement other automation actions here
@@ -672,7 +718,7 @@ function AutomationsPage() {
         title="Email Automations"
         description="Manage and monitor your email automation workflows"
       />
-
+      
       <AutomationsContainer>
         <AutomationsTitle>
           <FaCogs />
@@ -709,8 +755,8 @@ function AutomationsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </SearchContainer>
-
-          <CreateButton onClick={() => handleAutomationAction("create", "")}>
+          
+          <CreateButton onClick={() => handleAutomationAction('create', '')}>
             <FaPlus />
             Create Automation
           </CreateButton>
@@ -737,10 +783,7 @@ function AutomationsPage() {
                     <EmptyState>
                       <FaCogs />
                       <h3>No automations found</h3>
-                      <p>
-                        Try adjusting your search criteria or create a new
-                        automation.
-                      </p>
+                      <p>Try adjusting your search criteria or create a new automation.</p>
                     </EmptyState>
                   </TableCell>
                 </tr>
@@ -752,15 +795,11 @@ function AutomationsPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() =>
-                      handleAutomationAction("view", automation.id)
-                    }
+                    onClick={() => handleAutomationAction('view', automation.id)}
                   >
                     <TableCell>
                       <AutomationTitle>{automation.title}</AutomationTitle>
-                      <AutomationDescription>
-                        {automation.description}
-                      </AutomationDescription>
+                      <AutomationDescription>{automation.description}</AutomationDescription>
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={automation.status}>
@@ -772,7 +811,9 @@ function AutomationsPage() {
                       <WorkflowSteps>
                         {automation.steps.map((step, stepIndex) => (
                           <React.Fragment key={stepIndex}>
-                            <StepIcon type={step.type}>{step.icon}</StepIcon>
+                            <StepIcon type={step.type}>
+                              {step.icon}
+                            </StepIcon>
                             {stepIndex < automation.steps.length - 1 && (
                               <StepArrow>→</StepArrow>
                             )}
@@ -781,9 +822,7 @@ function AutomationsPage() {
                       </WorkflowSteps>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>
-                        {automation.subscribers.toLocaleString()}
-                      </MetricValue>
+                      <MetricValue>{automation.subscribers.toLocaleString()}</MetricValue>
                     </TableCell>
                     <TableCell>
                       <MetricValue>{automation.openRate}%</MetricValue>
@@ -793,39 +832,33 @@ function AutomationsPage() {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer>
-                        <DropdownMenu
+                        <DropdownMenu 
                           isOpen={openDropdown === automation.id}
                           data-dropdown
                         >
-                          <DropdownButton
+                          <DropdownButton 
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenDropdown(
-                                openDropdown === automation.id
-                                  ? null
-                                  : automation.id
-                              );
+                              setOpenDropdown(openDropdown === automation.id ? null : automation.id);
                             }}
                           >
                             <FaEllipsisV />
                           </DropdownButton>
-                          <DropdownContent
-                            isOpen={openDropdown === automation.id}
-                          >
-                            <DropdownItem
+                          <DropdownContent isOpen={openDropdown === automation.id}>
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction("view", automation.id);
+                                handleAutomationAction('view', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
                               <FaEye />
                               View Details
                             </DropdownItem>
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction("edit", automation.id);
+                                handleAutomationAction('edit', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
@@ -833,45 +866,36 @@ function AutomationsPage() {
                               Edit Automation
                             </DropdownItem>
                             <DropdownDivider />
-                            {automation.status === "active" ? (
-                              <DropdownItem
+                            {automation.status === 'active' ? (
+                              <DropdownItem 
                                 variant="warning"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction(
-                                    "pause",
-                                    automation.id
-                                  );
+                                  handleAutomationAction('pause', automation.id);
                                   setOpenDropdown(null);
                                 }}
                               >
                                 <FaPause />
                                 Pause
                               </DropdownItem>
-                            ) : automation.status === "paused" ? (
-                              <DropdownItem
+                            ) : automation.status === 'paused' ? (
+                              <DropdownItem 
                                 variant="primary"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction(
-                                    "resume",
-                                    automation.id
-                                  );
+                                  handleAutomationAction('resume', automation.id);
                                   setOpenDropdown(null);
                                 }}
                               >
                                 <FaPlay />
                                 Resume
                               </DropdownItem>
-                            ) : automation.status === "draft" ? (
-                              <DropdownItem
+                            ) : automation.status === 'draft' ? (
+                              <DropdownItem 
                                 variant="primary"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction(
-                                    "start",
-                                    automation.id
-                                  );
+                                  handleAutomationAction('start', automation.id);
                                   setOpenDropdown(null);
                                 }}
                               >
@@ -879,12 +903,12 @@ function AutomationsPage() {
                                 Start
                               </DropdownItem>
                             ) : null}
-                            {automation.status === "active" && (
-                              <DropdownItem
+                            {automation.status === 'active' && (
+                              <DropdownItem 
                                 variant="danger"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction("stop", automation.id);
+                                  handleAutomationAction('stop', automation.id);
                                   setOpenDropdown(null);
                                 }}
                               >
@@ -893,39 +917,30 @@ function AutomationsPage() {
                               </DropdownItem>
                             )}
                             <DropdownDivider />
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction(
-                                  "analytics",
-                                  automation.id
-                                );
+                                handleAutomationAction('analytics', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
                               <FaChartLine />
                               Analytics
                             </DropdownItem>
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction(
-                                  "duplicate",
-                                  automation.id
-                                );
+                                handleAutomationAction('duplicate', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
                               <FaCopy />
                               Duplicate
                             </DropdownItem>
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction(
-                                  "history",
-                                  automation.id
-                                );
+                                handleAutomationAction('history', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
@@ -933,20 +948,20 @@ function AutomationsPage() {
                               View History
                             </DropdownItem>
                             <DropdownDivider />
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction("export", automation.id);
+                                handleAutomationAction('export', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
                               <FaDownload />
                               Export
                             </DropdownItem>
-                            <DropdownItem
+                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction("share", automation.id);
+                                handleAutomationAction('share', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
@@ -954,11 +969,11 @@ function AutomationsPage() {
                               Share
                             </DropdownItem>
                             <DropdownDivider />
-                            <DropdownItem
+                            <DropdownItem 
                               variant="danger"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction("delete", automation.id);
+                                handleAutomationAction('delete', automation.id);
                                 setOpenDropdown(null);
                               }}
                             >
@@ -980,4 +995,4 @@ function AutomationsPage() {
   );
 }
 
-export default AutomationsPage;
+export default AutomationsPage; 

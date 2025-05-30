@@ -1,27 +1,34 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaUser,
-  FaUsers,
+import { 
+  FaUser, 
   FaSearch,
+  FaPlus,
   FaEdit,
   FaTrash,
+  FaEye,
   FaArrowLeft,
-  FaSave,
-  FaTimes,
+  FaUsers,
   FaEnvelope,
   FaCalendarAlt,
   FaMapMarkerAlt,
+  FaTag,
   FaChartLine,
+  FaEllipsisV,
   FaCheck,
+  FaTimes,
+  FaCog,
   FaHistory,
+  FaSave
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useParams } from "next/navigation";
 import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
 const SubscriberContainer = styled.div`
@@ -99,9 +106,7 @@ const HeaderActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{
-  variant?: "primary" | "secondary" | "danger";
-}>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -115,7 +120,7 @@ const ActionButton = styled.button<{
 
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
@@ -124,7 +129,7 @@ const ActionButton = styled.button<{
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
         `;
-      case "danger":
+      case 'danger':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -169,7 +174,7 @@ const Avatar = styled.div<{ color: string }>`
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: ${(props) => props.color};
+  background: ${props => props.color};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,25 +222,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: capitalize;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "active":
+      case 'active':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "unsubscribed":
+      case 'unsubscribed':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
         `;
-      case "bounced":
+      case 'bounced':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "pending":
+      case 'pending':
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
@@ -407,19 +412,15 @@ const AudiencesList = styled.div`
 const AudienceItem = styled.div<{ isMember: boolean }>`
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid
-    ${(props) =>
-      props.isMember ? "rgba(40, 167, 69, 0.3)" : "rgba(255, 255, 255, 0.1)"};
-  background-color: ${(props) =>
-    props.isMember ? "rgba(40, 167, 69, 0.1)" : "rgba(255, 255, 255, 0.02)"};
+  border: 1px solid ${props => props.isMember ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+  background-color: ${props => props.isMember ? 'rgba(40, 167, 69, 0.1)' : 'rgba(255, 255, 255, 0.02)'};
   display: flex;
   align-items: center;
   justify-content: space-between;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${(props) =>
-      props.isMember ? "rgba(40, 167, 69, 0.5)" : "rgba(255, 255, 255, 0.2)"};
+    border-color: ${props => props.isMember ? 'rgba(40, 167, 69, 0.5)' : 'rgba(255, 255, 255, 0.2)'};
   }
 `;
 
@@ -452,16 +453,13 @@ const ToggleButton = styled.button<{ isActive: boolean }>`
   font-size: 0.8rem;
   font-weight: 500;
 
-  ${(props) =>
-    props.isActive
-      ? `
+  ${props => props.isActive ? `
     background-color: rgba(220, 53, 69, 0.2);
     color: #dc3545;
     &:hover {
       background-color: rgba(220, 53, 69, 0.3);
     }
-  `
-      : `
+  ` : `
     background-color: rgba(40, 167, 69, 0.2);
     color: #28a745;
     &:hover {
@@ -481,13 +479,10 @@ const MembershipBadge = styled.span<{ isMember: boolean }>`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
-  ${(props) =>
-    props.isMember
-      ? `
+  ${props => props.isMember ? `
     background-color: rgba(40, 167, 69, 0.2);
     color: #28a745;
-  `
-      : `
+  ` : `
     background-color: rgba(108, 117, 125, 0.2);
     color: #6c757d;
   `}
@@ -499,7 +494,7 @@ const BulkActions = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const BulkButton = styled.button<{ variant?: "primary" | "secondary" }>`
+const BulkButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -511,16 +506,13 @@ const BulkButton = styled.button<{ variant?: "primary" | "secondary" }>`
   font-size: 0.8rem;
   font-weight: 500;
 
-  ${(props) =>
-    props.variant === "primary"
-      ? `
+  ${props => props.variant === 'primary' ? `
     background-color: rgba(40, 167, 69, 0.2);
     color: #28a745;
     &:hover {
       background-color: rgba(40, 167, 69, 0.3);
     }
-  `
-      : `
+  ` : `
     background-color: rgba(108, 117, 125, 0.2);
     color: #6c757d;
     &:hover {
@@ -534,81 +526,60 @@ const mockAudiences = [
   {
     id: "1",
     name: "Highly Engaged Users",
-    description:
-      "Users who opened emails in the last 30 days and clicked at least once",
+    description: "Users who opened emails in the last 30 days and clicked at least once",
     subscribers: 4567,
-    type: "dynamic" as const,
+    type: "dynamic" as const
   },
   {
     id: "2",
-    name: "New Subscribers",
+    name: "New Subscribers", 
     description: "Users who joined in the last 7 days",
     subscribers: 234,
-    type: "dynamic" as const,
+    type: "dynamic" as const
   },
   {
     id: "3",
     name: "Music Producers",
-    description: "Professional music producers and beatmakers",
+    description: "Professional music producers and beatmakers", 
     subscribers: 1890,
-    type: "static" as const,
+    type: "static" as const
   },
   {
     id: "4",
     name: "Inactive Users",
     description: "Users who haven't opened emails in 60+ days",
     subscribers: 2156,
-    type: "dynamic" as const,
+    type: "dynamic" as const
   },
   {
     id: "5",
     name: "Premium Subscribers",
     description: "Users with active premium subscriptions",
     subscribers: 892,
-    type: "dynamic" as const,
+    type: "dynamic" as const
   },
   {
     id: "6",
     name: "Beta Testers",
     description: "Users participating in beta programs",
     subscribers: 145,
-    type: "static" as const,
-  },
+    type: "static" as const
+  }
 ];
 
 const getSubscriberData = (id: string) => {
-  const colors = [
-    "#6c63ff",
-    "#4ecdc4",
-    "#45b7d1",
-    "#96ceb4",
-    "#feca57",
-    "#ff9ff3",
-    "#54a0ff",
-  ];
-  const names = [
-    "Alex Johnson",
-    "Sarah Chen",
-    "Mike Rodriguez",
-    "Emma Wilson",
-    "David Kim",
-  ];
-  const locations = [
-    "New York, US",
-    "San Francisco, US",
-    "Los Angeles, US",
-    "London, UK",
-    "Seoul, KR",
-  ];
-  const engagements = ["High", "Medium", "Low"];
-  const statuses = ["active", "unsubscribed", "bounced", "pending"];
-
+  const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+  const names = ['Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim'];
+  const locations = ['New York, US', 'San Francisco, US', 'Los Angeles, US', 'London, UK', 'Seoul, KR'];
+  const engagements = ['High', 'Medium', 'Low'];
+  const statuses = ['active', 'unsubscribed', 'bounced', 'pending'];
+  
   const name = names[parseInt(id) % names.length];
-
+  
   return {
     id,
     name,
-    email: `${name.toLowerCase().replace(" ", ".")}@example.com`,
+    email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
     status: statuses[parseInt(id) % statuses.length],
     subscribeDate: "2024-01-15",
     lastActivity: "2024-01-20",
@@ -617,7 +588,7 @@ const getSubscriberData = (id: string) => {
     engagement: engagements[parseInt(id) % engagements.length],
     totalOpens: 45,
     totalClicks: 12,
-    avatar: colors[name.charCodeAt(0) % colors.length],
+    avatar: colors[name.charCodeAt(0) % colors.length]
   };
 };
 
@@ -626,23 +597,10 @@ function SubscriberDetailPage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState<{
-    name: string;
-    email: string;
-    status: string;
-    location: string;
-    engagement: string;
-  }>({
-    name: "",
-    email: "",
-    status: "",
-    location: "",
-    engagement: "",
-  });
-  const [subscriberAudiences, setSubscriberAudiences] = useState<{
-    [key: string]: boolean;
-  }>({});
-
+  const [formData, setFormData] = useState<any>({});
+  const [subscriberAudiences, setSubscriberAudiences] = useState<{[key: string]: boolean}>({});
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
   const params = useParams();
@@ -663,17 +621,17 @@ function SubscriberDetailPage() {
       email: subscriber.email,
       status: subscriber.status,
       location: subscriber.location,
-      engagement: subscriber.engagement,
+      engagement: subscriber.engagement
     });
 
     // Mock subscriber audience memberships
     const mockMemberships = {
-      "1": true, // Highly Engaged Users
+      "1": true,  // Highly Engaged Users
       "2": false, // New Subscribers
-      "3": true, // Music Producers
+      "3": true,  // Music Producers
       "4": false, // Inactive Users
       "5": false, // Premium Subscribers
-      "6": true, // Beta Testers
+      "6": true   // Beta Testers
     };
     setSubscriberAudiences(mockMemberships);
   }, [subscriber]);
@@ -686,52 +644,51 @@ function SubscriberDetailPage() {
     return <LoadingComponent />;
   }
 
-  const filteredAudiences = mockAudiences.filter(
-    (audience) =>
-      audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      audience.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAudiences = mockAudiences.filter(audience =>
+    audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    audience.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleFormChange = (field: string, value: string) => {
-    setFormData((prev) => ({
+    setFormData((prev: any) => ({
       ...prev,
-      [field]: value,
+      [field]: value
     }));
   };
 
   const handleAudienceToggle = (audienceId: string) => {
-    setSubscriberAudiences((prev: { [key: string]: boolean }) => ({
+    setSubscriberAudiences((prev: {[key: string]: boolean}) => ({
       ...prev,
-      [audienceId]: !prev[audienceId],
+      [audienceId]: !prev[audienceId]
     }));
   };
 
   const handleSave = () => {
-    console.log("Saving subscriber:", formData);
-    console.log("Audience memberships:", subscriberAudiences);
+    console.log('Saving subscriber:', formData);
+    console.log('Audience memberships:', subscriberAudiences);
     // Here you would make API calls to save the changes
     setEditMode(false);
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this subscriber?")) {
-      console.log("Deleting subscriber:", subscriber.id);
+    if (window.confirm('Are you sure you want to delete this subscriber?')) {
+      console.log('Deleting subscriber:', subscriber.id);
       // Here you would make API call to delete
-      router.push("/admin/email-campaigns/subscribers");
+      router.push('/admin/email-campaigns/subscribers');
     }
   };
 
   const handleBulkAddAll = () => {
-    const newMemberships: { [key: string]: boolean } = {};
-    mockAudiences.forEach((audience) => {
+    const newMemberships: {[key: string]: boolean} = {};
+    mockAudiences.forEach(audience => {
       newMemberships[audience.id] = true;
     });
     setSubscriberAudiences(newMemberships);
   };
 
   const handleBulkRemoveAll = () => {
-    const newMemberships: { [key: string]: boolean } = {};
-    mockAudiences.forEach((audience) => {
+    const newMemberships: {[key: string]: boolean} = {};
+    mockAudiences.forEach(audience => {
       newMemberships[audience.id] = false;
     });
     setSubscriberAudiences(newMemberships);
@@ -743,7 +700,7 @@ function SubscriberDetailPage() {
         title={`Subscriber: ${subscriber.name}`}
         description={`Manage details and audience assignments for ${subscriber.name}`}
       />
-
+      
       <SubscriberContainer>
         <Header>
           <HeaderLeft>
@@ -777,11 +734,7 @@ function SubscriberDetailPage() {
                   <FaEdit />
                   Edit
                 </ActionButton>
-                <ActionButton
-                  onClick={() =>
-                    console.log("Send email to:", subscriber.email)
-                  }
-                >
+                <ActionButton onClick={() => console.log('Send email to:', subscriber.email)}>
                   <FaEnvelope />
                   Send Email
                 </ActionButton>
@@ -792,10 +745,7 @@ function SubscriberDetailPage() {
 
         <SubscriberInfo>
           <Avatar color={subscriber.avatar}>
-            {subscriber.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+            {subscriber.name.split(' ').map(n => n[0]).join('')}
           </Avatar>
           <Details>
             <SubscriberName>{subscriber.name}</SubscriberName>
@@ -807,8 +757,7 @@ function SubscriberDetailPage() {
               </MetaItem>
               <MetaItem>
                 <FaHistory />
-                Last active{" "}
-                {new Date(subscriber.lastActivity).toLocaleDateString()}
+                Last active {new Date(subscriber.lastActivity).toLocaleDateString()}
               </MetaItem>
               <MetaItem>
                 <FaMapMarkerAlt />
@@ -844,8 +793,8 @@ function SubscriberDetailPage() {
                   <Label>Name</Label>
                   <Input
                     type="text"
-                    value={formData.name || ""}
-                    onChange={(e) => handleFormChange("name", e.target.value)}
+                    value={formData.name || ''}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
                     disabled={!editMode}
                     placeholder="Enter subscriber name"
                   />
@@ -854,8 +803,8 @@ function SubscriberDetailPage() {
                   <Label>Email</Label>
                   <Input
                     type="email"
-                    value={formData.email || ""}
-                    onChange={(e) => handleFormChange("email", e.target.value)}
+                    value={formData.email || ''}
+                    onChange={(e) => handleFormChange('email', e.target.value)}
                     disabled={!editMode}
                     placeholder="Enter email address"
                   />
@@ -865,8 +814,8 @@ function SubscriberDetailPage() {
                 <FormField>
                   <Label>Status</Label>
                   <Select
-                    value={formData.status || ""}
-                    onChange={(e) => handleFormChange("status", e.target.value)}
+                    value={formData.status || ''}
+                    onChange={(e) => handleFormChange('status', e.target.value)}
                     disabled={!editMode}
                   >
                     <option value="active">Active</option>
@@ -879,10 +828,8 @@ function SubscriberDetailPage() {
                   <Label>Location</Label>
                   <Input
                     type="text"
-                    value={formData.location || ""}
-                    onChange={(e) =>
-                      handleFormChange("location", e.target.value)
-                    }
+                    value={formData.location || ''}
+                    onChange={(e) => handleFormChange('location', e.target.value)}
                     disabled={!editMode}
                     placeholder="Enter location"
                   />
@@ -891,10 +838,8 @@ function SubscriberDetailPage() {
               <FormField>
                 <Label>Engagement Level</Label>
                 <Select
-                  value={formData.engagement || ""}
-                  onChange={(e) =>
-                    handleFormChange("engagement", e.target.value)
-                  }
+                  value={formData.engagement || ''}
+                  onChange={(e) => handleFormChange('engagement', e.target.value)}
                   disabled={!editMode}
                 >
                   <option value="High">High</option>
@@ -940,15 +885,10 @@ function SubscriberDetailPage() {
 
             <AudiencesList>
               {filteredAudiences.map((audience) => (
-                <AudienceItem
-                  key={audience.id}
-                  isMember={subscriberAudiences[audience.id] || false}
-                >
+                <AudienceItem key={audience.id} isMember={subscriberAudiences[audience.id] || false}>
                   <AudienceItemInfo>
                     <AudienceItemName>{audience.name}</AudienceItemName>
-                    <AudienceItemDescription>
-                      {audience.description}
-                    </AudienceItemDescription>
+                    <AudienceItemDescription>{audience.description}</AudienceItemDescription>
                   </AudienceItemInfo>
                   {editMode ? (
                     <ToggleButton
@@ -968,9 +908,7 @@ function SubscriberDetailPage() {
                       )}
                     </ToggleButton>
                   ) : (
-                    <MembershipBadge
-                      isMember={subscriberAudiences[audience.id] || false}
-                    >
+                    <MembershipBadge isMember={subscriberAudiences[audience.id] || false}>
                       {subscriberAudiences[audience.id] ? (
                         <>
                           <FaCheck />
@@ -978,8 +916,8 @@ function SubscriberDetailPage() {
                         </>
                       ) : (
                         <>
-                          <FaUsers />
-                          Join
+                          <FaTimes />
+                          Not Member
                         </>
                       )}
                     </MembershipBadge>
@@ -994,4 +932,4 @@ function SubscriberDetailPage() {
   );
 }
 
-export default SubscriberDetailPage;
+export default SubscriberDetailPage; 

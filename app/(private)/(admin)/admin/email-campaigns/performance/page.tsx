@@ -1,17 +1,38 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaChartLine,
-  FaEnvelope,
-  FaUsers,
+import { 
+  FaChartLine, 
+  FaSearch,
+  FaFilter,
+  FaDownload,
+  FaCalendarAlt,
+  FaEnvelopeOpen,
   FaMousePointer,
-  FaEyeSlash,
+  FaUsers,
+  FaPercentage,
   FaArrowUp,
   FaArrowDown,
+  FaEye,
+  FaEdit,
+  FaShare,
+  FaCog,
+  FaInfoCircle,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaClock,
+  FaGlobe,
+  FaMobile,
+  FaDesktop,
+  FaTablet,
+  FaEnvelope,
+  FaBan,
+  FaHeart
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -106,7 +127,7 @@ const FilterSelect = styled.select`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: "primary" | "secondary" }>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
@@ -120,7 +141,7 @@ const ActionButton = styled.button<{ variant?: "primary" | "secondary" }>`
 
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background-color: var(--primary);
           color: white;
@@ -157,43 +178,32 @@ const MetricCard = styled(motion.div)<{ variant?: string }>`
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid
-    ${(props) => {
-      switch (props.variant) {
-        case "success":
-          return "rgba(40, 167, 69, 0.3)";
-        case "warning":
-          return "rgba(255, 193, 7, 0.3)";
-        case "danger":
-          return "rgba(220, 53, 69, 0.3)";
-        case "info":
-          return "rgba(23, 162, 184, 0.3)";
-        default:
-          return "rgba(255, 255, 255, 0.05)";
-      }
-    }};
+  border: 1px solid ${props => {
+    switch (props.variant) {
+      case 'success': return 'rgba(40, 167, 69, 0.3)';
+      case 'warning': return 'rgba(255, 193, 7, 0.3)';
+      case 'danger': return 'rgba(220, 53, 69, 0.3)';
+      case 'info': return 'rgba(23, 162, 184, 0.3)';
+      default: return 'rgba(255, 255, 255, 0.05)';
+    }
+  }};
   position: relative;
   overflow: hidden;
 
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 4px;
-    background: ${(props) => {
+    background: ${props => {
       switch (props.variant) {
-        case "success":
-          return "linear-gradient(90deg, #28a745, #20c997)";
-        case "warning":
-          return "linear-gradient(90deg, #ffc107, #fd7e14)";
-        case "danger":
-          return "linear-gradient(90deg, #dc3545, #e83e8c)";
-        case "info":
-          return "linear-gradient(90deg, #17a2b8, #6f42c1)";
-        default:
-          return "linear-gradient(90deg, var(--primary), var(--accent))";
+        case 'success': return 'linear-gradient(90deg, #28a745, #20c997)';
+        case 'warning': return 'linear-gradient(90deg, #ffc107, #fd7e14)';
+        case 'danger': return 'linear-gradient(90deg, #dc3545, #e83e8c)';
+        case 'info': return 'linear-gradient(90deg, #17a2b8, #6f42c1)';
+        default: return 'linear-gradient(90deg, var(--primary), var(--accent))';
       }
     }};
   }
@@ -217,18 +227,13 @@ const MetricTitle = styled.h3`
 
 const MetricIcon = styled.div<{ variant?: string }>`
   font-size: 1.2rem;
-  color: ${(props) => {
+  color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "#28a745";
-      case "warning":
-        return "#ffc107";
-      case "danger":
-        return "#dc3545";
-      case "info":
-        return "#17a2b8";
-      default:
-        return "var(--primary)";
+      case 'success': return '#28a745';
+      case 'warning': return '#ffc107';
+      case 'danger': return '#dc3545';
+      case 'info': return '#17a2b8';
+      default: return 'var(--primary)';
     }
   }};
 `;
@@ -236,18 +241,13 @@ const MetricIcon = styled.div<{ variant?: string }>`
 const MetricValue = styled.div<{ variant?: string }>`
   font-size: 2.5rem;
   font-weight: 700;
-  color: ${(props) => {
+  color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "#28a745";
-      case "warning":
-        return "#ffc107";
-      case "danger":
-        return "#dc3545";
-      case "info":
-        return "#17a2b8";
-      default:
-        return "var(--text)";
+      case 'success': return '#28a745';
+      case 'warning': return '#ffc107';
+      case 'danger': return '#dc3545';
+      case 'info': return '#17a2b8';
+      default: return 'var(--text)';
     }
   }};
   margin-bottom: 0.5rem;
@@ -255,7 +255,7 @@ const MetricValue = styled.div<{ variant?: string }>`
 
 const MetricChange = styled.div<{ positive: boolean }>`
   font-size: 0.8rem;
-  color: ${(props) => (props.positive ? "#28a745" : "#dc3545")};
+  color: ${props => props.positive ? '#28a745' : '#dc3545'};
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -437,8 +437,8 @@ const PerformanceBar = styled.div`
 
 const PerformanceFill = styled.div<{ percentage: number; color?: string }>`
   height: 100%;
-  width: ${(props) => props.percentage}%;
-  background-color: ${(props) => props.color || "var(--primary)"};
+  width: ${props => props.percentage}%;
+  background-color: ${props => props.color || 'var(--primary)'};
   transition: width 0.3s ease;
 `;
 
@@ -449,25 +449,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "excellent":
+      case 'excellent':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "good":
+      case 'good':
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case "average":
+      case 'average':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "poor":
+      case 'poor':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -491,18 +491,18 @@ const mockPerformanceData = {
     openRate: 27.5,
     clickRate: 6.4,
     unsubscribeRate: 0.5,
-    bounceRate: 2.1,
+    bounceRate: 2.1
   },
   trends: {
     openRateChange: 3.2,
     clickRateChange: -1.1,
     unsubscribeRateChange: -0.2,
-    bounceRateChange: 0.3,
+    bounceRateChange: 0.3
   },
   devices: {
     mobile: 58.3,
     desktop: 32.1,
-    tablet: 9.6,
+    tablet: 9.6
   },
   campaigns: [
     {
@@ -514,10 +514,10 @@ const mockPerformanceData = {
       openRate: 28.0,
       clickRate: 6.7,
       performance: "excellent",
-      sentDate: "2024-01-18",
+      sentDate: "2024-01-18"
     },
     {
-      id: "2",
+      id: "2", 
       name: "Product Update Announcement",
       sent: 12300,
       opens: 3321,
@@ -525,7 +525,7 @@ const mockPerformanceData = {
       openRate: 27.0,
       clickRate: 6.0,
       performance: "good",
-      sentDate: "2024-01-15",
+      sentDate: "2024-01-15"
     },
     {
       id: "3",
@@ -536,7 +536,7 @@ const mockPerformanceData = {
       openRate: 26.0,
       clickRate: 5.8,
       performance: "good",
-      sentDate: "2024-01-12",
+      sentDate: "2024-01-12"
     },
     {
       id: "4",
@@ -547,7 +547,7 @@ const mockPerformanceData = {
       openRate: 24.0,
       clickRate: 4.8,
       performance: "average",
-      sentDate: "2024-01-10",
+      sentDate: "2024-01-10"
     },
     {
       id: "5",
@@ -558,19 +558,28 @@ const mockPerformanceData = {
       openRate: 20.0,
       clickRate: 3.0,
       performance: "poor",
-      sentDate: "2024-01-08",
-    },
-  ],
+      sentDate: "2024-01-08"
+    }
+  ]
 };
 
 function PerformancePage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [timeRange, setTimeRange] = useState("30d");
   const [campaignFilter, setCampaignFilter] = useState("all");
-
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
-  if (languageLoading) {
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
+
+  if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
 
@@ -587,49 +596,52 @@ function PerformancePage() {
     }),
   };
 
+  const handleCampaignClick = (campaignId: string) => {
+    router.push(`/admin/email-campaigns/campaigns/${campaignId}`);
+  };
+
   return (
     <>
       <NextSEO
         title="Email Performance Analytics"
         description="Comprehensive email campaign performance analytics and insights"
       />
-
+      
       <PerformanceContainer>
         <PerformanceTitle>
           <FaChartLine />
           Email Performance Analytics
         </PerformanceTitle>
         <PerformanceSubtitle>
-          Comprehensive insights into your email campaign performance and
-          engagement metrics
+          Comprehensive insights into your email campaign performance and engagement metrics
         </PerformanceSubtitle>
 
         <FiltersRow>
           <LeftFilters>
-            <FilterSelect
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-            >
+            <FilterSelect value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
               <option value="90d">Last 90 days</option>
               <option value="1y">Last year</option>
             </FilterSelect>
-
-            <FilterSelect
-              value={campaignFilter}
-              onChange={(e) => setCampaignFilter(e.target.value)}
-            >
+            
+            <FilterSelect value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)}>
               <option value="all">All Campaigns</option>
               <option value="newsletter">Newsletters</option>
               <option value="promotional">Promotional</option>
               <option value="transactional">Transactional</option>
             </FilterSelect>
           </LeftFilters>
-
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <ActionButton>Export Report</ActionButton>
-            <ActionButton variant="primary">Share Dashboard</ActionButton>
+          
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <ActionButton>
+              <FaDownload />
+              Export Report
+            </ActionButton>
+            <ActionButton variant="primary">
+              <FaShare />
+              Share Dashboard
+            </ActionButton>
           </div>
         </FiltersRow>
 
@@ -647,9 +659,7 @@ function PerformancePage() {
                 <FaEnvelope />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue>
-              {mockPerformanceData.overview.totalSent.toLocaleString()}
-            </MetricValue>
+            <MetricValue>{mockPerformanceData.overview.totalSent.toLocaleString()}</MetricValue>
             <MetricChange positive={true}>
               <FaArrowUp />
               +12.5% from last period
@@ -666,22 +676,13 @@ function PerformancePage() {
             <MetricHeader>
               <MetricTitle>Open Rate</MetricTitle>
               <MetricIcon variant="success">
-                <FaEyeSlash />
+                <FaEnvelopeOpen />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue variant="success">
-              {mockPerformanceData.overview.openRate}%
-            </MetricValue>
-            <MetricChange
-              positive={mockPerformanceData.trends.openRateChange > 0}
-            >
-              {mockPerformanceData.trends.openRateChange > 0 ? (
-                <FaArrowUp />
-              ) : (
-                <FaArrowDown />
-              )}
-              {Math.abs(mockPerformanceData.trends.openRateChange)}% from last
-              period
+            <MetricValue variant="success">{mockPerformanceData.overview.openRate}%</MetricValue>
+            <MetricChange positive={mockPerformanceData.trends.openRateChange > 0}>
+              {mockPerformanceData.trends.openRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(mockPerformanceData.trends.openRateChange)}% from last period
             </MetricChange>
           </MetricCard>
 
@@ -698,16 +699,9 @@ function PerformancePage() {
               </MetricIcon>
             </MetricHeader>
             <MetricValue>{mockPerformanceData.overview.clickRate}%</MetricValue>
-            <MetricChange
-              positive={mockPerformanceData.trends.clickRateChange > 0}
-            >
-              {mockPerformanceData.trends.clickRateChange > 0 ? (
-                <FaArrowUp />
-              ) : (
-                <FaArrowDown />
-              )}
-              {Math.abs(mockPerformanceData.trends.clickRateChange)}% from last
-              period
+            <MetricChange positive={mockPerformanceData.trends.clickRateChange > 0}>
+              {mockPerformanceData.trends.clickRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(mockPerformanceData.trends.clickRateChange)}% from last period
             </MetricChange>
           </MetricCard>
 
@@ -720,23 +714,14 @@ function PerformancePage() {
           >
             <MetricHeader>
               <MetricTitle>Unsubscribe Rate</MetricTitle>
-              <MetricIcon>
-                <FaEyeSlash />
+              <MetricIcon variant="warning">
+                <FaBan />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue variant="warning">
-              {mockPerformanceData.overview.unsubscribeRate}%
-            </MetricValue>
-            <MetricChange
-              positive={mockPerformanceData.trends.unsubscribeRateChange < 0}
-            >
-              {mockPerformanceData.trends.unsubscribeRateChange > 0 ? (
-                <FaArrowUp />
-              ) : (
-                <FaArrowDown />
-              )}
-              {Math.abs(mockPerformanceData.trends.unsubscribeRateChange)}% from
-              last period
+            <MetricValue variant="warning">{mockPerformanceData.overview.unsubscribeRate}%</MetricValue>
+            <MetricChange positive={mockPerformanceData.trends.unsubscribeRateChange < 0}>
+              {mockPerformanceData.trends.unsubscribeRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(mockPerformanceData.trends.unsubscribeRateChange)}% from last period
             </MetricChange>
           </MetricCard>
         </MetricsGrid>
@@ -748,10 +733,13 @@ function PerformancePage() {
                 <FaArrowUp />
                 Performance Trends
               </ChartTitle>
+              <ActionButton>
+                <FaCog />
+                Configure
+              </ActionButton>
             </ChartHeader>
             <ChartContent>
-              📈 Interactive chart would be rendered here using a charting
-              library like Chart.js or Recharts
+              📈 Interactive chart would be rendered here using a charting library like Chart.js or Recharts
             </ChartContent>
           </ChartCard>
 
@@ -763,8 +751,7 @@ function PerformancePage() {
               </ChartTitle>
             </ChartHeader>
             <ChartContent>
-              🥧 Pie chart showing engagement distribution would be rendered
-              here
+              🥧 Pie chart showing engagement distribution would be rendered here
             </ChartContent>
           </ChartCard>
         </ChartsGrid>
@@ -772,41 +759,39 @@ function PerformancePage() {
         <DeviceBreakdownGrid>
           <DeviceCard>
             <DeviceIcon>
-              <FaEyeSlash />
+              <FaMobile />
             </DeviceIcon>
             <DeviceLabel>Mobile</DeviceLabel>
-            <DevicePercentage>
-              {mockPerformanceData.devices.mobile}%
-            </DevicePercentage>
+            <DevicePercentage>{mockPerformanceData.devices.mobile}%</DevicePercentage>
           </DeviceCard>
-
+          
           <DeviceCard>
             <DeviceIcon>
-              <FaEyeSlash />
+              <FaDesktop />
             </DeviceIcon>
             <DeviceLabel>Desktop</DeviceLabel>
-            <DevicePercentage>
-              {mockPerformanceData.devices.desktop}%
-            </DevicePercentage>
+            <DevicePercentage>{mockPerformanceData.devices.desktop}%</DevicePercentage>
           </DeviceCard>
-
+          
           <DeviceCard>
             <DeviceIcon>
-              <FaEyeSlash />
+              <FaTablet />
             </DeviceIcon>
             <DeviceLabel>Tablet</DeviceLabel>
-            <DevicePercentage>
-              {mockPerformanceData.devices.tablet}%
-            </DevicePercentage>
+            <DevicePercentage>{mockPerformanceData.devices.tablet}%</DevicePercentage>
           </DeviceCard>
         </DeviceBreakdownGrid>
 
         <CampaignPerformanceSection>
           <SectionHeader>
             <SectionTitle>
-              <FaEyeSlash />
+              <FaEnvelopeOpen />
               Campaign Performance
             </SectionTitle>
+            <ActionButton>
+              <FaEye />
+              View All
+            </ActionButton>
           </SectionHeader>
 
           <Table>
@@ -828,42 +813,30 @@ function PerformancePage() {
                   initial="hidden"
                   animate="visible"
                   custom={index}
+                  onClick={() => handleCampaignClick(campaign.id)}
                 >
                   <TableCell>
                     <CampaignName>{campaign.name}</CampaignName>
                     <CampaignMeta>
-                      {campaign.opens.toLocaleString()} opens •{" "}
-                      {campaign.clicks.toLocaleString()} clicks
+                      {campaign.opens.toLocaleString()} opens • {campaign.clicks.toLocaleString()} clicks
                     </CampaignMeta>
                   </TableCell>
                   <TableCell>{campaign.sent.toLocaleString()}</TableCell>
                   <TableCell>
                     <div>{campaign.openRate}%</div>
                     <PerformanceBar>
-                      <PerformanceFill
-                        percentage={campaign.openRate}
-                        color={
-                          campaign.openRate >= 25
-                            ? "#28a745"
-                            : campaign.openRate >= 20
-                            ? "#ffc107"
-                            : "#dc3545"
-                        }
+                      <PerformanceFill 
+                        percentage={campaign.openRate} 
+                        color={campaign.openRate >= 25 ? '#28a745' : campaign.openRate >= 20 ? '#ffc107' : '#dc3545'}
                       />
                     </PerformanceBar>
                   </TableCell>
                   <TableCell>
                     <div>{campaign.clickRate}%</div>
                     <PerformanceBar>
-                      <PerformanceFill
-                        percentage={campaign.clickRate * 5}
-                        color={
-                          campaign.clickRate >= 5
-                            ? "#28a745"
-                            : campaign.clickRate >= 3
-                            ? "#ffc107"
-                            : "#dc3545"
-                        }
+                      <PerformanceFill 
+                        percentage={campaign.clickRate * 5} 
+                        color={campaign.clickRate >= 5 ? '#28a745' : campaign.clickRate >= 3 ? '#ffc107' : '#dc3545'}
                       />
                     </PerformanceBar>
                   </TableCell>
@@ -885,4 +858,4 @@ function PerformancePage() {
   );
 }
 
-export default PerformancePage;
+export default PerformancePage; 

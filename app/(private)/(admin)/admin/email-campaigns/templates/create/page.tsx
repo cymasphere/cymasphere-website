@@ -1,34 +1,37 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import styled from "styled-components";
-import { motion } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
 import NextSEO from "@/components/NextSEO";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingComponent from "@/components/common/LoadingComponent";
-import useLanguage from "@/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
-import {
+import useLanguage from "@/hooks/useLanguage";
+import { 
+  FaFileAlt, 
   FaArrowLeft,
   FaSave,
-  FaFileAlt,
   FaChevronRight,
   FaInfoCircle,
   FaEdit,
+  FaEye,
+  FaHeading,
+  FaFont,
   FaMousePointer,
   FaDivide,
   FaShareAlt,
   FaExpandArrowsAlt,
   FaColumns,
   FaVideo,
+  FaCog,
   FaDesktop,
   FaMobileAlt,
   FaEnvelope,
-  FaImage,
-  FaFont,
-  FaHeading,
+  FaPaintBrush,
+  FaTextHeight,
+  FaImage
 } from "react-icons/fa";
-import VisualEditor from "@/components/email-campaigns/VisualEditor";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
 
 // Copy all the styled components from campaign creation
@@ -193,7 +196,7 @@ const NavigationButtons = styled.div`
   margin-top: 2rem;
 `;
 
-const NavButton = styled.button<{ variant?: "primary" | "secondary" }>`
+const NavButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -207,7 +210,7 @@ const NavButton = styled.button<{ variant?: "primary" | "secondary" }>`
 
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
@@ -241,16 +244,15 @@ const NavButton = styled.button<{ variant?: "primary" | "secondary" }>`
 
 // Copy visual editor components from campaign creation
 const ViewToggle = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== "active",
+  shouldForwardProp: (prop) => prop !== 'active',
 })<{ active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
-  background: ${(props) =>
-    props.active
-      ? "linear-gradient(135deg, var(--primary), var(--accent))"
-      : "rgba(255, 255, 255, 0.08)"};
-  color: ${(props) => (props.active ? "white" : "var(--text-secondary)")};
+  background: ${props => props.active 
+    ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
+    : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.85rem;
@@ -262,10 +264,9 @@ const ViewToggle = styled.button.withConfig({
   backdrop-filter: blur(10px);
 
   &:hover {
-    background: ${(props) =>
-      props.active
-        ? "linear-gradient(135deg, var(--accent), var(--primary))"
-        : "rgba(255, 255, 255, 0.15)"};
+    background: ${props => props.active 
+      ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
+      : 'rgba(255, 255, 255, 0.15)'};
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
   }
@@ -306,18 +307,13 @@ const EmailHeader = styled.div`
   position: relative;
 
   &:after {
-    content: "";
+    content: '';
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(108, 99, 255, 0.3),
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.3), transparent);
   }
 `;
 
@@ -332,18 +328,13 @@ const EmailFooter = styled.div`
   position: relative;
 
   &:before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(108, 99, 255, 0.3),
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.3), transparent);
   }
 `;
 
@@ -351,11 +342,7 @@ const ContentElementsBar = styled.div`
   display: flex;
   gap: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -373,11 +360,7 @@ const ContentElementButton = styled.div`
   min-width: 80px;
   border-radius: 12px;
   border: 2px solid transparent;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   cursor: grab;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.8rem;
@@ -429,21 +412,18 @@ const DragPreview = styled.div`
 `;
 
 const DroppableArea = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isDragOver",
+  shouldForwardProp: (prop) => prop !== 'isDragOver',
 })<{ isDragOver: boolean }>`
   min-height: 50px;
-  border: 2px dashed
-    ${(props) => (props.isDragOver ? "var(--primary)" : "transparent")};
+  border: 2px dashed ${props => props.isDragOver ? 'var(--primary)' : 'transparent'};
   border-radius: 12px;
-  background: ${(props) =>
-    props.isDragOver ? "rgba(108, 99, 255, 0.1)" : "transparent"};
+  background: ${props => props.isDragOver ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
   transition: all 0.3s ease;
   position: relative;
   margin: 1rem 0;
 
   &:before {
-    content: "${(props) =>
-      props.isDragOver ? "✨ Drop here to add content" : ""}";
+    content: '${props => props.isDragOver ? '✨ Drop here to add content' : ''}';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -456,50 +436,45 @@ const DroppableArea = styled.div.withConfig({
 `;
 
 const EmailElement = styled.div.withConfig({
-  shouldForwardProp: (prop) => !["selected", "editing"].includes(prop),
+  shouldForwardProp: (prop) => !['selected', 'editing'].includes(prop),
 })<{ selected?: boolean; editing?: boolean }>`
   margin: 1rem 0;
   padding: 1rem;
-  border: 2px solid
-    ${(props) => {
-      if (props.editing) return "var(--accent)";
-      if (props.selected) return "var(--primary)";
-      return "transparent";
-    }};
+  border: 2px solid ${props => {
+    if (props.editing) return 'var(--accent)';
+    if (props.selected) return 'var(--primary)';
+    return 'transparent';
+  }};
   border-radius: 8px;
-  background: ${(props) => {
-    if (props.editing) return "rgba(255, 193, 7, 0.1)";
-    if (props.selected) return "rgba(108, 99, 255, 0.1)";
-    return "rgba(255, 255, 255, 0.02)";
+  background: ${props => {
+    if (props.editing) return 'rgba(255, 193, 7, 0.1)';
+    if (props.selected) return 'rgba(108, 99, 255, 0.1)';
+    return 'rgba(255, 255, 255, 0.02)';
   }};
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
 
   &:hover {
-    border-color: ${(props) =>
-      props.editing ? "var(--accent)" : "var(--primary)"};
-    background: ${(props) => {
-      if (props.editing) return "rgba(255, 193, 7, 0.15)";
-      return "rgba(108, 99, 255, 0.08)";
+    border-color: ${props => props.editing ? 'var(--accent)' : 'var(--primary)'};
+    background: ${props => {
+      if (props.editing) return 'rgba(255, 193, 7, 0.15)';
+      return 'rgba(108, 99, 255, 0.08)';
     }};
   }
 `;
 
 const EditableText = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isEditing",
+  shouldForwardProp: (prop) => prop !== 'isEditing',
 })<{ isEditing: boolean }>`
   outline: none;
-  ${(props) =>
-    props.isEditing
-      ? `
+  ${props => props.isEditing ? `
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid var(--accent);
     border-radius: 4px;
     padding: 4px 8px;
     color: #333;
-  `
-      : ""}
+  ` : ''}
 `;
 
 const EmailButton = styled.a`
@@ -554,11 +529,7 @@ const ViewToggleContainer = styled.div`
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
   backdrop-filter: blur(10px);
   border-radius: 50px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -601,15 +572,15 @@ interface TemplateData {
 
 // Content elements for drag and drop
 const contentElements = [
-  { type: "header", icon: FaHeading, label: "Header" },
-  { type: "text", icon: FaFont, label: "Text" },
-  { type: "button", icon: FaMousePointer, label: "Button" },
-  { type: "image", icon: FaImage, label: "Image" },
-  { type: "divider", icon: FaDivide, label: "Divider" },
-  { type: "social", icon: FaShareAlt, label: "Social" },
-  { type: "spacer", icon: FaExpandArrowsAlt, label: "Spacer" },
-  { type: "columns", icon: FaColumns, label: "Columns" },
-  { type: "video", icon: FaVideo, label: "Video" },
+  { type: 'header', icon: FaHeading, label: 'Header' },
+  { type: 'text', icon: FaFont, label: 'Text' },
+  { type: 'button', icon: FaMousePointer, label: 'Button' },
+  { type: 'image', icon: FaImage, label: 'Image' },
+  { type: 'divider', icon: FaDivide, label: 'Divider' },
+  { type: 'social', icon: FaShareAlt, label: 'Social' },
+  { type: 'spacer', icon: FaExpandArrowsAlt, label: 'Spacer' },
+  { type: 'columns', icon: FaColumns, label: 'Columns' },
+  { type: 'video', icon: FaVideo, label: 'Video' }
 ];
 
 function CreateTemplatePage() {
@@ -617,16 +588,14 @@ function CreateTemplatePage() {
   const router = useRouter();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [savingMessage, setSavingMessage] = useState("");
-  const [currentView, setCurrentView] = useState<"desktop" | "mobile" | "text">(
-    "desktop"
-  );
+  const [savingMessage, setSavingMessage] = useState('');
+  const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [editingElement, setEditingElement] = useState<string | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
-
+  
   const [templateData, setTemplateData] = useState<TemplateData>({
     name: "",
     subject: "",
@@ -637,19 +606,11 @@ function CreateTemplatePage() {
     audience: "",
     content: "",
     emailElements: [
-      {
-        id: "header_" + Date.now(),
-        type: "header",
-        content: "Your Template Header",
-      },
-      {
-        id: "text_" + Date.now(),
-        type: "text",
-        content: "Add your template content here...",
-      },
-    ],
+      { id: 'header_' + Date.now(), type: 'header', content: 'Your Template Header' },
+      { id: 'text_' + Date.now(), type: 'text', content: 'Add your template content here...' }
+    ]
   });
-
+  
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
@@ -662,9 +623,9 @@ function CreateTemplatePage() {
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, elementType: string) => {
     setIsDragging(true);
-    e.dataTransfer.setData("text/plain", elementType);
-    e.dataTransfer.effectAllowed = "copy";
-
+    e.dataTransfer.setData('text/plain', elementType);
+    e.dataTransfer.effectAllowed = 'copy';
+    
     if (dragPreviewRef.current) {
       dragPreviewRef.current.textContent = elementType;
       e.dataTransfer.setDragImage(dragPreviewRef.current, 0, 0);
@@ -678,7 +639,7 @@ function CreateTemplatePage() {
 
   const handleDragOver = (e: React.DragEvent, index?: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.dropEffect = 'copy';
     setDragOverIndex(index !== undefined ? index : null);
   };
 
@@ -688,112 +649,64 @@ function CreateTemplatePage() {
 
   const handleDrop = (e: React.DragEvent, index?: number) => {
     e.preventDefault();
-    const elementType = e.dataTransfer.getData("text/plain");
-
+    const elementType = e.dataTransfer.getData('text/plain');
+    
     if (elementType) {
       const newElement = createNewElement(elementType);
       const newElements = [...templateData.emailElements];
-
+      
       if (index !== undefined) {
         newElements.splice(index, 0, newElement);
       } else {
         newElements.push(newElement);
       }
-
-      setTemplateData({ ...templateData, emailElements: newElements });
+      
+      setTemplateData({...templateData, emailElements: newElements});
     }
-
+    
     setIsDragging(false);
     setDragOverIndex(null);
   };
 
   const createNewElement = (type: string) => {
     const id = `${type}_${Date.now()}`;
-
+    
     switch (type) {
-      case "header":
-        return {
-          id,
-          type,
-          content: "New Header",
-          style: { fontSize: "32px", fontWeight: "bold", textAlign: "center" },
-        };
-      case "text":
-        return {
-          id,
-          type,
-          content: "Add your text content here...",
-          style: { fontSize: "16px", lineHeight: "1.6" },
-        };
-      case "button":
-        return {
-          id,
-          type,
-          content: "Click Here",
-          url: "#",
-          style: {
-            backgroundColor: "#6c63ff",
-            color: "white",
-            padding: "12px 24px",
-          },
-        };
-      case "image":
-        return {
-          id,
-          type,
-          src: "https://via.placeholder.com/600x300",
-          alt: "Image",
-          style: { width: "100%" },
-        };
-      case "divider":
-        return {
-          id,
-          type,
-          style: {
-            height: "2px",
-            backgroundColor: "#e0e0e0",
-            margin: "20px 0",
-          },
-        };
-      case "social":
-        return {
-          id,
-          type,
-          links: [
-            { platform: "facebook", url: "#" },
-            { platform: "twitter", url: "#" },
-            { platform: "instagram", url: "#" },
-          ],
-        };
-      case "spacer":
-        return { id, type, height: "40px" };
-      case "columns":
-        return {
-          id,
-          type,
-          columns: [
-            { content: "Column 1 content", width: "50%" },
-            { content: "Column 2 content", width: "50%" },
-          ],
-        };
-      case "video":
-        return {
-          id,
-          type,
-          src: "",
-          thumbnail: "https://via.placeholder.com/600x300",
-          title: "Video Title",
-        };
+      case 'header':
+        return { id, type, content: 'New Header', style: { fontSize: '32px', fontWeight: 'bold', textAlign: 'center' } };
+      case 'text':
+        return { id, type, content: 'Add your text content here...', style: { fontSize: '16px', lineHeight: '1.6' } };
+      case 'button':
+        return { id, type, content: 'Click Here', url: '#', style: { backgroundColor: '#6c63ff', color: 'white', padding: '12px 24px' } };
+      case 'image':
+        return { id, type, src: 'https://via.placeholder.com/600x300', alt: 'Image', style: { width: '100%' } };
+      case 'divider':
+        return { id, type, style: { height: '2px', backgroundColor: '#e0e0e0', margin: '20px 0' } };
+      case 'social':
+        return { id, type, links: [
+          { platform: 'facebook', url: '#' },
+          { platform: 'twitter', url: '#' },
+          { platform: 'instagram', url: '#' }
+        ] };
+      case 'spacer':
+        return { id, type, height: '40px' };
+      case 'columns':
+        return { id, type, columns: [
+          { content: 'Column 1 content', width: '50%' },
+          { content: 'Column 2 content', width: '50%' }
+        ] };
+      case 'video':
+        return { id, type, src: '', thumbnail: 'https://via.placeholder.com/600x300', title: 'Video Title' };
       default:
-        return { id, type, content: "New Element" };
+        return { id, type, content: 'New Element' };
     }
   };
 
   const updateElement = (elementId: string, updates: any) => {
-    const newElements = templateData.emailElements.map((el) =>
+    const newElements = templateData.emailElements.map(el => 
       el.id === elementId ? { ...el, ...updates } : el
     );
-    setTemplateData({ ...templateData, emailElements: newElements });
+    setTemplateData({...templateData, emailElements: newElements});
   };
 
   const selectElement = (elementId: string) => {
@@ -821,10 +734,8 @@ function CreateTemplatePage() {
   };
 
   const removeElement = (elementId: string) => {
-    const newElements = templateData.emailElements.filter(
-      (el) => el.id !== elementId
-    );
-    setTemplateData({ ...templateData, emailElements: newElements });
+    const newElements = templateData.emailElements.filter(el => el.id !== elementId);
+    setTemplateData({...templateData, emailElements: newElements});
     if (selectedElement === elementId) setSelectedElement(null);
     if (editingElement === elementId) setEditingElement(null);
   };
@@ -834,12 +745,12 @@ function CreateTemplatePage() {
     const isEditing = editingElement === element.id;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         stopEditing();
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         stopEditing();
-      } else if (e.key === "Delete" || e.key === "Backspace") {
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
         if (!isEditing) {
           e.preventDefault();
           removeElement(element.id);
@@ -852,7 +763,7 @@ function CreateTemplatePage() {
     };
 
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-      const newContent = (e.target as HTMLDivElement).textContent || "";
+      const newContent = (e.target as HTMLDivElement).textContent || '';
       handleContentChange(element.id, newContent);
     };
 
@@ -864,7 +775,7 @@ function CreateTemplatePage() {
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, index)}
         />
-
+        
         <EmailElement
           selected={isSelected}
           editing={isEditing}
@@ -873,7 +784,7 @@ function CreateTemplatePage() {
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
-          {element.type === "header" && (
+          {element.type === 'header' && (
             <EditableText
               isEditing={isEditing}
               contentEditable={isEditing}
@@ -881,19 +792,19 @@ function CreateTemplatePage() {
               onBlur={handleBlur}
               onInput={handleInput}
               style={{
-                fontSize: element.style?.fontSize || "32px",
-                fontWeight: element.style?.fontWeight || "bold",
-                textAlign: element.style?.textAlign || "center",
-                color: element.style?.color || "#333",
-                margin: "0",
-                outline: "none",
+                fontSize: element.style?.fontSize || '32px',
+                fontWeight: element.style?.fontWeight || 'bold',
+                textAlign: element.style?.textAlign || 'center',
+                color: element.style?.color || '#333',
+                margin: '0',
+                outline: 'none'
               }}
             >
               {element.content}
             </EditableText>
           )}
 
-          {element.type === "text" && (
+          {element.type === 'text' && (
             <EditableText
               isEditing={isEditing}
               contentEditable={isEditing}
@@ -901,24 +812,24 @@ function CreateTemplatePage() {
               onBlur={handleBlur}
               onInput={handleInput}
               style={{
-                fontSize: element.style?.fontSize || "16px",
-                lineHeight: element.style?.lineHeight || "1.6",
-                color: element.style?.color || "#555",
-                margin: "0",
-                outline: "none",
+                fontSize: element.style?.fontSize || '16px',
+                lineHeight: element.style?.lineHeight || '1.6',
+                color: element.style?.color || '#555',
+                margin: '0',
+                outline: 'none'
               }}
             >
               {element.content}
             </EditableText>
           )}
 
-          {element.type === "button" && (
-            <div style={{ textAlign: "center", margin: "2rem 0" }}>
+          {element.type === 'button' && (
+            <div style={{ textAlign: 'center', margin: '2rem 0' }}>
               <EmailButton
                 style={{
-                  backgroundColor: element.style?.backgroundColor || "#6c63ff",
-                  color: element.style?.color || "white",
-                  padding: element.style?.padding || "12px 24px",
+                  backgroundColor: element.style?.backgroundColor || '#6c63ff',
+                  color: element.style?.color || 'white',
+                  padding: element.style?.padding || '12px 24px'
                 }}
               >
                 {isEditing ? (
@@ -928,12 +839,7 @@ function CreateTemplatePage() {
                     suppressContentEditableWarning={true}
                     onBlur={handleBlur}
                     onInput={handleInput}
-                    style={{
-                      outline: "none",
-                      background: "none",
-                      border: "none",
-                      color: "inherit",
-                    }}
+                    style={{ outline: 'none', background: 'none', border: 'none', color: 'inherit' }}
                   >
                     {element.content}
                   </EditableText>
@@ -944,53 +850,41 @@ function CreateTemplatePage() {
             </div>
           )}
 
-          {element.type === "image" && (
-            <div style={{ textAlign: "center", margin: "1.5rem 0" }}>
+          {element.type === 'image' && (
+            <div style={{ textAlign: 'center', margin: '1.5rem 0' }}>
               <img
-                src={element.src || "https://via.placeholder.com/600x300"}
-                alt={element.alt || "Email Image"}
+                src={element.src || 'https://via.placeholder.com/600x300'}
+                alt={element.alt || 'Email Image'}
                 style={{
-                  maxWidth: "100%",
-                  height: "auto",
-                  borderRadius: "8px",
-                  ...element.style,
+                  maxWidth: '100%',
+                  height: 'auto',
+                  borderRadius: '8px',
+                  ...element.style
                 }}
               />
               {isEditing && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    fontSize: "0.8rem",
-                    color: "#666",
-                  }}
-                >
+                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
                   Double-click to edit image source
                 </div>
               )}
             </div>
           )}
 
-          {element.type === "divider" && (
+          {element.type === 'divider' && (
             <div
               style={{
-                height: element.style?.height || "2px",
-                backgroundColor: element.style?.backgroundColor || "#e0e0e0",
-                margin: element.style?.margin || "20px 0",
-                border: "none",
-                borderRadius: "1px",
+                height: element.style?.height || '2px',
+                backgroundColor: element.style?.backgroundColor || '#e0e0e0',
+                margin: element.style?.margin || '20px 0',
+                border: 'none',
+                borderRadius: '1px'
               }}
             />
           )}
 
-          {element.type === "social" && (
-            <div style={{ textAlign: "center", margin: "2rem 0" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "1rem",
-                }}
-              >
+          {element.type === 'social' && (
+            <div style={{ textAlign: 'center', margin: '2rem 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                 {element.links?.map((link: any, linkIndex: number) => (
                   <SocialLink key={linkIndex} href={link.url}>
                     {link.platform}
@@ -998,60 +892,50 @@ function CreateTemplatePage() {
                 ))}
               </div>
               {isEditing && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    fontSize: "0.8rem",
-                    color: "#666",
-                  }}
-                >
+                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
                   Click to edit social links
                 </div>
               )}
             </div>
           )}
 
-          {element.type === "spacer" && (
+          {element.type === 'spacer' && (
             <div
               style={{
-                height: element.height || "40px",
-                backgroundColor: isSelected
-                  ? "rgba(108, 99, 255, 0.1)"
-                  : "transparent",
-                border: isSelected ? "1px dashed var(--primary)" : "none",
-                borderRadius: "4px",
-                position: "relative",
+                height: element.height || '40px',
+                backgroundColor: isSelected ? 'rgba(108, 99, 255, 0.1)' : 'transparent',
+                border: isSelected ? '1px dashed var(--primary)' : 'none',
+                borderRadius: '4px',
+                position: 'relative'
               }}
             >
               {isSelected && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    fontSize: "0.8rem",
-                    color: "var(--primary)",
-                    fontWeight: "600",
-                  }}
-                >
-                  Spacer ({element.height || "40px"})
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  fontSize: '0.8rem',
+                  color: 'var(--primary)',
+                  fontWeight: '600'
+                }}>
+                  Spacer ({element.height || '40px'})
                 </div>
               )}
             </div>
           )}
 
-          {element.type === "columns" && (
-            <div style={{ display: "flex", gap: "1rem", margin: "1.5rem 0" }}>
+          {element.type === 'columns' && (
+            <div style={{ display: 'flex', gap: '1rem', margin: '1.5rem 0' }}>
               {element.columns?.map((column: any, colIndex: number) => (
                 <div
                   key={colIndex}
                   style={{
-                    flex: column.width || "1",
-                    padding: "1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "8px",
-                    backgroundColor: "#f9f9f9",
+                    flex: column.width || '1',
+                    padding: '1rem',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    backgroundColor: '#f9f9f9'
                   }}
                 >
                   {isEditing ? (
@@ -1062,11 +946,7 @@ function CreateTemplatePage() {
                       onBlur={handleBlur}
                       onInput={(e) => {
                         const newColumns = [...element.columns];
-                        newColumns[colIndex] = {
-                          ...newColumns[colIndex],
-                          content:
-                            (e.target as HTMLDivElement).textContent || "",
-                        };
+                        newColumns[colIndex] = { ...newColumns[colIndex], content: (e.target as HTMLDivElement).textContent || '' };
                         updateElement(element.id, { columns: newColumns });
                       }}
                     >
@@ -1080,44 +960,34 @@ function CreateTemplatePage() {
             </div>
           )}
 
-          {element.type === "video" && (
-            <div style={{ textAlign: "center", margin: "2rem 0" }}>
-              <div style={{ position: "relative", display: "inline-block" }}>
+          {element.type === 'video' && (
+            <div style={{ textAlign: 'center', margin: '2rem 0' }}>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
                 <img
-                  src={
-                    element.thumbnail || "https://via.placeholder.com/600x300"
-                  }
-                  alt={element.title || "Video Thumbnail"}
-                  style={{ maxWidth: "100%", borderRadius: "8px" }}
+                  src={element.thumbnail || 'https://via.placeholder.com/600x300'}
+                  alt={element.title || 'Video Thumbnail'}
+                  style={{ maxWidth: '100%', borderRadius: '8px' }}
                 />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: "60px",
-                    height: "60px",
-                    backgroundColor: "rgba(0, 0, 0, 0.7)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontSize: "24px",
-                  }}
-                >
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '60px',
+                  height: '60px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '24px'
+                }}>
                   ▶
                 </div>
               </div>
               {isEditing && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    fontSize: "0.8rem",
-                    color: "#666",
-                  }}
-                >
+                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
                   Double-click to edit video settings
                 </div>
               )}
@@ -1127,17 +997,17 @@ function CreateTemplatePage() {
           {isSelected && !isEditing && (
             <button
               style={{
-                position: "absolute",
-                top: "-10px",
-                right: "-10px",
-                background: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "24px",
-                height: "24px",
-                cursor: "pointer",
-                fontSize: "12px",
+                position: 'absolute',
+                top: '-10px',
+                right: '-10px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                cursor: 'pointer',
+                fontSize: '12px'
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1161,40 +1031,41 @@ function CreateTemplatePage() {
   }
 
   const templateTypes = [
-    { value: "welcome", label: "Welcome Email" },
-    { value: "newsletter", label: "Newsletter" },
-    { value: "promotional", label: "Promotional" },
-    { value: "transactional", label: "Transactional" },
-    { value: "announcement", label: "Announcement" },
-    { value: "event", label: "Event" },
+    { value: 'welcome', label: 'Welcome Email' },
+    { value: 'newsletter', label: 'Newsletter' },
+    { value: 'promotional', label: 'Promotional' },
+    { value: 'transactional', label: 'Transactional' },
+    { value: 'announcement', label: 'Announcement' },
+    { value: 'event', label: 'Event' }
   ];
 
   const audienceOptions = [
-    { value: "all", label: "All Subscribers" },
-    { value: "new", label: "New Subscribers" },
-    { value: "active", label: "Active Users" },
-    { value: "customers", label: "Customers" },
-    { value: "inactive", label: "Inactive Users" },
+    { value: 'all', label: 'All Subscribers' },
+    { value: 'new', label: 'New Subscribers' },
+    { value: 'active', label: 'Active Users' },
+    { value: 'customers', label: 'Customers' },
+    { value: 'inactive', label: 'Inactive Users' }
   ];
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSavingMessage("Saving template...");
-
+    setSavingMessage('Saving template...');
+    
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Saving template:", templateData);
-      setSavingMessage("Template saved successfully!");
-
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Saving template:', templateData);
+      setSavingMessage('Template saved successfully!');
+      
       setTimeout(() => {
-        router.push("/admin/email-campaigns/templates");
+        router.push('/admin/email-campaigns/templates');
       }, 1500);
+      
     } catch (error) {
-      console.error("Error saving template:", error);
-      setSavingMessage("Error saving template. Please try again.");
+      console.error('Error saving template:', error);
+      setSavingMessage('Error saving template. Please try again.');
     } finally {
       setIsSaving(false);
-      setTimeout(() => setSavingMessage(""), 3000);
+      setTimeout(() => setSavingMessage(''), 3000);
     }
   };
 
@@ -1204,16 +1075,12 @@ function CreateTemplatePage() {
         title="Create Template"
         description="Create a new email template"
       />
-
+      
       <CreateContainer>
         <Breadcrumbs>
-          <BreadcrumbLink href="/admin/email-campaigns">
-            Email Campaigns
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns">Email Campaigns</BreadcrumbLink>
           <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/templates">
-            Templates
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns/templates">Templates</BreadcrumbLink>
           <FaChevronRight />
           <BreadcrumbCurrent>Create Template</BreadcrumbCurrent>
         </Breadcrumbs>
@@ -1230,16 +1097,8 @@ function CreateTemplatePage() {
 
         {/* Template Details Form */}
         <FormSection>
-          <h3
-            style={{
-              color: "var(--text)",
-              marginBottom: "1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <FaInfoCircle style={{ color: "var(--primary)" }} />
+          <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FaInfoCircle style={{ color: 'var(--primary)' }} />
             Template Details
           </h3>
           <FormGrid>
@@ -1248,9 +1107,7 @@ function CreateTemplatePage() {
               <Input
                 type="text"
                 value={templateData.name}
-                onChange={(e) =>
-                  setTemplateData({ ...templateData, name: e.target.value })
-                }
+                onChange={(e) => setTemplateData({...templateData, name: e.target.value})}
                 placeholder="Enter template name"
               />
             </FormGroup>
@@ -1258,9 +1115,7 @@ function CreateTemplatePage() {
               <Label>Template Type</Label>
               <Select
                 value={templateData.type}
-                onChange={(e) =>
-                  setTemplateData({ ...templateData, type: e.target.value })
-                }
+                onChange={(e) => setTemplateData({...templateData, type: e.target.value})}
               >
                 <option value="">Choose template type...</option>
                 {templateTypes.map((type) => (
@@ -1277,9 +1132,7 @@ function CreateTemplatePage() {
               <Input
                 type="text"
                 value={templateData.subject}
-                onChange={(e) =>
-                  setTemplateData({ ...templateData, subject: e.target.value })
-                }
+                onChange={(e) => setTemplateData({...templateData, subject: e.target.value})}
                 placeholder="Enter default subject line"
               />
             </FormGroup>
@@ -1288,12 +1141,7 @@ function CreateTemplatePage() {
               <Input
                 type="text"
                 value={templateData.senderName}
-                onChange={(e) =>
-                  setTemplateData({
-                    ...templateData,
-                    senderName: e.target.value,
-                  })
-                }
+                onChange={(e) => setTemplateData({...templateData, senderName: e.target.value})}
                 placeholder="e.g. Cymasphere Team"
               />
             </FormGroup>
@@ -1304,12 +1152,7 @@ function CreateTemplatePage() {
               <Input
                 type="text"
                 value={templateData.preheader}
-                onChange={(e) =>
-                  setTemplateData({
-                    ...templateData,
-                    preheader: e.target.value,
-                  })
-                }
+                onChange={(e) => setTemplateData({...templateData, preheader: e.target.value})}
                 placeholder="Preview text that appears next to subject line"
               />
             </FormGroup>
@@ -1317,9 +1160,7 @@ function CreateTemplatePage() {
               <Label>Target Audience</Label>
               <Select
                 value={templateData.audience}
-                onChange={(e) =>
-                  setTemplateData({ ...templateData, audience: e.target.value })
-                }
+                onChange={(e) => setTemplateData({...templateData, audience: e.target.value})}
               >
                 <option value="">Choose target audience...</option>
                 {audienceOptions.map((audience) => (
@@ -1334,12 +1175,7 @@ function CreateTemplatePage() {
             <Label>Description</Label>
             <TextArea
               value={templateData.description}
-              onChange={(e) =>
-                setTemplateData({
-                  ...templateData,
-                  description: e.target.value,
-                })
-              }
+              onChange={(e) => setTemplateData({...templateData, description: e.target.value})}
               placeholder="Describe what this template is for"
             />
           </FormGroup>
@@ -1347,19 +1183,11 @@ function CreateTemplatePage() {
 
         {/* Visual Email Editor Section */}
         <FormSection>
-          <h3
-            style={{
-              color: "var(--text)",
-              marginBottom: "1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <FaEdit style={{ color: "var(--primary)" }} />
+          <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FaEdit style={{ color: 'var(--primary)' }} />
             Design Your Template
           </h3>
-
+          
           {/* Content Elements Bar */}
           <ContentElementsBar>
             {contentElements.map((element, index) => {
@@ -1380,151 +1208,78 @@ function CreateTemplatePage() {
           </ContentElementsBar>
 
           <ViewToggleContainer>
-            <ViewToggle
-              active={currentView === "desktop"}
-              onClick={() => setCurrentView("desktop")}
+            <ViewToggle 
+              active={currentView === 'desktop'}
+              onClick={() => setCurrentView('desktop')}
             >
-              <FaDesktop style={{ marginRight: "0.5rem" }} />
+              <FaDesktop style={{ marginRight: '0.5rem' }} />
               Desktop
             </ViewToggle>
-            <ViewToggle
-              active={currentView === "mobile"}
-              onClick={() => setCurrentView("mobile")}
+            <ViewToggle 
+              active={currentView === 'mobile'}
+              onClick={() => setCurrentView('mobile')}
             >
-              <FaMobileAlt style={{ marginRight: "0.5rem" }} />
+              <FaMobileAlt style={{ marginRight: '0.5rem' }} />
               Mobile
             </ViewToggle>
-            <ViewToggle
-              active={currentView === "text"}
-              onClick={() => setCurrentView("text")}
+            <ViewToggle 
+              active={currentView === 'text'}
+              onClick={() => setCurrentView('text')}
             >
-              <FaEnvelope style={{ marginRight: "0.5rem" }} />
+              <FaEnvelope style={{ marginRight: '0.5rem' }} />
               Text Only
             </ViewToggle>
           </ViewToggleContainer>
 
           <EmailCanvas>
-            <EmailContainer
-              style={{
-                width:
-                  currentView === "mobile"
-                    ? "375px"
-                    : currentView === "text"
-                    ? "100%"
-                    : "600px",
-                maxWidth: currentView === "text" ? "500px" : "none",
-                backgroundColor: currentView === "text" ? "#f8f9fa" : "white",
-                transition: "all 0.3s ease",
-              }}
-            >
-              {currentView === "text" ? (
-                <div
-                  style={{
-                    padding: "2rem",
-                    fontFamily: "monospace",
-                    fontSize: "0.9rem",
-                    lineHeight: "1.6",
-                  }}
-                >
-                  <div
-                    style={{
-                      marginBottom: "1rem",
-                      paddingBottom: "1rem",
-                      borderBottom: "1px solid #ddd",
-                    }}
-                  >
-                    <strong>Template Name:</strong>{" "}
-                    {templateData.name || "Untitled Template"}
-                    <br />
-                    <strong>Subject:</strong>{" "}
-                    {templateData.subject || "Email Subject"}
-                    <br />
-                    <strong>Sender:</strong>{" "}
-                    {templateData.senderName || "Sender Name"}
-                    <br />
+            <EmailContainer style={{
+              width: currentView === 'mobile' ? '375px' : currentView === 'text' ? '100%' : '600px',
+              maxWidth: currentView === 'text' ? '500px' : 'none',
+              backgroundColor: currentView === 'text' ? '#f8f9fa' : 'white',
+              transition: 'all 0.3s ease'
+            }}>
+              {currentView === 'text' ? (
+                <div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                  <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #ddd' }}>
+                    <strong>Template Name:</strong> {templateData.name || 'Untitled Template'}<br/>
+                    <strong>Subject:</strong> {templateData.subject || 'Email Subject'}<br/>
+                    <strong>Sender:</strong> {templateData.senderName || 'Sender Name'}<br/>
                     {templateData.preheader && (
                       <>
-                        <strong>Preheader:</strong> {templateData.preheader}
-                        <br />
+                        <strong>Preheader:</strong> {templateData.preheader}<br/>
                       </>
                     )}
                   </div>
                   {templateData.emailElements.map((element, index) => (
-                    <div key={element.id} style={{ marginBottom: "1rem" }}>
-                      {element.type === "header" && (
-                        <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-                          {element.content}
-                        </div>
-                      )}
-                      {element.type === "text" && <div>{element.content}</div>}
-                      {element.type === "button" && (
-                        <div
-                          style={{
-                            padding: "0.5rem",
-                            border: "1px solid #ddd",
-                            display: "inline-block",
-                          }}
-                        >
-                          [BUTTON: {element.content}]
-                        </div>
-                      )}
+                    <div key={element.id} style={{ marginBottom: '1rem' }}>
+                      {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{element.content}</div>}
+                      {element.type === 'text' && <div>{element.content}</div>}
+                      {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {element.content}]</div>}
                     </div>
                   ))}
                 </div>
               ) : (
                 <>
-                  <EmailHeader style={{ padding: "1.5rem 2rem" }}>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        color: "#666",
-                        fontSize: "0.9rem",
-                      }}
-                    >
+                  <EmailHeader style={{ padding: '1.5rem 2rem' }}>
+                    <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
                       📧 Email Preview
                     </div>
                   </EmailHeader>
-
+                  
                   <EmailBody
                     onDragOver={(e) => handleDragOver(e)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e)}
                   >
-                    <div
-                      style={{
-                        textAlign: "center",
-                        marginBottom: "2rem",
-                        paddingBottom: "1rem",
-                        borderBottom: "1px solid #eee",
-                      }}
-                    >
-                      <h2
-                        style={{
-                          color: "#333",
-                          marginBottom: "0.5rem",
-                          fontSize: "1.5rem",
-                        }}
-                      >
+                    <div style={{ textAlign: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
+                      <h2 style={{ color: '#333', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
                         {templateData.subject || "Template Subject"}
                       </h2>
-                      <p
-                        style={{
-                          color: "#666",
-                          fontSize: "0.9rem",
-                          margin: "0",
-                        }}
-                      >
+                      <p style={{ color: '#666', fontSize: '0.9rem', margin: '0' }}>
                         From: {templateData.senderName || "Sender Name"}
                       </p>
                       {templateData.preheader && (
-                        <p
-                          style={{
-                            color: "#999",
-                            fontSize: "0.85rem",
-                            fontStyle: "italic",
-                            margin: "0.5rem 0 0 0",
-                          }}
-                        >
+                        <p style={{ color: '#999', fontSize: '0.85rem', fontStyle: 'italic', margin: '0.5rem 0 0 0' }}>
                           {templateData.preheader}
                         </p>
                       )}
@@ -1536,53 +1291,34 @@ function CreateTemplatePage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e)}
                       >
-                        <div style={{ fontSize: "2rem", opacity: "0.5" }}>
-                          📧
-                        </div>
+                        <div style={{ fontSize: '2rem', opacity: '0.5' }}>📧</div>
                         <div>
                           <strong>Drag content elements here</strong>
                         </div>
-                        <div style={{ fontSize: "0.9rem", opacity: "0.8" }}>
-                          Start building your template by dragging elements from
-                          above
+                        <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>
+                          Start building your template by dragging elements from above
                         </div>
                       </DropZone>
                     ) : (
                       <>
                         {templateData.emailElements.map(renderEmailElement)}
                         <DroppableArea
-                          isDragOver={
-                            dragOverIndex === templateData.emailElements.length
-                          }
-                          onDragOver={(e) =>
-                            handleDragOver(e, templateData.emailElements.length)
-                          }
+                          isDragOver={dragOverIndex === templateData.emailElements.length}
+                          onDragOver={(e) => handleDragOver(e, templateData.emailElements.length)}
                           onDragLeave={handleDragLeave}
-                          onDrop={(e) =>
-                            handleDrop(e, templateData.emailElements.length)
-                          }
+                          onDrop={(e) => handleDrop(e, templateData.emailElements.length)}
                         />
                       </>
                     )}
                   </EmailBody>
 
-                  <EmailFooter
-                    style={{ padding: "1.5rem 2rem", textAlign: "center" }}
-                  >
-                    <div style={{ color: "#666", fontSize: "0.8rem" }}>
-                      <FooterLink href="#">Unsubscribe</FooterLink> |
-                      <FooterLink href="#" style={{ margin: "0 0.5rem" }}>
-                        Privacy Policy
-                      </FooterLink>{" "}
-                      |<FooterLink href="#">Contact Us</FooterLink>
+                  <EmailFooter style={{ padding: '1.5rem 2rem', textAlign: 'center' }}>
+                    <div style={{ color: '#666', fontSize: '0.8rem' }}>
+                      <FooterLink href="#">Unsubscribe</FooterLink> | 
+                      <FooterLink href="#" style={{ margin: '0 0.5rem' }}>Privacy Policy</FooterLink> | 
+                      <FooterLink href="#">Contact Us</FooterLink>
                     </div>
-                    <div
-                      style={{
-                        marginTop: "0.5rem",
-                        color: "#999",
-                        fontSize: "0.75rem",
-                      }}
-                    >
+                    <div style={{ marginTop: '0.5rem', color: '#999', fontSize: '0.75rem' }}>
                       © 2024 Your Company. All rights reserved.
                     </div>
                   </EmailFooter>
@@ -1590,7 +1326,7 @@ function CreateTemplatePage() {
               )}
             </EmailContainer>
           </EmailCanvas>
-
+          
           {/* Drag Preview Element */}
           <DragPreview ref={dragPreviewRef} />
         </FormSection>
@@ -1600,10 +1336,10 @@ function CreateTemplatePage() {
             <FaArrowLeft />
             Cancel
           </NavButton>
-
+          
           <NavButton variant="primary" onClick={handleSave} disabled={isSaving}>
             <FaSave />
-            {isSaving ? "Saving..." : "Save Template"}
+            {isSaving ? 'Saving...' : 'Save Template'}
           </NavButton>
         </NavigationButtons>
 
@@ -1612,18 +1348,16 @@ function CreateTemplatePage() {
           {savingMessage && (
             <motion.div
               style={{
-                position: "fixed",
-                top: "20px",
-                right: "20px",
-                padding: "1rem 1.5rem",
-                borderRadius: "8px",
-                color: "white",
-                fontWeight: "600",
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
                 zIndex: 1000,
-                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.2)",
-                backgroundColor: savingMessage.includes("Error")
-                  ? "#dc3545"
-                  : "#28a745",
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)',
+                backgroundColor: savingMessage.includes('Error') ? '#dc3545' : '#28a745'
               }}
               initial={{ opacity: 0, x: 300 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1639,4 +1373,4 @@ function CreateTemplatePage() {
   );
 }
 
-export default CreateTemplatePage;
+export default CreateTemplatePage; 

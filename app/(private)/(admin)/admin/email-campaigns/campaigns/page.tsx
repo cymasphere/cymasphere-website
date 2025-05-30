@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaEnvelopeOpen,
+import { 
+  FaEnvelopeOpen, 
   FaSearch,
   FaPlus,
   FaEdit,
@@ -11,9 +12,13 @@ import {
   FaEye,
   FaPlay,
   FaPause,
+  FaChartLine,
+  FaCalendarAlt,
+  FaUsers,
+  FaEnvelope,
   FaEllipsisV,
   FaClone,
-  FaDownload,
+  FaDownload
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -81,9 +86,10 @@ const StatCard = styled(motion.div)`
 `;
 
 const StatValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
 `;
 
 const StatLabel = styled.div`
@@ -144,6 +150,30 @@ const SearchIcon = styled.div`
   transform: translateY(-50%);
   color: var(--text-secondary);
   font-size: 1rem;
+`;
+
+const CreateButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+  }
+
+  svg {
+    font-size: 0.9rem;
+  }
 `;
 
 const CampaignsGrid = styled.div`
@@ -233,25 +263,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "active":
+      case 'active':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "paused":
+      case 'paused':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "draft":
+      case 'draft':
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case "completed":
+      case 'completed':
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
@@ -268,6 +298,11 @@ const StatusBadge = styled.span<{ status: string }>`
 const MetricValue = styled.div`
   font-weight: 600;
   color: var(--text);
+`;
+
+const MetricLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 `;
 
 const ActionsContainer = styled.div`
@@ -344,9 +379,7 @@ const DropdownItem = styled.button`
   }
 `;
 
-const ActionButton = styled.button<{
-  variant?: "primary" | "secondary" | "danger";
-}>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 6px 10px;
   border: none;
   border-radius: 4px;
@@ -362,7 +395,7 @@ const ActionButton = styled.button<{
 
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background-color: var(--primary);
           color: white;
@@ -370,7 +403,7 @@ const ActionButton = styled.button<{
             background-color: var(--accent);
           }
         `;
-      case "danger":
+      case 'danger':
         return `
           background-color: #dc3545;
           color: white;
@@ -395,13 +428,13 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-
+  
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-
+  
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -458,14 +491,13 @@ const mockCampaigns = [
 
 function CampaignsPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dropdownStates, setDropdownStates] = useState<Record<string, boolean>>(
-    {}
-  );
-
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     if (!languageLoading) {
@@ -476,17 +508,14 @@ function CampaignsPage() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        Object.keys(dropdownStates).length > 0 &&
-        !(event.target as Element).closest("[data-dropdown]")
-      ) {
-        setDropdownStates({});
+      if (openDropdown && !(event.target as Element).closest('[data-dropdown]')) {
+        setOpenDropdown(null);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownStates]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -496,10 +525,9 @@ function CampaignsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredCampaigns = mockCampaigns.filter(
-    (campaign) =>
-      campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCampaigns = mockCampaigns.filter(campaign =>
+    campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    campaign.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
@@ -508,9 +536,7 @@ function CampaignsPage() {
       label: "Total Campaigns",
     },
     {
-      value: mockCampaigns
-        .filter((c) => c.status === "active")
-        .length.toString(),
+      value: mockCampaigns.filter(c => c.status === "active").length.toString(),
       label: "Active Campaigns",
     },
     {
@@ -534,10 +560,10 @@ function CampaignsPage() {
 
   const handleCampaignAction = (action: string, campaignId: string) => {
     console.log(`${action} campaign:`, campaignId);
-    setDropdownStates({}); // Close dropdown after action
-    if (action === "create") {
-      router.push("/admin/email-campaigns/campaigns/create");
-    } else if (action === "edit") {
+    setOpenDropdown(null); // Close dropdown after action
+    if (action === 'create') {
+      router.push('/admin/email-campaigns/campaigns/create');
+    } else if (action === 'edit') {
       router.push(`/admin/email-campaigns/campaigns/create?edit=${campaignId}`);
     }
     // Other actions like pause, resume, delete can be implemented here
@@ -545,10 +571,7 @@ function CampaignsPage() {
 
   const handleDropdownToggle = (campaignId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDropdownStates({
-      ...dropdownStates,
-      [campaignId]: !dropdownStates[campaignId],
-    });
+    setOpenDropdown(openDropdown === campaignId ? null : campaignId);
   };
 
   return (
@@ -557,7 +580,7 @@ function CampaignsPage() {
         title="Email Campaigns"
         description="Manage and monitor your email marketing campaigns"
       />
-
+      
       <CampaignsContainer>
         <CampaignsTitle>
           <FaEnvelopeOpen />
@@ -594,11 +617,8 @@ function CampaignsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </SearchContainer>
-
-          <ActionButton
-            variant="primary"
-            onClick={() => handleCampaignAction("create", "")}
-          >
+          
+          <ActionButton variant="primary" onClick={() => handleCampaignAction('create', '')}>
             <FaPlus />
             Create Campaign
           </ActionButton>
@@ -624,10 +644,7 @@ function CampaignsPage() {
                     <EmptyState>
                       <FaEnvelopeOpen />
                       <h3>No campaigns found</h3>
-                      <p>
-                        Try adjusting your search criteria or create a new
-                        campaign.
-                      </p>
+                      <p>Try adjusting your search criteria or create a new campaign.</p>
                     </EmptyState>
                   </TableCell>
                 </tr>
@@ -639,23 +656,17 @@ function CampaignsPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() => handleCampaignAction("edit", campaign.id)}
+                    onClick={() => handleCampaignAction('edit', campaign.id)}
                   >
                     <TableCell>
                       <CampaignTitle>{campaign.title}</CampaignTitle>
-                      <CampaignDescription>
-                        {campaign.description}
-                      </CampaignDescription>
+                      <CampaignDescription>{campaign.description}</CampaignDescription>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={campaign.status}>
-                        {campaign.status}
-                      </StatusBadge>
+                      <StatusBadge status={campaign.status}>{campaign.status}</StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>
-                        {campaign.recipients.toLocaleString()}
-                      </MetricValue>
+                      <MetricValue>{campaign.recipients.toLocaleString()}</MetricValue>
                     </TableCell>
                     <TableCell>
                       <MetricValue>{campaign.openRate}%</MetricValue>
@@ -668,85 +679,48 @@ function CampaignsPage() {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer data-dropdown>
-                        <MoreButton
+                        <MoreButton 
                           onClick={(e) => handleDropdownToggle(campaign.id, e)}
-                          className={
-                            dropdownStates[campaign.id] ? "active" : ""
-                          }
+                          className={openDropdown === campaign.id ? 'active' : ''}
                         >
                           <FaEllipsisV />
                         </MoreButton>
                         <AnimatePresence>
-                          {dropdownStates[campaign.id] && (
+                          {openDropdown === campaign.id && (
                             <DropdownMenu
                               initial={{ opacity: 0, scale: 0.8, y: -10 }}
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.8, y: -10 }}
                               transition={{ duration: 0.15 }}
                             >
-                              <DropdownItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCampaignAction("edit", campaign.id);
-                                }}
-                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('edit', campaign.id); }}>
                                 <FaEdit />
                                 Edit Campaign
                               </DropdownItem>
-                              <DropdownItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCampaignAction("view", campaign.id);
-                                }}
-                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('view', campaign.id); }}>
                                 <FaEye />
                                 View Analytics
                               </DropdownItem>
-                              <DropdownItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCampaignAction("clone", campaign.id);
-                                }}
-                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('clone', campaign.id); }}>
                                 <FaClone />
                                 Duplicate
                               </DropdownItem>
-                              {campaign.status === "active" ? (
-                                <DropdownItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCampaignAction("pause", campaign.id);
-                                  }}
-                                >
+                              {campaign.status === 'active' ? (
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('pause', campaign.id); }}>
                                   <FaPause />
                                   Pause Campaign
                                 </DropdownItem>
-                              ) : campaign.status === "paused" ? (
-                                <DropdownItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCampaignAction("resume", campaign.id);
-                                  }}
-                                >
+                              ) : campaign.status === 'paused' ? (
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('resume', campaign.id); }}>
                                   <FaPlay />
                                   Resume Campaign
                                 </DropdownItem>
                               ) : null}
-                              <DropdownItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCampaignAction("export", campaign.id);
-                                }}
-                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('export', campaign.id); }}>
                                 <FaDownload />
                                 Export Data
                               </DropdownItem>
-                              <DropdownItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCampaignAction("delete", campaign.id);
-                                }}
-                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('delete', campaign.id); }}>
                                 <FaTrash />
                                 Delete
                               </DropdownItem>
@@ -766,4 +740,4 @@ function CampaignsPage() {
   );
 }
 
-export default CampaignsPage;
+export default CampaignsPage; 

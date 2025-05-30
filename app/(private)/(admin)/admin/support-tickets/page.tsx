@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaTicketAlt,
+import { 
+  FaTicketAlt, 
   FaSearch,
   FaEye,
   FaReply,
@@ -31,7 +31,7 @@ import {
   FaVideo,
   FaFile,
   FaUser,
-  FaUserTie,
+  FaUserTie
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -186,9 +186,7 @@ const FilterSelect = styled.select`
   }
 `;
 
-const ActionButton = styled.button<{
-  variant?: "primary" | "secondary" | "success";
-}>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'success' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -202,7 +200,7 @@ const ActionButton = styled.button<{
 
   ${(props) => {
     switch (props.variant) {
-      case "success":
+      case 'success':
         return `
           background: linear-gradient(90deg, #28a745, #20c997);
           color: white;
@@ -211,7 +209,7 @@ const ActionButton = styled.button<{
             box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
           }
         `;
-      case "primary":
+      case 'primary':
       default:
         return `
           background: linear-gradient(90deg, var(--primary), var(--accent));
@@ -236,7 +234,7 @@ const TableContainer = styled.div`
 
   @media (max-width: 768px) {
     overflow-x: auto;
-
+    
     table {
       min-width: 1200px;
     }
@@ -249,38 +247,14 @@ const Table = styled.table`
   table-layout: fixed;
 
   /* Define column widths */
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 100px;
-  } /* Ticket ID */
-  th:nth-child(2),
-  td:nth-child(2) {
-    width: 250px;
-  } /* Subject */
-  th:nth-child(3),
-  td:nth-child(3) {
-    width: 180px;
-  } /* User */
-  th:nth-child(4),
-  td:nth-child(4) {
-    width: 120px;
-  } /* Status */
-  th:nth-child(5),
-  td:nth-child(5) {
-    width: 120px;
-  } /* Priority */
-  th:nth-child(6),
-  td:nth-child(6) {
-    width: 110px;
-  } /* Created */
-  th:nth-child(7),
-  td:nth-child(7) {
-    width: 140px;
-  } /* Assigned To */
-  th:nth-child(8),
-  td:nth-child(8) {
-    width: 160px;
-  } /* Actions */
+  th:nth-child(1), td:nth-child(1) { width: 100px; } /* Ticket ID */
+  th:nth-child(2), td:nth-child(2) { width: 250px; } /* Subject */
+  th:nth-child(3), td:nth-child(3) { width: 180px; } /* User */
+  th:nth-child(4), td:nth-child(4) { width: 120px; } /* Status */
+  th:nth-child(5), td:nth-child(5) { width: 120px; } /* Priority */
+  th:nth-child(6), td:nth-child(6) { width: 110px; } /* Created */
+  th:nth-child(7), td:nth-child(7) { width: 140px; } /* Assigned To */
+  th:nth-child(8), td:nth-child(8) { width: 160px; } /* Actions */
 `;
 
 const TableHeader = styled.thead`
@@ -382,28 +356,28 @@ const StatusBadge = styled.span<{ status: string }>`
   align-items: center;
   gap: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-
+  
   ${(props) => {
     switch (props.status) {
-      case "open":
+      case 'open':
         return `
           background-color: #28a745;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "inProgress":
+      case 'inProgress':
         return `
           background-color: #ffc107;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "resolved":
+      case 'resolved':
         return `
           background-color: var(--primary);
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "closed":
+      case 'closed':
         return `
           background-color: #6c757d;
           color: white;
@@ -434,28 +408,28 @@ const PriorityBadge = styled.span<{ priority: string }>`
   align-items: center;
   gap: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-
+  
   ${(props) => {
     switch (props.priority) {
-      case "urgent":
+      case 'urgent':
         return `
           background-color: #dc3545;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "high":
+      case 'high':
         return `
           background-color: #ff6600;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "medium":
+      case 'medium':
         return `
           background-color: #ffc107;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
-      case "low":
+      case 'low':
         return `
           background-color: #28a745;
           color: white;
@@ -513,9 +487,8 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
   margin: 0 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
-  background-color: ${(props) =>
-    props.$active ? "var(--primary)" : "transparent"};
-  color: ${(props) => (props.$active ? "white" : "var(--text)")};
+  background-color: ${props => props.$active ? 'var(--primary)' : 'transparent'};
+  color: ${props => props.$active ? 'white' : 'var(--text)'};
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -574,10 +547,10 @@ const MoreMenuDropdown = styled(motion.div)`
   overflow: visible;
   backdrop-filter: blur(10px);
   transform: translateZ(0);
-
+  
   /* Ensure dropdown appears above table content */
   margin-top: 4px;
-
+  
   /* Handle edge cases where dropdown might go off-screen */
   @media (max-width: 768px) {
     right: auto;
@@ -586,12 +559,12 @@ const MoreMenuDropdown = styled(motion.div)`
   }
 `;
 
-const MoreMenuItem = styled.button<{ variant?: "danger" }>`
+const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
   width: 100%;
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${(props) => (props.variant === "danger" ? "#e74c3c" : "var(--text)")};
+  color: ${props => props.variant === 'danger' ? '#e74c3c' : 'var(--text)'};
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -601,10 +574,7 @@ const MoreMenuItem = styled.button<{ variant?: "danger" }>`
   font-size: 0.9rem;
 
   &:hover {
-    background-color: ${(props) =>
-      props.variant === "danger"
-        ? "rgba(231, 76, 60, 0.1)"
-        : "rgba(255, 255, 255, 0.05)"};
+    background-color: ${props => props.variant === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
   }
 
   svg {
@@ -707,17 +677,14 @@ const Message = styled.div<{ isAdmin?: boolean }>`
   margin-bottom: 1rem;
   align-items: flex-start;
   gap: 0.75rem;
-  flex-direction: ${(props) => (props.isAdmin ? "row-reverse" : "row")};
+  flex-direction: ${props => props.isAdmin ? 'row-reverse' : 'row'};
 `;
 
 const MessageAvatar = styled.div<{ isAdmin?: boolean }>`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${(props) =>
-    props.isAdmin
-      ? "linear-gradient(135deg, var(--primary), var(--accent))"
-      : "linear-gradient(135deg, #6c757d, #495057)"};
+  background: ${props => props.isAdmin ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'linear-gradient(135deg, #6c757d, #495057)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -730,27 +697,23 @@ const MessageBubble = styled.div<{ isAdmin?: boolean }>`
   max-width: 70%;
   padding: 0.75rem 1rem;
   border-radius: 18px;
-  background-color: ${(props) =>
-    props.isAdmin ? "var(--primary)" : "rgba(255, 255, 255, 0.08)"};
-  color: ${(props) => (props.isAdmin ? "white" : "var(--text)")};
+  background-color: ${props => props.isAdmin ? 'var(--primary)' : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.isAdmin ? 'white' : 'var(--text)'};
   position: relative;
   word-wrap: break-word;
 
   /* Message tail */
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 10px;
     width: 0;
     height: 0;
     border: 6px solid transparent;
-    ${(props) =>
-      props.isAdmin
-        ? `
+    ${props => props.isAdmin ? `
       right: -12px;
       border-left-color: var(--primary);
-    `
-        : `
+    ` : `
       left: -12px;
       border-right-color: rgba(255, 255, 255, 0.08);
     `}
@@ -935,24 +898,21 @@ const mockTickets = [
     messages: [
       {
         id: "msg-1",
-        content:
-          "I'm having trouble logging into my account when using Chrome browser. It keeps saying 'Invalid credentials' even though I'm sure my password is correct.",
+        content: "I'm having trouble logging into my account when using Chrome browser. It keeps saying 'Invalid credentials' even though I'm sure my password is correct.",
         timestamp: "2024-01-20T10:30:00Z",
         isAdmin: false,
-        sender: "john.doe@example.com",
+        sender: "john.doe@example.com"
       },
       {
         id: "msg-2",
-        content:
-          "Hi John, thanks for reaching out. Can you please try clearing your browser cache and cookies? Also, please share a screenshot of the error message you're seeing.",
+        content: "Hi John, thanks for reaching out. Can you please try clearing your browser cache and cookies? Also, please share a screenshot of the error message you're seeing.",
         timestamp: "2024-01-20T11:15:00Z",
         isAdmin: true,
-        sender: "Support Team",
+        sender: "Support Team"
       },
       {
         id: "msg-3",
-        content:
-          "I cleared the cache but still having the same issue. Here's the screenshot:",
+        content: "I cleared the cache but still having the same issue. Here's the screenshot:",
         timestamp: "2024-01-20T11:45:00Z",
         isAdmin: false,
         sender: "john.doe@example.com",
@@ -961,11 +921,11 @@ const mockTickets = [
             type: "image",
             name: "login-error.png",
             size: "245 KB",
-            url: "/images/mock-screenshot.jpg",
-          },
-        ],
-      },
-    ],
+            url: "/images/mock-screenshot.jpg"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "T-002",
@@ -979,24 +939,21 @@ const mockTickets = [
     messages: [
       {
         id: "msg-4",
-        content:
-          "I was charged twice for my monthly subscription. Can you please check my billing history?",
+        content: "I was charged twice for my monthly subscription. Can you please check my billing history?",
         timestamp: "2024-01-19T14:20:00Z",
         isAdmin: false,
-        sender: "jane.smith@example.com",
+        sender: "jane.smith@example.com"
       },
       {
         id: "msg-5",
-        content:
-          "I've reviewed your account and found the duplicate charge. I'm processing a refund now. You should see it in 3-5 business days.",
+        content: "I've reviewed your account and found the duplicate charge. I'm processing a refund now. You should see it in 3-5 business days.",
         timestamp: "2024-01-20T09:30:00Z",
         isAdmin: true,
-        sender: "John Admin",
+        sender: "John Admin"
       },
       {
         id: "msg-6",
-        content:
-          "Thank you! Here's my bank statement showing the duplicate charges:",
+        content: "Thank you! Here's my bank statement showing the duplicate charges:",
         timestamp: "2024-01-20T10:00:00Z",
         isAdmin: false,
         sender: "jane.smith@example.com",
@@ -1005,11 +962,11 @@ const mockTickets = [
             type: "file",
             name: "bank-statement.pdf",
             size: "1.2 MB",
-            url: "/documents/bank-statement.pdf",
-          },
-        ],
-      },
-    ],
+            url: "/documents/bank-statement.pdf"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "T-003",
@@ -1023,16 +980,14 @@ const mockTickets = [
     messages: [
       {
         id: "msg-7",
-        content:
-          "Would love to see a dark mode option in the app. The current bright theme strains my eyes during long sessions.",
+        content: "Would love to see a dark mode option in the app. The current bright theme strains my eyes during long sessions.",
         timestamp: "2024-01-18T16:45:00Z",
         isAdmin: false,
-        sender: "pro@example.com",
+        sender: "pro@example.com"
       },
       {
         id: "msg-8",
-        content:
-          "Great suggestion! Dark mode is actually already available. You can enable it in Settings > Appearance > Theme. Here's a quick video showing how:",
+        content: "Great suggestion! Dark mode is actually already available. You can enable it in Settings > Appearance > Theme. Here's a quick video showing how:",
         timestamp: "2024-01-19T10:20:00Z",
         isAdmin: true,
         sender: "Development Team",
@@ -1041,18 +996,18 @@ const mockTickets = [
             type: "video",
             name: "dark-mode-tutorial.mp4",
             size: "5.8 MB",
-            url: "/videos/dark-mode-tutorial.mp4",
-          },
-        ],
+            url: "/videos/dark-mode-tutorial.mp4"
+          }
+        ]
       },
       {
         id: "msg-9",
         content: "Perfect! Found it and enabled. Thanks for the quick help!",
         timestamp: "2024-01-19T10:35:00Z",
         isAdmin: false,
-        sender: "pro@example.com",
-      },
-    ],
+        sender: "pro@example.com"
+      }
+    ]
   },
   {
     id: "T-004",
@@ -1066,21 +1021,19 @@ const mockTickets = [
     messages: [
       {
         id: "msg-10",
-        content:
-          "The audio synthesis engine is producing distorted output when using certain filter combinations. This is blocking my work completely.",
+        content: "The audio synthesis engine is producing distorted output when using certain filter combinations. This is blocking my work completely.",
         timestamp: "2024-01-20T08:15:00Z",
         isAdmin: false,
-        sender: "musician@example.com",
+        sender: "musician@example.com"
       },
       {
         id: "msg-11",
-        content:
-          "This is indeed critical. Can you share the specific filter settings and a sample of the distorted audio? Our engineering team needs to reproduce this immediately.",
+        content: "This is indeed critical. Can you share the specific filter settings and a sample of the distorted audio? Our engineering team needs to reproduce this immediately.",
         timestamp: "2024-01-20T08:30:00Z",
         isAdmin: true,
-        sender: "Tech Lead",
-      },
-    ],
+        sender: "Tech Lead"
+      }
+    ]
   },
   {
     id: "T-005",
@@ -1094,28 +1047,26 @@ const mockTickets = [
     messages: [
       {
         id: "msg-12",
-        content:
-          "I can't figure out how to export my compositions as MIDI files. Is this feature available?",
+        content: "I can't figure out how to export my compositions as MIDI files. Is this feature available?",
         timestamp: "2024-01-17T13:20:00Z",
         isAdmin: false,
-        sender: "newbie@example.com",
+        sender: "newbie@example.com"
       },
       {
         id: "msg-13",
-        content:
-          "Yes! You can export MIDI files by going to File > Export > MIDI. Make sure your composition is selected first.",
+        content: "Yes! You can export MIDI files by going to File > Export > MIDI. Make sure your composition is selected first.",
         timestamp: "2024-01-18T09:15:00Z",
         isAdmin: true,
-        sender: "Support Team",
+        sender: "Support Team"
       },
       {
         id: "msg-14",
         content: "Got it! Thanks for the help.",
         timestamp: "2024-01-18T09:30:00Z",
         isAdmin: false,
-        sender: "newbie@example.com",
-      },
-    ],
+        sender: "newbie@example.com"
+      }
+    ]
   },
 ];
 
@@ -1125,19 +1076,17 @@ function SupportTicketsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [newMessages, setNewMessages] = useState<{ [key: string]: string }>({});
-  const [uploadingFiles, setUploadingFiles] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
+  const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
   const itemsPerPage = 10;
-
+  
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
   useEffect(() => {
     if (!languageLoading) {
@@ -1150,13 +1099,13 @@ function SupportTicketsPage() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       // Only close if clicking outside of any more menu container
-      if (!target.closest("[data-more-menu]")) {
+      if (!target.closest('[data-more-menu]')) {
         setOpenMoreMenu(null);
       }
     };
 
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   if (languageLoading || !translationsLoaded) {
@@ -1174,27 +1123,27 @@ function SupportTicketsPage() {
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection("asc");
+      setSortDirection('asc');
     }
   };
 
   const getSortIcon = (field: string) => {
     if (sortField !== field) return <FaSort />;
-    return sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />;
+    return sortDirection === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "open":
+      case 'open':
         return <FaCheckCircle />;
-      case "inProgress":
+      case 'inProgress':
         return <FaClock />;
-      case "resolved":
+      case 'resolved':
         return <FaCheckCircle />;
-      case "closed":
+      case 'closed':
         return <FaTimes />;
       default:
         return <FaClock />;
@@ -1203,51 +1152,47 @@ function SupportTicketsPage() {
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case "urgent":
+      case 'urgent':
         return <FaExclamationTriangle />;
-      case "high":
+      case 'high':
         return <FaExclamationCircle />;
-      case "medium":
+      case 'medium':
         return <FaExclamationCircle />;
-      case "low":
+      case 'low':
         return <FaCheckCircle />;
       default:
         return <FaCheckCircle />;
     }
   };
 
-  const filteredTickets = mockTickets.filter((ticket) => {
-    const matchesSearch =
+  const filteredTickets = mockTickets.filter(ticket => {
+    const matchesSearch = 
       ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.user.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter =
-      filterStatus === "all" || ticket.status === filterStatus;
-
+    
+    const matchesFilter = filterStatus === "all" || ticket.status === filterStatus;
+    
     return matchesSearch && matchesFilter;
   });
 
   const sortedTickets = [...filteredTickets].sort((a, b) => {
     if (!sortField) return 0;
-
+    
     let aValue = a[sortField as keyof typeof a];
     let bValue = b[sortField as keyof typeof b];
-
-    if (typeof aValue === "string") aValue = aValue.toLowerCase();
-    if (typeof bValue === "string") bValue = bValue.toLowerCase();
-
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    
+    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
   const totalPages = Math.ceil(sortedTickets.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTickets = sortedTickets.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const paginatedTickets = sortedTickets.slice(startIndex, startIndex + itemsPerPage);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -1268,30 +1213,27 @@ function SupportTicketsPage() {
     setOpenMoreMenu(openMoreMenu === ticketId ? null : ticketId);
   };
 
-  const handleMoreMenuAction = (
-    action: string,
-    ticket: { id: string; subject: string }
-  ) => {
+  const handleMoreMenuAction = (action: string, ticket: any) => {
     setOpenMoreMenu(null);
-
+    
     switch (action) {
-      case "view":
-        console.log("View ticket:", ticket);
+      case 'view':
+        console.log('View ticket:', ticket);
         break;
-      case "edit":
-        console.log("Edit ticket:", ticket);
+      case 'edit':
+        console.log('Edit ticket:', ticket);
         break;
-      case "reply":
-        console.log("Reply to ticket:", ticket);
+      case 'reply':
+        console.log('Reply to ticket:', ticket);
         break;
-      case "assign":
-        console.log("Assign ticket:", ticket);
+      case 'assign':
+        console.log('Assign ticket:', ticket);
         break;
-      case "close":
-        console.log("Close ticket:", ticket);
+      case 'close':
+        console.log('Close ticket:', ticket);
         break;
-      case "delete":
-        console.log("Delete ticket:", ticket);
+      case 'delete':
+        console.log('Delete ticket:', ticket);
         break;
       default:
         break;
@@ -1315,29 +1257,29 @@ function SupportTicketsPage() {
     if (!message) return;
 
     // In a real app, this would send to your API
-    console.log("Sending message for ticket:", ticketId, "Message:", message);
-
+    console.log('Sending message for ticket:', ticketId, 'Message:', message);
+    
     // Clear the input
-    setNewMessages((prev) => ({
+    setNewMessages(prev => ({
       ...prev,
-      [ticketId]: "",
+      [ticketId]: ''
     }));
   };
 
   const handleFileUpload = (ticketId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    setUploadingFiles((prev) => ({ ...prev, [ticketId]: true }));
+    setUploadingFiles(prev => ({ ...prev, [ticketId]: true }));
 
     // Simulate file upload
     setTimeout(() => {
-      console.log("Files uploaded for ticket:", ticketId, files);
-      setUploadingFiles((prev) => ({ ...prev, [ticketId]: false }));
+      console.log('Files uploaded for ticket:', ticketId, files);
+      setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
     }, 2000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent, ticketId: string) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage(ticketId);
     }
@@ -1347,23 +1289,16 @@ function SupportTicketsPage() {
     return new Date(timestamp).toLocaleString();
   };
 
-  const renderAttachment = (attachment: {
-    type: string;
-    name: string;
-    size: string;
-    url: string;
-  }) => {
+  const renderAttachment = (attachment: any) => {
     const { type, name, size, url } = attachment;
 
     switch (type) {
-      case "image":
+      case 'image':
         return (
           <MessageAttachment key={name}>
             <ImagePreview src={url} alt={name} />
             <AttachmentPreview>
-              <AttachmentIcon>
-                <FaImage />
-              </AttachmentIcon>
+              <AttachmentIcon><FaImage /></AttachmentIcon>
               <AttachmentInfo>
                 <AttachmentName>{name}</AttachmentName>
                 <AttachmentSize>{size}</AttachmentSize>
@@ -1371,16 +1306,14 @@ function SupportTicketsPage() {
             </AttachmentPreview>
           </MessageAttachment>
         );
-      case "video":
+      case 'video':
         return (
           <MessageAttachment key={name}>
             <VideoPreview controls>
               <source src={url} type="video/mp4" />
             </VideoPreview>
             <AttachmentPreview>
-              <AttachmentIcon>
-                <FaVideo />
-              </AttachmentIcon>
+              <AttachmentIcon><FaVideo /></AttachmentIcon>
               <AttachmentInfo>
                 <AttachmentName>{name}</AttachmentName>
                 <AttachmentSize>{size}</AttachmentSize>
@@ -1388,14 +1321,12 @@ function SupportTicketsPage() {
             </AttachmentPreview>
           </MessageAttachment>
         );
-      case "file":
+      case 'file':
       default:
         return (
           <MessageAttachment key={name}>
             <AttachmentPreview>
-              <AttachmentIcon>
-                <FaFile />
-              </AttachmentIcon>
+              <AttachmentIcon><FaFile /></AttachmentIcon>
               <AttachmentInfo>
                 <AttachmentName>{name}</AttachmentName>
                 <AttachmentSize>{size}</AttachmentSize>
@@ -1412,9 +1343,7 @@ function SupportTicketsPage() {
       label: t("admin.supportTickets.totalTickets", "Total Tickets"),
     },
     {
-      value: mockTickets
-        .filter((t) => t.status === "open" || t.status === "inProgress")
-        .length.toString(),
+      value: mockTickets.filter(t => t.status === "open" || t.status === "inProgress").length.toString(),
       label: t("admin.supportTickets.openTickets", "Open Tickets"),
     },
     {
@@ -1427,22 +1356,16 @@ function SupportTicketsPage() {
     <>
       <NextSEO
         title={t("admin.supportTickets", "Support Tickets")}
-        description={t(
-          "admin.supportTickets.subtitle",
-          "Manage customer support requests and issues"
-        )}
+        description={t("admin.supportTickets.subtitle", "Manage customer support requests and issues")}
       />
-
+      
       <TicketsContainer>
         <TicketsTitle>
           <FaTicketAlt />
           {t("admin.supportTickets.title", "Support Tickets")}
         </TicketsTitle>
         <TicketsSubtitle>
-          {t(
-            "admin.supportTickets.subtitle",
-            "Manage customer support requests and issues"
-          )}
+          {t("admin.supportTickets.subtitle", "Manage customer support requests and issues")}
         </TicketsSubtitle>
 
         <StatsRow>
@@ -1468,34 +1391,21 @@ function SupportTicketsPage() {
               </SearchIcon>
               <SearchInput
                 type="text"
-                placeholder={t(
-                  "admin.supportTickets.searchPlaceholder",
-                  "Search tickets by subject, user, or ticket ID..."
-                )}
+                placeholder={t("admin.supportTickets.searchPlaceholder", "Search tickets by subject, user, or ticket ID...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchContainer>
-
+            
             <FilterSelect
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="all">
-                {t("admin.supportTickets.filters.all", "All Tickets")}
-              </option>
-              <option value="open">
-                {t("admin.supportTickets.filters.open", "Open")}
-              </option>
-              <option value="inProgress">
-                {t("admin.supportTickets.filters.inProgress", "In Progress")}
-              </option>
-              <option value="resolved">
-                {t("admin.supportTickets.filters.resolved", "Resolved")}
-              </option>
-              <option value="closed">
-                {t("admin.supportTickets.filters.closed", "Closed")}
-              </option>
+              <option value="all">{t("admin.supportTickets.filters.all", "All Tickets")}</option>
+              <option value="open">{t("admin.supportTickets.filters.open", "Open")}</option>
+              <option value="inProgress">{t("admin.supportTickets.filters.inProgress", "In Progress")}</option>
+              <option value="resolved">{t("admin.supportTickets.filters.resolved", "Resolved")}</option>
+              <option value="closed">{t("admin.supportTickets.filters.closed", "Closed")}</option>
             </FilterSelect>
 
             <ActionButton variant="success">
@@ -1514,36 +1424,33 @@ function SupportTicketsPage() {
           <Table>
             <TableHeader>
               <tr>
-                <TableHeaderCell onClick={() => handleSort("id")}>
+                <TableHeaderCell onClick={() => handleSort('id')}>
                   {t("admin.supportTickets.ticketTable.id", "Ticket ID")}
-                  {getSortIcon("id")}
+                  {getSortIcon('id')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("subject")}>
+                <TableHeaderCell onClick={() => handleSort('subject')}>
                   {t("admin.supportTickets.ticketTable.subject", "Subject")}
-                  {getSortIcon("subject")}
+                  {getSortIcon('subject')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("user")}>
+                <TableHeaderCell onClick={() => handleSort('user')}>
                   {t("admin.supportTickets.ticketTable.user", "User")}
-                  {getSortIcon("user")}
+                  {getSortIcon('user')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("status")}>
+                <TableHeaderCell onClick={() => handleSort('status')}>
                   {t("admin.supportTickets.ticketTable.status", "Status")}
-                  {getSortIcon("status")}
+                  {getSortIcon('status')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("priority")}>
+                <TableHeaderCell onClick={() => handleSort('priority')}>
                   {t("admin.supportTickets.ticketTable.priority", "Priority")}
-                  {getSortIcon("priority")}
+                  {getSortIcon('priority')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("created")}>
+                <TableHeaderCell onClick={() => handleSort('created')}>
                   {t("admin.supportTickets.ticketTable.created", "Created")}
-                  {getSortIcon("created")}
+                  {getSortIcon('created')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort("assignedTo")}>
-                  {t(
-                    "admin.supportTickets.ticketTable.assignedTo",
-                    "Assigned To"
-                  )}
-                  {getSortIcon("assignedTo")}
+                <TableHeaderCell onClick={() => handleSort('assignedTo')}>
+                  {t("admin.supportTickets.ticketTable.assignedTo", "Assigned To")}
+                  {getSortIcon('assignedTo')}
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {t("admin.supportTickets.ticketTable.actions", "Actions")}
@@ -1554,145 +1461,90 @@ function SupportTicketsPage() {
               {paginatedTickets.map((ticket) => (
                 <React.Fragment key={ticket.id}>
                   <TableRow>
-                    <TableCell>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <ExpandButton
-                          onClick={() => toggleRowExpansion(ticket.id)}
-                        >
-                          {expandedRows.has(ticket.id) ? (
-                            <FaChevronUp />
-                          ) : (
-                            <FaChevronDown />
-                          )}
+                  <TableCell>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
+                          {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
                         </ExpandButton>
-                        <TicketId>{ticket.id}</TicketId>
+                    <TicketId>{ticket.id}</TicketId>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <TicketSubject>{ticket.subject}</TicketSubject>
-                      <TicketUser>by {ticket.user}</TicketUser>
-                    </TableCell>
-                    <TableCell>
-                      <TicketUser>{ticket.user}</TicketUser>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={ticket.status}>
-                        {getStatusIcon(ticket.status)}
-                        {t(
-                          `admin.supportTickets.filters.${ticket.status}`,
-                          ticket.status
-                        )}
-                      </StatusBadge>
-                    </TableCell>
-                    <TableCell>
-                      <PriorityBadge priority={ticket.priority}>
-                        {getPriorityIcon(ticket.priority)}
-                        {t(
-                          `admin.supportTickets.priority.${ticket.priority}`,
-                          ticket.priority
-                        )}
-                      </PriorityBadge>
-                    </TableCell>
-                    <TableCell>{formatDate(ticket.created)}</TableCell>
-                    <TableCell>
-                      <AssignedTo>{ticket.assignedTo}</AssignedTo>
-                    </TableCell>
-                    <TableCell>
-                      <MoreMenuContainer
-                        data-more-menu
-                        onClick={(e) => e.stopPropagation()}
+                  </TableCell>
+                  <TableCell>
+                    <TicketSubject>{ticket.subject}</TicketSubject>
+                    <TicketUser>by {ticket.user}</TicketUser>
+                  </TableCell>
+                  <TableCell>
+                    <TicketUser>{ticket.user}</TicketUser>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={ticket.status}>
+                      {getStatusIcon(ticket.status)}
+                      {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell>
+                    <PriorityBadge priority={ticket.priority}>
+                      {getPriorityIcon(ticket.priority)}
+                      {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
+                    </PriorityBadge>
+                  </TableCell>
+                  <TableCell>{formatDate(ticket.created)}</TableCell>
+                  <TableCell>
+                    <AssignedTo>{ticket.assignedTo}</AssignedTo>
+                  </TableCell>
+                  <TableCell>
+                    <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
+                      <MoreMenuButton
+                        onClick={(e) => handleMoreMenuClick(ticket.id, e)}
                       >
-                        <MoreMenuButton
-                          onClick={(e) => handleMoreMenuClick(ticket.id, e)}
-                        >
-                          <FaEllipsisV />
-                        </MoreMenuButton>
+                        <FaEllipsisV />
+                      </MoreMenuButton>
 
-                        {openMoreMenu === ticket.id && (
-                          <MoreMenuDropdown
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.1 }}
+                      {openMoreMenu === ticket.id && (
+                        <MoreMenuDropdown
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
+                            <FaEye />
+                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
+                            <FaReply />
+                            {t("admin.supportTickets.ticketActions.reply", "Reply")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
+                            <FaEdit />
+                            {t("admin.supportTickets.ticketActions.edit", "Edit")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
+                            <FaUserCog />
+                            {t("admin.supportTickets.ticketActions.assign", "Assign")}
+                          </MoreMenuItem>
+                          <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
+                          </MoreMenuItem>
+                          <MoreMenuItem 
+                            variant="danger"
+                            onClick={() => handleMoreMenuAction('delete', ticket)}
                           >
-                            <MoreMenuItem
-                              onClick={() =>
-                                handleMoreMenuAction("view", ticket)
-                              }
-                            >
-                              <FaEye />
-                              {t(
-                                "admin.supportTickets.ticketActions.view",
-                                "View Ticket"
-                              )}
-                            </MoreMenuItem>
-                            <MoreMenuItem
-                              onClick={() =>
-                                handleMoreMenuAction("reply", ticket)
-                              }
-                            >
-                              <FaReply />
-                              {t(
-                                "admin.supportTickets.ticketActions.reply",
-                                "Reply"
-                              )}
-                            </MoreMenuItem>
-                            <MoreMenuItem
-                              onClick={() =>
-                                handleMoreMenuAction("edit", ticket)
-                              }
-                            >
-                              <FaEdit />
-                              {t(
-                                "admin.supportTickets.ticketActions.edit",
-                                "Edit"
-                              )}
-                            </MoreMenuItem>
-                            <MoreMenuItem
-                              onClick={() =>
-                                handleMoreMenuAction("assign", ticket)
-                              }
-                            >
-                              <FaUserCog />
-                              {t(
-                                "admin.supportTickets.ticketActions.assign",
-                                "Assign"
-                              )}
-                            </MoreMenuItem>
-                            <MoreMenuItem
-                              onClick={() =>
-                                handleMoreMenuAction("close", ticket)
-                              }
-                            >
-                              <FaTimes />
-                              {t(
-                                "admin.supportTickets.ticketActions.close",
-                                "Close Ticket"
-                              )}
-                            </MoreMenuItem>
-                            <MoreMenuItem
-                              variant="danger"
-                              onClick={() =>
-                                handleMoreMenuAction("delete", ticket)
-                              }
-                            >
-                              <FaTimes />
-                              {t(
-                                "admin.supportTickets.ticketActions.delete",
-                                "Delete"
-                              )}
-                            </MoreMenuItem>
-                          </MoreMenuDropdown>
-                        )}
-                      </MoreMenuContainer>
-                    </TableCell>
-                  </TableRow>
+                            <FaTimes />
+                            {t("admin.supportTickets.ticketActions.delete", "Delete")}
+                          </MoreMenuItem>
+                        </MoreMenuDropdown>
+                      )}
+                    </MoreMenuContainer>
+                  </TableCell>
+                </TableRow>
 
                   <AnimatePresence>
                     {expandedRows.has(ticket.id) && (
                       <ExpandableRow
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
+                        animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
@@ -1707,36 +1559,22 @@ function SupportTicketsPage() {
                                 Conversation: {ticket.subject}
                               </ConversationTitle>
                               <ConversationMeta>
-                                <span>
-                                  Messages: {ticket.messages?.length || 0}
-                                </span>
-                                <span>
-                                  Last updated: {formatDate(ticket.lastUpdate)}
-                                </span>
+                                <span>Messages: {ticket.messages?.length || 0}</span>
+                                <span>Last updated: {formatDate(ticket.lastUpdate)}</span>
                               </ConversationMeta>
                             </ConversationHeader>
 
                             <MessagesContainer>
                               {ticket.messages?.map((message) => (
-                                <Message
-                                  key={message.id}
-                                  isAdmin={message.isAdmin}
-                                >
+                                <Message key={message.id} isAdmin={message.isAdmin}>
                                   <MessageAvatar isAdmin={message.isAdmin}>
-                                    {message.isAdmin ? (
-                                      <FaUserTie />
-                                    ) : (
-                                      <FaUser />
-                                    )}
+                                    {message.isAdmin ? <FaUserTie /> : <FaUser />}
                                   </MessageAvatar>
                                   <div style={{ flex: 1 }}>
                                     <MessageBubble isAdmin={message.isAdmin}>
-                                      <MessageContent>
-                                        {message.content}
-                                      </MessageContent>
+                                      <MessageContent>{message.content}</MessageContent>
                                       <MessageTime>
-                                        {message.sender} •{" "}
-                                        {formatMessageTime(message.timestamp)}
+                                        {message.sender} • {formatMessageTime(message.timestamp)}
                                       </MessageTime>
                                     </MessageBubble>
                                     {message.attachments?.map(renderAttachment)}
@@ -1747,35 +1585,25 @@ function SupportTicketsPage() {
 
                             <MessageInput>
                               <MessageTextArea
-                                placeholder={t(
-                                  "admin.supportTickets.conversation.placeholder",
-                                  "Type your message..."
-                                )}
-                                value={newMessages[ticket.id] || ""}
-                                onChange={(e) =>
-                                  setNewMessages((prev) => ({
-                                    ...prev,
-                                    [ticket.id]: e.target.value,
-                                  }))
-                                }
+                                placeholder={t("admin.supportTickets.conversation.placeholder", "Type your message...")}
+                                value={newMessages[ticket.id] || ''}
+                                onChange={(e) => setNewMessages(prev => ({
+                                  ...prev,
+                                  [ticket.id]: e.target.value
+                                }))}
                                 onKeyPress={(e) => handleKeyPress(e, ticket.id)}
                                 rows={1}
                               />
                               <MessageActions>
                                 <AttachButton
-                                  onClick={() =>
-                                    fileInputRefs.current[ticket.id]?.click()
-                                  }
+                                  onClick={() => fileInputRefs.current[ticket.id]?.click()}
                                   disabled={uploadingFiles[ticket.id]}
                                 >
                                   <FaPaperclip />
                                 </AttachButton>
                                 <SendButton
                                   onClick={() => handleSendMessage(ticket.id)}
-                                  disabled={
-                                    !newMessages[ticket.id]?.trim() ||
-                                    uploadingFiles[ticket.id]
-                                  }
+                                  disabled={!newMessages[ticket.id]?.trim() || uploadingFiles[ticket.id]}
                                 >
                                   <FaPaperPlane />
                                 </SendButton>
@@ -1789,9 +1617,7 @@ function SupportTicketsPage() {
                                 type="file"
                                 multiple
                                 accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                                onChange={(e) =>
-                                  handleFileUpload(ticket.id, e.target.files)
-                                }
+                                onChange={(e) => handleFileUpload(ticket.id, e.target.files)}
                               />
                             </MessageInput>
                           </ConversationContainer>
@@ -1803,26 +1629,23 @@ function SupportTicketsPage() {
               ))}
             </TableBody>
           </Table>
-
+          
           <Pagination>
             <PaginationInfo>
-              Showing {startIndex + 1} to{" "}
-              {Math.min(startIndex + itemsPerPage, sortedTickets.length)} of{" "}
-              {sortedTickets.length} tickets
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedTickets.length)} of {sortedTickets.length} tickets
             </PaginationInfo>
             <PaginationButtons>
-              <PaginationButton
+              <PaginationButton 
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
                 <FaChevronLeft />
               </PaginationButton>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (page) =>
-                    page === 1 ||
-                    page === totalPages ||
-                    Math.abs(page - currentPage) <= 2
+                .filter(page => 
+                  page === 1 || 
+                  page === totalPages || 
+                  Math.abs(page - currentPage) <= 2
                 )
                 .map((page, index, array) => (
                   <React.Fragment key={page}>
@@ -1837,10 +1660,8 @@ function SupportTicketsPage() {
                     </PaginationButton>
                   </React.Fragment>
                 ))}
-              <PaginationButton
-                onClick={() =>
-                  setCurrentPage(Math.min(totalPages, currentPage + 1))
-                }
+              <PaginationButton 
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >
                 <FaChevronRight />
@@ -1853,4 +1674,4 @@ function SupportTicketsPage() {
   );
 }
 
-export default SupportTicketsPage;
+export default SupportTicketsPage; 

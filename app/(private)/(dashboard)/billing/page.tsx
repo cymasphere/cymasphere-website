@@ -29,10 +29,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
-import NextSEO from "@/components/NextSEO";
-import useLanguage from "@/hooks/useLanguage";
-import { loadStripe } from "@stripe/stripe-js";
-import { createCheckoutSession } from "@/utils/stripe/actions";
 
 // Extended profile interface with additional fields we need
 interface ProfileWithSubscriptionDetails extends Profile {
@@ -357,7 +353,7 @@ export default function BillingPage() {
   const router = useRouter();
   const { user: userAuth } = useAuth();
   const user = userAuth!;
-
+  
   // Get subscription data from user object and cast to extended profile type
   const userSubscription = user.profile as ProfileWithSubscriptionDetails;
 
@@ -571,12 +567,7 @@ export default function BillingPage() {
 
     // Fetch all data when component mounts or lastUserUpdate changes
     fetchAllData();
-  }, [
-    user?.profile?.customer_id,
-    isInTrialPeriod,
-    lastUserUpdate,
-    userSubscription.subscription,
-  ]);
+  }, [user?.profile?.customer_id, isInTrialPeriod, lastUserUpdate, userSubscription.subscription]);
 
   // Function to refresh all data
   const refreshAllData = async () => {
@@ -683,14 +674,9 @@ export default function BillingPage() {
 
     // Handle lifetime plan separately - always goes to checkout
     if (selectedBillingPeriod === "lifetime") {
-      setConfirmationTitle(
-        t("dashboard.billing.upgradingPlan", "Upgrading Your Plan")
-      );
+      setConfirmationTitle(t("dashboard.billing.upgradingPlan", "Upgrading Your Plan"));
       setConfirmationMessage(
-        t(
-          "dashboard.billing.lifetimeUpgradeMessage",
-          "You're upgrading to the lifetime plan. You'll be redirected to checkout to complete your purchase."
-        )
+        t("dashboard.billing.lifetimeUpgradeMessage", "You're upgrading to the lifetime plan. You'll be redirected to checkout to complete your purchase.")
       );
       setShowConfirmationModal(true);
       setShowPlanModal(false);
@@ -700,27 +686,15 @@ export default function BillingPage() {
 
     // For users without a plan, direct to checkout
     if (userSubscription.subscription === "none") {
-      setConfirmationTitle(
-        t("dashboard.billing.startingPlan", "Starting Your Plan")
-      );
+      setConfirmationTitle(t("dashboard.billing.startingPlan", "Starting Your Plan"));
       setConfirmationMessage(
-        t(
-          "dashboard.billing.startingPlanMessage",
-          "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}",
-          {
-            trialDays: willProvideCard ? "14" : "7",
-            plan: selectedBillingPeriod,
-            paymentMessage: willProvideCard
-              ? t(
-                  "dashboard.billing.withCardMessage",
-                  "You'll be asked to provide your payment details, but won't be charged until your trial ends."
-                )
-              : t(
-                  "dashboard.billing.withoutCardMessage",
-                  "You can use basic features without providing payment information."
-                ),
-          }
-        )
+        t("dashboard.billing.startingPlanMessage", "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}", {
+          trialDays: willProvideCard ? "14" : "7",
+          plan: selectedBillingPeriod,
+          paymentMessage: willProvideCard
+            ? t("dashboard.billing.withCardMessage", "You'll be asked to provide your payment details, but won't be charged until your trial ends.")
+            : t("dashboard.billing.withoutCardMessage", "You can use basic features without providing payment information.")
+        })
       );
       setShowConfirmationModal(true);
       setShowPlanModal(false);
@@ -759,30 +733,18 @@ export default function BillingPage() {
           userSubscription.subscription === "annual" &&
           selectedBillingPeriod === "monthly"
         ) {
-          setConfirmationTitle(
-            t("dashboard.billing.planChangeScheduled", "Plan Change Scheduled")
-          );
+          setConfirmationTitle(t("dashboard.billing.planChangeScheduled", "Plan Change Scheduled"));
           setConfirmationMessage(
-            t(
-              "dashboard.billing.planChangeScheduledMessage",
-              "Your plan will be changed to monthly at the end of your current billing period on {{date}}.",
-              {
-                date: formatDate(userSubscription.subscription_expiration),
-              }
-            )
+            t("dashboard.billing.planChangeScheduledMessage", "Your plan will be changed to monthly at the end of your current billing period on {{date}}.", {
+              date: formatDate(userSubscription.subscription_expiration)
+            })
           );
         } else {
-          setConfirmationTitle(
-            t("dashboard.billing.planUpdated", "Plan Updated")
-          );
+          setConfirmationTitle(t("dashboard.billing.planUpdated", "Plan Updated"));
           setConfirmationMessage(
-            t(
-              "dashboard.billing.planUpdatedMessage",
-              "Your subscription has been changed to the {{plan}} plan. The changes will take effect immediately.",
-              {
-                plan: selectedBillingPeriod,
-              }
-            )
+            t("dashboard.billing.planUpdatedMessage", "Your subscription has been changed to the {{plan}} plan. The changes will take effect immediately.", {
+              plan: selectedBillingPeriod
+            })
           );
         }
 
@@ -792,59 +754,38 @@ export default function BillingPage() {
     } catch (error) {
       console.error("Error updating subscription:", error);
       // Show error notification
-      setConfirmationTitle(
-        t(
-          "dashboard.billing.subscriptionUpdateFailed",
-          "Subscription Update Failed"
-        )
-      );
+      setConfirmationTitle(t("dashboard.billing.subscriptionUpdateFailed", "Subscription Update Failed"));
 
       // Provide a more user-friendly error message based on the error
-      let errorMessage = t(
-        "dashboard.billing.unexpectedError",
-        "An unexpected error occurred while updating your subscription."
-      );
+      let errorMessage = t("dashboard.billing.unexpectedError", 
+        "An unexpected error occurred while updating your subscription.");
 
       if (error instanceof Error) {
         const errorText = error.message;
 
         if (errorText.includes("No active subscription found")) {
-          errorMessage = t(
-            "dashboard.billing.noActiveSubscription",
-            "We couldn't find an active subscription for your account. Please contact support for assistance."
-          );
+          errorMessage = t("dashboard.billing.noActiveSubscription",
+            "We couldn't find an active subscription for your account. Please contact support for assistance.");
         } else if (errorText.includes("billing cycle")) {
-          errorMessage = t(
-            "dashboard.billing.billingCycleError",
-            "We couldn't change your billing cycle. Please contact support for assistance with changing between monthly and annual plans."
-          );
+          errorMessage = t("dashboard.billing.billingCycleError",
+            "We couldn't change your billing cycle. Please contact support for assistance with changing between monthly and annual plans.");
         } else if (errorText.includes("payment method")) {
-          errorMessage = t(
-            "dashboard.billing.paymentMethodError",
-            "There was an issue with your payment method. Please update your payment information and try again."
-          );
+          errorMessage = t("dashboard.billing.paymentMethodError",
+            "There was an issue with your payment method. Please update your payment information and try again.");
         } else if (
           errorText.includes("permission") ||
           errorText.includes("unauthorized")
         ) {
-          errorMessage = t(
-            "dashboard.billing.permissionError",
-            "You don't have permission to make this change. Please contact support for assistance."
-          );
+          errorMessage = t("dashboard.billing.permissionError",
+            "You don't have permission to make this change. Please contact support for assistance.");
         } else if (errorText.includes("proration")) {
-          errorMessage = t(
-            "dashboard.billing.prorationError",
-            "There was an issue calculating your bill for the new plan. Please try again later or contact support."
-          );
+          errorMessage = t("dashboard.billing.prorationError", 
+            "There was an issue calculating your bill for the new plan. Please try again later or contact support.");
         } else {
           // If it's a specific error we want to show to the user
-          errorMessage = t(
-            "dashboard.billing.specificError",
-            "Failed to update your subscription: {{error}}",
-            {
-              error: errorText,
-            }
-          );
+          errorMessage = t("dashboard.billing.specificError", "Failed to update your subscription: {{error}}", {
+            error: errorText
+          });
         }
       }
 
@@ -931,13 +872,9 @@ export default function BillingPage() {
         // Show error message
         setConfirmationTitle(t("dashboard.billing.error", "Error"));
         setConfirmationMessage(
-          t(
-            "dashboard.billing.portalAccessError",
-            "Failed to access billing portal: {{error}}",
-            {
-              error: error || t("common.unknownError", "Unknown error"),
-            }
-          )
+          t("dashboard.billing.portalAccessError", "Failed to access billing portal: {{error}}", {
+            error: error || t("common.unknownError", "Unknown error")
+          })
         );
         setShowConfirmationModal(true);
       }
@@ -949,10 +886,7 @@ export default function BillingPage() {
       setConfirmationTitle(t("dashboard.billing.error", "Error"));
       setConfirmationMessage(
         t("dashboard.billing.errorOccurred", "An error occurred: {{error}}", {
-          error:
-            e instanceof Error
-              ? e.message
-              : t("common.unknownError", "Unknown error"),
+          error: e instanceof Error ? e.message : t("common.unknownError", "Unknown error")
         })
       );
       setShowConfirmationModal(true);
@@ -965,18 +899,11 @@ export default function BillingPage() {
       {isPortalLoading && (
         <LoadingOverlay>
           <LoadingComponent size="50px" text="" />
-          <SpinnerText>
-            {t(
-              "dashboard.billing.redirectingPortal",
-              "Redirecting to billing portal..."
-            )}
-          </SpinnerText>
+          <SpinnerText>{t("dashboard.billing.redirectingPortal", "Redirecting to billing portal...")}</SpinnerText>
         </LoadingOverlay>
       )}
 
-      <SectionTitle>
-        {t("dashboard.billing.title", "Billing & Subscription")}
-      </SectionTitle>
+      <SectionTitle>{t("dashboard.billing.title", "Billing & Subscription")}</SectionTitle>
 
       {shouldShowTrialContent && (
         <AlertBanner
@@ -988,18 +915,12 @@ export default function BillingPage() {
         >
           <FaGift />
           <p>
-            {t(
-              "dashboard.billing.trialBanner",
-              "You're currently on a {{trialDays}}-day free trial with full access to all premium features. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.",
-              {
-                trialDays: 7,
-                daysLeft: daysLeftInTrial,
-                amount: isLoadingInvoice
-                  ? "..."
-                  : upcomingInvoiceAmount?.toFixed(2) || getCurrentPrice(),
-                date: formatDate(userSubscription.trial_expiration),
-              }
-            )}
+            {t("dashboard.billing.trialBanner", "You're currently on a {{trialDays}}-day free trial with full access to all premium features. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.", {
+              trialDays: 7,
+              daysLeft: daysLeftInTrial,
+              amount: isLoadingInvoice ? "..." : upcomingInvoiceAmount?.toFixed(2) || getCurrentPrice(),
+              date: formatDate(userSubscription.trial_expiration)
+            })}
           </p>
         </AlertBanner>
       )}
@@ -1007,13 +928,7 @@ export default function BillingPage() {
       {priceError && (
         <AlertBanner style={{ backgroundColor: "rgba(255, 72, 66, 0.1)" }}>
           <FaTimes />
-          <p>
-            {priceError}{" "}
-            {t(
-              "dashboard.billing.showingDefaultPrices",
-              "Showing default prices."
-            )}
-          </p>
+          <p>{priceError} {t("dashboard.billing.showingDefaultPrices", "Showing default prices.")}</p>
         </AlertBanner>
       )}
 
@@ -1036,7 +951,7 @@ export default function BillingPage() {
                 gap: "0.5rem",
               }}
             >
-              {t("dashboard.billing.manageBilling", "Manage Billing")}{" "}
+              {t("dashboard.billing.manageBilling", "Manage Billing")} {" "}
               <FaExternalLinkAlt
                 style={{ color: "white", fontSize: "0.8rem" }}
               />
@@ -1088,19 +1003,10 @@ export default function BillingPage() {
                 </PlanPrice>
                 <PlanDescription>
                   {isSubscriptionNone(userSubscription.subscription)
-                    ? t(
-                        "dashboard.billing.noPlanDesc",
-                        "No active subscription"
-                      )
+                    ? t("dashboard.billing.noPlanDesc", "No active subscription")
                     : isSubscriptionLifetime(userSubscription.subscription)
-                    ? t(
-                        "dashboard.billing.lifetimePlanDesc",
-                        "Full access to all features forever with free updates"
-                      )
-                    : t(
-                        "dashboard.billing.paidPlanDesc",
-                        "Full access to all premium features and content"
-                      )}
+                    ? t("dashboard.billing.lifetimePlanDesc", "Full access to all features forever with free updates")
+                    : t("dashboard.billing.paidPlanDesc", "Full access to all premium features and content")}
                 </PlanDescription>
 
                 {/* Next billing date */}
@@ -1114,10 +1020,7 @@ export default function BillingPage() {
                           marginBottom: "0.25rem",
                         }}
                       >
-                        {t(
-                          "dashboard.billing.nextBilling",
-                          "Next billing date"
-                        )}
+                        {t("dashboard.billing.nextBilling", "Next billing date")}
                       </div>
                       <div>
                         {formatDate(userSubscription.subscription_expiration)}
@@ -1141,15 +1044,9 @@ export default function BillingPage() {
                     <FaInfoCircle
                       style={{ marginRight: "0.5rem", flexShrink: 0 }}
                     />
-                    {t(
-                      "dashboard.billing.cancelNotice",
-                      "Your subscription will be canceled on {{date}}. You will have access until then.",
-                      {
-                        date: formatDate(
-                          userSubscription.subscription_expiration
-                        ),
-                      }
-                    )}
+                    {t("dashboard.billing.cancelNotice", "Your subscription will be canceled on {{date}}. You will have access until then.", {
+                      date: formatDate(userSubscription.subscription_expiration)
+                    })}
                   </div>
                 )}
               </>
@@ -1183,8 +1080,7 @@ export default function BillingPage() {
       {!isSubscriptionNone(userSubscription.subscription) && (
         <BillingCard>
           <CardTitle>
-            <FaHistory />{" "}
-            {t("dashboard.billing.paymentHistory", "Payment History")}
+            <FaHistory /> {t("dashboard.billing.paymentHistory", "Payment History")}
           </CardTitle>
           <CardContent>
             {isLoadingInvoices ? (
@@ -1195,34 +1091,27 @@ export default function BillingPage() {
                   padding: "2rem 0",
                 }}
               >
-                <LoadingComponent
-                  size="30px"
-                  text={t(
-                    "dashboard.billing.loadingInvoices",
-                    "Loading invoices..."
-                  )}
-                />
+                <LoadingComponent size="30px" text={t("dashboard.billing.loadingInvoices", "Loading invoices...")} />
               </div>
             ) : invoiceError ? (
               <div style={{ color: "var(--error)", padding: "1rem 0" }}>
                 {invoiceError}
               </div>
             ) : invoices.length === 0 ? (
-              <div
-                style={{ color: "var(--text-secondary)", padding: "1rem 0" }}
-              >
-                {t(
-                  "dashboard.billing.noTransactions",
-                  "No transaction history available"
-                )}
+              <div style={{ color: "var(--text-secondary)", padding: "1rem 0" }}>
+                {t("dashboard.billing.noTransactions", "No transaction history available")}
               </div>
             ) : (
               <InvoicesList>
                 {invoices.map((invoice) => (
                   <InvoiceItem key={invoice.id}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{ display: "flex", flexDirection: "column" }}
+                    >
                       <div>{invoice.number || invoice.id}</div>
-                      <InvoiceDate>{formatDate(invoice.created)}</InvoiceDate>
+                      <InvoiceDate>
+                        {formatDate(invoice.created)}
+                      </InvoiceDate>
                     </div>
                     <div
                       style={{
@@ -1234,9 +1123,7 @@ export default function BillingPage() {
                       <InvoiceAmount>
                         ${(invoice.amount / 100).toFixed(2)}
                       </InvoiceAmount>
-                      <InvoiceStatus
-                        status={invoice.status === "paid" ? "paid" : "unpaid"}
-                      >
+                      <InvoiceStatus status={invoice.status === "paid" ? "paid" : "unpaid"}>
                         {invoice.status === "paid"
                           ? t("dashboard.billing.paid", "Paid")
                           : t("dashboard.billing.unpaid", "Unpaid")}
@@ -1279,20 +1166,17 @@ export default function BillingPage() {
               // Use the same features array as the main pricing section
               try {
                 const translatedFeatures = t("pricing.features", {
-                  returnObjects: true,
+                  returnObjects: true
                 });
-
+                
                 // Check if it's an array and has elements
-                if (
-                  Array.isArray(translatedFeatures) &&
-                  translatedFeatures.length > 0
-                ) {
+                if (Array.isArray(translatedFeatures) && translatedFeatures.length > 0) {
                   return translatedFeatures;
                 }
               } catch (error) {
                 console.log("Error loading translated features", error);
               }
-
+              
               // Fallback to English features
               return [
                 "Song Builder with Multi-Track Management",
@@ -1378,10 +1262,7 @@ export default function BillingPage() {
               <ModalFooter style={{ justifyContent: "center" }}>
                 <Button onClick={handleConfirmationClose}>
                   {confirmationTitle.includes("Upgrading")
-                    ? t(
-                        "dashboard.billing.continueToCheckout",
-                        "Continue to Checkout"
-                      )
+                    ? t("dashboard.billing.continueToCheckout", "Continue to Checkout")
                     : confirmationTitle.includes("Error") ||
                       confirmationTitle.includes("Failed")
                     ? t("dashboard.main.close", "Close")

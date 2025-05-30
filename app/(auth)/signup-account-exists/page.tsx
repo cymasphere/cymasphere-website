@@ -120,7 +120,7 @@ const ButtonContainer = styled.div`
   margin-top: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
-
+  
   @media (max-width: 640px) {
     flex-direction: column;
     max-width: 400px;
@@ -192,16 +192,14 @@ export default function AccountExists() {
         <InfoIcon />
         <Title>Account Already Exists</Title>
         <Subtitle>This email is already registered</Subtitle>
-
+        
         <Message>
           <p>
-            An account with the email <Highlight>{email}</Highlight> already
-            exists.
+            An account with the email <Highlight>{email}</Highlight> already exists.
           </p>
           <br />
           <p>
-            You can either sign in with your existing account or reset your
-            password if you have forgotten it.
+            You can either sign in with your existing account or reset your password if you've forgotten it.
           </p>
         </Message>
 
@@ -209,11 +207,11 @@ export default function AccountExists() {
           <Link href="/login" passHref>
             <PrimaryButton as="a">Sign In</PrimaryButton>
           </Link>
-
+          
           <Link href="/reset-password" passHref>
             <SecondaryButton as="a">Reset Password</SecondaryButton>
           </Link>
-
+          
           <Link href="/signup" passHref>
             <SecondaryButton as="a">Try Another Email</SecondaryButton>
           </Link>
@@ -221,4 +219,4 @@ export default function AccountExists() {
       </ContentContainer>
     </PageContainer>
   );
-}
+} 

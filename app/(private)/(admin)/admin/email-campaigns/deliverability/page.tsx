@@ -1,25 +1,38 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
+import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import {
-  FaShieldAlt,
+import { 
+  FaShieldAlt, 
+  FaSearch,
+  FaFilter,
+  FaDownload,
+  FaExclamationTriangle,
   FaCheckCircle,
-  FaArrowUp,
-  FaArrowDown,
+  FaTimesCircle,
+  FaChartLine,
+  FaEnvelopeOpen,
   FaBan,
+  FaExclamationTriangle as FaSpam,
   FaServer,
   FaGlobe,
-  FaExclamationTriangle as FaSpam,
-  FaSync,
-  FaDownload,
-  FaSearch,
+  FaCalendarAlt,
+  FaUsers,
+  FaPercentage,
+  FaArrowUp,
+  FaArrowDown,
+  FaInfoCircle,
   FaEye,
-  FaChartLine,
-  FaCog,
+  FaEdit,
   FaTrash,
+  FaSync,
+  FaCog,
+  FaFlag,
+  FaExternalLinkAlt
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -79,39 +92,30 @@ const OverviewCard = styled(motion.div)<{ variant?: string }>`
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid
-    ${(props) => {
-      switch (props.variant) {
-        case "success":
-          return "rgba(40, 167, 69, 0.3)";
-        case "warning":
-          return "rgba(255, 193, 7, 0.3)";
-        case "danger":
-          return "rgba(220, 53, 69, 0.3)";
-        default:
-          return "rgba(255, 255, 255, 0.05)";
-      }
-    }};
+  border: 1px solid ${props => {
+    switch (props.variant) {
+      case 'success': return 'rgba(40, 167, 69, 0.3)';
+      case 'warning': return 'rgba(255, 193, 7, 0.3)';
+      case 'danger': return 'rgba(220, 53, 69, 0.3)';
+      default: return 'rgba(255, 255, 255, 0.05)';
+    }
+  }};
   position: relative;
   overflow: hidden;
 
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 4px;
-    background: ${(props) => {
+    background: ${props => {
       switch (props.variant) {
-        case "success":
-          return "linear-gradient(90deg, #28a745, #20c997)";
-        case "warning":
-          return "linear-gradient(90deg, #ffc107, #fd7e14)";
-        case "danger":
-          return "linear-gradient(90deg, #dc3545, #e83e8c)";
-        default:
-          return "linear-gradient(90deg, var(--primary), var(--accent))";
+        case 'success': return 'linear-gradient(90deg, #28a745, #20c997)';
+        case 'warning': return 'linear-gradient(90deg, #ffc107, #fd7e14)';
+        case 'danger': return 'linear-gradient(90deg, #dc3545, #e83e8c)';
+        default: return 'linear-gradient(90deg, var(--primary), var(--accent))';
       }
     }};
   }
@@ -135,16 +139,12 @@ const CardTitle = styled.h3`
 
 const CardIcon = styled.div<{ variant?: string }>`
   font-size: 1.2rem;
-  color: ${(props) => {
+  color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "#28a745";
-      case "warning":
-        return "#ffc107";
-      case "danger":
-        return "#dc3545";
-      default:
-        return "var(--primary)";
+      case 'success': return '#28a745';
+      case 'warning': return '#ffc107';
+      case 'danger': return '#dc3545';
+      default: return 'var(--primary)';
     }
   }};
 `;
@@ -152,16 +152,12 @@ const CardIcon = styled.div<{ variant?: string }>`
 const CardValue = styled.div<{ variant?: string }>`
   font-size: 2.5rem;
   font-weight: 700;
-  color: ${(props) => {
+  color: ${props => {
     switch (props.variant) {
-      case "success":
-        return "#28a745";
-      case "warning":
-        return "#ffc107";
-      case "danger":
-        return "#dc3545";
-      default:
-        return "var(--text)";
+      case 'success': return '#28a745';
+      case 'warning': return '#ffc107';
+      case 'danger': return '#dc3545';
+      default: return 'var(--text)';
     }
   }};
   margin-bottom: 0.5rem;
@@ -169,7 +165,7 @@ const CardValue = styled.div<{ variant?: string }>`
 
 const CardChange = styled.div<{ positive: boolean }>`
   font-size: 0.8rem;
-  color: ${(props) => (props.positive ? "#28a745" : "#dc3545")};
+  color: ${props => props.positive ? '#28a745' : '#dc3545'};
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -211,9 +207,7 @@ const SectionActions = styled.div`
   align-items: center;
 `;
 
-const ActionButton = styled.button<{
-  variant?: "primary" | "secondary" | "danger";
-}>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
@@ -227,7 +221,7 @@ const ActionButton = styled.button<{
 
   ${(props) => {
     switch (props.variant) {
-      case "primary":
+      case 'primary':
         return `
           background-color: var(--primary);
           color: white;
@@ -235,7 +229,7 @@ const ActionButton = styled.button<{
             background-color: var(--accent);
           }
         `;
-      case "danger":
+      case 'danger':
         return `
           background-color: #dc3545;
           color: white;
@@ -402,25 +396,25 @@ const StatusBadge = styled.span<{ status: string }>`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-
+  
   ${(props) => {
     switch (props.status) {
-      case "delivered":
+      case 'delivered':
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case "bounced":
+      case 'bounced':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
         `;
-      case "spam":
+      case 'spam':
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case "blocked":
+      case 'blocked':
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
@@ -439,10 +433,10 @@ const ReputationScore = styled.div<{ score: number }>`
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: ${(props) => {
-    if (props.score >= 80) return "#28a745";
-    if (props.score >= 60) return "#ffc107";
-    return "#dc3545";
+  color: ${props => {
+    if (props.score >= 80) return '#28a745';
+    if (props.score >= 60) return '#ffc107';
+    return '#dc3545';
   }};
 `;
 
@@ -456,11 +450,11 @@ const ScoreBar = styled.div`
 
 const ScoreFill = styled.div<{ score: number }>`
   height: 100%;
-  width: ${(props) => props.score}%;
-  background-color: ${(props) => {
-    if (props.score >= 80) return "#28a745";
-    if (props.score >= 60) return "#ffc107";
-    return "#dc3545";
+  width: ${props => props.score}%;
+  background-color: ${props => {
+    if (props.score >= 80) return '#28a745';
+    if (props.score >= 60) return '#ffc107';
+    return '#dc3545';
   }};
   transition: width 0.3s ease;
 `;
@@ -491,13 +485,13 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
   color: var(--text-secondary);
-
+  
   svg {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-
+  
   h3 {
     margin-bottom: 0.5rem;
     color: var(--text);
@@ -510,7 +504,7 @@ const mockDeliverabilityData = {
     deliveryRate: 94.2,
     bounceRate: 3.1,
     spamRate: 2.7,
-    reputation: 87,
+    reputation: 87
   },
   domains: [
     {
@@ -521,27 +515,27 @@ const mockDeliverabilityData = {
       bounced: 234,
       spam: 156,
       blocked: 45,
-      lastChecked: "2024-01-20T10:30:00Z",
+      lastChecked: "2024-01-20T10:30:00Z"
     },
     {
-      id: "2",
+      id: "2", 
       domain: "outlook.com",
       reputation: 88,
       delivered: 8930,
       bounced: 167,
       spam: 89,
       blocked: 23,
-      lastChecked: "2024-01-20T10:25:00Z",
+      lastChecked: "2024-01-20T10:25:00Z"
     },
     {
       id: "3",
-      domain: "yahoo.com",
+      domain: "yahoo.com", 
       reputation: 85,
       delivered: 6750,
       bounced: 145,
       spam: 78,
       blocked: 34,
-      lastChecked: "2024-01-20T10:20:00Z",
+      lastChecked: "2024-01-20T10:20:00Z"
     },
     {
       id: "4",
@@ -551,8 +545,8 @@ const mockDeliverabilityData = {
       bounced: 67,
       spam: 23,
       blocked: 12,
-      lastChecked: "2024-01-20T10:15:00Z",
-    },
+      lastChecked: "2024-01-20T10:15:00Z"
+    }
   ],
   bounces: [
     {
@@ -562,36 +556,39 @@ const mockDeliverabilityData = {
       type: "hard",
       reason: "Mailbox does not exist",
       campaign: "Newsletter #45",
-      timestamp: "2024-01-20T09:45:00Z",
+      timestamp: "2024-01-20T09:45:00Z"
     },
     {
       id: "2",
       email: "user2@company.org",
-      domain: "company.org",
+      domain: "company.org", 
       type: "soft",
       reason: "Mailbox full",
       campaign: "Product Update",
-      timestamp: "2024-01-20T09:30:00Z",
+      timestamp: "2024-01-20T09:30:00Z"
     },
     {
       id: "3",
       email: "contact@business.net",
       domain: "business.net",
-      type: "hard",
+      type: "hard", 
       reason: "Domain does not exist",
       campaign: "Welcome Series",
-      timestamp: "2024-01-20T09:15:00Z",
-    },
-  ],
+      timestamp: "2024-01-20T09:15:00Z"
+    }
+  ]
 };
 
 function DeliverabilityPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [domainFilter, setDomainFilter] = useState("all");
   const [bounceFilter, setBounceFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState<"domains" | "bounces">("domains");
-
+  const [activeTab, setActiveTab] = useState<'domains' | 'bounces'>('domains');
+  
+  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
   useEffect(() => {
@@ -608,19 +605,15 @@ function DeliverabilityPage() {
     return <LoadingComponent />;
   }
 
-  const filteredDomains = mockDeliverabilityData.domains.filter((domain) => {
-    const matchesSearch = domain.domain
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  const filteredDomains = mockDeliverabilityData.domains.filter(domain => {
+    const matchesSearch = domain.domain.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  const filteredBounces = mockDeliverabilityData.bounces.filter((bounce) => {
-    const matchesSearch =
-      bounce.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bounce.domain.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      bounceFilter === "all" || bounce.type === bounceFilter;
+  const filteredBounces = mockDeliverabilityData.bounces.filter(bounce => {
+    const matchesSearch = bounce.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         bounce.domain.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = bounceFilter === "all" || bounce.type === bounceFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -649,7 +642,7 @@ function DeliverabilityPage() {
         title="Email Deliverability"
         description="Monitor email deliverability, reputation, and bounce management"
       />
-
+      
       <DeliverabilityContainer>
         <DeliverabilityTitle>
           <FaShieldAlt />
@@ -673,9 +666,7 @@ function DeliverabilityPage() {
                 <FaCheckCircle />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="success">
-              {mockDeliverabilityData.overview.deliveryRate}%
-            </CardValue>
+            <CardValue variant="success">{mockDeliverabilityData.overview.deliveryRate}%</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +2.3% from last month
@@ -695,9 +686,7 @@ function DeliverabilityPage() {
                 <FaBan />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="danger">
-              {mockDeliverabilityData.overview.bounceRate}%
-            </CardValue>
+            <CardValue variant="danger">{mockDeliverabilityData.overview.bounceRate}%</CardValue>
             <CardChange positive={false}>
               <FaArrowDown />
               -0.5% from last month
@@ -717,9 +706,7 @@ function DeliverabilityPage() {
                 <FaSpam />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="warning">
-              {mockDeliverabilityData.overview.spamRate}%
-            </CardValue>
+            <CardValue variant="warning">{mockDeliverabilityData.overview.spamRate}%</CardValue>
             <CardChange positive={false}>
               <FaArrowUp />
               +0.2% from last month
@@ -753,17 +740,11 @@ function DeliverabilityPage() {
               Domain Reputation
             </SectionTitle>
             <SectionActions>
-              <ActionButton
-                onClick={() => setActiveTab("domains")}
-                variant={activeTab === "domains" ? "primary" : "secondary"}
-              >
+              <ActionButton onClick={() => setActiveTab('domains')} variant={activeTab === 'domains' ? 'primary' : 'secondary'}>
                 <FaGlobe />
                 Domains
               </ActionButton>
-              <ActionButton
-                onClick={() => setActiveTab("bounces")}
-                variant={activeTab === "bounces" ? "primary" : "secondary"}
-              >
+              <ActionButton onClick={() => setActiveTab('bounces')} variant={activeTab === 'bounces' ? 'primary' : 'secondary'}>
                 <FaBan />
                 Bounces
               </ActionButton>
@@ -786,21 +767,14 @@ function DeliverabilityPage() {
                 </SearchIcon>
                 <SearchInput
                   type="text"
-                  placeholder={
-                    activeTab === "domains"
-                      ? "Search domains..."
-                      : "Search bounces..."
-                  }
+                  placeholder={activeTab === 'domains' ? "Search domains..." : "Search bounces..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </SearchContainer>
-
-              {activeTab === "bounces" && (
-                <FilterSelect
-                  value={bounceFilter}
-                  onChange={(e) => setBounceFilter(e.target.value)}
-                >
+              
+              {activeTab === 'bounces' && (
+                <FilterSelect value={bounceFilter} onChange={(e) => setBounceFilter(e.target.value)}>
                   <option value="all">All Bounces</option>
                   <option value="hard">Hard Bounces</option>
                   <option value="soft">Soft Bounces</option>
@@ -809,7 +783,7 @@ function DeliverabilityPage() {
             </LeftFilters>
           </FiltersRow>
 
-          {activeTab === "domains" ? (
+          {activeTab === 'domains' ? (
             <Table>
               <TableHeader>
                 <tr>
@@ -841,17 +815,11 @@ function DeliverabilityPage() {
                       initial="hidden"
                       animate="visible"
                       custom={index}
-                      onClick={() => handleDomainAction("view", domain.id)}
+                      onClick={() => handleDomainAction('view', domain.id)}
                     >
                       <TableCell>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                          }}
-                        >
-                          <FaGlobe style={{ color: "var(--primary)" }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <FaGlobe style={{ color: 'var(--primary)' }} />
                           {domain.domain}
                         </div>
                       </TableCell>
@@ -865,39 +833,23 @@ function DeliverabilityPage() {
                       </TableCell>
                       <TableCell>{domain.delivered.toLocaleString()}</TableCell>
                       <TableCell>
-                        <span style={{ color: "#dc3545" }}>
-                          {domain.bounced.toLocaleString()}
-                        </span>
+                        <span style={{ color: '#dc3545' }}>{domain.bounced.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
-                        <span style={{ color: "#ffc107" }}>
-                          {domain.spam.toLocaleString()}
-                        </span>
+                        <span style={{ color: '#ffc107' }}>{domain.spam.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
                         {new Date(domain.lastChecked).toLocaleString()}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <ActionsContainer>
-                          <TableActionButton
-                            onClick={() =>
-                              handleDomainAction("view", domain.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleDomainAction('view', domain.id)}>
                             <FaEye />
                           </TableActionButton>
-                          <TableActionButton
-                            onClick={() =>
-                              handleDomainAction("analyze", domain.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleDomainAction('analyze', domain.id)}>
                             <FaChartLine />
                           </TableActionButton>
-                          <TableActionButton
-                            onClick={() =>
-                              handleDomainAction("settings", domain.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleDomainAction('settings', domain.id)}>
                             <FaCog />
                           </TableActionButton>
                         </ActionsContainer>
@@ -938,27 +890,18 @@ function DeliverabilityPage() {
                       initial="hidden"
                       animate="visible"
                       custom={index}
-                      onClick={() => handleBounceAction("view", bounce.id)}
+                      onClick={() => handleBounceAction('view', bounce.id)}
                     >
                       <TableCell>
                         <div>
-                          <div style={{ fontWeight: "500" }}>
-                            {bounce.email}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "0.8rem",
-                              color: "var(--text-secondary)",
-                            }}
-                          >
+                          <div style={{ fontWeight: '500' }}>{bounce.email}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                             {bounce.domain}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <StatusBadge
-                          status={bounce.type === "hard" ? "bounced" : "spam"}
-                        >
+                        <StatusBadge status={bounce.type === 'hard' ? 'bounced' : 'spam'}>
                           {bounce.type} bounce
                         </StatusBadge>
                       </TableCell>
@@ -969,25 +912,13 @@ function DeliverabilityPage() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <ActionsContainer>
-                          <TableActionButton
-                            onClick={() =>
-                              handleBounceAction("view", bounce.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleBounceAction('view', bounce.id)}>
                             <FaEye />
                           </TableActionButton>
-                          <TableActionButton
-                            onClick={() =>
-                              handleBounceAction("suppress", bounce.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleBounceAction('suppress', bounce.id)}>
                             <FaBan />
                           </TableActionButton>
-                          <TableActionButton
-                            onClick={() =>
-                              handleBounceAction("delete", bounce.id)
-                            }
-                          >
+                          <TableActionButton onClick={() => handleBounceAction('delete', bounce.id)}>
                             <FaTrash />
                           </TableActionButton>
                         </ActionsContainer>
@@ -1004,4 +935,4 @@ function DeliverabilityPage() {
   );
 }
 
-export default DeliverabilityPage;
+export default DeliverabilityPage; 
