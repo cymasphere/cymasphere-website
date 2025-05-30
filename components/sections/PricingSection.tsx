@@ -1134,6 +1134,17 @@ const PricingContainer = styled.section`
     opacity: 0.6;
     z-index: 0;
   }
+
+  /* Mobile responsive styling */
+  @media (max-width: 768px) {
+    padding: 100px 10px 80px; /* Reduce padding on mobile */
+    min-height: 800px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 80px 5px 60px; /* Further reduce padding on smaller mobile devices */
+    min-height: 700px;
+  }
 `;
 
 const ContentContainer = styled.div`
@@ -1151,6 +1162,16 @@ const ContentContainer = styled.div`
   padding: 60px 40px 50px; /* Increased horizontal padding from 10px to 40px */
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
   pointer-events: none; /* Allow clicks to pass through to molecules */
+
+  /* Mobile responsive styling */
+  @media (max-width: 768px) {
+    padding: 40px 15px 30px; /* Reduce padding on mobile for more space */
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 30px 10px 25px; /* Further reduce padding on smaller mobile devices */
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -1380,6 +1401,17 @@ const PricingCard = styled(motion.div)`
   &:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Mobile responsive styling */
+  @media (max-width: 768px) {
+    max-width: 90vw; /* Use 90% of viewport width on mobile */
+    margin: 0 auto 60px; /* Reduce bottom margin on mobile */
+  }
+
+  @media (max-width: 480px) {
+    max-width: 95vw; /* Use 95% of viewport width on smaller mobile devices */
+    margin: 0 auto 50px;
   }
 `;
 
