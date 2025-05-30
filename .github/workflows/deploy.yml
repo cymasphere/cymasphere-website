@@ -129,13 +129,13 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Install dependencies
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && bun install"
+          # Install dependencies with proper environment sourcing
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'cd ~/cymasphere && bun install'"
 
       - name: Start application
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Check if process exists in PM2 and start/restart accordingly
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "cd ~/cymasphere && source ~/.nvm/nvm.sh && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name 'cymasphere' -- start"
+          # Check if process exists in PM2 and start/restart accordingly with proper environment
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'cd ~/cymasphere && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
