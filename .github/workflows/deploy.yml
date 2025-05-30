@@ -18,16 +18,15 @@ jobs:
       - name: Cache dependencies and Next.js build
         uses: actions/cache@v4
         with:
+          # See here for caching with `yarn`, `bun` or other package managers https://github.com/actions/cache/blob/main/examples.md or you can leverage caching with actions/setup-node https://github.com/actions/setup-node
           path: |
-            ~/.bun/install/cache
-            node_modules
+            ~/.npm
             ${{ github.workspace }}/.next/cache
           # Generate a new cache whenever packages or source files change.
-          key: ${{ runner.os }}-nextjs-bun-${{ hashFiles('**/bun.lock', '**/package.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
           # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
-            ${{ runner.os }}-nextjs-bun-${{ hashFiles('**/bun.lock', '**/package.json') }}-
-            ${{ runner.os }}-nextjs-bun-
+            ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-
 
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -129,13 +128,13 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Install dependencies with explicit npm global bin path
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun install'"
+          # Install dependencies with nvm sourcing and npm global bin path
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun install'"
 
       - name: Start application
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Start application with explicit npm global bin path
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
+          # Start application with nvm sourcing and npm global bin path
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
