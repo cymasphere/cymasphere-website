@@ -1,74 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/email";
 
-// Define proper types
-interface Subscriber {
-  id: string;
-  name: string;
-  email: string;
-  status: "active" | "unsubscribed" | "bounced";
-  tags: string[];
-}
-
-interface EmailElement {
-  type: string;
-  content?: string;
-  url?: string;
-  src?: string;
-  height?: string;
-}
-
 // Mock subscriber data (in production this would come from a database)
-const mockSubscribers: Subscriber[] = [
+const mockSubscribers = [
   {
     id: "1",
     name: "Alex Johnson",
     email: "alex.johnson@example.com",
     status: "active",
-    tags: ["VIP", "Producer"],
+    tags: ["VIP", "Producer"]
   },
   {
-    id: "2",
+    id: "2", 
     name: "Sarah Chen",
     email: "sarah.chen@example.com",
     status: "active",
-    tags: ["Beginner"],
+    tags: ["Beginner"]
   },
   {
     id: "3",
-    name: "Mike Rodriguez",
+    name: "Mike Rodriguez", 
     email: "mike.rodriguez@example.com",
     status: "unsubscribed",
-    tags: ["DJ", "Professional"],
+    tags: ["DJ", "Professional"]
   },
   {
     id: "4",
     name: "Emma Wilson",
-    email: "emma.wilson@example.com",
+    email: "emma.wilson@example.com", 
     status: "active",
-    tags: ["Student"],
+    tags: ["Student"]
   },
   {
     id: "5",
     name: "David Kim",
     email: "david.kim@example.com",
     status: "bounced",
-    tags: ["Producer", "Advanced"],
-  },
+    tags: ["Producer", "Advanced"]
+  }
 ];
 
 // Audience segment definitions
 const audienceSegments = {
-  all: (subscribers: Subscriber[]) =>
-    subscribers.filter((s) => s.status === "active"),
-  active: (subscribers: Subscriber[]) =>
-    subscribers.filter((s) => s.status === "active"),
-  new: (subscribers: Subscriber[]) =>
-    subscribers.filter(
-      (s) => s.status === "active" && s.tags.includes("Beginner")
-    ),
-  inactive: (subscribers: Subscriber[]) =>
-    subscribers.filter((s) => s.status === "unsubscribed"),
+  all: (subscribers: any[]) => subscribers.filter(s => s.status === 'active'),
+  active: (subscribers: any[]) => subscribers.filter(s => s.status === 'active'),
+  new: (subscribers: any[]) => subscribers.filter(s => s.status === 'active' && s.tags.includes('Beginner')),
+  inactive: (subscribers: any[]) => subscribers.filter(s => s.status === 'unsubscribed')
 };
 
 interface SendCampaignRequest {
@@ -76,8 +53,8 @@ interface SendCampaignRequest {
   name: string;
   subject: string;
   audience: string;
-  emailElements: EmailElement[];
-  scheduleType: "immediate" | "scheduled" | "draft";
+  emailElements: any[];
+  scheduleType: 'immediate' | 'scheduled' | 'draft';
   scheduleDate?: string;
   scheduleTime?: string;
 }
@@ -85,15 +62,15 @@ interface SendCampaignRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: SendCampaignRequest = await request.json();
-    const {
+    const { 
       campaignId,
-      name,
-      subject,
-      audience,
-      emailElements,
+      name, 
+      subject, 
+      audience, 
+      emailElements, 
       scheduleType,
       scheduleDate,
-      scheduleTime,
+      scheduleTime 
     } = body;
 
     // Validate required fields
@@ -105,17 +82,17 @@ export async function POST(request: NextRequest) {
     }
 
     // If it's a draft, just save and return
-    if (scheduleType === "draft") {
+    if (scheduleType === 'draft') {
       return NextResponse.json({
         success: true,
         message: "Campaign saved as draft",
         campaignId: campaignId || `campaign_${Date.now()}`,
-        status: "draft",
+        status: 'draft'
       });
     }
 
     // If scheduled for later, save schedule and return
-    if (scheduleType === "scheduled" && scheduleDate && scheduleTime) {
+    if (scheduleType === 'scheduled' && scheduleDate && scheduleTime) {
       const scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}`);
       if (scheduledDateTime <= new Date()) {
         return NextResponse.json(
@@ -128,14 +105,13 @@ export async function POST(request: NextRequest) {
         success: true,
         message: `Campaign scheduled for ${scheduledDateTime.toLocaleString()}`,
         campaignId: campaignId || `campaign_${Date.now()}`,
-        status: "scheduled",
-        scheduledFor: scheduledDateTime.toISOString(),
+        status: 'scheduled',
+        scheduledFor: scheduledDateTime.toISOString()
       });
     }
 
     // Get subscribers based on audience selection
-    const segmentFunction =
-      audienceSegments[audience as keyof typeof audienceSegments];
+    const segmentFunction = audienceSegments[audience as keyof typeof audienceSegments];
     if (!segmentFunction) {
       return NextResponse.json(
         { success: false, error: "Invalid audience segment" },
@@ -144,13 +120,10 @@ export async function POST(request: NextRequest) {
     }
 
     const targetSubscribers = segmentFunction(mockSubscribers);
-
+    
     if (targetSubscribers.length === 0) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "No active subscribers found for the selected audience",
-        },
+        { success: false, error: "No active subscribers found for the selected audience" },
         { status: 400 }
       );
     }
@@ -159,9 +132,7 @@ export async function POST(request: NextRequest) {
     const htmlContent = generateHtmlFromElements(emailElements, subject);
     const textContent = generateTextFromElements(emailElements);
 
-    console.log(
-      `🚀 Starting to send campaign "${name}" to ${targetSubscribers.length} subscribers...`
-    );
+    console.log(`🚀 Starting to send campaign "${name}" to ${targetSubscribers.length} subscribers...`);
 
     // Send emails to all subscribers
     const results = [];
@@ -179,7 +150,7 @@ export async function POST(request: NextRequest) {
           subject: personalizedSubject,
           html: personalizedHtml,
           text: personalizedText,
-          from: "support@cymasphere.com",
+          from: "support@cymasphere.com"
         });
 
         if (result.success) {
@@ -187,7 +158,7 @@ export async function POST(request: NextRequest) {
             subscriberId: subscriber.id,
             email: subscriber.email,
             messageId: result.messageId,
-            status: "sent",
+            status: 'sent'
           });
           console.log(`✅ Sent to ${subscriber.email} (${result.messageId})`);
         } else {
@@ -195,23 +166,21 @@ export async function POST(request: NextRequest) {
             subscriberId: subscriber.id,
             email: subscriber.email,
             error: result.error,
-            status: "failed",
+            status: 'failed'
           });
-          console.error(
-            `❌ Failed to send to ${subscriber.email}: ${result.error}`
-          );
+          console.error(`❌ Failed to send to ${subscriber.email}: ${result.error}`);
         }
 
         // Small delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
+
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push({
           subscriberId: subscriber.id,
           email: subscriber.email,
           error: errorMessage,
-          status: "failed",
+          status: 'failed'
         });
         console.error(`❌ Exception sending to ${subscriber.email}:`, error);
       }
@@ -233,16 +202,16 @@ export async function POST(request: NextRequest) {
         total: totalCount,
         sent: successCount,
         failed: errorCount,
-        successRate: ((successCount / totalCount) * 100).toFixed(1),
+        successRate: ((successCount / totalCount) * 100).toFixed(1)
       },
       results,
-      errors: errors.length > 0 ? errors : undefined,
+      errors: errors.length > 0 ? errors : undefined
     });
+
   } catch (error) {
     console.error("Error in send campaign API:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error sending campaign";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error sending campaign";
+    
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
@@ -251,42 +220,31 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to generate HTML from email elements
-function generateHtmlFromElements(
-  elements: EmailElement[],
-  subject: string
-): string {
-  const elementHtml = elements
-    .map((element) => {
-      switch (element.type) {
-        case "header":
-          return `<h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${element.content}</h1>`;
-
-        case "text":
-          return `<p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${element.content}</p>`;
-
-        case "button":
-          return `<div style="text-align: center; margin: 2rem 0;"><a href="${
-            element.url || "#"
-          }" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${
-            element.content
-          }</a></div>`;
-
-        case "image":
-          return `<div style="text-align: center; margin: 1.5rem 0;"><img src="${element.src}" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: 8px;" /></div>`;
-
-        case "divider":
-          return `<hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" />`;
-
-        case "spacer":
-          return `<div style="height: ${element.height || "20px"};"></div>`;
-
-        default:
-          return `<div style="color: #555; margin: 1rem 0;">${
-            element.content || ""
-          }</div>`;
-      }
-    })
-    .join("");
+function generateHtmlFromElements(elements: any[], subject: string): string {
+  const elementHtml = elements.map(element => {
+    switch (element.type) {
+      case 'header':
+        return `<h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${element.content}</h1>`;
+      
+      case 'text':
+        return `<p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${element.content}</p>`;
+      
+      case 'button':
+        return `<div style="text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+      
+      case 'image':
+        return `<div style="text-align: center; margin: 1.5rem 0;"><img src="${element.src}" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: 8px;" /></div>`;
+      
+      case 'divider':
+        return `<hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" />`;
+      
+      case 'spacer':
+        return `<div style="height: ${element.height || '20px'};"></div>`;
+      
+      default:
+        return `<div style="color: #555; margin: 1rem 0;">${element.content || ''}</div>`;
+    }
+  }).join('');
 
   return `
 <!DOCTYPE html>
@@ -368,29 +326,25 @@ function generateHtmlFromElements(
 }
 
 // Helper function to generate text content from email elements
-function generateTextFromElements(elements: EmailElement[]): string {
-  const textContent = elements
-    .map((element) => {
-      switch (element.type) {
-        case "header":
-          return `${element.content}\n${"=".repeat(
-            element.content?.length || 0
-          )}\n`;
-        case "text":
-          return `${element.content}\n`;
-        case "button":
-          return `${element.content}: ${element.url || "#"}\n`;
-        case "image":
-          return `[Image: ${element.src}]\n`;
-        case "divider":
-          return `${"─".repeat(50)}\n`;
-        case "spacer":
-          return "\n";
-        default:
-          return `${element.content || ""}\n`;
-      }
-    })
-    .join("\n");
+function generateTextFromElements(elements: any[]): string {
+  const textContent = elements.map(element => {
+    switch (element.type) {
+      case 'header':
+        return `${element.content}\n${'='.repeat(element.content.length)}\n`;
+      case 'text':
+        return `${element.content}\n`;
+      case 'button':
+        return `${element.content}: ${element.url || '#'}\n`;
+      case 'image':
+        return `[Image: ${element.src}]\n`;
+      case 'divider':
+        return `${'─'.repeat(50)}\n`;
+      case 'spacer':
+        return '\n';
+      default:
+        return `${element.content || ''}\n`;
+    }
+  }).join('\n');
 
   return `
 CYMASPHERE
@@ -409,9 +363,9 @@ Website: https://cymasphere.com
 }
 
 // Helper function to personalize content with subscriber data
-function personalizeContent(content: string, subscriber: Subscriber): string {
+function personalizeContent(content: string, subscriber: any): string {
   return content
-    .replace(/\{\{firstName\}\}/g, subscriber.name.split(" ")[0])
+    .replace(/\{\{firstName\}\}/g, subscriber.name.split(' ')[0])
     .replace(/\{\{fullName\}\}/g, subscriber.name)
     .replace(/\{\{email\}\}/g, subscriber.email);
-}
+} 
