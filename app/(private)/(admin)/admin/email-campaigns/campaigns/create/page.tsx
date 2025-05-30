@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import {
@@ -282,11 +281,9 @@ function CreateCampaignPage() {
           </div>
         )}
         {element.type === "image" && (
-          <Image
-            src={element.src || "/placeholder-image.jpg"}
+          <img
+            src={element.src}
             alt=""
-            width={200}
-            height={200}
             style={{
               maxWidth: "100%",
               height: element.height || "auto",

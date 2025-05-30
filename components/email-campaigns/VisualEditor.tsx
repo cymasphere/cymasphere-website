@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef } from "react";
-import Image from "next/image";
 import styled from "styled-components";
 import {
   FaFont,
@@ -866,11 +865,9 @@ export default function VisualEditor({
 
         {element.type === "image" && (
           <div style={{ textAlign: "center", margin: "2rem 0" }}>
-            <Image
-              src={(element.src || "/placeholder-image.jpg") as string}
+            <img
+              src={element.src}
               alt={element.alt || "Email image"}
-              width={600}
-              height={300}
               style={{
                 maxWidth: "100%",
                 height: "auto",
@@ -970,11 +967,9 @@ export default function VisualEditor({
         {element.type === "video" && (
           <div style={{ textAlign: "center", margin: "2rem 0" }}>
             <div style={{ position: "relative", display: "inline-block" }}>
-              <Image
-                src={(element.thumbnail || "/placeholder-image.jpg") as string}
+              <img
+                src={element.thumbnail}
                 alt="Video thumbnail"
-                width={600}
-                height={300}
                 style={{
                   maxWidth: "100%",
                   height: "auto",
