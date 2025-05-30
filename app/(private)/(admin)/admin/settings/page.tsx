@@ -128,10 +128,9 @@ function AdminSettingsPage() {
     return <LoadingComponent />;
   }
 
-  // Temporarily disabled admin check for testing
-  // if (!user || user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
+  if (!user || user.profile?.subscription !== "admin") {
+    return null;
+  }
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -146,20 +145,17 @@ function AdminSettingsPage() {
     {
       icon: <FaServer />,
       title: "System Configuration",
-      description:
-        "Configure server settings, database connections, and system preferences.",
+      description: "Configure server settings, database connections, and system preferences.",
     },
     {
       icon: <FaShieldAlt />,
       title: "Security Settings",
-      description:
-        "Manage authentication methods, access controls, and security policies.",
+      description: "Manage authentication methods, access controls, and security policies.",
     },
     {
       icon: <FaUsers />,
       title: "User Management",
-      description:
-        "Configure user roles, permissions, and access levels across the platform.",
+      description: "Configure user roles, permissions, and access levels across the platform.",
     },
   ];
 
@@ -169,7 +165,7 @@ function AdminSettingsPage() {
         title={t("admin.settings", "Admin Settings")}
         description="Configure system settings and preferences"
       />
-
+      
       <SettingsContainer>
         <SettingsTitle>
           <FaCog />
@@ -190,9 +186,9 @@ function AdminSettingsPage() {
             Coming Soon
           </ComingSoonTitle>
           <ComingSoonText>
-            Advanced administrative settings are being developed. This section
-            will provide comprehensive system configuration options, security
-            settings, and platform management tools for administrators.
+            Advanced administrative settings are being developed. This section will provide 
+            comprehensive system configuration options, security settings, and platform 
+            management tools for administrators.
           </ComingSoonText>
         </ComingSoonCard>
 
@@ -216,4 +212,4 @@ function AdminSettingsPage() {
   );
 }
 
-export default AdminSettingsPage;
+export default AdminSettingsPage; 

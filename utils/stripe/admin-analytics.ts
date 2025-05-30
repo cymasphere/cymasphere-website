@@ -82,7 +82,7 @@ export interface DetailedUserData extends UserData {
 export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
   try {
     const supabase = await createSupabaseServiceRole();
-
+    
     // Get all users from profiles
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
@@ -94,29 +94,26 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     }
 
     const totalUsers = profiles?.length || 0;
-
+    
     // Count subscription types
-    const subscriptionCounts =
-      profiles?.reduce((acc, profile) => {
-        const sub = profile.subscription || "none";
-        acc[sub] = (acc[sub] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
+    const subscriptionCounts = profiles?.reduce((acc, profile) => {
+      const sub = profile.subscription || "none";
+      acc[sub] = (acc[sub] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
 
     const freeUsers = subscriptionCounts.none || 0;
     const monthlySubscribers = subscriptionCounts.monthly || 0;
     const annualSubscribers = subscriptionCounts.annual || 0;
     const lifetimeCustomers = subscriptionCounts.lifetime || 0;
     const adminUsers = subscriptionCounts.admin || 0;
-
+    
     // Count trial users (those with trial_expiration but no active subscription)
-    const trialUsers =
-      profiles?.filter(
-        (p) =>
-          p.trial_expiration &&
-          new Date(p.trial_expiration) > new Date() &&
-          p.subscription === "none"
-      ).length || 0;
+    const trialUsers = profiles?.filter(p => 
+      p.trial_expiration && 
+      new Date(p.trial_expiration) > new Date() && 
+      p.subscription === "none"
+    ).length || 0;
 
     const activeSubscriptions = monthlySubscribers + annualSubscribers;
 
@@ -141,34 +138,29 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     }
 
     // Calculate revenue
-    const paidInvoices = invoices?.filter((inv) => inv.status === "paid") || [];
-    const succeededPayments =
-      paymentIntents?.filter((pi) => {
-        const attrs = pi.attrs as any;
-        return attrs?.status === "succeeded" && !attrs?.refunded;
-      }) || [];
+    const paidInvoices = invoices?.filter(inv => inv.status === "paid") || [];
+    const succeededPayments = paymentIntents?.filter(pi => {
+      const attrs = pi.attrs as any;
+      return attrs?.status === "succeeded" && !attrs?.refunded;
+    }) || [];
 
-    const totalInvoiceRevenue =
-      paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
-    const totalPaymentRevenue =
-      succeededPayments.reduce((sum, pi) => sum + (pi.amount || 0), 0) / 100;
+    const totalInvoiceRevenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
+    const totalPaymentRevenue = succeededPayments.reduce((sum, pi) => sum + (pi.amount || 0), 0) / 100;
     const lifetimeRevenue = totalInvoiceRevenue + totalPaymentRevenue;
 
     // Calculate monthly revenue (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentInvoices = paidInvoices.filter(
-      (inv) => inv.period_end && new Date(inv.period_end) >= thirtyDaysAgo
+    const recentInvoices = paidInvoices.filter(inv => 
+      inv.period_end && new Date(inv.period_end) >= thirtyDaysAgo
     );
-    const recentPayments = succeededPayments.filter(
-      (pi) => pi.created && new Date(pi.created) >= thirtyDaysAgo
+    const recentPayments = succeededPayments.filter(pi => 
+      pi.created && new Date(pi.created) >= thirtyDaysAgo
     );
 
-    const monthlyInvoiceRevenue =
-      recentInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
-    const monthlyPaymentRevenue =
-      recentPayments.reduce((sum, pi) => sum + (pi.amount || 0), 0) / 100;
+    const monthlyInvoiceRevenue = recentInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
+    const monthlyPaymentRevenue = recentPayments.reduce((sum, pi) => sum + (pi.amount || 0), 0) / 100;
     const monthlyRevenue = monthlyInvoiceRevenue + monthlyPaymentRevenue;
 
     // Calculate churn rate (simplified - cancellations vs active subscriptions)
@@ -177,16 +169,12 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       .from("stripe_subscriptions")
       .select("attrs");
 
-    const canceledSubs =
-      subscriptions?.filter((sub) => {
-        const attrs = sub.attrs as any;
-        return attrs?.status === "canceled";
-      }).length || 0;
+    const canceledSubs = subscriptions?.filter(sub => {
+      const attrs = sub.attrs as any;
+      return attrs?.status === "canceled";
+    }).length || 0;
 
-    const churnRate =
-      activeSubscriptions > 0
-        ? (canceledSubs / (activeSubscriptions + canceledSubs)) * 100
-        : 0;
+    const churnRate = activeSubscriptions > 0 ? (canceledSubs / (activeSubscriptions + canceledSubs)) * 100 : 0;
 
     // Get recent activity
     const recentActivity = await getRecentActivity();
@@ -223,12 +211,10 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
 /**
  * Fetches recent activity for the admin dashboard
  */
-export async function getRecentActivity(
-  limit: number = 10
-): Promise<AdminActivity[]> {
+export async function getRecentActivity(limit: number = 10): Promise<AdminActivity[]> {
   try {
     const supabase = await createSupabaseServiceRole();
-
+    
     const activities: AdminActivity[] = [];
 
     // Get recent payment intents
@@ -257,16 +243,10 @@ export async function getRecentActivity(
 
           activities.push({
             id: pi.id || "",
-            type:
-              attrs?.metadata?.purchase_type === "lifetime"
-                ? "payment"
-                : "payment",
-            description:
-              attrs?.metadata?.purchase_type === "lifetime"
-                ? `Lifetime purchase by ${customerEmail}`
-                : `Payment of $${((pi.amount || 0) / 100).toFixed(
-                    2
-                  )} by ${customerEmail}`,
+            type: attrs?.metadata?.purchase_type === "lifetime" ? "payment" : "payment",
+            description: attrs?.metadata?.purchase_type === "lifetime" 
+              ? `Lifetime purchase by ${customerEmail}`
+              : `Payment of $${((pi.amount || 0) / 100).toFixed(2)} by ${customerEmail}`,
             amount: (pi.amount || 0) / 100,
             currency: pi.currency || "usd",
             timestamp: pi.created || new Date().toISOString(),
@@ -302,9 +282,7 @@ export async function getRecentActivity(
           activities.push({
             id: invoice.id || "",
             type: "subscription",
-            description: `Subscription payment of $${(
-              (invoice.total || 0) / 100
-            ).toFixed(2)} by ${customerEmail}`,
+            description: `Subscription payment of $${((invoice.total || 0) / 100).toFixed(2)} by ${customerEmail}`,
             amount: (invoice.total || 0) / 100,
             currency: invoice.currency || "usd",
             timestamp: invoice.period_end || new Date().toISOString(),
@@ -324,9 +302,7 @@ export async function getRecentActivity(
     if (!usersError && recentUsers) {
       for (const user of recentUsers) {
         // Get user email from auth
-        const { data: authUser } = await supabase.auth.admin.getUserById(
-          user.id
-        );
+        const { data: authUser } = await supabase.auth.admin.getUserById(user.id);
         const userEmail = authUser.user?.email || "";
 
         activities.push({
@@ -341,10 +317,7 @@ export async function getRecentActivity(
     }
 
     // Sort all activities by timestamp (most recent first)
-    activities.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return activities.slice(0, limit);
   } catch (error) {
@@ -368,24 +341,16 @@ export async function getAllUsersForCRM(
 }> {
   try {
     const supabase = await createSupabaseServiceRole();
-
-    let query = supabase.from("profiles").select("*", { count: "exact" });
+    
+    let query = supabase
+      .from("profiles")
+      .select("*", { count: "exact" });
 
     // Apply subscription filter
     if (subscriptionFilter && subscriptionFilter !== "all") {
-      const validSubscriptionTypes: SubscriptionType[] = [
-        "none",
-        "monthly",
-        "annual",
-        "lifetime",
-      ];
-      if (
-        validSubscriptionTypes.includes(subscriptionFilter as SubscriptionType)
-      ) {
-        query = query.eq(
-          "subscription",
-          subscriptionFilter as SubscriptionType
-        );
+      const validSubscriptionTypes: SubscriptionType[] = ["none", "monthly", "annual", "lifetime", "admin"];
+      if (validSubscriptionTypes.includes(subscriptionFilter as SubscriptionType)) {
+        query = query.eq("subscription", subscriptionFilter as SubscriptionType);
       }
     }
 
@@ -407,22 +372,18 @@ export async function getAllUsersForCRM(
 
     for (const profile of profiles || []) {
       // Get auth user for email
-      const { data: authUser } = await supabase.auth.admin.getUserById(
-        profile.id
-      );
+      const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
       const userEmail = authUser.user?.email || "";
 
       // Filter by search term if provided
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        const matchesSearch =
+        const matchesSearch = 
           userEmail.toLowerCase().includes(searchLower) ||
-          (profile.first_name &&
-            profile.first_name.toLowerCase().includes(searchLower)) ||
-          (profile.last_name &&
-            profile.last_name.toLowerCase().includes(searchLower)) ||
+          (profile.first_name && profile.first_name.toLowerCase().includes(searchLower)) ||
+          (profile.last_name && profile.last_name.toLowerCase().includes(searchLower)) ||
           profile.id.toLowerCase().includes(searchLower);
-
+        
         if (!matchesSearch) continue;
       }
 
@@ -439,11 +400,7 @@ export async function getAllUsersForCRM(
       if (userSessions && userSessions.length > 0) {
         const session = userSessions[0];
         // Use the most recent timestamp available
-        lastActive =
-          session.refreshed_at ||
-          session.updated_at ||
-          session.created_at ||
-          undefined;
+        lastActive = session.refreshed_at || session.updated_at || session.created_at || undefined;
       }
 
       // Calculate total spent
@@ -456,10 +413,9 @@ export async function getAllUsersForCRM(
           .select("total, status")
           .eq("customer", profile.customer_id);
 
-        const invoiceTotal =
-          customerInvoices
-            ?.filter((inv) => inv.status === "paid")
-            .reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+        const invoiceTotal = customerInvoices
+          ?.filter(inv => inv.status === "paid")
+          .reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
 
         // Get total from payment intents
         const { data: customerPayments } = await supabase
@@ -468,13 +424,12 @@ export async function getAllUsersForCRM(
           .select("amount, attrs")
           .eq("customer", profile.customer_id);
 
-        const paymentTotal =
-          customerPayments
-            ?.filter((pi) => {
-              const attrs = pi.attrs as any;
-              return attrs?.status === "succeeded" && !attrs?.refunded;
-            })
-            .reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
+        const paymentTotal = customerPayments
+          ?.filter(pi => {
+            const attrs = pi.attrs as any;
+            return attrs?.status === "succeeded" && !attrs?.refunded;
+          })
+          .reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
 
         totalSpent = (invoiceTotal + paymentTotal) / 100;
       }
@@ -516,20 +471,18 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
 }> {
   try {
     const supabase = await createSupabaseServiceRole();
-
+    
     const labels: string[] = [];
     const data: number[] = [];
-
+    
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-
-      labels.push(
-        date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
-      );
-
+      
+      labels.push(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      
       // Get invoices for this month
       const { data: invoices } = await supabase
         .schema("stripe_tables")
@@ -547,15 +500,11 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
         .gte("created", monthStart.toISOString())
         .lte("created", monthEnd.toISOString());
 
-      const invoiceRevenue =
-        invoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
-      const paymentRevenue =
-        payments
-          ?.filter((pi) => {
-            const attrs = pi.attrs as any;
-            return attrs?.status === "succeeded" && !attrs?.refunded;
-          })
-          .reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
+      const invoiceRevenue = invoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+      const paymentRevenue = payments?.filter(pi => {
+        const attrs = pi.attrs as any;
+        return attrs?.status === "succeeded" && !attrs?.refunded;
+      }).reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
 
       data.push((invoiceRevenue + paymentRevenue) / 100);
     }
@@ -565,4 +514,4 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
     console.error("Error fetching monthly revenue trend:", error);
     return { labels: [], data: [] };
   }
-}
+} 
