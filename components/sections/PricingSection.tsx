@@ -1086,11 +1086,11 @@ const ChordWeb = React.memo(() => {
     // Add event listener with passive flag for performance
     canvas.addEventListener("click", handleCanvasClick, { passive: true });
 
+    // Capture the current timeoutIds value at effect level
+    const currentTimeoutIds = timeoutIds.current;
+
     // Clean up when component unmounts
     return () => {
-      // Capture the current timeoutIds value
-      const currentTimeoutIds = timeoutIds.current;
-
       // Clean up all timeouts
       Object.values(currentTimeoutIds).forEach((id) => clearTimeout(id));
 
