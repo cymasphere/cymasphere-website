@@ -52,6 +52,20 @@ export async function fetchProfile(
   return { profile, error };
 }
 
+export async function fetchIsAdmin(
+  id: string
+): Promise<{ is_admin: boolean; error: PostgrestError | null }> {
+  const supabase = await createSupabaseServer();
+
+  const { data, error } = await supabase
+    .from("admins")
+    .select()
+    .eq("user", id)
+    .single();
+
+  return { is_admin: !!data, error };
+}
+
 /**
  * Updates a user's subscription status by checking the Stripe tables in Supabase
  *

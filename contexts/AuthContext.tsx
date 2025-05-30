@@ -10,6 +10,7 @@ import {
 } from "@supabase/supabase-js";
 import { Profile, UserProfile } from "@/utils/supabase/types";
 import {
+  fetchIsAdmin,
   fetchProfile,
   signUpWithStripe,
   updateStripe,
@@ -60,6 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const { is_admin, error: adminError } = await fetchIsAdmin(
+          session.user.id
+        );
+        if (adminError) {
+          console.log(JSON.stringify(adminError));
+          return;
+        }
+
         if (profile) {
           // Check Stripe subscription status
           const { success, profile: updatedProfile } = await updateStripe(
@@ -68,9 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
 
           if (success && updatedProfile) {
-            setUser({ ...session.user, profile: updatedProfile });
+            setUser({
+              ...session.user,
+              profile: updatedProfile,
+              is_admin,
+            });
           } else if (profile) {
-            setUser({ ...session.user, profile });
+            setUser({ ...session.user, profile, is_admin });
           }
         }
       } catch (error) {
@@ -93,9 +106,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session_user) {
           console.log("auth state changed");
           const { profile, error } = await fetchProfile(session_user.id);
+          const { is_admin, error: adminError } = await fetchIsAdmin(
+            session_user.id
+          );
           if (error) console.log(JSON.stringify(error));
+          if (adminError) console.log(JSON.stringify(adminError));
           if (profile) {
-            setUser({ ...session_user, profile });
+            setUser({ ...session_user, profile, is_admin });
 
             // Check Stripe subscription status
             try {
@@ -104,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 profile
               );
               if (success && updatedProfile) {
-                setUser({ ...session_user, profile: updatedProfile });
+                setUser({ ...session_user, profile: updatedProfile, is_admin });
               }
             } catch (stripeError) {
               console.error("Error updating Stripe data:", stripeError);
