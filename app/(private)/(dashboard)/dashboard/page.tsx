@@ -353,7 +353,7 @@ function DashboardPage() {
   });
   const [isContactSubmitting, setIsContactSubmitting] = useState(false);
   const [deviceCount, setDeviceCount] = useState(0);
-  const [maxDevices, setMaxDevices] = useState(5);
+  const [maxDevices, setMaxDevices] = useState(3);
   const [isLoadingDevices, setIsLoadingDevices] = useState(true);
 
   // State for prices

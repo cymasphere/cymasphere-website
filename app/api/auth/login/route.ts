@@ -131,7 +131,7 @@ export async function POST(
         console.log("deviceCount", deviceCount);
 
         // If device count exceeds limit, sign out and return error
-        if (deviceCount > 5) {
+        if (deviceCount > 3) {
           await supabase.auth.signOut();
           return err(
             "maximum_devices",

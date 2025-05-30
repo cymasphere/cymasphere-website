@@ -620,11 +620,11 @@ function Settings() {
             <DeviceLimit>
               {t("dashboard.settings.devicesInfo", "You're using {{current}} of {{max}} allowed devices", {
                 current: activeDevices.length,
-                max: 5
+                max: 3
               })}
             </DeviceLimit>
-            <DeviceCounter warning={activeDevices.length >= 5}>
-              {activeDevices.length} / 5
+            <DeviceCounter warning={activeDevices.length >= 3}>
+              {activeDevices.length} / 3
             </DeviceCounter>
           </DeviceCount>
 
