@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 // Import translations directly to avoid hook ordering issues
@@ -63,22 +63,41 @@ const getTranslation = (key: string): string => {
   return fallbacks[key] || key;
 };
 
-// Animation variants
+// Animation variants - optimized for mobile performance
 const fadeIn = {
   hidden: {
     opacity: 0,
+    y: -20,
     transition: {
-      duration: 0.3,
-      ease: "easeInOut",
+      duration: 0.2,
+      ease: "easeOut",
     },
   },
   visible: {
     opacity: 1,
+    y: 0,
     transition: {
-      duration: 0.3,
-      ease: "easeInOut",
+      duration: 0.25,
+      ease: "easeOut",
     },
   },
+};
+
+// Simplified menu item variants for better performance
+const menuItemVariants = {
+  hidden: {
+    opacity: 0,
+    x: -20,
+  },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: i * 0.05, // Reduced delay for faster animation
+      duration: 0.2,   // Shorter duration
+      ease: "easeOut",
+    },
+  }),
 };
 
 const HeaderContainer = styled.header<{
@@ -254,7 +273,7 @@ const MenuToggle = styled.div`
   }
 `;
 
-const MobileMenu = styled(motion.div)<{ $isOpen: boolean }>`
+const MobileMenu = styled(motion.div)`
   display: flex;
   position: fixed;
   top: 70px;
@@ -263,37 +282,27 @@ const MobileMenu = styled(motion.div)<{ $isOpen: boolean }>`
   height: calc(100vh - 70px);
   padding-top: 10px;
   box-sizing: border-box;
-  background: linear-gradient(
-    165deg,
-    rgba(15, 14, 23, 0.98) 0%,
-    rgba(27, 25, 40, 0.98) 50%,
-    rgba(35, 32, 52, 0.98) 100%
-  );
-  backdrop-filter: blur(10px);
+  background: rgba(15, 14, 23, 0.95);
   z-index: 999;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  pointer-events: ${(props) => (props.$isOpen ? "auto" : "none")};
-  overflow-y: auto;
+  overflow: hidden;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0); /* Force hardware acceleration */
 
   &::before {
     content: "";
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: radial-gradient(
-        circle at 30% 50%,
-        rgba(108, 99, 255, 0.15),
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 70% 30%,
-        rgba(78, 205, 196, 0.15),
-        transparent 50%
-      );
+      circle at 50% 50%,
+      rgba(108, 99, 255, 0.1),
+      transparent 70%
+    );
     z-index: 0;
     pointer-events: none;
   }
@@ -313,6 +322,8 @@ const MobileMenuContent = styled(motion.div)`
   z-index: 1;
   padding: 20px 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: transform;
 `;
 
 const MobileNavTitle = styled.h2`
@@ -354,37 +365,30 @@ const MobileNavLink = styled(motion.a)<{ $isActive?: boolean }>`
   width: 85%;
   box-sizing: border-box;
   border-radius: 12px;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+  will-change: transform;
+  transform: translate3d(0, 0, 0); /* Force hardware acceleration */
 
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
     color: var(--primary);
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
   }
 
   &:hover {
     color: var(--primary);
-    background: linear-gradient(
-      120deg,
-      rgba(108, 99, 255, 0.1) 0%,
-      rgba(108, 99, 255, 0.05) 100%
-    );
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background: rgba(108, 99, 255, 0.08);
+    transform: translate3d(0, -1px, 0);
 
     svg {
-      transform: scale(1.1);
+      transform: scale(1.05);
     }
   }
 
   &:active {
-    transform: translateY(0px);
+    transform: translate3d(0, 0, 0);
   }
 `;
 
@@ -583,26 +587,6 @@ const UserMenuLogout = styled.button`
     height: 16px;
   }
 `;
-
-// Add animation variants for menu items
-const menuItemVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    transition: {
-      duration: 0.3,
-    },
-  },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.3,
-      ease: "easeOut",
-    },
-  }),
-};
 
 const NextHeader = () => {
   const router = useRouter();
@@ -833,119 +817,124 @@ const NextHeader = () => {
         </HeaderContent>
       </HeaderContainer>
 
-      <MobileMenu
-        $isOpen={menuOpen}
-        initial="hidden"
-        animate={menuOpen ? "visible" : "hidden"}
-        variants={fadeIn}
-      >
-        <MobileMenuContent>
-          <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
-          <MobileNavLinks>
-            {navItems.map((item, index) => (
-              <Link key={item.name} href={item.path} passHref legacyBehavior>
-                <MobileNavLink
-                  $isActive={pathname === item.path}
-                  onClick={() => setMenuOpen(false)}
-                  variants={menuItemVariants}
-                  custom={index}
-                  initial="hidden"
-                  animate={menuOpen ? "visible" : "hidden"}
-                >
-                  {item.path === "/#features" && <FaPuzzlePiece />}
-                  {item.path === "/#how-it-works" && <FaRegLightbulb />}
-                  {item.path === "/#pricing" && <FaRegCreditCard />}
-                  {item.path === "/#faq" && <FaQuestionCircle />}
-                  {item.name}
-                </MobileNavLink>
-              </Link>
-            ))}
+      <AnimatePresence mode="wait">
+        {menuOpen && (
+          <MobileMenu
+            key="mobile-menu"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={fadeIn}
+          >
+            <MobileMenuContent>
+              <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
+              <MobileNavLinks>
+                {navItems.map((item, index) => (
+                  <Link key={item.name} href={item.path} passHref legacyBehavior>
+                    <MobileNavLink
+                      $isActive={pathname === item.path}
+                      onClick={() => setMenuOpen(false)}
+                      variants={menuItemVariants}
+                      custom={index}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      {item.path === "/#features" && <FaPuzzlePiece />}
+                      {item.path === "/#how-it-works" && <FaRegLightbulb />}
+                      {item.path === "/#pricing" && <FaRegCreditCard />}
+                      {item.path === "/#faq" && <FaQuestionCircle />}
+                      {item.name}
+                    </MobileNavLink>
+                  </Link>
+                ))}
 
-            {user && (
-              <MobileUserSection>
-                <Link href="/dashboard" passHref legacyBehavior>
-                  <MobileNavLink
+                {user && (
+                  <MobileUserSection>
+                    <Link href="/dashboard" passHref legacyBehavior>
+                      <MobileNavLink
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setMenuOpen(false);
+                          router.push("/dashboard");
+                        }}
+                        variants={menuItemVariants}
+                        custom={navItems.length}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        <FaUser />
+                        {getTranslation("common.myAccount")}
+                      </MobileNavLink>
+                    </Link>
+                    <Link href="/admin" passHref legacyBehavior>
+                    <MobileNavLink
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setMenuOpen(false);
+                          router.push("/admin");
+                      }}
+                      variants={menuItemVariants}
+                      custom={navItems.length + 1}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        <FaShieldAlt />
+                        {getTranslation("common.adminConsole")}
+                      </MobileNavLink>
+                    </Link>
+                    <MobileNavLink
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLogout(e);
+                        setMenuOpen(false);
+                      }}
+                      variants={menuItemVariants}
+                      custom={navItems.length + 2}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <FaSignOutAlt />
+                      {getTranslation("common.logout")}
+                    </MobileNavLink>
+                  </MobileUserSection>
+                )}
+              </MobileNavLinks>
+
+              {!user && (
+                <MobileAuthSection>
+                  <AuthButton
+                    $isPrimary
+                    $isMobile
                     onClick={(e) => {
                       e.preventDefault();
                       setMenuOpen(false);
-                      router.push("/dashboard");
+                      handleLoginClick(e);
                     }}
-                    variants={menuItemVariants}
-                    custom={navItems.length}
-                    initial="hidden"
-                    animate={menuOpen ? "visible" : "hidden"}
                   >
-                    <FaUser />
-                    {getTranslation("common.myAccount")}
-                  </MobileNavLink>
-                </Link>
-                <Link href="/admin" passHref legacyBehavior>
-                <MobileNavLink
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMenuOpen(false);
-                      router.push("/admin");
-                  }}
-                  variants={menuItemVariants}
-                  custom={navItems.length + 1}
-                    initial="hidden"
-                    animate={menuOpen ? "visible" : "hidden"}
+                    {getTranslation("common.login")}
+                  </AuthButton>
+                  <AuthButton
+                    $isMobile
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      handleSignupClick(e);
+                    }}
                   >
-                    <FaShieldAlt />
-                    {getTranslation("common.adminConsole")}
-                  </MobileNavLink>
-                </Link>
-                <MobileNavLink
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleLogout(e);
-                    setMenuOpen(false);
-                  }}
-                  variants={menuItemVariants}
-                  custom={navItems.length + 2}
-                  initial="hidden"
-                  animate={menuOpen ? "visible" : "hidden"}
-                >
-                  <FaSignOutAlt />
-                  {getTranslation("common.logout")}
-                </MobileNavLink>
-              </MobileUserSection>
-            )}
-          </MobileNavLinks>
+                    {getTranslation("common.signUp")}
+                  </AuthButton>
+                </MobileAuthSection>
+              )}
+            </MobileMenuContent>
 
-          {!user && (
-            <MobileAuthSection>
-              <AuthButton
-                $isPrimary
-                $isMobile
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(false);
-                  handleLoginClick(e);
-                }}
-              >
-                {getTranslation("common.login")}
-              </AuthButton>
-              <AuthButton
-                $isMobile
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(false);
-                  handleSignupClick(e);
-                }}
-              >
-                {getTranslation("common.signUp")}
-              </AuthButton>
-            </MobileAuthSection>
-          )}
-        </MobileMenuContent>
-
-        <MobileFooter>
-          <div className="language-selector">
-            <NextLanguageSelector />
-          </div>
-        </MobileFooter>
-      </MobileMenu>
+            <MobileFooter>
+              <div className="language-selector">
+                <NextLanguageSelector />
+              </div>
+            </MobileFooter>
+          </MobileMenu>
+        )}
+      </AnimatePresence>
 
       <Overlay $isVisible={menuOpen} onClick={() => setMenuOpen(false)} />
     </>
@@ -953,3 +942,4 @@ const NextHeader = () => {
 };
 
 export default NextHeader;
+
