@@ -225,8 +225,11 @@ const PianoRoll: React.FC<PianoRollProps> = ({
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (playbackRef.current) {
-        clearInterval(playbackRef.current);
+      // Capture the current playbackRef value
+      const currentPlayback = playbackRef.current;
+
+      if (currentPlayback) {
+        clearInterval(currentPlayback);
       }
     };
   }, []);

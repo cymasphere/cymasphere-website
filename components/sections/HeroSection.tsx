@@ -287,7 +287,7 @@ const HeroSection = () => {
     }, 100); // Short timeout to ensure DOM is ready
 
     return () => clearTimeout(timeoutId);
-  }, [titleWords, isMobile]);
+  }, [titleWords, isMobile, currentWordIndex]);
 
   // Update center word width whenever the currentWordIndex changes
   useEffect(() => {
@@ -403,7 +403,6 @@ const HeroSection = () => {
     | "softClipper"
     | "masterVolume";
 
-  const [audioContextStarted, setAudioContextStarted] = useState(false);
   const effectsChain = useEffectsChain();
   const synthRef = useRef<DisposableSynth>(null);
 
@@ -455,7 +454,6 @@ const HeroSection = () => {
         // Initialize audio context if needed
         if (Tone.context.state !== "running") {
           await Tone.start();
-          setAudioContextStarted(true);
         }
 
         // Create a new synth using the same approach as Try Me section
@@ -570,7 +568,6 @@ const HeroSection = () => {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {
         await Tone.start();
-        setAudioContextStarted(true);
       }
 
       // Add octave information to the note if it doesn't have one
@@ -615,7 +612,6 @@ const HeroSection = () => {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {
         await Tone.start();
-        setAudioContextStarted(true);
       }
 
       // Get the current chord's notes
@@ -687,7 +683,7 @@ const HeroSection = () => {
     } catch (error) {
       console.error("Error playing chord:", error);
     }
-  }, [chordProgression, currentChordIndex, setAudioContextStarted, synthRef]);
+  }, [chordProgression, currentChordIndex, synthRef]);
 
   // Turn moveToNextChord into a useCallback
   const moveToNextChord = useCallback((): void => {
@@ -829,13 +825,7 @@ const HeroSection = () => {
       positions: newPositions,
       index: nextChordIndex,
     });
-  }, [
-    currentChordIndex,
-    chordProgression,
-    initialPositions,
-    displayedChord,
-    playChord,
-  ]);
+  }, [currentChordIndex, chordProgression, initialPositions, displayedChord]);
 
   // Change chord every 4 seconds
   useEffect(() => {
@@ -1070,17 +1060,10 @@ const HeroSection = () => {
     titleWords,
     currentWordIndex,
     t,
-    audioContextStarted,
-    playChord,
-    synthRef,
     wordMeasureRef,
     centerWordWidth,
     isMobile,
     getWordColor,
-    displayedChord,
-    previousChord,
-    transitioning,
-    positionAnimationOffsets,
   ]);
 
   // Render the voice leading lines during transitions
