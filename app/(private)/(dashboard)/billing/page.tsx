@@ -857,6 +857,11 @@ export default function BillingPage() {
     setSelectedBillingPeriod(period);
   };
 
+  // Wrapper function to handle the string parameter from PlanSelectionModal
+  const handleIntervalChange = (interval: string) => {
+    handleBillingPeriodChange(interval as SubscriptionType);
+  };
+
   const handleCardToggleChange = (newValue: boolean) => {
     setWillProvideCard(newValue);
   };
@@ -1152,7 +1157,7 @@ export default function BillingPage() {
             isOpen={showPlanModal}
             onClose={() => setShowPlanModal(false)}
             profile={userSubscription}
-            onIntervalChange={handleBillingPeriodChange}
+            onIntervalChange={handleIntervalChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
             planName="Cymasphere Pro"
