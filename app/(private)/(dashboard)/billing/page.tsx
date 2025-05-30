@@ -939,24 +939,6 @@ export default function BillingPage() {
       >
         <CardTitle>
           <FaCrown /> {t("dashboard.billing.currentPlan", "Current Plan")}
-          {userSubscription.subscription !== "none" && (
-            <Button
-              onClick={handleManageBilling}
-              style={{
-                marginLeft: "auto",
-                fontSize: "0.9rem",
-                padding: "0.5rem 1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              {t("dashboard.billing.manageBilling", "Manage Billing")} {" "}
-              <FaExternalLinkAlt
-                style={{ color: "white", fontSize: "0.8rem" }}
-              />
-            </Button>
-          )}
         </CardTitle>
         <CardContent>
           <PlanDetails>
@@ -1057,6 +1039,9 @@ export default function BillingPage() {
             <></>
           ) : (
             <div style={{ display: "flex", gap: "1rem" }}>
+              <Button onClick={handleManageBilling}>
+                {t("dashboard.billing.manageBilling", "Manage Billing")}
+              </Button>
               {/* Show change plan only for non-lifetime subscriptions */}
               {!isSubscriptionLifetime(userSubscription.subscription) && (
                 <Button
