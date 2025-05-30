@@ -540,7 +540,11 @@
       "yourName": "您的姓名",
       "yourEmail": "您的邮箱",
       "message": "您的消息",
-      "sending": "发送中..."
+      "sending": "发送中...",
+      "product": "产品",
+      "downloads": "下载",
+      "standaloneAndPlugins": "独立应用和插件",
+      "subscribeForAccess": "订阅以获取访问权限"
     },
     "profile": {
       "title": "我的资料",

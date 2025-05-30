@@ -554,7 +554,20 @@
       "yourName": "Your Name",
       "yourEmail": "Your Email",
       "message": "Your Message",
-      "sending": "Sending..."
+      "sending": "Sending...",
+      "downloads": "Downloads",
+      "downloadIntro": "Access your software downloads and installation files.",
+      "downloadAvailable": "Download the latest version of Cymasphere and get started with your music production.",
+      "downloadRequiresSubscription": "Subscribe to access software downloads and premium features.",
+      "goToDownloads": "Go to Downloads",
+      "viewDownloads": "View Downloads",
+      "available": "Available",
+      "restricted": "Restricted",
+      "downloadReady": "Software downloads ready",
+      "subscribeForDownloads": "Subscribe to access downloads",
+      "product": "Product",
+      "standaloneAndPlugins": "Standalone App and Plugins",
+      "subscribeForAccess": "Subscribe for access"
     },
     "profile": {
       "title": "My Profile",

@@ -11,6 +11,7 @@ import {
   FaLaptop,
   FaExclamationTriangle,
   FaInfoCircle,
+  FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { capitalize } from "@/utils/stringUtils";
@@ -636,6 +637,26 @@ function DashboardPage() {
               : user.profile.subscription === "lifetime"
               ? t("dashboard.main.lifetimeAccess", "Includes free updates for life")
               : t("dashboard.main.upgradeToPro", "Upgrade to access premium features")}
+          </StatDescription>
+        </StatCard>
+
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+          onClick={navigateToDownloads}
+        >
+          <StatHeader>
+            <StatTitle>{t("dashboard.main.product", "Product")}</StatTitle>
+            <StatIcon color="linear-gradient(90deg, #9C27B0, #E91E63)">
+              <FaDownload />
+            </StatIcon>
+          </StatHeader>
+          <StatValue>
+            {t("dashboard.main.downloads", "Downloads")}
+          </StatValue>
+          <StatDescription>
+            {user.profile.subscription !== "none"
+              ? t("dashboard.main.standaloneAndPlugins", "Standalone App and Plugins")
+              : t("dashboard.main.subscribeForAccess", "Subscribe for access")}
           </StatDescription>
         </StatCard>
 

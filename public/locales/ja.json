@@ -621,7 +621,11 @@
       "yourName": "お名前",
       "yourEmail": "メールアドレス",
       "message": "メッセージ",
-      "sending": "送信中..."
+      "sending": "送信中...",
+      "product": "製品",
+      "downloads": "ダウンロード",
+      "standaloneAndPlugins": "スタンドアロンアプリとプラグイン",
+      "subscribeForAccess": "アクセスするには購読してください"
     },
     "profile": {
       "title": "マイプロフィール",
@@ -772,7 +776,11 @@
       "yourName": "お名前",
       "yourEmail": "メールアドレス",
       "message": "メッセージ",
-      "sending": "送信中..."
+      "sending": "送信中...",
+      "product": "製品",
+      "downloads": "ダウンロード",
+      "standaloneAndPlugins": "スタンドアロンアプリとプラグイン",
+      "subscribeForAccess": "アクセスするには購読してください"
     },
     "profile": {
       "title": "マイプロフィール",

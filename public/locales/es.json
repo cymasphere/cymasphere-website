@@ -620,7 +620,11 @@
       "yourName": "Tu Nombre",
       "yourEmail": "Tu Email",
       "message": "Tu Mensaje",
-      "sending": "Enviando..."
+      "sending": "Enviando...",
+      "product": "Producto",
+      "downloads": "Descargas",
+      "standaloneAndPlugins": "Aplicación Independiente y Plugins",
+      "subscribeForAccess": "Suscríbete para acceder"
     },
     "profile": {
       "title": "Mi Perfil",

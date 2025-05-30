@@ -623,7 +623,11 @@
       "yourName": "Il tuo nome",
       "yourEmail": "La tua email",
       "message": "Il tuo messaggio",
-      "sending": "Invio..."
+      "sending": "Invio...",
+      "product": "Prodotto",
+      "downloads": "Download",
+      "standaloneAndPlugins": "App Standalone e Plugin",
+      "subscribeForAccess": "Abbonati per accedere"
     },
     "profile": {
       "title": "Il mio profilo",
@@ -983,5 +987,10 @@
     "enterEmail": "Inserisci il tuo indirizzo email per iniziare la tua prova gratuita di {{days}} giorni {{requirement}}.",
     "cardRequired": "(carta di credito richiesta)",
     "noCardRequired": "(nessuna carta di credito richiesta)"
-  }
+  },
+  "sending": "Invio...",
+  "product": "Prodotto",
+  "downloads": "Download",
+  "standaloneAndPlugins": "App Standalone e Plugin",
+  "subscribeForAccess": "Abbonati per accedere"
 } 

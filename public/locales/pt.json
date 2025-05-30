@@ -510,7 +510,11 @@
       "yourName": "Seu nome",
       "yourEmail": "Seu email",
       "message": "Sua mensagem",
-      "sending": "Enviando..."
+      "sending": "Enviando...",
+      "product": "Produto",
+      "downloads": "Downloads",
+      "standaloneAndPlugins": "App Standalone e Plugins",
+      "subscribeForAccess": "Assine para acessar"
     },
     "profile": {
       "title": "Meu perfil",

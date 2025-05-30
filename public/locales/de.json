@@ -618,7 +618,11 @@
       "yourName": "Ihr Name",
       "yourEmail": "Ihre E-Mail",
       "message": "Ihre Nachricht",
-      "sending": "Wird gesendet..."
+      "sending": "Wird gesendet...",
+      "product": "Produkt",
+      "downloads": "Downloads",
+      "standaloneAndPlugins": "Eigenständige App und Plugins",
+      "subscribeForAccess": "Abonnieren für Zugang"
     },
     "profile": {
       "title": "Mein Profil",

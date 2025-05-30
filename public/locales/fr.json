@@ -621,7 +621,11 @@
       "yourName": "Votre Nom",
       "yourEmail": "Votre Email",
       "message": "Votre Message",
-      "sending": "Envoi en cours..."
+      "sending": "Envoi en cours...",
+      "product": "Produit",
+      "downloads": "Téléchargements",
+      "standaloneAndPlugins": "Application Autonome et Plugins",
+      "subscribeForAccess": "S'abonner pour accéder"
     },
     "profile": {
       "title": "Mon profil",
