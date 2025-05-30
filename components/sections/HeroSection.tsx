@@ -278,28 +278,26 @@ const HeroSection = () => {
         // Clean up
         document.body.removeChild(tempDiv);
         setWordWidths(widths);
-
+        
         // Also update the current center word width
         setCenterWordWidth(widths[currentWordIndex] || 120);
-
+        
         console.log("Measured widths:", widths);
       }
     }, 100); // Short timeout to ensure DOM is ready
-
+    
     return () => clearTimeout(timeoutId);
   }, [titleWords, isMobile]);
 
   // Update center word width whenever the currentWordIndex changes
   useEffect(() => {
     if (typeof window === "undefined") return;
-
+    
     // If we have measured widths, use them
     if (wordWidths && Object.keys(wordWidths).length > 0) {
       const newWidth = wordWidths[currentWordIndex] || 120;
       setCenterWordWidth(newWidth);
-      console.log(
-        `Updated center word width for "${titleWords[currentWordIndex]}" to ${newWidth}px`
-      );
+      console.log(`Updated center word width for "${titleWords[currentWordIndex]}" to ${newWidth}px`);
     }
     // Also update from the DOM if possible (as a fallback)
     else if (centerWordRef.current) {
@@ -696,111 +694,88 @@ const HeroSection = () => {
       console.log("Skipping chord change - transition already in progress");
       return;
     }
-
+    
     // Get the next chord from the progression
     const nextChordIndex = (currentChordIndex + 1) % chordProgression.length;
-    console.log(
-      `Moving to next chord: ${nextChordIndex} (${chordProgression[nextChordIndex].name})`
-    );
+    console.log(`Moving to next chord: ${nextChordIndex} (${chordProgression[nextChordIndex].name})`);
 
     // Get current and next chord notes
     const currentNotes = chordProgression[currentChordIndex].notes;
     const nextNotes = chordProgression[nextChordIndex].notes;
-
+    
     // Create a new array for the next positions based on voice leading principles
     const newPositions = [...initialPositions];
-
+    
     // Map current displayed notes to their positions
     const currentNotePositions = displayedChord.notes.map((note, index) => ({
       note,
-      position: displayedChord.positions[index],
+      position: displayedChord.positions[index]
     }));
-
+    
     // Create a map to track which notes from the next chord have been assigned
     const assignedNextNotes = new Set<string>();
-
+    
     // Create the voice-led notes array, starting with the current note positions
     const voiceLeadingNotes: string[] = [];
-
+    
     // For each current note position, find the best voice leading note from the next chord
     currentNotePositions.forEach(({ note: currentNote }) => {
       // First, check if the same note exists in the next chord (common tone)
-      if (
-        nextNotes.includes(currentNote) &&
-        !assignedNextNotes.has(currentNote)
-      ) {
+      if (nextNotes.includes(currentNote) && !assignedNextNotes.has(currentNote)) {
         // Common tone voice leading - reuse the same note
         voiceLeadingNotes.push(currentNote);
         assignedNextNotes.add(currentNote);
       } else {
         // Find the closest note in the next chord
         // This is a simple implementation - for real voice leading we'd consider semitone distances
-
+        
         const noteIndex = {
-          C: 0,
-          "C#": 1,
-          Db: 1,
-          D: 2,
-          "D#": 3,
-          Eb: 3,
-          E: 4,
-          F: 5,
-          "F#": 6,
-          Gb: 6,
-          G: 7,
-          "G#": 8,
-          Ab: 8,
-          A: 9,
-          "A#": 10,
-          Bb: 10,
-          B: 11,
+          'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 
+          'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 
+          'A#': 10, 'Bb': 10, 'B': 11
         };
-
+        
         // Get the chromatic index of the current note
-        const currentNoteIndex =
-          noteIndex[currentNote as keyof typeof noteIndex] || 0;
-
+        const currentNoteIndex = noteIndex[currentNote as keyof typeof noteIndex] || 0;
+        
         // Find the unassigned note from the next chord with the closest distance
-        let closestNote = "";
+        let closestNote = '';
         let smallestDistance = 12; // Maximum semitone distance in an octave
-
+        
         for (const nextNote of nextNotes) {
           if (!assignedNextNotes.has(nextNote)) {
-            const nextNoteIndex =
-              noteIndex[nextNote as keyof typeof noteIndex] || 0;
-
+            const nextNoteIndex = noteIndex[nextNote as keyof typeof noteIndex] || 0;
+            
             // Calculate semitone distance (considering octave wrapping)
             let distance = Math.abs(nextNoteIndex - currentNoteIndex);
             if (distance > 6) distance = 12 - distance; // Consider the shorter path around the circle
-
+            
             if (distance < smallestDistance) {
               smallestDistance = distance;
               closestNote = nextNote;
             }
           }
         }
-
+        
         if (closestNote) {
           voiceLeadingNotes.push(closestNote);
           assignedNextNotes.add(closestNote);
         }
       }
     });
-
+    
     // If there are any unassigned notes from the next chord, add them
-    nextNotes.forEach((note) => {
+    nextNotes.forEach(note => {
       if (!assignedNextNotes.has(note)) {
         voiceLeadingNotes.push(note);
         assignedNextNotes.add(note);
       }
     });
-
+    
     // Ensure we have the same number of notes (should always be true for triads)
     while (voiceLeadingNotes.length < 3) {
       // Find any unused notes from the next chord
-      const unusedNote = nextNotes.find(
-        (note) => !voiceLeadingNotes.includes(note)
-      );
+      const unusedNote = nextNotes.find(note => !voiceLeadingNotes.includes(note));
       if (unusedNote) {
         voiceLeadingNotes.push(unusedNote);
       } else {
@@ -808,12 +783,8 @@ const HeroSection = () => {
         voiceLeadingNotes.push(nextNotes[0]);
       }
     }
-
-    console.log(
-      `Voice leading from ${currentNotes.join(",")} to ${voiceLeadingNotes.join(
-        ","
-      )}`
-    );
+    
+    console.log(`Voice leading from ${currentNotes.join(',')} to ${voiceLeadingNotes.join(',')}`);
 
     // Set up the transition
     setPreviousChord(displayedChord);
@@ -840,7 +811,7 @@ const HeroSection = () => {
   // Change chord every 4 seconds
   useEffect(() => {
     console.log("Setting up chord cycling interval");
-
+    
     const intervalId = setInterval(() => {
       console.log("Interval triggered - moving to next chord");
       moveToNextChord();
@@ -1038,10 +1009,7 @@ const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.2 }}
         >
-          {t(
-            "hero.subtitle",
-            "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision."
-          )}
+          {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
         </HeroSubtitle>
 
         <ButtonGroup
@@ -1078,9 +1046,9 @@ const HeroSection = () => {
     isMobile,
     getWordColor,
     displayedChord,
-    previousChord,
+    previousChord, 
     transitioning,
-    positionAnimationOffsets,
+    positionAnimationOffsets
   ]);
 
   // Render the voice leading lines during transitions
@@ -1091,16 +1059,14 @@ const HeroSection = () => {
 
     // Create lines between notes that are moving
     const lines = [];
-
+    
     // Iterate through the notes in previous chord
     for (let i = 0; i < previousChord.notes.length; i++) {
       const prevNote = previousChord.notes[i];
       const prevPos = previousChord.positions[i] || { top: "15%", left: "10%" };
-      const currPos = displayedChord.positions[i] || {
-        top: "15%",
-        left: "10%",
-      };
-
+      const currNote = displayedChord.notes[i] || "";
+      const currPos = displayedChord.positions[i] || { top: "15%", left: "10%" };
+      
       // Calculate start position
       const startX = prevPos.left
         ? (parseInt(prevPos.left.replace("%", "")) * windowWidth) / 100 + 30
@@ -1108,14 +1074,14 @@ const HeroSection = () => {
           (parseInt((prevPos.right || "0").replace("%", "")) * windowWidth) /
             100 -
           30;
-
+      
       const startY = prevPos.top
         ? (parseInt(prevPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -
           (parseInt((prevPos.bottom || "0").replace("%", "")) * windowHeight) /
             100 -
           30;
-
+          
       // Calculate end position
       const endX = currPos.left
         ? (parseInt(currPos.left.replace("%", "")) * windowWidth) / 100 + 30
@@ -1123,7 +1089,7 @@ const HeroSection = () => {
           (parseInt((currPos.right || "0").replace("%", "")) * windowWidth) /
             100 -
           30;
-
+          
       const endY = currPos.top
         ? (parseInt(currPos.top.replace("%", "")) * windowHeight) / 100 + 30
         : windowHeight -

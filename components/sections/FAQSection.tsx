@@ -4,18 +4,18 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import {
-  FaMusic,
-  FaQuestion,
-  FaPuzzlePiece,
-  FaSlidersH,
-  FaPlug,
-  FaPalette,
-  FaWaveSquare,
-  FaLayerGroup,
-  FaSyncAlt,
-  FaUserGraduate,
-  FaBook,
+import { 
+  FaMusic, 
+  FaQuestion, 
+  FaPuzzlePiece, 
+  FaSlidersH, 
+  FaPlug, 
+  FaPalette, 
+  FaWaveSquare, 
+  FaLayerGroup, 
+  FaSyncAlt, 
+  FaUserGraduate, 
+  FaBook 
 } from "react-icons/fa";
 
 const FAQContainer = styled.section`
@@ -78,7 +78,7 @@ const Question = styled.h3`
   flex: 1;
   display: flex;
   align-items: center;
-
+  
   svg {
     margin-right: 12px;
     color: var(--primary);
@@ -91,11 +91,9 @@ interface ToggleButtonProps {
   isOpen?: boolean;
 }
 
-const ToggleButton = styled(
-  ({ ...props }: ToggleButtonProps & React.HTMLAttributes<HTMLSpanElement>) => (
-    <span {...props} />
-  )
-)`
+const ToggleButton = styled(({ isOpen, ...props }: ToggleButtonProps & React.HTMLAttributes<HTMLSpanElement>) => (
+  <span {...props} />
+))`
   color: var(--primary);
   font-size: 1.5rem;
   font-weight: bold;
@@ -146,17 +144,16 @@ const FAQSection = () => {
     <FaPuzzlePiece key="puzzle" />,
     <FaPlug key="plug" />,
     <FaUserGraduate key="graduate" />,
-    <FaBook key="book" />,
+    <FaBook key="book" />
   ];
 
   // Get questions and answers from translation files
-  const questionsData =
-    (t("faq.questions", { returnObjects: true }) as FAQItem[]) || [];
-
+  const questionsData = t("faq.questions", { returnObjects: true }) as FAQItem[] || [];
+  
   const faqItems = questionsData.map((question: FAQItem, index: number) => ({
     icon: faqIcons[index % faqIcons.length],
     question: question.question,
-    answer: question.answer,
+    answer: question.answer
   }));
 
   return (
@@ -181,9 +178,7 @@ const FAQSection = () => {
           >
             <FAQItem>
               <FAQHeader onClick={() => toggleFaq(index)}>
-                <Question>
-                  {faq.icon} {faq.question}
-                </Question>
+                <Question>{faq.icon} {faq.question}</Question>
                 <ToggleButton isOpen={expandedFaqs[index]}>+</ToggleButton>
               </FAQHeader>
 
