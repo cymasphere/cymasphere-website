@@ -467,6 +467,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
+      setSidebarOpen(false);
       await signOut("local");
       router.push("/login");
     } catch (error) {
@@ -576,6 +577,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     path: string
   ) => {
     e.preventDefault();
+    setSidebarOpen(false);
     router.push(path);
   };
 
