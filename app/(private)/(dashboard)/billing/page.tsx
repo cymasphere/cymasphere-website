@@ -1057,9 +1057,6 @@ export default function BillingPage() {
             <></>
           ) : (
             <div style={{ display: "flex", gap: "1rem" }}>
-              <Button onClick={handleManageBilling}>
-                {t("dashboard.billing.manageBilling", "Manage Billing")}
-              </Button>
               {/* Show change plan only for non-lifetime subscriptions */}
               {!isSubscriptionLifetime(userSubscription.subscription) && (
                 <Button
