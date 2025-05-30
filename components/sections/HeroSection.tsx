@@ -1341,7 +1341,7 @@ const HeroSection = () => {
         key={`chord-name-${currentChordIndex}`}
         style={{
           position: "absolute",
-          bottom: "5%",
+          bottom: isMobile ? "2%" : "5%",
           left: "0",
           right: "0",
           textAlign: "center",
