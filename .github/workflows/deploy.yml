@@ -92,15 +92,19 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Create directories if they don't exist
+          # Create directories if they don't exist with proper structure
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
 
           # Copy application files with proper directory structure
           rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
             .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
 
-          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+          # Copy public directory with all subdirectories and preserve permissions
+          rsync -avz --delete --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
             public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
+
+          # Verify public directory structure was copied correctly
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
 
           # Copy package.json and other config files
           scp package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
@@ -121,6 +125,11 @@ jobs:
           # Copy next.config.js if it exists
           if [ -f "next.config.js" ]; then
             scp next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+          fi
+
+          # Copy next.config.ts if it exists
+          if [ -f "next.config.ts" ]; then
+            scp next.config.ts $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
           fi
 
       - name: Install dependencies on server
