@@ -896,6 +896,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   onClose,
 }) => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState(0);
+  const [activeFeature, setActiveFeature] = useState<Feature | null>(null);
   const [infoVisible, setInfoVisible] = useState(true);
   const [direction, setDirection] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
@@ -908,17 +909,20 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   );
   const modalRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
-    if (
-      typeof initialIndex === "number" &&
-      initialIndex >= 0 &&
-      initialIndex < features.length
-    ) {
-      setActiveFeatureIndex(initialIndex);
+    if (initialIndex) {
+      const index = features.findIndex((f) => f.id === initialIndex);
+      if (index !== -1) {
+        setActiveFeatureIndex(index);
+      }
     }
-  }, [initialIndex, features.length]);
+  }, [initialIndex]);
+
+  useEffect(() => {
+    setActiveFeature(features[activeFeatureIndex]);
+  }, [activeFeatureIndex]);
 
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {

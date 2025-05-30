@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styled from "styled-components";
 import {
   FaBars,
@@ -17,10 +17,20 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
+// Import translations directly to avoid hook ordering issues
 import i18next from "i18next";
+
+// Dynamically import components with browser-only APIs
+const DynamicLanguageSelector = dynamic(
+  () => import("../i18n/DynamicLanguageSelector"),
+  {
+    ssr: false,
+  }
+);
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -36,20 +46,20 @@ const getTranslation = (key: string): string => {
   if (i18next.isInitialized) {
     return i18next.t(key);
   }
-
+  
   // Fallback values for common keys
   const fallbacks: Record<string, string> = {
-    "common.navigation": "Navigation",
-    "common.myAccount": "My Account",
-    "common.logout": "Logout",
-    "common.login": "Login",
-    "common.signUp": "Sign Up",
-    "header.features": "Features",
-    "header.howItWorks": "How It Works",
-    "header.pricing": "Pricing",
-    "header.faq": "FAQ",
+    'common.navigation': 'Navigation',
+    'common.myAccount': 'My Account',
+    'common.logout': 'Logout',
+    'common.login': 'Login',
+    'common.signUp': 'Sign Up',
+    'header.features': 'Features',
+    'header.howItWorks': 'How It Works',
+    'header.pricing': 'Pricing',
+    'header.faq': 'FAQ'
   };
-
+  
   return fallbacks[key] || key;
 };
 
@@ -603,6 +613,35 @@ const NextHeader = () => {
   const [activeSection, setActiveSection] = useState("");
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Track language to force re-render on language change
+  const [language, setLanguage] = useState(() => 
+    typeof window !== 'undefined' ? i18next.language : 'en'
+  );
+  
+  // Effect to listen for language changes - with proper cleanup
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      console.log(`Language changed to: ${lng}`);
+      setLanguage(lng);
+    };
+    
+    if (typeof window !== 'undefined') {
+      i18next.on('languageChanged', handleLanguageChanged);
+      return () => {
+        i18next.off('languageChanged', handleLanguageChanged);
+      };
+    }
+    return undefined;
+  }, []);
+
+  // Define nav items using the non-hook translation function
+  const navItems = useMemo(() => [
+    { name: getTranslation("header.features"), path: "/#features" },
+    { name: getTranslation("header.howItWorks"), path: "/#how-it-works" },
+    { name: getTranslation("header.pricing"), path: "/#pricing" },
+    { name: getTranslation("header.faq"), path: "/#faq" },
+  ], [language]); // Re-compute when language changes
 
   useEffect(() => {
     const handleScroll = () => {
@@ -709,9 +748,7 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>
-          {getTranslation("common.login")}
-        </AuthButton>
+        <AuthButton onClick={handleLoginClick}>{getTranslation("common.login")}</AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
           {getTranslation("common.signUp")}
         </AuthButton>
@@ -770,46 +807,18 @@ const NextHeader = () => {
           </span>
 
           <Nav>
-            <Link key="features" href="/#features" passHref legacyBehavior>
-              <NavLink
-                $isActive={
-                  pathname === "/#features" || activeSection === "features"
-                }
-              >
-                {getTranslation("header.features")}
-              </NavLink>
-            </Link>
-            <Link
-              key="how-it-works"
-              href="/#how-it-works"
-              passHref
-              legacyBehavior
-            >
-              <NavLink
-                $isActive={
-                  pathname === "/#how-it-works" ||
-                  activeSection === "how-it-works"
-                }
-              >
-                {getTranslation("header.howItWorks")}
-              </NavLink>
-            </Link>
-            <Link key="pricing" href="/#pricing" passHref legacyBehavior>
-              <NavLink
-                $isActive={
-                  pathname === "/#pricing" || activeSection === "pricing"
-                }
-              >
-                {getTranslation("header.pricing")}
-              </NavLink>
-            </Link>
-            <Link key="faq" href="/#faq" passHref legacyBehavior>
-              <NavLink
-                $isActive={pathname === "/#faq" || activeSection === "faq"}
-              >
-                {getTranslation("header.faq")}
-              </NavLink>
-            </Link>
+            {navItems.map((item) => (
+              <Link key={item.name} href={item.path} passHref legacyBehavior>
+                <NavLink
+                  $isActive={
+                    pathname === item.path ||
+                    activeSection === item.path.replace("/#", "")
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              </Link>
+            ))}
             <div className="language-selector">
               <NextLanguageSelector />
             </div>
@@ -833,63 +842,24 @@ const NextHeader = () => {
         <MobileMenuContent>
           <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
           <MobileNavLinks>
-            <Link key="features" href="/#features" passHref legacyBehavior>
-              <MobileNavLink
-                $isActive={pathname === "/#features"}
-                onClick={() => setMenuOpen(false)}
-                variants={menuItemVariants}
-                custom={0}
-                initial="hidden"
-                animate={menuOpen ? "visible" : "hidden"}
-              >
-                <FaPuzzlePiece />
-                {getTranslation("header.features")}
-              </MobileNavLink>
-            </Link>
-            <Link
-              key="how-it-works"
-              href="/#how-it-works"
-              passHref
-              legacyBehavior
-            >
-              <MobileNavLink
-                $isActive={pathname === "/#how-it-works"}
-                onClick={() => setMenuOpen(false)}
-                variants={menuItemVariants}
-                custom={1}
-                initial="hidden"
-                animate={menuOpen ? "visible" : "hidden"}
-              >
-                <FaRegLightbulb />
-                {getTranslation("header.howItWorks")}
-              </MobileNavLink>
-            </Link>
-            <Link key="pricing" href="/#pricing" passHref legacyBehavior>
-              <MobileNavLink
-                $isActive={pathname === "/#pricing"}
-                onClick={() => setMenuOpen(false)}
-                variants={menuItemVariants}
-                custom={2}
-                initial="hidden"
-                animate={menuOpen ? "visible" : "hidden"}
-              >
-                <FaRegCreditCard />
-                {getTranslation("header.pricing")}
-              </MobileNavLink>
-            </Link>
-            <Link key="faq" href="/#faq" passHref legacyBehavior>
-              <MobileNavLink
-                $isActive={pathname === "/#faq"}
-                onClick={() => setMenuOpen(false)}
-                variants={menuItemVariants}
-                custom={3}
-                initial="hidden"
-                animate={menuOpen ? "visible" : "hidden"}
-              >
-                <FaQuestionCircle />
-                {getTranslation("header.faq")}
-              </MobileNavLink>
-            </Link>
+            {navItems.map((item, index) => (
+              <Link key={item.name} href={item.path} passHref legacyBehavior>
+                <MobileNavLink
+                  $isActive={pathname === item.path}
+                  onClick={() => setMenuOpen(false)}
+                  variants={menuItemVariants}
+                  custom={index}
+                  initial="hidden"
+                  animate={menuOpen ? "visible" : "hidden"}
+                >
+                  {item.path === "/#features" && <FaPuzzlePiece />}
+                  {item.path === "/#how-it-works" && <FaRegLightbulb />}
+                  {item.path === "/#pricing" && <FaRegCreditCard />}
+                  {item.path === "/#faq" && <FaQuestionCircle />}
+                  {item.name}
+                </MobileNavLink>
+              </Link>
+            ))}
 
             {user && (
               <MobileUserSection>
@@ -901,7 +871,7 @@ const NextHeader = () => {
                       router.push("/dashboard");
                     }}
                     variants={menuItemVariants}
-                    custom={4}
+                    custom={navItems.length}
                     initial="hidden"
                     animate={menuOpen ? "visible" : "hidden"}
                   >
@@ -910,14 +880,14 @@ const NextHeader = () => {
                   </MobileNavLink>
                 </Link>
                 <Link href="/admin" passHref legacyBehavior>
-                  <MobileNavLink
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMenuOpen(false);
+                <MobileNavLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
                       router.push("/admin");
-                    }}
-                    variants={menuItemVariants}
-                    custom={5}
+                  }}
+                  variants={menuItemVariants}
+                  custom={navItems.length + 1}
                     initial="hidden"
                     animate={menuOpen ? "visible" : "hidden"}
                   >
@@ -932,7 +902,7 @@ const NextHeader = () => {
                     setMenuOpen(false);
                   }}
                   variants={menuItemVariants}
-                  custom={6}
+                  custom={navItems.length + 2}
                   initial="hidden"
                   animate={menuOpen ? "visible" : "hidden"}
                 >

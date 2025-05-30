@@ -216,6 +216,11 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
+interface SettingsState {
+  // Remove the language: string; entry
+  // If this is the only entry, make it an empty interface
+}
+
 interface ProfileState {
   deleteConfirmation: string;
 }
@@ -229,6 +234,9 @@ interface Device {
 
 function Settings() {
   const { t } = useTranslation();
+  const [settings, setSettings] = useState<SettingsState>({
+    // Remove the language: "en" entry
+  });
 
   const [profile, setProfile] = useState<ProfileState>({
     deleteConfirmation: "",
@@ -248,42 +256,6 @@ function Settings() {
   // Real session data for active devices
   const [activeDevices, setActiveDevices] = useState<Device[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-
-  // Helper function to format the last active time
-  const formatLastActive = useCallback(
-    (date: Date): string => {
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-
-      if (diffMins < 5) {
-        return t("dashboard.settings.timeNow", "Now");
-      } else if (diffMins < 60) {
-        return t("dashboard.settings.timeMinutes", "{{count}} min ago", {
-          count: diffMins,
-        });
-      } else if (diffMins < 24 * 60) {
-        const diffHours = Math.floor(diffMins / 60);
-        return t("dashboard.settings.timeHours", "{{count}} hr ago", {
-          count: diffHours,
-          hr:
-            diffHours === 1
-              ? t("dashboard.settings.hour", "hr")
-              : t("dashboard.settings.hours", "hrs"),
-        });
-      } else {
-        const diffDays = Math.floor(diffMins / (60 * 24));
-        return t("dashboard.settings.timeDays", "{{count}} day ago", {
-          count: diffDays,
-          day:
-            diffDays === 1
-              ? t("dashboard.settings.day", "day")
-              : t("dashboard.settings.days", "days"),
-        });
-      }
-    },
-    [t]
-  );
 
   // Common function to refresh sessions data
   const refreshSessionData = useCallback(async () => {
@@ -338,12 +310,55 @@ function Settings() {
     } finally {
       setIsLoadingSessions(false);
     }
-  }, [user, session, formatLastActive]);
+  }, [user, session]);
 
   // Fetch the user's active sessions
   useEffect(() => {
     refreshSessionData();
   }, [refreshSessionData]);
+
+  // Helper function to format the last active time
+  const formatLastActive = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 5) {
+      return t("dashboard.settings.timeNow", "Now");
+    } else if (diffMins < 60) {
+      return t("dashboard.settings.timeMinutes", "{{count}} min ago", {
+        count: diffMins,
+      });
+    } else if (diffMins < 24 * 60) {
+      const diffHours = Math.floor(diffMins / 60);
+      return t("dashboard.settings.timeHours", "{{count}} hr ago", {
+        count: diffHours,
+        hr:
+          diffHours === 1
+            ? t("dashboard.settings.hour", "hr")
+            : t("dashboard.settings.hours", "hrs"),
+      });
+    } else {
+      const diffDays = Math.floor(diffMins / (60 * 24));
+      return t("dashboard.settings.timeDays", "{{count}} day ago", {
+        count: diffDays,
+        day:
+          diffDays === 1
+            ? t("dashboard.settings.day", "day")
+            : t("dashboard.settings.days", "days"),
+      });
+    }
+  };
+
+  const handleSelectChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    key: keyof SettingsState
+  ) => {
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      [key]: e.target.value,
+    }));
+  };
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -800,5 +815,95 @@ function Settings() {
     </SettingsContainer>
   );
 }
+
+// Additional styled components for the new form elements
+const Form = styled.form`
+  width: 100%;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+`;
+
+const Input = styled.input`
+  width: 100%;
+  background-color: rgba(30, 30, 46, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+`;
+
+const WarningBox = styled.div`
+  background-color: rgba(255, 87, 51, 0.1);
+  border: 1px solid rgba(255, 87, 51, 0.3);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+
+  svg {
+    color: var(--danger);
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+    margin-top: 0.1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+`;
+
+const DangerButton = styled(Button)`
+  background: linear-gradient(135deg, #ff5733, #c70039);
+
+  &:hover {
+    box-shadow: 0 5px 15px rgba(255, 87, 51, 0.3);
+  }
+`;
+
+// Styled component for outline button
+const OutlineButton = styled.button`
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+  }
+`;
 
 export default Settings;
