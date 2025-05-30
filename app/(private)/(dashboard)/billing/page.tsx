@@ -85,12 +85,21 @@ const CardTitle = styled.h3`
 
 const CardContent = styled.div`
   color: var(--text-secondary);
+
+  @media (max-width: 768px) {
+    text-align: center;
+  }
 `;
 
 const PlanDetails = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    align-items: center;
+    text-align: center;
+  }
 `;
 
 const PlanName = styled.div`
@@ -173,6 +182,11 @@ const InvoiceStatus = styled.div<InvoiceStatusProps>`
   color: white;
   background-color: ${(props) =>
     props.status === "paid" ? "var(--success)" : "var(--warning)"};
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 `;
 
 const DownloadButton = styled.button`
@@ -1040,7 +1054,7 @@ export default function BillingPage() {
           {isSubscriptionNone(userSubscription.subscription) ? (
             <></>
           ) : (
-            <div style={{ display: "flex", gap: "1rem" }}>
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
               <Button onClick={handleManageBilling}>
                 {t("dashboard.billing.manageBilling", "Manage Billing")}
               </Button>
