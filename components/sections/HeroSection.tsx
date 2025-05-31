@@ -418,6 +418,7 @@ const HeroSection = () => {
 
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(true); // Start as true for immediate fade-in
+  const [videoError, setVideoError] = useState(false);
   const effectsChain = useEffectsChain();
   const synthRef = useRef<DisposableSynth>(null);
 
@@ -1423,17 +1424,37 @@ const HeroSection = () => {
 
   return (
     <HeroContainer id="home">
-      <BackgroundVideo
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="none"
-        $loaded={videoLoaded}
-      >
-        <source src="/images/hero-background.mp4" type="video/mp4" />
-        <source src="/images/hero-background.webm" type="video/webm" />
-      </BackgroundVideo>
+      {!videoError && (
+        <BackgroundVideo
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="none"
+          $loaded={videoLoaded}
+          disablePictureInPicture
+          disableRemotePlayback
+          x-webkit-airplay="deny"
+          onError={() => {
+            console.warn('Video failed to load, hiding video background');
+            setVideoError(true);
+          }}
+          onLoadStart={() => {
+            console.log('Video loading started');
+          }}
+          onCanPlay={() => {
+            console.log('Video can play');
+          }}
+          style={{ 
+            willChange: 'auto',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
+        >
+          <source src="/images/hero-background.mp4" type="video/mp4" />
+          <source src="/images/hero-background.webm" type="video/webm" />
+        </BackgroundVideo>
+      )}
       {renderContent()}
       {renderVoiceLeadingLines()}
       {renderNotes()}
