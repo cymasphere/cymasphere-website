@@ -946,6 +946,12 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex);
+      // Focus the modal container to enable keyboard navigation
+      setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.focus();
+        }
+      }, 100);
     }
   }, [initialIndex, isOpen]);
 
@@ -1077,18 +1083,33 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     }
   }, [currentIndex, isOpen, preloadNextImages]);
 
-  // Toggle debug mode with Shift + D
+  // Global keyboard event listener for modal navigation
   useEffect(() => {
-    const handleDebugToggle = (e: KeyboardEvent) => {
-      // Typed event
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      // Handle debug mode toggle
       if (e.shiftKey && e.key === "D") {
         setDebugMode((prev) => !prev);
+        return;
+      }
+
+      // Handle navigation keys
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handlePrevious();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
       }
     };
 
-    window.addEventListener("keydown", handleDebugToggle);
-    return () => window.removeEventListener("keydown", handleDebugToggle);
-  }, []);
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [isOpen, handleNext, handlePrevious, onClose]);
 
   // Reset direction after animation completes
   useEffect(() => {
