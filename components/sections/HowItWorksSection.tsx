@@ -124,17 +124,32 @@ const StepContent = styled.div`
 
 interface StepImageProps {
   src?: string;
+  srcWebp?: string;
 }
 
 const StepImage = styled(motion.div)<StepImageProps>`
   flex: 1;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   height: 240px;
-  background-size: cover;
-  background-position: center;
-  background-image: url(${(props) => props.src});
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  picture {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
 
   @media (max-width: 768px) {
     width: 100%;
@@ -297,7 +312,8 @@ const HowItWorksSection = () => {
         "howItWorks.createWorkflow.step1.description",
         "Begin with pre-crafted templates or effortlessly build your own chord progressions by dragging voicings from the Harmony palette. The app automatically analyzes scales and modes, ensuring your music follows proper theory principles."
       ),
-      image: "https://images.unsplash.com/photo-1513883049090-d0b7439799bf?q=80&w=1000",
+      image: "/images/palette_view.png",
+      imageWebp: "/images/palette_view.webp",
     },
     {
       title: t("howItWorks.createWorkflow.step2.title", "Layer Multiple Tracks"),
@@ -305,7 +321,8 @@ const HowItWorksSection = () => {
         "howItWorks.createWorkflow.step2.description",
         "Create rich compositions with multiple tracks that intelligently work together. Add harmony, melodies, and rhythms—all synchronized and harmonically compatible with your chord progression."
       ),
-      image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000",
+      image: "/images/song_view.png",
+      imageWebp: "/images/song_view.webp",
     },
     {
       title: t("howItWorks.createWorkflow.step3.title", "Customize with Precision"),
@@ -313,7 +330,8 @@ const HowItWorksSection = () => {
         "howItWorks.createWorkflow.step3.description",
         "Fine-tune your sound with detailed customization. Adjust inversions, voicing density, tension notes, and harmonic extensions to craft everything from simple triads to complex jazz harmonies."
       ),
-      image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1000",
+      image: "/images/voicing_view.png",
+      imageWebp: "/images/voicing_view.webp",
     },
     {
       title: t("howItWorks.createWorkflow.step4.title", "Intelligent Musicality"),
@@ -321,7 +339,8 @@ const HowItWorksSection = () => {
         "howItWorks.createWorkflow.step4.description",
         "Experience professional-level musicality with intelligent voice leading that ensures smooth chord transitions. Access composition tools previously available only to trained musicians, empowering you to create sophisticated harmonies with confidence."
       ),
-      image: "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1000",
+      image: "/images/advanced_voicing.png",
+      imageWebp: "/images/advanced_voicing.webp",
     },
   ];
 
@@ -333,7 +352,8 @@ const HowItWorksSection = () => {
         "howItWorks.learnWorkflow.step1.description",
         "Master chord progressions through interactive ghost tracks that guide your playing. Experiment with reharmonization in real-time, watching as the app adapts to your creative choices while maintaining musical coherence."
       ),
-      image: "https://images.unsplash.com/photo-1558968406-1598644958132?q=80&w=1000",
+      image: "/images/song_view.png",
+      imageWebp: "/images/song_view.webp",
     },
     {
       title: t("howItWorks.learnWorkflow.step2.title", "Interactive Harmonic Analysis"),
@@ -341,7 +361,8 @@ const HowItWorksSection = () => {
         "howItWorks.learnWorkflow.step2.description",
         "Explore comprehensive harmonic displays that reveal the theory behind your music. Visualize voicings, patterns, scales, and chords in real-time, gaining deep insights into the musical structure of your creations."
       ),
-      image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1000",
+      image: "/images/harmony_analysis.png",
+      imageWebp: "/images/harmony_analysis.webp",
     },
     {
       title: t("howItWorks.learnWorkflow.step3.title", "Pattern-Based Learning"),
@@ -349,7 +370,8 @@ const HowItWorksSection = () => {
         "howItWorks.learnWorkflow.step3.description",
         "Start with a simple pattern and watch it evolve as you explore different scales and chord qualities. The app's visual feedback helps you understand how each note contributes to the overall harmony, while the pattern editor lets you experiment with variations and build your musical intuition."
       ),
-      image: "https://images.unsplash.com/photo-1514119412350-e174d90d280e?q=80&w=1000",
+      image: "/images/pattern_view.png",
+      imageWebp: "/images/pattern_view.webp",
     },
     {
       title: t("howItWorks.learnWorkflow.step4.title", "Refine Your Skills"),
@@ -357,7 +379,8 @@ const HowItWorksSection = () => {
         "howItWorks.learnWorkflow.step4.description",
         "Improve your musical ear by experimenting with different chord substitutions and modal interchange. As you refine your harmonic choices, you'll develop a deeper understanding of chord qualities and progressions, naturally building both your technical skills and creative voice."
       ),
-      image: "https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=1000",
+      image: "/images/voicing_view.png",
+      imageWebp: "/images/voicing_view.webp",
     },
   ];
 
@@ -369,7 +392,8 @@ const HowItWorksSection = () => {
         "howItWorks.integrateWorkflow.step1.description",
         "Use Cymasphere as a standalone application or as a VST/AU plugin within your DAW. Whether you're sketching ideas independently or integrating directly into your production, the app adapts to your preferred workflow."
       ),
-      image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1000",
+      image: "/images/DAW.png",
+      imageWebp: "/images/DAW.webp",
     },
     {
       title: t("howItWorks.integrateWorkflow.step2.title", "Multi-Track Control"),
@@ -377,7 +401,8 @@ const HowItWorksSection = () => {
         "howItWorks.integrateWorkflow.step2.description",
         "Manage multiple tracks simultaneously, each with its own independent voice settings and patterns. Create rich, layered arrangements by assigning different musical elements to separate tracks within your DAW."
       ),
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1000",
+      image: "/images/song_view.png",
+      imageWebp: "/images/song_view.webp",
     },
     {
       title: t("howItWorks.integrateWorkflow.step3.title", "Voice Channel Matrix"),
@@ -385,7 +410,8 @@ const HowItWorksSection = () => {
         "howItWorks.integrateWorkflow.step3.description",
         "Precisely control where each voice is sent using the channel matrix. Route individual voices to specific MIDI channels in your DAW, giving you complete control over instrument assignment and voice distribution."
       ),
-      image: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?q=80&w=1000",
+      image: "/images/matrix.png",
+      imageWebp: "/images/matrix.webp",
     },
     {
       title: t("howItWorks.integrateWorkflow.step4.title", "Seamless Workflow"),
@@ -393,7 +419,8 @@ const HowItWorksSection = () => {
         "howItWorks.integrateWorkflow.step4.description",
         "Integrate Cymasphere into your production process as a powerful harmony and pattern generator. Use it to quickly sketch ideas, develop complex progressions, and create musical patterns that feed directly into your DAW's instruments."
       ),
-      image: "https://images.unsplash.com/photo-1563330232-57114bb0823c?q=80&w=1000",
+      image: "/images/chord_scale.png",
+      imageWebp: "/images/chord_scale.webp",
     },
   ];
 
@@ -473,13 +500,21 @@ const HowItWorksSection = () => {
               </WorkflowContent>
             </StepContent>
             <StepImage
-              src={step.image}
               variants={imageVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               custom={index}
-            />
+            >
+              <picture>
+                <source srcSet={step.imageWebp} type="image/webp" />
+                <img 
+                  src={step.image} 
+                  alt={step.title}
+                  loading="lazy"
+                />
+              </picture>
+            </StepImage>
           </WorkflowStep>
         ))}
       </InfoBox>

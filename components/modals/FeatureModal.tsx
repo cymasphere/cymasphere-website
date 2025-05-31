@@ -448,8 +448,9 @@ const InfoImageContainer = styled.div`
   border-radius: 12px;
   overflow: visible;
   position: sticky;
-  top: 20px;
-  align-self: flex-start;
+  top: 50%;
+  transform: translateY(-50%);
+  align-self: center;
   background: rgba(10, 10, 15, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -787,7 +788,7 @@ const ImageDebug = styled.div`
 `;
 
 // Function to get image path based on feature title
-const getImagePath = (title: string): string | null => {
+const getImagePath = (title: string): { webp: string; png: string } | null => {
   if (!title) return null;
 
   // Explicitly use absolute paths with the public URL
@@ -795,41 +796,71 @@ const getImagePath = (title: string): string | null => {
 
   // Make Progression Timeline use the same image as Song Builder
   if (title === "Progression Timeline") {
-    return `${publicUrl}/images/song_view.png`;
+    return {
+      webp: `${publicUrl}/images/song_view.webp`,
+      png: `${publicUrl}/images/song_view.png`
+    };
   }
 
   const titleToImage = {
-    "Song Builder": `${publicUrl}/images/song_view.png`,
-    "Harmony Palettes": `${publicUrl}/images/palette_view.png`,
-    "Advanced Voice Handling": `${publicUrl}/images/advanced_voicing.png`,
-    "Dynamic Pattern Editor": `${publicUrl}/images/pattern_view.png`,
-    "Voicing Generator": `${publicUrl}/images/voicing_view.png`,
+    "Song Builder": {
+      webp: `${publicUrl}/images/song_view.webp`,
+      png: `${publicUrl}/images/song_view.png`
+    },
+    "Harmony Palettes": {
+      webp: `${publicUrl}/images/harmony_analysis.webp`,
+      png: `${publicUrl}/images/harmony_analysis.png`
+    },
+    "Advanced Voice Handling": {
+      webp: `${publicUrl}/images/advanced_voicing.webp`,
+      png: `${publicUrl}/images/advanced_voicing.png`
+    },
+    "Dynamic Pattern Editor": {
+      webp: `${publicUrl}/images/pattern_view.webp`,
+      png: `${publicUrl}/images/pattern_view.png`
+    },
+    "Voicing Generator": {
+      webp: `${publicUrl}/images/voicing_view.webp`,
+      png: `${publicUrl}/images/voicing_view.png`
+    },
   };
 
   // Fallback images for any feature without a specific image
   const fallbackImages = [
-    `${publicUrl}/images/song_view.png`,
-    `${publicUrl}/images/palette_view.png`,
-    `${publicUrl}/images/pattern_view.png`,
-    `${publicUrl}/images/voicing_view.png`,
+    {
+      webp: `${publicUrl}/images/song_view.webp`,
+      png: `${publicUrl}/images/song_view.png`
+    },
+    {
+      webp: `${publicUrl}/images/palette_view.webp`,
+      png: `${publicUrl}/images/palette_view.png`
+    },
+    {
+      webp: `${publicUrl}/images/pattern_view.webp`,
+      png: `${publicUrl}/images/pattern_view.png`
+    },
+    {
+      webp: `${publicUrl}/images/voicing_view.webp`,
+      png: `${publicUrl}/images/voicing_view.png`
+    },
   ];
 
-  let imagePath = titleToImage[title as keyof typeof titleToImage]; // Add type assertion
+  let imagePaths = titleToImage[title as keyof typeof titleToImage]; // Add type assertion
 
   // If no specific image is found, use a fallback based on the title's hash
-  if (!imagePath) {
+  if (!imagePaths) {
     const hash = title
       .split("")
       .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0); // Add types for reduce
-    imagePath = fallbackImages[hash % fallbackImages.length];
+    imagePaths = fallbackImages[hash % fallbackImages.length];
     console.log(
-      `No specific image for "${title}", using fallback: ${imagePath}`
+      `No specific image for "${title}", using fallback: ${imagePaths.png}`
     );
   } else {
-    // console.log(`For title "${title}", using image path: ${imagePath}`);
+    // console.log(`For title "${title}", using image paths: WebP: ${imagePaths.webp}, PNG: ${imagePaths.png}`);
   }
 
-  return imagePath;
+  return imagePaths;
 };
 
 // Add a visual feedback indicator for swipe actions on mobile
@@ -1024,9 +1055,9 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
       if (!feature) return;
 
       const { title, image: featureImage } = feature;
-      const imagePath = featureImage || getImagePath(title);
+      const imagePaths = featureImage ? { webp: featureImage, png: featureImage } : getImagePath(title);
 
-      if (imagePath && !imagesLoaded[title] && !imageErrors[title]) {
+      if (imagePaths && !imagesLoaded[title] && !imageErrors[title]) {
         const img = new Image();
         img.onload = () => {
           setImagesLoaded((prev) => ({ ...prev, [title]: true }));
@@ -1034,7 +1065,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
         img.onerror = () => {
           setImageErrors((prev) => ({ ...prev, [title]: true }));
         };
-        img.src = imagePath;
+        img.src = imagePaths.png; // Use PNG for preloading
       }
     });
   }, [features, currentIndex, imagesLoaded, imageErrors]);
@@ -1102,7 +1133,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
   const { title, detailedDescription, image: featureImage } = currentFeature;
 
   // Use the provided image or get one based on title
-  const imagePath = featureImage || getImagePath(title);
+  const imagePaths = featureImage ? { webp: featureImage, png: featureImage } : getImagePath(title);
   const isImageLoaded = imagesLoaded[title] || false;
   const hasImageError = imageErrors[title] || false;
 
@@ -1174,14 +1205,14 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                   <ImageContainer>
                     {debugMode && (
                       <ImageDebug>
-                        Path: {imagePath || "None"}
+                        Path: {imagePaths?.png || "None"}
                         <br />
                         Loaded: {isImageLoaded ? "Yes" : "No"}
                         <br />
                         Error: {hasImageError ? "Yes" : "No"}
                       </ImageDebug>
                     )}
-                    {imagePath && !isImageLoaded && !hasImageError && (
+                    {imagePaths && !isImageLoaded && !hasImageError && (
                       <LoadingWrapper>
                         <LoadingComponent size="40px" text="Loading image..." />
                       </LoadingWrapper>
@@ -1195,15 +1226,29 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                       </LoadingWrapper>
                     )}
                     <FeatureImage
-                      imgSrc={isImageLoaded ? imagePath : undefined} // Pass undefined instead of null if needed, or handle in styled-component
+                      imgSrc={null}
                       onClick={toggleInfo}
                       style={{ cursor: "pointer" }}
                     >
-                      {
-                        (!imagePath || hasImageError) &&
+                      {imagePaths && isImageLoaded && !hasImageError ? (
+                        <picture style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <source srcSet={imagePaths.webp} type="image/webp" />
+                          <img 
+                            src={imagePaths.png} 
+                            alt={features[currentIndex]?.title || "Feature image"}
+                            style={{ 
+                              maxWidth: "100%", 
+                              maxHeight: "100%", 
+                              objectFit: "contain",
+                              objectPosition: "center"
+                            }}
+                          />
+                        </picture>
+                      ) : (
+                        (!imagePaths || hasImageError) &&
                           features[currentIndex]
                             ?.title /* Add optional chaining */
-                      }
+                      )}
                     </FeatureImage>
                   </ImageContainer>
 
@@ -1211,14 +1256,28 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                     <ContentContainer>
                       <InfoImageContainer>
                         <InfoFeatureImage
-                          imgSrc={isImageLoaded ? imagePath : undefined} // Pass undefined instead of null if needed
+                          imgSrc={null}
                           onClick={toggleInfo}
                         >
-                          {
-                            (!imagePath || hasImageError) &&
+                          {imagePaths && isImageLoaded && !hasImageError ? (
+                            <picture style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <source srcSet={imagePaths.webp} type="image/webp" />
+                              <img 
+                                src={imagePaths.png} 
+                                alt={features[currentIndex]?.title || "Feature image"}
+                                style={{ 
+                                  maxWidth: "100%", 
+                                  maxHeight: "100%", 
+                                  objectFit: "contain",
+                                  objectPosition: "center"
+                                }}
+                              />
+                            </picture>
+                          ) : (
+                            (!imagePaths || hasImageError) &&
                               features[currentIndex]
                                 ?.title /* Add optional chaining */
-                          }
+                          )}
                         </InfoFeatureImage>
                       </InfoImageContainer>
 
