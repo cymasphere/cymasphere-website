@@ -15,11 +15,10 @@ import {
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { Profile, SubscriptionType } from "@/utils/supabase/types";
 import {
-  initiateCheckout,
-  getPrices,
   getUpcomingInvoice,
   updateSubscription,
   createCustomerPortalSession,
+  initiateCheckout,
 } from "@/utils/stripe/actions";
 import {
   getCustomerInvoices,
@@ -495,29 +494,32 @@ export default function BillingPage() {
         setIsLoadingPrices(true);
         setPriceError(null);
 
-        const { prices, error } = await getPrices();
+        const response = await fetch("/api/stripe/prices");
+        const result = await response.json();
 
-        if (error) {
-          setPriceError(error);
+        if (result.error) {
+          setPriceError(result.error);
           return;
         }
 
-        // Update state with fetched prices
-        setMonthlyPrice(Math.round(prices.monthly.amount / 100));
-        setYearlyPrice(Math.round(prices.annual.amount / 100));
-        setLifetimePrice(Math.round(prices.lifetime.amount / 100));
+        if (result.success && result.prices) {
+          // Update state with fetched prices
+          setMonthlyPrice(Math.round(result.prices.monthly.amount / 100));
+          setYearlyPrice(Math.round(result.prices.annual.amount / 100));
+          setLifetimePrice(Math.round(result.prices.lifetime.amount / 100));
 
-        // Store discount information if available
-        if (prices.monthly.discount) {
-          setMonthlyDiscount(prices.monthly.discount);
-        }
+          // Store discount information if available
+          if (result.prices.monthly.discount) {
+            setMonthlyDiscount(result.prices.monthly.discount);
+          }
 
-        if (prices.annual.discount) {
-          setYearlyDiscount(prices.annual.discount);
-        }
+          if (result.prices.annual.discount) {
+            setYearlyDiscount(result.prices.annual.discount);
+          }
 
-        if (prices.lifetime.discount) {
-          setLifetimeDiscount(prices.lifetime.discount);
+          if (result.prices.lifetime.discount) {
+            setLifetimeDiscount(result.prices.lifetime.discount);
+          }
         }
       } catch (err) {
         console.error("Error fetching prices:", err);
@@ -1064,14 +1066,9 @@ export default function BillingPage() {
                 <PlanName>
                   {isSubscriptionLifetime(userSubscription.subscription)
                     ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                    : `${
-                        userSubscription.subscription.charAt(0).toUpperCase() +
-                        userSubscription.subscription.slice(1)
-                      } ${
-                        subscriptionInterval === "month"
-                          ? t("dashboard.billing.monthly", "Monthly")
-                          : t("dashboard.billing.yearly", "Yearly")
-                      }`}
+                    : subscriptionInterval === "month"
+                    ? t("dashboard.billing.monthly", "Monthly")
+                    : t("dashboard.billing.yearly", "Yearly")}
                 </PlanName>
                 <PlanPrice>
                   {isSubscriptionNone(userSubscription.subscription)
