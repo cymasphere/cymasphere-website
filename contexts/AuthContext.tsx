@@ -92,51 +92,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    console.log("auth context triggered");
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
-      try {
-        console.log(event);
-        const session_user = session?.user;
-        console.log(!!session_user);
-        setSession(session);
-        if (session_user) {
-          console.log("auth state changed");
-          const { profile, error } = await fetchProfile(session_user.id);
-          const { is_admin, error: adminError } = await fetchIsAdmin(
-            session_user.id
-          );
-          if (error) console.log(JSON.stringify(error));
-          if (adminError) console.log(JSON.stringify(adminError));
-          if (profile) {
-            setUser({ ...session_user, profile, is_admin });
+  const updateUserFromSession = async () => {
+    try {
+      setLoading(user === null);
+      const {
+        data: { user: logged_in_user },
+      } = await supabase.auth.getUser();
 
-            // Check Stripe subscription status
-            try {
-              const { success, profile: updatedProfile } = await updateStripe(
-                session_user.email!,
-                profile
-              );
-              if (success && updatedProfile) {
-                setUser({ ...session_user, profile: updatedProfile, is_admin });
-              }
-            } catch (stripeError) {
-              console.error("Error updating Stripe data:", stripeError);
+      if (logged_in_user) {
+        const { profile, error } = await fetchProfile(logged_in_user.id);
+        if (error) {
+          console.log("error fetching profile", JSON.stringify(error));
+        }
+
+        const { is_admin, error: adminError } = await fetchIsAdmin(
+          logged_in_user.id
+        );
+        if (adminError) {
+          console.log(
+            "error fetching admin status",
+            JSON.stringify(adminError)
+          );
+        }
+
+        if (profile) {
+          // Check Stripe subscription status
+          try {
+            const { success, profile: updatedProfile } = await updateStripe(
+              logged_in_user.email!,
+              profile
+            );
+            if (success && updatedProfile) {
+              setUser({ ...logged_in_user, profile: updatedProfile, is_admin });
+            } else {
+              setUser({ ...logged_in_user, profile, is_admin });
             }
-          } else {
-            setUser(null);
+          } catch (stripeError) {
+            console.error("Error updating Stripe data:", stripeError);
+            setUser({ ...logged_in_user, profile, is_admin });
           }
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.log(JSON.stringify(error));
+      } else {
         setUser(null);
       }
+    } catch (error) {
+      console.log("error fetching profile", JSON.stringify(error));
+      setUser(null);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    updateUserFromSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  useEffect(() => {
+    console.log("auth context triggered");
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("auth state changed", event);
+      setSession(session);
     });
 
     return () => {
@@ -160,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async (scope: "global" | "local" | "others" | undefined) => {
     return await supabase.auth.signOut({ scope });
   };
+
   const resetPassword = async (email: string) => {
     return await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-password`,
