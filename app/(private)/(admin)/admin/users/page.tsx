@@ -1247,17 +1247,23 @@ export default function AdminCRM() {
   };
 
   const getDisplayName = (user: UserData) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    if (user.firstName && user.lastName && user.firstName.trim() && user.lastName.trim()) {
+      return `${user.firstName.trim()} ${user.lastName.trim()}`;
     }
-    return user.email.split("@")[0];
+    if (user.email && user.email.includes("@")) {
+      return user.email.split("@")[0];
+    }
+    return "Unknown User";
   };
 
   const getInitials = (user: UserData) => {
-    if (user.firstName && user.lastName) {
+    if (user.firstName && user.lastName && user.firstName.length > 0 && user.lastName.length > 0) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
-    return user.email[0].toUpperCase();
+    if (user.email && user.email.length > 0) {
+      return user.email[0].toUpperCase();
+    }
+    return "?";
   };
 
   const getAvatarColor = (email: string) => {
@@ -1265,6 +1271,9 @@ export default function AdminCRM() {
       "#6c63ff", "#4ecdc4", "#ffd93d", "#ff6b6b", "#95a5a6",
       "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6"
     ];
+    if (!email || email.length === 0) {
+      return colors[0]; // Default to first color
+    }
     const index = email.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
