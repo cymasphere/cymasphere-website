@@ -17,20 +17,11 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 // Import translations directly to avoid hook ordering issues
 import i18next from "i18next";
-
-// Dynamically import components with browser-only APIs
-const DynamicLanguageSelector = dynamic(
-  () => import("../i18n/DynamicLanguageSelector"),
-  {
-    ssr: false,
-  }
-);
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -46,20 +37,20 @@ const getTranslation = (key: string): string => {
   if (i18next.isInitialized) {
     return i18next.t(key);
   }
-  
+
   // Fallback values for common keys
   const fallbacks: Record<string, string> = {
-    'common.navigation': 'Navigation',
-    'common.myAccount': 'My Account',
-    'common.logout': 'Logout',
-    'common.login': 'Login',
-    'common.signUp': 'Sign Up',
-    'header.features': 'Features',
-    'header.howItWorks': 'How It Works',
-    'header.pricing': 'Pricing',
-    'header.faq': 'FAQ'
+    "common.navigation": "Navigation",
+    "common.myAccount": "My Account",
+    "common.logout": "Logout",
+    "common.login": "Login",
+    "common.signUp": "Sign Up",
+    "header.features": "Features",
+    "header.howItWorks": "How It Works",
+    "header.pricing": "Pricing",
+    "header.faq": "FAQ",
   };
-  
+
   return fallbacks[key] || key;
 };
 
@@ -94,7 +85,7 @@ const menuItemVariants = {
     x: 0,
     transition: {
       delay: i * 0.05, // Reduced delay for faster animation
-      duration: 0.2,   // Shorter duration
+      duration: 0.2, // Shorter duration
       ease: "easeOut",
     },
   }),
@@ -597,35 +588,38 @@ const NextHeader = () => {
   const [activeSection, setActiveSection] = useState("");
   const { user, signOut } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
-  
+
   // Track language to force re-render on language change
-  const [language, setLanguage] = useState(() => 
-    typeof window !== 'undefined' ? i18next.language : 'en'
+  const [language, setLanguage] = useState(() =>
+    typeof window !== "undefined" ? i18next.language : "en"
   );
-  
+
   // Effect to listen for language changes - with proper cleanup
   useEffect(() => {
     const handleLanguageChanged = (lng: string) => {
       console.log(`Language changed to: ${lng}`);
       setLanguage(lng);
     };
-    
-    if (typeof window !== 'undefined') {
-      i18next.on('languageChanged', handleLanguageChanged);
+
+    if (typeof window !== "undefined") {
+      i18next.on("languageChanged", handleLanguageChanged);
       return () => {
-        i18next.off('languageChanged', handleLanguageChanged);
+        i18next.off("languageChanged", handleLanguageChanged);
       };
     }
     return undefined;
   }, []);
 
   // Define nav items using the non-hook translation function
-  const navItems = useMemo(() => [
-    { name: getTranslation("header.features"), path: "/#features" },
-    { name: getTranslation("header.howItWorks"), path: "/#how-it-works" },
-    { name: getTranslation("header.pricing"), path: "/#pricing" },
-    { name: getTranslation("header.faq"), path: "/#faq" },
-  ], [language]); // Re-compute when language changes
+  const navItems = useMemo(
+    () => [
+      { name: getTranslation("header.features"), path: "/#features" },
+      { name: getTranslation("header.howItWorks"), path: "/#how-it-works" },
+      { name: getTranslation("header.pricing"), path: "/#pricing" },
+      { name: getTranslation("header.faq"), path: "/#faq" },
+    ],
+    [language]
+  ); // Re-compute when language changes
 
   useEffect(() => {
     const handleScroll = () => {
@@ -715,12 +709,14 @@ const NextHeader = () => {
                 {getTranslation("common.myAccount")}
               </UserMenuItem>
             </Link>
-            <Link href="/admin" passHref legacyBehavior>
-              <UserMenuItem onClick={() => setUserMenuOpen(false)}>
-                <FaShieldAlt />
-                {getTranslation("common.adminConsole")}
-              </UserMenuItem>
-            </Link>
+            {user.is_admin && (
+              <Link href="/admin" passHref legacyBehavior>
+                <UserMenuItem onClick={() => setUserMenuOpen(false)}>
+                  <FaShieldAlt />
+                  {getTranslation("common.adminConsole")}
+                </UserMenuItem>
+              </Link>
+            )}
             <UserMenuLogout onClick={handleLogout}>
               <FaSignOutAlt />
               {getTranslation("common.logout")}
@@ -732,7 +728,9 @@ const NextHeader = () => {
 
     return (
       <>
-        <AuthButton onClick={handleLoginClick}>{getTranslation("common.login")}</AuthButton>
+        <AuthButton onClick={handleLoginClick}>
+          {getTranslation("common.login")}
+        </AuthButton>
         <AuthButton $isPrimary onClick={handleSignupClick}>
           {getTranslation("common.signUp")}
         </AuthButton>
@@ -827,10 +825,17 @@ const NextHeader = () => {
             variants={fadeIn}
           >
             <MobileMenuContent>
-              <MobileNavTitle>{getTranslation("common.navigation")}</MobileNavTitle>
+              <MobileNavTitle>
+                {getTranslation("common.navigation")}
+              </MobileNavTitle>
               <MobileNavLinks>
                 {navItems.map((item, index) => (
-                  <Link key={item.name} href={item.path} passHref legacyBehavior>
+                  <Link
+                    key={item.name}
+                    href={item.path}
+                    passHref
+                    legacyBehavior
+                  >
                     <MobileNavLink
                       $isActive={pathname === item.path}
                       onClick={() => setMenuOpen(false)}
@@ -866,22 +871,24 @@ const NextHeader = () => {
                         {getTranslation("common.myAccount")}
                       </MobileNavLink>
                     </Link>
-                    <Link href="/admin" passHref legacyBehavior>
-                    <MobileNavLink
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setMenuOpen(false);
-                          router.push("/admin");
-                      }}
-                      variants={menuItemVariants}
-                      custom={navItems.length + 1}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        <FaShieldAlt />
-                        {getTranslation("common.adminConsole")}
-                      </MobileNavLink>
-                    </Link>
+                    {user.is_admin && (
+                      <Link href="/admin" passHref legacyBehavior>
+                        <MobileNavLink
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setMenuOpen(false);
+                            router.push("/admin");
+                          }}
+                          variants={menuItemVariants}
+                          custom={navItems.length + 1}
+                          initial="hidden"
+                          animate="visible"
+                        >
+                          <FaShieldAlt />
+                          {getTranslation("common.adminConsole")}
+                        </MobileNavLink>
+                      </Link>
+                    )}
                     <MobileNavLink
                       onClick={(e) => {
                         e.preventDefault();
@@ -942,4 +949,3 @@ const NextHeader = () => {
 };
 
 export default NextHeader;
-
