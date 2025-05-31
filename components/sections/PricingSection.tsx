@@ -9,16 +9,14 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCheck, FaGift, FaUnlock, FaTimes, FaCreditCard } from "react-icons/fa";
+import { FaCheck, FaGift, FaUnlock } from "react-icons/fa";
 import { IoInformationCircle } from "react-icons/io5";
 // Import Stripe actions
 import {
   initiateCheckout,
-  getPrices,
-  PlanType,
-  PriceData,
-  checkExistingCustomer
+  checkExistingCustomer,
 } from "@/utils/stripe/actions";
+import { PlanType, PriceData } from "@/types/stripe";
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
 import dynamic from "next/dynamic";
@@ -26,7 +24,7 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 // Import useRouter from next/navigation
 import { useRouter } from "next/navigation";
-import { createPortal } from 'react-dom';
+import { createPortal } from "react-dom";
 import EmailCollectionModal from "../modals/EmailCollectionModal";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -1288,7 +1286,7 @@ const RadioOptionTitle = styled.div`
   color: var(--text);
   display: flex;
   align-items: center;
-  
+
   svg {
     margin-right: 6px;
     color: var(--primary);
@@ -1332,9 +1330,9 @@ const RadioInput = styled.input`
   &:checked {
     border-color: var(--primary);
     background-color: transparent;
-    
+
     &:after {
-      content: '';
+      content: "";
       position: absolute;
       top: 50%;
       left: 50%;
@@ -1643,19 +1641,19 @@ const TrialBanner = styled.div`
 
 const TrialText = styled.div`
   text-align: center;
-  
+
   h3 {
     font-size: 1.3rem;
     margin: 0 0 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     svg {
       margin-right: 8px;
       color: var(--primary);
     }
-    
+
     span {
       background: linear-gradient(135deg, var(--primary), var(--accent));
       -webkit-background-clip: text;
@@ -1664,7 +1662,7 @@ const TrialText = styled.div`
       font-weight: 700;
     }
   }
-  
+
   p {
     margin: 0;
     color: var(--text-secondary);
@@ -1687,7 +1685,12 @@ const CardTrialBadge = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
-const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: boolean }) => {
+const InfoButton = ({
+  onClick,
+}: {
+  onClick: () => void;
+  isActive: boolean;
+}) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const iconRef = useRef<HTMLDivElement>(null);
@@ -1698,7 +1701,7 @@ const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: bool
       // Position to the right of the icon
       setTooltipPosition({
         top: rect.top,
-        left: rect.right + 10
+        left: rect.right + 10,
       });
     }
   };
@@ -1706,20 +1709,20 @@ const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: bool
   useEffect(() => {
     if (showTooltip) {
       updateTooltipPosition();
-      window.addEventListener('scroll', updateTooltipPosition);
-      window.addEventListener('resize', updateTooltipPosition);
+      window.addEventListener("scroll", updateTooltipPosition);
+      window.addEventListener("resize", updateTooltipPosition);
     }
-    
+
     return () => {
-      window.removeEventListener('scroll', updateTooltipPosition);
-      window.removeEventListener('resize', updateTooltipPosition);
+      window.removeEventListener("scroll", updateTooltipPosition);
+      window.removeEventListener("resize", updateTooltipPosition);
     };
   }, [showTooltip]);
 
   return (
     <>
-      <InfoIcon 
-        ref={iconRef} 
+      <InfoIcon
+        ref={iconRef}
         onClick={onClick}
         onMouseEnter={() => {
           setShowTooltip(true);
@@ -1729,38 +1732,48 @@ const InfoButton = ({ onClick, isActive }: { onClick: () => void; isActive: bool
       >
         <IoInformationCircle size={22} />
       </InfoIcon>
-      {showTooltip && typeof document !== 'undefined' && createPortal(
-        <TooltipContent style={{ top: tooltipPosition.top + 'px', left: tooltipPosition.left + 'px' }}>
-          Credit card required for 14-day trial. You can cancel anytime before the trial ends to avoid being charged.
-        </TooltipContent>,
-        document.body
-      )}
+      {showTooltip &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <TooltipContent
+            style={{
+              top: tooltipPosition.top + "px",
+              left: tooltipPosition.left + "px",
+            }}
+          >
+            Credit card required for 14-day trial. You can cancel anytime before
+            the trial ends to avoid being charged.
+          </TooltipContent>,
+          document.body
+        )}
     </>
   );
 };
 
 const PricingSection = () => {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   // Get authentication context
   const { user } = useAuth();
 
   // Track language to force re-render on language change
-  const [language, setLanguage] = useState(() => 
-    typeof window !== 'undefined' ? i18next.language : 'en'
+  const [language, setLanguage] = useState(() =>
+    typeof window !== "undefined"
+      ? (window as any).i18next?.language || "en"
+      : "en"
   );
-  
+
   // Effect to listen for language changes
   useEffect(() => {
     const handleLanguageChanged = (lng: string) => {
       console.log(`Language changed to: ${lng}`);
       setLanguage(lng);
     };
-    
-    if (typeof window !== 'undefined') {
-      i18next.on('languageChanged', handleLanguageChanged);
+
+    if (typeof window !== "undefined" && (window as any).i18next) {
+      (window as any).i18next.on("languageChanged", handleLanguageChanged);
       return () => {
-        i18next.off('languageChanged', handleLanguageChanged);
+        (window as any).i18next.off("languageChanged", handleLanguageChanged);
       };
     }
     return undefined;
@@ -1791,9 +1804,13 @@ const PricingSection = () => {
     const fetchPrices = async () => {
       setPricesLoading(true);
       try {
-        const result = await getPrices();
-        if (result.prices) {
+        const response = await fetch("/api/stripe/prices");
+        const result = await response.json();
+
+        if (result.success && result.prices) {
           setPrices(result.prices);
+        } else {
+          console.error("Error fetching prices:", result.error);
         }
       } catch (error) {
         console.error("Error fetching prices:", error);
@@ -1865,25 +1882,29 @@ const PricingSection = () => {
   };
 
   // Handle email submission from modal
-  const handleEmailSubmit = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    if (!prices) return { success: false, error: "Price information is not available" };
-    
+  const handleEmailSubmit = async (
+    email: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!prices)
+      return { success: false, error: "Price information is not available" };
+
     try {
       // Check if the customer already exists and has a subscription or prior transactions
       const customerCheck = await checkExistingCustomer(email);
-      
+
       if (customerCheck.error) {
         return { success: false, error: customerCheck.error };
       }
-      
+
       // If the customer has prior transactions, direct them to login
       if (customerCheck.exists && customerCheck.hasPriorTransactions) {
-        return { 
-          success: false, 
-          error: "This email is already associated with an account. Please sign in to continue."
+        return {
+          success: false,
+          error:
+            "This email is already associated with an account. Please sign in to continue.",
         };
       }
-      
+
       // If we get here, either the customer doesn't exist yet or doesn't have prior transactions
       setShowEmailModal(false);
       setCheckoutLoading(trialType === "14day" ? "long" : "short");
@@ -1908,16 +1929,19 @@ const PricingSection = () => {
         setCheckoutLoading(null);
         return { success: false, error: result.error };
       }
-      
+
       // If we get here, the checkout was initiated but no URL was returned
       setCheckoutLoading(null);
       return { success: false, error: "Could not create checkout session" };
     } catch (error) {
       console.error("Checkout error:", error);
       setCheckoutLoading(null);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
       };
     }
   };
@@ -1956,9 +1980,9 @@ const PricingSection = () => {
     try {
       // Use the correct type for the t function with returnObjects
       const translatedFeatures = t("pricing.features", {
-        returnObjects: true
+        returnObjects: true,
       });
-      
+
       // Check if it's an array and has elements
       if (Array.isArray(translatedFeatures) && translatedFeatures.length > 0) {
         return translatedFeatures;
@@ -1966,7 +1990,7 @@ const PricingSection = () => {
     } catch (error) {
       console.log("Error loading translated features", error);
     }
-    
+
     // Fallback to English features
     return [
       "Song Builder with Multi-Track Management",
@@ -2004,16 +2028,18 @@ const PricingSection = () => {
   // Check if user has completed a trial or has a subscription
   const shouldHideTrialContent = React.useMemo(() => {
     if (!user?.profile) return false;
-    
+
     // Hide trial content if:
     return (
       // User has an active subscription
       user.profile.subscription !== "none" ||
       // User previously had a trial that expired
-      (user.profile.trial_expiration && new Date(user.profile.trial_expiration) < new Date()) ||
+      (user.profile.trial_expiration &&
+        new Date(user.profile.trial_expiration) < new Date()) ||
       // User previously had a subscription that ended
-      (user.profile.subscription === "none" && user.profile.subscription_expiration && 
-       new Date(user.profile.subscription_expiration) < new Date())
+      (user.profile.subscription === "none" &&
+        user.profile.subscription_expiration &&
+        new Date(user.profile.subscription_expiration) < new Date())
     );
   }, [user]);
 
@@ -2035,28 +2061,43 @@ const PricingSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <SectionTitle>{t("pricing.simpleTransparent", "Simple, Transparent Pricing")}</SectionTitle>
+          <SectionTitle>
+            {t("pricing.simpleTransparent", "Simple, Transparent Pricing")}
+          </SectionTitle>
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (
             <TrialBanner>
               <TrialText>
                 <h3>
-                  <FaGift /> {t("pricing.freeTrial.title", "Try FREE for up to 14 days")}
+                  <FaGift />{" "}
+                  {t("pricing.freeTrial.title", "Try FREE for up to 14 days")}
                 </h3>
                 <p>
-                  {t("pricing.freeTrial.description", "Experience all premium features with two trial options.")}
+                  {t(
+                    "pricing.freeTrial.description",
+                    "Experience all premium features with two trial options."
+                  )}
                   <br />
-                  {t("pricing.freeTrial.options", "Choose 7 days with no card or 14 days with card on file.")}
+                  {t(
+                    "pricing.freeTrial.options",
+                    "Choose 7 days with no card or 14 days with card on file."
+                  )}
                 </p>
               </TrialText>
             </TrialBanner>
           )}
 
           <SectionSubtitle>
-            {t("pricing.chooseOption", "Choose the billing option that works best for you.")}
+            {t(
+              "pricing.chooseOption",
+              "Choose the billing option that works best for you."
+            )}
             <br />
-            {t("pricing.allFeatures", "All options include full access to all features.")}
+            {t(
+              "pricing.allFeatures",
+              "All options include full access to all features."
+            )}
           </SectionSubtitle>
 
           {/* Billing period toggle */}
@@ -2090,17 +2131,23 @@ const PricingSection = () => {
           <div style={{ textAlign: "center" }}>
             {billingPeriod === "monthly" && (
               <SavingsInfo>
-                <span>{t("pricing.mostFlexible", "Most Flexible")}</span> - {t("pricing.payMonthly", "Pay month-to-month, cancel anytime")}
+                <span>{t("pricing.mostFlexible", "Most Flexible")}</span> -{" "}
+                {t("pricing.payMonthly", "Pay month-to-month, cancel anytime")}
               </SavingsInfo>
             )}
             {billingPeriod === "annual" && (
               <SavingsInfo>
-                {t("pricing.save", "Save")} <span>25%</span> {t("pricing.withYearlyBilling", "with yearly billing")}
+                {t("pricing.save", "Save")} <span>25%</span>{" "}
+                {t("pricing.withYearlyBilling", "with yearly billing")}
               </SavingsInfo>
             )}
             {billingPeriod === "lifetime" && (
               <SavingsInfo>
-                <span>{t("pricing.bestValue", "Best Value")}</span> - {t("pricing.oneTimePayment", "One-time payment, lifetime access")}
+                <span>{t("pricing.bestValue", "Best Value")}</span> -{" "}
+                {t(
+                  "pricing.oneTimePayment",
+                  "One-time payment, lifetime access"
+                )}
               </SavingsInfo>
             )}
           </div>
@@ -2115,7 +2162,9 @@ const PricingSection = () => {
         >
           <PricingCard>
             {showTrialOptions && (
-              <CardTrialBadge>{t("pricing.freeTrial.title", "14-Day Free Trial")}</CardTrialBadge>
+              <CardTrialBadge>
+                {t("pricing.freeTrial.title", "14-Day Free Trial")}
+              </CardTrialBadge>
             )}
             <CardHeader>
               <PlanName>
@@ -2157,7 +2206,8 @@ const PricingSection = () => {
                   {billingPeriod === "annual" && currentPlan && (
                     <div style={{ marginTop: "5px", fontSize: "1rem" }}>
                       ${(currentPlan.amount / 100 / 12).toFixed(0)}/
-                      {t("pricing.perMonth", "month")} {t("pricing.billed", "billed annually")}
+                      {t("pricing.perMonth", "month")}{" "}
+                      {t("pricing.billed", "billed annually")}
                     </div>
                   )}
                   {billingPeriod === "lifetime" && (
@@ -2201,7 +2251,11 @@ const PricingSection = () => {
                 <TrialOptionContainer>
                   <RadioOptionsContainer>
                     <RadioOptionTitle>
-                      <FaGift /> {t("pricing.freeTrial.chooseFree", "Choose your free trial option:")}
+                      <FaGift />{" "}
+                      {t(
+                        "pricing.freeTrial.chooseFree",
+                        "Choose your free trial option:"
+                      )}
                     </RadioOptionTitle>
                     <RadioButtonGroup>
                       <RadioOption>
@@ -2216,8 +2270,16 @@ const PricingSection = () => {
                           <FaUnlock />
                         </TrialIcon>
                         <TrialDescription>
-                          {t("pricing.freeTrial.withCard", "14-day trial - Add card on file")} <InfoButton onClick={() => {}} isActive={false} />
-                          <br />{t("pricing.freeTrial.noCharge", "(won't be charged until trial ends)")}
+                          {t(
+                            "pricing.freeTrial.withCard",
+                            "14-day trial - Add card on file"
+                          )}{" "}
+                          <InfoButton onClick={() => {}} isActive={false} />
+                          <br />
+                          {t(
+                            "pricing.freeTrial.noCharge",
+                            "(won't be charged until trial ends)"
+                          )}
                         </TrialDescription>
                       </RadioOption>
 
@@ -2233,7 +2295,10 @@ const PricingSection = () => {
                           <FaUnlock />
                         </TrialIcon>
                         <TrialDescription>
-                          {t("pricing.freeTrial.noCard", "7-day trial - No credit card required")}
+                          {t(
+                            "pricing.freeTrial.noCard",
+                            "7-day trial - No credit card required"
+                          )}
                         </TrialDescription>
                       </RadioOption>
                     </RadioButtonGroup>
@@ -2264,10 +2329,11 @@ const PricingSection = () => {
                     <>
                       {t("pricing.processing", "Processing")} <Loader />
                     </>
+                  ) : shouldHideTrialContent &&
+                    user?.profile?.subscription === "none" ? (
+                    t("pricing.upgradeNow", "Upgrade Now")
                   ) : (
-                    shouldHideTrialContent && user?.profile?.subscription === "none" ? 
-                      t("pricing.upgradeNow", "Upgrade Now") : 
-                      t("pricing.buyNow", "Buy Now")
+                    t("pricing.buyNow", "Buy Now")
                   )}
                 </CheckoutButton>
               )}
