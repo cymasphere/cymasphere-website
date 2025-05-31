@@ -41,11 +41,25 @@ const HeroContainer = styled.section`
       ),
       radial-gradient(
         circle at 70% 30%,
-        rgba(78, 205, 196, 0.1),
+        rgba(147, 51, 234, 0.1),
         transparent 50%
       );
     z-index: 0;
   }
+
+
+`;
+
+const BackgroundVideo = styled.video`
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+  object-fit: contain;
 `;
 
 const HeroContent = styled.div`
@@ -1407,6 +1421,16 @@ const HeroSection = () => {
 
   return (
     <HeroContainer id="home">
+      <BackgroundVideo
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+      >
+        <source src="/images/hero-background.mp4" type="video/mp4" />
+        <source src="/images/hero-background.webm" type="video/webm" />
+      </BackgroundVideo>
       {renderContent()}
       {renderVoiceLeadingLines()}
       {renderNotes()}

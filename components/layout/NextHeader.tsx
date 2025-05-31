@@ -100,12 +100,12 @@ const HeaderContainer = styled.header<{
   left: 0;
   right: 0;
   z-index: 3000;
-  background-color: ${(props) =>
+  background: ${(props) =>
     props.$isScrolled || props.$menuOpen
       ? "rgba(15, 14, 23, 0.95)"
-      : "transparent"};
+      : "linear-gradient(180deg, rgba(15, 14, 23, 0.8) 0%, rgba(15, 14, 23, 0.4) 50%, rgba(15, 14, 23, 0.1) 100%)"};
   backdrop-filter: ${(props) =>
-    props.$isScrolled || props.$menuOpen ? "blur(8px)" : "none"};
+    props.$isScrolled || props.$menuOpen ? "blur(8px)" : "blur(4px)"};
   transition: all 0.3s ease-in-out;
 `;
 
