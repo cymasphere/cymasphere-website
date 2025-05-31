@@ -175,15 +175,33 @@ export async function fetchUserSessions(): Promise<{
       }
 
       // Transform the data to include only ip and device_name
-      const sessions = data.map((session) => ({
-        ip: (session.ip as string) || "Unknown",
-        device_name: session.user_agent!.replace("cymasphere: ", ""),
-        last_used:
-          session.refreshed_at ||
-          session.updated_at ||
-          session.created_at ||
-          new Date().toISOString(),
-      }));
+      // Group sessions by user_agent and keep only the most recent session for each unique user agent
+      const uniqueSessions = new Map();
+
+      data.forEach((session) => {
+        const userAgent = session.user_agent;
+        if (userAgent) {
+          const lastUsed =
+            session.refreshed_at || session.updated_at || session.created_at;
+
+          // If we haven't seen this user agent before, or if this session is more recent
+          if (
+            !uniqueSessions.has(userAgent) ||
+            (lastUsed &&
+              new Date(lastUsed) >
+                new Date(uniqueSessions.get(userAgent).last_used))
+          ) {
+            uniqueSessions.set(userAgent, {
+              ip: (session.ip as string) || "Unknown",
+              device_name: userAgent.replace("cymasphere: ", ""),
+              last_used: lastUsed || new Date().toISOString(),
+            });
+          }
+        }
+      });
+
+      // Convert Map values to array
+      const sessions = Array.from(uniqueSessions.values());
 
       return { sessions, error: null };
     }

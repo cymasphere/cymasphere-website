@@ -122,13 +122,18 @@ export async function POST(
         console.error("Error fetching user sessions:", sessionsError);
       } else {
         // Count sessions with user agent starting with "cymasphere:"
-        const deviceCount =
-          userSessions?.filter(
-            (session) =>
-              session.user_agent && session.user_agent.startsWith("cymasphere:")
-          ).length || 0;
+        const cymasphereUserAgents =
+          userSessions
+            ?.filter(
+              (session) =>
+                session.user_agent &&
+                session.user_agent.startsWith("cymasphere:")
+            )
+            .map((session) => session.user_agent) || [];
 
-        console.log("deviceCount", deviceCount);
+        // Get unique user agents to count unique devices
+        const uniqueUserAgents = [...new Set(cymasphereUserAgents)];
+        const deviceCount = uniqueUserAgents.length;
 
         // If device count exceeds limit, sign out and return error
         if (deviceCount > 3) {
