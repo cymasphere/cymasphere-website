@@ -794,11 +794,11 @@ const getImagePath = (title: string): { webp: string; png: string } | null => {
   // Explicitly use absolute paths with the public URL
   const publicUrl = process.env.PUBLIC_URL || "";
 
-  // Make Progression Timeline use the same image as Song Builder
+  // Make Progression Timeline use the harmony analysis image
   if (title === "Progression Timeline") {
     return {
-      webp: `${publicUrl}/images/song_view.webp`,
-      png: `${publicUrl}/images/song_view.png`
+      webp: `${publicUrl}/images/harmony_analysis.webp`,
+      png: `${publicUrl}/images/harmony_analysis.png`
     };
   }
 
@@ -808,8 +808,8 @@ const getImagePath = (title: string): { webp: string; png: string } | null => {
       png: `${publicUrl}/images/song_view.png`
     },
     "Harmony Palettes": {
-      webp: `${publicUrl}/images/harmony_analysis.webp`,
-      png: `${publicUrl}/images/harmony_analysis.png`
+      webp: `${publicUrl}/images/palette_view.webp`,
+      png: `${publicUrl}/images/palette_view.png`
     },
     "Advanced Voice Handling": {
       webp: `${publicUrl}/images/advanced_voicing.webp`,
