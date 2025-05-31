@@ -2015,21 +2015,20 @@ const PricingSection = () => {
       console.log("Error loading translated features", error);
     }
 
-    // Fallback to English features
-    return [
-      "Song Builder with Multi-Track Management",
-      "Intelligent Pattern Editor & Chord Adaptation",
-      "Gestural Harmony Palette Interface",
-      "Advanced Voice Leading & Chord Voicings",
-      "Interactive Chord Progression Timeline",
-      "Complete Voice and Range Control",
-      "Standalone App & DAW Plugin Support",
-      "Real-Time Chord Reharmonization Tools",
-      "Comprehensive Arrangement View",
-      "Custom Voicing Generation Engine",
-      "Cloud Storage & Project Backups",
-      "Premium Support & All Future Updates",
-    ];
+          // Fallback to English features
+      return [
+        "Song Builder with Multi-Track Management",
+        "Intelligent Pattern Editor & Chord Adaptation",
+        "Gestural Harmony Palette Interface",
+        "Advanced Voice Leading & Chord Voicings",
+        "Interactive Chord Progression Timeline",
+        "Complete Voice and Range Control",
+        "Standalone App & DAW Plugin Support",
+        "Real-Time Chord Reharmonization Tools",
+        "Comprehensive Arrangement View",
+        "Custom Voicing Generation Engine",
+        "Premium Support & All Future Updates",
+      ];
   }, [t, language]);
 
   // Get price details for the current plan

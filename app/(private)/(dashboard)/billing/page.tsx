@@ -1304,7 +1304,6 @@ export default function BillingPage() {
                 "Real-Time Chord Reharmonization Tools",
                 "Comprehensive Arrangement View",
                 "Custom Voicing Generation Engine",
-                "Cloud Storage & Project Backups",
                 "Premium Support & All Future Updates",
               ];
             })()}
