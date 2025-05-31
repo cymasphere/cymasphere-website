@@ -1066,14 +1066,9 @@ export default function BillingPage() {
                 <PlanName>
                   {isSubscriptionLifetime(userSubscription.subscription)
                     ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                    : `${
-                        userSubscription.subscription.charAt(0).toUpperCase() +
-                        userSubscription.subscription.slice(1)
-                      } ${
-                        subscriptionInterval === "month"
-                          ? t("dashboard.billing.monthly", "Monthly")
-                          : t("dashboard.billing.yearly", "Yearly")
-                      }`}
+                    : subscriptionInterval === "month"
+                    ? t("dashboard.billing.monthly", "Monthly")
+                    : t("dashboard.billing.yearly", "Yearly")}
                 </PlanName>
                 <PlanPrice>
                   {isSubscriptionNone(userSubscription.subscription)
