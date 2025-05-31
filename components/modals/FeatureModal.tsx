@@ -1226,7 +1226,6 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                       </LoadingWrapper>
                     )}
                     <FeatureImage
-                      imgSrc={null}
                       onClick={toggleInfo}
                       style={{ cursor: "pointer" }}
                     >
@@ -1256,7 +1255,6 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
                     <ContentContainer>
                       <InfoImageContainer>
                         <InfoFeatureImage
-                          imgSrc={null}
                           onClick={toggleInfo}
                         >
                           {imagePaths && isImageLoaded && !hasImageError ? (
