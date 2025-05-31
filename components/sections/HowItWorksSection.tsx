@@ -31,7 +31,7 @@ const SectionTitle = styled(motion.h2)`
 `;
 
 const InfoBox = styled(motion.div)`
-  background: rgba(30, 30, 46, 0.7);
+  background: rgba(15, 14, 23, 0.85);
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 30px;
