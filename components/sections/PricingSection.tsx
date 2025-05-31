@@ -1011,6 +1011,28 @@ const ChordWeb = React.memo(() => {
       // Clear only once
       context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
+      // Create a clipping mask to exclude the content area
+      context.save();
+      
+      // Define the content area to exclude (approximate ContentContainer area)
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const contentWidth = Math.min(1200, canvas.width * 0.9);
+      const contentHeight = canvas.height * 0.7; // Approximate content height
+      
+      // Create a path that covers everything EXCEPT the content area
+      context.beginPath();
+      // Outer rectangle (entire canvas)
+      context.rect(0, 0, canvas.width, canvas.height);
+      // Inner rectangle (content area) - this creates a "hole"
+      context.rect(
+        centerX - contentWidth / 2,
+        centerY - contentHeight / 2,
+        contentWidth,
+        contentHeight
+      );
+      context.clip("evenodd"); // Use even-odd rule to create the hole
+
       // Draw background radiance with less intensity
       drawBackgroundRadiance(clampedDelta);
 
@@ -1038,6 +1060,9 @@ const ChordWeb = React.memo(() => {
 
       // Draw connections between chords
       drawConnections(chordCenters);
+
+      // Restore the clipping mask
+      context.restore();
 
       // Request next frame
       animationFrameId.current = requestAnimationFrame(render);
@@ -1146,7 +1171,7 @@ const ContentContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
-  z-index: 3;
+  z-index: 5; /* Increased from 3 to 5 to ensure content is above canvas */
   background: linear-gradient(
     rgba(var(--background-rgb), 0.8) 0%,
     rgba(var(--background-rgb), 0.95) 20%,
@@ -1157,6 +1182,7 @@ const ContentContainer = styled.div`
   padding: 60px 40px 50px; /* Increased horizontal padding from 10px to 40px */
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
   pointer-events: none; /* Allow clicks to pass through to molecules */
+  isolation: isolate; /* Create new stacking context */
 
   /* Mobile responsive styling */
   @media (max-width: 768px) {
@@ -1390,8 +1416,9 @@ const PricingCard = styled(motion.div)`
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
   border: 2px solid var(--primary);
-  z-index: 5;
+  z-index: 10; /* Increased from 5 to 10 to ensure it's above canvas */
   pointer-events: auto !important; /* Force pointer events */
+  isolation: isolate; /* Create new stacking context */
 
   &:hover {
     transform: translateY(-8px);
@@ -1441,6 +1468,7 @@ const CardHeader = styled.div`
   text-align: center;
   position: relative;
   pointer-events: auto !important;
+  z-index: 11; /* Ensure header is above canvas */
 
   &::after {
     content: "";
@@ -1471,8 +1499,9 @@ const CardBody = styled.div`
   padding: 25px 20px;
   background: rgba(30, 28, 42, 0.8);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  z-index: 4; /* Add z-index here too */
+  z-index: 11; /* Increased from 4 to 11 to ensure it's above canvas */
   pointer-events: auto !important;
+  position: relative; /* Ensure z-index takes effect */
 `;
 
 const Divider = styled.hr`
