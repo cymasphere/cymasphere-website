@@ -174,7 +174,6 @@ export async function fetchUserSessions(): Promise<{
         return { sessions: [], error: "Failed to fetch user sessions" };
       }
 
-      // Transform the data to include only ip and device_name
       // Group sessions by user_agent and keep only the most recent session for each unique user agent
       const uniqueSessions = new Map();
 

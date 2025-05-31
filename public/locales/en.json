@@ -469,6 +469,7 @@
       "billing": "Billing",
       "downloads": "Downloads",
       "settings": "Settings",
+      "adminConsole": "Admin Console",
       "backToSite": "Back to Site",
       "backToHome": "Back to Home",
       "logout": "Logout",
@@ -901,7 +902,7 @@
       },
       "member3": {
         "name": "Michael Park",
-        "role": "UI/UX Designer" 
+        "role": "UI/UX Designer"
       },
       "member4": {
         "name": "Emma Rodriguez",
@@ -1024,4 +1025,4 @@
       }
     }
   }
-} 
+}
