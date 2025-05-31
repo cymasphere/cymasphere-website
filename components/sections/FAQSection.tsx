@@ -191,7 +191,7 @@ const FAQSection = () => {
                 }}
                 transition={{ duration: 0.3 }}
               >
-                <p>{faq.answer}</p>
+                <p dangerouslySetInnerHTML={{ __html: faq.answer }} />
               </Answer>
             </FAQItem>
           </motion.div>
