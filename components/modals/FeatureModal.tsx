@@ -8,6 +8,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaInfoCircle,
+  FaSearchPlus,
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -1185,8 +1186,8 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
               <ModalTitle>{title}</ModalTitle>
             </TitleContainer>
 
-            <InfoButton onClick={toggleInfo} aria-label="Show feature details">
-              <FaInfoCircle />
+            <InfoButton onClick={toggleInfo} aria-label={infoVisible ? "Show image only" : "Show feature details"}>
+              {infoVisible ? <FaSearchPlus /> : <FaInfoCircle />}
             </InfoButton>
 
             <CloseButton onClick={onClose} aria-label="Close modal">
