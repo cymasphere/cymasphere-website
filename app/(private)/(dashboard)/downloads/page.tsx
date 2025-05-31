@@ -295,7 +295,7 @@ function Downloads() {
                 </DownloadIcon>
                 <DownloadInfo>
                   <DownloadName>{t("dashboard.downloads.macosTitle", "Cymasphere for macOS")}</DownloadName>
-                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
+                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 2.0.0</DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
@@ -304,13 +304,13 @@ function Downloads() {
                     {t("dashboard.downloads.macosDesc", "Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.")}
                   </DownloadDescription>
                   <DownloadMeta>
-                    <DownloadSize>162 MB</DownloadSize>
+                    <DownloadSize>Coming Soon</DownloadSize>
                     <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
-                  <DownloadButton href="#">
-                    <FaDownload /> {t("dashboard.downloads.downloadMacos", "Download for macOS")}
+                  <DownloadButton href="#" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                    <FaDownload /> {t("dashboard.downloads.downloadMacos", "Coming Soon")}
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
@@ -323,7 +323,7 @@ function Downloads() {
                 </DownloadIcon>
                 <DownloadInfo>
                   <DownloadName>{t("dashboard.downloads.windowsTitle", "Cymasphere for Windows")}</DownloadName>
-                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
+                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 2.0.0</DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
@@ -332,12 +332,12 @@ function Downloads() {
                     {t("dashboard.downloads.windowsDesc", "Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).")}
                   </DownloadDescription>
                   <DownloadMeta>
-                    <DownloadSize>{t("dashboard.downloads.size", "145 MB")}</DownloadSize>
+                    <DownloadSize>32.02 MB</DownloadSize>
                     <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
-                  <DownloadButton href="#">
+                  <DownloadButton href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/builds/Cymasphere_Installer.exe">
                     <FaDownload /> {t("dashboard.downloads.downloadWindows", "Download for Windows")}
                   </DownloadButton>
                 </DownloadButtonContainer>
