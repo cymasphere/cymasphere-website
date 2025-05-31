@@ -50,16 +50,17 @@ const HeroContainer = styled.section`
 
 `;
 
-const BackgroundVideo = styled.video`
+const BackgroundVideo = styled.video<{ $loaded?: boolean }>`
   position: absolute;
   top: 60px;
   left: 0;
   width: 100%;
   height: calc(100% - 60px);
-  opacity: 0.15;
+  opacity: ${props => props.$loaded ? 0.15 : 0};
   z-index: 0;
   pointer-events: none;
   object-fit: contain;
+  transition: opacity 1.5s ease-in-out;
 `;
 
 const HeroContent = styled.div`
@@ -416,6 +417,7 @@ const HeroSection = () => {
     | "masterVolume";
 
   const [audioContextStarted, setAudioContextStarted] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const effectsChain = useEffectsChain();
   const synthRef = useRef<DisposableSynth>(null);
 
@@ -1427,6 +1429,9 @@ const HeroSection = () => {
         muted
         playsInline
         preload="auto"
+        $loaded={videoLoaded}
+        onLoadedData={() => setVideoLoaded(true)}
+        onCanPlay={() => setVideoLoaded(true)}
       >
         <source src="/images/hero-background.mp4" type="video/mp4" />
         <source src="/images/hero-background.webm" type="video/webm" />
