@@ -417,7 +417,7 @@ const HeroSection = () => {
     | "masterVolume";
 
   const [audioContextStarted, setAudioContextStarted] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(true); // Start as true for immediate fade-in
   const effectsChain = useEffectsChain();
   const synthRef = useRef<DisposableSynth>(null);
 
@@ -1428,10 +1428,8 @@ const HeroSection = () => {
         loop
         muted
         playsInline
-        preload="auto"
+        preload="none"
         $loaded={videoLoaded}
-        onLoadedData={() => setVideoLoaded(true)}
-        onCanPlay={() => setVideoLoaded(true)}
       >
         <source src="/images/hero-background.mp4" type="video/mp4" />
         <source src="/images/hero-background.webm" type="video/webm" />
