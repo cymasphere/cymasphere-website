@@ -251,7 +251,7 @@
   "howItWorks": {
     "title": "Cómo Funciona",
     "subtitle": "Creación musical simplificada",
-    "createSubtitle": "Compón música con herramientas potentes",
+    "createSubtitle": "Compón música con propósito",
     "learnSubtitle": "Domina tus canciones favoritas sin esfuerzo",
     "integrateSubtitle": "Conéctate con tu flujo de trabajo existente",
     "tabs": {
@@ -448,7 +448,7 @@
       },
       {
         "question": "¿Hay un manual de usuario disponible para Cymasphere?",
-        "answer": "No, toda la ayuda está directamente integrada en el gestor de ayuda de la aplicación, lo que hace que sea muy fácil explorar y aprender sobre las nuevas funciones. Las preguntas, informes de errores y otras consultas pueden dirigirse a nuestro servidor de Discord o enviando un correo electrónico a support@cymasphere.com."
+        "answer": "No, toda la ayuda está directamente integrada en el gestor de ayuda de la aplicación, lo que hace que sea muy fácil explorar y aprender sobre las nuevas funciones. Las preguntas, informes de errores y otras consultas pueden dirigirse a nuestro <a href=\"https://discord.gg/cymasphere\" target=\"_blank\" rel=\"noopener noreferrer\">servidor de Discord</a> o enviando un correo electrónico a support@cymasphere.com."
       }
     ]
   },

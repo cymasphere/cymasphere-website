@@ -252,7 +252,7 @@
   "howItWorks": {
     "title": "使い方",
     "subtitle": "簡単な音楽作成",
-    "createSubtitle": "パワフルなツールで音楽を作曲",
+    "createSubtitle": "目的を持って音楽を作曲",
     "learnSubtitle": "お気に入りの曲を簡単にマスター",
     "integrateSubtitle": "既存のワークフローと連携",
     "tabs": {
@@ -449,7 +449,7 @@
       },
       {
         "question": "Cymasphereのユーザーマニュアルはありますか？",
-        "answer": "いいえ、すべてのヘルプはアプリ内のヘルプマネージャーに直接組み込まれており、新機能を簡単に探索して学ぶことができます。質問、バグレポート、その他のお問い合わせは、Discordサーバーまたはsupport@cymasphere.comにメールでお問い合わせください。"
+        "answer": "いいえ、すべてのヘルプはアプリ内のヘルプマネージャーに直接組み込まれており、新機能を簡単に探索して学ぶことができます。質問、バグレポート、その他のお問い合わせは、<a href=\"https://discord.gg/cymasphere\" target=\"_blank\" rel=\"noopener noreferrer\">Discordサーバー</a>またはsupport@cymasphere.comにメールでお問い合わせください。"
       }
     ]
   },

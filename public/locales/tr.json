@@ -176,7 +176,7 @@
   "howItWorks": {
     "title": "Nasıl çalışır",
     "subtitle": "Müzik yaratımı basitleştirildi",
-    "createSubtitle": "Güçlü araçlarla müzik besteleme",
+    "createSubtitle": "Amaçlı müzik besteleme",
     "learnSubtitle": "Favori şarkılarınızda zahmetsizce ustalaşın",
     "integrateSubtitle": "Mevcut iş akışınızla bağlantı kurun",
     "tabs": {
@@ -914,7 +914,7 @@
       },
       {
         "question": "Cymasphere için kullanıcı kılavuzu mevcut mu?",
-        "answer": "Hayır, tüm yardım doğrudan uygulama içi yardım yöneticisine yerleştirilmiştir, yeni özellikleri keşfetmeyi ve öğrenmeyi zahmetsiz hale getirir. Sorular, hata raporları ve diğer sorular Discord sunucumuz aracılığıyla veya support@cymasphere.com adresine e-posta göndererek iletilebilir."
+        "answer": "Hayır, tüm yardım doğrudan uygulama içi yardım yöneticisine yerleştirilmiştir, yeni özellikleri keşfetmeyi ve öğrenmeyi zahmetsiz hale getirir. Sorular, hata raporları ve diğer sorular <a href=\"https://discord.gg/cymasphere\" target=\"_blank\" rel=\"noopener noreferrer\">Discord sunucumuz</a> aracılığıyla veya support@cymasphere.com adresine e-posta göndererek iletilebilir."
       }
     ]
   },

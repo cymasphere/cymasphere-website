@@ -251,7 +251,7 @@
   "howItWorks": {
     "title": "Wie es funktioniert",
     "subtitle": "Musikerstellung leicht gemacht",
-    "createSubtitle": "Komponieren Sie Musik mit leistungsstarken Werkzeugen",
+    "createSubtitle": "Komponieren Sie Musik mit Absicht",
     "learnSubtitle": "Meistern Sie Ihre Lieblingssongs mühelos",
     "integrateSubtitle": "Verbinden Sie sich mit Ihrem bestehenden Workflow",
     "tabs": {
@@ -447,7 +447,7 @@
       },
       {
         "question": "Gibt es ein Benutzerhandbuch für Cymasphere?",
-        "answer": "Nein, alle Hilfestellungen sind direkt in den In-App-Hilfemanager integriert, was es mühelos macht, neue Funktionen zu erkunden und zu erlernen. Fragen, Fehlerberichte und andere Anfragen können an unseren Discord-Server gerichtet oder per E-Mail an support@cymasphere.com gesendet werden."
+        "answer": "Nein, alle Hilfestellungen sind direkt in den In-App-Hilfemanager integriert, was es mühelos macht, neue Funktionen zu erkunden und zu erlernen. Fragen, Fehlerberichte und andere Anfragen können an unseren <a href=\"https://discord.gg/cymasphere\" target=\"_blank\" rel=\"noopener noreferrer\">Discord-Server</a> gerichtet oder per E-Mail an support@cymasphere.com gesendet werden."
       }
     ]
   },

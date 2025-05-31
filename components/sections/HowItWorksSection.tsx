@@ -9,12 +9,48 @@ import i18next from "i18next";
 const SectionContainer = styled.section`
   width: 100%;
   padding: 80px 20px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(
+    165deg,
+    rgba(15, 14, 23, 0.98) 0%,
+    rgba(27, 25, 40, 0.98) 50%,
+    rgba(35, 32, 52, 0.98) 100%
+  );
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
   overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at 30% 50%,
+        rgba(108, 99, 255, 0.08),
+        transparent 60%
+      ),
+      radial-gradient(
+        circle at 70% 30%,
+        rgba(78, 205, 196, 0.08),
+        transparent 60%
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(0, 0, 0, 0.1),
+        rgba(0, 0, 0, 0.4) 80%
+      );
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 const SectionTitle = styled(motion.h2)`
@@ -42,18 +78,20 @@ const InfoBox = styled(motion.div)`
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 `;
 
-const Description = styled.p`
-  color: rgba(255, 255, 255, 0.8);
+const SubtitleHeading = styled(motion.h3)`
+  font-size: 2rem;
+  margin: 30px auto 40px;
   text-align: center;
   max-width: 800px;
-  margin: 0 auto 40px;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  line-height: 1.4;
   position: relative;
   z-index: 1;
 
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.6rem;
+    margin: 25px auto 30px;
   }
 `;
 
@@ -159,7 +197,7 @@ const StepImage = styled(motion.div)<StepImageProps>`
 `;
 
 interface WorkflowTitleProps {
-  number?: string | number;
+  $number?: string | number;
 }
 
 const WorkflowTitle = styled.h3<WorkflowTitleProps>`
@@ -170,7 +208,7 @@ const WorkflowTitle = styled.h3<WorkflowTitleProps>`
   align-items: center;
 
   &:before {
-    content: "${(props) => props.number}";
+    content: "${(props) => props.$number}";
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -196,51 +234,7 @@ const WorkflowDescription = styled.p`
   line-height: 1.7;
 `;
 
-const BackgroundCircle = styled.div`
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(78, 205, 196, 0.1) 0%,
-    rgba(108, 99, 255, 0.05) 50%,
-    rgba(0, 0, 0, 0) 80%
-  );
-  top: -200px;
-  right: -200px;
-  z-index: 0;
 
-  @media (max-width: 768px) {
-    width: 400px;
-    height: 400px;
-    top: -150px;
-    right: -150px;
-  }
-`;
-
-const BackgroundCircle2 = styled.div`
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(108, 99, 255, 0.08) 0%,
-    rgba(78, 205, 196, 0.03) 50%,
-    rgba(0, 0, 0, 0) 80%
-  );
-  bottom: -200px;
-  left: -200px;
-  z-index: 0;
-
-  @media (max-width: 768px) {
-    width: 300px;
-    height: 300px;
-    bottom: -100px;
-    left: -100px;
-  }
-`;
 
 const workflowVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -285,7 +279,7 @@ const HowItWorksSection = () => {
       case "create":
         return t(
           "howItWorks.createSubtitle",
-          "Compose music with powerful tools"
+          "Compose music with purpose"
         );
       case "learn":
         return t(
@@ -302,7 +296,7 @@ const HowItWorksSection = () => {
     }
   };
 
-  const sectionDescription = getSubtitle();
+  const sectionSubtitle = getSubtitle();
 
   // Get create workflow with translations
   const getCreateWorkflow = () => [
@@ -442,9 +436,6 @@ const HowItWorksSection = () => {
 
   return (
     <SectionContainer id="how-it-works">
-      <BackgroundCircle />
-      <BackgroundCircle2 />
-
       <SectionTitle
         initial={{ opacity: 0, y: -20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -453,8 +444,6 @@ const HowItWorksSection = () => {
       >
         {sectionTitle}
       </SectionTitle>
-
-      <Description>{sectionDescription}</Description>
 
       <TabsContainer>
         <Tab
@@ -483,9 +472,16 @@ const HowItWorksSection = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
       >
+        <SubtitleHeading
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {sectionSubtitle}
+        </SubtitleHeading>
         {currentWorkflow.map((step, index) => (
           <WorkflowStep
-            key={index}
+            key={`${activeTab}-${index}`}
             variants={workflowVariants}
             initial="hidden"
             whileInView="visible"
@@ -494,7 +490,7 @@ const HowItWorksSection = () => {
             reversed={index % 2 !== 0}
           >
             <StepContent>
-              <WorkflowTitle number={index + 1}>{step.title}</WorkflowTitle>
+              <WorkflowTitle $number={index + 1}>{step.title}</WorkflowTitle>
               <WorkflowContent>
                 <WorkflowDescription>{step.description}</WorkflowDescription>
               </WorkflowContent>

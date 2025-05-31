@@ -166,7 +166,7 @@
   "howItWorks": {
     "title": "工作原理",
     "subtitle": "音乐创作变得简单",
-    "createSubtitle": "使用强大工具作曲",
+    "createSubtitle": "有目的地作曲",
     "learnSubtitle": "轻松掌握您喜爱的歌曲",
     "integrateSubtitle": "连接到您现有的工作流程",
     "tabs": {
@@ -338,7 +338,7 @@
       },
       {
         "question": "Cymasphere有用户手册吗？",
-        "answer": "没有，所有帮助都直接内置在应用程序的帮助管理器中，让探索和学习新功能变得毫不费力。问题、错误报告和其他询问可以通过我们的Discord服务器或发送邮件至support@cymasphere.com。"
+        "answer": "没有，所有帮助都直接内置在应用程序的帮助管理器中，让探索和学习新功能变得毫不费力。问题、错误报告和其他询问可以通过我们的<a href=\"https://discord.gg/cymasphere\" target=\"_blank\" rel=\"noopener noreferrer\">Discord服务器</a>或发送邮件至support@cymasphere.com。"
       }
     ]
   },
