@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import {
   FaDownload,
@@ -9,6 +9,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import { createSupabaseBrowser } from "@/utils/supabase/client";
 
 const DownloadsContainer = styled.div`
   width: 100%;
@@ -152,29 +153,34 @@ const DownloadButtonContainer = styled.div`
   padding-top: 1rem;
 `;
 
-const DownloadButton = styled.a`
+const DownloadButton = styled.a<{ disabled?: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: ${(props) =>
+    props.disabled
+      ? "linear-gradient(135deg, #666, #888)"
+      : "linear-gradient(135deg, var(--primary), var(--accent))"};
   color: white;
   border: none;
   border-radius: 6px;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s ease;
   text-decoration: none;
   width: 100%;
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
 
   svg {
     margin-right: 0.5rem;
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+    transform: ${(props) => (props.disabled ? "none" : "translateY(-2px)")};
+    box-shadow: ${(props) =>
+      props.disabled ? "none" : "0 5px 15px rgba(108, 99, 255, 0.3)"};
     text-decoration: none;
     color: white;
   }
@@ -277,14 +283,132 @@ const ResourceLink = styled.a`
 
 function Downloads() {
   const { t } = useTranslation();
-  
+  const [fileInfo, setFileInfo] = useState({
+    windows: { size: "Loading...", lastModified: "Loading..." },
+    macos: { size: "Loading...", lastModified: "Loading..." },
+  });
+  const [versionInfo, setVersionInfo] = useState({
+    version: "Loading...",
+    loading: true,
+  });
+
+  useEffect(() => {
+    const fetchFileInfo = async () => {
+      try {
+        const supabase = createSupabaseBrowser();
+
+        // Fetch version info from manifest file
+        try {
+          const { data: manifestData, error: manifestError } =
+            await supabase.storage.from("builds").download("manifest.json");
+
+          if (manifestError) {
+            // Try alternative manifest file names
+            const { data: altManifestData, error: altManifestError } =
+              await supabase.storage.from("builds").download("version.json");
+
+            if (altManifestError) {
+              setVersionInfo({ version: "1.2.3", loading: false });
+            } else if (altManifestData) {
+              const manifestText = await altManifestData.text();
+              const manifest = JSON.parse(manifestText);
+              setVersionInfo({
+                version: manifest.version || manifest.app_version || "1.2.3",
+                loading: false,
+              });
+            }
+          } else if (manifestData) {
+            const manifestText = await manifestData.text();
+            const manifest = JSON.parse(manifestText);
+            setVersionInfo({
+              version: manifest.version || manifest.app_version || "1.2.3",
+              loading: false,
+            });
+          }
+        } catch {
+          setVersionInfo({ version: "1.2.3", loading: false });
+        }
+
+        // Fetch file information from the builds bucket
+        const { data: files, error } = await supabase.storage
+          .from("builds")
+          .list("", {
+            limit: 100,
+            sortBy: { column: "name", order: "asc" },
+          });
+
+        if (error) {
+          return;
+        }
+
+        if (files) {
+          const windowsFile = files.find(
+            (file) =>
+              file.name.includes("Cymasphere_Installer") &&
+              file.name.endsWith(".exe")
+          );
+          const macosFile = files.find(
+            (file) => file.name === "Cymasphere_Installer.pkg"
+          );
+
+          const formatFileSize = (bytes: number | null | undefined): string => {
+            if (!bytes) return "Unknown";
+            const mb = bytes / (1024 * 1024);
+            return `${mb.toFixed(2)} MB`;
+          };
+
+          const formatDate = (
+            dateString: string | null | undefined
+          ): string => {
+            if (!dateString) return "Unknown";
+            const date = new Date(dateString);
+            return date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          };
+
+          setFileInfo({
+            windows: {
+              size: windowsFile?.metadata?.size
+                ? formatFileSize(windowsFile.metadata.size)
+                : "Loading...",
+              lastModified: windowsFile?.updated_at
+                ? formatDate(windowsFile.updated_at)
+                : "Loading...",
+            },
+            macos: {
+              size: macosFile?.metadata?.size
+                ? formatFileSize(macosFile.metadata.size)
+                : "Loading...",
+              lastModified: macosFile?.updated_at
+                ? formatDate(macosFile.updated_at)
+                : "Loading...",
+            },
+          });
+        }
+      } catch {
+        // Keep fallback values if fetch fails
+        setFileInfo({
+          windows: { size: "Loading...", lastModified: "Loading..." },
+          macos: { size: "Loading...", lastModified: "Loading..." },
+        });
+        setVersionInfo({ version: "1.2.3", loading: false });
+      }
+    };
+
+    fetchFileInfo();
+  }, []);
+
   return (
     <DownloadsContainer>
       <SectionTitle>{t("dashboard.downloads.title", "Downloads")}</SectionTitle>
 
       <DownloadCard>
         <CardTitle>
-          <FaDownload /> {t("dashboard.downloads.installers", "Cymasphere Installers")}
+          <FaDownload />{" "}
+          {t("dashboard.downloads.installers", "Cymasphere Installers")}
         </CardTitle>
         <CardContent>
           <DownloadsGrid>
@@ -294,23 +418,55 @@ function Downloads() {
                   <FaApple />
                 </DownloadIcon>
                 <DownloadInfo>
-                  <DownloadName>{t("dashboard.downloads.macosTitle", "Cymasphere for macOS")}</DownloadName>
-                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
+                  <DownloadName>
+                    {t(
+                      "dashboard.downloads.macosTitle",
+                      "Cymasphere for macOS"
+                    )}
+                  </DownloadName>
+                  <DownloadVersion>
+                    {t("dashboard.downloads.version", "Version")}{" "}
+                    {versionInfo.version}
+                  </DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
                 <div>
                   <DownloadDescription>
-                    {t("dashboard.downloads.macosDesc", "Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors.")}
+                    {t(
+                      "dashboard.downloads.macosDesc",
+                      "Universal installer for macOS with standalone app and plugins (AU, VST3) for both Apple Silicon and Intel processors."
+                    )}
                   </DownloadDescription>
                   <DownloadMeta>
-                    <DownloadSize>162 MB</DownloadSize>
-                    <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
+                    <DownloadSize>{fileInfo.macos.size}</DownloadSize>
+                    <DownloadDate>
+                      {t("dashboard.downloads.updated", "Updated")}:{" "}
+                      {fileInfo.macos.lastModified}
+                    </DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
-                  <DownloadButton href="#">
-                    <FaDownload /> {t("dashboard.downloads.downloadMacos", "Download for macOS")}
+                  <DownloadButton
+                    href={
+                      fileInfo.macos.size === "Loading..."
+                        ? "#"
+                        : "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/builds//Cymasphere_Installer.pkg"
+                    }
+                    disabled={fileInfo.macos.size === "Loading..."}
+                    onClick={(e) => {
+                      if (fileInfo.macos.size === "Loading...") {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <FaDownload />{" "}
+                    {fileInfo.macos.size === "Loading..."
+                      ? t("dashboard.downloads.loading", "Loading...")
+                      : t(
+                          "dashboard.downloads.downloadMacos",
+                          "Download for macOS"
+                        )}
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
@@ -322,23 +478,55 @@ function Downloads() {
                   <FaWindows />
                 </DownloadIcon>
                 <DownloadInfo>
-                  <DownloadName>{t("dashboard.downloads.windowsTitle", "Cymasphere for Windows")}</DownloadName>
-                  <DownloadVersion>{t("dashboard.downloads.version", "Version")} 1.2.3</DownloadVersion>
+                  <DownloadName>
+                    {t(
+                      "dashboard.downloads.windowsTitle",
+                      "Cymasphere for Windows"
+                    )}
+                  </DownloadName>
+                  <DownloadVersion>
+                    {t("dashboard.downloads.version", "Version")}{" "}
+                    {versionInfo.version}
+                  </DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
                 <div>
                   <DownloadDescription>
-                    {t("dashboard.downloads.windowsDesc", "Complete installer for Windows 10/11 including standalone app and plugin formats (VST3).")}
+                    {t(
+                      "dashboard.downloads.windowsDesc",
+                      "Complete installer for Windows 10/11 including standalone app and plugin formats (VST3)."
+                    )}
                   </DownloadDescription>
                   <DownloadMeta>
-                    <DownloadSize>{t("dashboard.downloads.size", "145 MB")}</DownloadSize>
-                    <DownloadDate>{t("dashboard.downloads.updated", "Updated")}: {t("dashboard.downloads.updateDate", "March 10, 2023")}</DownloadDate>
+                    <DownloadSize>{fileInfo.windows.size}</DownloadSize>
+                    <DownloadDate>
+                      {t("dashboard.downloads.updated", "Updated")}:{" "}
+                      {fileInfo.windows.lastModified}
+                    </DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
-                  <DownloadButton href="#">
-                    <FaDownload /> {t("dashboard.downloads.downloadWindows", "Download for Windows")}
+                  <DownloadButton
+                    href={
+                      fileInfo.windows.size === "Loading..."
+                        ? "#"
+                        : "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/builds//Cymasphere_Installer.exe"
+                    }
+                    disabled={fileInfo.windows.size === "Loading..."}
+                    onClick={(e) => {
+                      if (fileInfo.windows.size === "Loading...") {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <FaDownload />{" "}
+                    {fileInfo.windows.size === "Loading..."
+                      ? t("dashboard.downloads.loading", "Loading...")
+                      : t(
+                          "dashboard.downloads.downloadWindows",
+                          "Download for Windows"
+                        )}
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
@@ -359,13 +547,23 @@ function Downloads() {
                   <FaFilePdf />
                 </ResourceIcon>
                 <ResourceInfo>
-                  <ResourceTitle>{t("dashboard.downloads.quickStart", "Quick Start Guide")}</ResourceTitle>
+                  <ResourceTitle>
+                    {t("dashboard.downloads.quickStart", "Quick Start Guide")}
+                  </ResourceTitle>
                   <ResourceDescription>
-                    {t("dashboard.downloads.quickStartDesc", "Get up and running with Cymasphere in minutes")}
+                    {t(
+                      "dashboard.downloads.quickStartDesc",
+                      "Get up and running with Cymasphere in minutes"
+                    )}
                   </ResourceDescription>
                 </ResourceInfo>
-                <ResourceLink href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/documentation//Cymasphere-QuickStart-Guide.pdf" target="_blank" rel="noopener noreferrer">
-                  {t("dashboard.downloads.downloadPdf", "Download PDF")} <FaDownload />
+                <ResourceLink
+                  href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/documentation//Cymasphere-QuickStart-Guide.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("dashboard.downloads.downloadPdf", "Download PDF")}{" "}
+                  <FaDownload />
                 </ResourceLink>
               </ResourceItem>
             </ResourcesList>
