@@ -12,10 +12,7 @@ import { motion } from "framer-motion";
 import { FaCheck, FaGift, FaUnlock } from "react-icons/fa";
 import { IoInformationCircle } from "react-icons/io5";
 // Import Stripe actions
-import {
-  initiateCheckout,
-  checkExistingCustomer,
-} from "@/utils/stripe/actions";
+// Removed server action imports - now using API routes
 import { PlanType, PriceData } from "@/types/stripe";
 import * as Tone from "tone"; // Import Tone.js for audio playback
 // Import the CymasphereLogo component dynamically
@@ -1859,13 +1856,22 @@ const PricingSection = () => {
       // Make sure email is a string or undefined, not null
       const userEmail = user?.email || undefined;
 
-      const result = await initiateCheckout(
-        billingPeriod,
-        userEmail,
-        customerId,
-        promotionCode,
-        collectPaymentMethod
-      );
+      // Use API route instead of server action
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planType: billingPeriod,
+          email: userEmail,
+          customerId: customerId,
+          promotionCode: promotionCode,
+          collectPaymentMethod: collectPaymentMethod,
+        }),
+      });
+
+      const result = await response.json();
 
       if (result.url) {
         // Redirect to Stripe Checkout
@@ -1890,7 +1896,16 @@ const PricingSection = () => {
 
     try {
       // Check if the customer already exists and has a subscription or prior transactions
-      const customerCheck = await checkExistingCustomer(email);
+      // Use API route instead of server action
+      const customerCheckResponse = await fetch("/api/stripe/check-customer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const customerCheck = await customerCheckResponse.json();
 
       if (customerCheck.error) {
         return { success: false, error: customerCheck.error };
@@ -1912,13 +1927,22 @@ const PricingSection = () => {
       const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
       const collectPaymentMethod = trialType === "14day";
 
-      const result = await initiateCheckout(
-        billingPeriod,
-        email,
-        undefined,
-        promotionCode,
-        collectPaymentMethod
-      );
+      // Use API route instead of server action
+      const checkoutResponse = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planType: billingPeriod,
+          email: email,
+          customerId: undefined,
+          promotionCode: promotionCode,
+          collectPaymentMethod: collectPaymentMethod,
+        }),
+      });
+
+      const result = await checkoutResponse.json();
 
       if (result.url) {
         // Redirect to Stripe Checkout
