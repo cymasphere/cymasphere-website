@@ -87,51 +87,51 @@ export async function getPrices(): Promise<{
     ]);
 
     // Fetch active promotions/coupons
-    const promotions = await stripe.promotionCodes.list({
-      active: true,
-      limit: 10,
-      expand: ["data.coupon"],
-    });
+    // const promotions = await stripe.promotionCodes.list({
+    //   active: true,
+    //   limit: 10,
+    //   expand: ["data.coupon"],
+    // });
 
     // console.log(JSON.stringify(promotions));
 
     // Find the best applicable discount
     // Get the first active promotion with the highest percent_off or amount_off
-    const getActivePromotion = () => {
-      if (!promotions.data.length) return undefined;
+    // const getActivePromotion = () => {
+    //   if (!promotions.data.length) return undefined;
 
-      // Sort by percent_off (descending), then by amount_off (descending)
-      const sortedPromotions = [...promotions.data].sort((a, b) => {
-        // Compare percent_off first (higher is better)
-        const percentOffA = a.coupon?.percent_off || 0;
-        const percentOffB = b.coupon?.percent_off || 0;
-        if (percentOffA !== percentOffB) {
-          return percentOffB - percentOffA;
-        }
+    //   // Sort by percent_off (descending), then by amount_off (descending)
+    //   const sortedPromotions = [...promotions.data].sort((a, b) => {
+    //     // Compare percent_off first (higher is better)
+    //     const percentOffA = a.coupon?.percent_off || 0;
+    //     const percentOffB = b.coupon?.percent_off || 0;
+    //     if (percentOffA !== percentOffB) {
+    //       return percentOffB - percentOffA;
+    //     }
 
-        // If percent_off is the same, compare amount_off
-        const amountOffA = a.coupon?.amount_off || 0;
-        const amountOffB = b.coupon?.amount_off || 0;
-        return amountOffB - amountOffA;
-      });
+    //     // If percent_off is the same, compare amount_off
+    //     const amountOffA = a.coupon?.amount_off || 0;
+    //     const amountOffB = b.coupon?.amount_off || 0;
+    //     return amountOffB - amountOffA;
+    //   });
 
-      // Return the best promotion
-      const bestPromotion = sortedPromotions[0];
-      if (!bestPromotion || !bestPromotion.coupon) return undefined;
+    //   // Return the best promotion
+    //   const bestPromotion = sortedPromotions[0];
+    //   if (!bestPromotion || !bestPromotion.coupon) return undefined;
 
-      return {
-        id: bestPromotion.id,
-        name: bestPromotion.coupon.name || "Special Offer",
-        percent_off: bestPromotion.coupon.percent_off || undefined,
-        amount_off: bestPromotion.coupon.amount_off || undefined,
-        currency: bestPromotion.coupon.currency || undefined,
-        promotion_code: bestPromotion.id, // Save promotion code ID
-        promotion_display: bestPromotion.coupon.name || "Special Offer",
-      };
-    };
+    //   return {
+    //     id: bestPromotion.id,
+    //     name: bestPromotion.coupon.name || "Special Offer",
+    //     percent_off: bestPromotion.coupon.percent_off || undefined,
+    //     amount_off: bestPromotion.coupon.amount_off || undefined,
+    //     currency: bestPromotion.coupon.currency || undefined,
+    //     promotion_code: bestPromotion.id, // Save promotion code ID
+    //     promotion_display: bestPromotion.coupon.name || "Special Offer",
+    //   };
+    // };
 
-    // Get the best active promotion
-    const activePromotion = getActivePromotion();
+    // // Get the best active promotion
+    // const activePromotion = getActivePromotion();
 
     // Get product name
     const productName =
@@ -146,7 +146,7 @@ export async function getPrices(): Promise<{
         currency: monthlyPrice.currency,
         interval: monthlyPrice.recurring?.interval,
         name: `${productName} (Monthly)`,
-        discount: activePromotion,
+        // discount: activePromotion,
       },
       annual: {
         id: annualPrice.id,
@@ -155,7 +155,7 @@ export async function getPrices(): Promise<{
         currency: annualPrice.currency,
         interval: annualPrice.recurring?.interval,
         name: `${productName} (Annual)`,
-        discount: activePromotion,
+        // discount: activePromotion,
       },
       lifetime: {
         id: lifetimePrice.id,
@@ -163,7 +163,7 @@ export async function getPrices(): Promise<{
         amount: lifetimePrice.unit_amount || 0,
         currency: lifetimePrice.currency,
         name: `${productName} (Lifetime)`,
-        discount: activePromotion,
+        // discount: activePromotion,
       },
     };
 
@@ -480,14 +480,16 @@ export async function getUpcomingInvoice(customerId: string | null): Promise<{
     // Handle the case where there are no upcoming invoices gracefully
     // This is common for lifetime customers, canceled subscriptions, or customers without active subscriptions
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    if (errorMessage.includes("No upcoming invoices") || 
-        errorMessage.includes("no upcoming invoice") ||
-        errorMessage.includes("No invoice found")) {
+
+    if (
+      errorMessage.includes("No upcoming invoices") ||
+      errorMessage.includes("no upcoming invoice") ||
+      errorMessage.includes("No invoice found")
+    ) {
       // This is not really an error - just means no upcoming charges
       return { amount: 0, error: null, due_date: null };
     }
-    
+
     // For other types of errors, still log them but don't expose the full error to the UI
     console.error("Error fetching upcoming invoice:", error);
     return { amount: 0, error: null, due_date: null };
@@ -669,7 +671,9 @@ export async function createCustomerPortalSession(
     return {
       url: null,
       error:
-        error instanceof Error ? error.message : "Failed to create portal session",
+        error instanceof Error
+          ? error.message
+          : "Failed to create portal session",
     };
   }
 }
@@ -683,12 +687,12 @@ export async function createCustomerPortalSession(
 export async function refundPaymentIntent(
   paymentIntentId: string,
   amount?: number,
-  reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
+  reason?: "duplicate" | "fraudulent" | "requested_by_customer"
 ): Promise<{ success: boolean; refund?: any; error?: string }> {
   try {
     const refundData: Stripe.RefundCreateParams = {
       payment_intent: paymentIntentId,
-      reason: reason || 'requested_by_customer',
+      reason: reason || "requested_by_customer",
     };
 
     // Add amount if partial refund
@@ -723,7 +727,8 @@ export async function refundPaymentIntent(
     console.error("Error refunding payment intent:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to process refund",
+      error:
+        error instanceof Error ? error.message : "Failed to process refund",
     };
   }
 }
@@ -742,17 +747,17 @@ export async function refundInvoice(
   try {
     // First, get the invoice to check its status and amount
     const invoice = await stripe.invoices.retrieve(invoiceId);
-    
-    if (invoice.status !== 'paid') {
+
+    if (invoice.status !== "paid") {
       return {
         success: false,
-        error: 'Invoice must be paid to create a refund',
+        error: "Invoice must be paid to create a refund",
       };
     }
 
     const creditNoteData: Stripe.CreditNoteCreateParams = {
       invoice: invoiceId,
-      reason: reason || 'duplicate',
+      reason: reason || "duplicate",
     };
 
     // Add amount if partial refund
@@ -769,10 +774,16 @@ export async function refundInvoice(
       amount: creditNote.amount,
       created: creditNote.created,
       currency: creditNote.currency,
-      customer: typeof creditNote.customer === 'string' ? creditNote.customer : {
-        id: creditNote.customer.id,
-        email: 'email' in creditNote.customer ? creditNote.customer.email : null,
-      },
+      customer:
+        typeof creditNote.customer === "string"
+          ? creditNote.customer
+          : {
+              id: creditNote.customer.id,
+              email:
+                "email" in creditNote.customer
+                  ? creditNote.customer.email
+                  : null,
+            },
       customer_balance_transaction: creditNote.customer_balance_transaction,
       discount_amount: creditNote.discount_amount,
       discount_amounts: creditNote.discount_amounts,
@@ -802,7 +813,8 @@ export async function refundInvoice(
     console.error("Error refunding invoice:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to process refund",
+      error:
+        error instanceof Error ? error.message : "Failed to process refund",
     };
   }
 }
@@ -820,7 +832,7 @@ export async function getPaymentIntentRefunds(
     });
 
     // Serialize the refunds
-    const serializedRefunds = refunds.data.map(refund => ({
+    const serializedRefunds = refunds.data.map((refund) => ({
       id: refund.id,
       object: refund.object,
       amount: refund.amount,
@@ -861,16 +873,22 @@ export async function getInvoiceCreditNotes(
     });
 
     // Serialize the credit notes
-    const serializedCreditNotes = creditNotes.data.map(creditNote => ({
+    const serializedCreditNotes = creditNotes.data.map((creditNote) => ({
       id: creditNote.id,
       object: creditNote.object,
       amount: creditNote.amount,
       created: creditNote.created,
       currency: creditNote.currency,
-      customer: typeof creditNote.customer === 'string' ? creditNote.customer : {
-        id: creditNote.customer.id,
-        email: 'email' in creditNote.customer ? creditNote.customer.email : null,
-      },
+      customer:
+        typeof creditNote.customer === "string"
+          ? creditNote.customer
+          : {
+              id: creditNote.customer.id,
+              email:
+                "email" in creditNote.customer
+                  ? creditNote.customer.email
+                  : null,
+            },
       customer_balance_transaction: creditNote.customer_balance_transaction,
       discount_amount: creditNote.discount_amount,
       discount_amounts: creditNote.discount_amounts,
@@ -899,7 +917,8 @@ export async function getInvoiceCreditNotes(
     console.error("Error fetching credit notes:", error);
     return {
       creditNotes: [],
-      error: error instanceof Error ? error.message : "Failed to fetch credit notes",
+      error:
+        error instanceof Error ? error.message : "Failed to fetch credit notes",
     };
   }
 }
@@ -912,19 +931,25 @@ export async function getInvoiceCreditNotes(
  * @param currency Currency for amount-based coupons (required if discountType is 'amount')
  */
 export async function createOneTimeCoupon(
-  discountType: 'percent' | 'amount',
+  discountType: "percent" | "amount",
   discountValue: number,
   name?: string,
-  currency: string = 'usd'
+  currency: string = "usd"
 ): Promise<{ success: boolean; coupon?: any; error?: string }> {
   try {
     const couponData: Stripe.CouponCreateParams = {
-      duration: 'once', // One-time use
-      name: name || `${discountType === 'percent' ? discountValue + '%' : '$' + (discountValue / 100)} off`,
+      duration: "once", // One-time use
+      name:
+        name ||
+        `${
+          discountType === "percent"
+            ? discountValue + "%"
+            : "$" + discountValue / 100
+        } off`,
     };
 
     // Set discount value based on type
-    if (discountType === 'percent') {
+    if (discountType === "percent") {
       couponData.percent_off = discountValue;
     } else {
       couponData.amount_off = discountValue;
@@ -1002,23 +1027,26 @@ export async function createPromotionCode(
       object: promotionCode.object,
       active: promotionCode.active,
       code: promotionCode.code,
-      coupon: typeof promotionCode.coupon === 'string' ? promotionCode.coupon : {
-        id: promotionCode.coupon.id,
-        object: promotionCode.coupon.object,
-        amount_off: promotionCode.coupon.amount_off,
-        created: promotionCode.coupon.created,
-        currency: promotionCode.coupon.currency,
-        duration: promotionCode.coupon.duration,
-        duration_in_months: promotionCode.coupon.duration_in_months,
-        livemode: promotionCode.coupon.livemode,
-        max_redemptions: promotionCode.coupon.max_redemptions,
-        metadata: promotionCode.coupon.metadata,
-        name: promotionCode.coupon.name,
-        percent_off: promotionCode.coupon.percent_off,
-        redeem_by: promotionCode.coupon.redeem_by,
-        times_redeemed: promotionCode.coupon.times_redeemed,
-        valid: promotionCode.coupon.valid,
-      },
+      coupon:
+        typeof promotionCode.coupon === "string"
+          ? promotionCode.coupon
+          : {
+              id: promotionCode.coupon.id,
+              object: promotionCode.coupon.object,
+              amount_off: promotionCode.coupon.amount_off,
+              created: promotionCode.coupon.created,
+              currency: promotionCode.coupon.currency,
+              duration: promotionCode.coupon.duration,
+              duration_in_months: promotionCode.coupon.duration_in_months,
+              livemode: promotionCode.coupon.livemode,
+              max_redemptions: promotionCode.coupon.max_redemptions,
+              metadata: promotionCode.coupon.metadata,
+              name: promotionCode.coupon.name,
+              percent_off: promotionCode.coupon.percent_off,
+              redeem_by: promotionCode.coupon.redeem_by,
+              times_redeemed: promotionCode.coupon.times_redeemed,
+              valid: promotionCode.coupon.valid,
+            },
       created: promotionCode.created,
       customer: promotionCode.customer,
       expires_at: promotionCode.expires_at,
@@ -1037,7 +1065,10 @@ export async function createPromotionCode(
     console.error("Error creating promotion code:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create promotion code",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create promotion code",
     };
   }
 }
@@ -1049,7 +1080,7 @@ export async function createPromotionCode(
  * @param options Additional options for the discount code
  */
 export async function createOneTimeDiscountCode(
-  discountType: 'percent' | 'amount',
+  discountType: "percent" | "amount",
   discountValue: number,
   options?: {
     code?: string;
@@ -1058,9 +1089,9 @@ export async function createOneTimeDiscountCode(
     expiresAt?: number;
     maxRedemptions?: number;
   }
-): Promise<{ 
-  success: boolean; 
-  coupon?: any; 
+): Promise<{
+  success: boolean;
+  coupon?: any;
   promotionCode?: any;
   code?: string;
   error?: string;
@@ -1106,7 +1137,10 @@ export async function createOneTimeDiscountCode(
     console.error("Error creating discount code:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create discount code",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create discount code",
     };
   }
 }
@@ -1123,7 +1157,7 @@ export async function listPromotionCodes(options?: {
   try {
     const listParams: Stripe.PromotionCodeListParams = {
       limit: options?.limit || 100,
-      expand: ['data.coupon'], // Expand coupon data
+      expand: ["data.coupon"], // Expand coupon data
     };
 
     if (options?.active !== undefined) {
@@ -1137,37 +1171,42 @@ export async function listPromotionCodes(options?: {
     const promotionCodes = await stripe.promotionCodes.list(listParams);
 
     // Serialize the promotion codes to plain objects
-    const serializedPromotionCodes = promotionCodes.data.map(promotionCode => ({
-      id: promotionCode.id,
-      object: promotionCode.object,
-      active: promotionCode.active,
-      code: promotionCode.code,
-      coupon: typeof promotionCode.coupon === 'string' ? promotionCode.coupon : {
-        id: promotionCode.coupon.id,
-        object: promotionCode.coupon.object,
-        amount_off: promotionCode.coupon.amount_off,
-        created: promotionCode.coupon.created,
-        currency: promotionCode.coupon.currency,
-        duration: promotionCode.coupon.duration,
-        duration_in_months: promotionCode.coupon.duration_in_months,
-        livemode: promotionCode.coupon.livemode,
-        max_redemptions: promotionCode.coupon.max_redemptions,
-        metadata: promotionCode.coupon.metadata,
-        name: promotionCode.coupon.name,
-        percent_off: promotionCode.coupon.percent_off,
-        redeem_by: promotionCode.coupon.redeem_by,
-        times_redeemed: promotionCode.coupon.times_redeemed,
-        valid: promotionCode.coupon.valid,
-      },
-      created: promotionCode.created,
-      customer: promotionCode.customer,
-      expires_at: promotionCode.expires_at,
-      livemode: promotionCode.livemode,
-      max_redemptions: promotionCode.max_redemptions,
-      metadata: promotionCode.metadata,
-      restrictions: promotionCode.restrictions,
-      times_redeemed: promotionCode.times_redeemed,
-    }));
+    const serializedPromotionCodes = promotionCodes.data.map(
+      (promotionCode) => ({
+        id: promotionCode.id,
+        object: promotionCode.object,
+        active: promotionCode.active,
+        code: promotionCode.code,
+        coupon:
+          typeof promotionCode.coupon === "string"
+            ? promotionCode.coupon
+            : {
+                id: promotionCode.coupon.id,
+                object: promotionCode.coupon.object,
+                amount_off: promotionCode.coupon.amount_off,
+                created: promotionCode.coupon.created,
+                currency: promotionCode.coupon.currency,
+                duration: promotionCode.coupon.duration,
+                duration_in_months: promotionCode.coupon.duration_in_months,
+                livemode: promotionCode.coupon.livemode,
+                max_redemptions: promotionCode.coupon.max_redemptions,
+                metadata: promotionCode.coupon.metadata,
+                name: promotionCode.coupon.name,
+                percent_off: promotionCode.coupon.percent_off,
+                redeem_by: promotionCode.coupon.redeem_by,
+                times_redeemed: promotionCode.coupon.times_redeemed,
+                valid: promotionCode.coupon.valid,
+              },
+        created: promotionCode.created,
+        customer: promotionCode.customer,
+        expires_at: promotionCode.expires_at,
+        livemode: promotionCode.livemode,
+        max_redemptions: promotionCode.max_redemptions,
+        metadata: promotionCode.metadata,
+        restrictions: promotionCode.restrictions,
+        times_redeemed: promotionCode.times_redeemed,
+      })
+    );
 
     return {
       promotionCodes: serializedPromotionCodes,
@@ -1176,7 +1215,10 @@ export async function listPromotionCodes(options?: {
     console.error("Error listing promotion codes:", error);
     return {
       promotionCodes: [],
-      error: error instanceof Error ? error.message : "Failed to list promotion codes",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to list promotion codes",
     };
   }
 }
@@ -1200,7 +1242,10 @@ export async function deactivatePromotionCode(
     console.error("Error deactivating promotion code:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to deactivate promotion code",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to deactivate promotion code",
     };
   }
 }
@@ -1230,10 +1275,16 @@ export async function cancelSubscriptionAdmin(
       created: subscription.created,
       current_period_end: subscription.current_period_end,
       current_period_start: subscription.current_period_start,
-      customer: typeof subscription.customer === 'string' ? subscription.customer : {
-        id: subscription.customer.id,
-        email: 'email' in subscription.customer ? subscription.customer.email : null,
-      },
+      customer:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : {
+              id: subscription.customer.id,
+              email:
+                "email" in subscription.customer
+                  ? subscription.customer.email
+                  : null,
+            },
       status: subscription.status,
       metadata: subscription.metadata,
     };
@@ -1246,7 +1297,10 @@ export async function cancelSubscriptionAdmin(
     console.error("Error canceling subscription:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to cancel subscription",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to cancel subscription",
     };
   }
 }
@@ -1274,10 +1328,16 @@ export async function reactivateSubscription(
       created: subscription.created,
       current_period_end: subscription.current_period_end,
       current_period_start: subscription.current_period_start,
-      customer: typeof subscription.customer === 'string' ? subscription.customer : {
-        id: subscription.customer.id,
-        email: 'email' in subscription.customer ? subscription.customer.email : null,
-      },
+      customer:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : {
+              id: subscription.customer.id,
+              email:
+                "email" in subscription.customer
+                  ? subscription.customer.email
+                  : null,
+            },
       status: subscription.status,
       metadata: subscription.metadata,
     };
@@ -1290,7 +1350,10 @@ export async function reactivateSubscription(
     console.error("Error reactivating subscription:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to reactivate subscription",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to reactivate subscription",
     };
   }
 }
@@ -1306,8 +1369,10 @@ export async function changeSubscriptionPlan(
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     // Get the current subscription
-    const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
+    const currentSubscription = await stripe.subscriptions.retrieve(
+      subscriptionId
+    );
+
     if (!currentSubscription.items.data.length) {
       return {
         success: false,
@@ -1323,7 +1388,7 @@ export async function changeSubscriptionPlan(
           price: newPriceId,
         },
       ],
-      proration_behavior: 'create_prorations', // Create prorations for the change
+      proration_behavior: "create_prorations", // Create prorations for the change
     });
 
     // Serialize the subscription object
@@ -1336,13 +1401,19 @@ export async function changeSubscriptionPlan(
       created: subscription.created,
       current_period_end: subscription.current_period_end,
       current_period_start: subscription.current_period_start,
-      customer: typeof subscription.customer === 'string' ? subscription.customer : {
-        id: subscription.customer.id,
-        email: 'email' in subscription.customer ? subscription.customer.email : null,
-      },
+      customer:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : {
+              id: subscription.customer.id,
+              email:
+                "email" in subscription.customer
+                  ? subscription.customer.email
+                  : null,
+            },
       status: subscription.status,
       metadata: subscription.metadata,
-      items: subscription.items.data.map(item => ({
+      items: subscription.items.data.map((item) => ({
         id: item.id,
         price: {
           id: item.price.id,
@@ -1362,7 +1433,10 @@ export async function changeSubscriptionPlan(
     console.error("Error changing subscription plan:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to change subscription plan",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to change subscription plan",
     };
   }
 }
@@ -1376,7 +1450,7 @@ export async function getSubscriptionDetails(
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-      expand: ['items.data.price', 'customer'],
+      expand: ["items.data.price", "customer"],
     });
 
     // Serialize the subscription object
@@ -1389,13 +1463,19 @@ export async function getSubscriptionDetails(
       created: subscription.created,
       current_period_end: subscription.current_period_end,
       current_period_start: subscription.current_period_start,
-      customer: typeof subscription.customer === 'string' ? subscription.customer : {
-        id: subscription.customer.id,
-        email: 'email' in subscription.customer ? subscription.customer.email : null,
-      },
+      customer:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : {
+              id: subscription.customer.id,
+              email:
+                "email" in subscription.customer
+                  ? subscription.customer.email
+                  : null,
+            },
       status: subscription.status,
       metadata: subscription.metadata,
-      items: subscription.items.data.map(item => ({
+      items: subscription.items.data.map((item) => ({
         id: item.id,
         price: {
           id: item.price.id,
@@ -1418,7 +1498,10 @@ export async function getSubscriptionDetails(
     console.error("Error getting subscription details:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to get subscription details",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get subscription details",
     };
   }
 }
@@ -1433,11 +1516,11 @@ export async function getCustomerSubscriptions(
   try {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      expand: ['data.items.data.price'],
+      expand: ["data.items.data.price"],
     });
 
     // Serialize the subscriptions
-    const serializedSubscriptions = subscriptions.data.map(subscription => ({
+    const serializedSubscriptions = subscriptions.data.map((subscription) => ({
       id: subscription.id,
       object: subscription.object,
       cancel_at: subscription.cancel_at,
@@ -1446,13 +1529,19 @@ export async function getCustomerSubscriptions(
       created: subscription.created,
       current_period_end: subscription.current_period_end,
       current_period_start: subscription.current_period_start,
-      customer: typeof subscription.customer === 'string' ? subscription.customer : {
-        id: subscription.customer.id,
-        email: 'email' in subscription.customer ? subscription.customer.email : null,
-      },
+      customer:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : {
+              id: subscription.customer.id,
+              email:
+                "email" in subscription.customer
+                  ? subscription.customer.email
+                  : null,
+            },
       status: subscription.status,
       metadata: subscription.metadata,
-      items: subscription.items.data.map(item => ({
+      items: subscription.items.data.map((item) => ({
         id: item.id,
         price: {
           id: item.price.id,
@@ -1476,7 +1565,10 @@ export async function getCustomerSubscriptions(
     return {
       success: false,
       subscriptions: [],
-      error: error instanceof Error ? error.message : "Failed to get customer subscriptions",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get customer subscriptions",
     };
   }
 }
