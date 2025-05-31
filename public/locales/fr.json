@@ -632,6 +632,7 @@
       "personalInfo": "Informations personnelles",
       "firstName": "Prénom",
       "lastName": "Nom",
+      "email": "Adresse e-mail",
       "saveChanges": "Enregistrer les modifications",
       "passwordSection": "Changer le mot de passe",
       "sendResetEmail": "Envoyer un e-mail de réinitialisation du mot de passe",

@@ -551,6 +551,7 @@
       "personalInfo": "个人信息",
       "firstName": "名字",
       "lastName": "姓氏",
+      "email": "电子邮箱地址",
       "saveChanges": "保存更改",
       "passwordSection": "更改密码",
       "sendResetEmail": "发送密码重置邮件",

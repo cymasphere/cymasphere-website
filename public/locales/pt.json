@@ -521,6 +521,7 @@
       "personalInfo": "Informações pessoais",
       "firstName": "Nome",
       "lastName": "Sobrenome",
+      "email": "Endereço de Email",
       "saveChanges": "Salvar alterações",
       "passwordSection": "Alterar senha",
       "sendResetEmail": "Enviar email de redefinição de senha",

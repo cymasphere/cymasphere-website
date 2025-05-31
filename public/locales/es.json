@@ -631,6 +631,7 @@
       "personalInfo": "Información Personal",
       "firstName": "Nombre",
       "lastName": "Apellido",
+      "email": "Dirección de Correo Electrónico",
       "saveChanges": "Guardar Cambios",
       "passwordSection": "Cambiar Contraseña",
       "sendResetEmail": "Enviar Correo de Restablecimiento de Contraseña",

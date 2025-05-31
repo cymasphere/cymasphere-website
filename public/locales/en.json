@@ -574,6 +574,7 @@
       "personalInfo": "Personal Information",
       "firstName": "First Name",
       "lastName": "Last Name",
+      "email": "Email Address",
       "saveChanges": "Save Changes",
       "passwordSection": "Change Password",
       "sendResetEmail": "Send Password Reset Email",

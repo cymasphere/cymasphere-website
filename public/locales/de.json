@@ -629,6 +629,7 @@
       "personalInfo": "Persönliche Informationen",
       "firstName": "Vorname",
       "lastName": "Nachname",
+      "email": "E-Mail-Adresse",
       "saveChanges": "Änderungen speichern",
       "passwordSection": "Passwort ändern",
       "sendResetEmail": "E-Mail zum Zurücksetzen des Passworts senden",

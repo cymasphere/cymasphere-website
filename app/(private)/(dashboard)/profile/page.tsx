@@ -107,6 +107,16 @@ const Input = styled.input`
   }
 `;
 
+const ReadOnlyInput = styled(Input)`
+  background-color: rgba(30, 30, 46, 0.3);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
 const Button = styled.button`
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
@@ -404,6 +414,16 @@ function Profile() {
                 />
               </FormGroup>
             </TwoColumnGrid>
+
+            <FormGroup>
+              <Label>{t("dashboard.profile.email", "Email Address")}</Label>
+              <ReadOnlyInput
+                type="email"
+                value={user?.email || ""}
+                readOnly
+                disabled
+              />
+            </FormGroup>
 
             <Button
               type="submit"

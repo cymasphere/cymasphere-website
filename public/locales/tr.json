@@ -610,6 +610,7 @@
       "personalInfo": "Kişisel Bilgiler",
       "firstName": "Ad",
       "lastName": "Soyad",
+      "email": "E-posta Adresi",
       "saveChanges": "Değişiklikleri Kaydet",
       "passwordSection": "Şifre Değiştir",
       "sendResetEmail": "Şifre Sıfırlama E-postası Gönder",
