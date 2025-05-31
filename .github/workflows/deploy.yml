@@ -84,8 +84,8 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Stop the current application
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "pm2 stop cymasphere || true"
+          # Stop the current application with proper Node.js environment
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && export PATH=\$(npm bin -g):\$PATH && pm2 stop cymasphere || true'"
 
       - name: Copy files to server
         env:
@@ -95,19 +95,20 @@ jobs:
           # Create directories if they don't exist with proper structure
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
 
-          # Copy application files with proper directory structure
-          rsync -avz --delete -e "ssh -o ConnectTimeout=60" \
+          # Copy application files with proper directory structure using checksum-based comparison for efficiency
+          rsync -avz --delete --checksum --partial --compress-level=6 -e "ssh -o ConnectTimeout=60" \
             .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
 
-          # Copy public directory with all subdirectories and preserve permissions
-          rsync -avz --delete --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+          # Copy public directory with all subdirectories, preserve permissions, and only transfer changed files
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
             public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
 
           # Verify public directory structure was copied correctly
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
 
-          # Copy package.json and other config files
-          scp package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+          # Copy package.json and other config files only if changed
+          rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+            package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
           # Create environment file
           echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
@@ -120,16 +121,21 @@ jobs:
           echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
           echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
           echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
-          scp .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
-          # Copy next.config.js if it exists
+          # Copy environment file only if changed
+          rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+            .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Copy next.config.js if it exists and has changed
           if [ -f "next.config.js" ]; then
-            scp next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+            rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+              next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
           fi
 
-          # Copy next.config.ts if it exists
+          # Copy next.config.ts if it exists and has changed
           if [ -f "next.config.ts" ]; then
-            scp next.config.ts $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+            rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+              next.config.ts $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
           fi
 
       - name: Install dependencies on server
