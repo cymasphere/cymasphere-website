@@ -111,8 +111,15 @@ const FeatureDescription = styled.p`
   transition: all 0.3s ease;
 `;
 
-const FeatureCard = styled(motion.div)`
-  background-color: var(--card-bg);
+const FeatureCard = styled(motion.div)<{ $rotation?: number }>`
+  background: linear-gradient(
+    ${props => props.$rotation || 165}deg,
+    rgba(15, 14, 23, 0.98) 0%,
+    rgba(27, 25, 40, 0.98) 50%,
+    rgba(35, 32, 52, 0.98) 100%
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 40px 30px;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -128,6 +135,28 @@ const FeatureCard = styled(motion.div)`
   transform: translateZ(0);
   will-change: transform, box-shadow;
   backface-visibility: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at 30% 50%,
+        rgba(108, 99, 255, 0.1),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 30%,
+        rgba(78, 205, 196, 0.1),
+        transparent 50%
+      );
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 16px;
+  }
 
   &:after {
     content: "";
@@ -146,6 +175,11 @@ const FeatureCard = styled(motion.div)`
     z-index: -1;
     transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     will-change: opacity, transform;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
   }
 
   &:hover {
@@ -247,6 +281,19 @@ const FeaturesSection = () => {
     `;
   };
 
+  // Generate dramatically different rotations for each card
+  const cardRotations = React.useMemo(() => {
+    // Use much more varied rotations across the full 360 degree spectrum
+    return [
+      45,   // Top-left to bottom-right
+      135,  // Top-right to bottom-left  
+      225,  // Bottom-right to top-left
+      315,  // Bottom-left to top-right
+      90,   // Top to bottom
+      270,  // Bottom to top
+    ];
+  }, []);
+
   const featuresData = React.useMemo(
     () => [
       {
@@ -255,6 +302,7 @@ const FeaturesSection = () => {
         description: t("features.songBuilder.description"),
         detailedDescription: formatDetailedDescription("songBuilder"),
         color: "#4A90E2",
+        rotation: cardRotations[0],
       },
       {
         icon: <FaVolumeUp />,
@@ -262,6 +310,7 @@ const FeaturesSection = () => {
         description: t("features.harmonyPalettes.description"),
         detailedDescription: formatDetailedDescription("harmonyPalettes"),
         color: "#50E3C2",
+        rotation: cardRotations[1],
       },
       {
         icon: <FaWaveSquare />,
@@ -269,6 +318,7 @@ const FeaturesSection = () => {
         description: t("features.patternEditor.description"),
         detailedDescription: formatDetailedDescription("patternEditor"),
         color: "#F5A623",
+        rotation: cardRotations[2],
       },
       {
         icon: <FaMusic />,
@@ -276,6 +326,7 @@ const FeaturesSection = () => {
         description: t("features.voicingGenerator.description"),
         detailedDescription: formatDetailedDescription("voicingGenerator"),
         color: "#D0021B",
+        rotation: cardRotations[3],
       },
       {
         icon: <FaClock />,
@@ -283,6 +334,7 @@ const FeaturesSection = () => {
         description: t("features.progressionTimeline.description"),
         detailedDescription: formatDetailedDescription("progressionTimeline"),
         color: "#9013FE",
+        rotation: cardRotations[4],
       },
       {
         icon: <FaPuzzlePiece />,
@@ -290,9 +342,10 @@ const FeaturesSection = () => {
         description: t("features.voiceHandling.description"),
         detailedDescription: formatDetailedDescription("voiceHandling"),
         color: "#4CAF50",
+        rotation: cardRotations[5],
       },
     ],
-    [t, currentLocale, i18n.language]
+    [t, currentLocale, i18n.language, cardRotations]
   );
 
   return (
@@ -317,6 +370,7 @@ const FeaturesSection = () => {
               whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
               variants={cardVariants}
+              $rotation={feature.rotation}
               onClick={() => {
                 setSelectedFeature(index);
                 setModalOpen(true);
