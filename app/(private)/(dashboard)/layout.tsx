@@ -13,6 +13,7 @@ import {
   FaBars,
   FaHome,
   FaArrowLeft,
+  FaShieldAlt,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -400,28 +401,6 @@ const MobileNavTitle = styled.h3`
   width: 100%;
 `;
 
-const MobileUserInfo = styled(UserInfo)`
-  margin-top: 1rem;
-  width: 80%;
-  max-width: 400px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  justify-content: center;
-`;
-
-// Add page transition animation wrapper
-const PageTransition = styled(motion.div)`
-  width: 100%;
-  height: 100%;
-`;
-
-// Add a styled wrapper for mobile language selector
-const MobileLanguageWrapper = styled.div`
-  margin-bottom: 0.5rem;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-`;
-
 const MobileFooterSection = styled.div`
   width: 80%;
   max-width: 400px;
@@ -444,11 +423,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLElement>(null);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  
+
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  
+
   // Wait for translations to load
   useEffect(() => {
     if (!languageLoading) {
@@ -503,7 +482,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             alignItems: "center",
           }}
         >
-          <LoadingComponent text={t("dashboard.layout.loading", "Loading dashboard...")} />
+          <LoadingComponent
+            text={t("dashboard.layout.loading", "Loading dashboard...")}
+          />
         </Content>
       </LayoutContainer>
     );
@@ -642,12 +623,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </NavItem>
           </Link>
+          {user.is_admin && (
+            <Link href="/admin" passHref legacyBehavior>
+              <NavItem
+                $active={pathname.startsWith("/admin") ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin")}
+              >
+                <FaShieldAlt />{" "}
+                {t("dashboard.layout.adminConsole", "Admin Console")}
+              </NavItem>
+            </Link>
+          )}
         </nav>
 
         <UserInfo>
           <UserName>
-            <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-            <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+            <h4>
+              {t("dashboard.layout.welcomeUser", "{{name}}", {
+                name: user_display_name,
+              })}
+            </h4>
+            <p>
+              {t("dashboard.layout.emailLabel", "{{email}}", {
+                email: user.email,
+              })}
+            </p>
           </UserName>
           <LogoutButton onClick={handleLogout}>
             <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
@@ -683,7 +683,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 {t("common.brandFirst", "CYMA")}
               </span>
-              <span style={{ color: "white" }}>{t("common.brandSecond", "SPHERE")}</span>
+              <span style={{ color: "white" }}>
+                {t("common.brandSecond", "SPHERE")}
+              </span>
             </span>
           </div>
         </MobileLogoContent>
@@ -695,7 +697,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>{t("dashboard.layout.account", "Account")}</MobileNavTitle>
+          <MobileNavTitle>
+            {t("dashboard.layout.account", "Account")}
+          </MobileNavTitle>
 
           <Link href="/dashboard" passHref legacyBehavior>
             <MobileNavItem
@@ -762,11 +766,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          {user.is_admin && (
+            <Link href="/admin" passHref legacyBehavior>
+              <MobileNavItem
+                $active={pathname.startsWith("/admin") ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={5}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/admin")}
+              >
+                <FaShieldAlt />{" "}
+                {t("dashboard.layout.adminConsole", "Admin Console")}
+              </MobileNavItem>
+            </Link>
+          )}
+
           <Link href="/" passHref legacyBehavior>
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={5}
+              custom={6}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
@@ -779,12 +799,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <MobileLanguageWrapper>
               <NextLanguageSelector />
             </MobileLanguageWrapper>
-            
+
             <UserName>
-              <h4>{t("dashboard.layout.welcomeUser", "{{name}}", { name: user_display_name })}</h4>
-              <p>{t("dashboard.layout.emailLabel", "{{email}}", { email: user.email })}</p>
+              <h4>
+                {t("dashboard.layout.welcomeUser", "{{name}}", {
+                  name: user_display_name,
+                })}
+              </h4>
+              <p>
+                {t("dashboard.layout.emailLabel", "{{email}}", {
+                  email: user.email,
+                })}
+              </p>
             </UserName>
-            
+
             <LogoutButton onClick={handleLogout}>
               <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
             </LogoutButton>
@@ -818,3 +846,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </LayoutContainer>
   );
 }
+
+// Add a styled wrapper for mobile language selector
+const MobileLanguageWrapper = styled.div`
+  margin-bottom: 0.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+// Add page transition animation wrapper
+const PageTransition = styled(motion.div)`
+  width: 100%;
+  height: 100%;
+`;
