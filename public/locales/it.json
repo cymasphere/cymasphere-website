@@ -634,6 +634,7 @@
       "personalInfo": "Informazioni personali",
       "firstName": "Nome",
       "lastName": "Cognome",
+      "email": "Indirizzo Email",
       "saveChanges": "Salva modifiche",
       "passwordSection": "Cambia password",
       "sendResetEmail": "Invia email reset password",
