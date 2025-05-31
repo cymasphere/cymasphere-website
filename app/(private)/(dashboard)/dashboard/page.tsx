@@ -636,7 +636,9 @@ function DashboardPage() {
               ? t("dashboard.main.trialDaysLeft", "{{days}} days left in your free trial", { days: getDaysLeftInTrial() })
               : user.profile.subscription === "lifetime"
               ? t("dashboard.main.lifetimeAccess", "Includes free updates for life")
-              : t("dashboard.main.upgradeToPro", "Upgrade to access premium features")}
+              : user.profile.subscription !== "none"
+              ? t("dashboard.main.fullAccess", "You have full access")
+              : t("dashboard.main.upgradeToPro", "Upgrade to Pro for full access")}
           </StatDescription>
         </StatCard>
 
@@ -792,10 +794,15 @@ function DashboardPage() {
                   })
                 : t("dashboard.main.upgradeMessage", "Upgrade to unlock premium features and advanced audio processing capabilities.")}
             </p>
+            {user.profile.subscription !== "none" && user.profile.subscription !== "lifetime" && !shouldShowTrialContent() && (
+              <p style={{ marginTop: "10px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                💡 {t("dashboard.main.upgradeToLifetime", "Upgrade to Lifetime access")} - One-time payment, no recurring fees, free updates forever.
+              </p>
+            )}
           </CardContent>
           <Button
             onClick={
-              user.profile.subscription !== "none"
+              user.profile.subscription === "lifetime"
                 ? navigateToDownloads
                 : navigateToBilling
             }
@@ -803,10 +810,10 @@ function DashboardPage() {
           >
             {isLoadingPrices ? (
               <LoadingComponent size="20px" text="" />
-            ) : user.profile.subscription === "none" ? (
-              t("dashboard.main.getStarted", "Get Started")
-            ) : (
+            ) : user.profile.subscription === "lifetime" ? (
               t("dashboard.downloads.downloadButton", "Download")
+            ) : (
+              t("dashboard.main.upgradeNow", "Upgrade")
             )}
           </Button>
         </Card>
