@@ -284,13 +284,16 @@ const CarouselContainer = styled.div`
 
   @media (max-width: 768px) {
     margin-top: 0; /* No top margin needed since we padded the container */
-    margin-bottom: 0; /* Footer is fixed now, so no margin needed */
-    height: 100%;
+    margin-bottom: 70px; /* Account for fixed footer */
+    height: calc(100% - 70px);
+    padding-top: 30px; /* Add space between header and content */
   }
 
   @media (max-width: 480px) {
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 60px; /* Account for fixed footer */
+    height: calc(100% - 60px);
+    padding-top: 25px; /* Add space between header and content */
   }
 `;
 
@@ -303,6 +306,18 @@ const Slide = styled(motion.div)`
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+    padding: 20px 15px;
+    gap: 20px; /* Space between image and text */
+    overflow-y: auto;
+  }
+
+  @media (max-width: 480px) {
+    padding: 15px 10px;
+    gap: 15px; /* Space between image and text */
+  }
 `;
 
 const ImageContainer = styled.div`
@@ -317,19 +332,23 @@ const ImageContainer = styled.div`
   padding-top: 0;
 
   @media (max-width: 768px) {
-    height: 45vh;
-    min-height: 250px;
-    max-height: 450px;
-    padding-top: 0;
+    height: auto;
+    min-height: 200px;
+    max-height: 40vh;
+    padding: 0;
+    margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
   }
 
   @media (max-width: 480px) {
-    height: 40vh;
-    min-height: 220px;
-    padding-top: 0;
+    min-height: 180px;
+    max-height: 35vh;
+    border-radius: 8px;
   }
 `;
 
@@ -352,7 +371,8 @@ const FeatureImage = styled.div<FeatureImageProps>`
 
   @media (max-width: 768px) {
     background-size: contain;
-    background-position: center;
+    background-position: top center; /* Position image at top of container */
+    align-items: flex-start; /* Align content to top */
   }
 
   /* Show text only if no image is provided */
@@ -390,14 +410,20 @@ const ContentOverlay = styled.div<ContentOverlayProps>`
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 
   @media (max-width: 768px) {
-    padding: 10px 15px 70px; /* Add padding at the bottom to account for fixed footer */
-    height: calc(100% - 0px); /* Take full height */
-    overflow-y: auto; /* Make sure this container is scrollable on mobile */
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   @media (max-width: 480px) {
-    padding: 10px 12px 60px; /* Add padding at the bottom to account for fixed footer */
-    height: calc(100% - 0px); /* Take full height */
+    position: relative;
+    padding: 0;
+    height: auto;
   }
 
   /* Scrollbar styling */
@@ -457,20 +483,11 @@ const InfoImageContainer = styled.div`
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 
   @media (max-width: 768px) {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 16/10;
-    position: relative;
-    top: 0;
-    margin-bottom: 10px;
-    flex-shrink: 0;
+    display: none; /* Hide duplicate image on mobile */
   }
 
   @media (max-width: 480px) {
-    border-radius: 8px;
-    margin-bottom: 10px;
-    aspect-ratio: 16/9;
+    display: none; /* Hide duplicate image on mobile */
   }
 
   &:hover {
