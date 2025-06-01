@@ -1206,7 +1206,7 @@ const HeroSection = () => {
             key={`shadow-${positionKey}`}
             style={{
               position: "absolute",
-              width: "60px",
+              width: isMobile ? "45px" : "60px",
               height: "8px",
               borderRadius: "50%",
               backgroundColor: "rgba(0, 0, 0, 0.2)",
@@ -1244,8 +1244,8 @@ const HeroSection = () => {
             key={`note-${positionKey}`}
             style={{
               position: "absolute",
-              width: "60px",
-              height: "60px",
+              width: isMobile ? "45px" : "60px",
+              height: isMobile ? "45px" : "60px",
               borderRadius: "50%",
               backgroundColor: noteColor,
               display: "flex",
@@ -1253,7 +1253,7 @@ const HeroSection = () => {
               justifyContent: "center",
               color: "white",
               fontWeight: "bold",
-              fontSize: "1.5rem",
+              fontSize: isMobile ? "1.2rem" : "1.5rem",
               textShadow:
                 "0px 2px 3px rgba(0,0,0,0.5), 0px 1px 5px rgba(0,0,0,0.5)",
               zIndex: 2,
