@@ -2252,8 +2252,8 @@ const PricingSection = () => {
                   </div>
                   {billingPeriod === "annual" && currentPlan && (
                     <div style={{ marginTop: "5px", fontSize: "1rem" }}>
-                      ${(currentPlan.amount / 100 / 12).toFixed(0)}/
-                      {t("pricing.perMonth", "month")}{" "}
+                      ${(currentPlan.amount / 100 / 12).toFixed(0)}
+                      {t("pricing.perMonth", "/month")}{" "}
                       {t("pricing.billed", "billed annually")}
                     </div>
                   )}
