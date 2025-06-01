@@ -401,35 +401,59 @@ const ChordWeb = React.memo(() => {
       }
 
       resizeTimeout = setTimeout(() => {
-        // Set canvas dimensions to match display size
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        // Get the device pixel ratio for sharp rendering
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Get the display size
+        const displayWidth = canvas.clientWidth;
+        const displayHeight = canvas.clientHeight;
+        
+        // Set the actual canvas size to match display size * device pixel ratio
+        canvas.width = displayWidth * devicePixelRatio;
+        canvas.height = displayHeight * devicePixelRatio;
+        
+        // Scale the context back down to display size
+        context.scale(devicePixelRatio, devicePixelRatio);
+        
+        // Set CSS size to display size
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
 
         // Re-initialize positions after resize
         positionsInitialized.current = false;
       }, 200); // 200ms debounce
     };
 
-    // Set initial canvas size
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    // Set initial canvas size with device pixel ratio
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
+    context.scale(devicePixelRatio, devicePixelRatio);
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
 
     // Add event listeners
     canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("resize", resizeCanvas, { passive: true });
 
-    // Initialize positions
+    // Initialize positions - use display size, not canvas internal size
     const initializePositions = (width: number, height: number) => {
+      // Use display dimensions for positioning, not internal canvas dimensions
+      const displayWidth = canvas.clientWidth;
+      const displayHeight = canvas.clientHeight;
       // Define center safe zone - no molecules in this area
-      const centerX = width / 2;
-      const centerY = height / 2;
+      const centerX = displayWidth / 2;
+      const centerY = displayHeight / 2;
 
       // Define a wider, more rectangular safe zone that better matches the content area
       // These are intentionally unused since they're for documentation purposes
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const safeZoneWidth = width * 0.9; // Increased from 0.8 to 0.9
+      const safeZoneWidth = displayWidth * 0.9; // Increased from 0.8 to 0.9
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const safeZoneHeight = height * 0.95; // Increased from 0.85 to 0.95
+      const safeZoneHeight = displayHeight * 0.95; // Increased from 0.85 to 0.95
 
       // Position chord molecules in an evenly distributed pattern
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -448,8 +472,8 @@ const ChordWeb = React.memo(() => {
         const angle = index * angleStep + (Math.random() * 0.2 - 0.1); // Reduced randomness
 
         // More pronounced elliptical distribution with less randomness and pushed further out
-        const radiusX = width * 0.45 + (Math.random() * 0.04 - 0.02) * width; // Increased from 0.38 to 0.45
-        const radiusY = height * 0.45 + (Math.random() * 0.04 - 0.02) * height; // Increased from 0.38 to 0.45
+        const radiusX = displayWidth * 0.45 + (Math.random() * 0.04 - 0.02) * displayWidth; // Increased from 0.38 to 0.45
+        const radiusY = displayHeight * 0.45 + (Math.random() * 0.04 - 0.02) * displayHeight; // Increased from 0.38 to 0.45
 
         const x = centerX + Math.cos(angle) * radiusX;
         const y = centerY + Math.sin(angle) * radiusY;
@@ -920,8 +944,8 @@ const ChordWeb = React.memo(() => {
     const render = (timestamp: number) => {
       // Skip initialization frames to prevent animation stutter
       if (!positionsInitialized.current) {
-        // Initialize only when ready
-        initializePositions(canvas.width, canvas.height);
+        // Initialize only when ready - use display dimensions
+        initializePositions(canvas.clientWidth, canvas.clientHeight);
       }
 
       // Calculate time delta for smooth animation regardless of frame rate
@@ -1008,7 +1032,7 @@ const ChordWeb = React.memo(() => {
         }
       });
 
-      // Clear only once
+      // Clear only once - use display dimensions
       context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
       // Draw background radiance with less intensity
