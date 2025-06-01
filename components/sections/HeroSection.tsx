@@ -419,6 +419,7 @@ const HeroSection = () => {
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(true); // Start as true for immediate fade-in
   const [videoError, setVideoError] = useState(false);
+  const [textContentLoaded, setTextContentLoaded] = useState(false); // Track when text content is ready
   const effectsChain = useEffectsChain();
   const synthRef = useRef<DisposableSynth>(null);
 
@@ -1033,6 +1034,10 @@ const HeroSection = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.4 }}
+          onAnimationComplete={() => {
+            // Set text content as loaded when the buttons finish animating
+            setTextContentLoaded(true);
+          }}
         >
           <PrimaryButton
             href="#pricing"
@@ -1065,7 +1070,9 @@ const HeroSection = () => {
     displayedChord,
     previousChord, 
     transitioning,
-    positionAnimationOffsets
+    positionAnimationOffsets,
+    textContentLoaded,
+    setTextContentLoaded
   ]);
 
   // Render the voice leading lines during transitions
@@ -1149,7 +1156,7 @@ const HeroSection = () => {
   };
 
   // Render the floating musical notes
-  const renderNotes = () => {
+  const renderNotes = useCallback(() => {
     return displayedChord.notes.map((note, index) => {
       // Get note position from state
       let position = { ...displayedChord.positions[index] };
@@ -1217,25 +1224,28 @@ const HeroSection = () => {
               left: shadowLeft,
               right: shadowRight,
             }}
-            animate={{
+            initial={{ opacity: 0 }}
+            animate={textContentLoaded ? {
               scale: [0.9, 1, 0.9],
               opacity: [0.3, 0.4, 0.3],
-            }}
-            transition={{
+            } : { opacity: 0 }}
+            transition={textContentLoaded ? {
               scale: {
                 repeatType: "mirror",
                 repeat: Infinity,
                 duration: 2.5,
                 ease: "easeInOut",
-                delay: animationOffset.delay, // Re-add the position-specific offset
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
               },
               opacity: {
                 repeatType: "mirror",
                 repeat: Infinity,
                 duration: 2.5,
                 ease: "easeInOut",
-                delay: animationOffset.delay, // Re-add the position-specific offset
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
               },
+            } : {
+              opacity: { duration: 0.8, delay: 0.3 + animationOffset.delay }
             }}
           />
 
@@ -1264,12 +1274,18 @@ const HeroSection = () => {
             }}
             title={t("hero.tooltips.playNote", "Click to play this note")}
             // Keep backgroundColor as an animated property during transitions
-            animate={{
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={textContentLoaded ? {
+              opacity: 1,
               backgroundColor: noteColor,
               y: [0, -15, 0],
               scale: [1, 1.05, 1],
+            } : { 
+              opacity: 1, 
+              scale: 1,
+              backgroundColor: noteColor 
             }}
-            transition={{
+            transition={textContentLoaded ? {
               backgroundColor: {
                 duration: 1.5,
                 ease: "easeInOut",
@@ -1279,15 +1295,19 @@ const HeroSection = () => {
                 repeat: Infinity,
                 duration: 2.5,
                 ease: "easeInOut",
-                delay: animationOffset.delay,
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
               },
               scale: {
                 repeatType: "mirror",
                 repeat: Infinity,
                 duration: 2.5,
                 ease: "easeInOut",
-                delay: animationOffset.delay,
+                delay: animationOffset.delay + 0.5, // Add extra delay after text loads
               },
+            } : {
+              opacity: { duration: 0.8, delay: 0.3 + animationOffset.delay },
+              scale: { duration: 0.6, delay: 0.3 + animationOffset.delay },
+              backgroundColor: { duration: 0.6, delay: 0.3 + animationOffset.delay }
             }}
             onClick={() => playNote(note)}
             whileHover={{
@@ -1349,10 +1369,20 @@ const HeroSection = () => {
         </React.Fragment>
       );
     });
-  };
+  }, [
+    displayedChord,
+    isMobile,
+    transitioning,
+    previousChord,
+    positionAnimationOffsets,
+    pitchColors,
+    t,
+    playNote,
+    textContentLoaded
+  ]);
 
   // Render the chord name display
-  const renderChordName = () => (
+  const renderChordName = useCallback(() => (
     <AnimatePresence mode="sync">
       <motion.div
         key={`chord-name-${currentChordIndex}`}
@@ -1374,10 +1404,10 @@ const HeroSection = () => {
         }}
         title={t("hero.tooltips.playChord", "Click to play the chord")}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: textContentLoaded ? 1 : 0 }}
         exit={{ opacity: 0 }}
         transition={{
-          opacity: { duration: 0.7 },
+          opacity: { duration: 0.7, delay: textContentLoaded ? 1.0 : 0 },
         }}
         onClick={playChord}
         whileHover={{
@@ -1389,7 +1419,13 @@ const HeroSection = () => {
         {chordProgression[currentChordIndex].name}
       </motion.div>
     </AnimatePresence>
-  );
+  ), [
+    currentChordIndex,
+    chordProgression,
+    t,
+    playChord,
+    textContentLoaded
+  ]);
 
   // Effect for transitioning between chords
   useEffect(() => {
