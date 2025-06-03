@@ -1,52 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createFacebookAPI } from '@/utils/facebook/api';
+import { requireAdManagerAccess } from '@/utils/auth/middleware';
 
 export async function GET(request: NextRequest) {
-  try {
-    // Development mode: mock connection if Facebook app is not ready
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const mockConnection = process.env.FACEBOOK_MOCK_CONNECTION === 'true';
-    
-    if (isDevelopment && mockConnection) {
-      return NextResponse.json({
-        connected: true,
-        user: {
-          id: 'mock_user_123',
-          name: 'Development User',
-          email: 'dev@example.com'
-        },
-        message: 'Connected to Facebook Ads (Development Mode)',
-        isDevelopmentMode: true
-      });
-    }
+  // Check authentication and permissions first
+  const authResult = await requireAdManagerAccess(request);
+  if (authResult) {
+    return authResult; // Return error response if auth fails
+  }
 
-    // Get stored Facebook token from user session/database
-    // For now, we'll check if a token exists in a mock way
-    // In production, this would check the database for stored tokens
-    
-    const mockAdAccountId = process.env.FACEBOOK_AD_ACCOUNT_ID || '123456789';
-    const facebookAPI = createFacebookAPI(mockAdAccountId);
+  try {
+    // Create Facebook API instance
+    const facebookAPI = createFacebookAPI();
     
     if (!facebookAPI) {
       return NextResponse.json({
         connected: false,
-        message: 'No Facebook access token found'
+        message: 'Failed to initialize Facebook API client'
       });
     }
 
-    // Test the connection
+    // Check if API is configured
+    if (!facebookAPI.isApiConfigured()) {
+      const status = facebookAPI.getConfigurationStatus();
+      return NextResponse.json({
+        connected: false,
+        message: status.message
+      });
+    }
+
+    // Test the connection with real Facebook API
     const connectionTest = await facebookAPI.testConnection();
     
-    if (connectionTest.success) {
+    if (connectionTest.connected) {
       return NextResponse.json({
         connected: true,
-        user: connectionTest.user,
-        message: 'Connected to Facebook Ads'
+        permissions: connectionTest.permissions,
+        account: connectionTest.account,
+        message: `Connected to Facebook Ads - Account: ${connectionTest.account?.name || 'Unknown'}`
       });
     } else {
       return NextResponse.json({
         connected: false,
-        message: connectionTest.error || 'Failed to connect to Facebook'
+        message: 'Failed to connect to Facebook API - check token permissions'
       });
     }
   } catch (error) {

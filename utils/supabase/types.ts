@@ -10,4 +10,7 @@ export type SessionData = Database["public"]["Tables"]["user_sessions"]["Row"];
 export interface UserProfile extends User {
   profile: Profile;
   is_admin: boolean;
+  is_ad_manager?: boolean;
+  can_access_admin?: boolean;
+  can_access_ad_manager?: boolean;
 }

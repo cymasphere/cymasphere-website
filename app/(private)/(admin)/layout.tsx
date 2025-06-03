@@ -559,14 +559,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is admin
+  // Check if user has admin access
   useEffect(() => {
-    // Temporarily disabled admin check for testing
-    // if (user && user.profile?.subscription !== "admin") {
-    //   router.push("/dashboard");
-    // }
-    if (user && !user.is_admin) {
-      router.push("/dashboard");
+    if (user && !user.can_access_admin) {
+      // If they're an ad manager, redirect to ad manager dashboard
+      if (user.can_access_ad_manager) {
+        router.push("/ad-manager");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [user, router]);
 
@@ -666,14 +667,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return <LoadingComponent />;
   }
 
-  if (!user.is_admin) {
+  if (!user.can_access_admin) {
     return <LoadingComponent />;
   }
-
-  // Temporarily disabled admin check for testing
-  // if (user.profile?.subscription !== "admin") {
-  //   return null;
-  // }
 
   return (
     <LayoutContainer>
@@ -971,6 +967,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <FaChartBar /> Analytics
             </NavItem>
           </Link>
+          
+          {/* Standalone Ad Manager Access */}
+          <Link href="/ad-manager" passHref legacyBehavior>
+            <NavItem
+              $active={pathname.startsWith("/ad-manager") ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/ad-manager")}
+            >
+              <FaBullhorn /> Ad Manager Console
+            </NavItem>
+          </Link>
+          
           <Link href="/admin/settings" passHref legacyBehavior>
             <NavItem
               $active={pathname === "/admin/settings" ? "true" : "false"}

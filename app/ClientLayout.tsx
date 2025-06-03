@@ -109,9 +109,12 @@ export default function ClientLayout({
 
   // Check if the route is in the admin section
   const isAdminRoute = pathname?.includes('/admin');
+  
+  // Check if the route is in the ad-manager section
+  const isAdManagerRoute = pathname?.includes('/ad-manager');
 
-  // Hide header and footer for auth routes, dashboard routes, and admin routes
-  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute || isAdminRoute;
+  // Hide header and footer for auth routes, dashboard routes, admin routes, and ad-manager routes
+  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute || isAdminRoute || isAdManagerRoute;
 
   return (
     <ThemeProvider theme={theme}>

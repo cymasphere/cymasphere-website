@@ -10,7 +10,7 @@ import {
 } from "@supabase/supabase-js";
 import { Profile, UserProfile } from "@/utils/supabase/types";
 import {
-  fetchIsAdmin,
+  fetchUserPermissions,
   fetchProfile,
   signUpWithStripe,
   updateStripe,
@@ -61,11 +61,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const { is_admin, error: adminError } = await fetchIsAdmin(
-          session.user.id
-        );
-        if (adminError) {
-          console.log(JSON.stringify(adminError));
+        const { 
+          is_admin, 
+          is_ad_manager, 
+          can_access_admin, 
+          can_access_ad_manager, 
+          error: permissionsError 
+        } = await fetchUserPermissions(session.user.id);
+        
+        if (permissionsError) {
+          console.log(JSON.stringify(permissionsError));
           return;
         }
 
@@ -81,9 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               ...session.user,
               profile: updatedProfile,
               is_admin,
+              is_ad_manager,
+              can_access_admin,
+              can_access_ad_manager,
             });
           } else if (profile) {
-            setUser({ ...session.user, profile, is_admin });
+            setUser({ 
+              ...session.user, 
+              profile, 
+              is_admin,
+              is_ad_manager,
+              can_access_admin,
+              can_access_ad_manager,
+            });
           }
         }
       } catch (error) {
@@ -105,13 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log("error fetching profile", JSON.stringify(error));
         }
 
-        const { is_admin, error: adminError } = await fetchIsAdmin(
-          logged_in_user.id
-        );
-        if (adminError) {
+        const { 
+          is_admin, 
+          is_ad_manager, 
+          can_access_admin, 
+          can_access_ad_manager, 
+          error: permissionsError 
+        } = await fetchUserPermissions(logged_in_user.id);
+        
+        if (permissionsError) {
           console.log(
-            "error fetching admin status",
-            JSON.stringify(adminError)
+            "error fetching permissions",
+            JSON.stringify(permissionsError)
           );
         }
 
@@ -123,13 +143,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               profile
             );
             if (success && updatedProfile) {
-              setUser({ ...logged_in_user, profile: updatedProfile, is_admin });
+              setUser({ 
+                ...logged_in_user, 
+                profile: updatedProfile, 
+                is_admin,
+                is_ad_manager,
+                can_access_admin,
+                can_access_ad_manager,
+              });
             } else {
-              setUser({ ...logged_in_user, profile, is_admin });
+              setUser({ 
+                ...logged_in_user, 
+                profile, 
+                is_admin,
+                is_ad_manager,
+                can_access_admin,
+                can_access_ad_manager,
+              });
             }
           } catch (stripeError) {
             console.error("Error updating Stripe data:", stripeError);
-            setUser({ ...logged_in_user, profile, is_admin });
+            setUser({ 
+              ...logged_in_user, 
+              profile, 
+              is_admin,
+              is_ad_manager,
+              can_access_admin,
+              can_access_ad_manager,
+            });
           }
         } else {
           setUser(null);

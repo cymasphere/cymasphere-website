@@ -14,6 +14,7 @@ import {
   FaHome,
   FaArrowLeft,
   FaShieldAlt,
+  FaBullhorn,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -623,6 +624,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaCog /> {t("dashboard.layout.settings", "Settings")}
             </NavItem>
           </Link>
+          {user.can_access_ad_manager && (
+            <Link href="/ad-manager" passHref legacyBehavior>
+              <NavItem
+                $active={pathname.startsWith("/ad-manager") ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/ad-manager")}
+              >
+                <FaBullhorn />{" "}
+                {t("dashboard.layout.adManager", "Ad Manager")}
+              </NavItem>
+            </Link>
+          )}
           {user.is_admin && (
             <Link href="/admin" passHref legacyBehavior>
               <NavItem
@@ -766,12 +778,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          {user.can_access_ad_manager && (
+            <Link href="/ad-manager" passHref legacyBehavior>
+              <MobileNavItem
+                $active={pathname.startsWith("/ad-manager") ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={5}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/ad-manager")}
+              >
+                <FaBullhorn />{" "}
+                {t("dashboard.layout.adManager", "Ad Manager")}
+              </MobileNavItem>
+            </Link>
+          )}
+
           {user.is_admin && (
             <Link href="/admin" passHref legacyBehavior>
               <MobileNavItem
                 $active={pathname.startsWith("/admin") ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={5}
+                custom={6}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/admin")}
