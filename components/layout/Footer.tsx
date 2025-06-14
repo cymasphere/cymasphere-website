@@ -357,9 +357,9 @@ const Footer = () => {
 
         <FooterColumn>
           <FooterHeading>{getTranslation("footer.company", "Company")}</FooterHeading>
-          <FooterButton onClick={() => setShowAboutModal(true)}>
-            {getTranslation("footer.aboutUs", "About Us")}
-          </FooterButton>
+          <Link href="/about" passHref legacyBehavior>
+            <FooterLink>{getTranslation("footer.aboutUs", "About Us")}</FooterLink>
+          </Link>
           <Link href="/privacy-policy" passHref legacyBehavior>
             <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
           </Link>
@@ -394,11 +394,6 @@ const Footer = () => {
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
         modalType="privacy"
-      />
-
-      <AboutUsModal
-        isOpen={showAboutModal}
-        onClose={() => setShowAboutModal(false)}
       />
     </FooterContainer>
   );

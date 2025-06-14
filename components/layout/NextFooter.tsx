@@ -333,16 +333,9 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
-          <FooterLink
-            as="a"
-            href="#"
-            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              setShowAboutModal(true);
-            }}
-          >
-            About Us
-          </FooterLink>
+          <Link href="/about" passHref legacyBehavior>
+            <FooterLink>About Us</FooterLink>
+          </Link>
           <Link href="/contact" passHref legacyBehavior>
             <FooterLink>Contact</FooterLink>
           </Link>
@@ -375,13 +368,6 @@ const NextFooter = () => {
           isOpen={showPrivacyModal}
           onClose={() => setShowPrivacyModal(false)}
           modalType="privacy"
-        />
-      )}
-
-      {showAboutModal && (
-        <AboutUsModal
-          isOpen={showAboutModal}
-          onClose={() => setShowAboutModal(false)}
         />
       )}
     </FooterContainer>
