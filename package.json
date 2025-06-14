@@ -3,14 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "facebook:setup": "node facebook-setup-cli.js",
-    "facebook:test": "node facebook-real-data-fix.js",
-    "facebook:quick-test": "node facebook-quick-test.js",
-    "facebook:cli": "node facebook-setup-cli.js",
     "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts"
   },
   "packageManager": "bun@1.2.2",

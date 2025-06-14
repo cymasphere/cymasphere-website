@@ -1,116 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdManagerAccess } from '@/utils/auth/middleware';
+import { storeFacebookToken } from '@/utils/facebook/api';
 
 export async function GET(request: NextRequest) {
-  // Check authentication and permissions first
-  const authResult = await requireAdManagerAccess(request);
-  if (authResult) {
-    return authResult; // Return error response if auth fails
-  }
-
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
 
-    // Handle OAuth errors
+    // Check for OAuth errors
     if (error) {
-      console.error('Facebook OAuth error:', error, errorDescription);
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'facebook_auth_failed');
-      redirectUrl.searchParams.set('message', errorDescription || 'Facebook authentication failed');
-      return NextResponse.redirect(redirectUrl.toString());
+      console.error('Facebook OAuth error:', error);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=oauth_denied`);
     }
 
-    // Validate state parameter (basic security check)
-    if (!state || !state.startsWith('facebook_ads_connect_')) {
-      console.error('Invalid state parameter:', state);
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'invalid_state');
-      return NextResponse.redirect(redirectUrl.toString());
+    // Verify state parameter for CSRF protection
+    if (state !== 'facebook_ads_connect') {
+      console.error('Invalid state parameter');
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=invalid_state`);
     }
 
-    // Validate authorization code
     if (!code) {
       console.error('No authorization code received');
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'no_auth_code');
-      return NextResponse.redirect(redirectUrl.toString());
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=no_code`);
     }
 
     // Exchange authorization code for access token
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    const redirectUri = `${baseUrl}/api/facebook-ads/callback`;
+    const accessToken = await exchangeCodeForToken(code);
+    
+    if (!accessToken) {
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=token_exchange_failed`);
+    }
 
-    if (!appId || !appSecret) {
-      console.error('Facebook app credentials not configured');
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'app_not_configured');
-      return NextResponse.redirect(redirectUrl.toString());
+    // Store the access token (in production, this would be stored securely in database)
+    storeFacebookToken(accessToken);
+
+    // Redirect back to Ad Manager with success
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?connected=true`);
+  } catch (error) {
+    console.error('Error handling Facebook OAuth callback:', error);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=callback_failed`);
+  }
+}
+
+async function exchangeCodeForToken(code: string): Promise<string | null> {
+  try {
+    const clientId = process.env.FACEBOOK_APP_ID;
+    const clientSecret = process.env.FACEBOOK_APP_SECRET;
+    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/facebook-ads/callback`;
+
+    if (!clientId || !clientSecret) {
+      console.error('Facebook App credentials not configured');
+      return null;
     }
 
     // Exchange code for access token
-    const tokenUrl = `https://graph.facebook.com/v20.0/oauth/access_token?` +
-      `client_id=${appId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `client_secret=${appSecret}&` +
-      `code=${code}`;
+    const tokenUrl = new URL('https://graph.facebook.com/v20.0/oauth/access_token');
+    tokenUrl.searchParams.set('client_id', clientId);
+    tokenUrl.searchParams.set('client_secret', clientSecret);
+    tokenUrl.searchParams.set('redirect_uri', redirectUri);
+    tokenUrl.searchParams.set('code', code);
 
-    console.log('Exchanging code for access token...');
-    const tokenResponse = await fetch(tokenUrl);
-    const tokenData = await tokenResponse.json();
+    const response = await fetch(tokenUrl.toString(), {
+      method: 'GET',
+    });
 
-    if (tokenData.error) {
-      console.error('Token exchange error:', tokenData.error);
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'token_exchange_failed');
-      redirectUrl.searchParams.set('message', tokenData.error.message || 'Failed to get access token');
-      return NextResponse.redirect(redirectUrl.toString());
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Token exchange failed:', errorData);
+      return null;
     }
 
-    const accessToken = tokenData.access_token;
-    if (!accessToken) {
-      console.error('No access token received:', tokenData);
-      const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-      redirectUrl.searchParams.set('error', 'no_access_token');
-      return NextResponse.redirect(redirectUrl.toString());
-    }
-
-    console.log('✅ Access token received successfully');
-
-    // Get user info and permissions
-    const userResponse = await fetch(`https://graph.facebook.com/v20.0/me?access_token=${accessToken}&fields=id,name,email`);
-    const userData = await userResponse.json();
-
-    // Get ad accounts
-    const adAccountsResponse = await fetch(`https://graph.facebook.com/v20.0/me/adaccounts?access_token=${accessToken}&fields=id,name,account_status`);
-    const adAccountsData = await adAccountsResponse.json();
-
-    console.log('✅ Facebook user connected:', userData.name || userData.id);
-    if (adAccountsData.data && adAccountsData.data.length > 0) {
-      console.log('✅ Found ad accounts:', adAccountsData.data.length);
-    }
-
-    // TODO: Store the access token securely in your database
-    // For now, we'll just log success and redirect back to ad manager
-    console.log('⚠️  TODO: Store access token in database for persistent connection');
-
-    // Redirect back to ad manager with success
-    const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-    redirectUrl.searchParams.set('connected', 'true');
-    redirectUrl.searchParams.set('user', userData.name || 'Facebook User');
+    const tokenData = await response.json();
     
-    return NextResponse.redirect(redirectUrl.toString());
+    if (!tokenData.access_token) {
+      console.error('No access token in response:', tokenData);
+      return null;
+    }
 
+    // Optionally, exchange short-lived token for long-lived token
+    const longLivedToken = await exchangeForLongLivedToken(tokenData.access_token);
+    
+    return longLivedToken || tokenData.access_token;
   } catch (error) {
-    console.error('Callback error:', error);
-    const redirectUrl = new URL('/ad-manager', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
-    redirectUrl.searchParams.set('error', 'callback_failed');
-    redirectUrl.searchParams.set('message', error instanceof Error ? error.message : 'Unknown error');
-    return NextResponse.redirect(redirectUrl.toString());
+    console.error('Error exchanging code for token:', error);
+    return null;
+  }
+}
+
+async function exchangeForLongLivedToken(shortLivedToken: string): Promise<string | null> {
+  try {
+    const clientId = process.env.FACEBOOK_APP_ID;
+    const clientSecret = process.env.FACEBOOK_APP_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return null;
+    }
+
+    const tokenUrl = new URL('https://graph.facebook.com/v20.0/oauth/access_token');
+    tokenUrl.searchParams.set('grant_type', 'fb_exchange_token');
+    tokenUrl.searchParams.set('client_id', clientId);
+    tokenUrl.searchParams.set('client_secret', clientSecret);
+    tokenUrl.searchParams.set('fb_exchange_token', shortLivedToken);
+
+    const response = await fetch(tokenUrl.toString());
+    
+    if (!response.ok) {
+      console.warn('Failed to exchange for long-lived token, using short-lived token');
+      return null;
+    }
+
+    const tokenData = await response.json();
+    return tokenData.access_token || null;
+  } catch (error) {
+    console.warn('Error exchanging for long-lived token:', error);
+    return null;
   }
 } 

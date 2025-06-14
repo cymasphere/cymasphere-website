@@ -13,7 +13,6 @@ import {
   FaRegLightbulb,
   FaRegCreditCard,
   FaShieldAlt,
-  FaBullhorn,
 } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -710,19 +709,11 @@ const NextHeader = () => {
                 {getTranslation("common.myAccount")}
               </UserMenuItem>
             </Link>
-            {user.can_access_admin && (
+            {user.is_admin && (
               <Link href="/admin" passHref legacyBehavior>
                 <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                   <FaShieldAlt />
                   {getTranslation("common.adminConsole")}
-                </UserMenuItem>
-              </Link>
-            )}
-            {user.can_access_ad_manager && (
-              <Link href="/ad-manager" passHref legacyBehavior>
-                <UserMenuItem onClick={() => setUserMenuOpen(false)}>
-                  <FaBullhorn />
-                  Ad Manager
                 </UserMenuItem>
               </Link>
             )}
@@ -880,7 +871,7 @@ const NextHeader = () => {
                         {getTranslation("common.myAccount")}
                       </MobileNavLink>
                     </Link>
-                    {user.can_access_admin && (
+                    {user.is_admin && (
                       <Link href="/admin" passHref legacyBehavior>
                         <MobileNavLink
                           onClick={(e) => {
@@ -895,24 +886,6 @@ const NextHeader = () => {
                         >
                           <FaShieldAlt />
                           {getTranslation("common.adminConsole")}
-                        </MobileNavLink>
-                      </Link>
-                    )}
-                    {user.can_access_ad_manager && (
-                      <Link href="/ad-manager" passHref legacyBehavior>
-                        <MobileNavLink
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setMenuOpen(false);
-                            router.push("/ad-manager");
-                          }}
-                          variants={menuItemVariants}
-                          custom={navItems.length + 2}
-                          initial="hidden"
-                          animate="visible"
-                        >
-                          <FaBullhorn />
-                          Ad Manager
                         </MobileNavLink>
                       </Link>
                     )}

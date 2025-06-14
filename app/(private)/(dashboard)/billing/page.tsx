@@ -640,13 +640,8 @@ export default function BillingPage() {
         setIsLoadingPrices(true);
 
         try {
-          // Only allow valid plan types for checkout
-          if (selectedBillingPeriod !== "monthly" && selectedBillingPeriod !== "annual" && selectedBillingPeriod !== "lifetime") {
-            throw new Error("Invalid plan type for checkout");
-          }
-          
           const { url, error } = await initiateCheckout(
-            selectedBillingPeriod as "monthly" | "annual" | "lifetime",
+            selectedBillingPeriod,
             user.email,
             user.profile.customer_id || undefined,
             promotionCode,
