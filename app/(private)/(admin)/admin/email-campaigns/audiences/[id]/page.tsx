@@ -26,11 +26,29 @@ import {
   FaCog,
   FaHistory,
   FaClone,
-  FaDownload
+  FaDownload,
+  FaUpload
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import styled from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(108, 99, 255, 0.3);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  ${css`
+    animation: ${spin} 1s linear infinite;
+  `}
+`;
+
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -661,9 +679,18 @@ const fetchAudienceSubscribers = async (id: string, page: number = 1, limit: num
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`Failed to fetch subscribers: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('API Error Response:', errorData);
+      
+      if (response.status === 401) {
+        throw new Error('Authentication required. Please log in.');
+      } else if (response.status === 403) {
+        throw new Error('Admin access required.');
+      } else if (response.status === 404) {
+        throw new Error('Audience not found.');
+      } else {
+        throw new Error(errorData.error || `Failed to fetch subscribers: ${response.status}`);
+      }
     }
 
     const data = await response.json();
@@ -676,7 +703,7 @@ const fetchAudienceSubscribers = async (id: string, page: number = 1, limit: num
 
 // Transform database audience data to display format
 const transformAudienceData = (dbAudience: any) => {
-  // Convert filters object to array format for the UI
+  // Convert filters object to proper filter rules for the UI
   const filtersArray: Array<{
     id: string;
     field: string;
@@ -686,15 +713,71 @@ const transformAudienceData = (dbAudience: any) => {
   }> = [];
   
   if (dbAudience.filters && typeof dbAudience.filters === 'object') {
-    // Convert the JSON object to an array of filter objects
-    Object.entries(dbAudience.filters).forEach(([key, value], index) => {
-      filtersArray.push({
-        id: (index + 1).toString(),
-        field: key,
-        operator: "equals",
-        value: Array.isArray(value) ? value.join(', ') : String(value),
-        timeframe: "all_time"
+    const filters = dbAudience.filters;
+    
+    // Handle new structured format with rules array
+    if (filters.rules && Array.isArray(filters.rules)) {
+      filters.rules.forEach((rule: any, index: number) => {
+        filtersArray.push({
+          id: (index + 1).toString(),
+          field: rule.field || "status",
+          operator: rule.operator || "equals",
+          value: String(rule.value || ""),
+          timeframe: rule.timeframe || "all_time"
+        });
       });
+    } else {
+      // Handle legacy simple format for backward compatibility
+      // Only create one filter rule for status if it exists
+      if (filters.status && filters.status !== 'active') {
+        filtersArray.push({
+          id: "1",
+          field: "status",
+          operator: "equals",
+          value: String(filters.status),
+          timeframe: "all_time"
+        });
+      }
+      
+      // Add subscription filter if it's not 'none'
+      if (filters.subscription && filters.subscription !== 'none') {
+        filtersArray.push({
+          id: "2", 
+          field: "subscription",
+          operator: "equals",
+          value: String(filters.subscription),
+          timeframe: "all_time"
+        });
+      }
+      
+      // Add other meaningful filters, but skip boolean values and common defaults
+      Object.entries(filters).forEach(([key, value], index) => {
+        if (key !== 'status' && key !== 'subscription' && key !== 'rules' &&
+            typeof value !== 'boolean' && 
+            value !== 'active' && 
+            value !== 'none' &&
+            value !== null &&
+            value !== undefined) {
+          filtersArray.push({
+            id: (index + 10).toString(), // Avoid ID conflicts
+            field: key,
+            operator: "equals", 
+            value: Array.isArray(value) ? value.join(', ') : String(value),
+            timeframe: "all_time"
+          });
+        }
+      });
+    }
+  }
+  
+  // If no meaningful filters, start with a default one
+  if (filtersArray.length === 0) {
+    filtersArray.push({
+      id: "default",
+      field: "status",
+      operator: "equals",
+      value: "active",
+      timeframe: "all_time"
     });
   }
 
@@ -702,7 +785,7 @@ const transformAudienceData = (dbAudience: any) => {
     id: dbAudience.id,
     name: dbAudience.name,
     description: dbAudience.description || "No description provided",
-    type: "dynamic" as const, // All audiences are dynamic for now
+    type: "dynamic" as const,
     subscribers: dbAudience.subscriber_count || 0,
     createdAt: dbAudience.created_at,
     lastUpdated: dbAudience.updated_at,
@@ -716,6 +799,7 @@ function AudienceDetailPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [audienceData, setAudienceData] = useState<any>(null);
+  const [originalAudienceData, setOriginalAudienceData] = useState<any>(null);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
@@ -740,30 +824,31 @@ function AudienceDetailPage() {
     }
   }, [audienceId, user, authLoading]);
 
-  // Load subscribers when audience changes or pagination changes
+  // Load subscribers when audience changes initially
   useEffect(() => {
-    if (audienceId && user && !authLoading) {
+    if (audienceId && user && !authLoading && audienceData) {
       loadSubscribers();
     }
-  }, [audienceId, user, authLoading, pagination.page]);
+  }, [audienceId, user, authLoading, audienceData]);
 
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (audienceId && user && !authLoading) {
-        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
-        loadSubscribers();
+      if (audienceId && user && !authLoading && audienceData) {
+        loadSubscribers(1); // Reset to first page on search
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, user, authLoading]);
+  }, [searchTerm]);
 
   const loadAudienceData = async () => {
     try {
       setLoading(true);
       const data = await fetchAudienceData(audienceId);
-      setAudienceData(transformAudienceData(data));
+      const transformedData = transformAudienceData(data);
+      setAudienceData(transformedData);
+      setOriginalAudienceData(JSON.parse(JSON.stringify(transformedData))); // Deep copy for cancel functionality
     } catch (error) {
       console.error('Failed to load audience:', error);
       // Handle error - maybe show toast or redirect
@@ -772,14 +857,26 @@ function AudienceDetailPage() {
     }
   };
 
-  const loadSubscribers = async () => {
+  const loadSubscribers = async (page?: number) => {
     try {
       setSubscribersLoading(true);
-      const data = await fetchAudienceSubscribers(audienceId, pagination.page, pagination.limit, searchTerm);
+      const currentPage = page || pagination.page;
+      const data = await fetchAudienceSubscribers(audienceId, currentPage, pagination.limit, searchTerm);
       setSubscribers(data.subscribers || []);
-      setPagination(prev => ({ ...prev, ...data.pagination }));
+      setPagination(prev => ({ ...prev, ...data.pagination, page: currentPage }));
     } catch (error) {
       console.error('Failed to load subscribers:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load subscribers';
+      
+      // Show user-friendly error message
+      if (errorMessage.includes('Authentication required')) {
+        // Redirect to login if not authenticated
+        router.push('/login');
+      } else {
+        // Show error to user (you could replace this with a toast notification)
+        alert(errorMessage);
+      }
+      
       setSubscribers([]);
     } finally {
       setSubscribersLoading(false);
@@ -794,10 +891,9 @@ function AudienceDetailPage() {
     return <LoadingComponent />;
   }
 
-  const filteredSubscribers = subscribers.filter(subscriber =>
-    subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subscriber.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // No need to filter on frontend since the API handles filtering
+  // Just use the subscribers directly from the API
+  const filteredSubscribers = subscribers;
 
   const getAvatarColor = (name: string) => {
     const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
@@ -805,25 +901,152 @@ function AudienceDetailPage() {
     return colors[index];
   };
 
-  const handleSave = () => {
-    console.log('Saving audience:', audienceData);
-    setEditMode(false);
+  const updateSubscriberCount = async (filters: any) => {
+    try {
+      // First save the filters to the audience, then get the count
+      const updateResponse = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ filters })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update filters for count calculation');
+      }
+      
+      // Now get subscriber count based on the updated filters
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?page=1&limit=1`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.pagination?.total || 0;
+      }
+    } catch (error) {
+      console.error('Failed to get subscriber count:', error);
+    }
+    return 0;
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this audience?')) {
-      console.log('Deleting audience:', audienceId);
-      router.push('/admin/email-campaigns/audiences');
+  const handleSave = async () => {
+    try {
+      // Convert UI filter rules back to database format
+      // Store filters as a structured array to support multiple rules per field
+      const databaseFilters: any = {
+        rules: []
+      };
+      
+      audienceData.filters.forEach((filter: any) => {
+        // Only save meaningful filters with values
+        if (filter.value && filter.value.trim() !== '') {
+          // Validate filter values to prevent database errors
+          let validValue = filter.value.trim();
+          
+          // Validate status values
+          if (filter.field === 'status') {
+            const validStatuses = ['active', 'inactive', 'pending', 'unsubscribed', 'bounced'];
+            if (!validStatuses.includes(validValue)) {
+              validValue = 'active'; // Default to active for invalid status
+            }
+          }
+          
+          // Validate subscription values  
+          if (filter.field === 'subscription') {
+            const validSubscriptions = ['none', 'monthly', 'annual', 'lifetime'];
+            if (!validSubscriptions.includes(validValue)) {
+              validValue = 'none'; // Default to none for invalid subscription
+            }
+          }
+          
+          databaseFilters.rules.push({
+            field: filter.field,
+            operator: filter.operator,
+            value: validValue,
+            timeframe: filter.timeframe || 'all_time'
+          });
+        }
+      });
+
+      // If no rules, fall back to simple format for backward compatibility
+      if (databaseFilters.rules.length === 0) {
+        databaseFilters.status = 'active';
+      }
+
+      // Calculate new subscriber count for dynamic audiences
+      let subscriberCount = audienceData.subscribers;
+      if (audienceData.type === 'dynamic') {
+        subscriberCount = await updateSubscriberCount(databaseFilters);
+      }
+
+      const updateData = {
+        name: audienceData.name,
+        description: audienceData.description,
+        filters: databaseFilters,
+        subscriber_count: subscriberCount
+      };
+
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save audience: ${response.status}`);
+      }
+
+      // Reload audience data to reflect changes and update original data
+      await loadAudienceData();
+      // Reload subscribers to reflect filter changes
+      await loadSubscribers();
+      setEditMode(false);
+      
+      console.log('Audience saved successfully');
+    } catch (error) {
+      console.error('Failed to save audience:', error);
+      alert('Failed to save audience. Please try again.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this audience? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete audience: ${response.status}`);
+        }
+
+        console.log('Audience deleted successfully');
+        router.push('/admin/email-campaigns/audiences');
+      } catch (error) {
+        console.error('Failed to delete audience:', error);
+        alert('Failed to delete audience. Please try again.');
+      }
     }
   };
 
   const addFilterRule = () => {
     const newRule = {
       id: Date.now().toString(),
-      field: "email_opens",
-      operator: "greater_than", 
-      value: "",
-      timeframe: "30_days"
+      field: "status",
+      operator: "equals", 
+      value: "active",
+      timeframe: "all_time"
     };
     
     setAudienceData((prev: any) => ({
@@ -875,8 +1098,51 @@ function AudienceDetailPage() {
         <AudienceInfo>
           <AudienceHeader>
             <AudienceDetails>
-              <AudienceName>{audienceData.name}</AudienceName>
-              <AudienceDescription>{audienceData.description}</AudienceDescription>
+              {editMode ? (
+                <>
+                  <Input
+                    type="text"
+                    value={audienceData.name}
+                    onChange={(e) => setAudienceData((prev: any) => ({ ...prev, name: e.target.value }))}
+                    style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}
+                    placeholder="Audience name"
+                  />
+                  <textarea
+                    value={audienceData.description}
+                    onChange={(e) => setAudienceData((prev: any) => ({ ...prev, description: e.target.value }))}
+                    style={{ 
+                      width: '100%', 
+                      minHeight: '60px',
+                      background: 'transparent',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      padding: '8px',
+                      fontSize: '1rem',
+                      marginBottom: '0.5rem'
+                    }}
+                    placeholder="Audience description"
+                  />
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+                      Audience Type:
+                    </label>
+                    <Select
+                      value={audienceData.type}
+                      onChange={(e) => setAudienceData((prev: any) => ({ ...prev, type: e.target.value }))}
+                      style={{ width: '200px' }}
+                    >
+                      <option value="dynamic">🔄 Dynamic (Filter-based)</option>
+                      <option value="static">📌 Static (Manual list)</option>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AudienceName>{audienceData.name}</AudienceName>
+                  <AudienceDescription>{audienceData.description}</AudienceDescription>
+                </>
+              )}
               <AudienceMeta>
                 <MetaItem>
                   <TypeBadge type={audienceData.type}>
@@ -885,7 +1151,7 @@ function AudienceDetailPage() {
                 </MetaItem>
                 <MetaItem>
                   <FaUsers />
-                      {pagination.total > 0 ? pagination.total.toLocaleString() : audienceData.subscribers.toLocaleString()} subscribers
+                  {subscribersLoading ? 'Loading...' : (pagination.total > 0 ? pagination.total.toLocaleString() : (audienceData.subscribers || 0).toLocaleString())} subscribers
                 </MetaItem>
                 <MetaItem>
                   <FaCalendarAlt />
@@ -900,7 +1166,11 @@ function AudienceDetailPage() {
             <ActionButtons>
               {editMode ? (
                 <>
-                  <HeaderActionButton onClick={() => setEditMode(false)}>
+                  <HeaderActionButton onClick={() => {
+                    // Revert to original data on cancel
+                    setAudienceData(JSON.parse(JSON.stringify(originalAudienceData)));
+                    setEditMode(false);
+                  }}>
                     <FaTimes />
                     Cancel
                   </HeaderActionButton>
@@ -939,6 +1209,14 @@ function AudienceDetailPage() {
               <SectionTitle>
                 <FaFilter />
                 Filter Conditions
+                <span style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'var(--text-secondary)', 
+                  fontWeight: 'normal',
+                  marginLeft: '0.5rem'
+                }}>
+                  - Automatically includes subscribers matching these criteria
+                </span>
               </SectionTitle>
               <FilterConditions>
                 <FilterGroup>
@@ -986,13 +1264,40 @@ function AudienceDetailPage() {
                         <option value="contains">Contains</option>
                       </Select>
                       
-                      <Input
-                        type="text"
-                        value={filter.value}
-                        onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
-                        disabled={!editMode}
-                        placeholder="Value"
-                      />
+                      {filter.field === 'status' ? (
+                        <Select
+                          value={filter.value}
+                          onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
+                          disabled={!editMode}
+                        >
+                          <option value="">Select status...</option>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="pending">Pending</option>
+                          <option value="unsubscribed">Unsubscribed</option>
+                          <option value="bounced">Bounced</option>
+                        </Select>
+                      ) : filter.field === 'subscription' ? (
+                        <Select
+                          value={filter.value}
+                          onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
+                          disabled={!editMode}
+                        >
+                          <option value="">Select subscription...</option>
+                          <option value="none">None (Free)</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="annual">Annual</option>
+                          <option value="lifetime">Lifetime</option>
+                        </Select>
+                      ) : (
+                        <Input
+                          type="text"
+                          value={filter.value}
+                          onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
+                          disabled={!editMode}
+                          placeholder="Value"
+                        />
+                      )}
                       
                       {editMode && (
                         <RemoveButton onClick={() => removeFilterRule(filter.id)}>
@@ -1016,7 +1321,7 @@ function AudienceDetailPage() {
             <ContentSection>
               <SectionTitle>
                 <FaUsers />
-                Subscribers ({filteredSubscribers.length})
+                Subscribers ({pagination.total > 0 ? pagination.total.toLocaleString() : (subscribersLoading ? 'Loading...' : '0')})
                 <span style={{ 
                   fontSize: '0.9rem', 
                   color: 'var(--text-secondary)', 
@@ -1064,7 +1369,29 @@ function AudienceDetailPage() {
                     </tr>
                   </TableHeader>
                   <TableBody>
-                    {filteredSubscribers.length === 0 ? (
+                    {subscribersLoading ? (
+                      <tr>
+                        <TableCell colSpan={7}>
+                          <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'center', 
+                            alignItems: 'center', 
+                            padding: '3rem 0',
+                            color: 'var(--text-secondary)'
+                          }}>
+                                                          <div style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                gap: '1rem' 
+                              }}>
+                              <Spinner />
+                              <span>Loading subscribers...</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </tr>
+                    ) : filteredSubscribers.length === 0 ? (
                       <tr>
                         <TableCell colSpan={7}>
                           <EmptyState>
@@ -1138,10 +1465,124 @@ function AudienceDetailPage() {
                   </TableBody>
                 </Table>
               </SubscribersTable>
+              
+              {/* Pagination Controls */}
+              {pagination.total > 0 && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginTop: '2rem',
+                  padding: '1rem',
+                  backgroundColor: 'var(--card-bg)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} subscribers
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button
+                      onClick={() => {
+                        if (pagination.page > 1) {
+                          const newPage = pagination.page - 1;
+                          loadSubscribers(newPage);
+                        }
+                      }}
+                      disabled={pagination.page <= 1 || subscribersLoading}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px',
+                        backgroundColor: pagination.page <= 1 ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
+                        color: pagination.page <= 1 ? 'var(--text-secondary)' : 'white',
+                        cursor: pagination.page <= 1 || subscribersLoading ? 'not-allowed' : 'pointer',
+                        opacity: subscribersLoading ? 0.5 : 1
+                      }}
+                    >
+                      Previous
+                    </button>
+                    
+                    <span style={{ 
+                      color: 'var(--text)', 
+                      fontSize: '0.9rem',
+                      margin: '0 1rem'
+                    }}>
+                      Page {pagination.page} of {pagination.totalPages}
+                    </span>
+                    
+                    <button
+                      onClick={() => {
+                        if (pagination.page < pagination.totalPages) {
+                          const newPage = pagination.page + 1;
+                          loadSubscribers(newPage);
+                        }
+                      }}
+                      disabled={pagination.page >= pagination.totalPages || subscribersLoading}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px',
+                        backgroundColor: pagination.page >= pagination.totalPages ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
+                        color: pagination.page >= pagination.totalPages ? 'var(--text-secondary)' : 'white',
+                        cursor: pagination.page >= pagination.totalPages || subscribersLoading ? 'not-allowed' : 'pointer',
+                        opacity: subscribersLoading ? 0.5 : 1
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </ContentSection>
           </>
         ) : (
           <ContentSection>
+            <SectionTitle>
+              <FaUsers />
+              Static Audience Management
+              <span style={{ 
+                fontSize: '0.9rem', 
+                color: 'var(--text-secondary)', 
+                fontWeight: 'normal',
+                marginLeft: '0.5rem'
+              }}>
+                - Manually managed subscriber list
+              </span>
+            </SectionTitle>
+            
+            <div style={{ 
+              background: 'rgba(108, 99, 255, 0.1)',
+              border: '1px solid rgba(108, 99, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>Static Audience Features:</h4>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
+                <li>Manually add/remove specific subscribers</li>
+                <li>Import subscriber lists from CSV files</li>
+                <li>Full control over audience membership</li>
+                <li>No automatic updates based on criteria</li>
+              </ul>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+              <HeaderActionButton onClick={() => console.log('Add individual subscriber')}>
+                <FaUserPlus />
+                Add Subscriber
+              </HeaderActionButton>
+              <HeaderActionButton onClick={() => console.log('Import CSV')}>
+                <FaUpload />
+                Import CSV
+              </HeaderActionButton>
+              <HeaderActionButton onClick={() => console.log('Export list')}>
+                <FaDownload />
+                Export List
+              </HeaderActionButton>
+            </div>
+            
             <SectionTitle>
               <FaUsers />
               Subscribers ({filteredSubscribers.length})

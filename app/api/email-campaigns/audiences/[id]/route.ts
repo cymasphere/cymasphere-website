@@ -96,7 +96,7 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, filters } = body;
+    const { name, description, filters, subscriber_count } = body;
 
     const updateData: any = {
       updated_at: new Date().toISOString()
@@ -105,6 +105,7 @@ export async function PUT(
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (filters !== undefined) updateData.filters = filters;
+    if (subscriber_count !== undefined) updateData.subscriber_count = subscriber_count;
 
     const { data: audience, error } = await supabase
       .from('email_audiences')
