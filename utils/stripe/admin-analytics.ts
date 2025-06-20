@@ -120,21 +120,45 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
 
     const activeSubscriptions = monthlySubscribers + annualSubscribers;
 
-    // Get revenue data from Stripe tables
-    const { data: invoices, error: invoicesError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_invoices")
-      .select("total, currency, period_end, status");
+    // Get revenue data from Stripe tables with timeout and limit
+    let invoices: any[] = [];
+    let invoicesError: any = null;
+    
+    try {
+      const result = await supabase
+        .schema("stripe_tables")
+        .from("stripe_invoices")
+        .select("total, currency, period_end, status")
+        .limit(1000); // Limit to prevent timeouts
+      
+      invoices = result.data || [];
+      invoicesError = result.error;
+    } catch (error) {
+      console.error('Stripe invoices query failed:', error);
+      invoicesError = { message: 'Query failed' };
+    }
 
     if (invoicesError) {
       console.error("Error fetching invoices:", invoicesError);
     }
 
-    // Get payment intents for one-time payments (lifetime purchases)
-    const { data: paymentIntents, error: piError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_payment_intents")
-      .select("amount, currency, created, attrs");
+    // Get payment intents for one-time payments (lifetime purchases) with limit
+    let paymentIntents: any[] = [];
+    let piError: any = null;
+    
+    try {
+      const result = await supabase
+        .schema("stripe_tables")
+        .from("stripe_payment_intents")
+        .select("amount, currency, created, attrs")
+        .limit(1000); // Limit to prevent timeouts
+      
+      paymentIntents = result.data || [];
+      piError = result.error;
+    } catch (error) {
+      console.error('Stripe payment intents query failed:', error);
+      piError = { message: 'Query failed' };
+    }
 
     if (piError) {
       console.error("Error fetching payment intents:", piError);
@@ -215,7 +239,23 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     };
   } catch (error) {
     console.error("Error fetching admin dashboard stats:", error);
-    throw error;
+    
+    // Return safe defaults on database timeout or other errors
+    return {
+      totalUsers: 0,
+      activeSubscriptions: 0,
+      monthlyRevenue: 0,
+      lifetimeRevenue: 0,
+      totalCustomers: 0,
+      freeUsers: 0,
+      monthlySubscribers: 0,
+      annualSubscribers: 0,
+      lifetimeCustomers: 0,
+      adminUsers: 0,
+      trialUsers: 0,
+      churnRate: 0,
+      recentActivity: [],
+    };
   }
 }
 
