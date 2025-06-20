@@ -620,102 +620,95 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
   }
 `;
 
-// Mock audience data
-const getAudienceData = (id: string) => {
-  const audiences: Record<string, any> = {
-    "1": {
-      id: "1",
-      name: "Highly Engaged Users",
-      description: "Users who opened emails in the last 30 days and clicked at least once",
-      type: "dynamic" as const,
-      subscribers: 4567,
-      createdAt: "2024-01-10",
-      lastUpdated: "2024-01-22",
-      filters: [
-        {
-          id: "1",
-          field: "email_opens",
-          operator: "greater_than",
-          value: "0",
-          timeframe: "30_days"
-        },
-        {
-          id: "2", 
-          field: "email_clicks",
-          operator: "greater_than",
-          value: "0",
-          timeframe: "30_days"
-        }
-      ]
-    },
-    "3": {
-      id: "3",
-      name: "Music Producers",
-      description: "Professional music producers and beatmakers",
-      type: "static" as const,
-      subscribers: 1890,
-      createdAt: "2024-01-05",
-      lastUpdated: "2024-01-20",
-      filters: []
+// Fetch audience data from API
+const fetchAudienceData = async (id: string) => {
+  try {
+    const response = await fetch(`/api/email-campaigns/audiences/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch audience: ${response.status}`);
     }
-  };
-  
-  return audiences[id] || audiences["1"];
+
+    const data = await response.json();
+    return data.audience;
+  } catch (error) {
+    console.error('Error fetching audience:', error);
+    throw error;
+  }
 };
 
-// Mock subscribers data for static audiences
-const mockSubscribers = [
-  {
-    id: "1",
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    status: "active",
-    subscribeDate: "2024-01-15",
-    lastActivity: "2024-01-20",
-    engagement: "High",
-    source: "filter" as const
-  },
-  {
-    id: "2",
-    name: "Sarah Chen",
-    email: "sarah.chen@example.com", 
-    status: "active",
-    subscribeDate: "2024-01-10",
-    lastActivity: "2024-01-22",
-    engagement: "Medium",
-    source: "filter" as const
-  },
-  {
-    id: "3",
-    name: "Mike Rodriguez",
-    email: "mike.rodriguez@example.com",
-    status: "unsubscribed",
-    subscribeDate: "2023-12-20",
-    lastActivity: "2024-01-18",
-    engagement: "Low",
-    source: "manual" as const
-  },
-  {
-    id: "4",
-    name: "Emma Wilson",
-    email: "emma.wilson@example.com",
-    status: "active",
-    subscribeDate: "2024-01-18",
-    lastActivity: "2024-01-21",
-    engagement: "High",
-    source: "filter" as const
-  },
-  {
-    id: "5",
-    name: "David Kim",
-    email: "david.kim@example.com",
-    status: "active",
-    subscribeDate: "2024-01-12",
-    lastActivity: "2024-01-19",
-    engagement: "Medium",
-    source: "manual" as const
+// Fetch audience subscribers from API
+const fetchAudienceSubscribers = async (id: string, page: number = 1, limit: number = 10, search: string = '') => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search })
+    });
+
+    const response = await fetch(`/api/email-campaigns/audiences/${id}/subscribers?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to fetch subscribers: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching audience subscribers:', error);
+    throw error;
   }
-];
+};
+
+// Transform database audience data to display format
+const transformAudienceData = (dbAudience: any) => {
+  // Convert filters object to array format for the UI
+  const filtersArray: Array<{
+    id: string;
+    field: string;
+    operator: string;
+    value: string;
+    timeframe: string;
+  }> = [];
+  
+  if (dbAudience.filters && typeof dbAudience.filters === 'object') {
+    // Convert the JSON object to an array of filter objects
+    Object.entries(dbAudience.filters).forEach(([key, value], index) => {
+      filtersArray.push({
+        id: (index + 1).toString(),
+        field: key,
+        operator: "equals",
+        value: Array.isArray(value) ? value.join(', ') : String(value),
+        timeframe: "all_time"
+      });
+    });
+  }
+
+  return {
+    id: dbAudience.id,
+    name: dbAudience.name,
+    description: dbAudience.description || "No description provided",
+    type: "dynamic" as const, // All audiences are dynamic for now
+    subscribers: dbAudience.subscriber_count || 0,
+    createdAt: dbAudience.created_at,
+    lastUpdated: dbAudience.updated_at,
+    filters: filtersArray
+  };
+};
 
 function AudienceDetailPage() {
   const { user } = useAuth();
@@ -723,6 +716,10 @@ function AudienceDetailPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [audienceData, setAudienceData] = useState<any>(null);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -736,13 +733,60 @@ function AudienceDetailPage() {
     }
   }, [languageLoading]);
 
+  // Load audience data
   useEffect(() => {
-    if (audienceId) {
-      setAudienceData(getAudienceData(audienceId));
+    if (audienceId && user) {
+      loadAudienceData();
     }
-  }, [audienceId]);
+  }, [audienceId, user]);
 
-  if (languageLoading || !translationsLoaded) {
+  // Load subscribers when audience changes or pagination changes
+  useEffect(() => {
+    if (audienceId && user) {
+      loadSubscribers();
+    }
+  }, [audienceId, user, pagination.page]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (audienceId && user) {
+        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
+        loadSubscribers();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const loadAudienceData = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAudienceData(audienceId);
+      setAudienceData(transformAudienceData(data));
+    } catch (error) {
+      console.error('Failed to load audience:', error);
+      // Handle error - maybe show toast or redirect
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSubscribers = async () => {
+    try {
+      setSubscribersLoading(true);
+      const data = await fetchAudienceSubscribers(audienceId, pagination.page, pagination.limit, searchTerm);
+      setSubscribers(data.subscribers || []);
+      setPagination(prev => ({ ...prev, ...data.pagination }));
+    } catch (error) {
+      console.error('Failed to load subscribers:', error);
+      setSubscribers([]);
+    } finally {
+      setSubscribersLoading(false);
+    }
+  };
+
+  if (languageLoading || !translationsLoaded || loading) {
     return <LoadingComponent />;
   }
 
@@ -750,7 +794,7 @@ function AudienceDetailPage() {
     return <LoadingComponent />;
   }
 
-  const filteredSubscribers = mockSubscribers.filter(subscriber =>
+  const filteredSubscribers = subscribers.filter(subscriber =>
     subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     subscriber.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -841,7 +885,7 @@ function AudienceDetailPage() {
                 </MetaItem>
                 <MetaItem>
                   <FaUsers />
-                  {audienceData.subscribers.toLocaleString()} subscribers
+                      {pagination.total > 0 ? pagination.total.toLocaleString() : audienceData.subscribers.toLocaleString()} subscribers
                 </MetaItem>
                 <MetaItem>
                   <FaCalendarAlt />
@@ -915,11 +959,20 @@ function AudienceDetailPage() {
                         onChange={(e) => updateFilterRule(filter.id, 'field', e.target.value)}
                         disabled={!editMode}
                       >
+                        <option value="status">Status</option>
+                        <option value="subscription">Subscription</option>
+                        <option value="tags">Tags</option>
+                        <option value="interests">Interests</option>
                         <option value="email_opens">Email Opens</option>
                         <option value="email_clicks">Email Clicks</option>
                         <option value="last_activity">Last Activity</option>
                         <option value="subscription_date">Subscription Date</option>
                         <option value="engagement_score">Engagement Score</option>
+                        <option value="signup_date">Signup Date</option>
+                        <option value="trial_status">Trial Status</option>
+                        <option value="device_type">Device Type</option>
+                        <option value="last_email_open">Last Email Open</option>
+                        <option value="last_login">Last Login</option>
                       </Select>
                       
                       <Select
@@ -1027,7 +1080,7 @@ function AudienceDetailPage() {
                           <TableCell>
                             <SubscriberInfo>
                               <Avatar color={getAvatarColor(subscriber.name)}>
-                                {subscriber.name.split(' ').map(n => n[0]).join('')}
+                                {subscriber.name.split(' ').map((n: string) => n[0]).join('')}
                               </Avatar>
                               <SubscriberDetails>
                                 <SubscriberName>{subscriber.name}</SubscriberName>
@@ -1135,7 +1188,7 @@ function AudienceDetailPage() {
                         <TableCell>
                           <SubscriberInfo>
                             <Avatar color={getAvatarColor(subscriber.name)}>
-                              {subscriber.name.split(' ').map(n => n[0]).join('')}
+                              {subscriber.name.split(' ').map((n: string) => n[0]).join('')}
                             </Avatar>
                             <SubscriberDetails>
                               <SubscriberName>{subscriber.name}</SubscriberName>

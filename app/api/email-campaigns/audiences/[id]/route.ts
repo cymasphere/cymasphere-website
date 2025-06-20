@@ -4,7 +4,7 @@ import { createSupabaseServer } from '@/utils/supabase/server';
 // GET /api/email-campaigns/audiences/[id] - Get single audience
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -31,10 +31,13 @@ export async function GET(
   }
 
   try {
+    // Await params as required by Next.js
+    const { id } = await params;
+
     const { data: audience, error } = await supabase
       .from('email_audiences')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error) {
@@ -62,7 +65,7 @@ export async function GET(
 // PUT /api/email-campaigns/audiences/[id] - Update audience
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -89,6 +92,9 @@ export async function PUT(
   }
 
   try {
+    // Await params as required by Next.js
+    const { id } = await params;
+
     const body = await request.json();
     const { name, description, filters } = body;
 
@@ -103,7 +109,7 @@ export async function PUT(
     const { data: audience, error } = await supabase
       .from('email_audiences')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select('*')
       .single();
 
@@ -132,7 +138,7 @@ export async function PUT(
 // DELETE /api/email-campaigns/audiences/[id] - Delete audience
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -159,10 +165,13 @@ export async function DELETE(
   }
 
   try {
+    // Await params as required by Next.js
+    const { id } = await params;
+
     const { error } = await supabase
       .from('email_audiences')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting audience:', error);

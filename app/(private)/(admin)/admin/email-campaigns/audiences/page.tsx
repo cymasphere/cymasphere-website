@@ -607,11 +607,11 @@ const convertToDisplayAudience = (dbAudience: DatabaseAudience) => ({
   growthRate: "+0%", // This would need to be calculated from historical data
   engagementRate: "N/A", // This would need to be calculated from email metrics
   lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
-  tags: [
+    tags: [
     { text: "Active", type: "status" as const }
-  ],
+    ],
   criteria: `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
-  type: "dynamic" as const
+    type: "dynamic" as const
 });
 
 function AudiencesPage() {
