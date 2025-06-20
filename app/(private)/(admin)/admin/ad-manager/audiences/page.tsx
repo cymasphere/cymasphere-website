@@ -533,19 +533,12 @@ const CloseButton = styled.button`
 interface Audience {
   id: string;
   name: string;
-  description: string;
-  type: 'custom' | 'lookalike' | 'saved';
-  status: 'active' | 'inactive' | 'processing';
-  size: number;
-  reach: number;
-  demographics: {
-    ageRange: string;
-    gender: string;
-    locations: string[];
-  };
-  interests: string[];
-  createdAt: string;
-  lastUpdated: string;
+  description: string | null;
+  filters: any;
+  subscriber_count: number | null;
+  created_by: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface DeleteModalProps {
@@ -605,10 +598,9 @@ const DeleteConfirmationModal: React.FC<DeleteModalProps> = ({
                              <AudienceInfoCard>
                  <AudienceInfoTitle>{audience.name}</AudienceInfoTitle>
                  <AudienceInfoDetails>
-                  <span>Size: {formatNumber(audience.size)}</span>
-                  <span>Reach: {formatNumber(audience.reach)}</span>
-                  <span>Type: {audience.type.charAt(0).toUpperCase() + audience.type.slice(1)}</span>
-                                     <span>Status: {audience.status.charAt(0).toUpperCase() + audience.status.slice(1)}</span>
+                  <span>Subscribers: {formatNumber(audience.subscriber_count || 0)}</span>
+                  <span>Created: {audience.created_at ? new Date(audience.created_at).toLocaleDateString() : 'Unknown'}</span>
+                  <span>Filters: {Object.keys(audience.filters || {}).length}</span>
                  </AudienceInfoDetails>
                </AudienceInfoCard>
 
@@ -645,67 +637,41 @@ const DeleteConfirmationModal: React.FC<DeleteModalProps> = ({
   );
 };
 
-const mockAudiences: Audience[] = [
-  {
-    id: "1",
-    name: "Music Producers 25-35",
-    description: "Professional music producers aged 25-35 interested in electronic music production tools",
-    type: "custom",
-    status: "active",
-    size: 45000,
-    reach: 32000,
-    demographics: {
-      ageRange: "25-35",
-      gender: "All",
-      locations: ["United States", "Canada", "United Kingdom"]
-    },
-    interests: ["Music Production", "Electronic Music", "Audio Software", "DJ Equipment"],
-    createdAt: "2024-01-15",
-    lastUpdated: "2024-01-20"
-  },
-  {
-    id: "2",
-    name: "Lookalike - Existing Customers",
-    description: "Lookalike audience based on our top-performing customers",
-    type: "lookalike",
-    status: "active",
-    size: 2100000,
-    reach: 1800000,
-    demographics: {
-      ageRange: "18-55",
-      gender: "All",
-      locations: ["United States"]
-    },
-    interests: ["Music", "Technology", "Creative Software"],
-    createdAt: "2024-01-18",
-    lastUpdated: "2024-01-19"
-  },
-  {
-    id: "3",
-    name: "Website Visitors - Last 30 Days",
-    description: "Users who visited our website in the last 30 days",
-    type: "custom",
-    status: "processing",
-    size: 8500,
-    reach: 6800,
-    demographics: {
-      ageRange: "18-65",
-      gender: "All",
-      locations: ["Worldwide"]
-    },
-    interests: ["Music Production", "Software"],
-    createdAt: "2024-01-22",
-    lastUpdated: "2024-01-22"
+// Fetch audiences from API
+const fetchAudiences = async (): Promise<Audience[]> => {
+  try {
+    console.log('Fetching audiences from API...');
+    const response = await fetch('/api/email-campaigns/audiences', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(`Failed to fetch audiences: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Fetched audiences data:', data);
+    return data.audiences || [];
+  } catch (error) {
+    console.error('Error fetching audiences:', error);
+    return [];
   }
-];
+};
 
 export default function AudiencesPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [audiences, setAudiences] = useState<Audience[]>(mockAudiences);
-  const [loading, setLoading] = useState(false);
+  const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredAudiences, setFilteredAudiences] = useState<Audience[]>(mockAudiences);
+  const [filteredAudiences, setFilteredAudiences] = useState<Audience[]>([]);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     audience: Audience | null;
@@ -716,14 +682,29 @@ export default function AudiencesPage() {
     isDeleting: false
   });
 
+  // Load audiences on component mount
+  useEffect(() => {
+    const loadAudiences = async () => {
+      console.log('Loading audiences... User:', user?.email);
+      setLoading(true);
+      const fetchedAudiences = await fetchAudiences();
+      console.log('Fetched audiences count:', fetchedAudiences.length);
+      setAudiences(fetchedAudiences);
+      setLoading(false);
+    };
+
+    if (user) {
+      loadAudiences();
+    } else {
+      console.log('No user found, not loading audiences');
+    }
+  }, [user]);
+
   useEffect(() => {
     // Filter audiences based on search term
     const filtered = audiences.filter(audience =>
       audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      audience.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      audience.interests.some(interest => 
-        interest.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      (audience.description && audience.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredAudiences(filtered);
   }, [searchTerm, audiences]);
@@ -745,8 +726,17 @@ export default function AudiencesPage() {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/email-campaigns/audiences/${deleteModal.audience.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete audience');
+      }
       
       setAudiences(prev => prev.filter(audience => audience.id !== deleteModal.audience?.id));
       
@@ -772,21 +762,12 @@ export default function AudiencesPage() {
   };
 
   const handleRefreshAudience = async (audienceId: string) => {
-    // Simulate audience refresh
+    // Simulate audience refresh - update the updated_at timestamp
     setAudiences(prev => prev.map(audience => 
       audience.id === audienceId 
-        ? { ...audience, status: 'processing' as const, lastUpdated: new Date().toISOString() }
+        ? { ...audience, updated_at: new Date().toISOString() }
         : audience
     ));
-
-    // Simulate processing completion
-    setTimeout(() => {
-      setAudiences(prev => prev.map(audience => 
-        audience.id === audienceId 
-          ? { ...audience, status: 'active' as const }
-          : audience
-      ));
-    }, 3000);
   };
 
   const formatNumber = (num: number) => {
@@ -794,13 +775,13 @@ export default function AudiencesPage() {
   };
 
   const totalAudiences = audiences.length;
-  const activeAudiences = audiences.filter(a => a.status === 'active').length;
-  const totalReach = audiences.reduce((sum, a) => sum + a.reach, 0);
+  const activeAudiences = audiences.length; // All audiences are considered active in this context
+  const totalSubscribers = audiences.reduce((sum, a) => sum + (a.subscriber_count || 0), 0);
   const avgAudienceSize = audiences.length > 0 
-    ? audiences.reduce((sum, a) => sum + a.size, 0) / audiences.length 
+    ? audiences.reduce((sum, a) => sum + (a.subscriber_count || 0), 0) / audiences.length 
     : 0;
 
-  if (!user) {
+  if (!user || loading) {
     return <LoadingComponent />;
   }
 
@@ -844,8 +825,8 @@ export default function AudiencesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <StatValue>{formatNumber(totalReach)}</StatValue>
-            <StatLabel>Total Reach</StatLabel>
+            <StatValue>{formatNumber(totalSubscribers)}</StatValue>
+            <StatLabel>Total Subscribers</StatLabel>
           </StatCard>
 
           <StatCard
@@ -908,22 +889,19 @@ export default function AudiencesPage() {
                   <AudienceInfo>
                     <AudienceDetails>
                       <AudienceName>{audience.name}</AudienceName>
-                      <AudienceDescription>{audience.description}</AudienceDescription>
+                      <AudienceDescription>{audience.description || 'No description provided'}</AudienceDescription>
                       <AudienceMeta>
                         <MetaItem>
                           <FaUsers />
-                          {audience.type.charAt(0).toUpperCase() + audience.type.slice(1)}
+                          {audience.subscriber_count || 0} subscribers
                         </MetaItem>
                         <MetaItem>
                           <FaGlobe />
-                          {audience.demographics.locations.join(', ')}
+                          Created {audience.created_at ? new Date(audience.created_at).toLocaleDateString() : 'Unknown'}
                         </MetaItem>
                         <MetaItem>
                           <FaCheckCircle />
-                          <StatusBadge $status={audience.status}>
-                            {audience.status === 'processing' && <FaSync />}
-                            {audience.status.charAt(0).toUpperCase() + audience.status.slice(1)}
-                          </StatusBadge>
+                          Active
                         </MetaItem>
                       </AudienceMeta>
                     </AudienceDetails>
@@ -939,7 +917,7 @@ export default function AudiencesPage() {
                       <SmallButton
                         onClick={() => {
                           // In real implementation, this would open a detailed view modal or page
-                          alert(`View details for audience: ${audience.name}\nSize: ${formatNumber(audience.size)}\nReach: ${formatNumber(audience.reach)}\nType: ${audience.type}`);
+                          alert(`View details for audience: ${audience.name}\nSubscribers: ${formatNumber(audience.subscriber_count || 0)}\nCreated: ${audience.created_at ? new Date(audience.created_at).toLocaleDateString() : 'Unknown'}`);
                         }}
                         title="View Audience Details"
                         whileHover={{ scale: 1.1 }}
@@ -968,20 +946,20 @@ export default function AudiencesPage() {
 
                 <AudienceStats>
                   <AudienceStatItem>
-                    <AudienceStatValue>{formatNumber(audience.size)}</AudienceStatValue>
-                    <AudienceStatLabel>Audience Size</AudienceStatLabel>
+                    <AudienceStatValue>{formatNumber(audience.subscriber_count || 0)}</AudienceStatValue>
+                    <AudienceStatLabel>Subscribers</AudienceStatLabel>
                   </AudienceStatItem>
                   <AudienceStatItem>
-                    <AudienceStatValue>{formatNumber(audience.reach)}</AudienceStatValue>
-                    <AudienceStatLabel>Potential Reach</AudienceStatLabel>
+                    <AudienceStatValue>{audience.created_at ? new Date(audience.created_at).toLocaleDateString() : 'Unknown'}</AudienceStatValue>
+                    <AudienceStatLabel>Created</AudienceStatLabel>
                   </AudienceStatItem>
                   <AudienceStatItem>
-                    <AudienceStatValue>{audience.demographics.ageRange}</AudienceStatValue>
-                    <AudienceStatLabel>Age Range</AudienceStatLabel>
+                    <AudienceStatValue>{audience.updated_at ? new Date(audience.updated_at).toLocaleDateString() : 'Unknown'}</AudienceStatValue>
+                    <AudienceStatLabel>Last Updated</AudienceStatLabel>
                   </AudienceStatItem>
                   <AudienceStatItem>
-                    <AudienceStatValue>{audience.interests.length}</AudienceStatValue>
-                    <AudienceStatLabel>Interests</AudienceStatLabel>
+                    <AudienceStatValue>{Object.keys(audience.filters || {}).length}</AudienceStatValue>
+                    <AudienceStatLabel>Filters</AudienceStatLabel>
                   </AudienceStatItem>
                 </AudienceStats>
               </AudienceCard>
