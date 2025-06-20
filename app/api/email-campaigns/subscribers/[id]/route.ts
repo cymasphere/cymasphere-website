@@ -3,7 +3,7 @@ import { createSupabaseServer } from '@/utils/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -26,7 +26,8 @@ export async function GET(
   }
 
   try {
-    const subscriberId = params.id;
+    const resolvedParams = await params;
+    const subscriberId = resolvedParams.id;
 
     // Query the subscriber from the database
     const { data: subscriberData, error: subscriberError } = await supabase
@@ -96,7 +97,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -119,7 +120,8 @@ export async function PUT(
   }
 
   try {
-    const subscriberId = params.id;
+    const resolvedParams = await params;
+    const subscriberId = resolvedParams.id;
     const body = await request.json();
 
     // Update the subscriber in the database

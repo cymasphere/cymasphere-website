@@ -174,9 +174,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create subscriber in the database
+    const subscriberId = crypto.randomUUID();
     const { data: newSubscriber, error: createError } = await supabase
       .from('subscribers')
       .insert({
+        id: subscriberId,
         email,
         status: 'active',
         source: 'manual',

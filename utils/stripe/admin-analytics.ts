@@ -140,13 +140,12 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       console.error("Error fetching payment intents:", piError);
     }
 
-    // Calculate revenue
+    // Calculate revenue (using mock data for now)
     const paidInvoices = invoices?.filter((inv) => inv.status === "paid") || [];
-    const succeededPayments =
-      paymentIntents?.filter((pi) => {
-        const attrs = pi.attrs as any;
-        return attrs?.status === "succeeded" && !attrs?.refunded;
-      }) || [];
+    const succeededPayments = paymentIntents?.filter((pi) => {
+      const attrs = pi.attrs as any;
+      return attrs?.status === "succeeded" && !attrs?.refunded;
+    }) || [];
 
     const totalInvoiceRevenue =
       paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
