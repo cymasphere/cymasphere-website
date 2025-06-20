@@ -95,8 +95,8 @@ jobs:
           # Stop the current application with proper Node.js environment
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && export PATH=\$(npm bin -g):\$PATH && pm2 stop cymasphere || true'"
           
-          # Aggressively clean all build artifacts and caches on server
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "rm -rf ~/cymasphere/.next ~/cymasphere/node_modules/.cache"
+          # Clean build artifacts on server to avoid server action mismatches
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "rm -rf ~/cymasphere/.next"
 
       - name: Copy files to server
         env:
@@ -154,8 +154,8 @@ jobs:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          # Remove node_modules and reinstall completely to avoid stale modules
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && rm -rf node_modules && export PATH=\$(npm bin -g):\$PATH && bun install'"
+          # Install dependencies with nvm sourcing and npm global bin path
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun install'"
           
           # Generate Supabase types on server to ensure they match
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun run gen-supabase-types'"
