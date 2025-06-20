@@ -15,16 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache dependencies only (not Next.js build)
+      - name: Cache dependencies and Next.js build
         uses: actions/cache@v4
         with:
-          # Cache only dependencies, not Next.js build to avoid server action mismatches
+          # See here for caching with `yarn`, `bun` or other package managers https://github.com/actions/cache/blob/main/examples.md or you can leverage caching with actions/setup-node https://github.com/actions/setup-node
           path: |
             ~/.npm
-            ~/.bun
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+            ${{ github.workspace }}/.next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
-            ${{ runner.os }}-deps-
+            ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-
 
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -46,16 +48,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install
-
-      - name: Generate Supabase types
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: bun run gen-supabase-types
-
-      - name: Clean build directory
-        run: rm -rf .next
 
       - name: Build application
         env:
@@ -94,9 +86,6 @@ jobs:
         run: |
           # Stop the current application with proper Node.js environment
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && export PATH=\$(npm bin -g):\$PATH && pm2 stop cymasphere || true'"
-          
-          # Clean build artifacts on server to avoid server action mismatches
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "rm -rf ~/cymasphere/.next"
 
       - name: Copy files to server
         env:
@@ -117,25 +106,25 @@ jobs:
           # Verify public directory structure was copied correctly
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
 
-          # Copy essential config files
+          # Copy package.json and other config files only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
-            package.json bun.lock database.types.ts middleware.ts $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+            package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
-          # Create environment file (use .env.local for consistency with local development)
-          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.local
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
-          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.local
-          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.local
-          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.local
-          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.local
-          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.local
-          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.local
+          # Create environment file
+          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.production
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.production
+          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
+          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
+          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
 
-          # Copy environment file
+          # Copy environment file only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
-            .env.local $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+            .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
           # Copy next.config.js if it exists and has changed
           if [ -f "next.config.js" ]; then
@@ -156,9 +145,6 @@ jobs:
         run: |
           # Install dependencies with nvm sourcing and npm global bin path
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun install'"
-          
-          # Generate Supabase types on server to ensure they match
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun run gen-supabase-types'"
 
       - name: Start application
         env:
