@@ -711,7 +711,7 @@ const transformAudienceData = (dbAudience: any) => {
 };
 
 function AudienceDetailPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -735,29 +735,29 @@ function AudienceDetailPage() {
 
   // Load audience data
   useEffect(() => {
-    if (audienceId && user) {
+    if (audienceId && user && !authLoading) {
       loadAudienceData();
     }
-  }, [audienceId, user]);
+  }, [audienceId, user, authLoading]);
 
   // Load subscribers when audience changes or pagination changes
   useEffect(() => {
-    if (audienceId && user) {
+    if (audienceId && user && !authLoading) {
       loadSubscribers();
     }
-  }, [audienceId, user, pagination.page]);
+  }, [audienceId, user, authLoading, pagination.page]);
 
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (audienceId && user) {
+      if (audienceId && user && !authLoading) {
         setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
         loadSubscribers();
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, user, authLoading]);
 
   const loadAudienceData = async () => {
     try {
@@ -786,7 +786,7 @@ function AudienceDetailPage() {
     }
   };
 
-  if (languageLoading || !translationsLoaded || loading) {
+  if (languageLoading || !translationsLoaded || loading || authLoading) {
     return <LoadingComponent />;
   }
 
