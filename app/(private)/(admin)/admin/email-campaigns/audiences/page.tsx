@@ -34,10 +34,19 @@ import {
   FaCheck
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import styled from "styled-components";
+import styled, { css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useRouter } from "next/navigation";
+
+// Global styles for animations
+const GlobalStyles = createGlobalStyle`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
 
 const AudiencesContainer = styled.div`
   width: 100%;
@@ -611,7 +620,8 @@ const convertToDisplayAudience = (dbAudience: DatabaseAudience) => ({
     { text: "Active", type: "status" as const }
     ],
   criteria: `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
-    type: "dynamic" as const
+    type: "dynamic" as const,
+  originalFilters: dbAudience.filters // Store original filters for cloning
 });
 
 function AudiencesPage() {
@@ -621,6 +631,9 @@ function AudiencesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [audienceToDelete, setAudienceToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newAudience, setNewAudience] = useState({
     name: "",
     description: "",
@@ -703,23 +716,132 @@ function AudiencesPage() {
     setOpenDropdown(null);
     switch (action) {
       case 'edit':
-        // Handle edit action
-        break;
-      case 'view':
-        router.push(`/admin/email-campaigns/subscribers?audience=${audienceId}`);
+        router.push(`/admin/email-campaigns/audiences/${audienceId}`);
         break;
       case 'export':
-        // Handle export action
+        handleExportAudience(audienceId);
         break;
       case 'delete':
-        // Handle delete action
+        handleDeleteAudience(audienceId);
         break;
       case 'clone':
-        // Handle clone action
+        handleCloneAudience(audienceId);
         break;
       case 'email':
         router.push(`/admin/email-campaigns/campaigns/create?audience=${audienceId}`);
         break;
+    }
+  };
+
+  const handleExportAudience = async (audienceId: string) => {
+    try {
+      // Find the audience data
+      const audience = audiences.find(a => a.id === audienceId);
+      if (!audience) return;
+
+      // Create CSV content
+      const csvContent = [
+        ['Audience Name', 'Description', 'Subscribers', 'Type', 'Last Updated'],
+        [
+          audience.name,
+          audience.description,
+          audience.subscribers.toString(),
+          audience.type,
+          audience.lastActive
+        ]
+      ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `audience-${audience.name.toLowerCase().replace(/\s+/g, '-')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('Audience exported successfully');
+    } catch (error) {
+      console.error('Error exporting audience:', error);
+    }
+  };
+
+  const handleDeleteAudience = (audienceId: string) => {
+    const audience = audiences.find(a => a.id === audienceId);
+    if (!audience) return;
+
+    setAudienceToDelete(audience);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAudience = async () => {
+    if (!audienceToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setAudiences(prev => prev.filter(a => a.id !== audienceToDelete.id));
+        console.log('Audience deleted successfully');
+        setShowDeleteModal(false);
+        setAudienceToDelete(null);
+      } else {
+        const error = await response.json();
+        console.error('Error deleting audience:', error);
+        // Keep modal open to show error state
+      }
+    } catch (error) {
+      console.error('Error deleting audience:', error);
+      // Keep modal open to show error state
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteAudience = () => {
+    setShowDeleteModal(false);
+    setAudienceToDelete(null);
+    setIsDeleting(false);
+  };
+
+  const handleCloneAudience = async (audienceId: string) => {
+    try {
+      const audience = audiences.find(a => a.id === audienceId);
+      if (!audience) return;
+
+      const response = await fetch('/api/email-campaigns/audiences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${audience.name} (Copy)`,
+          description: audience.description,
+          filters: audience.originalFilters // Use original filters for cloning
+        }),
+      });
+
+      if (response.ok) {
+        const { audience: newAudience } = await response.json();
+        // Reload audiences to include the new one
+        const dbAudiences = await fetchAudiences();
+        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
+        setAudiences(displayAudiences);
+        console.log('Audience cloned successfully');
+      } else {
+        const error = await response.json();
+        console.error('Error cloning audience:', error);
+        // Could show error notification instead of alert
+      }
+    } catch (error) {
+      console.error('Error cloning audience:', error);
+      // Could show error notification instead of alert
     }
   };
 
@@ -732,15 +854,55 @@ function AudiencesPage() {
     router.push(`/admin/email-campaigns/audiences/${audienceId}`);
   };
 
-  const handleCreateAudience = () => {
-    console.log("Creating audience:", newAudience);
-    // Here you would make an API call to create the audience
-    setShowCreateModal(false);
-    setNewAudience({ name: "", description: "", type: "dynamic" });
+  const handleCreateAudience = async () => {
+    if (!newAudience.name.trim()) {
+      // Could add proper form validation here instead of alert
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/email-campaigns/audiences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newAudience.name,
+          description: newAudience.description,
+          filters: {} // Start with empty filters - user can edit later
+        }),
+      });
+
+      if (response.ok) {
+        const { audience: createdAudience } = await response.json();
+        
+        // Reload audiences to include the new one
+        const dbAudiences = await fetchAudiences();
+        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
+        setAudiences(displayAudiences);
+        
+        // Close modal and reset form
+        setShowCreateModal(false);
+        setNewAudience({ name: "", description: "", type: "dynamic" });
+        
+        console.log('Audience created successfully');
+        
+        // Navigate to edit the new audience
+        router.push(`/admin/email-campaigns/audiences/${createdAudience.id}`);
+      } else {
+        const error = await response.json();
+        console.error('Error creating audience:', error);
+        // Could show error state in modal instead of alert
+      }
+    } catch (error) {
+      console.error('Error creating audience:', error);
+      // Could show error state in modal instead of alert
+    }
   };
 
   return (
     <>
+      <GlobalStyles />
       <NextSEO
         title="Email Audiences"
         description="Manage and segment your email audiences for targeted campaigns"
@@ -777,14 +939,6 @@ function AudiencesPage() {
           </LeftActions>
           
           <RightActions>
-            <ActionButton>
-              <FaFileImport />
-              Import
-            </ActionButton>
-            <ActionButton>
-              <FaFileExport />
-              Export All
-            </ActionButton>
             <ActionButton variant="primary" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
               Create Audience
@@ -875,10 +1029,6 @@ function AudiencesPage() {
                               exit={{ opacity: 0, scale: 0.8, y: -10 }}
                               transition={{ duration: 0.15 }}
                             >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('view', audience.id); }}>
-                                <FaEye />
-                                View Details
-                              </DropdownItem>
                               <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('edit', audience.id); }}>
                                 <FaEdit />
                                 Edit Audience
@@ -969,6 +1119,97 @@ function AudiencesPage() {
                   <ActionButton variant="primary" onClick={handleCreateAudience}>
                     <FaPlus />
                     Create Audience
+                  </ActionButton>
+                </ModalActions>
+              </ModalContent>
+            </CreateAudienceModal>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && audienceToDelete && (
+            <CreateAudienceModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={cancelDeleteAudience}
+            >
+              <ModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '500px' }}
+              >
+                <ModalTitle style={{ color: 'var(--error-color)' }}>
+                  <FaTrash />
+                  Delete Audience
+                </ModalTitle>
+                
+                <div style={{ 
+                  padding: '1.5rem 0', 
+                  textAlign: 'center',
+                  lineHeight: '1.6'
+                }}>
+                  <p style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                    Are you sure you want to delete the audience
+                  </p>
+                  <p style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: '1.2rem',
+                    color: 'var(--primary-color)',
+                    marginBottom: '1rem'
+                  }}>
+                    "{audienceToDelete.name}"
+                  </p>
+                  <p style={{ 
+                    color: 'var(--error-color)', 
+                    fontSize: '0.95rem',
+                    backgroundColor: 'var(--error-bg)',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--error-border)'
+                  }}>
+                    ⚠️ This action cannot be undone. All data associated with this audience will be permanently deleted.
+                  </p>
+                </div>
+
+                <ModalActions>
+                  <ActionButton 
+                    onClick={cancelDeleteAudience}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </ActionButton>
+                  <ActionButton 
+                    variant="danger" 
+                    onClick={confirmDeleteAudience}
+                    disabled={isDeleting}
+                    style={{
+                      backgroundColor: 'var(--error-color)',
+                      borderColor: 'var(--error-color)'
+                    }}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid white',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                          marginRight: '0.5rem'
+                        }} />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FaTrash />
+                        Delete Audience
+                      </>
+                    )}
                   </ActionButton>
                 </ModalActions>
               </ModalContent>
