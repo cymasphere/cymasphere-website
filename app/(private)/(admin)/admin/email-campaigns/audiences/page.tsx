@@ -626,7 +626,6 @@ const convertToDisplayAudience = (dbAudience: DatabaseAudience) => ({
 
 function AudiencesPage() {
   const { user } = useAuth();
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -646,12 +645,6 @@ function AudiencesPage() {
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
-    }
-  }, [languageLoading]);
-
   // Load audiences from API
   useEffect(() => {
     const loadAudiences = async () => {
@@ -670,10 +663,10 @@ function AudiencesPage() {
       }
     };
 
-    if (user && translationsLoaded) {
+    if (user && !languageLoading) {
       loadAudiences();
     }
-  }, [user, translationsLoaded]);
+  }, [user, languageLoading]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -687,7 +680,7 @@ function AudiencesPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || !translationsLoaded || loading) {
+  if (languageLoading || loading) {
     return <LoadingComponent />;
   }
 

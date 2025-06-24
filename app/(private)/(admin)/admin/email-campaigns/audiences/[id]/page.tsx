@@ -30,12 +30,20 @@ import {
   FaUpload
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import styled, { keyframes, css } from "styled-components";
+import styled, { keyframes, css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+`;
+
+// Global styles for animations
+const GlobalStyles = createGlobalStyle`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const Spinner = styled.div`
@@ -641,21 +649,35 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
 // Fetch audience data from API
 const fetchAudienceData = async (id: string) => {
   try {
+    console.log('Fetching audience data for ID:', id);
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(`/api/email-campaigns/audiences/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include'
+      credentials: 'include',
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch audience: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('Successfully fetched audience data:', data);
     return data.audience;
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Request timed out after 10 seconds');
+      throw new Error('Request timed out. Please try again.');
+    }
     console.error('Error fetching audience:', error);
     throw error;
   }
@@ -794,47 +816,50 @@ const transformAudienceData = (dbAudience: any) => {
 };
 
 function AudienceDetailPage() {
-  const { user, loading: authLoading } = useAuth();
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editMode, setEditMode] = useState(false);
-  const [audienceData, setAudienceData] = useState<any>(null);
-  const [originalAudienceData, setOriginalAudienceData] = useState<any>(null);
-  const [subscribers, setSubscribers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [subscribersLoading, setSubscribersLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const audienceId = params.id as string;
 
-  useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
-    }
-  }, [languageLoading]);
+  const [loading, setLoading] = useState(true);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [audienceData, setAudienceData] = useState<any>(null);
+  const [originalAudienceData, setOriginalAudienceData] = useState<any>(null);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load audience data
   useEffect(() => {
-    if (audienceId && user && !authLoading) {
+    // Load audience data when component mounts or audienceId/user changes
+    if (audienceId && user) {
       loadAudienceData();
     }
-  }, [audienceId, user, authLoading]);
+  }, [audienceId, user]);
 
-  // Load subscribers when audience changes initially
+  // Load subscribers when audience data is available
   useEffect(() => {
-    if (audienceId && user && !authLoading && audienceData) {
+    if (audienceData && audienceId && user) {
       loadSubscribers();
     }
-  }, [audienceId, user, authLoading, audienceData]);
+  }, [audienceData?.id]); // Only depend on audience ID change, not the full object
 
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (audienceId && user && !authLoading && audienceData) {
+      if (audienceData && audienceId && user) {
         loadSubscribers(1); // Reset to first page on search
       }
     }, 500);
@@ -843,17 +868,28 @@ function AudienceDetailPage() {
   }, [searchTerm]);
 
   const loadAudienceData = async () => {
+    console.log('Loading audience data for ID:', audienceId);
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
       const data = await fetchAudienceData(audienceId);
+      console.log('Fetched audience data:', data);
+      
       const transformedData = transformAudienceData(data);
+      console.log('Transformed audience data:', transformedData);
+      
       setAudienceData(transformedData);
       setOriginalAudienceData(JSON.parse(JSON.stringify(transformedData))); // Deep copy for cancel functionality
+      console.log('Audience data loaded successfully');
     } catch (error) {
       console.error('Failed to load audience:', error);
-      // Handle error - maybe show toast or redirect
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load audience';
+      setError(errorMessage);
+      // Set loading to false even on error to prevent infinite loading
+      setAudienceData(null);
     } finally {
       setLoading(false);
+      console.log('Loading state set to false');
     }
   };
 
@@ -883,11 +919,75 @@ function AudienceDetailPage() {
     }
   };
 
-  if (languageLoading || !translationsLoaded || loading || authLoading) {
+  if (languageLoading || loading) {
     return <LoadingComponent />;
   }
 
-  if (!user || !audienceData) {
+  if (!user) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <>
+        <GlobalStyles />
+        <AudienceContainer>
+          <Header>
+            <BackButton href="/admin/email-campaigns/audiences">
+              <FaArrowLeft />
+              Back to Audiences
+            </BackButton>
+            <AudienceTitle>
+              <FaUsers />
+              Error Loading Audience
+            </AudienceTitle>
+          </Header>
+          
+          <ContentSection>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem 2rem',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ 
+                fontSize: '3rem', 
+                color: 'var(--error-color)', 
+                marginBottom: '1rem' 
+              }}>
+                ⚠️
+              </div>
+              <h2 style={{ 
+                color: 'var(--text)', 
+                marginBottom: '1rem' 
+              }}>
+                Failed to Load Audience
+              </h2>
+              <p style={{ 
+                marginBottom: '2rem',
+                maxWidth: '500px',
+                margin: '0 auto 2rem auto',
+                lineHeight: '1.6'
+              }}>
+                {error}
+              </p>
+              <HeaderActionButton 
+                variant="primary" 
+                onClick={() => {
+                  setError(null);
+                  loadAudienceData();
+                }}
+              >
+                <FaEdit />
+                Try Again
+              </HeaderActionButton>
+            </div>
+          </ContentSection>
+        </AudienceContainer>
+      </>
+    );
+  }
+
+  if (!audienceData) {
     return <LoadingComponent />;
   }
 
@@ -1017,26 +1117,105 @@ function AudienceDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this audience? This action cannot be undone.')) {
-      try {
-        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+    setShowDeleteModal(true);
+  };
 
-        if (!response.ok) {
-          throw new Error(`Failed to delete audience: ${response.status}`);
-        }
+  const confirmDeleteAudience = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-        console.log('Audience deleted successfully');
-        router.push('/admin/email-campaigns/audiences');
-      } catch (error) {
-        console.error('Failed to delete audience:', error);
-        alert('Failed to delete audience. Please try again.');
+      if (!response.ok) {
+        throw new Error(`Failed to delete audience: ${response.status}`);
       }
+
+      console.log('Audience deleted successfully');
+      router.push('/admin/email-campaigns/audiences');
+    } catch (error) {
+      console.error('Failed to delete audience:', error);
+      // Keep modal open to show error state
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteAudience = () => {
+    setShowDeleteModal(false);
+    setIsDeleting(false);
+  };
+
+  const handleDuplicate = async () => {
+    try {
+      const response = await fetch('/api/email-campaigns/audiences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${audienceData.name} (Copy)`,
+          description: audienceData.description,
+          filters: audienceData.originalFilters || audienceData.filters
+        }),
+      });
+
+      if (response.ok) {
+        const { audience: newAudience } = await response.json();
+        console.log('Audience duplicated successfully');
+        // Navigate to the new audience
+        router.push(`/admin/email-campaigns/audiences/${newAudience.id}`);
+      } else {
+        const error = await response.json();
+        console.error('Error duplicating audience:', error);
+      }
+    } catch (error) {
+      console.error('Error duplicating audience:', error);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      // Create CSV content with audience details and subscribers
+      const csvRows = [
+        ['Email', 'First Name', 'Last Name', 'Subscription', 'Status', 'Created Date', 'Last Updated'],
+      ];
+
+      // Add subscriber data
+      subscribers.forEach(subscriber => {
+        csvRows.push([
+          subscriber.email || '',
+          subscriber.first_name || '',
+          subscriber.last_name || '',
+          subscriber.subscription || 'none',
+          subscriber.status || 'active',
+          subscriber.created_at ? new Date(subscriber.created_at).toLocaleDateString() : '',
+          subscriber.updated_at ? new Date(subscriber.updated_at).toLocaleDateString() : ''
+        ]);
+      });
+
+      const csvContent = csvRows.map(row => 
+        row.map(field => `"${field}"`).join(',')
+      ).join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `audience-${audienceData.name.toLowerCase().replace(/\s+/g, '-')}-subscribers.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('Audience exported successfully');
+    } catch (error) {
+      console.error('Error exporting audience:', error);
     }
   };
 
@@ -1078,6 +1257,7 @@ function AudienceDetailPage() {
 
   return (
     <>
+      <GlobalStyles />
       <NextSEO
         title={`Audience: ${audienceData.name}`}
         description={`Manage ${audienceData.name} audience and subscribers`}
@@ -1185,11 +1365,11 @@ function AudienceDetailPage() {
                     <FaEdit />
                     Edit
                   </HeaderActionButton>
-                  <HeaderActionButton onClick={() => console.log('Duplicate audience')}>
+                  <HeaderActionButton onClick={handleDuplicate}>
                     <FaClone />
                     Duplicate
                   </HeaderActionButton>
-                  <HeaderActionButton onClick={() => console.log('Export audience')}>
+                  <HeaderActionButton onClick={handleExport}>
                     <FaDownload />
                     Export
                   </HeaderActionButton>
@@ -1675,6 +1855,128 @@ function AudienceDetailPage() {
           </ContentSection>
         )}
       </AudienceContainer>
+      
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={cancelDeleteAudience}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '2rem',
+                maxWidth: '500px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflow: 'auto'
+              }}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                marginBottom: '1.5rem',
+                color: 'var(--error-color)'
+              }}>
+                <FaTrash />
+                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Delete Audience</h2>
+              </div>
+              
+              <div style={{ 
+                padding: '1.5rem 0', 
+                textAlign: 'center',
+                lineHeight: '1.6'
+              }}>
+                <p style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                  Are you sure you want to delete the audience
+                </p>
+                <p style={{ 
+                  fontWeight: 'bold', 
+                  fontSize: '1.2rem',
+                  color: 'var(--primary)',
+                  marginBottom: '1rem'
+                }}>
+                  "{audienceData?.name}"
+                </p>
+                <p style={{ 
+                  color: 'var(--error-color)', 
+                  fontSize: '0.95rem',
+                  backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(220, 53, 69, 0.3)'
+                }}>
+                  ⚠️ This action cannot be undone. All data associated with this audience will be permanently deleted.
+                </p>
+              </div>
+
+              <div style={{ 
+                display: 'flex', 
+                gap: '1rem', 
+                justifyContent: 'flex-end' 
+              }}>
+                <HeaderActionButton 
+                  onClick={cancelDeleteAudience}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </HeaderActionButton>
+                <HeaderActionButton 
+                  variant="danger" 
+                  onClick={confirmDeleteAudience}
+                  disabled={isDeleting}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    borderColor: '#dc3545'
+                  }}
+                >
+                  {isDeleting ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid transparent',
+                        borderTop: '2px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        marginRight: '0.5rem'
+                      }} />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <FaTrash />
+                      Delete Audience
+                    </>
+                  )}
+                </HeaderActionButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
