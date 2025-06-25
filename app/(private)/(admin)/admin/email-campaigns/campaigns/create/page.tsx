@@ -2439,10 +2439,14 @@ function CreateCampaignPage() {
     const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
     const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
     
+    // Calculate fallback totals from audience subscriber_count
+    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    
     return {
-      totalIncluded: reachData.totalIncluded,
-      totalExcluded: reachData.totalExcluded,
-      estimatedReach: reachData.estimatedReach,
+      totalIncluded: reachData.isLoading ? fallbackTotalIncluded : (reachData.totalIncluded || fallbackTotalIncluded),
+      totalExcluded: reachData.isLoading ? fallbackTotalExcluded : (reachData.totalExcluded || fallbackTotalExcluded),
+      estimatedReach: reachData.isLoading ? Math.max(0, fallbackTotalIncluded - fallbackTotalExcluded) : (reachData.estimatedReach || Math.max(0, fallbackTotalIncluded - fallbackTotalExcluded)),
       includedCount: includedAudiences.length,
       excludedCount: excludedAudiences.length
     };
@@ -2653,6 +2657,28 @@ function CreateCampaignPage() {
             <StepDescription>
               Set up your campaign details, select your audience, and choose a template.
             </StepDescription>
+            
+            {/* Template Selection Section */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaPalette style={{ color: 'var(--primary)' }} />
+                Choose Template
+              </h3>
+              <FormGroup>
+                <Label>Email Template</Label>
+                <Select
+                  value={campaignData.template}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
+                >
+                  <option value="">Choose a template...</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.title} - {template.description}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            </div>
             
             {/* Campaign Details Section */}
             <div style={{ marginBottom: '2.5rem' }}>
@@ -2896,27 +2922,7 @@ function CreateCampaignPage() {
               )}
             </AudienceSelectionContainer>
 
-            {/* Template Selection Section */}
-            <div>
-              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FaPalette style={{ color: 'var(--primary)' }} />
-                Choose Template
-              </h3>
-              <FormGroup>
-                <Label>Email Template</Label>
-                <Select
-                  value={campaignData.template}
-                  onChange={(e) => handleTemplateSelect(e.target.value)}
-                >
-                  <option value="">Choose a template...</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.title} - {template.description}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            </div>
+
           </StepContent>
         );
 
