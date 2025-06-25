@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -37,14 +37,32 @@ import {
   FaEnvelope,
   FaPaintBrush,
   FaTextHeight,
-  FaPuzzlePiece
+  FaPuzzlePiece,
+  FaTimes,
+  FaExclamationTriangle,
+  FaSearch
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import styled from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
+
+// Keyframes for spinner animation
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(108, 99, 255, 0.3);
+  border-top: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+`;
 
 const CreateContainer = styled.div`
   width: 100%;
@@ -122,7 +140,7 @@ const StepIndicator = styled.div`
   }
 `;
 
-const Step = styled.div<{ active: boolean; completed: boolean }>`
+const Step = styled.div<{ $active: boolean; $completed: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -133,13 +151,13 @@ const Step = styled.div<{ active: boolean; completed: boolean }>`
   transition: all 0.3s ease;
   
   ${props => {
-    if (props.completed) {
+    if (props.$completed) {
       return `
         background-color: rgba(40, 167, 69, 0.2);
         color: #28a745;
         border: 2px solid #28a745;
       `;
-    } else if (props.active) {
+    } else if (props.$active) {
       return `
         background-color: rgba(108, 99, 255, 0.2);
         color: var(--primary);
@@ -160,10 +178,10 @@ const Step = styled.div<{ active: boolean; completed: boolean }>`
   }
 `;
 
-const StepConnector = styled.div<{ completed: boolean }>`
+const StepConnector = styled.div<{ $completed: boolean }>`
   width: 40px;
   height: 2px;
-  background-color: ${props => props.completed ? '#28a745' : 'rgba(255, 255, 255, 0.1)'};
+  background-color: ${props => props.$completed ? '#28a745' : 'rgba(255, 255, 255, 0.1)'};
   transition: background-color 0.3s ease;
 
   @media (max-width: 768px) {
@@ -385,19 +403,19 @@ const EditorToolbar = styled.div`
   flex-wrap: wrap;
 `;
 
-const ToolbarButton = styled.button<{ active?: boolean }>`
+const ToolbarButton = styled.button<{ $active?: boolean }>`
   padding: 8px 12px;
   border: none;
   border-radius: 4px;
-  background-color: ${props => props.active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  background-color: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.8rem;
 
   &:hover {
-    background-color: ${props => props.active ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)'};
-    color: ${props => props.active ? 'white' : 'var(--text)'};
+    background-color: ${props => props.$active ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)'};
+    color: ${props => props.$active ? 'white' : 'var(--text)'};
   }
 `;
 
@@ -625,16 +643,14 @@ const DragElement = styled.div`
   }
 `;
 
-const ViewToggle = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
-})<{ active: boolean }>`
+const ViewToggle = styled.button<{ $active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
-  background: ${props => props.active 
+  background: ${props => props.$active 
     ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
     : 'rgba(255, 255, 255, 0.08)'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.85rem;
@@ -657,7 +673,7 @@ const ViewToggle = styled.button.withConfig({
   }
 
   &:hover {
-    background: ${props => props.active 
+    background: ${props => props.$active 
       ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
       : 'rgba(255, 255, 255, 0.15)'};
     transform: translateY(-2px);
@@ -1199,6 +1215,237 @@ const ContentElementsBar = styled.div`
   }
 `;
 
+const AudienceSelectionContainer = styled.div`
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const SearchInputContainer = styled.div`
+  position: relative;
+  margin-bottom: 1.5rem;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 12px 16px 12px 45px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const SearchIcon = styled.div`
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  pointer-events: none;
+`;
+
+const ClearSearchButton = styled.button`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const AudienceList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const AudienceItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  min-height: 140px;
+  position: relative;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const AudienceCheckbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+`;
+
+const AudienceInfo = styled.div`
+  flex: 1;
+  cursor: pointer;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+`;
+
+const AudienceName = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+`;
+
+const AudienceDetails = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+`;
+
+const AudienceCount = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const AudienceType = styled.span<{ $type: 'static' | 'dynamic' }>`
+  background: ${props => props.$type === 'static' ? 'rgba(255,193,7,0.2)' : 'rgba(40,167,69,0.2)'};
+  color: ${props => props.$type === 'static' ? '#ffc107' : '#28a745'};
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const ExcludeButton = styled.button<{ $isExcluded: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid ${props => props.$isExcluded ? '#dc3545' : 'rgba(255, 255, 255, 0.2)'};
+  border-radius: 6px;
+  background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  color: ${props => props.$isExcluded ? '#dc3545' : 'var(--text-secondary)'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  font-weight: 500;
+  width: 100%;
+  margin-top: auto;
+  
+  &:hover {
+    background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+    border-color: ${props => props.$isExcluded ? '#dc3545' : 'rgba(255, 255, 255, 0.3)'};
+    transform: translateY(-1px);
+  }
+  
+  svg {
+    font-size: 0.9rem;
+  }
+`;
+
+const AudienceStatsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const AudienceStatItem = styled.div`
+  text-align: center;
+`;
+
+const AudienceStatValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+`;
+
+const AudienceStatLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
 const ContentElementButton = styled.div`
   display: flex;
   flex-direction: column;
@@ -1346,37 +1593,14 @@ const EditableText = styled.div.withConfig({
   ` : ''}
 `;
 
-// Mock data
-const audienceSegments = [
-  {
-    id: "all",
-    title: "All Subscribers",
-    description: "Send to all active subscribers",
-    count: 12890,
-    engagement: "Mixed"
-  },
-  {
-    id: "active",
-    title: "Highly Engaged",
-    description: "Subscribers who opened emails in the last 30 days",
-    count: 4567,
-    engagement: "High"
-  },
-  {
-    id: "new",
-    title: "New Subscribers",
-    description: "Subscribers who joined in the last 7 days",
-    count: 234,
-    engagement: "Unknown"
-  },
-  {
-    id: "inactive",
-    title: "Re-engagement",
-    description: "Subscribers who haven't opened emails in 60+ days",
-    count: 1890,
-    engagement: "Low"
-  }
-];
+// Audience interface
+interface Audience {
+  id: string;
+  name: string;
+  description: string;
+  subscriber_count: number;
+  type: 'static' | 'dynamic';
+}
 
 const templates = [
   {
@@ -1474,9 +1698,12 @@ interface CampaignData {
   name: string;
   subject: string;
   senderName: string;
+  senderEmail: string;
+  replyToEmail: string;
   preheader: string;
   description: string;
-  audience: string;
+  audienceIds: string[]; // Array of selected audience IDs
+  excludedAudienceIds: string[]; // Array of excluded audience IDs
   template: string;
   content: string;
   scheduleType: string;
@@ -1663,6 +1890,10 @@ const LoadingSpinner = styled(motion.div)`
 `;
 
 function CreateCampaignPage() {
+  // Add audience state
+  const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [audiencesLoading, setAudiencesLoading] = useState(true);
+  const [audienceSearchTerm, setAudienceSearchTerm] = useState('');
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1681,6 +1912,23 @@ function CreateCampaignPage() {
   const [sendingMessage, setSendingMessage] = useState('');
   const [campaignResult, setCampaignResult] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  
+  // Reach calculation state
+  const [reachData, setReachData] = useState<{
+    totalIncluded: number;
+    totalExcluded: number;
+    estimatedReach: number;
+    includedCount: number;
+    excludedCount: number;
+    isLoading: boolean;
+  }>({
+    totalIncluded: 0,
+    totalExcluded: 0,
+    estimatedReach: 0,
+    includedCount: 0,
+    excludedCount: 0,
+    isLoading: false
+  });
   
   // Initialize email elements based on campaign content or template
   const getInitialEmailElements = () => {
@@ -1719,41 +1967,22 @@ function CreateCampaignPage() {
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   
   // Initialize campaign data based on edit mode or template
-  const getInitialCampaignData = () => {
-    if (isEditMode && editId) {
-      const existingCampaign = mockCampaigns.find(c => c.id === editId);
-      if (existingCampaign) {
-        return existingCampaign;
-      }
-    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
-      // Initialize from template
-      const preset = templatePresets[templateId as keyof typeof templatePresets];
-      return {
-        name: preset.name,
-        subject: preset.subject,
-        senderName: preset.senderName,
-        preheader: preset.preheader,
-        description: preset.description,
-        audience: preset.audience,
-        template: templateId,
-        content: preset.content,
-        scheduleType: "",
-        scheduleDate: "",
-        scheduleTime: ""
-      };
-    }
+  const getInitialCampaignData = (): CampaignData => {
     return {
-    name: "",
-    subject: "",
-    senderName: "",
-    preheader: "",
-    description: "",
-    audience: "",
-    template: "",
-    content: "",
-    scheduleType: "",
-    scheduleDate: "",
-    scheduleTime: ""
+      name: "",
+      subject: "",
+      senderName: "Cymasphere",
+      senderEmail: "support@cymasphere.com",
+      replyToEmail: "",
+      preheader: "",
+      description: "",
+      audienceIds: [],
+      excludedAudienceIds: [],
+      template: "",
+      content: "",
+      scheduleType: "",
+      scheduleDate: "",
+      scheduleTime: ""
     };
   };
   
@@ -1762,11 +1991,119 @@ function CreateCampaignPage() {
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
+  // Define reach calculation function using useCallback so it can be used in useEffect
+  const updateReachCalculation = useCallback(async () => {
+    if (campaignData.audienceIds.length === 0) {
+      setReachData({
+        totalIncluded: 0,
+        totalExcluded: 0,
+        estimatedReach: 0,
+        includedCount: 0,
+        excludedCount: 0,
+        isLoading: false
+      });
+      return;
+    }
+
+    setReachData(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const response = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          audienceIds: campaignData.audienceIds,
+          excludedAudienceIds: campaignData.excludedAudienceIds
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+        
+        setReachData({
+          totalIncluded: data.details.totalIncluded || 0,
+          totalExcluded: data.details.totalExcluded || 0,
+          estimatedReach: data.uniqueCount || 0,
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        });
+      } else {
+        console.error('Failed to calculate reach:', response.status);
+        // Fallback to simple calculation
+        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+        const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        
+        setReachData({
+          totalIncluded,
+          totalExcluded,
+          estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        });
+      }
+    } catch (error) {
+      console.error('Error calculating reach:', error);
+      // Fallback to simple calculation
+      const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+      const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      
+      setReachData({
+        totalIncluded,
+        totalExcluded,
+        estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+        includedCount: includedAudiences.length,
+        excludedCount: excludedAudiences.length,
+        isLoading: false
+      });
+    }
+  }, [campaignData.audienceIds, campaignData.excludedAudienceIds, audiences, setReachData]);
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Load audiences from API
+  useEffect(() => {
+    const loadAudiences = async () => {
+      try {
+        const response = await fetch('/api/email-campaigns/audiences', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAudiences(data.audiences || []);
+        } else {
+          console.error('Failed to load audiences:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading audiences:', error);
+      } finally {
+        setAudiencesLoading(false);
+      }
+    };
+
+    if (user) {
+      loadAudiences();
+    }
+  }, [user]);
+
+  // Update reach calculation when audience selection changes
+  useEffect(() => {
+    updateReachCalculation();
+  }, [updateReachCalculation]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -1798,26 +2135,30 @@ function CreateCampaignPage() {
     console.log("Saving campaign:", campaignData);
     
     try {
-      const response = await fetch('/api/email-campaigns/send', {
+      const response = await fetch('/api/email-campaigns/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          campaignId: editId,
           name: campaignData.name,
           subject: campaignData.subject,
-          audience: campaignData.audience,
-          emailElements,
-          scheduleType: 'draft'
+          sender_name: campaignData.senderName,
+          sender_email: campaignData.senderEmail,
+          reply_to_email: campaignData.replyToEmail,
+          preheader: campaignData.preheader,
+          html_content: emailElements.map(el => `<div>${el.content}</div>`).join(''),
+          text_content: emailElements.map(el => el.content).join('\n'),
+          audience_ids: campaignData.audienceIds,
+          excluded_audience_ids: campaignData.excludedAudienceIds,
+          status: 'draft'
         }),
       });
 
       const result = await response.json();
       
-      if (result.success) {
+      if (response.ok) {
         console.log('Campaign saved as draft:', result);
-        // Show success message
         setSendingMessage('Campaign saved as draft successfully!');
         setTimeout(() => setSendingMessage(''), 3000);
       } else {
@@ -1834,7 +2175,7 @@ function CreateCampaignPage() {
 
   const handleSend = async () => {
     // Validate required fields
-    if (!campaignData.name || !campaignData.subject || !campaignData.audience) {
+    if (!campaignData.name || !campaignData.subject || campaignData.audienceIds.length === 0) {
       setSendingMessage('Please fill in all required fields (name, subject, audience)');
       setTimeout(() => setSendingMessage(''), 5000);
       return;
@@ -1851,44 +2192,48 @@ function CreateCampaignPage() {
     setCampaignResult(null);
 
     try {
-      const response = await fetch('/api/email-campaigns/send', {
+      // First save the campaign
+      const saveResponse = await fetch('/api/email-campaigns/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          campaignId: editId,
           name: campaignData.name,
           subject: campaignData.subject,
-          audience: campaignData.audience,
-          emailElements,
-          scheduleType: campaignData.scheduleType,
-          scheduleDate: campaignData.scheduleDate,
-          scheduleTime: campaignData.scheduleTime
+          sender_name: campaignData.senderName,
+          sender_email: campaignData.senderEmail,
+          reply_to_email: campaignData.replyToEmail,
+          preheader: campaignData.preheader,
+          html_content: emailElements.map(el => `<div>${el.content}</div>`).join(''),
+          text_content: emailElements.map(el => el.content).join('\n'),
+          audience_ids: campaignData.audienceIds,
+          excluded_audience_ids: campaignData.excludedAudienceIds,
+          status: campaignData.scheduleType === 'scheduled' ? 'scheduled' : 'sent',
+          scheduled_at: campaignData.scheduleType === 'scheduled' ? 
+            `${campaignData.scheduleDate}T${campaignData.scheduleTime}:00Z` : null
         }),
       });
 
-      const result = await response.json();
+      const result = await saveResponse.json();
       
-      if (result.success) {
+      if (saveResponse.ok) {
         console.log('Campaign result:', result);
         setCampaignResult(result);
         setShowResultModal(true);
         
-        if (result.status === 'draft') {
-          setSendingMessage('Campaign saved as draft!');
-        } else if (result.status === 'scheduled') {
+        if (campaignData.scheduleType === 'scheduled') {
           setSendingMessage(`Campaign scheduled successfully!`);
         } else {
-          setSendingMessage(`Campaign sent to ${result.stats?.sent || 0} subscribers!`);
+          setSendingMessage(`Campaign created and ready to send!`);
         }
       } else {
-        console.error('Error sending campaign:', result.error);
+        console.error('Error creating campaign:', result.error);
         setSendingMessage(`Error: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error sending campaign:', error);
-      setSendingMessage('Error sending campaign. Please try again.');
+      console.error('Error creating campaign:', error);
+      setSendingMessage('Error creating campaign. Please try again.');
     } finally {
       setIsSending(false);
       setTimeout(() => {
@@ -2040,7 +2385,7 @@ function CreateCampaignPage() {
         senderName: preset.senderName || campaignData.senderName,
         preheader: preset.preheader || campaignData.preheader,
         description: preset.description || campaignData.description,
-        audience: preset.audience || campaignData.audience,
+        audienceIds: campaignData.audienceIds,
         content: preset.content || campaignData.content
       });
       
@@ -2054,6 +2399,66 @@ function CreateCampaignPage() {
       // Just set the template without copying data
       setCampaignData({...campaignData, template: templateId});
     }
+  };
+
+  const handleAudienceToggle = (audienceId: string, isChecked: boolean) => {
+    if (isChecked) {
+      setCampaignData({
+        ...campaignData,
+        audienceIds: [...campaignData.audienceIds, audienceId],
+        excludedAudienceIds: campaignData.excludedAudienceIds.filter(id => id !== audienceId)
+      });
+    } else {
+      setCampaignData({
+        ...campaignData,
+        audienceIds: campaignData.audienceIds.filter(id => id !== audienceId)
+      });
+    }
+  };
+
+  const handleAudienceExclude = (audienceId: string) => {
+    const isCurrentlyExcluded = campaignData.excludedAudienceIds.includes(audienceId);
+    
+    if (isCurrentlyExcluded) {
+      // Remove from excluded
+      setCampaignData({
+        ...campaignData,
+        excludedAudienceIds: campaignData.excludedAudienceIds.filter(id => id !== audienceId)
+      });
+    } else {
+      // Add to excluded and remove from included
+      setCampaignData({
+        ...campaignData,
+        audienceIds: campaignData.audienceIds.filter(id => id !== audienceId),
+        excludedAudienceIds: [...campaignData.excludedAudienceIds, audienceId]
+      });
+    }
+  };
+
+  const calculateAudienceStats = () => {
+    const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+    const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+    
+    return {
+      totalIncluded: reachData.totalIncluded,
+      totalExcluded: reachData.totalExcluded,
+      estimatedReach: reachData.estimatedReach,
+      includedCount: includedAudiences.length,
+      excludedCount: excludedAudiences.length
+    };
+  };
+
+  const getFilteredAudiences = () => {
+    if (!audienceSearchTerm.trim()) {
+      return audiences;
+    }
+    
+    const searchTerm = audienceSearchTerm.toLowerCase();
+    return audiences.filter(audience => 
+      audience.name?.toLowerCase().includes(searchTerm) ||
+      (audience.description && audience.description.toLowerCase().includes(searchTerm)) ||
+      audience.type?.toLowerCase().includes(searchTerm)
+    );
   };
 
   const renderEmailElement = (element: any, index: number) => {
@@ -2286,6 +2691,26 @@ function CreateCampaignPage() {
                 />
               </FormGroup>
               <FormGroup>
+                <Label>Sender Email</Label>
+                <Input
+                  type="email"
+                  value={campaignData.senderEmail}
+                  onChange={(e) => setCampaignData({...campaignData, senderEmail: e.target.value})}
+                  placeholder="e.g. support@cymasphere.com"
+                />
+              </FormGroup>
+            </FormGrid>
+            <FormGrid>
+              <FormGroup>
+                <Label>Reply-To Email (Optional)</Label>
+                <Input
+                  type="email"
+                  value={campaignData.replyToEmail}
+                  onChange={(e) => setCampaignData({...campaignData, replyToEmail: e.target.value})}
+                  placeholder="e.g. noreply@cymasphere.com"
+                />
+              </FormGroup>
+              <FormGroup>
                 <Label>Preheader Text</Label>
                 <Input
                   type="text"
@@ -2306,26 +2731,170 @@ function CreateCampaignPage() {
             </div>
 
             {/* Audience Selection Section */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AudienceSelectionContainer>
+              <h3 style={{ color: 'var(--text)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaUsers style={{ color: 'var(--primary)' }} />
-                Select Audience
+                Select Target Audiences
               </h3>
-              <FormGroup>
-                <Label>Target Audience</Label>
-                <Select
-                  value={campaignData.audience}
-                  onChange={(e) => setCampaignData({...campaignData, audience: e.target.value})}
-                >
-                  <option value="">Choose an audience...</option>
-                  {audienceSegments.map((segment) => (
-                    <option key={segment.id} value={segment.id}>
-                      {segment.title} - {segment.count.toLocaleString()} subscribers ({segment.engagement} engagement)
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            </div>
+              
+              {!audiencesLoading && audiences.length > 0 && (
+                <SearchInputContainer>
+                  <SearchIcon>
+                    <FaSearch />
+                  </SearchIcon>
+                  <SearchInput
+                    type="text"
+                    placeholder="Search audiences by name, description, or type..."
+                    value={audienceSearchTerm}
+                    onChange={(e) => setAudienceSearchTerm(e.target.value)}
+                  />
+                  {audienceSearchTerm && (
+                    <ClearSearchButton
+                      onClick={() => setAudienceSearchTerm('')}
+                      title="Clear search"
+                    >
+                      <FaTimes />
+                    </ClearSearchButton>
+                  )}
+                </SearchInputContainer>
+              )}
+              
+              {audiencesLoading ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  Loading audiences...
+                </div>
+              ) : audiences.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem', 
+                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <FaExclamationTriangle style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--accent)' }} />
+                  <div>No audiences available. Create an audience first.</div>
+                </div>
+              ) : (
+                <>
+                  {getFilteredAudiences().length === 0 && audienceSearchTerm ? (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '2rem', 
+                      color: 'var(--text-secondary)',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.05)'
+                    }}>
+                      <FaSearch style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-secondary)' }} />
+                      <div>No audiences found matching "{audienceSearchTerm}"</div>
+                      <div style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        Try searching for a different term or{' '}
+                        <button 
+                          onClick={() => setAudienceSearchTerm('')}
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            color: 'var(--primary)', 
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          clear the search
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <AudienceList>
+                      {getFilteredAudiences().map((audience) => {
+                        const isIncluded = campaignData.audienceIds.includes(audience.id);
+                        const isExcluded = campaignData.excludedAudienceIds.includes(audience.id);
+                        
+                        return (
+                          <AudienceItem key={audience.id}>
+                            <AudienceCheckbox
+                              type="checkbox"
+                              id={`audience-${audience.id}`}
+                              checked={isIncluded}
+                              onChange={(e) => handleAudienceToggle(audience.id, e.target.checked)}
+                            />
+                            
+                            <AudienceInfo onClick={() => handleAudienceToggle(audience.id, !isIncluded)}>
+                              <AudienceName>{audience.name}</AudienceName>
+                              <AudienceDetails>
+                                <AudienceCount>
+                                  <FaUsers />
+                                  {audience.subscriber_count.toLocaleString()} subscribers
+                                </AudienceCount>
+                                <AudienceType $type={audience.type}>
+                                  {audience.type}
+                                </AudienceType>
+                              </AudienceDetails>
+                            </AudienceInfo>
+                            
+                            <ExcludeButton
+                              $isExcluded={isExcluded}
+                              onClick={() => handleAudienceExclude(audience.id)}
+                              title={isExcluded ? 'Remove from exclusions' : 'Exclude from campaign'}
+                            >
+                              <FaTimes />
+                              {isExcluded ? 'Excluded' : 'Exclude'}
+                            </ExcludeButton>
+                          </AudienceItem>
+                        );
+                      })}
+                    </AudienceList>
+                  )}
+                  
+                  {/* Audience Statistics */}
+                  {(campaignData.audienceIds.length > 0 || campaignData.excludedAudienceIds.length > 0) && (
+                    <AudienceStatsContainer>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().includedCount}</AudienceStatValue>
+                        <AudienceStatLabel>Included</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().excludedCount}</AudienceStatValue>
+                        <AudienceStatLabel>Excluded</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().totalIncluded.toLocaleString()}</AudienceStatValue>
+                        <AudienceStatLabel>Total Included</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().totalExcluded.toLocaleString()}</AudienceStatValue>
+                        <AudienceStatLabel>Total Excluded</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue style={{ color: 'var(--accent)' }}>
+                          {reachData.isLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <Spinner />
+                              Calculating...
+                            </div>
+                          ) : (
+                            <>
+                              {calculateAudienceStats().estimatedReach.toLocaleString()}
+                              {campaignData.audienceIds.length > 1 && (
+                                <div style={{ 
+                                  fontSize: '0.7rem', 
+                                  color: 'var(--text-secondary)', 
+                                  marginTop: '0.2rem',
+                                  fontStyle: 'italic'
+                                }}>
+                                  ✨ Unique subscribers only
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </AudienceStatValue>
+                        <AudienceStatLabel>Estimated Reach</AudienceStatLabel>
+                      </AudienceStatItem>
+                    </AudienceStatsContainer>
+                  )}
+                </>
+              )}
+            </AudienceSelectionContainer>
 
             {/* Template Selection Section */}
             <div>
@@ -2482,21 +3051,21 @@ function CreateCampaignPage() {
               }}>
                 <ViewToggleContainer>
                   <ViewToggle 
-                    active={currentView === 'desktop'}
+                    $active={currentView === 'desktop'}
                     onClick={() => setCurrentView('desktop')}
                   >
                     <FaDesktop style={{ marginRight: '0.5rem' }} />
                     Desktop
                   </ViewToggle>
                   <ViewToggle 
-                    active={currentView === 'mobile'}
+                    $active={currentView === 'mobile'}
                     onClick={() => setCurrentView('mobile')}
                   >
                     <FaMobileAlt style={{ marginRight: '0.5rem' }} />
                     Mobile
                   </ViewToggle>
                   <ViewToggle 
-                    active={currentView === 'text'}
+                    $active={currentView === 'text'}
                     onClick={() => setCurrentView('text')}
                   >
                     <FaEnvelope style={{ marginRight: '0.5rem' }} />
@@ -2780,7 +3349,14 @@ function CreateCampaignPage() {
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px' }}>
                     <p><strong>Name:</strong> {campaignData.name || "Untitled Campaign"}</p>
                     <p><strong>Subject:</strong> {campaignData.subject || "No subject"}</p>
-                    <p><strong>Audience:</strong> {audienceSegments.find(a => a.id === campaignData.audience)?.title || "No audience selected"}</p>
+                    <p><strong>Audiences:</strong> {
+                  campaignData.audienceIds.length === 0 
+                    ? "No audiences selected" 
+                    : campaignData.audienceIds.map(id => {
+                        const audience = audiences.find(a => a.id === id);
+                        return audience ? audience.name : 'Unknown';
+                      }).join(', ')
+                }</p>
                     <p><strong>Template:</strong> {templates.find(t => t.id === campaignData.template)?.title || "No template selected"}</p>
                   </div>
                 </div>
@@ -2889,8 +3465,8 @@ function CreateCampaignPage() {
           {steps.map((step, index) => (
             <React.Fragment key={step.number}>
               <Step 
-                active={currentStep === step.number}
-                completed={currentStep > step.number}
+                $active={currentStep === step.number}
+                $completed={currentStep > step.number}
                 onClick={() => setCurrentStep(step.number)}
                 style={{ cursor: 'pointer' }}
               >
@@ -2898,7 +3474,7 @@ function CreateCampaignPage() {
                 {step.title}
               </Step>
               {index < steps.length - 1 && (
-                <StepConnector completed={currentStep > step.number} />
+                <StepConnector $completed={currentStep > step.number} />
               )}
             </React.Fragment>
           ))}

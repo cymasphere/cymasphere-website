@@ -168,7 +168,7 @@ export async function POST(
   console.log('🚀 POST add subscriber API started');
   
   try {
-    const supabase = await createSupabaseServer();
+  const supabase = await createSupabaseServer();
   
   // Get authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
