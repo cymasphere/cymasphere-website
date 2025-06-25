@@ -1309,54 +1309,69 @@ const AudienceList = styled.div`
   }
 `;
 
-const AudienceItem = styled.div`
+const AudienceItem = styled.div<{ $isSelected: boolean; $isExcluded: boolean }>`
   display: flex;
-  flex-direction: column;
-  padding: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: ${props => {
+    if (props.$isExcluded) return 'rgba(220, 53, 69, 0.1)';
+    if (props.$isSelected) return 'rgba(40, 167, 69, 0.15)';
+    return 'rgba(255, 255, 255, 0.02)';
+  }};
+  border: 1px solid ${props => {
+    if (props.$isExcluded) return 'rgba(220, 53, 69, 0.3)';
+    if (props.$isSelected) return 'rgba(40, 167, 69, 0.4)';
+    return 'rgba(255, 255, 255, 0.05)';
+  }};
   transition: all 0.3s ease;
-  min-height: 140px;
-  position: relative;
+  cursor: pointer;
+  gap: 0.75rem;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: ${props => {
+      if (props.$isExcluded) return 'rgba(220, 53, 69, 0.15)';
+      if (props.$isSelected) return 'rgba(40, 167, 69, 0.2)';
+      return 'rgba(255, 255, 255, 0.05)';
+    }};
+    border-color: ${props => {
+      if (props.$isExcluded) return 'rgba(220, 53, 69, 0.5)';
+      if (props.$isSelected) return 'rgba(40, 167, 69, 0.6)';
+      return 'rgba(255, 255, 255, 0.1)';
+    }};
+    transform: translateY(-1px);
   }
 `;
 
 const AudienceCheckbox = styled.input`
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
-  accent-color: var(--primary);
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
+  accent-color: #28a745;
+  flex-shrink: 0;
 `;
 
 const AudienceInfo = styled.div`
   flex: 1;
   cursor: pointer;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  min-width: 0; /* Allow text truncation */
 `;
 
 const AudienceName = styled.div`
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 0.25rem;
-  font-size: 1rem;
+  margin-bottom: 0.125rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const AudienceDetails = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.9rem;
+  gap: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 `;
 
@@ -1364,35 +1379,37 @@ const AudienceCount = styled.span`
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  white-space: nowrap;
 `;
 
 const AudienceType = styled.span<{ $type: 'static' | 'dynamic' }>`
   background: ${props => props.$type === 'static' ? 'rgba(255,193,7,0.2)' : 'rgba(40,167,69,0.2)'};
   color: ${props => props.$type === 'static' ? '#ffc107' : '#28a745'};
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 `;
 
 const ExcludeButton = styled.button<{ $isExcluded: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
   border: 1px solid ${props => props.$isExcluded ? '#dc3545' : 'rgba(255, 255, 255, 0.2)'};
-  border-radius: 6px;
+  border-radius: 4px;
   background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
   color: ${props => props.$isExcluded ? '#dc3545' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  width: 100%;
-  margin-top: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
   
   &:hover {
     background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
@@ -1401,7 +1418,7 @@ const ExcludeButton = styled.button<{ $isExcluded: boolean }>`
   }
   
   svg {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
   }
 `;
 
@@ -2837,7 +2854,11 @@ function CreateCampaignPage() {
                         const isExcluded = campaignData.excludedAudienceIds.includes(audience.id);
                         
                         return (
-                          <AudienceItem key={audience.id}>
+                          <AudienceItem 
+                            key={audience.id}
+                            $isSelected={isIncluded}
+                            $isExcluded={isExcluded}
+                          >
                             <AudienceCheckbox
                               type="checkbox"
                               id={`audience-${audience.id}`}
