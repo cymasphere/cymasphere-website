@@ -1441,7 +1441,7 @@ function AudienceDetailPage() {
           } else if (errorMessage === 'Subscriber already in audience') {
             errorMessage = 'This subscriber is already in the audience.';
           } else if (errorMessage === 'Can only add subscribers to static audiences') {
-            errorMessage = 'You can only manually add subscribers to static audiences. This audience appears to be dynamic.';
+            errorMessage = 'You can only add subscribers to static audiences. This audience appears to be dynamic.';
           }
         } else if (response.status === 401) {
           errorMessage = 'Authentication required. Please log in again.';
@@ -1823,14 +1823,6 @@ function AudienceDetailPage() {
               <SectionTitle>
                 <FaUsers />
                 Subscribers ({pagination.total > 0 ? pagination.total.toLocaleString() : (subscribersLoading ? 'Loading...' : '0')})
-                <span style={{ 
-                  fontSize: '0.9rem', 
-                  color: 'var(--text-secondary)', 
-                  fontWeight: 'normal',
-                  marginLeft: '0.5rem'
-                }}>
-                  - Based on filter criteria + manual additions/exclusions
-                </span>
               </SectionTitle>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -2050,14 +2042,6 @@ function AudienceDetailPage() {
             <SectionTitle>
               <FaUsers />
               Static Audience Management
-              <span style={{ 
-                fontSize: '0.9rem', 
-                color: 'var(--text-secondary)', 
-                fontWeight: 'normal',
-                marginLeft: '0.5rem'
-              }}>
-                - Manually managed subscriber list
-              </span>
             </SectionTitle>
             
             <div style={{ 
@@ -2069,7 +2053,7 @@ function AudienceDetailPage() {
             }}>
               <h4 style={{ margin: 0, color: 'var(--primary)' }}>Static Audience Features:</h4>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
-                <li>Manually add/remove specific subscribers</li>
+                <li>Add/remove specific subscribers</li>
                 <li>Import subscriber lists from CSV files</li>
                 <li>Full control over audience membership</li>
                 <li>No automatic updates based on criteria</li>

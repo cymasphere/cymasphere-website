@@ -628,7 +628,7 @@ const convertToDisplayAudience = (dbAudience: DatabaseAudience, realTimeCount?: 
       { text: audienceType === 'static' ? "Static" : "Dynamic", type: "status" as const }
     ],
     criteria: audienceType === 'static' 
-      ? "Manual subscriber management" 
+      ? "Subscriber management" 
       : `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
     type: audienceType as 'static' | 'dynamic',
     originalFilters: dbAudience.filters // Store original filters for cloning
