@@ -103,7 +103,7 @@ export async function GET(
       }
 
       // Get actual subscriber data
-      const subscriberIds = relations.map(r => r.subscriber_id).filter((id): id is string => Boolean(id));
+      const subscriberIds = relations.map((r: any) => r.subscriber_id).filter((id: any): id is string => Boolean(id));
       console.log('Subscriber IDs to fetch:', subscriberIds);
       
       const { data: subscribers, error: subscribersError } = await adminSupabase
@@ -116,7 +116,7 @@ export async function GET(
       console.log('Subscribers error:', subscribersError);
 
       // Transform to expected format
-      const formattedSubscribers = (subscribers || []).map(sub => {
+      const formattedSubscribers = (subscribers || []).map((sub: any) => {
         const metadata = (sub.metadata as any) || {};
         return {
           id: sub.id,
