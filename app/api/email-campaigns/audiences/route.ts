@@ -17,22 +17,70 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
     
     // Handle different filter formats for dynamic audiences
     if (filters.rules && Array.isArray(filters.rules)) {
-      // Handle new format with rules array
-      const rule = filters.rules[0]; // For now, handle single rule
-      if (rule && rule.field === 'subscription') {
-        const { count } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('subscription', rule.value);
-        console.log(`Count for subscription '${rule.value}': ${count}`);
-        return count || 0;
+      // Handle new format with rules array - need to process ALL rules, not just first one
+      console.log('Processing rules array:', filters.rules);
+      
+      let hasSubscriptionRule = false;
+      let hasStatusRule = false;
+      let subscriptionValue = null;
+      let statusValue = null;
+      
+      // Extract all rule values
+      for (const rule of filters.rules) {
+        if (rule.field === 'subscription') {
+          hasSubscriptionRule = true;
+          subscriptionValue = rule.value;
+        } else if (rule.field === 'status') {
+          hasStatusRule = true;
+          statusValue = rule.value;
+        }
       }
-      if (rule && rule.field === 'status') {
+      
+      // If we have both subscription and status rules, we need to join
+      if (hasSubscriptionRule && hasStatusRule) {
+        console.log(`Joining: subscription=${subscriptionValue} AND status=${statusValue}`);
+        
+        // Get profiles with subscription first
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('subscription', subscriptionValue);
+        
+        if (!profilesData || profilesData.length === 0) {
+          console.log('No profiles found with subscription:', subscriptionValue);
+          return 0;
+        }
+        
+        const profileIds = profilesData.map((p: any) => p.id);
+        console.log(`Found ${profileIds.length} profiles with subscription ${subscriptionValue}`);
+        
+        // Then get subscribers with status and matching profile IDs
         const { count } = await supabase
           .from('subscribers')
           .select('*', { count: 'exact', head: true })
-          .eq('status', rule.value);
-        console.log(`Count for status '${rule.value}': ${count}`);
+          .eq('status', statusValue)
+          .in('user_id', profileIds);
+        
+        console.log(`Final count after joining: ${count}`);
+        return count || 0;
+      }
+      
+      // Handle single rule cases
+      if (hasSubscriptionRule && !hasStatusRule) {
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('subscription', subscriptionValue);
+        console.log(`Count for subscription '${subscriptionValue}': ${count}`);
+        return count || 0;
+      }
+      
+      if (hasStatusRule && !hasSubscriptionRule) {
+        const { count } = await supabase
+          .from('subscribers')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', statusValue);
+        console.log(`Count for status '${statusValue}': ${count}`);
         return count || 0;
       }
     }

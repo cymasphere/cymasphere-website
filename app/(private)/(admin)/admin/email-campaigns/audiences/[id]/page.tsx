@@ -787,26 +787,27 @@ const transformAudienceData = (dbAudience: any) => {
       audienceType = "static";
     } else if (filters.audience_type === 'dynamic') {
       audienceType = "dynamic";
-    } else {
-      // Auto-detect based on presence of meaningful filters
-      // Handle new structured format with rules array
+      
+      // Process rules for dynamic audiences
       if (filters.rules && Array.isArray(filters.rules) && filters.rules.length > 0) {
-        audienceType = "dynamic";
+        console.log('Processing rules array:', filters.rules);
         filters.rules.forEach((rule: any, index: number) => {
-          filtersArray.push({
-            id: (index + 1).toString(),
+          console.log(`Processing rule ${index + 1}:`, rule);
+      filtersArray.push({
+        id: (index + 1).toString(),
             field: rule.field || "status",
             operator: rule.operator || "equals",
             value: String(rule.value || ""),
             timeframe: rule.timeframe || "all_time"
           });
         });
+        console.log('Filters array after processing rules:', filtersArray);
       } else {
         // Handle legacy simple format for backward compatibility
         let hasFilters = false;
         
-        // Only create filter rules for non-default values
-        if (filters.status && filters.status !== 'active') {
+        // Add status filter if present (including 'active' status)
+        if (filters.status) {
           hasFilters = true;
           filtersArray.push({
             id: "1",
@@ -840,17 +841,27 @@ const transformAudienceData = (dbAudience: any) => {
             hasFilters = true;
             filtersArray.push({
               id: (index + 10).toString(), // Avoid ID conflicts
-              field: key,
-              operator: "equals", 
-              value: Array.isArray(value) ? value.join(', ') : String(value),
-              timeframe: "all_time"
-            });
+        field: key,
+        operator: "equals",
+        value: Array.isArray(value) ? value.join(', ') : String(value),
+        timeframe: "all_time"
+      });
           }
         });
-        
-        if (hasFilters) {
-          audienceType = "dynamic";
-        }
+      }
+    } else {
+      // Auto-detect based on presence of meaningful filters
+      if (filters.rules && Array.isArray(filters.rules) && filters.rules.length > 0) {
+        audienceType = "dynamic";
+        filters.rules.forEach((rule: any, index: number) => {
+          filtersArray.push({
+            id: (index + 1).toString(),
+            field: rule.field || "status",
+            operator: rule.operator || "equals",
+            value: String(rule.value || ""),
+            timeframe: rule.timeframe || "all_time"
+          });
+        });
       }
     }
   }
@@ -1224,7 +1235,7 @@ function AudienceDetailPage() {
       await loadAudienceData();
       // Reload subscribers to reflect filter changes
       await loadSubscribers();
-      setEditMode(false);
+    setEditMode(false);
       
       console.log('Audience saved successfully');
     } catch (error) {
@@ -1396,25 +1407,52 @@ function AudienceDetailPage() {
       console.log('Response headers:', response.headers);
       
       if (!response.ok) {
-        let errorData;
+        let errorData = {};
+        let rawResponse = '';
+        
         try {
-          errorData = await response.json();
+          const responseText = await response.text();
+          rawResponse = responseText;
+          
+          if (responseText.trim()) {
+            errorData = JSON.parse(responseText);
+          }
         } catch (parseError) {
-          console.error('Failed to parse error response as JSON:', parseError);
-          const textResponse = await response.text();
-          console.error('Raw error response:', textResponse);
-          throw new Error(`Server error (${response.status}): ${textResponse || 'Unknown error'}`);
+          console.error('Failed to parse error response:', parseError);
+          console.error('Raw response:', rawResponse);
         }
-        console.error('API Error:', errorData);
+        
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          rawResponse
+        });
         
         // Provide more helpful error messages
-        let errorMessage = errorData.error || 'Failed to add subscriber';
-        if (errorData.error === 'Email not found in system. User must sign up first.') {
-          errorMessage = 'This email address is not registered in the system. The user must create an account first.';
-        } else if (errorData.error === 'Subscriber is already in this audience') {
-          errorMessage = 'This subscriber is already in the audience.';
-        } else if (errorData.error === 'Can only manually add subscribers to static audiences') {
-          errorMessage = 'You can only manually add subscribers to static audiences. This audience appears to be dynamic.';
+        let errorMessage = 'Failed to add subscriber';
+        
+        if (errorData && typeof errorData === 'object' && 'error' in errorData) {
+          errorMessage = errorData.error as string;
+          
+          // Transform specific error messages
+          if (errorMessage === 'Email not found in system. User must sign up first.') {
+            errorMessage = 'This email address is not registered in the system. The user must create an account first.';
+          } else if (errorMessage === 'Subscriber already in audience') {
+            errorMessage = 'This subscriber is already in the audience.';
+          } else if (errorMessage === 'Can only add subscribers to static audiences') {
+            errorMessage = 'You can only manually add subscribers to static audiences. This audience appears to be dynamic.';
+          }
+        } else if (response.status === 401) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else if (response.status === 403) {
+          errorMessage = 'Access denied. Admin privileges required.';
+        } else if (response.status === 404) {
+          errorMessage = 'Audience not found.';
+        } else if (rawResponse) {
+          errorMessage = `Server error: ${rawResponse}`;
+        } else {
+          errorMessage = `Server error (${response.status}): ${response.statusText}`;
         }
         
         throw new Error(errorMessage);
@@ -1602,8 +1640,8 @@ function AudienceDetailPage() {
                 </>
               ) : (
                 <>
-                  <AudienceName>{audienceData.name}</AudienceName>
-                  <AudienceDescription>{audienceData.description}</AudienceDescription>
+              <AudienceName>{audienceData.name}</AudienceName>
+              <AudienceDescription>{audienceData.description}</AudienceDescription>
                 </>
               )}
               <AudienceMeta>
@@ -1753,13 +1791,13 @@ function AudienceDetailPage() {
                           <option value="lifetime">Lifetime</option>
                         </Select>
                       ) : (
-                        <Input
-                          type="text"
-                          value={filter.value}
-                          onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
-                          disabled={!editMode}
-                          placeholder="Value"
-                        />
+                      <Input
+                        type="text"
+                        value={filter.value}
+                        onChange={(e) => updateFilterRule(filter.id, 'value', e.target.value)}
+                        disabled={!editMode}
+                        placeholder="Value"
+                      />
                       )}
                       
                       {editMode && (
@@ -1809,14 +1847,14 @@ function AudienceDetailPage() {
                 </SearchContainer>
                 
                 {audienceData.type === 'static' && (
-                  <HeaderActionButton 
-                    variant="primary" 
+                <HeaderActionButton 
+                  variant="primary" 
                     onClick={() => setShowAddSubscriberModal(true)}
-                    style={{ marginLeft: '1rem' }}
-                  >
-                    <FaUserPlus />
-                    Add Subscriber
-                  </HeaderActionButton>
+                  style={{ marginLeft: '1rem' }}
+                >
+                  <FaUserPlus />
+                  Add Subscriber
+                </HeaderActionButton>
                 )}
               </div>
 
@@ -1862,7 +1900,12 @@ function AudienceDetailPage() {
                           <EmptyState>
                             <FaUsers />
                             <h3>No subscribers found</h3>
-                            <p>Try adjusting your search criteria or filter conditions.</p>
+                          <p>
+                            {pagination.total > 0 
+                              ? `This audience should contain ${pagination.total} subscribers, but there may be an authentication issue preventing the list from loading. Try refreshing the page.`
+                              : 'Try adjusting your search criteria or filter conditions.'
+                            }
+                          </p>
                           </EmptyState>
                         </TableCell>
                       </tr>

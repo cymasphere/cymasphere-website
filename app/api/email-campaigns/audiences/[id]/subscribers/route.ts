@@ -9,7 +9,24 @@ export async function GET(
   console.log('🚀 GET subscribers API started');
   
   try {
-  const supabase = await createSupabaseServer();
+    // More detailed debugging
+    const allHeaders = Object.fromEntries(request.headers.entries());
+    const cookies = request.headers.get('cookie');
+    const { id } = await params;
+    
+    console.log('🔍 GET Request details:', {
+      audienceId: id,
+      url: request.url,
+      method: request.method,
+      hasAuthCookie: cookies?.includes('sb-') ? true : false,
+      cookieCount: cookies?.split(';').length || 0,
+      userAgent: request.headers.get('user-agent'),
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer'),
+      allCookies: cookies
+    });
+    
+    const supabase = await createSupabaseServer();
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -18,19 +35,27 @@ export async function GET(
       hasUser: !!user,
       userId: user?.id,
       userEmail: user?.email,
-      authError: authError?.message,
-      hasCookies: !!request.headers.get('cookie'),
-      cookieLength: request.headers.get('cookie')?.length || 0
+      authError: authError?.message || 'none',
+      authErrorCode: authError?.status,
+      session: !!user ? 'valid' : 'invalid'
     });
     
     if (authError || !user) {
-      console.log('❌ GET Auth failed:', authError?.message);
+      console.log('❌ GET Auth failed:', authError?.message || 'No user found');
+      
+      // More helpful error response for debugging
       return NextResponse.json({ 
-        error: 'Authentication required',
+        error: 'Authentication required. Please refresh the page and try again.',
+        details: 'Your session may have expired. Please log out and log back in if the problem persists.',
         debug: {
           authError: authError?.message,
+          authErrorCode: authError?.status,
           hasUser: !!user,
-          hasCookies: !!request.headers.get('cookie')
+          hasCookies: !!cookies,
+          cookieCount: cookies?.split(';').length || 0,
+          timestamp: new Date().toISOString(),
+          audienceId: id,
+          requestUrl: request.url
         }
       }, { status: 401 });
     }
@@ -60,7 +85,6 @@ export async function GET(
     
     console.log('🔑 Using service role key for admin operations');
 
-    const { id } = await params;
     console.log('Getting subscribers for audience:', id);
 
     // Get audience to check if it's static
@@ -145,11 +169,207 @@ export async function GET(
       });
     }
 
-    // For dynamic audiences, return empty for now
-    console.log('🔄 Dynamic audience - not implemented yet');
+    // For dynamic audiences, calculate subscriber count using same logic as main API
+    console.log('🔄 Dynamic audience - calculating subscriber count');
+    
+    // Import the calculateSubscriberCount function logic
+    const calculateSubscriberCount = async (filters: any) => {
+      try {
+        console.log('Calculating subscriber count for filters:', JSON.stringify(filters));
+        
+        // Handle different filter formats for dynamic audiences
+        if (filters.rules && Array.isArray(filters.rules)) {
+          // Handle new format with rules array - need to process ALL rules, not just first one
+          console.log('Processing rules array:', filters.rules);
+          
+          let hasSubscriptionRule = false;
+          let hasStatusRule = false;
+          let subscriptionValue = null;
+          let statusValue = null;
+          
+          // Extract all rule values
+          for (const rule of filters.rules) {
+            if (rule.field === 'subscription') {
+              hasSubscriptionRule = true;
+              subscriptionValue = rule.value;
+            } else if (rule.field === 'status') {
+              hasStatusRule = true;
+              statusValue = rule.value;
+            }
+          }
+          
+          // If we have both subscription and status rules, we need to join
+          if (hasSubscriptionRule && hasStatusRule) {
+            console.log(`Joining: subscription=${subscriptionValue} AND status=${statusValue}`);
+            
+            // Get profiles with subscription first
+            const { data: profilesData, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, first_name, last_name, subscription')
+              .eq('subscription', subscriptionValue);
+            
+            if (!profilesData || profilesData.length === 0) {
+              console.log('No profiles found with subscription:', subscriptionValue);
+              return 0;
+            }
+            
+            const profileIds = profilesData.map((p: any) => p.id);
+            console.log(`Found ${profileIds.length} profiles with subscription ${subscriptionValue}`);
+            
+            // Then get subscribers with status and matching profile IDs
+            const { count } = await supabase
+              .from('subscribers')
+              .select('*', { count: 'exact', head: true })
+              .eq('status', statusValue)
+              .in('user_id', profileIds);
+            
+            console.log(`Final count after joining: ${count}`);
+            return count || 0;
+          }
+          
+          // Handle single rule cases
+          if (hasSubscriptionRule && !hasStatusRule) {
+            const { count } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact', head: true })
+              .eq('subscription', subscriptionValue);
+            console.log(`Count for subscription '${subscriptionValue}': ${count}`);
+            return count || 0;
+          }
+          
+          if (hasStatusRule && !hasSubscriptionRule) {
+            const { count } = await supabase
+              .from('subscribers')
+              .select('*', { count: 'exact', head: true })
+              .eq('status', statusValue);
+            console.log(`Count for status '${statusValue}': ${count}`);
+            return count || 0;
+          }
+        }
+        
+        return 0;
+      } catch (error) {
+        console.error('Error in calculateSubscriberCount:', error);
+        return 0;
+      }
+    };
+    
+    const subscriberCount = await calculateSubscriberCount(filters);
+    console.log(`✅ Dynamic audience calculated count: ${subscriberCount}`);
+    
+    // Get actual subscriber data for dynamic audiences
+    console.log('🔍 Fetching actual subscriber data for dynamic audience...');
+    console.log('🔍 Filters object:', JSON.stringify(filters, null, 2));
+    
+    if (filters.rules && Array.isArray(filters.rules)) {
+      console.log('🔍 Processing rules for subscriber data:', filters.rules);
+      let hasSubscriptionRule = false;
+      let hasStatusRule = false;
+      let subscriptionValue = null;
+      let statusValue = null;
+      
+      // Extract rule values
+      for (const rule of filters.rules) {
+        console.log('🔍 Processing rule:', rule);
+        if (rule.field === 'subscription') {
+          hasSubscriptionRule = true;
+          subscriptionValue = rule.value;
+          console.log('✅ Found subscription rule:', subscriptionValue);
+        } else if (rule.field === 'status') {
+          hasStatusRule = true;
+          statusValue = rule.value;
+          console.log('✅ Found status rule:', statusValue);
+        }
+      }
+      
+      console.log('🔍 Rule summary:', {
+        hasSubscriptionRule,
+        hasStatusRule,
+        subscriptionValue,
+        statusValue
+      });
+      
+      // If we have both subscription and status rules, get actual subscriber data
+      if (hasSubscriptionRule && hasStatusRule) {
+        console.log(`🔍 Getting subscriber data: subscription=${subscriptionValue} AND status=${statusValue}`);
+        
+        // Get profiles with subscription first
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, subscription')
+          .eq('subscription', subscriptionValue);
+        
+        console.log('🔍 Profiles query result:', {
+          count: profilesData?.length || 0,
+          error: profilesError?.message || 'none',
+          sample: profilesData?.[0] || 'none'
+        });
+        
+        if (profilesData && profilesData.length > 0) {
+          const profileIds = profilesData.map((p: any) => p.id);
+          console.log('🔍 Profile IDs to match:', profileIds);
+          
+          // Get subscribers with status and matching profile IDs
+          const { data: subscribersData, error: subscribersError } = await supabase
+            .from('subscribers')
+            .select('id, email, status, created_at, updated_at, user_id')
+            .eq('status', statusValue)
+            .in('user_id', profileIds);
+          
+          console.log('🔍 Subscribers query result:', {
+            count: subscribersData?.length || 0,
+            error: subscribersError?.message || 'none',
+            sample: subscribersData?.[0] || 'none'
+          });
+          
+          if (subscribersData && subscribersData.length > 0) {
+            // Transform to expected format
+            const formattedSubscribers = subscribersData.map((sub: any) => {
+              const profile = profilesData.find((p: any) => p.id === sub.user_id);
+              return {
+                id: sub.id,
+                name: [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Unknown User',
+                email: sub.email,
+                status: sub.status || 'active',
+                subscribeDate: sub.created_at || new Date().toISOString(),
+                lastActivity: sub.updated_at || sub.created_at || new Date().toISOString(),
+                engagement: 'Medium',
+                source: 'filter',
+                tags: [],
+                subscriptionType: profile?.subscription || 'unknown'
+              };
+            });
+            
+            console.log(`✅ Returning ${formattedSubscribers.length} formatted subscribers`);
+            console.log('🔍 Sample formatted subscriber:', formattedSubscribers[0]);
+            
+            return NextResponse.json({
+              subscribers: formattedSubscribers,
+              pagination: { 
+                page: 1, 
+                limit: 10, 
+                total: formattedSubscribers.length, 
+                totalPages: Math.ceil(formattedSubscribers.length / 10) 
+              }
+            });
+          } else {
+            console.log('❌ No subscribers found matching the criteria');
+          }
+        } else {
+          console.log('❌ No profiles found with subscription:', subscriptionValue);
+        }
+      } else {
+        console.log('❌ Missing required rules - hasSubscription:', hasSubscriptionRule, 'hasStatus:', hasStatusRule);
+      }
+    } else {
+      console.log('❌ No rules array found in filters');
+    }
+    
+    console.log('🔄 Falling back to empty subscribers with count');
+    // Fallback: return empty with count
     return NextResponse.json({
       subscribers: [],
-      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+      pagination: { page: 1, limit: 10, total: subscriberCount, totalPages: Math.ceil(subscriberCount / 10) }
     });
 
   } catch (error) {

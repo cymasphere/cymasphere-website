@@ -608,16 +608,19 @@ const fetchAudiences = async (): Promise<DatabaseAudience[]> => {
 };
 
 // Convert database audience to display format
-const convertToDisplayAudience = (dbAudience: DatabaseAudience) => {
+const convertToDisplayAudience = (dbAudience: DatabaseAudience, realTimeCount?: number) => {
   // Determine audience type from filters
   const filters = dbAudience.filters || {};
   const audienceType = filters.audience_type === 'static' ? 'static' : 'dynamic';
+  
+  // Use real-time count if provided, otherwise fall back to cached count
+  const subscriberCount = realTimeCount !== undefined ? realTimeCount : (dbAudience.subscriber_count || 0);
   
   return {
     id: dbAudience.id,
     name: dbAudience.name,
     description: dbAudience.description || "No description provided",
-    subscribers: dbAudience.subscriber_count || 0,
+    subscribers: subscriberCount,
     growthRate: "+0%", // This would need to be calculated from historical data
     engagementRate: "N/A", // This would need to be calculated from email metrics
     lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
@@ -662,8 +665,31 @@ function AudiencesPage() {
       console.log('🔄 Loading audiences...');
       const dbAudiences = await fetchAudiences();
       console.log('📊 Received audiences from API:', dbAudiences);
-      const displayAudiences = dbAudiences.map(convertToDisplayAudience);
-      console.log('🎯 Converted to display format:', displayAudiences);
+      
+      // Get real-time subscriber counts for all audiences
+      console.log('🔄 Fetching real-time subscriber counts...');
+      const displayAudiences = await Promise.all(
+        dbAudiences.map(async (dbAudience) => {
+          try {
+            // Call the API to get real-time count
+            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+            if (response.ok) {
+              const data = await response.json();
+              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+              console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
+              return convertToDisplayAudience(dbAudience, realTimeCount);
+            } else {
+              console.warn(`Failed to get real-time count for ${dbAudience.name}, using cached count`);
+              return convertToDisplayAudience(dbAudience);
+            }
+          } catch (error) {
+            console.warn(`Error getting real-time count for ${dbAudience.name}:`, error);
+            return convertToDisplayAudience(dbAudience);
+          }
+        })
+      );
+      
+      console.log('🎯 Converted to display format with real-time counts:', displayAudiences);
       setAudiences(displayAudiences);
     } catch (error) {
       console.error('Failed to load audiences:', error);

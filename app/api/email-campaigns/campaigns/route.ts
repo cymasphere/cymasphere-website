@@ -123,10 +123,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // For now, we'll use the first audience_id for the main audience_id field
-    // Later we can extend this to support multiple audiences properly
-    const primary_audience_id = audience_ids && audience_ids.length > 0 ? audience_ids[0] : null;
-
     // Create new campaign
     const { data: campaign, error } = await supabase
       .from('email_campaigns')
@@ -139,16 +135,12 @@ export async function POST(request: NextRequest) {
         preheader,
         html_content,
         text_content,
-        audience_id: primary_audience_id,
         template_id,
         status,
         scheduled_at,
         created_by: user.id
       })
-      .select(`
-        *,
-        email_audiences(id, name)
-      `)
+      .select()
       .single();
 
     if (error) {
@@ -158,10 +150,58 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // TODO: Store multiple audiences and excluded audiences in a separate junction table
-    // For now, we'll just use the primary audience
+    // Insert included audiences into junction table
+    if (audience_ids && audience_ids.length > 0) {
+      const includedAudiences = audience_ids.map((audienceId: string) => ({
+        campaign_id: campaign.id,
+        audience_id: audienceId,
+        is_excluded: false
+      }));
 
-    return NextResponse.json({ campaign }, { status: 201 });
+      const { error: audienceError } = await (supabase as any)
+        .from('email_campaign_audiences')
+        .insert(includedAudiences);
+
+      if (audienceError) {
+        console.error('Error linking audiences to campaign:', audienceError);
+        // Don't fail the entire operation, just log the error
+      }
+    }
+
+    // Insert excluded audiences into junction table
+    if (excluded_audience_ids && excluded_audience_ids.length > 0) {
+      const excludedAudiences = excluded_audience_ids.map((audienceId: string) => ({
+        campaign_id: campaign.id,
+        audience_id: audienceId,
+        is_excluded: true
+      }));
+
+      const { error: excludeError } = await (supabase as any)
+        .from('email_campaign_audiences')
+        .insert(excludedAudiences);
+
+      if (excludeError) {
+        console.error('Error linking excluded audiences to campaign:', excludeError);
+        // Don't fail the entire operation, just log the error
+      }
+    }
+
+    // Fetch the complete campaign with audience relationships
+    const { data: completeCampaign, error: fetchError } = await (supabase as any)
+      .from('email_campaigns')
+      .select(`
+        *,
+        email_campaign_audiences(
+          is_excluded,
+          email_audiences(id, name)
+        )
+      `)
+      .eq('id', campaign.id)
+      .single();
+
+    return NextResponse.json({ 
+      campaign: completeCampaign || campaign 
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Create campaign API error:', error);
