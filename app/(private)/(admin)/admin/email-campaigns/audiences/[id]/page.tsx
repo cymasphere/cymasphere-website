@@ -353,6 +353,48 @@ const Input = styled.input`
   }
 `;
 
+const EmailInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const SubscriberSearchInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
 const RemoveButton = styled.button`
   padding: 6px;
   border: none;
@@ -734,66 +776,87 @@ const transformAudienceData = (dbAudience: any) => {
     timeframe: string;
   }> = [];
   
+  // Determine audience type based on filters
+  let audienceType: "dynamic" | "static" = "static"; // Default to static
+  
   if (dbAudience.filters && typeof dbAudience.filters === 'object') {
     const filters = dbAudience.filters;
     
-    // Handle new structured format with rules array
-    if (filters.rules && Array.isArray(filters.rules)) {
-      filters.rules.forEach((rule: any, index: number) => {
-        filtersArray.push({
-          id: (index + 1).toString(),
-          field: rule.field || "status",
-          operator: rule.operator || "equals",
-          value: String(rule.value || ""),
-          timeframe: rule.timeframe || "all_time"
-        });
-      });
+    // Check if this is marked as a static audience
+    if (filters.audience_type === 'static') {
+      audienceType = "static";
+    } else if (filters.audience_type === 'dynamic') {
+      audienceType = "dynamic";
     } else {
-      // Handle legacy simple format for backward compatibility
-      // Only create one filter rule for status if it exists
-      if (filters.status && filters.status !== 'active') {
-        filtersArray.push({
-          id: "1",
-          field: "status",
-          operator: "equals",
-          value: String(filters.status),
-          timeframe: "all_time"
-        });
-      }
-      
-      // Add subscription filter if it's not 'none'
-      if (filters.subscription && filters.subscription !== 'none') {
-        filtersArray.push({
-          id: "2", 
-          field: "subscription",
-          operator: "equals",
-          value: String(filters.subscription),
-          timeframe: "all_time"
-        });
-      }
-      
-      // Add other meaningful filters, but skip boolean values and common defaults
-      Object.entries(filters).forEach(([key, value], index) => {
-        if (key !== 'status' && key !== 'subscription' && key !== 'rules' &&
-            typeof value !== 'boolean' && 
-            value !== 'active' && 
-            value !== 'none' &&
-            value !== null &&
-            value !== undefined) {
+      // Auto-detect based on presence of meaningful filters
+      // Handle new structured format with rules array
+      if (filters.rules && Array.isArray(filters.rules) && filters.rules.length > 0) {
+        audienceType = "dynamic";
+        filters.rules.forEach((rule: any, index: number) => {
           filtersArray.push({
-            id: (index + 10).toString(), // Avoid ID conflicts
-            field: key,
-            operator: "equals", 
-            value: Array.isArray(value) ? value.join(', ') : String(value),
+            id: (index + 1).toString(),
+            field: rule.field || "status",
+            operator: rule.operator || "equals",
+            value: String(rule.value || ""),
+            timeframe: rule.timeframe || "all_time"
+          });
+        });
+      } else {
+        // Handle legacy simple format for backward compatibility
+        let hasFilters = false;
+        
+        // Only create filter rules for non-default values
+        if (filters.status && filters.status !== 'active') {
+          hasFilters = true;
+          filtersArray.push({
+            id: "1",
+            field: "status",
+            operator: "equals",
+            value: String(filters.status),
             timeframe: "all_time"
           });
         }
-      });
+        
+        // Add subscription filter if it's not 'none'
+        if (filters.subscription && filters.subscription !== 'none') {
+          hasFilters = true;
+          filtersArray.push({
+            id: "2", 
+            field: "subscription",
+            operator: "equals",
+            value: String(filters.subscription),
+            timeframe: "all_time"
+          });
+        }
+        
+        // Add other meaningful filters, but skip boolean values and common defaults
+        Object.entries(filters).forEach(([key, value], index) => {
+          if (key !== 'status' && key !== 'subscription' && key !== 'rules' && key !== 'audience_type' &&
+              typeof value !== 'boolean' && 
+              value !== 'active' && 
+              value !== 'none' &&
+              value !== null &&
+              value !== undefined) {
+            hasFilters = true;
+            filtersArray.push({
+              id: (index + 10).toString(), // Avoid ID conflicts
+              field: key,
+              operator: "equals", 
+              value: Array.isArray(value) ? value.join(', ') : String(value),
+              timeframe: "all_time"
+            });
+          }
+        });
+        
+        if (hasFilters) {
+          audienceType = "dynamic";
+        }
+      }
     }
   }
   
-  // If no meaningful filters, start with a default one
-  if (filtersArray.length === 0) {
+  // If it's a dynamic audience but has no meaningful filters, start with a default one
+  if (audienceType === "dynamic" && filtersArray.length === 0) {
     filtersArray.push({
       id: "default",
       field: "status",
@@ -807,7 +870,7 @@ const transformAudienceData = (dbAudience: any) => {
     id: dbAudience.id,
     name: dbAudience.name,
     description: dbAudience.description || "No description provided",
-    type: "dynamic" as const,
+    type: audienceType,
     subscribers: dbAudience.subscriber_count || 0,
     createdAt: dbAudience.created_at,
     lastUpdated: dbAudience.updated_at,
@@ -841,6 +904,19 @@ function AudienceDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Add subscriber modal state
+  const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
+  const [addSubscriberEmail, setAddSubscriberEmail] = useState('');
+  const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Remove subscriber modal state
+  const [showRemoveSubscriberModal, setShowRemoveSubscriberModal] = useState(false);
+  const [subscriberToRemove, setSubscriberToRemove] = useState<any>(null);
+  const [isRemovingSubscriber, setIsRemovingSubscriber] = useState(false);
 
   useEffect(() => {
     // Load audience data when component mounts or audienceId/user changes
@@ -852,9 +928,10 @@ function AudienceDetailPage() {
   // Load subscribers when audience data is available
   useEffect(() => {
     if (audienceData && audienceId && user) {
+      console.log('🔥 Loading subscribers because audience data is available');
       loadSubscribers();
     }
-  }, [audienceData?.id]); // Only depend on audience ID change, not the full object
+  }, [audienceData, audienceId, user]); // Trigger when audience data is loaded
 
   // Debounced search effect
   useEffect(() => {
@@ -866,6 +943,11 @@ function AudienceDetailPage() {
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
+
+  // Debug pagination changes
+  useEffect(() => {
+    console.log('📊 Pagination state changed:', pagination);
+  }, [pagination]);
 
   const loadAudienceData = async () => {
     console.log('Loading audience data for ID:', audienceId);
@@ -894,18 +976,39 @@ function AudienceDetailPage() {
   };
 
   const loadSubscribers = async (page?: number) => {
+    console.log('🚀 loadSubscribers called with page:', page);
+    console.log('🔍 Current user:', user?.id, user?.email);
+    console.log('🔍 Current audience data:', audienceData?.type, audienceData?.name);
+    
     try {
       setSubscribersLoading(true);
-      const currentPage = page || pagination.page;
-      const data = await fetchAudienceSubscribers(audienceId, currentPage, pagination.limit, searchTerm);
+      const currentPage = page || pagination?.page || 1;
+      console.log('Fetching subscribers for audience:', audienceId, 'page:', currentPage);
+      const data = await fetchAudienceSubscribers(audienceId, currentPage, pagination?.limit || 10, searchTerm);
+      console.log('Subscribers API response:', data);
       setSubscribers(data.subscribers || []);
-      setPagination(prev => ({ ...prev, ...data.pagination, page: currentPage }));
+      const newPagination = { 
+        page: currentPage,
+        limit: data.pagination?.limit || pagination?.limit || 10,
+        total: data.pagination?.total || 0,
+        totalPages: data.pagination?.totalPages || Math.ceil((data.pagination?.total || 0) / (data.pagination?.limit || pagination?.limit || 10))
+      };
+      console.log('🔄 Setting pagination:', newPagination);
+      setPagination(newPagination);
+      console.log('✅ Subscribers loaded successfully:', data.subscribers?.length || 0, 'subscribers');
     } catch (error) {
       console.error('Failed to load subscribers:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load subscribers';
       
+      console.log('🔍 Error details:', {
+        errorMessage,
+        userLoggedIn: !!user,
+        audienceType: audienceData?.type
+      });
+      
       // Show user-friendly error message
       if (errorMessage.includes('Authentication required')) {
+        console.log('🔄 Redirecting to login due to auth error');
         // Redirect to login if not authenticated
         router.push('/login');
       } else {
@@ -914,6 +1017,13 @@ function AudienceDetailPage() {
       }
       
       setSubscribers([]);
+      // Ensure pagination state is preserved even on error
+      setPagination(prev => prev || {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1
+      });
     } finally {
       setSubscribersLoading(false);
     }
@@ -994,6 +1104,9 @@ function AudienceDetailPage() {
   // No need to filter on frontend since the API handles filtering
   // Just use the subscribers directly from the API
   const filteredSubscribers = subscribers;
+  
+  // Debug pagination state
+  console.log('🔍 Current pagination state:', pagination);
 
   const getAvatarColor = (name: string) => {
     const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
@@ -1024,8 +1137,8 @@ function AudienceDetailPage() {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        return data.pagination?.total || 0;
+        const subscribersData = await response.json();
+        return subscribersData.pagination?.total || 0;
       }
     } catch (error) {
       console.error('Failed to get subscriber count:', error);
@@ -1038,43 +1151,47 @@ function AudienceDetailPage() {
       // Convert UI filter rules back to database format
       // Store filters as a structured array to support multiple rules per field
       const databaseFilters: any = {
+        audience_type: audienceData.type, // Store the audience type
         rules: []
       };
       
-      audienceData.filters.forEach((filter: any) => {
-        // Only save meaningful filters with values
-        if (filter.value && filter.value.trim() !== '') {
-          // Validate filter values to prevent database errors
-          let validValue = filter.value.trim();
-          
-          // Validate status values
-          if (filter.field === 'status') {
-            const validStatuses = ['active', 'inactive', 'pending', 'unsubscribed', 'bounced'];
-            if (!validStatuses.includes(validValue)) {
-              validValue = 'active'; // Default to active for invalid status
+      // Only process filters for dynamic audiences
+      if (audienceData.type === 'dynamic') {
+        audienceData.filters.forEach((filter: any) => {
+          // Only save meaningful filters with values
+          if (filter.value && filter.value.trim() !== '') {
+            // Validate filter values to prevent database errors
+            let validValue = filter.value.trim();
+            
+            // Validate status values
+            if (filter.field === 'status') {
+              const validStatuses = ['active', 'inactive', 'pending', 'unsubscribed', 'bounced'];
+              if (!validStatuses.includes(validValue)) {
+                validValue = 'active'; // Default to active for invalid status
+              }
             }
-          }
-          
-          // Validate subscription values  
-          if (filter.field === 'subscription') {
-            const validSubscriptions = ['none', 'monthly', 'annual', 'lifetime'];
-            if (!validSubscriptions.includes(validValue)) {
-              validValue = 'none'; // Default to none for invalid subscription
+            
+            // Validate subscription values  
+            if (filter.field === 'subscription') {
+              const validSubscriptions = ['none', 'monthly', 'annual', 'lifetime'];
+              if (!validSubscriptions.includes(validValue)) {
+                validValue = 'none'; // Default to none for invalid subscription
+              }
             }
+            
+            databaseFilters.rules.push({
+              field: filter.field,
+              operator: filter.operator,
+              value: validValue,
+              timeframe: filter.timeframe || 'all_time'
+            });
           }
-          
-          databaseFilters.rules.push({
-            field: filter.field,
-            operator: filter.operator,
-            value: validValue,
-            timeframe: filter.timeframe || 'all_time'
-          });
-        }
-      });
+        });
 
-      // If no rules, fall back to simple format for backward compatibility
-      if (databaseFilters.rules.length === 0) {
-        databaseFilters.status = 'active';
+        // If no rules for dynamic audience, fall back to simple format for backward compatibility
+        if (databaseFilters.rules.length === 0) {
+          databaseFilters.status = 'active';
+        }
       }
 
       // Calculate new subscriber count for dynamic audiences
@@ -1250,9 +1367,175 @@ function AudienceDetailPage() {
     }));
   };
 
-  const handleRemoveSubscriber = (subscriberId: string) => {
-    // Implement the logic to remove a subscriber from the audience
-    console.log('Removing subscriber:', subscriberId);
+  const handleRemoveSubscriber = (subscriber: any) => {
+    setSubscriberToRemove(subscriber);
+    setShowRemoveSubscriberModal(true);
+  };
+
+  const handleAddSubscriber = async () => {
+    if (!addSubscriberEmail.trim()) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setIsAddingSubscriber(true);
+    try {
+      console.log('Adding subscriber with email:', addSubscriberEmail.trim());
+      console.log('Audience ID:', audienceId);
+      
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email: addSubscriberEmail.trim() })
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          console.error('Failed to parse error response as JSON:', parseError);
+          const textResponse = await response.text();
+          console.error('Raw error response:', textResponse);
+          throw new Error(`Server error (${response.status}): ${textResponse || 'Unknown error'}`);
+        }
+        console.error('API Error:', errorData);
+        
+        // Provide more helpful error messages
+        let errorMessage = errorData.error || 'Failed to add subscriber';
+        if (errorData.error === 'Email not found in system. User must sign up first.') {
+          errorMessage = 'This email address is not registered in the system. The user must create an account first.';
+        } else if (errorData.error === 'Subscriber is already in this audience') {
+          errorMessage = 'This subscriber is already in the audience.';
+        } else if (errorData.error === 'Can only manually add subscribers to static audiences') {
+          errorMessage = 'You can only manually add subscribers to static audiences. This audience appears to be dynamic.';
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('Subscriber added successfully:', result);
+      
+      setAddSubscriberEmail('');
+      setShowAddSubscriberModal(false);
+      setSearchResults([]);
+      setShowSearchResults(false);
+      
+      // Reload subscribers to show the new addition
+      await loadSubscribers();
+      
+    } catch (error) {
+      console.error('Failed to add subscriber:', error);
+      alert(`Failed to add subscriber: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsAddingSubscriber(false);
+    }
+  };
+
+  const searchSubscribers = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/email-campaigns/subscribers?search=${encodeURIComponent(query)}&limit=10`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.subscribers || []);
+        setShowSearchResults(true);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSubscriberInputChange = (value: string) => {
+    setAddSubscriberEmail(value);
+    
+    // Debounce search
+    clearTimeout((window as any).searchTimeout);
+    (window as any).searchTimeout = setTimeout(() => {
+      searchSubscribers(value);
+    }, 300);
+  };
+
+  const selectSubscriber = (subscriber: any) => {
+    setAddSubscriberEmail(subscriber.email);
+    setShowSearchResults(false);
+    setSearchResults([]);
+  };
+
+  const resetAddSubscriberModal = () => {
+    setShowAddSubscriberModal(false);
+    setAddSubscriberEmail('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setIsAddingSubscriber(false);
+  };
+
+  const confirmRemoveSubscriber = async () => {
+    if (!subscriberToRemove) return;
+
+    setIsRemovingSubscriber(true);
+    try {
+      console.log('Removing subscriber:', subscriberToRemove.id, 'from audience:', audienceId);
+      
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?subscriberId=${subscriberToRemove.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to remove subscriber');
+      }
+
+      console.log('✅ Subscriber removed successfully');
+      
+      // Close modal and reset state
+      setShowRemoveSubscriberModal(false);
+      setSubscriberToRemove(null);
+      
+      // Reload subscribers to reflect the removal
+      await loadSubscribers();
+      
+    } catch (error) {
+      console.error('Failed to remove subscriber:', error);
+      // Don't use alert, just log the error for now
+      console.error('Remove subscriber error:', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsRemovingSubscriber(false);
+    }
+  };
+
+  const cancelRemoveSubscriber = () => {
+    setShowRemoveSubscriberModal(false);
+    setSubscriberToRemove(null);
+    setIsRemovingSubscriber(false);
   };
 
   return (
@@ -1525,14 +1808,16 @@ function AudienceDetailPage() {
                   />
                 </SearchContainer>
                 
-                <HeaderActionButton 
-                  variant="primary" 
-                  onClick={() => console.log('Add subscriber manually')}
-                  style={{ marginLeft: '1rem' }}
-                >
-                  <FaUserPlus />
-                  Add Subscriber
-                </HeaderActionButton>
+                {audienceData.type === 'static' && (
+                  <HeaderActionButton 
+                    variant="primary" 
+                    onClick={() => setShowAddSubscriberModal(true)}
+                    style={{ marginLeft: '1rem' }}
+                  >
+                    <FaUserPlus />
+                    Add Subscriber
+                  </HeaderActionButton>
+                )}
               </div>
 
               <SubscribersTable>
@@ -1632,7 +1917,7 @@ function AudienceDetailPage() {
                             <ActionsContainer>
                               <ActionButton 
                                 variant="danger" 
-                                onClick={() => handleRemoveSubscriber(subscriber.id)}
+                                onClick={() => handleRemoveSubscriber(subscriber)}
                                 title="Remove from audience"
                               >
                                 <FaTimes />
@@ -1647,7 +1932,7 @@ function AudienceDetailPage() {
               </SubscribersTable>
               
               {/* Pagination Controls */}
-              {pagination.total > 0 && (
+              {pagination && pagination.total > 0 && (
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -1659,25 +1944,25 @@ function AudienceDetailPage() {
                   border: '1px solid rgba(255, 255, 255, 0.05)'
                 }}>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} subscribers
+                    Showing {((pagination?.page || 1) - 1) * (pagination?.limit || 10) + 1} to {Math.min((pagination?.page || 1) * (pagination?.limit || 10), pagination?.total || 0)} of {pagination?.total || 0} subscribers
                   </div>
                   
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <button
                       onClick={() => {
-                        if (pagination.page > 1) {
-                          const newPage = pagination.page - 1;
+                        if ((pagination?.page || 1) > 1) {
+                          const newPage = (pagination?.page || 1) - 1;
                           loadSubscribers(newPage);
                         }
                       }}
-                      disabled={pagination.page <= 1 || subscribersLoading}
+                      disabled={(pagination?.page || 1) <= 1 || subscribersLoading}
                       style={{
                         padding: '8px 12px',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         borderRadius: '4px',
-                        backgroundColor: pagination.page <= 1 ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
-                        color: pagination.page <= 1 ? 'var(--text-secondary)' : 'white',
-                        cursor: pagination.page <= 1 || subscribersLoading ? 'not-allowed' : 'pointer',
+                        backgroundColor: (pagination?.page || 1) <= 1 ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
+                        color: (pagination?.page || 1) <= 1 ? 'var(--text-secondary)' : 'white',
+                        cursor: (pagination?.page || 1) <= 1 || subscribersLoading ? 'not-allowed' : 'pointer',
                         opacity: subscribersLoading ? 0.5 : 1
                       }}
                     >
@@ -1689,24 +1974,24 @@ function AudienceDetailPage() {
                       fontSize: '0.9rem',
                       margin: '0 1rem'
                     }}>
-                      Page {pagination.page} of {pagination.totalPages}
+                      Page {pagination?.page || 1} of {pagination?.totalPages || 1}
                     </span>
                     
                     <button
                       onClick={() => {
-                        if (pagination.page < pagination.totalPages) {
-                          const newPage = pagination.page + 1;
+                        if ((pagination?.page || 1) < (pagination?.totalPages || 1)) {
+                          const newPage = (pagination?.page || 1) + 1;
                           loadSubscribers(newPage);
                         }
                       }}
-                      disabled={pagination.page >= pagination.totalPages || subscribersLoading}
+                      disabled={(pagination?.page || 1) >= (pagination?.totalPages || 1) || subscribersLoading}
                       style={{
                         padding: '8px 12px',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         borderRadius: '4px',
-                        backgroundColor: pagination.page >= pagination.totalPages ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
-                        color: pagination.page >= pagination.totalPages ? 'var(--text-secondary)' : 'white',
-                        cursor: pagination.page >= pagination.totalPages || subscribersLoading ? 'not-allowed' : 'pointer',
+                        backgroundColor: (pagination?.page || 1) >= (pagination?.totalPages || 1) ? 'rgba(255, 255, 255, 0.05)' : 'var(--primary)',
+                        color: (pagination?.page || 1) >= (pagination?.totalPages || 1) ? 'var(--text-secondary)' : 'white',
+                        cursor: (pagination?.page || 1) >= (pagination?.totalPages || 1) || subscribersLoading ? 'not-allowed' : 'pointer',
                         opacity: subscribersLoading ? 0.5 : 1
                       }}
                     >
@@ -1739,7 +2024,7 @@ function AudienceDetailPage() {
               padding: '1rem',
               marginBottom: '1.5rem'
             }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>Static Audience Features:</h4>
+              <h4 style={{ margin: 0, color: 'var(--primary)' }}>Static Audience Features:</h4>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
                 <li>Manually add/remove specific subscribers</li>
                 <li>Import subscriber lists from CSV files</li>
@@ -1749,7 +2034,7 @@ function AudienceDetailPage() {
             </div>
             
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <HeaderActionButton onClick={() => console.log('Add individual subscriber')}>
+              <HeaderActionButton onClick={() => setShowAddSubscriberModal(true)}>
                 <FaUserPlus />
                 Add Subscriber
               </HeaderActionButton>
@@ -1839,7 +2124,7 @@ function AudienceDetailPage() {
                           <ActionsContainer>
                             <ActionButton 
                               variant="danger" 
-                              onClick={() => handleRemoveSubscriber(subscriber.id)}
+                              onClick={() => handleRemoveSubscriber(subscriber)}
                               title="Remove from audience"
                             >
                               <FaTimes />
@@ -1969,6 +2254,316 @@ function AudienceDetailPage() {
                     <>
                       <FaTrash />
                       Delete Audience
+                    </>
+                  )}
+                </HeaderActionButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Subscriber Modal */}
+      {showAddSubscriberModal && audienceData.type === 'static' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            style={{
+              backgroundColor: 'var(--card-bg)',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'visible',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div style={{
+              padding: '2rem 2rem 0 2rem'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                marginBottom: '1.5rem',
+                color: 'var(--primary)'
+              }}>
+                <FaUserPlus />
+                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Add Subscriber</h2>
+              </div>
+            </div>
+            
+                        <div style={{
+              padding: '0 2rem',
+              flex: 1,
+              overflow: 'visible'
+            }}>
+              <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
+                <label 
+                  htmlFor="subscriber-search-input"
+                  style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}
+                >
+                  Search Subscribers:
+                </label>
+                <SubscriberSearchInput
+                  type="text"
+                  value={addSubscriberEmail}
+                  onChange={(e) => handleSubscriberInputChange(e.target.value)}
+                  placeholder="Type email to search existing subscribers..."
+                  id="subscriber-search-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (searchResults.length > 0) {
+                        selectSubscriber(searchResults[0]);
+                      }
+                    }
+                  }}
+                />
+              
+              {/* Autocomplete dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'var(--card-bg)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  zIndex: 1050,
+                  marginTop: '4px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                  backdropFilter: 'blur(10px)'
+                }}>
+                {searchResults.map((subscriber, index) => (
+                  <div
+                    key={subscriber.id || index}
+                    onClick={() => selectSubscriber(subscriber)}
+                    style={{
+                      padding: '12px',
+                      borderBottom: index < searchResults.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.target as HTMLElement).style.backgroundColor = 'rgba(108, 99, 255, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: getAvatarColor(subscriber.name || subscriber.email),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {subscriber.name ? 
+                        subscriber.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 
+                        subscriber.email.charAt(0).toUpperCase()
+                      }
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--text)', fontWeight: '500' }}>
+                        {subscriber.name || 'Unknown User'}
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        {subscriber.email}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                </div>
+              )}
+              </div>
+            </div>
+            
+            <div style={{
+              padding: '0 2rem 2rem 2rem'
+            }}>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <HeaderActionButton 
+                  onClick={resetAddSubscriberModal}
+                  disabled={isAddingSubscriber}
+                >
+                  Cancel
+                </HeaderActionButton>
+                <HeaderActionButton 
+                  variant="primary" 
+                  onClick={handleAddSubscriber}
+                  disabled={isAddingSubscriber}
+                >
+                  {isAddingSubscriber ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid transparent',
+                        borderTop: '2px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        marginRight: '0.5rem'
+                      }} />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <FaUserPlus />
+                      Add Subscriber
+                    </>
+                  )}
+                </HeaderActionButton>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Remove Subscriber Modal */}
+      <AnimatePresence>
+        {showRemoveSubscriberModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={cancelRemoveSubscriber}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '2rem',
+                maxWidth: '500px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflow: 'auto'
+              }}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                marginBottom: '1.5rem',
+                color: 'var(--error-color)'
+              }}>
+                <FaTrash />
+                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Remove Subscriber</h2>
+              </div>
+              
+              <div style={{ 
+                padding: '1.5rem 0', 
+                textAlign: 'center',
+                lineHeight: '1.6'
+              }}>
+                <p style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                  Are you sure you want to remove the subscriber
+                </p>
+                <p style={{ 
+                  fontWeight: 'bold', 
+                  fontSize: '1.2rem',
+                  color: 'var(--primary)',
+                  marginBottom: '1rem'
+                }}>
+                  "{subscriberToRemove?.name}"
+                </p>
+                <p style={{ 
+                  color: 'var(--error-color)', 
+                  fontSize: '0.95rem',
+                  backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(220, 53, 69, 0.3)'
+                }}>
+                  ⚠️ This action cannot be undone. The subscriber will be permanently removed from the audience.
+                </p>
+              </div>
+
+              <div style={{ 
+                display: 'flex', 
+                gap: '1rem', 
+                justifyContent: 'flex-end' 
+              }}>
+                <HeaderActionButton 
+                  onClick={cancelRemoveSubscriber}
+                  disabled={isRemovingSubscriber}
+                >
+                  Cancel
+                </HeaderActionButton>
+                <HeaderActionButton 
+                  variant="danger" 
+                  onClick={confirmRemoveSubscriber}
+                  disabled={isRemovingSubscriber}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    borderColor: '#dc3545'
+                  }}
+                >
+                  {isRemovingSubscriber ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid transparent',
+                        borderTop: '2px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        marginRight: '0.5rem'
+                      }} />
+                      Removing...
+                    </>
+                  ) : (
+                    <>
+                      <FaTrash />
+                      Remove Subscriber
                     </>
                   )}
                 </HeaderActionButton>

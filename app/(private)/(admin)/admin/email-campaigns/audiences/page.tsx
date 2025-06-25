@@ -608,21 +608,29 @@ const fetchAudiences = async (): Promise<DatabaseAudience[]> => {
 };
 
 // Convert database audience to display format
-const convertToDisplayAudience = (dbAudience: DatabaseAudience) => ({
-  id: dbAudience.id,
-  name: dbAudience.name,
-  description: dbAudience.description || "No description provided",
-  subscribers: dbAudience.subscriber_count || 0,
-  growthRate: "+0%", // This would need to be calculated from historical data
-  engagementRate: "N/A", // This would need to be calculated from email metrics
-  lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
+const convertToDisplayAudience = (dbAudience: DatabaseAudience) => {
+  // Determine audience type from filters
+  const filters = dbAudience.filters || {};
+  const audienceType = filters.audience_type === 'static' ? 'static' : 'dynamic';
+  
+  return {
+    id: dbAudience.id,
+    name: dbAudience.name,
+    description: dbAudience.description || "No description provided",
+    subscribers: dbAudience.subscriber_count || 0,
+    growthRate: "+0%", // This would need to be calculated from historical data
+    engagementRate: "N/A", // This would need to be calculated from email metrics
+    lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
     tags: [
-    { text: "Active", type: "status" as const }
+      { text: audienceType === 'static' ? "Static" : "Dynamic", type: "status" as const }
     ],
-  criteria: `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
-    type: "dynamic" as const,
-  originalFilters: dbAudience.filters // Store original filters for cloning
-});
+    criteria: audienceType === 'static' 
+      ? "Manual subscriber management" 
+      : `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
+    type: audienceType as 'static' | 'dynamic',
+    originalFilters: dbAudience.filters // Store original filters for cloning
+  };
+};
 
 function AudiencesPage() {
   const { user } = useAuth();

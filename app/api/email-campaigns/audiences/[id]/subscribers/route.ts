@@ -6,7 +6,169 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🚀 GET subscribers API started');
+  
+  try {
   const supabase = await createSupabaseServer();
+    
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    console.log('🔍 GET Auth check:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      authError: authError?.message,
+      hasCookies: !!request.headers.get('cookie'),
+      cookieLength: request.headers.get('cookie')?.length || 0
+    });
+    
+    if (authError || !user) {
+      console.log('❌ GET Auth failed:', authError?.message);
+      return NextResponse.json({ 
+        error: 'Authentication required',
+        debug: {
+          authError: authError?.message,
+          hasUser: !!user,
+          hasCookies: !!request.headers.get('cookie')
+        }
+      }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      console.log('❌ Admin check failed');
+      return NextResponse.json({ 
+        error: 'Admin access required' 
+      }, { status: 403 });
+    }
+
+    console.log('✅ Auth and admin check passed');
+
+    // Create service role client for admin operations (bypasses RLS)
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    console.log('🔑 Using service role key for admin operations');
+
+    const { id } = await params;
+    console.log('Getting subscribers for audience:', id);
+
+    // Get audience to check if it's static
+    const { data: audience } = await adminSupabase
+      .from('email_audiences')
+      .select('id, name, filters')
+      .eq('id', id)
+      .single();
+
+    if (!audience) {
+      console.log('❌ Audience not found');
+      return NextResponse.json({ 
+        error: 'Audience not found' 
+      }, { status: 404 });
+    }
+
+    const filters = audience.filters as any || {};
+    console.log('Audience type:', filters.audience_type);
+
+    // For static audiences, get subscribers from the junction table
+    if (filters.audience_type === 'static') {
+      console.log('📋 Static audience - getting subscribers from junction table');
+      
+      // Get subscriber IDs from junction table
+      const { data: relations, error: relationsError } = await adminSupabase
+        .from('email_audience_subscribers')
+        .select('subscriber_id')
+        .eq('audience_id', id);
+
+      console.log(`Found ${relations?.length || 0} subscriber relations`);
+      console.log('Relations data:', relations);
+      console.log('Relations error:', relationsError);
+
+      if (!relations || relations.length === 0) {
+        console.log('❌ No relations found, returning empty');
+        return NextResponse.json({
+          subscribers: [],
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+        });
+      }
+
+      // Get actual subscriber data
+      const subscriberIds = relations.map(r => r.subscriber_id).filter((id): id is string => Boolean(id));
+      console.log('Subscriber IDs to fetch:', subscriberIds);
+      
+      const { data: subscribers, error: subscribersError } = await adminSupabase
+        .from('subscribers')
+        .select('id, email, status, created_at, metadata')
+        .in('id', subscriberIds);
+
+      console.log(`Retrieved ${subscribers?.length || 0} subscriber details`);
+      console.log('Subscribers data:', subscribers);
+      console.log('Subscribers error:', subscribersError);
+
+      // Transform to expected format
+      const formattedSubscribers = (subscribers || []).map(sub => {
+        const metadata = (sub.metadata as any) || {};
+        return {
+          id: sub.id,
+          name: [metadata.first_name, metadata.last_name].filter(Boolean).join(' ') || 'Unknown User',
+          email: sub.email,
+          status: sub.status || 'active',
+          subscribeDate: sub.created_at || new Date().toISOString(),
+          lastActivity: sub.created_at || new Date().toISOString(),
+          engagement: 'Medium',
+          source: 'manual',
+          tags: [],
+          subscriptionType: metadata.subscription || 'unknown'
+        };
+      });
+
+      console.log(`✅ Returning ${formattedSubscribers.length} subscribers`);
+
+      return NextResponse.json({
+        subscribers: formattedSubscribers,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: formattedSubscribers.length,
+          totalPages: 1
+        }
+      });
+    }
+
+    // For dynamic audiences, return empty for now
+    console.log('🔄 Dynamic audience - not implemented yet');
+    return NextResponse.json({
+      subscribers: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+    });
+
+  } catch (error) {
+    console.error('❌ API Error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
+// POST /api/email-campaigns/audiences/[id]/subscribers - Add subscriber to static audience
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  console.log('🚀 POST add subscriber API started');
+  
+  try {
+    const supabase = await createSupabaseServer();
   
   // Get authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -30,164 +192,200 @@ export async function GET(
     }, { status: 403 });
   }
 
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
+    // Create service role client for admin operations (bypasses RLS)
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    console.log('🔑 POST: Using service role key for admin operations');
 
-    // Await params as required by Next.js
     const { id } = await params;
+    const body = await request.json();
+    const { email } = body;
 
-    // First verify the audience exists and get its filters
-    const { data: audience, error: audienceError } = await supabase
+    if (!email) {
+      return NextResponse.json({ 
+        error: 'Email is required' 
+      }, { status: 400 });
+    }
+
+    console.log('Adding subscriber:', email, 'to audience:', id);
+
+    // Check if audience is static
+    const { data: audience } = await adminSupabase
       .from('email_audiences')
-      .select('id, name, filters')
+      .select('id, filters')
       .eq('id', id)
       .single();
 
-    if (audienceError || !audience) {
+    if (!audience) {
       return NextResponse.json({ 
         error: 'Audience not found' 
       }, { status: 404 });
     }
 
-    // Get audience filters to apply dynamically
-    let filters = audience.filters as any || {};
-    
-    // Convert new structured format to simple format for backward compatibility
-    if (filters.rules && Array.isArray(filters.rules)) {
-      const simpleFilters: any = {};
-      filters.rules.forEach((rule: any) => {
-        if (rule.field && rule.value) {
-          simpleFilters[rule.field] = rule.value;
-        }
+    const filters = audience.filters as any || {};
+    if (filters.audience_type !== 'static') {
+      return NextResponse.json({ 
+        error: 'Can only add subscribers to static audiences' 
+      }, { status: 400 });
+    }
+
+    // Find or create subscriber
+    let { data: subscriber } = await adminSupabase
+      .from('subscribers')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (!subscriber) {
+      console.log('Creating new subscriber for:', email);
+      const { data: newSubscriber, error: createError } = await adminSupabase
+        .from('subscribers')
+        .insert({
+          id: crypto.randomUUID(),
+          email: email,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: {}
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('Failed to create subscriber:', createError);
+        return NextResponse.json({ 
+          error: 'Failed to create subscriber' 
+        }, { status: 500 });
+      }
+
+      subscriber = newSubscriber;
+    }
+
+    console.log('Using subscriber ID:', subscriber.id);
+
+    // Check if already in audience
+    const { data: existing } = await adminSupabase
+      .from('email_audience_subscribers')
+      .select('id')
+      .eq('audience_id', id)
+      .eq('subscriber_id', subscriber.id)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({ 
+        error: 'Subscriber already in audience' 
+      }, { status: 409 });
+    }
+
+    // Add to audience
+    const { error: addError } = await adminSupabase
+      .from('email_audience_subscribers')
+      .insert({
+        audience_id: id,
+        subscriber_id: subscriber.id,
+        added_at: new Date().toISOString()
       });
-      filters = simpleFilters;
+
+    if (addError) {
+      console.error('Failed to add to audience:', addError);
+      return NextResponse.json({ 
+        error: 'Failed to add subscriber to audience' 
+      }, { status: 500 });
     }
+
+    console.log('✅ Subscriber added successfully');
+
+      return NextResponse.json({
+      message: 'Subscriber added successfully' 
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('❌ Add subscriber error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
+// DELETE /api/email-campaigns/audiences/[id]/subscribers - Remove subscriber from static audience
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  console.log('🚀 DELETE subscriber API started');
+  
+  try {
+    const supabase = await createSupabaseServer();
     
-    console.log('Applying filters:', filters);
-
-    // Since we have complex filtering needs, let's work directly with profiles table
-    // Build the base query on profiles table with all filters applied at database level
-    let profilesQuery = supabase
-      .from('profiles')
-      .select('id, first_name, last_name, subscription, updated_at');
-
-    // Apply subscription filter
-    if (filters.subscription) {
-      if (typeof filters.subscription === 'object' && filters.subscription.operator === 'in') {
-        profilesQuery = profilesQuery.in('subscription', filters.subscription.value);
-      } else {
-        profilesQuery = profilesQuery.eq('subscription', filters.subscription);
-      }
-    }
-
-    // Apply search on names
-    if (search) {
-      profilesQuery = profilesQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
-    }
-
-    // Apply date-based filters
-    if (filters.signup_date && filters.signup_date.operator === 'within') {
-      const daysAgo = parseInt(filters.signup_date.value.replace('_days', ''));
-      const dateThreshold = new Date();
-      dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
-      profilesQuery = profilesQuery.gte('updated_at', dateThreshold.toISOString());
-    }
-
-    if (filters.last_email_open && filters.last_email_open.operator === 'older_than') {
-      const daysAgo = parseInt(filters.last_email_open.value.replace('_days', ''));
-      const dateThreshold = new Date();
-      dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
-      profilesQuery = profilesQuery.lte('updated_at', dateThreshold.toISOString());
-    }
-
-    // First get the total count with the same filters
-    let countQuery = supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true });
-
-    // Apply the same filters to count query
-    if (filters.subscription) {
-      if (typeof filters.subscription === 'object' && filters.subscription.operator === 'in') {
-        countQuery = countQuery.in('subscription', filters.subscription.value);
-      } else {
-        countQuery = countQuery.eq('subscription', filters.subscription);
-      }
-    }
-
-    if (search) {
-      countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
-    }
-
-    if (filters.signup_date && filters.signup_date.operator === 'within') {
-      const daysAgo = parseInt(filters.signup_date.value.replace('_days', ''));
-      const dateThreshold = new Date();
-      dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
-      countQuery = countQuery.gte('updated_at', dateThreshold.toISOString());
-    }
-
-    if (filters.last_email_open && filters.last_email_open.operator === 'older_than') {
-      const daysAgo = parseInt(filters.last_email_open.value.replace('_days', ''));
-      const dateThreshold = new Date();
-      dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
-      countQuery = countQuery.lte('updated_at', dateThreshold.toISOString());
-    }
-
-    // Get the total count
-    const { count: totalFilteredCount, error: countError } = await countQuery;
-
-    if (countError) {
-      console.error('Count query error:', countError);
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ 
-        error: 'Failed to count subscribers' 
+        error: 'Authentication required' 
+      }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json({ 
+        error: 'Admin access required' 
+      }, { status: 403 });
+    }
+
+    // Create service role client for admin operations (bypasses RLS)
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    console.log('🔑 DELETE: Using service role key for admin operations');
+
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const subscriberId = searchParams.get('subscriberId');
+
+    if (!subscriberId) {
+      return NextResponse.json({ 
+        error: 'subscriberId is required' 
+      }, { status: 400 });
+    }
+
+    console.log('Removing subscriber:', subscriberId, 'from audience:', id);
+
+    // Remove from audience
+    const { error: removeError } = await adminSupabase
+      .from('email_audience_subscribers')
+      .delete()
+      .eq('audience_id', id)
+      .eq('subscriber_id', subscriberId);
+
+    if (removeError) {
+      console.error('Failed to remove subscriber:', removeError);
+      return NextResponse.json({ 
+        error: 'Failed to remove subscriber' 
       }, { status: 500 });
     }
 
-    console.log(`Total filtered profiles: ${totalFilteredCount}`);
-
-    // Now get the paginated results with the same filters
-    const { data: profilesData, error: profilesError } = await profilesQuery
-      .range((page - 1) * limit, page * limit - 1)
-      .order('updated_at', { ascending: false });
-
-    if (profilesError) {
-      console.error('Profiles query error:', profilesError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch profiles' 
-      }, { status: 500 });
-    }
-
-    console.log(`Retrieved ${profilesData?.length || 0} profiles for page ${page}`);
-
-    // Transform profiles into subscriber format
-    const subscribers = (profilesData || []).map(profile => ({
-      id: profile.id,
-      name: [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Unknown User',
-      email: `${profile.first_name?.toLowerCase() || 'user'}@example.com`, // Generate placeholder email
-      status: 'active' as const,
-      subscribeDate: profile.updated_at || new Date().toISOString(),
-      lastActivity: profile.updated_at || new Date().toISOString(),
-      engagement: 'Medium' as const,
-      source: 'filter' as const,
-      tags: [],
-      subscriptionType: profile.subscription || 'none',
-      addedToAudience: profile.updated_at || new Date().toISOString()
-    }));
+    console.log('✅ Subscriber removed successfully');
 
     return NextResponse.json({
-      subscribers,
-      pagination: {
-        page,
-        limit,
-        total: totalFilteredCount || 0,
-        totalPages: Math.ceil((totalFilteredCount || 0) / limit)
-      }
+      message: 'Subscriber removed successfully'
     });
 
   } catch (error) {
-    console.error('Get audience subscribers API error:', error);
+    console.error('❌ Remove subscriber error:', error);
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 });

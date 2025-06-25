@@ -6,9 +6,18 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
   try {
     console.log('Calculating subscriber count for filters:', JSON.stringify(filters));
     
-    // Handle different filter formats
+    // Check if this is a static audience
+    if (filters.audience_type === 'static') {
+      // For static audiences, count from email_audience_subscribers table
+      // We need the audience ID to do this, but it's not passed to this function
+      // For now, return the stored subscriber_count or 0
+      console.log('Static audience detected, using stored count');
+      return 0; // Will be handled separately for static audiences
+    }
+    
+    // Handle different filter formats for dynamic audiences
     if (filters.rules && Array.isArray(filters.rules)) {
-      // Handle old format with rules array
+      // Handle new format with rules array
       const rule = filters.rules[0]; // For now, handle single rule
       if (rule && rule.field === 'subscription') {
         const { count } = await supabase
@@ -18,19 +27,28 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
         console.log(`Count for subscription '${rule.value}': ${count}`);
         return count || 0;
       }
+      if (rule && rule.field === 'status') {
+        const { count } = await supabase
+          .from('subscribers')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', rule.value);
+        console.log(`Count for status '${rule.value}': ${count}`);
+        return count || 0;
+      }
     }
     
-    // Build query based on filters
+    // Initialize queries for both tables
     let profileQuery = supabase.from('profiles').select('*', { count: 'exact', head: true });
     let subscriberQuery = supabase.from('subscribers').select('*', { count: 'exact', head: true });
-    
     let useProfiles = false;
     let useSubscribers = false;
     let needsJoin = false;
     
     // Process each filter
     for (const [field, value] of Object.entries(filters)) {
-      if (field === 'subscription') {
+      if (field === 'audience_type') {
+        continue; // Skip audience_type field
+      } else if (field === 'subscription') {
         useProfiles = true;
         if (typeof value === 'string') {
           profileQuery = profileQuery.eq('subscription', value);
@@ -191,7 +209,30 @@ export async function GET(request: NextRequest) {
     // Calculate actual subscriber counts for each audience
     const audiencesWithCounts = await Promise.all(
       (audiences || []).map(async (audience) => {
-        const actualCount = await calculateSubscriberCount(supabase, audience.filters || {});
+        let actualCount = 0;
+        
+        // Check if this is a static audience
+        if (audience.filters && typeof audience.filters === 'object' && audience.filters !== null) {
+          const filters = audience.filters as any;
+          if (filters.audience_type === 'static') {
+            // For static audiences, count from email_audience_subscribers table
+            const { count } = await supabase
+              .from('email_audience_subscribers')
+              .select('*', { count: 'exact', head: true })
+              .eq('audience_id', audience.id);
+            actualCount = count || 0;
+            console.log(`Static audience ${audience.name}: ${actualCount} subscribers`);
+          } else {
+            // For dynamic audiences, calculate from filters
+            actualCount = await calculateSubscriberCount(supabase, audience.filters || {});
+            console.log(`Dynamic audience ${audience.name}: ${actualCount} subscribers`);
+          }
+        } else {
+          // For dynamic audiences, calculate from filters
+          actualCount = await calculateSubscriberCount(supabase, audience.filters || {});
+          console.log(`Dynamic audience ${audience.name}: ${actualCount} subscribers`);
+        }
+        
         return {
           ...audience,
           subscriber_count: actualCount
@@ -260,7 +301,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate initial subscriber count
-    const initialCount = await calculateSubscriberCount(supabase, filters || {});
+    let initialCount = 0;
+    if (filters && typeof filters === 'object' && filters !== null) {
+      const filtersObj = filters as any;
+      if (filtersObj.audience_type === 'static') {
+        // For static audiences, start with 0 subscribers
+        initialCount = 0;
+      } else {
+        // For dynamic audiences, calculate from filters
+        initialCount = await calculateSubscriberCount(supabase, filters || {});
+      }
+    } else {
+      // Default to dynamic audience behavior
+      initialCount = await calculateSubscriberCount(supabase, filters || {});
+    }
 
     // Create new audience
     const { data: audience, error } = await supabase

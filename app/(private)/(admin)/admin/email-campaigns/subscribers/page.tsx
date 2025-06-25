@@ -508,8 +508,8 @@ function SubscribersPage() {
       const params = new URLSearchParams({
         search: searchTerm,
         status: statusFilter,
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString()
+        page: (pagination?.page || 1).toString(),
+        limit: (pagination?.limit || 50).toString()
       });
 
       const response = await fetch(`/api/email-campaigns/subscribers?${params}`);
@@ -517,8 +517,13 @@ function SubscribersPage() {
       if (response.ok) {
         const data = await response.json();
         setSubscribers(data.subscribers);
-        setSubscriberStats(data.stats);
-        setPagination(data.pagination);
+        setSubscriberStats(data.stats || {});
+        setPagination(data.pagination || {
+          page: 1,
+          limit: 50,
+          total: 0,
+          totalPages: 0
+        });
       } else {
         console.error('Failed to fetch subscribers');
       }
@@ -534,7 +539,7 @@ function SubscribersPage() {
     if (translationsLoaded && user) {
       fetchSubscribers();
     }
-  }, [translationsLoaded, user, searchTerm, statusFilter, pagination.page]);
+  }, [translationsLoaded, user, searchTerm, statusFilter, pagination?.page]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -561,19 +566,19 @@ function SubscribersPage() {
 
   const statsDisplay = [
     {
-      value: subscriberStats.total?.toString() || "0",
+      value: subscriberStats?.total?.toString() || "0",
       label: "Total Subscribers",
     },
     {
-      value: subscriberStats.active?.toString() || "0",
+      value: subscriberStats?.active?.toString() || "0",
       label: "Active Subscribers",
     },
     {
-      value: subscriberStats.highEngagement?.toString() || "0",
+      value: subscriberStats?.highEngagement?.toString() || "0",
       label: "High Engagement",
     },
     {
-      value: subscriberStats.growthRate || "0%",
+      value: subscriberStats?.growthRate || "0%",
       label: "Growth Rate",
     },
   ];
