@@ -206,39 +206,72 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
+    console.log(`🚀 Processing ${audiences?.length || 0} audiences for subscriber counts...`);
+    
     // Calculate actual subscriber counts for each audience
     const audiencesWithCounts = await Promise.all(
       (audiences || []).map(async (audience) => {
         let actualCount = 0;
         
+        console.log(`\n--- Processing audience: "${audience.name}" ---`);
+        console.log(`Stored subscriber_count: ${audience.subscriber_count}`);
+        console.log(`Filters:`, JSON.stringify(audience.filters));
+        
         // Check if this is a static audience
         if (audience.filters && typeof audience.filters === 'object' && audience.filters !== null) {
           const filters = audience.filters as any;
+          console.log(`Audience type from filters: ${filters.audience_type || 'not set'}`);
+          
           if (filters.audience_type === 'static') {
-            // For static audiences, count from email_audience_subscribers table
-            const { count } = await supabase
-              .from('email_audience_subscribers')
-              .select('*', { count: 'exact', head: true })
-              .eq('audience_id', audience.id);
-            actualCount = count || 0;
-            console.log(`Static audience ${audience.name}: ${actualCount} subscribers`);
+            // For static audiences, call the subscribers API to get the exact same count as the edit modal
+            console.log(`🔍 STATIC AUDIENCE - Getting count from subscribers API for "${audience.name}" (ID: ${audience.id})`);
+            
+            try {
+              // Make internal API call to get subscriber count (same as edit modal)
+              const subscribersResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/email-campaigns/audiences/${audience.id}/subscribers?page=1&limit=1`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': request.headers.get('Authorization') || '',
+                  'Cookie': request.headers.get('Cookie') || ''
+                }
+              });
+              
+              if (subscribersResponse.ok) {
+                const subscribersData = await subscribersResponse.json();
+                actualCount = subscribersData.pagination?.total || 0;
+                console.log(`📊 STATIC AUDIENCE "${audience.name}": ${actualCount} subscribers (from subscribers API)`);
+              } else {
+                console.error(`❌ Subscribers API call failed for "${audience.name}":`, subscribersResponse.status);
+                actualCount = 0;
+              }
+            } catch (error) {
+              console.error(`❌ Error calling subscribers API for "${audience.name}":`, error);
+              actualCount = 0;
+            }
           } else {
             // For dynamic audiences, calculate from filters
+            console.log(`🔄 DYNAMIC AUDIENCE - Calculating for "${audience.name}"`);
             actualCount = await calculateSubscriberCount(supabase, audience.filters || {});
-            console.log(`Dynamic audience ${audience.name}: ${actualCount} subscribers`);
+            console.log(`📊 DYNAMIC AUDIENCE "${audience.name}": ${actualCount} subscribers (calculated)`);
           }
         } else {
           // For dynamic audiences, calculate from filters
+          console.log(`🔄 NO FILTERS OBJECT - Treating as dynamic audience "${audience.name}"`);
           actualCount = await calculateSubscriberCount(supabase, audience.filters || {});
-          console.log(`Dynamic audience ${audience.name}: ${actualCount} subscribers`);
+          console.log(`📊 NO FILTERS AUDIENCE "${audience.name}": ${actualCount} subscribers (calculated)`);
         }
         
-        return {
+        const result = {
           ...audience,
           subscriber_count: actualCount
         };
+        
+        console.log(`✅ Final result for "${audience.name}": subscriber_count=${result.subscriber_count}`);
+        return result;
       })
     );
+    
+    console.log(`🏁 Finished processing all audiences. Returning ${audiencesWithCounts.length} audiences.`);
 
     // Get total count
     const { count, error: countError } = await supabase

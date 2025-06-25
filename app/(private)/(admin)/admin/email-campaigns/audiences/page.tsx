@@ -654,23 +654,26 @@ function AudiencesPage() {
   const router = useRouter();
 
   // Load audiences from API
-  useEffect(() => {
-    const loadAudiences = async () => {
-      if (!user) return;
-      
-      setLoading(true);
-      try {
-        const dbAudiences = await fetchAudiences();
-        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
-        setAudiences(displayAudiences);
-      } catch (error) {
-        console.error('Failed to load audiences:', error);
-        setAudiences([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadAudiences = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      console.log('🔄 Loading audiences...');
+      const dbAudiences = await fetchAudiences();
+      console.log('📊 Received audiences from API:', dbAudiences);
+      const displayAudiences = dbAudiences.map(convertToDisplayAudience);
+      console.log('🎯 Converted to display format:', displayAudiences);
+      setAudiences(displayAudiences);
+    } catch (error) {
+      console.error('Failed to load audiences:', error);
+      setAudiences([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (user && !languageLoading) {
       loadAudiences();
     }
@@ -940,6 +943,10 @@ function AudiencesPage() {
           </LeftActions>
           
           <RightActions>
+            <ActionButton onClick={loadAudiences} disabled={loading}>
+              <FaSync />
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </ActionButton>
             <ActionButton variant="primary" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
               Create Audience
