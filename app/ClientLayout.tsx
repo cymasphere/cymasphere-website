@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
+import { initializeTimezoneTracking } from "@/utils/supabase/timezone-tracker";
 
 // Theme configuration
 const theme = {
@@ -91,6 +92,11 @@ export default function ClientLayout({
   children
 }: ClientLayoutProps) {
   const pathname = usePathname();
+  
+  // Initialize timezone tracking
+  useEffect(() => {
+    initializeTimezoneTracking();
+  }, []);
   
   // Check if the route is in the auth directory
   const isAuthRoute = pathname?.startsWith('/login') || 

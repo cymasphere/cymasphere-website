@@ -407,6 +407,28 @@ function SignUp() {
 
     try {
       setLoadingState(true);
+      
+      // Passively collect timezone information
+      let timezoneData = {};
+      try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const offsetMinutes = new Date().getTimezoneOffset();
+        const offsetHours = -offsetMinutes / 60;
+        
+        timezoneData = {
+          timezone,
+          offsetHours,
+          offsetMinutes,
+          detectedAt: new Date().toISOString()
+        };
+      } catch (timezoneError) {
+        console.warn('Could not detect timezone:', timezoneError);
+        timezoneData = { timezone: 'America/Los_Angeles', offsetHours: -8, offsetMinutes: 480 };
+      }
+      
+      // Store timezone data in sessionStorage to be picked up by the auth system
+      sessionStorage.setItem('user_timezone_data', JSON.stringify(timezoneData));
+      
       // Combine first and last name for the API call
       const result = await signUp(
         formData.firstName.trim(),

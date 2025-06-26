@@ -40,7 +40,9 @@ import {
   FaPuzzlePiece,
   FaTimes,
   FaExclamationTriangle,
-  FaSearch
+  FaSearch,
+  FaGlobe,
+  FaTabletAlt
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -528,6 +530,12 @@ const PreviewTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  
+  svg:first-child {
+    color: var(--primary);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
 `;
 
 const PreviewContent = styled.div`
@@ -977,6 +985,265 @@ const PreviewButton = styled.button`
 
   &:active {
     transform: translateY(-1px);
+  }
+`;
+
+const PreviewModal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  z-index: 10000;
+  padding: 0;
+`;
+
+const PreviewModalContent = styled(motion.div)`
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+`;
+
+const PreviewModalTitle = styled.h3`
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  &:before {
+    content: '📧';
+    font-size: 1.5rem;
+  }
+`;
+
+const PreviewModalClose = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+`;
+
+const PreviewModalBody = styled.div`
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewEmailFrame = styled.div`
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const ExpandPreviewButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(108, 99, 255, 0.4);
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+
+    &:before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+  }
+`;
+
+const DeviceToggleContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const DeviceToggle = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: ${props => props.$active 
+    ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
+    : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.15)'};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    background: ${props => props.$active 
+      ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
+      : 'rgba(255, 255, 255, 0.15)'};
+    color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+    border-color: ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.25)'};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+
+    &:before {
+      left: 100%;
+    }
+  }
+`;
+
+const PreviewContainer = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
+    }
+  }};
+  max-width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return 'min(1400px, calc(100vw - 4rem))';
+      default: return 'min(1400px, calc(100vw - 4rem))';
+    }
+  }};
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const DeviceFrame = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  position: relative;
+  background: ${props => props.$device === 'desktop' ? 'transparent' : '#000'};
+  border-radius: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '25px';
+      case 'tablet': return '20px';
+      case 'desktop': return '8px';
+      default: return '8px';
+    }
+  }};
+  padding: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '20px 8px';
+      case 'tablet': return '15px 10px';
+      case 'desktop': return '0';
+      default: return '0';
+    }
+  }};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: ${props => props.$device === 'mobile' ? '8px' : '6px'};
+    left: 50%;
+    transform: translateX(-50%);
+    width: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '60px';
+        case 'tablet': return '80px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    height: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '4px';
+        case 'tablet': return '3px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    background: #333;
+    border-radius: 2px;
+    display: ${props => props.$device === 'desktop' ? 'none' : 'block'};
   }
 `;
 
@@ -1852,6 +2119,8 @@ function CreateCampaignPage() {
   const [sendingMessage, setSendingMessage] = useState('');
   const [campaignResult, setCampaignResult] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   
   // Reach calculation state
   const [reachData, setReachData] = useState<{
@@ -1909,7 +2178,7 @@ function CreateCampaignPage() {
       excludedAudienceIds: [],
     template: "",
     content: "",
-    scheduleType: "",
+    scheduleType: "immediate", // Default to "Send Now"
     scheduleDate: "",
     scheduleTime: ""
     };
@@ -2029,10 +2298,17 @@ function CreateCampaignPage() {
     }
   }, [user]);
 
-  // Update reach calculation when audience selection changes
+  // Update reach calculation when audience selection changes or when reaching review step
   useEffect(() => {
     updateReachCalculation();
   }, [updateReachCalculation]);
+
+  // Trigger reach calculation when user reaches the review step
+  useEffect(() => {
+    if (currentStep === 3 && campaignData.audienceIds.length > 0) {
+      updateReachCalculation();
+    }
+  }, [currentStep, updateReachCalculation]);
 
   // Load campaign data for editing
   useEffect(() => {
@@ -2251,14 +2527,57 @@ function CreateCampaignPage() {
       const result = await saveResponse.json();
       
       if (saveResponse.ok) {
-        console.log('Campaign result:', result);
-        setCampaignResult(result);
-        setShowResultModal(true);
+        console.log('Campaign saved:', result);
         
-        if (campaignData.scheduleType === 'scheduled') {
-          setSendingMessage(`Campaign scheduled successfully!`);
+        // Call the send API for all schedule types (it handles immediate, scheduled, timezone, and draft)
+        setSendingMessage(
+          campaignData.scheduleType === 'immediate' ? 'Sending emails now...' :
+          campaignData.scheduleType === 'scheduled' ? 'Scheduling campaign...' :
+          campaignData.scheduleType === 'timezone' ? 'Setting up timezone-based delivery...' :
+          'Saving as draft...'
+        );
+        
+        const sendResponse = await fetch('/api/email-campaigns/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            campaignId: result.campaign?.id,
+            name: campaignData.name,
+            subject: campaignData.subject,
+            audienceIds: campaignData.audienceIds,
+            excludedAudienceIds: campaignData.excludedAudienceIds,
+            emailElements: emailElements,
+            scheduleType: campaignData.scheduleType,
+            scheduleDate: campaignData.scheduleDate,
+            scheduleTime: campaignData.scheduleTime
+          }),
+        });
+
+        const sendResult = await sendResponse.json();
+        
+        if (sendResponse.ok) {
+          console.log('📧 Send result:', sendResult);
+          setCampaignResult(sendResult);
+          setShowResultModal(true);
+          
+          // Update message based on actual result
+          if (sendResult.status === 'scheduled') {
+            setSendingMessage(
+              sendResult.scheduleType === 'timezone' 
+                ? `Campaign scheduled for timezone-based delivery at ${sendResult.stats?.sendTime}!`
+                : `Campaign scheduled for ${new Date(sendResult.scheduledFor).toLocaleString()}!`
+            );
+          } else if (sendResult.status === 'draft') {
+            setSendingMessage('Campaign saved as draft!');
+          } else {
+            setSendingMessage(`Campaign sent successfully to ${sendResult.stats?.sent || 0} subscribers!`);
+          }
         } else {
-          setSendingMessage(`Campaign created and ready to send!`);
+          console.error('❌ Error with campaign:', sendResult.error);
+          setSendingMessage(`Error: ${sendResult.error}`);
         }
       } else {
         console.error('Error creating campaign:', result.error);
@@ -2496,6 +2815,157 @@ function CreateCampaignPage() {
       (audience.description && audience.description.toLowerCase().includes(searchTerm)) ||
       audience.type?.toLowerCase().includes(searchTerm)
     );
+  };
+
+  // Generate HTML from email elements
+  const generatePreviewHtml = () => {
+    const elementHtml = emailElements.map(element => {
+      switch (element.type) {
+        case 'header':
+          return `<h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${element.content}</h1>`;
+        
+        case 'text':
+          return `<p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${element.content}</p>`;
+        
+        case 'button':
+          return `<div style="text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+        
+        case 'image':
+          return `<div style="text-align: center; margin: 2rem 0;"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
+        
+        case 'divider':
+          return `<div style="margin: 2rem 0; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div>`;
+        
+        case 'spacer':
+          return `<div style="height: ${element.height || '20px'};"></div>`;
+        
+        default:
+          return `<div>${element.content || ''}</div>`;
+      }
+    }).join('');
+
+         return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${campaignData.subject || 'Email Preview'}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo .cyma {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            color: #666666;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #6c63ff;
+            text-decoration: none;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 15px;
+            }
+            .logo {
+                font-size: 1.2rem;
+                letter-spacing: 1px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .footer {
+                padding: 15px;
+                font-size: 11px;
+            }
+            h1 {
+                font-size: 2rem !important;
+            }
+            p {
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .content {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8rem !important;
+            }
+            p {
+                font-size: 0.85rem !important;
+            }
+            .logo {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="cyma">CYMA</span><span>SPHERE</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            ${elementHtml}
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
+            <p>
+                <a href="#">Unsubscribe</a> | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
   };
 
   const renderEmailElement = (element: any, index: number) => {
@@ -3400,6 +3870,17 @@ function CreateCampaignPage() {
                         return audience ? audience.name : 'Unknown';
                       }).join(', ')
                 }</p>
+                    {campaignData.audienceIds.length > 0 && (
+                      <p><strong>Total Recipients:</strong> {
+                        reachData.isLoading ? (
+                          <span style={{ color: 'var(--text-secondary)' }}>Calculating...</span>
+                        ) : (
+                          <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+                            {(reachData.estimatedReach || calculateAudienceStats().estimatedReach).toLocaleString()} subscribers
+                          </span>
+                        )
+                      }</p>
+                    )}
                     <p><strong>Template:</strong> {templates.find(t => t.id === campaignData.template)?.title || "No template selected"}</p>
                   </div>
                 </div>
@@ -3408,13 +3889,90 @@ function CreateCampaignPage() {
                     <PreviewTitle>
                       <FaEye />
                       Email Preview
+                      <ExpandPreviewButton 
+                        onClick={() => setShowPreviewModal(true)}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        <FaExpandArrowsAlt />
+                        Full Screen Preview
+                      </ExpandPreviewButton>
                     </PreviewTitle>
                     <PreviewContent>
-                      <h2 style={{ color: '#333', marginBottom: '1rem' }}>
-                        {campaignData.subject || "Email Subject"}
-                      </h2>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>
-                        {campaignData.content || "Email content will appear here..."}
+                      <div style={{ 
+                        position: 'relative',
+                        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Email preview with subtle shadow */}
+                        <div style={{
+                          background: 'white',
+                          borderRadius: '8px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                          overflow: 'hidden',
+                          maxHeight: '280px',
+                          position: 'relative'
+                        }}>
+                          <iframe
+                            srcDoc={generatePreviewHtml()}
+                            style={{
+                              width: '100%',
+                              height: '380px',
+                              border: 'none',
+                              transform: 'scale(0.7)',
+                              transformOrigin: 'top left',
+                              pointerEvents: 'none'
+                            }}
+                            title="Email Preview"
+                          />
+                          
+                          {/* Fade overlay to indicate more content */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '60px',
+                            background: 'linear-gradient(transparent, rgba(255, 255, 255, 0.95))',
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            paddingBottom: '0.75rem'
+                          }}>
+                            <div style={{
+                              background: 'rgba(0, 0, 0, 0.1)',
+                              color: '#666',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '16px',
+                              fontSize: '0.75rem',
+                              fontWeight: '500',
+                              backdropFilter: 'blur(10px)'
+                            }}>
+                              Scroll to see more content
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Preview info */}
+                        <div style={{
+                          marginTop: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '1rem',
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaDesktop style={{ color: 'var(--primary)' }} />
+                            Desktop View
+                          </span>
+                          <span>•</span>
+                          <span>70% Scale</span>
+                        </div>
                       </div>
                     </PreviewContent>
                   </PreviewSection>
@@ -3446,12 +4004,12 @@ function CreateCampaignPage() {
                 <ScheduleDescription>Choose a specific date and time</ScheduleDescription>
               </ScheduleOption>
               <ScheduleOption
-                selected={campaignData.scheduleType === "draft"}
-                onClick={() => setCampaignData({...campaignData, scheduleType: "draft"})}
+                selected={campaignData.scheduleType === "timezone"}
+                onClick={() => setCampaignData({...campaignData, scheduleType: "timezone"})}
               >
-                <ScheduleIcon><FaSave /></ScheduleIcon>
-                <ScheduleTitle>Save as Draft</ScheduleTitle>
-                <ScheduleDescription>Save and send later manually</ScheduleDescription>
+                <ScheduleIcon><FaGlobe /></ScheduleIcon>
+                <ScheduleTitle>Send by Timezone</ScheduleTitle>
+                <ScheduleDescription>Send at optimal time for each subscriber's timezone</ScheduleDescription>
               </ScheduleOption>
             </ScheduleOptions>
             {campaignData.scheduleType === "scheduled" && (
@@ -3471,6 +4029,45 @@ function CreateCampaignPage() {
                     value={campaignData.scheduleTime}
                     onChange={(e) => setCampaignData({...campaignData, scheduleTime: e.target.value})}
                   />
+                </FormGroup>
+              </FormGrid>
+            )}
+
+            {campaignData.scheduleType === "timezone" && (
+              <FormGrid>
+                <FormGroup>
+                  <Label>Send Time (in each subscriber's timezone)</Label>
+                  <Input
+                    type="time"
+                    value={campaignData.scheduleTime || "09:00"}
+                    onChange={(e) => setCampaignData({...campaignData, scheduleTime: e.target.value})}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    💡 Best times: 9:00 AM or 2:00 PM for maximum engagement
+                  </div>
+                </FormGroup>
+                <FormGroup>
+                  <Label>Delivery Window</Label>
+                  <select 
+                    style={{
+                      width: '100%',
+                      padding: '0.9rem 1rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      color: 'var(--text)',
+                      fontSize: '1rem'
+                    }}
+                    value={campaignData.scheduleDate || "24hours"}
+                    onChange={(e) => setCampaignData({...campaignData, scheduleDate: e.target.value})}
+                  >
+                    <option value="24hours">Over 24 hours (recommended)</option>
+                    <option value="12hours">Over 12 hours (faster)</option>
+                    <option value="6hours">Over 6 hours (urgent)</option>
+                  </select>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    🌍 Emails will be sent when it's the specified time in each subscriber's timezone
+                  </div>
                 </FormGroup>
               </FormGrid>
             )}
@@ -3547,10 +4144,18 @@ function CreateCampaignPage() {
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
                 )}
-                <FaPaperPlane />
+                {campaignData.scheduleType === 'immediate' && <FaPaperPlane />}
+                {campaignData.scheduleType === 'scheduled' && <FaClock />}
+                {campaignData.scheduleType === 'timezone' && <FaGlobe />}
+                {!campaignData.scheduleType && <FaPaperPlane />}
                 {isSending 
-                  ? 'Sending...' 
-                  : (isEditMode ? 'Update Campaign' : 'Send Campaign')
+                  ? 'Processing...' 
+                  : (() => {
+                      if (campaignData.scheduleType === 'immediate') return 'Send Now';
+                      if (campaignData.scheduleType === 'scheduled') return 'Schedule Campaign';
+                      if (campaignData.scheduleType === 'timezone') return 'Send by Timezone';
+                      return 'Send Now'; // Default
+                    })()
                 }
               </NavButton>
             ) : (
@@ -3604,22 +4209,51 @@ function CreateCampaignPage() {
 
                 {campaignResult.stats && (
                   <ModalStats>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.total}</StatValue>
-                      <StatLabel>Total Recipients</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.sent}</StatValue>
-                      <StatLabel>Successfully Sent</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.failed}</StatValue>
-                      <StatLabel>Failed</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.successRate}%</StatValue>
-                      <StatLabel>Success Rate</StatLabel>
-                    </StatItem>
+                    {/* For immediate sends, show delivery stats */}
+                    {campaignResult.status !== 'scheduled' && (
+                      <>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.total}</StatValue>
+                          <StatLabel>Total Recipients</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.sent}</StatValue>
+                          <StatLabel>Successfully Sent</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.failed}</StatValue>
+                          <StatLabel>Failed</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.successRate}%</StatValue>
+                          <StatLabel>Success Rate</StatLabel>
+                        </StatItem>
+                      </>
+                    )}
+                    
+                    {/* For scheduled sends, show schedule details */}
+                    {campaignResult.status === 'scheduled' && (
+                      <>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.audienceCount || 0}</StatValue>
+                          <StatLabel>Target Audiences</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.excludedAudienceCount || 0}</StatValue>
+                          <StatLabel>Excluded Audiences</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.scheduleType || 'scheduled'}</StatValue>
+                          <StatLabel>Schedule Type</StatLabel>
+                        </StatItem>
+                        {campaignResult.stats.deliveryWindow && (
+                          <StatItem>
+                            <StatValue>{campaignResult.stats.deliveryWindow}</StatValue>
+                            <StatLabel>Delivery Window</StatLabel>
+                          </StatItem>
+                        )}
+                      </>
+                    )}
                   </ModalStats>
                 )}
 
@@ -3630,11 +4264,33 @@ function CreateCampaignPage() {
                     borderRadius: '8px',
                     margin: '1rem 0'
                   }}>
-                    <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
-                      <FaClock style={{ marginRight: '0.5rem' }} />
-                      Scheduled for: {campaignResult.scheduledFor ? 
-                        new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
-                    </p>
+                    {campaignResult.scheduleType === 'timezone' ? (
+                      <div>
+                        <p style={{ color: 'var(--primary)', fontWeight: '600', margin: '0 0 0.5rem 0' }}>
+                          <FaGlobe style={{ marginRight: '0.5rem' }} />
+                          Timezone-Based Delivery
+                        </p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+                          Send Time: {campaignResult.stats?.sendTime} (in each subscriber's timezone)
+                        </p>
+                        {campaignResult.stats?.deliveryWindow && (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+                            Delivery Window: {campaignResult.stats.deliveryWindow}
+                          </p>
+                        )}
+                        {campaignResult.stats?.estimatedCompletionTime && (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+                            Estimated Completion: {campaignResult.stats.estimatedCompletionTime}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
+                        <FaClock style={{ marginRight: '0.5rem' }} />
+                        Scheduled for: {campaignResult.scheduledFor ? 
+                          new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -3654,6 +4310,120 @@ function CreateCampaignPage() {
                 </ModalActions>
               </ModalContent>
             </ResultModal>
+          )}
+        </AnimatePresence>
+
+        {/* Email Preview Modal */}
+        <AnimatePresence>
+          {showPreviewModal && (
+            <PreviewModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPreviewModal(false)}
+            >
+              <PreviewModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <PreviewModalHeader>
+                  <PreviewModalTitle>
+                    {campaignData.subject || 'Email Preview'}
+                  </PreviewModalTitle>
+                  
+                  {/* Device Controls in Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                  }}>
+                    <DeviceToggleContainer style={{ margin: 0, background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '0.3rem' }}>
+                      <DeviceToggle 
+                        $active={previewDevice === 'mobile'}
+                        onClick={() => setPreviewDevice('mobile')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaMobileAlt />
+                        Mobile
+                      </DeviceToggle>
+                      <DeviceToggle 
+                        $active={previewDevice === 'tablet'}
+                        onClick={() => setPreviewDevice('tablet')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaTabletAlt />
+                        Tablet
+                      </DeviceToggle>
+                      <DeviceToggle 
+                        $active={previewDevice === 'desktop'}
+                        onClick={() => setPreviewDevice('desktop')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaDesktop />
+                        Desktop
+                      </DeviceToggle>
+                    </DeviceToggleContainer>
+                    
+                    <PreviewModalClose onClick={() => setShowPreviewModal(false)}>
+                      <FaTimes />
+                    </PreviewModalClose>
+                  </div>
+                </PreviewModalHeader>
+                
+                <PreviewModalBody>
+                  {/* Preview Area - Container handles scrolling */}
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                    overflow: 'auto',
+                    padding: '2rem',
+                    background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)'
+                  }}>
+                    <PreviewContainer $device={previewDevice}>
+                      <DeviceFrame $device={previewDevice}>
+                        <div style={{
+                          background: 'white',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <iframe
+                            srcDoc={generatePreviewHtml()}
+                            style={{
+                              width: '100%',
+                              height: 'calc(100vh - 200px)',
+                              border: 'none',
+                              display: 'block',
+                              overflow: 'hidden'
+                            }}
+                            scrolling="no"
+                            title="Full Email Preview"
+                          />
+                        </div>
+                      </DeviceFrame>
+                    </PreviewContainer>
+                  </div>
+
+                  {/* Footer Info - Fixed at bottom */}
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem 2rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    fontSize: '0.8rem',
+                    color: '#999',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    flexShrink: 0
+                  }}>
+                    💡 Use the device buttons in the header to test how your email looks across different screen sizes
+                  </div>
+                </PreviewModalBody>
+              </PreviewModalContent>
+            </PreviewModal>
           )}
         </AnimatePresence>
       </CreateContainer>
