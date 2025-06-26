@@ -108,18 +108,24 @@ export async function POST(request: NextRequest) {
     const { 
       name, 
       subject, 
-      sender_name, 
-      sender_email,
-      reply_to_email,
+      senderName,
+      senderEmail,
+      replyToEmail,
       preheader, 
-      html_content,
-      text_content,
-      audience_ids, // Array of audience IDs
-      excluded_audience_ids, // Array of excluded audience IDs
+      description,
+      htmlContent,
+      textContent,
+      audienceIds = [],
+      excludedAudienceIds = [],
       template_id,
       status = 'draft',
       scheduled_at
     } = body;
+
+    console.log('📊 Campaign data received:', {
+      name, subject, senderName, senderEmail, replyToEmail, 
+      audienceIds, excludedAudienceIds
+    });
 
     if (!name || !subject) {
       return NextResponse.json({ 
@@ -127,21 +133,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create new campaign (using actual database field names - no audience_id field exists)
+    // Create new campaign using correct field names
     const { data: campaign, error } = await supabase
       .from('email_campaigns')
       .insert({
         name,
         subject,
-        description: body?.description || null,
-        from_name: sender_name || 'Cymasphere',
-        from_email: sender_email || 'support@cymasphere.com',
-        reply_to: reply_to_email,
+        description,
+        sender_name: senderName || 'Cymasphere',
+        sender_email: senderEmail || 'support@cymasphere.com', 
+        reply_to_email: replyToEmail,
+        preheader,
+        html_content: htmlContent,
+        text_content: textContent,
         template_id,
         status,
         scheduled_at,
         created_by: user.id
-        // Note: audience_id, preheader, html_content, text_content don't exist in current schema
       })
       .select()
       .single();
@@ -149,33 +157,60 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('🚨 Database error creating campaign:', error);
       console.error('🚨 Error details:', JSON.stringify(error, null, 2));
-      console.error('🚨 Campaign data being inserted:', {
-        name,
-        subject,
-        from_name: sender_name || 'Cymasphere',
-        from_email: sender_email || 'support@cymasphere.com',
-        reply_to: reply_to_email,
-        template_id,
-        status,
-        scheduled_at,
-        created_by: user.id
-      });
       return NextResponse.json({ 
-        error: 'Failed to create campaign' 
+        error: 'Failed to create campaign',
+        details: error.message 
       }, { status: 500 });
     }
 
-    // Note: Current schema only supports single audience_id per campaign
-    // Multiple audience support would require the junction table email_campaign_audiences
+    console.log('✅ Campaign created:', campaign.id);
+
+    // Now handle audience relationships using the junction table
+    const audienceInserts = [];
+
+    // Add included audiences
+    for (const audienceId of audienceIds) {
+      audienceInserts.push({
+        campaign_id: campaign.id,
+        audience_id: audienceId,
+        is_excluded: false
+      });
+    }
+
+    // Add excluded audiences
+    for (const audienceId of excludedAudienceIds) {
+      audienceInserts.push({
+        campaign_id: campaign.id,
+        audience_id: audienceId,
+        is_excluded: true
+      });
+    }
+
+    // Insert audience relationships if any
+    if (audienceInserts.length > 0) {
+      const { error: audienceError } = await supabase
+        .from('email_campaign_audiences')
+        .insert(audienceInserts);
+
+      if (audienceError) {
+        console.error('🚨 Database error creating campaign audiences:', audienceError);
+        // Don't fail the entire request, just log the error
+        console.warn('⚠️ Campaign created but audience relationships failed');
+      } else {
+        console.log(`✅ Created ${audienceInserts.length} audience relationships`);
+      }
+    }
     
     return NextResponse.json({ 
-      campaign 
+      campaign,
+      audienceCount: audienceInserts.length
     }, { status: 201 });
 
   } catch (error) {
     console.error('Create campaign API error:', error);
     return NextResponse.json({ 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

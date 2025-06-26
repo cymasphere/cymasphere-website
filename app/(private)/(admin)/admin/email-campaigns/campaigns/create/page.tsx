@@ -2155,8 +2155,13 @@ function CreateCampaignPage() {
     console.log("Saving campaign:", campaignData);
     
     try {
-      const response = await fetch('/api/email-campaigns/campaigns', {
-        method: 'POST',
+      // Use PUT for editing existing campaigns, POST for creating new ones
+      const isUpdating = isEditMode && editId;
+      const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
+      const method = isUpdating ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -2164,14 +2169,15 @@ function CreateCampaignPage() {
         body: JSON.stringify({
           name: campaignData.name,
           subject: campaignData.subject,
-          sender_name: campaignData.senderName,
-          sender_email: campaignData.senderEmail,
-          reply_to_email: campaignData.replyToEmail,
+          senderName: campaignData.senderName,           // ✅ FIXED
+          senderEmail: campaignData.senderEmail,         // ✅ FIXED
+          replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
           preheader: campaignData.preheader,
-          html_content: emailElements.map(el => `<div>${el.content}</div>`).join(''),
-          text_content: emailElements.map(el => el.content).join('\n'),
-          audience_ids: campaignData.audienceIds,
-          excluded_audience_ids: campaignData.excludedAudienceIds,
+          description: campaignData.description,         // ✅ ADDED
+          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
+          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          audienceIds: campaignData.audienceIds,         // ✅ FIXED
+          excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
           status: 'draft'
         }),
       });
@@ -2179,17 +2185,17 @@ function CreateCampaignPage() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log('Campaign saved as draft:', result);
-        setSendingMessage('Campaign saved as draft successfully!');
+        console.log(`Campaign ${isUpdating ? 'updated' : 'saved'} as draft:`, result);
+        setSendingMessage(`Campaign ${isUpdating ? 'updated' : 'saved'} as draft successfully!`);
         setTimeout(() => setSendingMessage(''), 3000);
       } else {
-        console.error('Error saving campaign:', result.error);
-        setSendingMessage(`Error saving campaign: ${result.error}`);
+        console.error(`Error ${isUpdating ? 'updating' : 'saving'} campaign:`, result.error);
+        setSendingMessage(`Error ${isUpdating ? 'updating' : 'saving'} campaign: ${result.error}`);
         setTimeout(() => setSendingMessage(''), 5000);
       }
     } catch (error) {
-      console.error('Error saving campaign:', error);
-      setSendingMessage('Error saving campaign. Please try again.');
+      console.error(`Error ${isEditMode ? 'updating' : 'saving'} campaign:`, error);
+      setSendingMessage(`Error ${isEditMode ? 'updating' : 'saving'} campaign. Please try again.`);
       setTimeout(() => setSendingMessage(''), 5000);
     }
   };
@@ -2213,9 +2219,13 @@ function CreateCampaignPage() {
     setCampaignResult(null);
 
     try {
-      // First save the campaign
-      const saveResponse = await fetch('/api/email-campaigns/campaigns', {
-        method: 'POST',
+      // First save the campaign (use PUT if editing, POST if creating)
+      const isUpdating = isEditMode && editId;
+      const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
+      const method = isUpdating ? 'PUT' : 'POST';
+      
+      const saveResponse = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -2223,14 +2233,15 @@ function CreateCampaignPage() {
         body: JSON.stringify({
           name: campaignData.name,
           subject: campaignData.subject,
-          sender_name: campaignData.senderName,
-          sender_email: campaignData.senderEmail,
-          reply_to_email: campaignData.replyToEmail,
+          senderName: campaignData.senderName,           // ✅ FIXED
+          senderEmail: campaignData.senderEmail,         // ✅ FIXED
+          replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
           preheader: campaignData.preheader,
-          html_content: emailElements.map(el => `<div>${el.content}</div>`).join(''),
-          text_content: emailElements.map(el => el.content).join('\n'),
-          audience_ids: campaignData.audienceIds,
-          excluded_audience_ids: campaignData.excludedAudienceIds,
+          description: campaignData.description,         // ✅ ADDED
+          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
+          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          audienceIds: campaignData.audienceIds,         // ✅ FIXED
+          excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
           status: campaignData.scheduleType === 'scheduled' ? 'scheduled' : 'sent',
           scheduled_at: campaignData.scheduleType === 'scheduled' ? 
             `${campaignData.scheduleDate}T${campaignData.scheduleTime}:00Z` : null

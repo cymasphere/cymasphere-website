@@ -153,6 +153,45 @@ export type Database = {
           },
         ]
       }
+      email_campaign_audiences: {
+        Row: {
+          audience_id: string | null
+          campaign_id: string | null
+          created_at: string | null
+          id: string
+          is_excluded: boolean | null
+        }
+        Insert: {
+          audience_id?: string | null
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+        }
+        Update: {
+          audience_id?: string | null
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_audiences_audience_id_fkey"
+            columns: ["audience_id"]
+            isOneToOne: false
+            referencedRelation: "email_audiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_audiences_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           created_at: string | null
@@ -163,16 +202,19 @@ export type Database = {
           emails_delivered: number | null
           emails_opened: number | null
           emails_sent: number | null
-          from_email: string | null
-          from_name: string | null
+          html_content: string | null
           id: string
           name: string
-          reply_to: string | null
+          preheader: string | null
+          reply_to_email: string | null
           scheduled_at: string | null
+          sender_email: string | null
+          sender_name: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["campaign_status"] | null
           subject: string | null
           template_id: string | null
+          text_content: string | null
           total_recipients: number | null
           updated_at: string | null
         }
@@ -185,16 +227,19 @@ export type Database = {
           emails_delivered?: number | null
           emails_opened?: number | null
           emails_sent?: number | null
-          from_email?: string | null
-          from_name?: string | null
+          html_content?: string | null
           id?: string
           name: string
-          reply_to?: string | null
+          preheader?: string | null
+          reply_to_email?: string | null
           scheduled_at?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["campaign_status"] | null
           subject?: string | null
           template_id?: string | null
+          text_content?: string | null
           total_recipients?: number | null
           updated_at?: string | null
         }
@@ -207,16 +252,19 @@ export type Database = {
           emails_delivered?: number | null
           emails_opened?: number | null
           emails_sent?: number | null
-          from_email?: string | null
-          from_name?: string | null
+          html_content?: string | null
           id?: string
           name?: string
-          reply_to?: string | null
+          preheader?: string | null
+          reply_to_email?: string | null
           scheduled_at?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["campaign_status"] | null
           subject?: string | null
           template_id?: string | null
+          text_content?: string | null
           total_recipients?: number | null
           updated_at?: string | null
         }

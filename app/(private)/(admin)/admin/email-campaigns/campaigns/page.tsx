@@ -209,6 +209,10 @@ const TableHeaderCell = styled.th`
     background-color: rgba(255, 255, 255, 0.02);
   }
 
+  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+    text-align: center;
+  }
+
   &:last-child {
     text-align: center;
     cursor: default;
@@ -239,6 +243,10 @@ const TableCell = styled.td`
   color: var(--text);
   font-size: 0.9rem;
   vertical-align: middle;
+
+  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+    text-align: center;
+  }
 
   &:last-child {
     text-align: center;

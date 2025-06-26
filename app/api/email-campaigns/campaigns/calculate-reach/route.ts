@@ -8,7 +8,7 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
     console.log('🚫 Excluding audiences:', excludedAudienceIds);
 
     if (audienceIds.length === 0) {
-      return { uniqueCount: 0, details: [] };
+      return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
     }
 
     // Get all audiences to understand their types and filters
@@ -18,7 +18,7 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
       .in('id', [...audienceIds, ...excludedAudienceIds]);
 
     if (!audiences) {
-      return { uniqueCount: 0, details: [] };
+      return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
     }
 
     const includedAudiences = audiences.filter((a: any) => audienceIds.includes(a.id));
@@ -75,6 +75,9 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
       }
     }
 
+    // Store original included count before exclusions
+    const originalIncludedCount = allIncludedSubscriberIds.size;
+
     // Remove excluded subscribers from included set
     allExcludedSubscriberIds.forEach(id => {
       allIncludedSubscriberIds.delete(id);
@@ -83,12 +86,12 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
     const uniqueCount = allIncludedSubscriberIds.size;
 
     console.log(`✅ Unique reach calculated: ${uniqueCount} subscribers`);
-    console.log(`📊 Included audiences: ${includedAudiences.length}, Excluded audiences: ${excludedAudiences.length}`);
+    console.log(`📊 Original included: ${originalIncludedCount}, Excluded: ${allExcludedSubscriberIds.size}, Final: ${uniqueCount}`);
 
     return {
       uniqueCount,
       details: {
-        totalIncluded: Array.from(allIncludedSubscriberIds).length + Array.from(allExcludedSubscriberIds).length,
+        totalIncluded: originalIncludedCount,
         totalExcluded: allExcludedSubscriberIds.size,
         includedAudiences: includedAudiences.length,
         excludedAudiences: excludedAudiences.length
@@ -97,7 +100,7 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
 
   } catch (error) {
     console.error('❌ Error calculating unique reach:', error);
-    return { uniqueCount: 0, details: [] };
+    return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
   }
 }
 
@@ -106,7 +109,86 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
   try {
     const subscriberIds: string[] = [];
 
-    // Initialize queries for both tables
+    // Handle new format with rules array first
+    if (filters.rules && Array.isArray(filters.rules)) {
+      console.log('Processing rules array:', filters.rules);
+      
+      let hasSubscriptionRule = false;
+      let hasStatusRule = false;
+      let subscriptionValue = null;
+      let statusValue = null;
+      
+      // Extract all rule values
+      for (const rule of filters.rules) {
+        if (rule.field === 'subscription') {
+          hasSubscriptionRule = true;
+          subscriptionValue = rule.value;
+        } else if (rule.field === 'status') {
+          hasStatusRule = true;
+          statusValue = rule.value;
+        }
+      }
+      
+      // If we have both subscription and status rules, we need to join
+      if (hasSubscriptionRule && hasStatusRule) {
+        console.log(`Joining: subscription=${subscriptionValue} AND status=${statusValue}`);
+        
+        // Get profiles with subscription first
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('subscription', subscriptionValue);
+        
+        if (!profilesData || profilesData.length === 0) {
+          console.log('No profiles found with subscription:', subscriptionValue);
+          return [];
+        }
+        
+        const profileIds = profilesData.map((p: any) => p.id);
+        console.log(`Found ${profileIds.length} profiles with subscription ${subscriptionValue}`);
+        
+        // Then get subscribers with status and matching profile IDs
+        const { data: subscribersData } = await supabase
+          .from('subscribers')
+          .select('id')
+          .eq('status', statusValue)
+          .in('user_id', profileIds);
+        
+        if (subscribersData) {
+          subscribersData.forEach((s: any) => subscriberIds.push(s.id));
+        }
+        
+        console.log(`Final count after joining: ${subscriberIds.length}`);
+        return subscriberIds;
+      }
+      
+      // Handle single rule cases
+      if (hasSubscriptionRule && !hasStatusRule) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('subscription', subscriptionValue);
+        
+        if (profilesData) {
+          profilesData.forEach((p: any) => subscriberIds.push(p.id));
+        }
+        return subscriberIds;
+      }
+      
+      if (hasStatusRule && !hasSubscriptionRule) {
+        const { data: subscribersData } = await supabase
+          .from('subscribers')
+          .select('id')
+          .eq('status', statusValue);
+        
+        if (subscribersData) {
+          subscribersData.forEach((s: any) => subscriberIds.push(s.id));
+        }
+        return subscriberIds;
+      }
+    }
+
+    // Initialize queries for both tables (fallback for old format)
     let profileQuery = supabase.from('profiles').select('id');
     let subscriberQuery = supabase.from('subscribers').select('id');
     let useProfiles = false;
@@ -115,7 +197,7 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
 
     // Process each filter (similar to calculateSubscriberCount but return IDs)
     for (const [field, value] of Object.entries(filters)) {
-      if (field === 'audience_type') {
+      if (field === 'audience_type' || field === 'rules') {
         continue;
       } else if (field === 'subscription') {
         useProfiles = true;
