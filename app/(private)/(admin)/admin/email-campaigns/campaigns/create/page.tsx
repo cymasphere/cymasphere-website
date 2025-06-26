@@ -1728,84 +1728,7 @@ interface CampaignData {
   scheduleTime: string;
 }
 
-// Mock campaigns data for editing
-const mockCampaigns = [
-  {
-    id: "1",
-    name: "Welcome Series",
-    subject: "Welcome to Cymasphere! 🎵",
-    senderName: "Cymasphere Team",
-    preheader: "Let's get you started on your music creation journey",
-    description: "Automated welcome email sequence for new subscribers",
-    audience: "new",
-    template: "welcome",
-    content: `
-      <h2>Welcome to Cymasphere!</h2>
-      <p>We're excited to have you join our community of music creators and synthesizer enthusiasts.</p>
-      <p>Here's what you can expect:</p>
-      <ul>
-        <li>Access to our powerful web-based synthesizer</li>
-        <li>Regular updates on new features and sounds</li>
-        <li>Tips and tutorials from our team</li>
-      </ul>
-      <p>Get started by exploring our synthesizer and creating your first track!</p>
-    `,
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "2",
-    name: "Product Launch Announcement",
-    subject: "🚀 New Synthesizer Features Available Now!",
-    senderName: "Cymasphere Product Team",
-    preheader: "Revolutionary new features that will transform your music production",
-    description: "Announcing our latest synthesizer features",
-    audience: "active",
-    template: "promotional",
-    content: `
-      <h2>Exciting New Features Just Launched! 🚀</h2>
-      <p>We've been working hard to bring you some amazing new synthesizer capabilities...</p>
-    `,
-    scheduleType: "scheduled",
-    scheduleDate: "2024-02-01",
-    scheduleTime: "10:00"
-  },
-  {
-    id: "3",
-    name: "Monthly Newsletter",
-    subject: "🎵 This Month in Music Production",
-    senderName: "Cymasphere Newsletter",
-    preheader: "The latest tips, trends, and updates from the music production world",
-    description: "Regular updates and tips for music producers",
-    audience: "all",
-    template: "newsletter",
-    content: `
-      <h2>This Month in Music Production</h2>
-      <p>Here are the latest tips, tricks, and updates from the world of electronic music...</p>
-    `,
-    scheduleType: "draft",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "4",
-    name: "Re-engagement Campaign",
-    subject: "We Miss You! Come Back and Create 🎶",
-    senderName: "Cymasphere Support",
-    preheader: "Special offers and new features waiting for you",
-    description: "Win back inactive subscribers",
-    audience: "inactive",
-    template: "custom",
-    content: `
-      <h2>We Miss You!</h2>
-      <p>It's been a while since we've seen you creating music with Cymasphere...</p>
-    `,
-    scheduleType: "trigger",
-    scheduleDate: "",
-    scheduleTime: ""
-  }
-];
+// Campaign email elements will be loaded from the database when editing existing campaigns
 
 const SendingFeedback = styled(motion.div)<{ type?: 'success' | 'error' | 'info' }>`
   position: fixed;
@@ -1947,20 +1870,9 @@ function CreateCampaignPage() {
     isLoading: false
   });
   
-  // Initialize email elements based on campaign content or template
+  // Initialize email elements based on template
   const getInitialEmailElements = () => {
-    if (isEditMode && editId) {
-      const existingCampaign = mockCampaigns.find(c => c.id === editId);
-      if (existingCampaign && existingCampaign.content) {
-        // Convert HTML content to email elements for the visual editor
-        // This is a simplified version - in a real app you'd parse the HTML properly
-        return [
-          { id: 'header', type: 'header', content: existingCampaign.subject },
-          { id: 'text1', type: 'text', content: existingCampaign.content.replace(/<[^>]*>/g, '') },
-          { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' }
-        ];
-      }
-    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
+    if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
       // Initialize from template
       const preset = templatePresets[templateId as keyof typeof templatePresets];
       return preset.emailElements.map(element => ({
@@ -1986,20 +1898,20 @@ function CreateCampaignPage() {
   // Initialize campaign data based on edit mode or template
   const getInitialCampaignData = (): CampaignData => {
     return {
-      name: "",
-      subject: "",
+    name: "",
+    subject: "",
       senderName: "Cymasphere",
       senderEmail: "support@cymasphere.com",
       replyToEmail: "",
-      preheader: "",
-      description: "",
+    preheader: "",
+    description: "",
       audienceIds: [],
       excludedAudienceIds: [],
-      template: "",
-      content: "",
-      scheduleType: "",
-      scheduleDate: "",
-      scheduleTime: ""
+    template: "",
+    content: "",
+    scheduleType: "",
+    scheduleDate: "",
+    scheduleTime: ""
     };
   };
   
@@ -2122,6 +2034,97 @@ function CreateCampaignPage() {
     updateReachCalculation();
   }, [updateReachCalculation]);
 
+  // Load campaign data for editing
+  useEffect(() => {
+    console.log('🔍 Campaign loading effect triggered:', {
+      isEditMode,
+      editId,
+      hasUser: !!user,
+      searchParams: searchParams.toString(),
+      currentURL: window.location.href
+    });
+    
+    const loadCampaignData = async () => {
+      if (isEditMode && editId && user) {
+        console.log('🔍 Starting campaign load for ID:', editId);
+        try {
+          const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const campaign = data.campaign;
+            
+            console.log('🔍 Frontend received campaign data:', JSON.stringify(data, null, 2));
+            console.log('🔍 Campaign object:', JSON.stringify(campaign, null, 2));
+            console.log('🔍 Field values:');
+            console.log('  - campaign.name:', campaign.name);
+            console.log('  - campaign.subject:', campaign.subject);
+            console.log('  - campaign.senderName:', campaign.senderName);
+            console.log('  - campaign.senderEmail:', campaign.senderEmail);
+            console.log('  - campaign.replyToEmail:', campaign.replyToEmail);
+            console.log('  - campaign.audienceIds:', campaign.audienceIds);
+            
+            // Update campaign data state
+            setCampaignData({
+              name: campaign.name || '',
+              subject: campaign.subject || '',
+              senderName: campaign.senderName || 'Cymasphere',
+              senderEmail: campaign.senderEmail || 'support@cymasphere.com',
+              replyToEmail: campaign.replyToEmail || '',
+              preheader: campaign.preheader || '',
+              description: campaign.description || '',
+              audienceIds: campaign.audienceIds || [],
+              excludedAudienceIds: campaign.excludedAudienceIds || [],
+              template: campaign.template_id || '',
+              content: campaign.html_content || '',
+              scheduleType: campaign.scheduled_at ? 'scheduled' : '',
+              scheduleDate: campaign.scheduled_at ? campaign.scheduled_at.split('T')[0] : '',
+              scheduleTime: campaign.scheduled_at ? campaign.scheduled_at.split('T')[1]?.split('.')[0] : ''
+            });
+            
+            // Parse email elements from html_content if available
+            if (campaign.html_content) {
+              // Simple parsing - in a real app you'd have a proper HTML to elements parser
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(campaign.html_content, 'text/html');
+              const elements = Array.from(doc.body.children).map((element, index) => ({
+                id: `element_${index}`,
+                type: element.tagName.toLowerCase() === 'h1' ? 'header' : 'text',
+                content: element.textContent || ''
+              }));
+              
+              if (elements.length > 0) {
+                setEmailElements(elements);
+              }
+            }
+          } else if (response.status === 404) {
+            console.warn(`Campaign with ID ${editId} not found, creating new campaign instead`);
+            // Campaign doesn't exist, treat as create mode
+            // Clear the edit parameter from URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('edit');
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            console.error('Failed to load campaign:', response.status);
+          }
+        } catch (error) {
+          console.error('Error loading campaign:', error);
+        }
+      } else {
+        console.log('🔍 Campaign loading skipped:', {
+          isEditMode,
+          editId,
+          hasUser: !!user,
+          reason: !isEditMode ? 'not in edit mode' : !editId ? 'no edit ID' : !user ? 'no user' : 'unknown'
+        });
+      }
+    };
+
+    loadCampaignData();
+  }, [isEditMode, editId, user]);
+
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
@@ -2157,6 +2160,7 @@ function CreateCampaignPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: campaignData.name,
           subject: campaignData.subject,
@@ -2215,6 +2219,7 @@ function CreateCampaignPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: campaignData.name,
           subject: campaignData.subject,
@@ -2805,7 +2810,7 @@ function CreateCampaignPage() {
               {audiencesLoading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                   Loading audiences...
-                </div>
+            </div>
               ) : audiences.length === 0 ? (
                 <div style={{ 
                   textAlign: 'center', 
@@ -2918,7 +2923,7 @@ function CreateCampaignPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <Spinner />
                               Calculating...
-                            </div>
+            </div>
                           ) : (
                             <>
                               {calculateAudienceStats().estimatedReach.toLocaleString()}

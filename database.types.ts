@@ -630,7 +630,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      debug_is_admin: {
+        Args: { user_id: string }
+        Returns: Json
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       automation_trigger:

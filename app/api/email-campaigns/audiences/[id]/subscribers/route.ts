@@ -496,7 +496,7 @@ export async function POST(
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Subscriber already in audience' 
       }, { status: 409 });
     }
@@ -528,8 +528,8 @@ export async function POST(
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 });
-  }
-}
+      }
+    }
 
 // DELETE /api/email-campaigns/audiences/[id]/subscribers - Remove subscriber from static audience
 export async function DELETE(
@@ -575,12 +575,12 @@ export async function DELETE(
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const subscriberId = searchParams.get('subscriberId');
-
+          
     if (!subscriberId) {
       return NextResponse.json({ 
         error: 'subscriberId is required' 
       }, { status: 400 });
-    }
+        }
 
     console.log('Removing subscriber:', subscriberId, 'from audience:', id);
 

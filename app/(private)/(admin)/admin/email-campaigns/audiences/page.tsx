@@ -617,13 +617,13 @@ const convertToDisplayAudience = (dbAudience: DatabaseAudience, realTimeCount?: 
   const subscriberCount = realTimeCount !== undefined ? realTimeCount : (dbAudience.subscriber_count || 0);
   
   return {
-    id: dbAudience.id,
-    name: dbAudience.name,
-    description: dbAudience.description || "No description provided",
+  id: dbAudience.id,
+  name: dbAudience.name,
+  description: dbAudience.description || "No description provided",
     subscribers: subscriberCount,
-    growthRate: "+0%", // This would need to be calculated from historical data
-    engagementRate: "N/A", // This would need to be calculated from email metrics
-    lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
+  growthRate: "+0%", // This would need to be calculated from historical data
+  engagementRate: "N/A", // This would need to be calculated from email metrics
+  lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
     tags: [
       { text: audienceType === 'static' ? "Static" : "Dynamic", type: "status" as const }
     ],
@@ -657,13 +657,13 @@ function AudiencesPage() {
   const router = useRouter();
 
   // Load audiences from API
-  const loadAudiences = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
+    const loadAudiences = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
       console.log('🔄 Loading audiences...');
-      const dbAudiences = await fetchAudiences();
+        const dbAudiences = await fetchAudiences();
       console.log('📊 Received audiences from API:', dbAudiences);
       
       // Get real-time subscriber counts for all audiences
@@ -690,14 +690,14 @@ function AudiencesPage() {
       );
       
       console.log('🎯 Converted to display format with real-time counts:', displayAudiences);
-      setAudiences(displayAudiences);
-    } catch (error) {
-      console.error('Failed to load audiences:', error);
-      setAudiences([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setAudiences(displayAudiences);
+      } catch (error) {
+        console.error('Failed to load audiences:', error);
+        setAudiences([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   useEffect(() => {
     if (user && !languageLoading) {
@@ -912,8 +912,8 @@ function AudiencesPage() {
         setAudiences(displayAudiences);
         
         // Close modal and reset form
-        setShowCreateModal(false);
-        setNewAudience({ name: "", description: "", type: "dynamic" });
+    setShowCreateModal(false);
+    setNewAudience({ name: "", description: "", type: "dynamic" });
         
         console.log('Audience created successfully');
         

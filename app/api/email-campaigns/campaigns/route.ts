@@ -32,13 +32,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Get campaigns with audience info
+    // Get campaigns without the problematic join first
     const { data: campaigns, error } = await supabase
       .from('email_campaigns')
-      .select(`
-        *,
-        email_audiences(id, name)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -77,10 +74,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServer();
   
+  console.log('🔐 POST /api/email-campaigns/campaigns called');
+  console.log('📝 Headers:', Object.fromEntries(request.headers.entries()));
+  
   // Get authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
+  console.log('👤 User:', user ? `${user.email} (${user.id})` : 'null');
+  console.log('❌ Auth error:', authError);
+  
   if (authError || !user) {
+    console.log('🚫 Returning 401 - Authentication required');
     return NextResponse.json({ 
       error: 'Authentication required' 
     }, { status: 401 });
@@ -123,84 +127,49 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create new campaign
+    // Create new campaign (using actual database field names - no audience_id field exists)
     const { data: campaign, error } = await supabase
       .from('email_campaigns')
       .insert({
         name,
         subject,
-        sender_name: sender_name || 'Cymasphere',
-        sender_email: sender_email || 'support@cymasphere.com',
-        reply_to_email,
-        preheader,
-        html_content,
-        text_content,
+        description: body?.description || null,
+        from_name: sender_name || 'Cymasphere',
+        from_email: sender_email || 'support@cymasphere.com',
+        reply_to: reply_to_email,
         template_id,
         status,
         scheduled_at,
         created_by: user.id
+        // Note: audience_id, preheader, html_content, text_content don't exist in current schema
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating campaign:', error);
+      console.error('🚨 Database error creating campaign:', error);
+      console.error('🚨 Error details:', JSON.stringify(error, null, 2));
+      console.error('🚨 Campaign data being inserted:', {
+        name,
+        subject,
+        from_name: sender_name || 'Cymasphere',
+        from_email: sender_email || 'support@cymasphere.com',
+        reply_to: reply_to_email,
+        template_id,
+        status,
+        scheduled_at,
+        created_by: user.id
+      });
       return NextResponse.json({ 
         error: 'Failed to create campaign' 
       }, { status: 500 });
     }
 
-    // Insert included audiences into junction table
-    if (audience_ids && audience_ids.length > 0) {
-      const includedAudiences = audience_ids.map((audienceId: string) => ({
-        campaign_id: campaign.id,
-        audience_id: audienceId,
-        is_excluded: false
-      }));
-
-      const { error: audienceError } = await (supabase as any)
-        .from('email_campaign_audiences')
-        .insert(includedAudiences);
-
-      if (audienceError) {
-        console.error('Error linking audiences to campaign:', audienceError);
-        // Don't fail the entire operation, just log the error
-      }
-    }
-
-    // Insert excluded audiences into junction table
-    if (excluded_audience_ids && excluded_audience_ids.length > 0) {
-      const excludedAudiences = excluded_audience_ids.map((audienceId: string) => ({
-        campaign_id: campaign.id,
-        audience_id: audienceId,
-        is_excluded: true
-      }));
-
-      const { error: excludeError } = await (supabase as any)
-        .from('email_campaign_audiences')
-        .insert(excludedAudiences);
-
-      if (excludeError) {
-        console.error('Error linking excluded audiences to campaign:', excludeError);
-        // Don't fail the entire operation, just log the error
-      }
-    }
-
-    // Fetch the complete campaign with audience relationships
-    const { data: completeCampaign, error: fetchError } = await (supabase as any)
-      .from('email_campaigns')
-      .select(`
-        *,
-        email_campaign_audiences(
-          is_excluded,
-          email_audiences(id, name)
-        )
-      `)
-      .eq('id', campaign.id)
-      .single();
-
+    // Note: Current schema only supports single audience_id per campaign
+    // Multiple audience support would require the junction table email_campaign_audiences
+    
     return NextResponse.json({ 
-      campaign: completeCampaign || campaign 
+      campaign 
     }, { status: 201 });
 
   } catch (error) {

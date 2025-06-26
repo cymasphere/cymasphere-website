@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     let subscribersQuery = supabase
       .from('subscribers')
       .select('id, email, status, created_at, user_id', { count: 'exact' });
-
+    
     // Apply status filter if not 'all'
     if (status !== 'all' && ['active', 'unsubscribed', 'bounced', 'pending'].includes(status)) {
       subscribersQuery = subscribersQuery.eq('status', status as 'active' | 'unsubscribed' | 'bounced' | 'pending');
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         .from('profiles')
         .select('id, first_name, last_name')
         .in('id', userIds);
-      
+
       profiles?.forEach(profile => {
         profilesMap.set(profile.id, profile);
       });

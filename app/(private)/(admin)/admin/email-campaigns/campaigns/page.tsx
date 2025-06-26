@@ -441,57 +441,11 @@ const EmptyState = styled.div`
   }
 `;
 
-// Mock data
-const mockCampaigns = [
-  {
-    id: "1",
-    title: "Welcome Series",
-    description: "Automated welcome email sequence for new subscribers",
-    status: "active",
-    recipients: 1250,
-    sent: 3750,
-    openRate: 24.5,
-    clickRate: 3.2,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "Product Launch Announcement",
-    description: "Announcing our latest synthesizer features",
-    status: "completed",
-    recipients: 5420,
-    sent: 5420,
-    openRate: 31.2,
-    clickRate: 5.8,
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "3",
-    title: "Monthly Newsletter",
-    description: "Regular updates and tips for music producers",
-    status: "draft",
-    recipients: 0,
-    sent: 0,
-    openRate: 0,
-    clickRate: 0,
-    createdAt: "2024-01-20",
-  },
-  {
-    id: "4",
-    title: "Re-engagement Campaign",
-    description: "Win back inactive subscribers",
-    status: "paused",
-    recipients: 890,
-    sent: 445,
-    openRate: 18.7,
-    clickRate: 2.1,
-    createdAt: "2024-01-12",
-  },
-];
-
 function CampaignsPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
@@ -505,6 +459,33 @@ function CampaignsPage() {
     }
   }, [languageLoading]);
 
+  // Fetch campaigns from API
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/email-campaigns/campaigns', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📧 Fetched campaigns:', data);
+          setCampaigns(data.campaigns || []);
+        } else {
+          console.error('Failed to fetch campaigns:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching campaigns:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCampaigns();
+  }, [user]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -517,7 +498,7 @@ function CampaignsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || !translationsLoaded) {
+  if (languageLoading || !translationsLoaded || loading) {
     return <LoadingComponent />;
   }
 
@@ -525,26 +506,26 @@ function CampaignsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredCampaigns = mockCampaigns.filter(campaign =>
-    campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    campaign.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCampaigns = campaigns.filter((campaign: any) =>
+    campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
     {
-      value: mockCampaigns.length.toString(),
+      value: campaigns.length.toString(),
       label: "Total Campaigns",
     },
     {
-      value: mockCampaigns.filter(c => c.status === "active").length.toString(),
-      label: "Active Campaigns",
+      value: campaigns.filter((c: any) => c.status === "draft").length.toString(),
+      label: "Draft Campaigns",
     },
     {
-      value: "28.4%",
+      value: "0%",
       label: "Avg Open Rate",
     },
     {
-      value: "4.2%",
+      value: "0%",
       label: "Avg Click Rate",
     },
   ];
@@ -649,7 +630,7 @@ function CampaignsPage() {
                   </TableCell>
                 </tr>
               ) : (
-                filteredCampaigns.map((campaign, index) => (
+                filteredCampaigns.map((campaign: any, index: number) => (
                   <TableRow
                     key={campaign.id}
                     variants={cardVariants}
@@ -659,23 +640,23 @@ function CampaignsPage() {
                     onClick={() => handleCampaignAction('edit', campaign.id)}
                   >
                     <TableCell>
-                      <CampaignTitle>{campaign.title}</CampaignTitle>
-                      <CampaignDescription>{campaign.description}</CampaignDescription>
+                      <CampaignTitle>{campaign.name || 'Untitled'}</CampaignTitle>
+                      <CampaignDescription>{campaign.subject || campaign.description || 'No description'}</CampaignDescription>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={campaign.status}>{campaign.status}</StatusBadge>
+                      <StatusBadge status={campaign.status || 'draft'}>{campaign.status || 'draft'}</StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{campaign.recipients.toLocaleString()}</MetricValue>
+                      <MetricValue>{campaign.total_recipients || 0}</MetricValue>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{campaign.openRate}%</MetricValue>
+                      <MetricValue>0%</MetricValue>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{campaign.clickRate}%</MetricValue>
+                      <MetricValue>0%</MetricValue>
                     </TableCell>
                     <TableCell>
-                      {new Date(campaign.createdAt).toLocaleDateString()}
+                      {campaign.created_at ? new Date(campaign.created_at).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer data-dropdown>
