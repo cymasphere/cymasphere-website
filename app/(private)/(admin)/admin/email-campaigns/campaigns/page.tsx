@@ -449,6 +449,34 @@ const EmptyState = styled.div`
   }
 `;
 
+const TabsContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  color: ${props => props.active ? 'var(--primary)' : 'var(--text-secondary)'};
+  font-weight: ${props => props.active ? '600' : '400'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid ${props => props.active ? 'var(--primary)' : 'transparent'};
+  font-size: 0.9rem;
+
+  &:hover {
+    color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+`;
+
 function CampaignsPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
@@ -456,6 +484,7 @@ function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'drafts' | 'scheduled' | 'sent'>('all');
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -514,10 +543,26 @@ function CampaignsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredCampaigns = campaigns.filter((campaign: any) =>
-    campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCampaigns = campaigns.filter((campaign: any) => {
+    // First filter by search term
+    const matchesSearch = campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Then filter by tab
+    switch (activeTab) {
+      case 'drafts':
+        return campaign.status === 'draft';
+      case 'scheduled':
+        return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
+      case 'sent':
+        return campaign.status === 'sent' || campaign.status === 'completed';
+      case 'all':
+      default:
+        return true;
+    }
+  });
 
   const stats = [
     {
@@ -529,12 +574,12 @@ function CampaignsPage() {
       label: "Draft Campaigns",
     },
     {
-      value: "0%",
-      label: "Avg Open Rate",
+      value: campaigns.filter((c: any) => c.status === "scheduled" || (c.scheduled_at && new Date(c.scheduled_at) > new Date())).length.toString(),
+      label: "Scheduled",
     },
     {
-      value: "0%",
-      label: "Avg Click Rate",
+      value: campaigns.filter((c: any) => c.status === "sent" || c.status === "completed").length.toString(),
+      label: "Sent Campaigns",
     },
   ];
 
@@ -550,9 +595,16 @@ function CampaignsPage() {
   const handleCampaignAction = (action: string, campaignId: string) => {
     console.log(`${action} campaign:`, campaignId);
     setOpenDropdown(null); // Close dropdown after action
+    
     if (action === 'create') {
       router.push('/admin/email-campaigns/campaigns/create');
     } else if (action === 'edit') {
+      // Check if campaign is sent - prevent editing
+      const campaign = campaigns.find(c => c.id === campaignId);
+      if (campaign && (campaign.status === 'sent' || campaign.status === 'completed')) {
+        alert('Sent campaigns cannot be edited.');
+        return;
+      }
       router.push(`/admin/email-campaigns/campaigns/create?edit=${campaignId}`);
     }
     // Other actions like pause, resume, delete can be implemented here
@@ -613,6 +665,21 @@ function CampaignsPage() {
           </ActionButton>
         </ActionsRow>
 
+        <TabsContainer>
+          <Tab active={activeTab === 'all'} onClick={() => setActiveTab('all')}>
+            All
+          </Tab>
+          <Tab active={activeTab === 'drafts'} onClick={() => setActiveTab('drafts')}>
+            Drafts
+          </Tab>
+          <Tab active={activeTab === 'scheduled'} onClick={() => setActiveTab('scheduled')}>
+            Scheduled
+          </Tab>
+          <Tab active={activeTab === 'sent'} onClick={() => setActiveTab('sent')}>
+            Sent
+          </Tab>
+        </TabsContainer>
+
         <CampaignsGrid>
           <Table>
             <TableHeader>
@@ -645,7 +712,14 @@ function CampaignsPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() => handleCampaignAction('edit', campaign.id)}
+                    onClick={() => {
+                      // Prevent editing sent campaigns
+                      if (campaign.status === 'sent' || campaign.status === 'completed') {
+                        alert('Sent campaigns cannot be edited.');
+                        return;
+                      }
+                      handleCampaignAction('edit', campaign.id);
+                    }}
                   >
                     <TableCell>
                       <CampaignTitle>{campaign.name || 'Untitled'}</CampaignTitle>
