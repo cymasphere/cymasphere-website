@@ -361,6 +361,7 @@ const TemplateDescription = styled.p`
   font-size: 0.9rem;
   margin: 0 0 1rem 0;
   line-height: 1.4;
+  padding-bottom: 0.5rem;
 `;
 
 const TemplateFooter = styled.div`
@@ -460,93 +461,21 @@ const EmptyState = styled.div`
   }
 `;
 
-// Mock template data
-const mockTemplates = [
-  {
-    id: "1",
-    title: "Welcome Series Starter",
-    description: "A warm welcome email template perfect for new subscribers. Includes company introduction and next steps.",
-    category: "welcome",
-    rating: 4.8,
-    downloads: 1250,
-    favorites: 89,
-    isFavorite: false,
-    author: "Cymasphere Team",
-    createdAt: "2024-01-15",
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    icon: FaHandshake
-  },
-  {
-    id: "2",
-    title: "Product Launch Announcement",
-    description: "Eye-catching template for announcing new products or features. Includes product showcase and CTA buttons.",
-    category: "promotional",
-    rating: 4.6,
-    downloads: 890,
-    favorites: 67,
-    isFavorite: true,
-    author: "Design Studio",
-    createdAt: "2024-01-12",
-    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    icon: FaBullhorn
-  },
-  {
-    id: "3",
-    title: "Monthly Newsletter",
-    description: "Clean and professional newsletter template with sections for news, updates, and featured content.",
-    category: "newsletter",
-    rating: 4.9,
-    downloads: 2100,
-    favorites: 156,
-    isFavorite: false,
-    author: "Newsletter Pro",
-    createdAt: "2024-01-10",
-    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    icon: FaNewspaper
-  },
-  {
-    id: "4",
-    title: "E-commerce Cart Recovery",
-    description: "Persuasive template to recover abandoned carts. Includes product images and urgency elements.",
-    category: "ecommerce",
-    rating: 4.7,
-    downloads: 1560,
-    favorites: 98,
-    isFavorite: false,
-    author: "E-comm Expert",
-    createdAt: "2024-01-08",
-    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-    icon: FaShoppingCart
-  },
-  {
-    id: "5",
-    title: "Holiday Special Offer",
-    description: "Festive template for holiday promotions and special offers. Customizable for any holiday season.",
-    category: "promotional",
-    rating: 4.5,
-    downloads: 780,
-    favorites: 45,
-    isFavorite: true,
-    author: "Holiday Designs",
-    createdAt: "2024-01-05",
-    gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-    icon: FaGift
-  },
-  {
-    id: "6",
-    title: "User Onboarding Guide",
-    description: "Step-by-step onboarding template to help new users get started with your product or service.",
-    category: "welcome",
-    rating: 4.8,
-    downloads: 1340,
-    favorites: 112,
-    isFavorite: false,
-    author: "UX Team",
-    createdAt: "2024-01-03",
-    gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-    icon: FaUser
-  }
-];
+// Template interface for library
+interface LibraryTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  rating: number;
+  downloads: number;
+  favorites: number;
+  isFavorite: boolean;
+  author: string;
+  createdAt: string;
+  gradient: string;
+  icon: any;
+}
 
 function TemplateLibraryPage() {
   const { user } = useAuth();
@@ -555,7 +484,9 @@ function TemplateLibraryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [favorites, setFavorites] = useState<string[]>(['2', '5']);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<LibraryTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -566,6 +497,69 @@ function TemplateLibraryPage() {
     }
   }, [languageLoading]);
 
+  // Load templates from API and convert to library format
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/email-campaigns/templates');
+        if (response.ok) {
+          const data = await response.json();
+          const libraryTemplates: LibraryTemplate[] = (data.templates || []).map((template: any) => ({
+            id: template.id,
+            title: template.name,
+            description: template.description || 'No description available',
+            category: template.type,
+            rating: 4.5 + Math.random() * 0.5, // Random rating for now
+            downloads: Math.floor(Math.random() * 2000) + 100,
+            favorites: Math.floor(Math.random() * 200) + 10,
+            isFavorite: false,
+            author: 'Cymasphere Team',
+            createdAt: new Date(template.created_at).toISOString().split('T')[0],
+            gradient: getGradientForType(template.type),
+            icon: getIconForType(template.type)
+          }));
+          setTemplates(libraryTemplates);
+        } else {
+          console.error('Failed to load templates');
+          setTemplates([]);
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        setTemplates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      loadTemplates();
+    }
+  }, [user]);
+
+  // Helper functions for template display
+  const getGradientForType = (type: string) => {
+    const gradients = {
+      welcome: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      promotional: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      newsletter: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      transactional: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+      custom: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+    };
+    return gradients[type as keyof typeof gradients] || gradients.custom;
+  };
+
+  const getIconForType = (type: string) => {
+    const icons = {
+      welcome: FaHandshake,
+      promotional: FaBullhorn,
+      newsletter: FaNewspaper,
+      transactional: FaFileAlt,
+      custom: FaFileAlt
+    };
+    return icons[type as keyof typeof icons] || icons.custom;
+  };
+
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
@@ -574,7 +568,7 @@ function TemplateLibraryPage() {
     return <LoadingComponent />;
   }
 
-  const filteredTemplates = mockTemplates.filter(template => {
+  const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;

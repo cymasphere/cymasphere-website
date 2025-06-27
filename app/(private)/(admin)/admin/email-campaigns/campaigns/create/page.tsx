@@ -387,6 +387,7 @@ const TemplateTitle = styled.h4`
 const TemplateDescription = styled.p`
   color: var(--text-secondary);
   font-size: 0.8rem;
+  padding-bottom: 0.5rem;
 `;
 
 const ContentEditor = styled.div`
@@ -471,7 +472,9 @@ const NavigationButtons = styled.div`
   margin-top: 2rem;
 `;
 
-const NavButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const NavButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1941,7 +1944,7 @@ const templatePresets = {
     content: `Exciting New Features Just Launched!`,
     emailElements: [
       { id: 'header_' + Date.now(), type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
-      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=🚀+New+Features' },
+              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=New+Features' },
       { id: 'text_' + Date.now(), type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
       { id: 'button_' + Date.now(), type: 'button', content: 'Explore New Features', url: '#' },
       { id: 'spacer_' + Date.now(), type: 'spacer', height: '30px' }
@@ -1959,7 +1962,7 @@ const templatePresets = {
       { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
       { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
       { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' },
-      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=🎵+Welcome+to+Cymasphere' }
+              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=Welcome+to+Cymasphere' }
     ]
   },
   custom: {
@@ -2101,6 +2104,7 @@ function CreateCampaignPage() {
   const [audiences, setAudiences] = useState<Audience[]>([]);
   const [audiencesLoading, setAudiencesLoading] = useState(true);
   const [audienceSearchTerm, setAudienceSearchTerm] = useState('');
+  const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2153,7 +2157,7 @@ function CreateCampaignPage() {
       { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
       { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
       { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' },
-      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎵+Create+Amazing+Music' }
+      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Create+Amazing+Music' }
     ];
   };
 
@@ -2715,7 +2719,7 @@ function CreateCampaignPage() {
       case 'columns':
         return { id, type: 'columns', content: 'Two Column Layout' };
       case 'video':
-        return { id, type: 'video', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎬+Video+Placeholder', content: 'Video Content' };
+        return { id, type: 'video', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', content: 'Video Content' };
       default:
         return { id, type: 'text', content: 'New Element' };
     }

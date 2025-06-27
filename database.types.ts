@@ -439,6 +439,45 @@ export type Database = {
           },
         ]
       }
+      email_template_audiences: {
+        Row: {
+          audience_id: string | null
+          created_at: string | null
+          id: string
+          is_excluded: boolean | null
+          template_id: string | null
+        }
+        Insert: {
+          audience_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+          template_id?: string | null
+        }
+        Update: {
+          audience_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_template_audiences_audience_id_fkey"
+            columns: ["audience_id"]
+            isOneToOne: false
+            referencedRelation: "email_audiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_template_audiences_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           created_at: string | null

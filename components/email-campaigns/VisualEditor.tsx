@@ -590,7 +590,7 @@ export default function VisualEditor({
       case 'button':
         return { id, type: 'button', content: 'Click Here', url: '#' };
       case 'image':
-        return { id, type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎵+Your+Image', alt: 'Image description' };
+        return { id, type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
         return { id, type: 'divider' };
       case 'social':
@@ -607,7 +607,7 @@ export default function VisualEditor({
           { content: 'Column 2 content' }
         ]};
       case 'video':
-        return { id, type: 'video', thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=▶️+Video', url: '#' };
+        return { id, type: 'video', thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
       default:
         return { id, type: 'text', content: 'New element' };
     }
