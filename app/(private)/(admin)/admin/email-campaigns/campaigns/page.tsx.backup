@@ -30,7 +30,6 @@ import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/contexts/ToastContext";
 
 const CampaignsContainer = styled.div`
   width: 100%;
@@ -600,7 +599,6 @@ const ModalButton = styled.button<{ variant?: 'primary' | 'danger' | 'secondary'
 
 function CampaignsPage() {
   const { user } = useAuth();
-  const { success, error } = useToast();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -609,9 +607,6 @@ function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'drafts' | 'scheduled' | 'sent'>('all');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelCampaignId, setCancelCampaignId] = useState<string | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
-  const [campaignToDelete, setCampaignToDelete] = useState<any>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -733,7 +728,7 @@ function CampaignsPage() {
       case 'edit':
         // Check if campaign is sent - prevent editing
         if (campaign && (campaign.status === 'sent' || campaign.status === 'completed')) {
-          error('Sent campaigns cannot be edited.', 3000);
+          alert('Sent campaigns cannot be edited.');
           return;
         }
         router.push(`/admin/email-campaigns/campaigns/create?edit=${campaignId}`);
@@ -769,7 +764,7 @@ function CampaignsPage() {
         if (confirm('Are you sure you want to pause this campaign?')) {
           // TODO: Implement pause functionality
           console.log('Pausing campaign:', campaignId);
-          success('Campaign paused successfully!', 3000);
+          alert('Campaign paused.');
         }
         break;
         
@@ -777,7 +772,7 @@ function CampaignsPage() {
         if (confirm('Are you sure you want to resume this campaign?')) {
           // TODO: Implement resume functionality
           console.log('Resuming campaign:', campaignId);
-          success('Campaign resumed successfully!', 3000);
+          alert('Campaign resumed.');
         }
         break;
         
@@ -796,15 +791,15 @@ function CampaignsPage() {
       case 'export':
         // TODO: Implement export functionality
         console.log('Exporting data for:', campaignId);
-        success('Export functionality coming soon!', 3000);
+        alert('Export functionality coming soon!');
         break;
         
       case 'delete':
-        // Show delete confirmation modal
-        const campaignToDelete = campaigns.find(c => c.id === campaignId);
-        setDeleteCampaignId(campaignId);
-        setCampaignToDelete(campaignToDelete);
-        setShowDeleteModal(true);
+        if (confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+          // TODO: Implement delete functionality
+          console.log('Deleting campaign:', campaignId);
+          alert('Campaign deleted.');
+        }
         break;
         
       default:
@@ -817,104 +812,23 @@ function CampaignsPage() {
     setOpenDropdown(openDropdown === campaignId ? null : campaignId);
   };
 
-  const handleCancelConfirm = async () => {
+  const handleCancelConfirm = () => {
     if (cancelCampaignId) {
-      try {
-        console.log("Cancelling scheduled campaign:", cancelCampaignId);
-        
-        // Call API to update campaign status from "scheduled" to "draft"
-        const response = await fetch(`/api/email-campaigns/campaigns/${cancelCampaignId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            status: "draft",
-            scheduled_at: null // Clear the scheduled time
-          }),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log("✅ Campaign schedule cancelled:", result);
-          
-          // Update the local campaigns state to reflect the change
-          setCampaigns(prevCampaigns => 
-            prevCampaigns.map(campaign => 
-              campaign.id === cancelCampaignId 
-                ? { ...campaign, status: "draft", scheduled_at: null }
-                : campaign
-            )
-          );
-          
-          // Show success toast
-          success("Campaign schedule cancelled successfully! Campaign is now a draft.", 4000);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to cancel campaign schedule");
-        }
-        
-        // Close modal and reset state
-        setShowCancelModal(false);
-        setCancelCampaignId(null);
-      } catch (err) {
-        // Show error toast
-        error("Failed to cancel campaign schedule. Please try again.", 5000);
-        console.error("Error cancelling campaign:", err);
-      }
+      // TODO: Implement cancel schedule functionality
+      console.log('Cancelling scheduled campaign:', cancelCampaignId);
+      // Here you would make an API call to cancel the campaign
+      // For now, just show success message
+      alert('Campaign schedule cancelled successfully!');
+      
+      // Close modal and reset state
+      setShowCancelModal(false);
+      setCancelCampaignId(null);
     }
   };
 
   const handleCancelClose = () => {
     setShowCancelModal(false);
     setCancelCampaignId(null);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (deleteCampaignId) {
-      try {
-        console.log("Deleting campaign:", deleteCampaignId);
-        
-        // Call API to delete the campaign
-        const response = await fetch(`/api/email-campaigns/campaigns/${deleteCampaignId}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          console.log("✅ Campaign deleted successfully");
-          
-          // Remove the campaign from local state
-          setCampaigns(prevCampaigns => 
-            prevCampaigns.filter(campaign => campaign.id !== deleteCampaignId)
-          );
-          
-          // Show success toast
-          success(`Campaign "${campaignToDelete?.name || 'Untitled'}" deleted successfully!`, 4000);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to delete campaign");
-        }
-        
-        // Close modal and reset state
-        setShowDeleteModal(false);
-        setDeleteCampaignId(null);
-        setCampaignToDelete(null);
-      } catch (err) {
-        // Show error toast
-        error("Failed to delete campaign. Please try again.", 5000);
-        console.error("Error deleting campaign:", err);
-        
-        // Keep modal open on error so user can try again
-      }
-    }
-  };
-
-  const handleDeleteClose = () => {
-    setShowDeleteModal(false);
-    setDeleteCampaignId(null);
-    setCampaignToDelete(null);
   };
 
   return (
@@ -1017,7 +931,7 @@ function CampaignsPage() {
                     onClick={() => {
                       // Prevent editing sent campaigns
                       if (campaign.status === 'sent' || campaign.status === 'completed') {
-                        error('Sent campaigns cannot be edited.', 3000);
+                        alert('Sent campaigns cannot be edited.');
                         return;
                       }
                       handleCampaignAction('edit', campaign.id);
@@ -1203,41 +1117,6 @@ function CampaignsPage() {
                 </ModalButton>
                 <ModalButton variant="danger" onClick={handleCancelConfirm}>
                   Yes, Cancel Schedule
-                </ModalButton>
-              </ModalActions>
-            </ModalContent>
-          </ModalOverlay>
-        )}
-      </AnimatePresence>
-
-      {/* Delete Campaign Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteModal && (
-          <ModalOverlay
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleDeleteClose}
-          >
-            <ModalContent
-              initial={{ opacity: 0, scale: 0.8, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 50 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ModalTitle>
-                <FaExclamationTriangle />
-                Delete Campaign
-              </ModalTitle>
-              <ModalMessage>
-                Are you sure you want to delete the campaign "{campaignToDelete?.name || 'Untitled'}"? This action cannot be undone and all campaign data will be permanently lost.
-              </ModalMessage>
-              <ModalActions>
-                <ModalButton onClick={handleDeleteClose}>
-                  Cancel
-                </ModalButton>
-                <ModalButton variant="danger" onClick={handleDeleteConfirm}>
-                  Yes, Delete Campaign
                 </ModalButton>
               </ModalActions>
             </ModalContent>

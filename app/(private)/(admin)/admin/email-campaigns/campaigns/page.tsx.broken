@@ -26,11 +26,11 @@ import {
   FaTimes
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/contexts/ToastContext";
 
 const CampaignsContainer = styled.div`
   width: 100%;
@@ -608,10 +608,10 @@ function CampaignsPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'drafts' | 'scheduled' | 'sent'>('all');
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelCampaignId, setCancelCampaignId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
   const [campaignToDelete, setCampaignToDelete] = useState<any>(null);
+  const [cancelCampaignId, setCancelCampaignId] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -769,7 +769,7 @@ function CampaignsPage() {
         if (confirm('Are you sure you want to pause this campaign?')) {
           // TODO: Implement pause functionality
           console.log('Pausing campaign:', campaignId);
-          success('Campaign paused successfully!', 3000);
+          alert('Campaign paused.');
         }
         break;
         
@@ -777,7 +777,7 @@ function CampaignsPage() {
         if (confirm('Are you sure you want to resume this campaign?')) {
           // TODO: Implement resume functionality
           console.log('Resuming campaign:', campaignId);
-          success('Campaign resumed successfully!', 3000);
+          alert('Campaign resumed.');
         }
         break;
         
@@ -796,7 +796,7 @@ function CampaignsPage() {
       case 'export':
         // TODO: Implement export functionality
         console.log('Exporting data for:', campaignId);
-        success('Export functionality coming soon!', 3000);
+        alert('Export functionality coming soon!');
         break;
         
       case 'delete':
@@ -804,8 +804,7 @@ function CampaignsPage() {
         const campaignToDelete = campaigns.find(c => c.id === campaignId);
         setDeleteCampaignId(campaignId);
         setCampaignToDelete(campaignToDelete);
-        setShowDeleteModal(true);
-        break;
+        setShowDeleteModal(true);        break;
         
       default:
         console.log('Unknown action:', action);
@@ -815,6 +814,7 @@ function CampaignsPage() {
   const handleDropdownToggle = (campaignId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenDropdown(openDropdown === campaignId ? null : campaignId);
+
   };
 
   const handleCancelConfirm = async () => {
@@ -867,9 +867,6 @@ function CampaignsPage() {
   };
 
   const handleCancelClose = () => {
-    setShowCancelModal(false);
-    setCancelCampaignId(null);
-  };
 
   const handleDeleteConfirm = async () => {
     if (deleteCampaignId) {
@@ -915,6 +912,9 @@ function CampaignsPage() {
     setShowDeleteModal(false);
     setDeleteCampaignId(null);
     setCampaignToDelete(null);
+  };
+    setShowCancelModal(false);
+    setCancelCampaignId(null);
   };
 
   return (
@@ -1051,6 +1051,41 @@ function CampaignsPage() {
                           <FaEllipsisV />
                         </MoreButton>
                         <AnimatePresence>
+
+      {/* Delete Campaign Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleDeleteClose}
+          >
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalTitle>
+                <FaExclamationTriangle />
+                Delete Campaign
+              </ModalTitle>
+              <ModalMessage>
+                Are you sure you want to delete the campaign "{campaignToDelete?.name || 'Untitled'}"? This action cannot be undone and all campaign data will be permanently lost.
+              </ModalMessage>
+              <ModalActions>
+                <ModalButton onClick={handleDeleteClose}>
+                  Cancel
+                </ModalButton>
+                <ModalButton variant="danger" onClick={handleDeleteConfirm}>
+                  Yes, Delete Campaign
+                </ModalButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
                           {openDropdown === campaign.id && (
                             <DropdownMenu
                               initial={{ opacity: 0, scale: 0.8, y: -10 }}
@@ -1165,6 +1200,41 @@ function CampaignsPage() {
                             </DropdownMenu>
                           )}
                         </AnimatePresence>
+
+      {/* Delete Campaign Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleDeleteClose}
+          >
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalTitle>
+                <FaExclamationTriangle />
+                Delete Campaign
+              </ModalTitle>
+              <ModalMessage>
+                Are you sure you want to delete the campaign "{campaignToDelete?.name || 'Untitled'}"? This action cannot be undone and all campaign data will be permanently lost.
+              </ModalMessage>
+              <ModalActions>
+                <ModalButton onClick={handleDeleteClose}>
+                  Cancel
+                </ModalButton>
+                <ModalButton variant="danger" onClick={handleDeleteConfirm}>
+                  Yes, Delete Campaign
+                </ModalButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
                       </ActionsContainer>
                     </TableCell>
                   </TableRow>
@@ -1177,6 +1247,41 @@ function CampaignsPage() {
 
       {/* Cancel Schedule Confirmation Modal */}
       <AnimatePresence>
+
+      {/* Delete Campaign Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleDeleteClose}
+          >
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalTitle>
+                <FaExclamationTriangle />
+                Delete Campaign
+              </ModalTitle>
+              <ModalMessage>
+                Are you sure you want to delete the campaign "{campaignToDelete?.name || 'Untitled'}"? This action cannot be undone and all campaign data will be permanently lost.
+              </ModalMessage>
+              <ModalActions>
+                <ModalButton onClick={handleDeleteClose}>
+                  Cancel
+                </ModalButton>
+                <ModalButton variant="danger" onClick={handleDeleteConfirm}>
+                  Yes, Delete Campaign
+                </ModalButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
         {showCancelModal && (
           <ModalOverlay
             initial={{ opacity: 0 }}

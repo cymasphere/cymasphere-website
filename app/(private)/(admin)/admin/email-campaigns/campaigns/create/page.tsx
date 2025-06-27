@@ -2111,10 +2111,15 @@ function CreateCampaignPage() {
   const editId = searchParams.get('edit');
   const templateId = searchParams.get('template');
   const shouldPrefill = searchParams.get('prefill') === 'true';
+  const stepParam = searchParams.get('step');
+  const scheduleTypeParam = searchParams.get('scheduleType');
   const isEditMode = Boolean(editId);
   
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const step = stepParam ? parseInt(stepParam, 10) : 1;
+    return step >= 1 && step <= 3 ? step : 1;
+  });
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
   
@@ -2182,9 +2187,9 @@ function CreateCampaignPage() {
       excludedAudienceIds: [],
     template: "",
     content: "",
-    scheduleType: "immediate", // Default to "Send Now"
+    scheduleType: scheduleTypeParam || "immediate", // Use URL parameter or default to "Send Now"
     scheduleDate: "",
-    scheduleTime: ""
+    scheduleTime: "09:00" // Default send time to 9:00 AM
     };
   };
   
@@ -2276,6 +2281,16 @@ function CreateCampaignPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Handle URL parameter changes for scheduleType
+  useEffect(() => {
+    if (scheduleTypeParam && scheduleTypeParam !== campaignData.scheduleType) {
+      setCampaignData(prev => ({
+        ...prev,
+        scheduleType: scheduleTypeParam
+      }));
+    }
+  }, [scheduleTypeParam]);
 
   // Load audiences from API
   useEffect(() => {

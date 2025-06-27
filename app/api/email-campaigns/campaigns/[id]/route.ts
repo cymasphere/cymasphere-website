@@ -84,9 +84,9 @@ export async function GET(
     // Transform the data for frontend consumption with new schema fields
     const transformedCampaign = {
       ...campaign,
-      senderName: campaign.sender_name || campaign.from_name, // Fallback to old field
-      senderEmail: campaign.sender_email || campaign.from_email, // Fallback to old field
-      replyToEmail: campaign.reply_to_email || campaign.reply_to, // Fallback to old field
+      senderName: campaign.sender_name || (campaign as any).from_name, // Fallback to old field
+      senderEmail: campaign.sender_email || (campaign as any).from_email, // Fallback to old field
+      replyToEmail: campaign.reply_to_email || (campaign as any).reply_to, // Fallback to old field
       audienceIds,
       excludedAudienceIds
     };
@@ -255,6 +255,108 @@ export async function PUT(
 
   } catch (error) {
     console.error('Update campaign API error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// DELETE /api/email-campaigns/campaigns/[id] - Delete campaign
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createSupabaseServer();
+  
+  // Get authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return NextResponse.json({ 
+      error: 'Authentication required' 
+    }, { status: 401 });
+  }
+
+  // Check if user is admin
+  const { data: adminCheck } = await supabase
+    .from('admins')
+    .select('*')
+    .eq('user', user.id)
+    .single();
+
+  if (!adminCheck) {
+    return NextResponse.json({ 
+      error: 'Admin access required' 
+    }, { status: 403 });
+  }
+
+  try {
+    const campaignId = params.id;
+    
+    console.log('🗑️ DELETE /api/email-campaigns/campaigns/[id] - Campaign ID:', campaignId);
+
+    // First, get the campaign to verify it exists and get its details
+    const { data: campaign, error: fetchError } = await supabase
+      .from('email_campaigns')
+      .select('id, name, status')
+      .eq('id', campaignId)
+      .single();
+
+    if (fetchError || !campaign) {
+      console.error('Campaign not found:', fetchError);
+      return NextResponse.json({ 
+        error: 'Campaign not found' 
+      }, { status: 404 });
+    }
+
+    // Prevent deletion of sent campaigns for data integrity
+    if (campaign.status === 'sent' || campaign.status === 'completed') {
+      return NextResponse.json({ 
+        error: 'Cannot delete sent campaigns. Archive them instead.' 
+      }, { status: 400 });
+    }
+
+    console.log(`🗑️ Deleting campaign: "${campaign.name}" (Status: ${campaign.status})`);
+
+    // Delete associated audience relationships first (foreign key constraints)
+    const { error: audienceDeleteError } = await supabase
+      .from('email_campaign_audiences')
+      .delete()
+      .eq('campaign_id', campaignId);
+
+    if (audienceDeleteError) {
+      console.error('Error deleting campaign audience relationships:', audienceDeleteError);
+      // Continue with deletion anyway - this is not critical
+    }
+
+    // Delete the campaign
+    const { error: deleteError } = await supabase
+      .from('email_campaigns')
+      .delete()
+      .eq('id', campaignId);
+
+    if (deleteError) {
+      console.error('Error deleting campaign:', deleteError);
+      return NextResponse.json({ 
+        error: 'Failed to delete campaign',
+        details: deleteError.message 
+      }, { status: 500 });
+    }
+
+    console.log('✅ Campaign deleted successfully:', campaignId);
+
+    return NextResponse.json({ 
+      message: 'Campaign deleted successfully',
+      deletedCampaign: {
+        id: campaign.id,
+        name: campaign.name,
+        status: campaign.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Delete campaign API error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'
