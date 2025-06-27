@@ -2327,6 +2327,7 @@ function CreateCampaignPage() {
     const loadCampaignData = async () => {
       if (isEditMode && editId && user) {
         console.log('🔍 Starting campaign load for ID:', editId);
+        setIsLoadingCampaign(true);
         try {
           const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
             credentials: 'include'
@@ -2391,6 +2392,8 @@ function CreateCampaignPage() {
           }
         } catch (error) {
           console.error('Error loading campaign:', error);
+        } finally {
+          setIsLoadingCampaign(false);
         }
       } else {
         console.log('🔍 Campaign loading skipped:', {
@@ -2411,6 +2414,10 @@ function CreateCampaignPage() {
 
   if (!user) {
     return <LoadingComponent />;
+  }
+
+  if (isLoadingCampaign) {
+    return <LoadingComponent text="Loading campaign..." />;
   }
 
   const steps = [
