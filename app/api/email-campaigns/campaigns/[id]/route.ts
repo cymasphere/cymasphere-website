@@ -4,7 +4,7 @@ import { createSupabaseServer } from '@/utils/supabase/server';
 // GET /api/email-campaigns/campaigns/[id] - Get single campaign
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -31,7 +31,8 @@ export async function GET(
   }
 
   try {
-    const campaignId = params.id;
+    const resolvedParams = await params;
+    const campaignId = resolvedParams.id;
 
     // Get campaign with updated schema fields
     const { data: campaign, error } = await supabase
@@ -115,7 +116,7 @@ export async function GET(
 // PUT /api/email-campaigns/campaigns/[id] - Update campaign
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -142,7 +143,8 @@ export async function PUT(
   }
 
   try {
-    const campaignId = params.id;
+    const resolvedParams = await params;
+    const campaignId = resolvedParams.id;
     const body = await request.json();
     const { 
       name, 
@@ -265,7 +267,7 @@ export async function PUT(
 // DELETE /api/email-campaigns/campaigns/[id] - Delete campaign
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -292,7 +294,8 @@ export async function DELETE(
   }
 
   try {
-    const campaignId = params.id;
+    const resolvedParams = await params;
+    const campaignId = resolvedParams.id;
     
     console.log('🗑️ DELETE /api/email-campaigns/campaigns/[id] - Campaign ID:', campaignId);
 
@@ -311,7 +314,7 @@ export async function DELETE(
     }
 
     // Prevent deletion of sent campaigns for data integrity
-    if (campaign.status === 'sent' || campaign.status === 'completed') {
+    if (campaign.status === 'sent') {
       return NextResponse.json({ 
         error: 'Cannot delete sent campaigns. Archive them instead.' 
       }, { status: 400 });

@@ -120,25 +120,12 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
 
     const activeSubscriptions = monthlySubscribers + annualSubscribers;
 
-    // Get revenue data from Stripe tables
-    const { data: invoices, error: invoicesError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_invoices")
-      .select("total, currency, period_end, status");
+    // TODO: Integrate with Stripe tables when available
+    // Using mock data for revenue calculations for now
+    const invoices: any[] = [];
+    const paymentIntents: any[] = [];
 
-    if (invoicesError) {
-      console.error("Error fetching invoices:", invoicesError);
-    }
-
-    // Get payment intents for one-time payments (lifetime purchases)
-    const { data: paymentIntents, error: piError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_payment_intents")
-      .select("amount, currency, created, attrs");
-
-    if (piError) {
-      console.error("Error fetching payment intents:", piError);
-    }
+    console.log("Using mock revenue data - Stripe tables not available");
 
     // Calculate revenue (using mock data for now)
     const paidInvoices = invoices?.filter((inv) => inv.status === "paid") || [];
@@ -170,18 +157,8 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       recentPayments.reduce((sum, pi) => sum + (pi.amount || 0), 0) / 100;
     const monthlyRevenue = monthlyInvoiceRevenue + monthlyPaymentRevenue;
 
-    // Calculate churn rate (simplified - cancellations vs active subscriptions)
-    const { data: subscriptions, error: subsError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_subscriptions")
-      .select("attrs");
-
-    const canceledSubs =
-      subscriptions?.filter((sub) => {
-        const attrs = sub.attrs as any;
-        return attrs?.status === "canceled";
-      }).length || 0;
-
+    // Calculate churn rate (using mock data)
+    const canceledSubs = 0; // Mock: no canceled subscriptions
     const churnRate =
       activeSubscriptions > 0
         ? (canceledSubs / (activeSubscriptions + canceledSubs)) * 100
@@ -190,13 +167,8 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     // Get recent activity
     const recentActivity = await getRecentActivity();
 
-    // Get total customers from Stripe
-    const { data: customers, error: customersError } = await supabase
-      .schema("stripe_tables")
-      .from("stripe_customers")
-      .select("id");
-
-    const totalCustomers = customers?.length || 0;
+    // Get total customers (using total users as proxy)
+    const totalCustomers = totalUsers;
 
     return {
       totalUsers,

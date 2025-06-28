@@ -757,6 +757,469 @@ export type Database = {
       [_ in never]: never
     }
   }
+  stripe_tables: {
+    Tables: {
+      stripe_charges: {
+        Row: {
+          amount: number | null
+          attrs: Json | null
+          created: string | null
+          currency: string | null
+          customer: string | null
+          description: string | null
+          id: string | null
+          invoice: string | null
+          payment_intent: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          customer?: string | null
+          description?: string | null
+          id?: string | null
+          invoice?: string | null
+          payment_intent?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          customer?: string | null
+          description?: string | null
+          id?: string | null
+          invoice?: string | null
+          payment_intent?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      stripe_checkout_sessions: {
+        Row: {
+          attrs: Json | null
+          customer: string | null
+          id: string | null
+          payment_intent: string | null
+          subscription: string | null
+        }
+        Insert: {
+          attrs?: Json | null
+          customer?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          subscription?: string | null
+        }
+        Update: {
+          attrs?: Json | null
+          customer?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          subscription?: string | null
+        }
+        Relationships: []
+      }
+      stripe_customers: {
+        Row: {
+          attrs: Json | null
+          created: string | null
+          description: string | null
+          email: string | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          attrs?: Json | null
+          created?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          attrs?: Json | null
+          created?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
+      stripe_disputes: {
+        Row: {
+          amount: number | null
+          attrs: Json | null
+          charge: string | null
+          created: string | null
+          currency: string | null
+          id: string | null
+          payment_intent: string | null
+          reason: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attrs?: Json | null
+          charge?: string | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attrs?: Json | null
+          charge?: string | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          api_version: string | null
+          attrs: Json | null
+          created: string | null
+          id: string | null
+          type: string | null
+        }
+        Insert: {
+          api_version?: string | null
+          attrs?: Json | null
+          created?: string | null
+          id?: string | null
+          type?: string | null
+        }
+        Update: {
+          api_version?: string | null
+          attrs?: Json | null
+          created?: string | null
+          id?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      stripe_invoices: {
+        Row: {
+          attrs: Json | null
+          currency: string | null
+          customer: string | null
+          id: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          subscription: string | null
+          total: number | null
+        }
+        Insert: {
+          attrs?: Json | null
+          currency?: string | null
+          customer?: string | null
+          id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          subscription?: string | null
+          total?: number | null
+        }
+        Update: {
+          attrs?: Json | null
+          currency?: string | null
+          customer?: string | null
+          id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          subscription?: string | null
+          total?: number | null
+        }
+        Relationships: []
+      }
+      stripe_payment_intents: {
+        Row: {
+          amount: number | null
+          attrs: Json | null
+          created: string | null
+          currency: string | null
+          customer: string | null
+          id: string | null
+          payment_method: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          customer?: string | null
+          id?: string | null
+          payment_method?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          customer?: string | null
+          id?: string | null
+          payment_method?: string | null
+        }
+        Relationships: []
+      }
+      stripe_prices: {
+        Row: {
+          active: boolean | null
+          attrs: Json | null
+          created: string | null
+          currency: string | null
+          id: string | null
+          product: string | null
+          type: string | null
+          unit_amount: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          product?: string | null
+          type?: string | null
+          unit_amount?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          attrs?: Json | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          product?: string | null
+          type?: string | null
+          unit_amount?: number | null
+        }
+        Relationships: []
+      }
+      stripe_products: {
+        Row: {
+          active: boolean | null
+          attrs: Json | null
+          created: string | null
+          default_price: string | null
+          description: string | null
+          id: string | null
+          name: string | null
+          updated: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          attrs?: Json | null
+          created?: string | null
+          default_price?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          updated?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          attrs?: Json | null
+          created?: string | null
+          default_price?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          updated?: string | null
+        }
+        Relationships: []
+      }
+      stripe_refunds: {
+        Row: {
+          amount: number | null
+          attrs: Json | null
+          charge: string | null
+          created: string | null
+          currency: string | null
+          id: string | null
+          payment_intent: string | null
+          reason: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attrs?: Json | null
+          charge?: string | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attrs?: Json | null
+          charge?: string | null
+          created?: string | null
+          currency?: string | null
+          id?: string | null
+          payment_intent?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      stripe_setup_attempts: {
+        Row: {
+          application: string | null
+          attrs: Json | null
+          created: string | null
+          customer: string | null
+          id: string | null
+          on_behalf_of: string | null
+          payment_method: string | null
+          setup_intent: string | null
+          status: string | null
+          usage: string | null
+        }
+        Insert: {
+          application?: string | null
+          attrs?: Json | null
+          created?: string | null
+          customer?: string | null
+          id?: string | null
+          on_behalf_of?: string | null
+          payment_method?: string | null
+          setup_intent?: string | null
+          status?: string | null
+          usage?: string | null
+        }
+        Update: {
+          application?: string | null
+          attrs?: Json | null
+          created?: string | null
+          customer?: string | null
+          id?: string | null
+          on_behalf_of?: string | null
+          payment_method?: string | null
+          setup_intent?: string | null
+          status?: string | null
+          usage?: string | null
+        }
+        Relationships: []
+      }
+      stripe_setup_intents: {
+        Row: {
+          attrs: Json | null
+          client_secret: string | null
+          created: string | null
+          customer: string | null
+          description: string | null
+          id: string | null
+          payment_method: string | null
+          status: string | null
+          usage: string | null
+        }
+        Insert: {
+          attrs?: Json | null
+          client_secret?: string | null
+          created?: string | null
+          customer?: string | null
+          description?: string | null
+          id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          usage?: string | null
+        }
+        Update: {
+          attrs?: Json | null
+          client_secret?: string | null
+          created?: string | null
+          customer?: string | null
+          description?: string | null
+          id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          usage?: string | null
+        }
+        Relationships: []
+      }
+      stripe_subscriptions: {
+        Row: {
+          attrs: Json | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          customer: string | null
+          id: string | null
+        }
+        Insert: {
+          attrs?: Json | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer?: string | null
+          id?: string | null
+        }
+        Update: {
+          attrs?: Json | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
+      stripe_tokens: {
+        Row: {
+          attrs: Json | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          customer: string | null
+          id: string | null
+        }
+        Insert: {
+          attrs?: Json | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer?: string | null
+          id?: string | null
+        }
+        Update: {
+          attrs?: Json | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DefaultSchema = Database[Extract<keyof Database, "public">]
@@ -896,5 +1359,8 @@ export const Constants = {
         "custom",
       ],
     },
+  },
+  stripe_tables: {
+    Enums: {},
   },
 } as const

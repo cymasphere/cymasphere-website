@@ -3,7 +3,7 @@ import { createSupabaseServer } from '@/utils/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createSupabaseServer();
   
@@ -30,7 +30,8 @@ export async function GET(
   }
 
   try {
-    const templateId = params.id;
+    const resolvedParams = await params;
+    const templateId = resolvedParams.id;
 
     // Fetch the template
     const { data: template, error } = await supabase
