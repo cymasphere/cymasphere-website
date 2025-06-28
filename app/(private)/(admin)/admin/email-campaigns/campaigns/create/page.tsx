@@ -2200,7 +2200,13 @@ function CreateCampaignPage() {
 
   // Define reach calculation function using useCallback so it can be used in useEffect
   const updateReachCalculation = useCallback(async () => {
+    console.log(`🎯🎯🎯 =====EDIT MODAL DEBUG=====`);
+    console.log(`Campaign data audienceIds:`, campaignData.audienceIds);
+    console.log(`Campaign data excludedAudienceIds:`, campaignData.excludedAudienceIds);
+    console.log(`Available audiences in edit modal:`, audiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+    
     if (campaignData.audienceIds.length === 0) {
+      console.log(`🎯 Edit modal: No audiences selected, setting reach to 0`);
       setReachData({
         totalIncluded: 0,
         totalExcluded: 0,
@@ -2215,6 +2221,11 @@ function CreateCampaignPage() {
     setReachData(prev => ({ ...prev, isLoading: true }));
 
     try {
+      console.log(`🎯 Edit modal calling reach API with:`, {
+        audienceIds: campaignData.audienceIds,
+        excludedAudienceIds: campaignData.excludedAudienceIds
+      });
+
       const response = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
         method: 'POST',
         headers: {
@@ -2227,19 +2238,31 @@ function CreateCampaignPage() {
         })
       });
 
+      console.log(`🎯 Edit modal reach API response status:`, response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log(`🎯 Edit modal reach API response data:`, JSON.stringify(data, null, 2));
+        
         const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
         const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
         
-        setReachData({
-          totalIncluded: data.details.totalIncluded || 0,
-          totalExcluded: data.details.totalExcluded || 0,
+        console.log(`🎯 Edit modal matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        console.log(`🎯 Edit modal matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        
+        const finalReachData = {
+          totalIncluded: data.details?.totalIncluded || 0,
+          totalExcluded: data.details?.totalExcluded || 0,
           estimatedReach: data.uniqueCount || 0,
           includedCount: includedAudiences.length,
           excludedCount: excludedAudiences.length,
           isLoading: false
-        });
+        };
+        
+        console.log(`🎯 Edit modal final reach data:`, finalReachData);
+        console.log(`🎯 EDIT MODAL KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
+        
+        setReachData(finalReachData);
       } else {
         console.error('Failed to calculate reach:', response.status);
         // Fallback to simple calculation
@@ -2376,8 +2399,20 @@ function CreateCampaignPage() {
               template: campaign.template_id || '',
               content: campaign.html_content || '',
               scheduleType: campaign.scheduled_at ? 'scheduled' : '',
-              scheduleDate: campaign.scheduled_at ? campaign.scheduled_at.split('T')[0] : '',
-              scheduleTime: campaign.scheduled_at ? campaign.scheduled_at.split('T')[1]?.split('.')[0] : ''
+              scheduleDate: campaign.scheduled_at ? (() => {
+                const scheduledDate = new Date(campaign.scheduled_at);
+                console.log('📅 Loading scheduled time for editing:', {
+                  storedValue: campaign.scheduled_at,
+                  parsedDate: scheduledDate.toString(),
+                  localDateString: scheduledDate.toLocaleDateString('en-CA'), // YYYY-MM-DD format
+                  localTimeString: scheduledDate.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' }) // HH:MM format
+                });
+                return scheduledDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+              })() : '',
+              scheduleTime: campaign.scheduled_at ? (() => {
+                const scheduledDate = new Date(campaign.scheduled_at);
+                return scheduledDate.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' }); // HH:MM format
+              })() : ''
             });
             
             // Parse email elements from html_content if available
@@ -2546,7 +2581,27 @@ function CreateCampaignPage() {
           excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
           status: campaignData.scheduleType === 'scheduled' ? 'scheduled' : 'sent',
           scheduled_at: campaignData.scheduleType === 'scheduled' ? 
-            `${campaignData.scheduleDate}T${campaignData.scheduleTime}:00Z` : null
+            (() => {
+              // Preserve local timezone by adding timezone offset explicitly
+              const localDateTime = new Date(`${campaignData.scheduleDate}T${campaignData.scheduleTime}:00`);
+              const timezoneOffset = localDateTime.getTimezoneOffset();
+              const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60);
+              const offsetMinutes = Math.abs(timezoneOffset) % 60;
+              const offsetSign = timezoneOffset <= 0 ? '+' : '-';
+              const offsetString = `${offsetSign}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
+              const localDateTimeString = `${campaignData.scheduleDate}T${campaignData.scheduleTime}:00${offsetString}`;
+              
+              console.log('📅 Saving scheduled time:', {
+                originalDate: campaignData.scheduleDate,
+                originalTime: campaignData.scheduleTime,
+                timezoneOffset,
+                offsetString,
+                localDateTimeString,
+                parsedBack: new Date(localDateTimeString).toString()
+              });
+              
+              return localDateTimeString;
+            })() : null
         }),
       });
 
@@ -3902,7 +3957,17 @@ function CreateCampaignPage() {
                           <span style={{ color: 'var(--text-secondary)' }}>Calculating...</span>
                         ) : (
                           <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>
-                            {(reachData.estimatedReach || calculateAudienceStats().estimatedReach).toLocaleString()} subscribers
+                            {(() => {
+                              const reachValue = reachData.estimatedReach || calculateAudienceStats().estimatedReach;
+                              console.log(`🎯 EDIT MODAL DISPLAY VALUE:`, {
+                                'reachData.estimatedReach': reachData.estimatedReach,
+                                'calculateAudienceStats().estimatedReach': calculateAudienceStats().estimatedReach,
+                                'finalDisplayValue': reachValue,
+                                'reachData': reachData,
+                                'calculateAudienceStats()': calculateAudienceStats()
+                              });
+                              return reachValue.toLocaleString();
+                            })()} subscribers
                           </span>
                         )
                       }</p>

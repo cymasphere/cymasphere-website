@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
       // TODO: Store in campaign scheduling queue
       console.log(`📅 Campaign "${name}" scheduled for: ${scheduledDateTime.toLocaleString()}`);
       console.log(`📊 Target audiences: ${audienceIds.length} selected, ${excludedAudienceIds?.length || 0} excluded`);
-      
+
       return NextResponse.json({
         success: true,
         message: `Campaign scheduled for ${scheduledDateTime.toLocaleString()}`,

@@ -175,7 +175,7 @@ npx supabase db push --password '$2DEK@kBdYbbMs'
 
 3. For secure operations, avoid hardcoding the password in scripts - use environment variables instead.
 
-4. If you get "nodename nor servname provided, or not known", the hostname might be incorrect. Use the pooler address format shown in Method 1.
+4. If you get "nodename nor servname provided, or not known", the hostname might be incorrect. Use the pooler address format shown in Method 1. 
 
 ### Migration-Specific Troubleshooting
 

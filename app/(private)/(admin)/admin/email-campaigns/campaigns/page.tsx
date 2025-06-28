@@ -612,6 +612,68 @@ function CampaignsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
   const [campaignToDelete, setCampaignToDelete] = useState<any>(null);
+  const [audiences, setAudiences] = useState<any[]>([]);
+  const [campaignAudienceData, setCampaignAudienceData] = useState<Record<string, {
+    audienceIds: string[];
+    excludedAudienceIds: string[];
+    isLoaded: boolean;
+  }>>({});
+  const [campaignReachData, setCampaignReachData] = useState<Record<string, {
+    totalIncluded: number;
+    totalExcluded: number;
+    estimatedReach: number;
+    includedCount: number;
+    excludedCount: number;
+    isLoading: boolean;
+  }>>({});
+
+  // Fetch audience IDs for a campaign (same API call as edit modal)
+  const fetchCampaignAudienceData = async (campaignId: string) => {
+    if (campaignAudienceData[campaignId]?.isLoaded) return;
+
+    try {
+      const response = await fetch(`/api/email-campaigns/campaigns/${campaignId}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const audienceIds = data.campaign?.audienceIds || [];
+        const excludedAudienceIds = data.campaign?.excludedAudienceIds || [];
+        
+        setCampaignAudienceData(prev => ({
+          ...prev,
+          [campaignId]: {
+            audienceIds,
+            excludedAudienceIds,
+            isLoaded: true
+          }
+        }));
+        
+        console.log(`✅ Loaded audience data for campaign ${campaignId}:`, { audienceIds, excludedAudienceIds });
+      }
+    } catch (error) {
+      console.error(`Error fetching audience data for campaign ${campaignId}:`, error);
+    }
+  };
+
+  // Copy exact function from edit modal that works
+  const calculateAudienceStatsForCampaign = (audienceIds: string[], excludedAudienceIds: string[], campaignId: string) => {
+    const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
+    const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+    
+    // Calculate fallback totals from audience subscriber_count (EXACT same as edit modal)
+    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    
+    return {
+      totalIncluded: fallbackTotalIncluded,
+      totalExcluded: fallbackTotalExcluded,
+      estimatedReach: Math.max(0, fallbackTotalIncluded - fallbackTotalExcluded),
+      includedCount: includedAudiences.length,
+      excludedCount: excludedAudiences.length
+    };
+  };
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -622,6 +684,155 @@ function CampaignsPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Function to calculate reach for a campaign (exact same logic as edit modal)
+  const calculateCampaignReach = async (campaign: any) => {
+    if (!campaign.id || campaignReachData[campaign.id]?.isLoading) return;
+
+    // Don't calculate for sent campaigns that already have final metrics
+    if (campaign.status === 'sent' || campaign.status === 'completed') {
+      return;
+    }
+
+    let audienceIds: string[] = [];
+    let excludedAudienceIds: string[] = [];
+    
+    try {
+      console.log(`🔍🔍🔍 [${campaign.name}] =====CAMPAIGNS TABLE DEBUG=====`);
+      console.log(`Campaign ID: ${campaign.id}`);
+      console.log(`Campaign Status: ${campaign.status}`);
+
+      const audienceResponse = await fetch(`/api/email-campaigns/campaigns/${campaign.id}`, {
+        credentials: 'include'
+      });
+
+      if (!audienceResponse.ok) {
+        throw new Error('Failed to fetch campaign details');
+      }
+
+      const campaignDetails = await audienceResponse.json();
+      console.log(`🔍 Full campaign details response:`, JSON.stringify(campaignDetails, null, 2));
+      
+      audienceIds = campaignDetails.campaign?.audienceIds || [];
+      excludedAudienceIds = campaignDetails.campaign?.excludedAudienceIds || [];
+      
+      console.log(`🔍 Extracted audience IDs:`, {
+        audienceIds,
+        excludedAudienceIds,
+        totalAudienceCount: audienceIds.length,
+        excludedCount: excludedAudienceIds.length
+      });
+
+      if (audienceIds.length === 0) {
+        setCampaignReachData(prev => ({ 
+          ...prev, 
+          [campaign.id]: {
+            totalIncluded: 0,
+            totalExcluded: 0,
+            estimatedReach: 0,
+            includedCount: 0,
+            excludedCount: 0,
+            isLoading: false
+          }
+        }));
+        return;
+      }
+
+      // Set loading state
+      setCampaignReachData(prev => ({ 
+        ...prev, 
+        [campaign.id]: {
+          ...prev[campaign.id],
+          isLoading: true
+        } as any
+      }));
+
+      console.log(`🔍 Calling reach calculation API with:`, {
+        audienceIds,
+        excludedAudienceIds,
+        apiEndpoint: '/api/email-campaigns/campaigns/calculate-reach'
+      });
+
+      const reachResponse = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          audienceIds,
+          excludedAudienceIds
+        })
+      });
+
+      console.log(`🔍 Reach API response status:`, reachResponse.status);
+
+      if (reachResponse.ok) {
+        const reachData = await reachResponse.json();
+        console.log(`🔍 Reach API response data:`, JSON.stringify(reachData, null, 2));
+        
+        const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+        
+        console.log(`🔍 Available audiences in state:`, audiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        console.log(`🔍 Matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        console.log(`🔍 Matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        
+        const finalReachData = {
+          totalIncluded: reachData.details?.totalIncluded || 0,
+          totalExcluded: reachData.details?.totalExcluded || 0,
+          estimatedReach: reachData.uniqueCount || 0, // Use uniqueCount like edit modal
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        };
+        
+        console.log(`🔍 Final reach data being set:`, finalReachData);
+        console.log(`🔍 KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
+        
+        setCampaignReachData(prev => ({ 
+          ...prev, 
+          [campaign.id]: finalReachData
+        }));
+      } else {
+        // Fallback calculation (same as edit modal)
+        const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+        const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        
+        setCampaignReachData(prev => ({ 
+          ...prev, 
+          [campaign.id]: {
+            totalIncluded,
+            totalExcluded,
+            estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+            includedCount: includedAudiences.length,
+            excludedCount: excludedAudiences.length,
+            isLoading: false
+          }
+        }));
+      }
+    } catch (error) {
+      // Fallback calculation (same as edit modal)
+      const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
+      const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      
+      setCampaignReachData(prev => ({ 
+        ...prev, 
+        [campaign.id]: {
+          totalIncluded,
+          totalExcluded,
+          estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        }
+      }));
+    }
+  };
 
   // Fetch campaigns from API
   useEffect(() => {
@@ -636,7 +847,37 @@ function CampaignsPage() {
         if (response.ok) {
           const data = await response.json();
           console.log('📧 Fetched campaigns:', data);
-          setCampaigns(data.campaigns || []);
+          const fetchedCampaigns = data.campaigns || [];
+          setCampaigns(fetchedCampaigns);
+          
+          console.log('🔍🔍🔍 =====CAMPAIGNS TABLE FILTER DEBUG=====');
+          console.log('All fetched campaigns:', fetchedCampaigns.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            status: c.status,
+            scheduled_at: c.scheduled_at,
+            scheduled_at_date: c.scheduled_at ? new Date(c.scheduled_at) : null,
+            current_date: new Date(),
+            is_future: c.scheduled_at ? new Date(c.scheduled_at) > new Date() : false
+          })));
+          
+          // Calculate reach for scheduled campaigns only
+          const scheduledCampaigns = fetchedCampaigns.filter((c: any) => 
+            c.status === 'scheduled' || (c.scheduled_at && new Date(c.scheduled_at) > new Date())
+          );
+          
+          console.log('🔍 Scheduled campaigns that will get reach calculation:', scheduledCampaigns.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            status: c.status,
+            scheduled_at: c.scheduled_at
+          })));
+          
+          // Fetch audience data for scheduled campaigns (like edit modal does)
+          scheduledCampaigns.forEach((campaign: any) => {
+            console.log(`🔍 Fetching audience data for: ${campaign.name} (${campaign.id})`);
+            fetchCampaignAudienceData(campaign.id);
+          });
         } else {
           console.error('Failed to fetch campaigns:', response.status);
         }
@@ -649,6 +890,32 @@ function CampaignsPage() {
 
     fetchCampaigns();
   }, [user]);
+
+  // Load audiences for reach calculation fallbacks (same as edit modal)
+  useEffect(() => {
+    const loadAudiences = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/email-campaigns/audiences', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📊 Loaded audiences for reach calculations:', data.audiences?.length || 0);
+          setAudiences(data.audiences || []);
+        } else {
+          console.error('Failed to load audiences:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading audiences:', error);
+      }
+    };
+
+    loadAudiences();
+  }, [user]);
+
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -988,9 +1255,18 @@ function CampaignsPage() {
               <tr>
                 <TableHeaderCell>Campaign</TableHeaderCell>
                 <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Recipients</TableHeaderCell>
-                <TableHeaderCell>Open Rate</TableHeaderCell>
-                <TableHeaderCell>Click Rate</TableHeaderCell>
+                {activeTab === 'scheduled' ? (
+                  <>
+                    <TableHeaderCell>Scheduled Time</TableHeaderCell>  
+                    <TableHeaderCell>Reach</TableHeaderCell>
+                  </>
+                ) : (
+                  <>
+                    <TableHeaderCell>Recipients</TableHeaderCell>
+                    <TableHeaderCell>Open Rate</TableHeaderCell>
+                    <TableHeaderCell>Click Rate</TableHeaderCell>
+                  </>
+                )}
                 <TableHeaderCell>Created</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
@@ -998,7 +1274,7 @@ function CampaignsPage() {
             <TableBody>
               {filteredCampaigns.length === 0 ? (
                 <tr>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={activeTab === 'scheduled' ? 6 : 7}>
                     <EmptyState>
                       <FaEnvelopeOpen />
                       <h3>No campaigns found</h3>
@@ -1030,15 +1306,98 @@ function CampaignsPage() {
                     <TableCell>
                       <StatusBadge status={campaign.status || 'draft'}>{campaign.status || 'draft'}</StatusBadge>
                     </TableCell>
-                    <TableCell>
-                      <MetricValue>{campaign.total_recipients || 0}</MetricValue>
-                    </TableCell>
-                    <TableCell>
-                      <MetricValue>0%</MetricValue>
-                    </TableCell>
-                    <TableCell>
-                      <MetricValue>0%</MetricValue>
-                    </TableCell>
+                    {activeTab === 'scheduled' ? (
+                      <>
+                        <TableCell>
+                          <MetricValue>
+                            {campaign.scheduled_at 
+                              ? (() => {
+                                  const scheduledDate = new Date(campaign.scheduled_at);
+                                  console.log('📅 Displaying scheduled time:', {
+                                    campaignName: campaign.name,
+                                    storedValue: campaign.scheduled_at,
+                                    parsedDate: scheduledDate.toString(),
+                                    utcString: scheduledDate.toUTCString(),
+                                    localString: scheduledDate.toLocaleString(),
+                                    timezoneOffset: scheduledDate.getTimezoneOffset()
+                                  });
+                                  
+                                  return scheduledDate.toLocaleString(undefined, {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    timeZoneName: 'short'
+                                  });
+                                })()
+                              : 'Not scheduled'
+                            }
+                          </MetricValue>
+                        </TableCell>
+                        <TableCell>
+                          <MetricValue>
+                            {campaignReachData[campaign.id]?.isLoading ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  style={{ width: '12px', height: '12px', border: '2px solid rgba(108, 99, 255, 0.3)', borderTop: '2px solid var(--primary)', borderRadius: '50%' }}
+                                />
+                                Calculating...
+                              </span>
+                            ) : (() => {
+                              // Get audience data (fetched separately like edit modal)
+                              const campaignAudiences = campaignAudienceData[campaign.id];
+                              
+                              if (!campaignAudiences?.isLoaded) {
+                                console.log(`🔄 Still loading audience data for ${campaign.name}...`);
+                                return '...';
+                              }
+                              
+                              const audienceIds = campaignAudiences.audienceIds || [];
+                              const excludedAudienceIds = campaignAudiences.excludedAudienceIds || [];
+                              
+                              if (audienceIds.length === 0) {
+                                console.log(`⚠️ No audiences for ${campaign.name}`);
+                                return '0';
+                              }
+                              
+                              if (audiences.length === 0) {
+                                console.log(`🔄 Audiences list not loaded yet for ${campaign.name}`);
+                                return '...';
+                              }
+                              
+                              // Use EXACT same logic as edit modal
+                              const stats = calculateAudienceStatsForCampaign(audienceIds, excludedAudienceIds, campaign.id);
+                              const finalReach = stats.estimatedReach;
+                              
+                              console.log(`🎯 FINAL REACH for ${campaign.name}:`, {
+                                audienceIds,
+                                excludedAudienceIds,
+                                stats,
+                                finalReach
+                              });
+                              
+                              return finalReach.toLocaleString();
+                            })()}
+                          </MetricValue>
+                          <MetricLabel>subscribers</MetricLabel>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>
+                          <MetricValue>{campaign.total_recipients || 0}</MetricValue>
+                        </TableCell>
+                        <TableCell>
+                          <MetricValue>0%</MetricValue>
+                        </TableCell>
+                        <TableCell>
+                          <MetricValue>0%</MetricValue>
+                        </TableCell>
+                      </>
+                    )}
                     <TableCell>
                       {campaign.created_at ? new Date(campaign.created_at).toLocaleDateString() : 'N/A'}
                     </TableCell>
