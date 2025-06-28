@@ -606,7 +606,7 @@ function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'drafts' | 'scheduled' | 'sent'>('all');
+  const [activeTab, setActiveTab] = useState<'drafts' | 'scheduled' | 'sent'>('drafts');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelCampaignId, setCancelCampaignId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -861,20 +861,20 @@ function CampaignsPage() {
             is_future: c.scheduled_at ? new Date(c.scheduled_at) > new Date() : false
           })));
           
-          // Calculate reach for scheduled campaigns only
-          const scheduledCampaigns = fetchedCampaigns.filter((c: any) => 
-            c.status === 'scheduled' || (c.scheduled_at && new Date(c.scheduled_at) > new Date())
+          // Calculate reach for scheduled AND draft campaigns (both need reach calculation)
+          const campaignsNeedingReach = fetchedCampaigns.filter((c: any) => 
+            c.status === 'scheduled' || c.status === 'draft' || (c.scheduled_at && new Date(c.scheduled_at) > new Date())
           );
           
-          console.log('🔍 Scheduled campaigns that will get reach calculation:', scheduledCampaigns.map((c: any) => ({
+          console.log('🔍 Campaigns that will get reach calculation:', campaignsNeedingReach.map((c: any) => ({
             id: c.id,
             name: c.name,
             status: c.status,
             scheduled_at: c.scheduled_at
           })));
           
-          // Fetch audience data for scheduled campaigns (like edit modal does)
-          scheduledCampaigns.forEach((campaign: any) => {
+          // Fetch audience data for campaigns that need reach calculation (like edit modal does)
+          campaignsNeedingReach.forEach((campaign: any) => {
             console.log(`🔍 Fetching audience data for: ${campaign.name} (${campaign.id})`);
             fetchCampaignAudienceData(campaign.id);
           });
@@ -952,9 +952,8 @@ function CampaignsPage() {
         return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
       case 'sent':
         return campaign.status === 'sent' || campaign.status === 'completed';
-      case 'all':
       default:
-        return true;
+        return campaign.status === 'draft';
     }
   });
 
@@ -1235,9 +1234,6 @@ function CampaignsPage() {
         </ActionsRow>
 
         <TabsContainer>
-          <Tab active={activeTab === 'all'} onClick={() => setActiveTab('all')}>
-            All
-          </Tab>
           <Tab active={activeTab === 'drafts'} onClick={() => setActiveTab('drafts')}>
             Drafts
           </Tab>
@@ -1258,6 +1254,10 @@ function CampaignsPage() {
                 {activeTab === 'scheduled' ? (
                   <>
                     <TableHeaderCell>Scheduled Time</TableHeaderCell>  
+                    <TableHeaderCell>Reach</TableHeaderCell>
+                  </>
+                ) : activeTab === 'drafts' ? (
+                  <>
                     <TableHeaderCell>Reach</TableHeaderCell>
                   </>
                 ) : (
@@ -1335,6 +1335,58 @@ function CampaignsPage() {
                             }
                           </MetricValue>
                         </TableCell>
+                        <TableCell>
+                          <MetricValue>
+                            {campaignReachData[campaign.id]?.isLoading ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  style={{ width: '12px', height: '12px', border: '2px solid rgba(108, 99, 255, 0.3)', borderTop: '2px solid var(--primary)', borderRadius: '50%' }}
+                                />
+                                Calculating...
+                              </span>
+                            ) : (() => {
+                              // Get audience data (fetched separately like edit modal)
+                              const campaignAudiences = campaignAudienceData[campaign.id];
+                              
+                              if (!campaignAudiences?.isLoaded) {
+                                console.log(`🔄 Still loading audience data for ${campaign.name}...`);
+                                return '...';
+                              }
+                              
+                              const audienceIds = campaignAudiences.audienceIds || [];
+                              const excludedAudienceIds = campaignAudiences.excludedAudienceIds || [];
+                              
+                              if (audienceIds.length === 0) {
+                                console.log(`⚠️ No audiences for ${campaign.name}`);
+                                return '0';
+                              }
+                              
+                              if (audiences.length === 0) {
+                                console.log(`🔄 Audiences list not loaded yet for ${campaign.name}`);
+                                return '...';
+                              }
+                              
+                              // Use EXACT same logic as edit modal
+                              const stats = calculateAudienceStatsForCampaign(audienceIds, excludedAudienceIds, campaign.id);
+                              const finalReach = stats.estimatedReach;
+                              
+                              console.log(`🎯 FINAL REACH for ${campaign.name}:`, {
+                                audienceIds,
+                                excludedAudienceIds,
+                                stats,
+                                finalReach
+                              });
+                              
+                              return finalReach.toLocaleString();
+                            })()}
+                          </MetricValue>
+                          <MetricLabel>subscribers</MetricLabel>
+                        </TableCell>
+                      </>
+                    ) : activeTab === 'drafts' ? (
+                      <>
                         <TableCell>
                           <MetricValue>
                             {campaignReachData[campaign.id]?.isLoading ? (
