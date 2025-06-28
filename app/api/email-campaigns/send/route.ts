@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // TODO: Store in campaign scheduling queue
+      // ✅ Campaign is now stored and will be processed by the cron job at /api/email-campaigns/process-scheduled
       console.log(`📅 Campaign "${name}" scheduled for: ${scheduledDateTime.toLocaleString()}`);
       console.log(`📊 Target audiences: ${audienceIds.length} selected, ${excludedAudienceIds?.length || 0} excluded`);
 
