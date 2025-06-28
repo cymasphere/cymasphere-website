@@ -333,9 +333,8 @@ async function getSubscribersForAudiences(audienceIds: string[], excludedAudienc
           subscribers (
             id,
             email,
-            first_name,
-            last_name,
-            is_subscribed
+            status,
+            user_id
           )
         `)
         .in('audience_id', audienceIds);
@@ -348,7 +347,7 @@ async function getSubscribersForAudiences(audienceIds: string[], excludedAudienc
       // Flatten and deduplicate subscribers
       const subscriberMap = new Map();
       audienceSubscribers?.forEach((rel: any) => {
-        if (rel.subscribers && rel.subscribers.is_subscribed) {
+        if (rel.subscribers && rel.subscribers.status === 'active') {
           subscriberMap.set(rel.subscribers.id, rel.subscribers);
         }
       });
