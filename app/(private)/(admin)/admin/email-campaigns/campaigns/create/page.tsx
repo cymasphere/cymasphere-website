@@ -4393,7 +4393,14 @@ function CreateCampaignPage() {
                     variant="primary" 
                     onClick={() => {
                       setShowResultModal(false);
-                      router.push("/admin/email-campaigns/campaigns");
+                      // Determine which tab to navigate to based on campaign status
+                      let targetTab = 'drafts'; // default
+                      if (campaignResult.status === 'scheduled') {
+                        targetTab = 'scheduled';
+                      } else if (campaignResult.status === 'sent' || campaignResult.status === 'completed') {
+                        targetTab = 'sent';
+                      }
+                      router.push(`/admin/email-campaigns/campaigns?tab=${targetTab}`);
                     }}
                   >
                     View Campaigns

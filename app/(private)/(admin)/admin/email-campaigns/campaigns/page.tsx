@@ -32,7 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 
 const CampaignsContainer = styled.div`
@@ -630,6 +630,7 @@ function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
   const [activeTab, setActiveTab] = useState<'drafts' | 'scheduled' | 'sent'>('drafts');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelCampaignId, setCancelCampaignId] = useState<string | null>(null);
@@ -706,6 +707,15 @@ function CampaignsPage() {
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Handle tab from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'scheduled' || tabParam === 'sent' || tabParam === 'drafts') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!languageLoading) {

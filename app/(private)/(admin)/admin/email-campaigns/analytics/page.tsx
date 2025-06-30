@@ -206,7 +206,9 @@ const MetricIcon = styled.div<{ variant?: string }>`
   }};
 `;
 
-const MetricChange = styled.div<{ positive: boolean }>`
+const MetricChange = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'positive',
+})<{ positive: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -399,7 +401,9 @@ const MetricNumber = styled.div`
   font-size: 0.9rem;
 `;
 
-const MetricPercent = styled.div<{ positive?: boolean }>`
+const MetricPercent = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'positive',
+})<{ positive?: boolean }>`
   font-size: 0.8rem;
   color: ${props => props.positive ? '#28a745' : props.positive === false ? '#dc3545' : 'var(--text-secondary)'};
   margin-top: 0.25rem;

@@ -18,7 +18,11 @@ export function injectEmailTracking(
     return htmlContent; // Return original content if tracking parameters missing
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+  // Always use production URL for tracking pixels (even in development)
+  // because localhost URLs won't work in external email clients
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com')
+    : 'https://cymasphere.com';
   console.log('🔧 Using base URL:', baseUrl);
 
   // Step 1: Rewrite links for click tracking
@@ -90,7 +94,7 @@ export async function createSendRecord(
     const sendRecord = {
       campaign_id: campaignId,
       subscriber_id: subscriberId,
-      recipient_email: recipientEmail,
+      email: recipientEmail,
       sent_at: new Date().toISOString(),
       status: 'sent'
     };

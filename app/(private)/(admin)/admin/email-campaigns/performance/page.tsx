@@ -253,7 +253,9 @@ const MetricValue = styled.div<{ variant?: string }>`
   margin-bottom: 0.5rem;
 `;
 
-const MetricChange = styled.div<{ positive: boolean }>`
+const MetricChange = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'positive',
+})<{ positive: boolean }>`
   font-size: 0.8rem;
   color: ${props => props.positive ? '#28a745' : '#dc3545'};
   font-weight: 600;

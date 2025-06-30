@@ -416,7 +416,7 @@ export async function POST(request: NextRequest) {
             subscriber_id: subscriber.id,
             email: subscriber.email,
             status: 'pending'
-          })
+          } as any)
           .select('id')
           .single();
 
@@ -593,8 +593,11 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
         return match;
       }
       
-      // Create tracking URL
-      const trackingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/api/email-campaigns/track/click?c=${campaignId}&u=${subscriberId}&s=${sendId}&url=${encodeURIComponent(url)}`;
+      // Always use production URL for tracking (even in development)
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com')
+        : 'https://cymasphere.com';
+      const trackingUrl = `${baseUrl}/api/email-campaigns/track/click?c=${campaignId}&u=${subscriberId}&s=${sendId}&url=${encodeURIComponent(url)}`;
       return `href="${trackingUrl}"`;
     });
   };
@@ -703,9 +706,13 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
 
   // Add tracking pixel if we have tracking parameters
   if (campaignId && subscriberId && sendId) {
+    // Always use production URL for tracking pixels (even in development)
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com')
+      : 'https://cymasphere.com';
     const trackingPixel = `
     <!-- Email Open Tracking -->
-    <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:none;border:0;outline:0;" alt="" />`;
+    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:none;border:0;outline:0;" alt="" />`;
     
     html += trackingPixel;
   }

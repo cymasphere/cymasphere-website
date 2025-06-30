@@ -7,6 +7,113 @@ import { injectEmailTracking, createSendRecord } from "@/utils/email-tracking";
 // Store the last execution time in memory
 let lastCronExecution: string | null = null;
 
+// Helper function to generate proper HTML template for scheduled campaigns
+function generateProperEmailTemplate(contentHtml: string, subject: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo .cyma {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content div {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .content h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+            background: linear-gradient(135deg, #333, #666);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        .content a {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            color: #666666;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #6c63ff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="cyma">CYMA</span><span>SPHERE</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            ${contentHtml}
+        </div>
+        
+        <div class="footer">
+            <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
+            <p><a href="https://cymasphere.com/unsubscribe">Unsubscribe</a> | <a href="https://cymasphere.com">Visit our website</a></p>
+            <p>© 2024 Cymasphere. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
 // This endpoint will be called by a cron job every minute
 export async function POST(request: NextRequest) {
   const executionTime = new Date().toISOString();
@@ -218,8 +325,11 @@ export async function POST(request: NextRequest) {
               supabase
             );
 
-            // Inject tracking into HTML content (works for both new and existing campaigns)
-            let htmlContent = campaign.html_content || `<h1>${campaign.subject || 'Newsletter'}</h1><p>Content coming soon...</p>`;
+            // Generate proper HTML template (instead of using raw html_content)
+            let htmlContent = generateProperEmailTemplate(
+              campaign.html_content || `<h1>${campaign.subject || 'Newsletter'}</h1><p>Content coming soon...</p>`,
+              campaign.subject || 'Newsletter'
+            );
             
             if (sendId) {
               htmlContent = injectEmailTracking(
