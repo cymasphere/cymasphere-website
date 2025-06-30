@@ -1267,7 +1267,7 @@ function CampaignsPage() {
                     <TableHeaderCell>Click Rate</TableHeaderCell>
                   </>
                 )}
-                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell>{activeTab === 'sent' ? 'Sent Date' : 'Created'}</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHeader>
@@ -1451,7 +1451,18 @@ function CampaignsPage() {
                       </>
                     )}
                     <TableCell>
-                      {campaign.created_at ? new Date(campaign.created_at).toLocaleDateString() : 'N/A'}
+                      {activeTab === 'sent' && campaign.sent_at 
+                        ? new Date(campaign.sent_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : campaign.created_at 
+                          ? new Date(campaign.created_at).toLocaleDateString() 
+                          : 'N/A'
+                      }
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer data-dropdown>
