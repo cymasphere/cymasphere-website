@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/utils/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/utils/email";
+import { injectEmailTracking, createSendRecord } from "@/utils/email-tracking";
 
 // Store the last execution time in memory
 let lastCronExecution: string | null = null;
@@ -209,18 +210,41 @@ export async function POST(request: NextRequest) {
 
         for (const subscriber of subscribersResult) {
           try {
-                         const emailResult = await sendEmail({
-               to: subscriber.email,
-               subject: campaign.subject || 'Newsletter',
-               html: campaign.html_content || `<h1>${campaign.subject || 'Newsletter'}</h1><p>Content coming soon...</p>`,
-               text: campaign.text_content || campaign.subject || 'Newsletter',
-               from: `${campaign.sender_name || 'Cymasphere'} <${campaign.sender_email || 'support@cymasphere.com'}>`,
-               replyTo: campaign.reply_to_email || undefined
-             });
+            // Create send record for tracking
+            const sendId = await createSendRecord(
+              campaign.id,
+              subscriber.id,
+              subscriber.email,
+              supabase
+            );
+
+            // Inject tracking into HTML content (works for both new and existing campaigns)
+            let htmlContent = campaign.html_content || `<h1>${campaign.subject || 'Newsletter'}</h1><p>Content coming soon...</p>`;
+            
+            if (sendId) {
+              htmlContent = injectEmailTracking(
+                htmlContent,
+                campaign.id,
+                subscriber.id,
+                sendId
+              );
+              console.log(`📊 Added tracking to email for ${subscriber.email} (sendId: ${sendId})`);
+            } else {
+              console.log(`⚠️ No tracking added for ${subscriber.email} (send record creation failed)`);
+            }
+
+            const emailResult = await sendEmail({
+              to: subscriber.email,
+              subject: campaign.subject || 'Newsletter',
+              html: htmlContent,
+              text: campaign.text_content || campaign.subject || 'Newsletter',
+              from: `${campaign.sender_name || 'Cymasphere'} <${campaign.sender_email || 'support@cymasphere.com'}>`,
+              replyTo: campaign.reply_to_email || undefined
+            });
 
             if (emailResult.success) {
               sentCount++;
-              console.log(`✅ Sent to ${subscriber.email}`);
+              console.log(`✅ Sent to ${subscriber.email} with tracking`);
             } else {
               failedCount++;
               console.log(`❌ Failed to send to ${subscriber.email}:`, emailResult.error);
@@ -229,7 +253,8 @@ export async function POST(request: NextRequest) {
             sendResults.push({
               email: subscriber.email,
               success: emailResult.success,
-              error: emailResult.error
+              error: emailResult.error,
+              sendId: sendId
             });
 
             // Small delay to avoid overwhelming the email service
@@ -241,7 +266,8 @@ export async function POST(request: NextRequest) {
             sendResults.push({
               email: subscriber.email,
               success: false,
-              error: emailError instanceof Error ? emailError.message : 'Unknown error'
+              error: emailError instanceof Error ? emailError.message : 'Unknown error',
+              sendId: null
             });
           }
         }
