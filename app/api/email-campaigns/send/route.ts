@@ -258,14 +258,49 @@ export async function POST(request: NextRequest) {
 
     // If scheduled for later, save schedule and return
     if (scheduleType === 'scheduled' && scheduleDate && scheduleTime) {
-      // Create the scheduled datetime - ensure we handle timezone properly
-      const scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      // If we have a campaignId, get the scheduled_at time from the already-saved campaign
+      let scheduledDateTime;
+      
+      if (campaignId) {
+        try {
+          // Get the campaign's scheduled_at value (which includes proper timezone)
+          const supabase = await createSupabaseServer();
+          const { data: campaign, error } = await supabase
+            .from('email_campaigns')
+            .select('scheduled_at')
+            .eq('id', campaignId)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching campaign scheduled_at:', error);
+            // Fallback to reconstructing from date/time
+            scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+          } else if (campaign.scheduled_at) {
+            scheduledDateTime = new Date(campaign.scheduled_at);
+            console.log('📅 Using saved scheduled_at from campaign:', {
+              campaignId,
+              savedScheduledAt: campaign.scheduled_at,
+              parsedDateTime: scheduledDateTime.toString()
+            });
+          } else {
+            // No scheduled_at in campaign, fallback to reconstructing
+            scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+          }
+        } catch (error) {
+          console.error('Error fetching campaign:', error);
+          // Fallback to reconstructing from date/time
+          scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+        }
+      } else {
+        // No campaignId, reconstruct from date/time
+        scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      }
+      
       const currentTime = new Date();
       
       console.log('📅 Validating scheduled time:', {
         scheduleDate,
         scheduleTime,
-        combinedString: `${scheduleDate}T${scheduleTime}:00`,
         scheduledDateTime: scheduledDateTime.toString(),
         scheduledUTC: scheduledDateTime.toISOString(),
         currentTime: currentTime.toString(),
