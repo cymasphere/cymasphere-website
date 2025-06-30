@@ -196,6 +196,12 @@ export async function POST(request: NextRequest) {
 
         console.log(`📬 Sending to ${subscribersResult.length} subscribers`);
 
+        // Debug AWS environment variables
+        console.log('🔧 AWS Environment Check:');
+        console.log('  AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? `${process.env.AWS_ACCESS_KEY_ID.slice(0, 8)}...` : 'NOT_SET');
+        console.log('  AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? `${process.env.AWS_SECRET_ACCESS_KEY.slice(0, 8)}...` : 'NOT_SET');
+        console.log('  AWS_REGION:', process.env.AWS_REGION || 'NOT_SET');
+
         // Send emails
         let sentCount = 0;
         let failedCount = 0;
