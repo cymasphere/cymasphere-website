@@ -23,7 +23,10 @@ import {
   FaClock,
   FaPaperPlane,
   FaExclamationTriangle,
-  FaTimes
+  FaTimes,
+  FaSort,
+  FaSortUp,
+  FaSortDown
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -210,6 +213,7 @@ const TableHeaderCell = styled.th`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: all 0.2s ease;
+  user-select: none;
 
   &:hover {
     color: var(--text);
@@ -226,6 +230,26 @@ const TableHeaderCell = styled.th`
     &:hover {
       background-color: transparent;
     }
+  }
+`;
+
+const SortableHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &.center {
+    justify-content: center;
+  }
+  
+  svg {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+  
+  &:hover svg {
+    opacity: 1;
   }
 `;
 
@@ -626,6 +650,10 @@ function CampaignsPage() {
     excludedCount: number;
     isLoading: boolean;
   }>>({});
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<string>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Fetch audience IDs for a campaign (same API call as edit modal)
   const fetchCampaignAudienceData = async (campaignId: string) => {
@@ -929,6 +957,12 @@ function CampaignsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
+  // Reset sorting when tab changes (different tabs have different date meanings)
+  useEffect(() => {
+    setSortField('date');
+    setSortDirection('desc');
+  }, [activeTab]);
+
   if (languageLoading || !translationsLoaded || loading) {
     return <LoadingComponent />;
   }
@@ -937,25 +971,98 @@ function CampaignsPage() {
     return <LoadingComponent />;
   }
 
-  const filteredCampaigns = campaigns.filter((campaign: any) => {
-    // First filter by search term
-    const matchesSearch = campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!matchesSearch) return false;
-    
-    // Then filter by tab
-    switch (activeTab) {
-      case 'drafts':
-        return campaign.status === 'draft';
-      case 'scheduled':
-        return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
-      case 'sent':
-        return campaign.status === 'sent' || campaign.status === 'completed';
-      default:
-        return campaign.status === 'draft';
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc'); // Default to descending for new field
     }
-  });
+  };
+
+  // Helper function to render sortable header
+  const renderSortableHeader = (label: string, field: string, centered: boolean = false) => {
+    const isActive = sortField === field;
+    const SortIcon = isActive 
+      ? (sortDirection === 'asc' ? FaSortUp : FaSortDown)
+      : FaSort;
+    
+    return (
+      <SortableHeader className={centered ? 'center' : ''}>
+        {label}
+        <SortIcon />
+      </SortableHeader>
+    );
+  };
+
+  const getSortValue = (campaign: any, field: string) => {
+    switch (field) {
+      case 'name':
+        return campaign.name?.toLowerCase() || '';
+      case 'status':
+        return campaign.status || '';
+      case 'date':
+        if (activeTab === 'sent' && campaign.sent_at) {
+          return new Date(campaign.sent_at).getTime();
+        }
+        if (activeTab === 'scheduled' && campaign.scheduled_at) {
+          return new Date(campaign.scheduled_at).getTime();
+        }
+        return campaign.created_at ? new Date(campaign.created_at).getTime() : 0;
+      case 'scheduled_time':
+        return campaign.scheduled_at ? new Date(campaign.scheduled_at).getTime() : 0;
+      case 'recipients':
+        return campaign.total_recipients || 0;
+      case 'open_rate':
+        return campaign.emails_sent > 0 ? (campaign.emails_opened || 0) / campaign.emails_sent : 0;
+      case 'click_rate':
+        return campaign.emails_sent > 0 ? (campaign.emails_clicked || 0) / campaign.emails_sent : 0;
+      case 'reach':
+        // For reach, we need to calculate it from audience data
+        const campaignAudiences = campaignAudienceData[campaign.id];
+        if (!campaignAudiences?.isLoaded || audiences.length === 0) return 0;
+        const stats = calculateAudienceStatsForCampaign(
+          campaignAudiences.audienceIds, 
+          campaignAudiences.excludedAudienceIds, 
+          campaign.id
+        );
+        return stats.estimatedReach;
+      default:
+        return '';
+    }
+  };
+
+  const filteredCampaigns = campaigns
+    .filter((campaign: any) => {
+      // First filter by search term
+      const matchesSearch = campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return false;
+      
+      // Then filter by tab
+      switch (activeTab) {
+        case 'drafts':
+          return campaign.status === 'draft';
+        case 'scheduled':
+          return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
+        case 'sent':
+          return campaign.status === 'sent' || campaign.status === 'completed';
+        default:
+          return campaign.status === 'draft';
+      }
+    })
+    .sort((a: any, b: any) => {
+      const aValue = getSortValue(a, sortField);
+      const bValue = getSortValue(b, sortField);
+      
+      let comparison = 0;
+      if (aValue < bValue) comparison = -1;
+      if (aValue > bValue) comparison = 1;
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
 
   const stats = [
     {
@@ -1249,25 +1356,43 @@ function CampaignsPage() {
           <Table>
             <TableHeader>
               <tr>
-                <TableHeaderCell>Campaign</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('name')}>
+                  {renderSortableHeader('Campaign', 'name')}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('status')}>
+                  {renderSortableHeader('Status', 'status', true)}
+                </TableHeaderCell>
                 {activeTab === 'scheduled' ? (
                   <>
-                    <TableHeaderCell>Scheduled Time</TableHeaderCell>  
-                    <TableHeaderCell>Reach</TableHeaderCell>
+                    <TableHeaderCell onClick={() => handleSort('scheduled_time')}>
+                      {renderSortableHeader('Scheduled Time', 'scheduled_time', true)}
+                    </TableHeaderCell>  
+                    <TableHeaderCell onClick={() => handleSort('reach')}>
+                      {renderSortableHeader('Reach', 'reach', true)}
+                    </TableHeaderCell>
                   </>
                 ) : activeTab === 'drafts' ? (
                   <>
-                    <TableHeaderCell>Reach</TableHeaderCell>
+                    <TableHeaderCell onClick={() => handleSort('reach')}>
+                      {renderSortableHeader('Reach', 'reach', true)}
+                    </TableHeaderCell>
                   </>
                 ) : (
                   <>
-                    <TableHeaderCell>Recipients</TableHeaderCell>
-                    <TableHeaderCell>Open Rate</TableHeaderCell>
-                    <TableHeaderCell>Click Rate</TableHeaderCell>
+                    <TableHeaderCell onClick={() => handleSort('recipients')}>
+                      {renderSortableHeader('Recipients', 'recipients', true)}
+                    </TableHeaderCell>
+                    <TableHeaderCell onClick={() => handleSort('open_rate')}>
+                      {renderSortableHeader('Open Rate', 'open_rate', true)}
+                    </TableHeaderCell>
+                    <TableHeaderCell onClick={() => handleSort('click_rate')}>
+                      {renderSortableHeader('Click Rate', 'click_rate', true)}
+                    </TableHeaderCell>
                   </>
                 )}
-                <TableHeaderCell>{activeTab === 'sent' ? 'Sent Date' : 'Created'}</TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('date')}>
+                  {renderSortableHeader(activeTab === 'sent' ? 'Sent Date' : 'Created', 'date', true)}
+                </TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHeader>
