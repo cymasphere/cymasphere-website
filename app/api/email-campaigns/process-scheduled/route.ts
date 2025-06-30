@@ -15,20 +15,24 @@ export async function POST(request: NextRequest) {
   lastCronExecution = executionTime;
   
   try {
-    // Verify the request is authorized (Vercel cron or manual with secret)
+    // Verify the request is authorized (Vercel cron, AWS cron, or manual with secret)
     const authHeader = request.headers.get('authorization');
     const vercelSecret = request.headers.get('x-vercel-cron-signature');
     const cronSecret = process.env.CRON_SECRET || 'your-secret-key';
     
-    // Allow Vercel cron jobs (they have a special header) or manual calls with API key
-    const isAuthorized = vercelSecret || authHeader === `Bearer ${cronSecret}`;
+    // Allow Vercel cron jobs, AWS cron jobs with API key, or manual calls with API key
+    const isVercelCron = !!vercelSecret;
+    const isApiKeyCron = authHeader === `Bearer ${cronSecret}`;
+    const isAuthorized = isVercelCron || isApiKeyCron;
     
     if (!isAuthorized) {
       console.log('❌ Unauthorized cron job request - missing vercel cron signature or API key');
+      console.log('❌ Expected Authorization header:', `Bearer ${cronSecret.slice(0, 8)}...`);
+      console.log('❌ Received Authorization header:', authHeader || 'none');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('✅ Authorized request:', vercelSecret ? 'Vercel Cron' : 'Manual API Key');
+    console.log('✅ Authorized request:', isVercelCron ? 'Vercel Cron' : 'API Key Cron');
 
     // Use admin client for cron jobs (bypasses RLS and doesn't need user authentication)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
