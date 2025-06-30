@@ -258,10 +258,28 @@ export async function POST(request: NextRequest) {
 
     // If scheduled for later, save schedule and return
     if (scheduleType === 'scheduled' && scheduleDate && scheduleTime) {
-      const scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}`);
-      if (scheduledDateTime <= new Date()) {
+      // Create the scheduled datetime - ensure we handle timezone properly
+      const scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      const currentTime = new Date();
+      
+      console.log('📅 Validating scheduled time:', {
+        scheduleDate,
+        scheduleTime,
+        combinedString: `${scheduleDate}T${scheduleTime}:00`,
+        scheduledDateTime: scheduledDateTime.toString(),
+        scheduledUTC: scheduledDateTime.toISOString(),
+        currentTime: currentTime.toString(),
+        currentUTC: currentTime.toISOString(),
+        timeDifference: scheduledDateTime.getTime() - currentTime.getTime(),
+        isInFuture: scheduledDateTime > currentTime
+      });
+      
+      // Add a 1-minute buffer to account for processing time and minor clock differences
+      const bufferTime = new Date(currentTime.getTime() + 60000); // 1 minute buffer
+      
+      if (scheduledDateTime <= bufferTime) {
         return NextResponse.json(
-          { success: false, error: "Scheduled time must be in the future" },
+          { success: false, error: "Scheduled time must be at least 1 minute in the future" },
           { status: 400 }
         );
       }
