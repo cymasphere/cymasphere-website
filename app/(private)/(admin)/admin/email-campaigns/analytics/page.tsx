@@ -16,7 +16,14 @@ import {
   FaEye,
   FaEnvelope,
   FaUserTimes,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaClock,
+  FaCheckCircle,
+  FaSpinner,
+  FaEdit,
+  FaPlay,
+  FaPause,
+  FaTrash
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -222,6 +229,12 @@ const MetricLabel = styled.div`
   font-weight: 500;
 `;
 
+const MetricContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+`;
+
 const ChartsGrid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -392,140 +405,96 @@ const MetricPercent = styled.div<{ positive?: boolean }>`
   margin-top: 0.25rem;
 `;
 
-// Mock data
-const mockMetrics = [
-  {
-    label: "Total Emails Sent",
-    value: "24,567",
-    change: "+12.5%",
-    positive: true,
-    icon: FaEnvelope,
-    variant: "primary"
-  },
-  {
-    label: "Open Rate",
-    value: "28.4%",
-    change: "+2.1%",
-    positive: true,
-    icon: FaEnvelopeOpen,
-    variant: "success"
-  },
-  {
-    label: "Click Rate",
-    value: "4.2%",
-    change: "-0.3%",
-    positive: false,
-    icon: FaMousePointer,
-    variant: "warning"
-  },
-  {
-    label: "Unsubscribe Rate",
-    value: "0.8%",
-    change: "+0.1%",
-    positive: false,
-    icon: FaUserTimes,
-    variant: "danger"
-  },
-  {
-    label: "Bounce Rate",
-    value: "2.1%",
-    change: "-0.5%",
-    positive: true,
-    icon: FaExclamationTriangle,
-    variant: "info"
-  },
-  {
-    label: "Active Subscribers",
-    value: "12,890",
-    change: "+156",
-    positive: true,
-    icon: FaUsers,
-    variant: "success"
-  }
-];
+// Analytics interfaces
+interface MetricData {
+  label: string;
+  value: string;
+  change: string;
+  positive: boolean | null;
+  icon: string;
+  variant: string;
+}
 
-const mockCampaigns = [
-  {
-    id: "1",
-    name: "Welcome Series",
-    type: "Automation",
-    status: "sent",
-    sent: 1250,
-    delivered: 1235,
-    opens: 312,
-    clicks: 45,
-    openRate: 25.3,
-    clickRate: 3.6,
-    sentDate: "2024-01-20"
-  },
-  {
-    id: "2",
-    name: "Product Launch",
-    type: "Campaign",
-    status: "sent",
-    sent: 5420,
-    delivered: 5380,
-    opens: 1678,
-    clicks: 312,
-    openRate: 31.2,
-    clickRate: 5.8,
-    sentDate: "2024-01-18"
-  },
-  {
-    id: "3",
-    name: "Newsletter #47",
-    type: "Campaign",
-    status: "sending",
-    sent: 890,
-    delivered: 885,
-    opens: 166,
-    clicks: 19,
-    openRate: 18.7,
-    clickRate: 2.1,
-    sentDate: "2024-01-22"
-  },
-  {
-    id: "4",
-    name: "Re-engagement",
-    type: "Automation",
-    status: "sent",
-    sent: 2100,
-    delivered: 2078,
-    opens: 601,
-    clicks: 89,
-    openRate: 28.9,
-    clickRate: 4.2,
-    sentDate: "2024-01-19"
-  },
-  {
-    id: "5",
-    name: "Birthday Campaign",
-    type: "Campaign",
-    status: "draft",
-    sent: 0,
-    delivered: 0,
-    opens: 0,
-    clicks: 0,
-    openRate: 0,
-    clickRate: 0,
-    sentDate: "2024-01-25"
-  }
-];
+interface CampaignData {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  sent: number;
+  delivered: number;
+  opens: number;
+  clicks: number;
+  openRate: number;
+  clickRate: number;
+  sentDate: string;
+}
+
+interface AnalyticsData {
+  metrics: MetricData[];
+  campaigns: CampaignData[];
+  summary: {
+    totalSent: number;
+    totalDelivered: number;
+    totalOpened: number;
+    totalClicked: number;
+    totalBounced: number;
+    openRate: number;
+    clickRate: number;
+    bounceRate: number;
+    activeSubscribers: number;
+  };
+}
 
 function AnalyticsPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [timeRange, setTimeRange] = useState("30d");
   const [campaignType, setCampaignType] = useState("all");
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+
+  // Fetch analytics data
+  const fetchAnalyticsData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/email-campaigns/analytics?timeRange=${timeRange}&campaignType=${campaignType}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setAnalyticsData(result.data);
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  useEffect(() => {
+    if (user && translationsLoaded) {
+      fetchAnalyticsData();
+    }
+  }, [user, translationsLoaded, timeRange, campaignType]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -534,6 +503,34 @@ function AnalyticsPage() {
   if (!user) {
     return <LoadingComponent />;
   }
+
+  if (loading) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <AnalyticsContainer>
+        <div style={{ color: 'var(--color-error)', textAlign: 'center', padding: '2rem' }}>
+          <FaExclamationTriangle size={48} style={{ marginBottom: '1rem' }} />
+          <h3>Error Loading Analytics</h3>
+          <p>{error}</p>
+          <button onClick={fetchAnalyticsData} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      </AnalyticsContainer>
+    );
+  }
+
+  const iconMap: { [key: string]: any } = {
+    FaEnvelope,
+    FaEnvelopeOpen,
+    FaMousePointer,
+    FaUserTimes,
+    FaExclamationTriangle,
+    FaUsers
+  };
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -582,28 +579,32 @@ function AnalyticsPage() {
         </FiltersRow>
 
         <MetricsGrid>
-          {mockMetrics.map((metric, index) => (
-            <MetricCard
-              key={metric.label}
-              variant={metric.variant}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-            >
-              <MetricHeader>
+          {analyticsData?.metrics.map((metric, index) => {
+            const IconComponent = iconMap[metric.icon] || FaChartLine;
+            return (
+              <MetricCard
+                key={metric.label}
+                variant={metric.variant}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                custom={index}
+              >
                 <MetricIcon variant={metric.variant}>
-                  <metric.icon />
+                  <IconComponent />
                 </MetricIcon>
-                <MetricChange positive={metric.positive}>
-                  {metric.positive ? <FaArrowUp /> : <FaArrowDown />}
-                  {metric.change}
-                </MetricChange>
-              </MetricHeader>
-              <MetricValue>{metric.value}</MetricValue>
-              <MetricLabel>{metric.label}</MetricLabel>
-            </MetricCard>
-          ))}
+                <MetricContent>
+                  <MetricValue>{metric.value}</MetricValue>
+                  <MetricLabel>{metric.label}</MetricLabel>
+                  {metric.change !== "+0%" && metric.change !== "+0" && (
+                    <MetricChange positive={metric.positive === true}>
+                      {metric.change}
+                    </MetricChange>
+                  )}
+                </MetricContent>
+              </MetricCard>
+            );
+          })}
         </MetricsGrid>
 
         <ChartsGrid>
@@ -653,7 +654,7 @@ function AnalyticsPage() {
               </tr>
             </TableHead>
             <TableBody>
-              {mockCampaigns.map((campaign) => (
+              {analyticsData?.campaigns.map((campaign) => (
                 <TableRow key={campaign.id}>
                   <TableCell>
                     <CampaignName>{campaign.name}</CampaignName>

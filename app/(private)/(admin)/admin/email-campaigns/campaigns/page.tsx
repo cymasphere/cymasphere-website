@@ -1443,10 +1443,20 @@ function CampaignsPage() {
                           <MetricValue>{campaign.total_recipients || 0}</MetricValue>
                         </TableCell>
                         <TableCell>
-                          <MetricValue>0%</MetricValue>
+                          <MetricValue>
+                            {campaign.emails_sent > 0 
+                              ? `${((campaign.emails_opened || 0) / campaign.emails_sent * 100).toFixed(1)}%`
+                              : '0%'
+                            }
+                          </MetricValue>
                         </TableCell>
                         <TableCell>
-                          <MetricValue>0%</MetricValue>
+                          <MetricValue>
+                            {campaign.emails_sent > 0 
+                              ? `${((campaign.emails_clicked || 0) / campaign.emails_sent * 100).toFixed(1)}%`
+                              : '0%'
+                            }
+                          </MetricValue>
                         </TableCell>
                       </>
                     )}

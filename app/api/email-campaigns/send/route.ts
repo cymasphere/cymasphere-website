@@ -381,8 +381,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate HTML content from email elements
-    const htmlContent = generateHtmlFromElements(emailElements, subject);
+    // Generate base HTML and text content (without tracking yet)
+    const baseHtmlContent = generateHtmlFromElements(emailElements, subject);
     const textContent = generateTextFromElements(emailElements);
 
     console.log(`🚀 Starting to send campaign "${name}" to ${targetSubscribers.length} subscribers...`);
@@ -398,6 +398,7 @@ export async function POST(request: NextRequest) {
     // Send emails to all subscribers
     const results = [];
     const errors = [];
+    const supabase = await createSupabaseServer();
 
     console.log(`\n🚀 Starting email send process...`);
     console.log(`📧 Target subscribers: ${targetSubscribers.length}`);
@@ -407,12 +408,42 @@ export async function POST(request: NextRequest) {
 
     for (const subscriber of targetSubscribers) {
       try {
+        // Create email_sends record first to get tracking ID
+        const { data: sendRecord, error: sendError } = await supabase
+          .from('email_sends')
+          .insert({
+            campaign_id: campaignId,
+            subscriber_id: subscriber.id,
+            email: subscriber.email,
+            status: 'pending'
+          })
+          .select('id')
+          .single();
+
+        if (sendError || !sendRecord) {
+          console.error(`❌ Error creating send record for ${subscriber.email}:`, sendError);
+          errors.push({
+            subscriberId: subscriber.id,
+            email: subscriber.email,
+            error: 'Failed to create send record',
+            status: 'failed'
+          });
+          continue;
+        }
+
+        const sendId = sendRecord.id;
+        console.log(`📝 Created send record: ${sendId} for ${subscriber.email}`);
+
+        // Generate tracking-enabled HTML content
+        const trackedHtmlContent = generateHtmlFromElements(emailElements, subject, campaignId, subscriber.id, sendId);
+        
         // Personalize content
-        const personalizedHtml = personalizeContent(htmlContent, subscriber);
+        const personalizedHtml = personalizeContent(trackedHtmlContent, subscriber);
         const personalizedText = personalizeContent(textContent, subscriber);
         const personalizedSubject = personalizeContent(subject, subscriber);
 
         console.log(`\n📧 Processing subscriber: ${subscriber.email}`);
+        console.log(`   - Send ID: ${sendId}`);
         console.log(`   - Personalized subject: "${personalizedSubject}"`);
         console.log(`   - HTML content length: ${personalizedHtml.length} chars`);
         console.log(`   - Text content length: ${personalizedText.length} chars`);
@@ -430,19 +461,40 @@ export async function POST(request: NextRequest) {
         console.log(`📬 sendEmail result:`, JSON.stringify(result, null, 2));
 
         if (result.success) {
+          // Update send record to sent status
+          await supabase
+            .from('email_sends')
+            .update({
+              status: 'sent',
+              sent_at: new Date().toISOString()
+            })
+            .eq('id', sendId);
+
           results.push({
             subscriberId: subscriber.id,
             email: subscriber.email,
             messageId: result.messageId,
+            sendId: sendId,
             status: 'sent'
           });
           console.log(`✅ SUCCESS: Email sent to ${subscriber.email}`);
           console.log(`   - Message ID: ${result.messageId}`);
+          console.log(`   - Send ID: ${sendId}`);
         } else {
+          // Update send record to failed status
+          await supabase
+            .from('email_sends')
+            .update({
+              status: 'failed',
+              error_message: result.error
+            })
+            .eq('id', sendId);
+
           errors.push({
             subscriberId: subscriber.id,
             email: subscriber.email,
             error: result.error,
+            sendId: sendId,
             status: 'failed'
           });
           console.error(`❌ FAILED: Could not send to ${subscriber.email}`);
@@ -468,6 +520,25 @@ export async function POST(request: NextRequest) {
     const successCount = results.length;
     const errorCount = errors.length;
     const totalCount = targetSubscribers.length;
+
+    // Update campaign statistics
+    if (campaignId && successCount > 0) {
+      try {
+        await supabase
+          .from('email_campaigns')
+          .update({
+            emails_sent: successCount,
+            total_recipients: totalCount,
+            sent_at: new Date().toISOString(),
+            status: 'sent'
+          })
+          .eq('id', campaignId);
+        
+        console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total`);
+      } catch (error) {
+        console.error('❌ Error updating campaign stats:', error);
+      }
+    }
 
     console.log(`📊 Campaign "${name}" completed:`);
     console.log(`   ✅ Successful: ${successCount}/${totalCount}`);
@@ -501,8 +572,33 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to generate HTML from email elements
-function generateHtmlFromElements(elements: any[], subject: string): string {
+// Helper function to generate HTML from email elements with tracking
+function generateHtmlFromElements(elements: any[], subject: string, campaignId?: string, subscriberId?: string, sendId?: string): string {
+  
+  // Helper function to rewrite links for click tracking
+  const rewriteLinksForTracking = (html: string): string => {
+    if (!campaignId || !subscriberId || !sendId) {
+      return html; // No tracking if missing parameters
+    }
+    
+    // Find and replace all href attributes
+    return html.replace(/href=["']([^"']+)["']/g, (match, url) => {
+      // Skip already tracked URLs
+      if (url.includes('/api/email-campaigns/track/click')) {
+        return match;
+      }
+      
+      // Skip internal tracking URLs
+      if (url.includes('unsubscribe') || url.includes('mailto:')) {
+        return match;
+      }
+      
+      // Create tracking URL
+      const trackingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/api/email-campaigns/track/click?c=${campaignId}&u=${subscriberId}&s=${sendId}&url=${encodeURIComponent(url)}`;
+      return `href="${trackingUrl}"`;
+    });
+  };
+  
   const elementHtml = elements.map(element => {
     switch (element.type) {
       case 'header':
@@ -528,7 +624,8 @@ function generateHtmlFromElements(elements: any[], subject: string): string {
     }
   }).join('');
 
-  return `
+  // Base HTML template
+  let html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -602,9 +699,25 @@ function generateHtmlFromElements(elements: any[], subject: string): string {
             <p><a href="https://cymasphere.com/unsubscribe">Unsubscribe</a> | <a href="https://cymasphere.com">Visit our website</a></p>
             <p>© 2024 Cymasphere. All rights reserved.</p>
         </div>
-    </div>
+    </div>`;
+
+  // Add tracking pixel if we have tracking parameters
+  if (campaignId && subscriberId && sendId) {
+    const trackingPixel = `
+    <!-- Email Open Tracking -->
+    <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:none;border:0;outline:0;" alt="" />`;
+    
+    html += trackingPixel;
+  }
+
+  html += `
 </body>
 </html>`;
+
+  // Rewrite links for click tracking
+  html = rewriteLinksForTracking(html);
+  
+  return html;
 }
 
 // Helper function to generate text content from email elements
