@@ -121,6 +121,10 @@ jobs:
           echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
           echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
           echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.production
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.production
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.production
+          echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.production
 
           # Copy environment file only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
