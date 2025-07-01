@@ -717,6 +717,14 @@ function CampaignsPage() {
     }
   }, [searchParams]);
 
+  // Function to update both tab state and URL
+  const handleTabChange = (tab: 'drafts' | 'scheduled' | 'sent') => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
@@ -1351,13 +1359,13 @@ function CampaignsPage() {
         </ActionsRow>
 
         <TabsContainer>
-          <Tab active={activeTab === 'drafts'} onClick={() => setActiveTab('drafts')}>
+          <Tab active={activeTab === 'drafts'} onClick={() => handleTabChange('drafts')}>
             Drafts
           </Tab>
-          <Tab active={activeTab === 'scheduled'} onClick={() => setActiveTab('scheduled')}>
+          <Tab active={activeTab === 'scheduled'} onClick={() => handleTabChange('scheduled')}>
             Scheduled
           </Tab>
-          <Tab active={activeTab === 'sent'} onClick={() => setActiveTab('sent')}>
+          <Tab active={activeTab === 'sent'} onClick={() => handleTabChange('sent')}>
             Sent
           </Tab>
         </TabsContainer>

@@ -229,12 +229,20 @@ export async function POST(request: NextRequest) {
       audienceIds,
       excludedAudienceIds,
       scheduleType,
+      emailElementsCount: emailElements?.length || 0,
+      emailElementsPreview: emailElements?.slice(0, 2) || 'undefined',
       developmentMode: DEVELOPMENT_MODE,
       testMode: TEST_MODE
     });
 
     // Validate required fields
     if (!name || !subject || !audienceIds || audienceIds.length === 0 || !emailElements) {
+      console.error('❌ Missing required fields:', {
+        name: !!name,
+        subject: !!subject,
+        audienceIds: !!audienceIds && audienceIds.length > 0,
+        emailElements: !!emailElements
+      });
       return NextResponse.json(
         { success: false, error: "Missing required campaign fields (name, subject, audiences, content)" },
         { status: 400 }
@@ -435,7 +443,22 @@ export async function POST(request: NextRequest) {
         console.log(`📝 Created send record: ${sendId} for ${subscriber.email}`);
 
         // Generate tracking-enabled HTML content
+        console.log(`🔧 Generating tracked HTML for ${subscriber.email}:`, {
+          emailElementsCount: emailElements.length,
+          campaignId,
+          subscriberId: subscriber.id,
+          sendId,
+          elementsPreview: emailElements.slice(0, 2)
+        });
+        
         const trackedHtmlContent = generateHtmlFromElements(emailElements, subject, campaignId, subscriber.id, sendId);
+        
+        console.log(`📧 Generated tracked HTML for ${subscriber.email}:`, {
+          length: trackedHtmlContent.length,
+          hasTrackingPixel: trackedHtmlContent.includes('/api/email-campaigns/track/open'),
+          hasTrackingParams: trackedHtmlContent.includes(`c=${campaignId}`),
+          lastChars: trackedHtmlContent.slice(-200)
+        });
         
         // Personalize content
         const personalizedHtml = personalizeContent(trackedHtmlContent, subscriber);
@@ -594,6 +617,7 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
       }
       
       // Always use production URL for tracking (even in development)
+      // because localhost URLs won't work in external email clients
       const baseUrl = process.env.NODE_ENV === 'production' 
         ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com')
         : 'https://cymasphere.com';
@@ -707,6 +731,7 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
   // Add tracking pixel if we have tracking parameters
   if (campaignId && subscriberId && sendId) {
     // Always use production URL for tracking pixels (even in development)
+    // because localhost URLs won't work in external email clients
     const baseUrl = process.env.NODE_ENV === 'production' 
       ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com')
       : 'https://cymasphere.com';
