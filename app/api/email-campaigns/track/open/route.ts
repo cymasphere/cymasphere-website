@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       const openTime = new Date().getTime();
       openedWithinSeconds = (openTime - sentTime) / 1000;
       
-      // Check for suspiciously fast opens (industry standard: 0.5s threshold)
+      // Check for suspiciously fast opens (industry standard: 0.5s threshold)  
       if (openedWithinSeconds < 0.5) {
         console.log('🤖 Suspiciously fast open detected - not recording:', {
           openedWithinSeconds,
@@ -139,9 +139,9 @@ export async function GET(request: NextRequest) {
             'Pragma': 'no-cache',
             'Expires': '0'
           }
-        });
+                });
+        }
       }
-    }
 
     if (isPrefetcher) {
       console.log('📱 Known prefetcher detected - recording with flag:', {
@@ -157,27 +157,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!existingOpen) {
-      // Only record legitimate opens (not bots, not development tests)
-      if (!sendRecord) {
-        console.log('⚠️ Send record not found - skipping recording (likely development test)');
-        
-        // Don't record anything for missing send records (development tests)
-        const pixel = Buffer.from(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          'base64'
-        );
-        return new NextResponse(pixel, {
-          status: 200,
-          headers: {
-            'Content-Type': 'image/png',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-      }
-
-      // Record the legitimate open event
+      // Record the open event (even if send record doesn't exist - for development testing)
       const openRecord = {
         send_id: sendId,
         campaign_id: campaignId,
@@ -186,6 +166,12 @@ export async function GET(request: NextRequest) {
         user_agent: userAgent,
         opened_at: new Date().toISOString()
       };
+
+      if (!sendRecord) {
+        console.log('⚠️ Send record not found in production DB - likely development testing');
+        // Add a note to track that this was a development test
+        openRecord.ip_address = ip ? `DEV-TEST: ${ip}` : 'DEV-TEST: unknown';
+      }
 
       console.log('🔄 Attempting to insert open record:', openRecord);
 
