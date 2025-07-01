@@ -21,13 +21,8 @@ class EmailCampaignScheduler {
         'http://localhost:3000/api/email-campaigns/process-scheduled',
       cronSecret: process.env.CRON_SECRET || 'your-secret-key'
     };
-
-    console.log('📅 Email Campaign Scheduler initialized:', {
-      enabled: this.config.enabled,
-      cronExpression: this.config.cronExpression,
-      endpoint: this.config.endpoint,
-      environment: process.env.NODE_ENV
-    });
+    
+    // Don't log here - will log when actually starting
   }
 
   async processScheduledCampaigns(): Promise<void> {
@@ -88,7 +83,12 @@ class EmailCampaignScheduler {
       return;
     }
 
-    console.log(`🚀 Starting email campaign scheduler: ${this.config.cronExpression}`);
+    console.log('📅 Email Campaign Scheduler starting:', {
+      enabled: this.config.enabled,
+      cronExpression: this.config.cronExpression,
+      endpoint: this.config.endpoint,
+      environment: process.env.NODE_ENV
+    });
 
     this.scheduledTask = cron.schedule(this.config.cronExpression, () => {
       this.processScheduledCampaigns();
@@ -128,4 +128,4 @@ export const emailScheduler = new EmailCampaignScheduler();
 // Auto-start in production or when explicitly enabled
 if (typeof window === 'undefined') { // Server-side only
   emailScheduler.start();
-} 
+}

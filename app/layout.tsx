@@ -6,9 +6,6 @@ import ClientLayout from "./ClientLayout";
 import I18nProvider from "@/app/i18n/I18nProvider";
 import "./globals.css";
 
-// Initialize email campaign scheduler
-import "../utils/init";
-
 // Metadata configuration
 export const metadata: Metadata = {
   title: "Cymasphere",

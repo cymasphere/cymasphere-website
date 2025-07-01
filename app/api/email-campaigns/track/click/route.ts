@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
+// Helper function to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -16,6 +22,13 @@ export async function GET(request: NextRequest) {
       // Redirect to a safe fallback if URL is missing
       const fallbackUrl = targetUrl || 'https://cymasphere.com';
       return NextResponse.redirect(fallbackUrl);
+    }
+
+    // Validate UUID formats to prevent PostgreSQL errors
+    if (!isValidUUID(sendId) || !isValidUUID(campaignId) || !isValidUUID(subscriberId)) {
+      console.log('❌ Invalid UUID format in tracking parameters:', { sendId, campaignId, subscriberId });
+      // Still redirect to target URL but don't try to record in database
+      return NextResponse.redirect(targetUrl);
     }
 
     // Use service role client for anonymous tracking click access
