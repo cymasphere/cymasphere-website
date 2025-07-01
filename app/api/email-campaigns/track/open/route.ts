@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       userAgent: userAgent?.slice(0, 50)
     });
 
-    // Re-enable proper bot detection (not too aggressive)
+    // Industry-standard bot detection (2024 best practices)
     const isBot = isLikelyBotOpen(userAgent, ip || null);
     const isPrefetcher = isKnownPrefetcher(userAgent);
 
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       console.log('🤖 Bot/automated open detected - not recording:', {
         userAgent: userAgent?.slice(0, 50),
         ip: ip || 'null',
-        reason: 'Failed bot detection'
+        reason: 'Matched known bot pattern'
       });
       
       // Still return pixel but don't record the open
@@ -119,11 +119,12 @@ export async function GET(request: NextRequest) {
       const openTime = new Date().getTime();
       openedWithinSeconds = (openTime - sentTime) / 1000;
       
-      // Check for suspiciously fast opens (reasonable threshold)
-      if (openedWithinSeconds < 1) {
+      // Check for suspiciously fast opens (industry standard: 0.5s threshold)
+      if (openedWithinSeconds < 0.5) {
         console.log('🤖 Suspiciously fast open detected - not recording:', {
           openedWithinSeconds,
-          userAgent: userAgent?.slice(0, 50)
+          userAgent: userAgent?.slice(0, 50),
+          note: 'Faster than 0.5 seconds indicates automation'
         });
         
         const pixel = Buffer.from(

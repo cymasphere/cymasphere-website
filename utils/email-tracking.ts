@@ -3,60 +3,80 @@
  */
 
 /**
- * Known bot/automated user agents (partial matches)
+ * Known bot/automated user agents based on 2024 industry best practices
+ * Only includes very specific bot patterns that are definitely automated
  */
 const BOT_USER_AGENTS = [
-  'bot',
-  'crawler',
-  'spider',
-  'scanner',
-  'checker',
-  'monitor',
-  'curl',
-  'wget',
-  'python',
-  'java',
-  'manual-test',
-  // Specific known email security scanners
+  // Explicit bot identifiers
+  'googlebot',
+  'bingbot',
+  'slurp',
+  'facebookexternalhit',
+  'twitterbot',
+  'linkedinbot',
+  'whatsapp',
+  'telegrambot',
+  
+  // Email security scanners (corporate/enterprise)
   'proofpoint',
   'mimecast',
   'forcepoint',
   'symantec',
   'mcafee',
-  // Very old Chrome versions (likely headless/automated)
-  'Chrome/42.',
-  'Chrome/41.',
-  'Chrome/40.',
+  'cisco ironport',
+  'barracuda',
+  'sophos',
+  'trend micro',
+  
+  // Development/testing tools
+  'curl/',
+  'wget/',
+  'postman',
+  'insomnia',
+  'httpie',
+  'python-requests',
+  'go-http-client',
+  
+  // Very old browsers (definitely automated/headless)
+  'Chrome/38.',
   'Chrome/39.',
-  'Chrome/38.'
+  'Chrome/40.',
+  'Chrome/41.',
+  'Chrome/42.',
+  
+  // Explicit test patterns
+  'test-',
+  'debug-',
+  'bot-',
+  'scanner-',
+  'manual-test'
 ];
 
 /**
- * Suspicious IP patterns
+ * Suspicious IP patterns - ONLY obvious localhost/development IPs
+ * Note: Private network ranges (192.168.x.x, 10.x.x.x) are NOT included
+ * because these are legitimate IPs used by home and office networks
  */
 const SUSPICIOUS_IPS = [
-  '127.0.0.1',
-  '::1',
-  '::ffff:127.0.0.1',
-  'localhost',
-  'DEV-TEST:',
-  // Removed private network ranges - these are legitimate user IPs!
-  // Home and office networks commonly use 192.168.x.x, 10.x.x.x, etc.
+  '127.0.0.1',           // IPv4 loopback
+  '::1',                 // IPv6 loopback
+  '::ffff:127.0.0.1',   // IPv4-mapped IPv6 loopback
+  'localhost',           // Literal localhost
+  'DEV-TEST:'           // Development test patterns
 ];
 
 /**
  * Determines if an email open is likely from a bot or automated system
+ * Uses 2024 industry best practices for bot detection
  * @param userAgent - The user agent string
- * @param ipAddress - The IP address
- * @param openedWithinSeconds - Seconds between send and open (very fast = suspicious)
+ * @param ipAddress - The IP address  
  * @returns true if likely automated, false if likely human
  */
 export function isLikelyBotOpen(
   userAgent: string | null,
-  ipAddress: string | null,
-  openedWithinSeconds?: number
+  ipAddress: string | null
 ): boolean {
-  // Check user agent for bot patterns
+  // Check user agent for specific bot patterns
   if (userAgent) {
     const ua = userAgent.toLowerCase();
     for (const botPattern of BOT_USER_AGENTS) {
@@ -67,7 +87,7 @@ export function isLikelyBotOpen(
     }
   }
 
-  // Check IP address for suspicious patterns  
+  // Check IP address for obvious development/testing patterns  
   if (ipAddress) {
     for (const suspiciousIp of SUSPICIOUS_IPS) {
       if (ipAddress.includes(suspiciousIp)) {
@@ -77,35 +97,32 @@ export function isLikelyBotOpen(
     }
   }
 
-  // Check for suspiciously fast opens (opened within 2 seconds of sending)
-  if (openedWithinSeconds !== undefined && openedWithinSeconds < 2) {
-    console.log(`⚡ Fast open detected: ${openedWithinSeconds}s`);
-    return true;
-  }
-
   return false;
 }
 
 /**
  * Determines if an email client is known to prefetch images aggressively
+ * NOTE: Prefetching is NOT the same as being a bot - prefetchers are legitimate email clients
+ * This function is for informational purposes, not for blocking opens
  * @param userAgent - The user agent string
- * @returns true if known prefetcher
+ * @returns true if known prefetcher (but should still count as legitimate opens)
  */
 export function isKnownPrefetcher(userAgent: string | null): boolean {
   if (!userAgent) return false;
   
   const ua = userAgent.toLowerCase();
   
-  // Gmail web client and mobile apps are known prefetchers
-  if (ua.includes('gmail') || ua.includes('google')) {
+  // Apple Mail Privacy Protection (prefetches all images)
+  if (ua.includes('applecoremail') || ua.includes('mail/')) {
     return true;
   }
   
-  // Apple Mail (especially iOS) often prefetches
-  if (ua.includes('mobile') && ua.includes('safari')) {
+  // Some corporate email clients that prefetch for security scanning
+  if (ua.includes('outlook') && ua.includes('safelinks')) {
     return true;
   }
   
+  // Gmail prefetching is normal user behavior - don't treat as suspicious
   return false;
 }
 
