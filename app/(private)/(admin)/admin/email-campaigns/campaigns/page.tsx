@@ -26,7 +26,12 @@ import {
   FaTimes,
   FaSort,
   FaSortUp,
-  FaSortDown
+  FaSortDown,
+  FaExpandArrowsAlt,
+  FaDesktop,
+  FaMobileAlt,
+  FaTabletAlt,
+  FaCheck
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -622,6 +627,287 @@ const ModalButton = styled.button<{ variant?: 'primary' | 'danger' | 'secondary'
   }}
 `;
 
+// Add preview-related styled components
+const PreviewSection = styled.div`
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.5rem;
+`;
+
+const PreviewTitle = styled.h3`
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  
+  svg:first-child {
+    color: var(--primary);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+`;
+
+const PreviewContent = styled.div`
+  background-color: white;
+  color: #333;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+`;
+
+const ExpandPreviewButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(108, 99, 255, 0.4);
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+
+    &:before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+  }
+`;
+
+const PreviewModal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  z-index: 10000;
+  padding: 0;
+`;
+
+const PreviewModalContent = styled(motion.div)`
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+`;
+
+const PreviewModalTitle = styled.h3`
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  &:before {
+    content: '📧';
+    font-size: 1.5rem;
+  }
+`;
+
+const PreviewModalClose = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+`;
+
+const PreviewModalBody = styled.div`
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  display: flex;
+  flex-direction: column;
+`;
+
+const DeviceToggleContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const DeviceToggle = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: ${props => props.$active 
+    ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
+    : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.15)'};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    background: ${props => props.$active 
+      ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
+      : 'rgba(255, 255, 255, 0.15)'};
+    color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+    border-color: ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.25)'};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+
+    &:before {
+      left: 100%;
+    }
+  }
+`;
+
+const PreviewContainer = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
+    }
+  }};
+  max-width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return 'min(1400px, calc(100vw - 4rem))';
+      default: return 'min(1400px, calc(100vw - 4rem))';
+    }
+  }};
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const DeviceFrame = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  position: relative;
+  background: ${props => props.$device === 'desktop' ? 'transparent' : '#000'};
+  border-radius: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '25px';
+      case 'tablet': return '20px';
+      case 'desktop': return '8px';
+      default: return '8px';
+    }
+  }};
+  padding: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '20px 8px';
+      case 'tablet': return '15px 10px';
+      case 'desktop': return '0';
+      default: return '0';
+    }
+  }};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: ${props => props.$device === 'mobile' ? '8px' : '6px'};
+    left: 50%;
+    transform: translateX(-50%);
+    width: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '60px';
+        case 'tablet': return '80px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    height: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '4px';
+        case 'tablet': return '3px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    background: #333;
+    border-radius: 2px;
+    display: ${props => props.$device === 'desktop' ? 'none' : 'block'};
+  }
+`;
+
 function CampaignsPage() {
   const { user } = useAuth();
   const { success, error } = useToast();
@@ -641,6 +927,8 @@ function CampaignsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [deliverabilityData, setDeliverabilityData] = useState<any>(null);
   const [loadingDeliverability, setLoadingDeliverability] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [audiences, setAudiences] = useState<any[]>([]);
   const [campaignAudienceData, setCampaignAudienceData] = useState<Record<string, {
     audienceIds: string[];
@@ -1345,6 +1633,99 @@ function CampaignsPage() {
     setDeliverabilityData(null);
   };
 
+  // Generate preview HTML for sent campaigns
+  const generatePreviewHtml = (campaign: any) => {
+    const htmlContent = campaign?.html_content || '';
+    
+    // If the campaign has stored HTML content, use it
+    if (htmlContent) {
+      return htmlContent;
+    }
+
+    // Fallback: generate basic HTML structure
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${campaign?.subject || 'Email Preview'}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo .cyma {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            color: #666666;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #6c63ff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="cyma">CYMA</span><span>SPHERE</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${campaign?.subject || 'Welcome to Cymasphere! 🎵'}</h1>
+            <p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${campaign?.description || 'Thank you for joining our community of music creators and enthusiasts.'}</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
+            <p>
+                <a href="#">Unsubscribe</a> | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+  };
+
   return (
     <>
       <NextSEO
@@ -1918,7 +2299,100 @@ function CampaignsPage() {
                   Loading deliverability data...
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <>
+                  {/* Email Preview Section */}
+                  <PreviewSection>
+                    <PreviewTitle>
+                      <FaEye />
+                      Email Preview
+                      <ExpandPreviewButton 
+                        onClick={() => setShowPreviewModal(true)}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        <FaExpandArrowsAlt />
+                        Full Screen Preview
+                      </ExpandPreviewButton>
+                    </PreviewTitle>
+                    <div style={{ 
+                      position: 'relative',
+                      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      overflow: 'hidden'
+                    }}>
+                      {/* Email preview with subtle shadow */}
+                      <div style={{
+                        background: 'white',
+                        borderRadius: '8px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                        overflow: 'hidden',
+                        maxHeight: '280px',
+                        position: 'relative'
+                      }}>
+                        <iframe
+                          srcDoc={generatePreviewHtml(selectedCampaign)}
+                          style={{
+                            width: '100%',
+                            height: '380px',
+                            border: 'none',
+                            transform: 'scale(0.7)',
+                            transformOrigin: 'top left',
+                            pointerEvents: 'none'
+                          }}
+                          title="Email Preview"
+                        />
+                        
+                        {/* Fade overlay to indicate more content */}
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: '60px',
+                          background: 'linear-gradient(transparent, rgba(255, 255, 255, 0.95))',
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          justifyContent: 'center',
+                          paddingBottom: '0.75rem'
+                        }}>
+                          <div style={{
+                            background: 'rgba(0, 0, 0, 0.1)',
+                            color: '#666',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '16px',
+                            fontSize: '0.75rem',
+                            fontWeight: '500',
+                            backdropFilter: 'blur(10px)'
+                          }}>
+                            Click "Full Screen Preview" for complete view
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview info */}
+                      <div style={{
+                        marginTop: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '1rem',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <FaDesktop style={{ color: 'var(--primary)' }} />
+                          Desktop View
+                        </span>
+                        <span>•</span>
+                        <span>70% Scale</span>
+                      </div>
+                    </div>
+                  </PreviewSection>
+
+                  {/* Deliverability Metrics */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div style={{ 
                     backgroundColor: 'var(--surface)', 
                     padding: '1rem', 
@@ -1985,6 +2459,7 @@ function CampaignsPage() {
                     </div>
                   </div>
                 </div>
+                </>
               )}
 
               <ModalActions>
@@ -1994,6 +2469,120 @@ function CampaignsPage() {
               </ModalActions>
             </ModalContent>
           </ModalOverlay>
+        )}
+      </AnimatePresence>
+
+      {/* Email Preview Modal */}
+      <AnimatePresence>
+        {showPreviewModal && (
+          <PreviewModal
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowPreviewModal(false)}
+          >
+            <PreviewModalContent
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PreviewModalHeader>
+                <PreviewModalTitle>
+                  {selectedCampaign?.subject || 'Email Preview'}
+                </PreviewModalTitle>
+                
+                {/* Device Controls in Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem'
+                }}>
+                  <DeviceToggleContainer style={{ margin: 0, background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '0.3rem' }}>
+                    <DeviceToggle 
+                      $active={previewDevice === 'mobile'}
+                      onClick={() => setPreviewDevice('mobile')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      <FaMobileAlt />
+                      Mobile
+                    </DeviceToggle>
+                    <DeviceToggle 
+                      $active={previewDevice === 'tablet'}
+                      onClick={() => setPreviewDevice('tablet')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      <FaTabletAlt />
+                      Tablet
+                    </DeviceToggle>
+                    <DeviceToggle 
+                      $active={previewDevice === 'desktop'}
+                      onClick={() => setPreviewDevice('desktop')}
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      <FaDesktop />
+                      Desktop
+                    </DeviceToggle>
+                  </DeviceToggleContainer>
+                  
+                  <PreviewModalClose onClick={() => setShowPreviewModal(false)}>
+                    <FaTimes />
+                  </PreviewModalClose>
+                </div>
+              </PreviewModalHeader>
+              
+              <PreviewModalBody>
+                {/* Preview Area - Container handles scrolling */}
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  overflow: 'auto',
+                  padding: '2rem',
+                  background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)'
+                }}>
+                  <PreviewContainer $device={previewDevice}>
+                    <DeviceFrame $device={previewDevice}>
+                      <div style={{
+                        background: 'white',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <iframe
+                          srcDoc={generatePreviewHtml(selectedCampaign)}
+                          style={{
+                            width: '100%',
+                            height: 'calc(100vh - 200px)',
+                            border: 'none',
+                            display: 'block',
+                            overflow: 'hidden'
+                          }}
+                          scrolling="no"
+                          title="Full Email Preview"
+                        />
+                      </div>
+                    </DeviceFrame>
+                  </PreviewContainer>
+                </div>
+
+                {/* Footer Info - Fixed at bottom */}
+                <div style={{
+                  textAlign: 'center',
+                  padding: '1rem 2rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  fontSize: '0.8rem',
+                  color: '#999',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  flexShrink: 0
+                }}>
+                  💡 Use the device buttons in the header to test how your email looks across different screen sizes
+                </div>
+              </PreviewModalBody>
+            </PreviewModalContent>
+          </PreviewModal>
         )}
       </AnimatePresence>
     </>
