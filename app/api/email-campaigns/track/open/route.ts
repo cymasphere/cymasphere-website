@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
+import { isLikelyBotOpen, isKnownPrefetcher } from '@/utils/email-tracking';
 
 // Helper function to validate UUID format
 function isValidUUID(uuid: string): boolean {
@@ -71,9 +72,50 @@ export async function GET(request: NextRequest) {
     // Check if the send record exists (for proper tracking)
     const { data: sendRecord } = await supabase
       .from('email_sends')
-      .select('id')
+      .select('id, sent_at')
       .eq('id', sendId)
       .single();
+
+    // Calculate time between send and open for bot detection
+    let openedWithinSeconds: number | undefined;
+    if (sendRecord?.sent_at) {
+      const sentTime = new Date(sendRecord.sent_at).getTime();
+      const openTime = new Date().getTime();
+      openedWithinSeconds = (openTime - sentTime) / 1000;
+    }
+
+    // Check if this is likely a bot/automated open
+    const isBot = isLikelyBotOpen(userAgent, ip, openedWithinSeconds);
+    const isPrefetcher = isKnownPrefetcher(userAgent);
+
+    if (isBot) {
+      console.log('🤖 Bot/automated open detected - not recording:', {
+        userAgent: userAgent?.slice(0, 50),
+        ip,
+        openedWithinSeconds
+      });
+      
+      // Still return pixel but don't record the open
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      return new NextResponse(pixel, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    }
+
+    if (isPrefetcher) {
+      console.log('📱 Known prefetcher detected - recording with flag:', {
+        userAgent: userAgent?.slice(0, 50)
+      });
+    }
 
     // Check if this open has already been recorded for this specific email send (prevent duplicates)
     const { data: existingOpen } = await supabase
@@ -90,7 +132,12 @@ export async function GET(request: NextRequest) {
         subscriber_id: subscriberId,
         ip_address: ip,
         user_agent: userAgent,
-        opened_at: new Date().toISOString()
+        opened_at: new Date().toISOString(),
+        // Add metadata about the open type
+        metadata: {
+          is_prefetcher: isPrefetcher,
+          opened_within_seconds: openedWithinSeconds
+        }
       };
 
       if (!sendRecord) {
@@ -106,7 +153,10 @@ export async function GET(request: NextRequest) {
       if (insertError) {
         console.error('❌ Error recording email open:', insertError);
       } else {
-        console.log('✅ Email open recorded successfully', sendRecord ? '(production)' : '(dev test)');
+        console.log('✅ Email open recorded successfully', sendRecord ? '(production)' : '(dev test)', {
+          isPrefetcher,
+          openedWithinSeconds
+        });
         
         // Update campaign statistics using increment to avoid race conditions
         try {

@@ -3,6 +3,228 @@
  */
 
 /**
+ * Known bot/automated user agents (partial matches)
+ */
+const BOT_USER_AGENTS = [
+  'bot',
+  'crawler',
+  'spider',
+  'scanner',
+  'checker',
+  'monitor',
+  'curl',
+  'wget',
+  'python',
+  'java',
+  'manual-test',
+  // Specific known email security scanners
+  'proofpoint',
+  'mimecast',
+  'forcepoint',
+  'symantec',
+  'mcafee',
+  // Very old Chrome versions (likely headless/automated)
+  'Chrome/42.',
+  'Chrome/41.',
+  'Chrome/40.',
+  'Chrome/39.',
+  'Chrome/38.'
+];
+
+/**
+ * Suspicious IP patterns
+ */
+const SUSPICIOUS_IPS = [
+  '127.0.0.1',
+  '::1',
+  '::ffff:127.0.0.1',
+  'localhost',
+  'DEV-TEST:'
+];
+
+/**
+ * Determines if an email open is likely from a bot or automated system
+ * @param userAgent - The user agent string
+ * @param ipAddress - The IP address
+ * @param openedWithinSeconds - Seconds between send and open (very fast = suspicious)
+ * @returns true if likely automated, false if likely human
+ */
+export function isLikelyBotOpen(
+  userAgent: string | null,
+  ipAddress: string | null,
+  openedWithinSeconds?: number
+): boolean {
+  // Check user agent for bot patterns
+  if (userAgent) {
+    const ua = userAgent.toLowerCase();
+    if (BOT_USER_AGENTS.some(botPattern => ua.includes(botPattern.toLowerCase()))) {
+      return true;
+    }
+  }
+
+  // Check IP address for suspicious patterns
+  if (ipAddress) {
+    if (SUSPICIOUS_IPS.some(suspiciousIp => ipAddress.includes(suspiciousIp))) {
+      return true;
+    }
+  }
+
+  // Check for suspiciously fast opens (opened within 2 seconds of sending)
+  if (openedWithinSeconds !== undefined && openedWithinSeconds < 2) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Determines if an email client is known to prefetch images aggressively
+ * @param userAgent - The user agent string
+ * @returns true if known prefetcher
+ */
+export function isKnownPrefetcher(userAgent: string | null): boolean {
+  if (!userAgent) return false;
+  
+  const ua = userAgent.toLowerCase();
+  
+  // Gmail web client and mobile apps are known prefetchers
+  if (ua.includes('gmail') || ua.includes('google')) {
+    return true;
+  }
+  
+  // Apple Mail (especially iOS) often prefetches
+  if (ua.includes('mobile') && ua.includes('safari')) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Generates email tracking pixel URL
+ * @param campaignId - Campaign ID
+ * @param subscriberId - Subscriber ID  
+ * @param sendId - Unique send record ID
+ * @param baseUrl - Base URL for tracking
+ * @returns Complete tracking pixel URL
+ */
+export function generateTrackingPixelUrl(
+  campaignId: string,
+  subscriberId: string,
+  sendId: string,
+  baseUrl: string = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+): string {
+  return `${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}`;
+}
+
+/**
+ * Generates click tracking URL
+ * @param targetUrl - Original URL to redirect to
+ * @param campaignId - Campaign ID
+ * @param subscriberId - Subscriber ID
+ * @param sendId - Unique send record ID
+ * @param baseUrl - Base URL for tracking
+ * @returns Complete click tracking URL
+ */
+export function generateClickTrackingUrl(
+  targetUrl: string,
+  campaignId: string,
+  subscriberId: string,
+  sendId: string,
+  baseUrl: string = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+): string {
+  const encodedUrl = encodeURIComponent(targetUrl);
+  return `${baseUrl}/api/email-campaigns/track/click?c=${campaignId}&u=${subscriberId}&s=${sendId}&url=${encodedUrl}`;
+}
+
+/**
+ * Replaces all links in HTML content with click tracking URLs
+ * @param htmlContent - Original HTML content
+ * @param campaignId - Campaign ID
+ * @param subscriberId - Subscriber ID
+ * @param sendId - Unique send record ID
+ * @param baseUrl - Base URL for tracking
+ * @returns HTML with tracking URLs
+ */
+export function injectClickTracking(
+  htmlContent: string,
+  campaignId: string,
+  subscriberId: string,
+  sendId: string,
+  baseUrl?: string
+): string {
+  // Regex to find all href attributes
+  const hrefRegex = /href=["']([^"']+)["']/g;
+  
+  return htmlContent.replace(hrefRegex, (match, originalUrl) => {
+    // Skip if already a tracking URL or relative/anchor link
+    if (originalUrl.startsWith('#') || 
+        originalUrl.startsWith('mailto:') || 
+        originalUrl.startsWith('tel:') ||
+        originalUrl.includes('/api/email-campaigns/track/')) {
+      return match;
+    }
+    
+    const trackingUrl = generateClickTrackingUrl(originalUrl, campaignId, subscriberId, sendId, baseUrl);
+    return `href="${trackingUrl}"`;
+  });
+}
+
+/**
+ * Injects tracking pixel into HTML email content
+ * @param htmlContent - Original HTML content
+ * @param campaignId - Campaign ID
+ * @param subscriberId - Subscriber ID
+ * @param sendId - Unique send record ID
+ * @param baseUrl - Base URL for tracking
+ * @returns HTML with tracking pixel
+ */
+export function injectOpenTracking(
+  htmlContent: string,
+  campaignId: string,
+  subscriberId: string,
+  sendId: string,
+  baseUrl?: string
+): string {
+  const trackingPixelUrl = generateTrackingPixelUrl(campaignId, subscriberId, sendId, baseUrl);
+  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`;
+  
+  // Try to insert before closing body tag, otherwise append to end
+  if (htmlContent.includes('</body>')) {
+    return htmlContent.replace('</body>', `${trackingPixel}</body>`);
+  } else {
+    return htmlContent + trackingPixel;
+  }
+}
+
+/**
+ * Adds both open and click tracking to HTML email content
+ * @param htmlContent - Original HTML content
+ * @param campaignId - Campaign ID
+ * @param subscriberId - Subscriber ID
+ * @param sendId - Unique send record ID
+ * @param baseUrl - Base URL for tracking
+ * @returns Fully tracked HTML content
+ */
+export function addEmailTracking(
+  htmlContent: string,
+  campaignId: string,
+  subscriberId: string,
+  sendId: string,
+  baseUrl?: string
+): string {
+  let trackedContent = htmlContent;
+  
+  // Add click tracking first
+  trackedContent = injectClickTracking(trackedContent, campaignId, subscriberId, sendId, baseUrl);
+  
+  // Then add open tracking
+  trackedContent = injectOpenTracking(trackedContent, campaignId, subscriberId, sendId, baseUrl);
+  
+  return trackedContent;
+}
+
+/**
  * Inject tracking pixel and rewrite links in HTML content
  */
 export function injectEmailTracking(
