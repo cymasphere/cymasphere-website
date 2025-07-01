@@ -544,20 +544,48 @@ export async function POST(request: NextRequest) {
     const errorCount = errors.length;
     const totalCount = targetSubscribers.length;
 
-    // Update campaign statistics
-    if (campaignId && successCount > 0) {
+    // Update campaign statistics AND store the tracked HTML template
+    if (campaignId) {
       try {
-        await supabase
-          .from('email_campaigns')
-          .update({
-            emails_sent: successCount,
-            total_recipients: totalCount,
-            sent_at: new Date().toISOString(),
-            status: 'sent'
-          })
-          .eq('id', campaignId);
+        // Generate a sample tracked HTML template
+        const sampleSubscriber = targetSubscribers[0];
+        let trackedHtmlTemplate = null;
+        let sampleSendId = null;
         
-        console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total`);
+        if (sampleSubscriber) {
+          // Use existing send ID if available, otherwise generate a placeholder ID for template
+          sampleSendId = results.find(r => r.subscriberId === sampleSubscriber.id)?.sendId || 'template-placeholder-id';
+          trackedHtmlTemplate = generateHtmlFromElements(emailElements, subject, campaignId, sampleSubscriber.id, sampleSendId);
+        }
+        
+        if (trackedHtmlTemplate) {
+          await supabase
+            .from('email_campaigns')
+            .update({
+              emails_sent: successCount,
+              total_recipients: totalCount,
+              sent_at: successCount > 0 ? new Date().toISOString() : null,
+              status: successCount > 0 ? 'sent' : 'draft',
+              html_content: trackedHtmlTemplate  // Store the tracked HTML template
+            })
+            .eq('id', campaignId);
+          
+          console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total`);
+          console.log(`📧 Updated campaign with tracked HTML template (${trackedHtmlTemplate.length} chars)`);
+        } else {
+          // Fallback: update without HTML if we can't generate template
+          await supabase
+            .from('email_campaigns')
+            .update({
+              emails_sent: successCount,
+              total_recipients: totalCount,
+              sent_at: successCount > 0 ? new Date().toISOString() : null,
+              status: successCount > 0 ? 'sent' : 'draft'
+            })
+            .eq('id', campaignId);
+          
+          console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total (no HTML update)`);
+        }
       } catch (error) {
         console.error('❌ Error updating campaign stats:', error);
       }

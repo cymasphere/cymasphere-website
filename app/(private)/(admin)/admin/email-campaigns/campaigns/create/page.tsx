@@ -2059,7 +2059,7 @@ const ModalTitle = styled.h2`
 
 const ModalStats = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin: 1.5rem 0;
 `;

@@ -69,30 +69,15 @@ export async function GET(request: NextRequest) {
                'unknown';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // Check if the send record exists (for proper tracking)
-    const { data: sendRecord } = await supabase
-      .from('email_sends')
-      .select('id, sent_at')
-      .eq('id', sendId)
-      .single();
-
-    // Calculate time between send and open for bot detection
-    let openedWithinSeconds: number | undefined;
-    if (sendRecord?.sent_at) {
-      const sentTime = new Date(sendRecord.sent_at).getTime();
-      const openTime = new Date().getTime();
-      openedWithinSeconds = (openTime - sentTime) / 1000;
-    }
-
-    // Check if this is likely a bot/automated open
-    const isBot = isLikelyBotOpen(userAgent, ip, openedWithinSeconds);
+    // Check if this is likely a bot/automated open FIRST (before database operations)
+    const isBot = isLikelyBotOpen(userAgent, ip);
     const isPrefetcher = isKnownPrefetcher(userAgent);
 
     if (isBot) {
       console.log('🤖 Bot/automated open detected - not recording:', {
         userAgent: userAgent?.slice(0, 50),
         ip,
-        openedWithinSeconds
+        reason: 'Failed bot detection'
       });
       
       // Still return pixel but don't record the open
@@ -111,6 +96,43 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Check if the send record exists (for proper tracking)
+    const { data: sendRecord } = await supabase
+      .from('email_sends')
+      .select('id, sent_at')
+      .eq('id', sendId)
+      .single();
+
+    // Calculate time between send and open for additional bot detection
+    let openedWithinSeconds: number | undefined;
+    if (sendRecord?.sent_at) {
+      const sentTime = new Date(sendRecord.sent_at).getTime();
+      const openTime = new Date().getTime();
+      openedWithinSeconds = (openTime - sentTime) / 1000;
+      
+      // Additional bot check for suspiciously fast opens
+      if (openedWithinSeconds < 2) {
+        console.log('🤖 Suspiciously fast open detected - not recording:', {
+          openedWithinSeconds,
+          userAgent: userAgent?.slice(0, 50)
+        });
+        
+        const pixel = Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          'base64'
+        );
+        return new NextResponse(pixel, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+      }
+    }
+
     if (isPrefetcher) {
       console.log('📱 Known prefetcher detected - recording with flag:', {
         userAgent: userAgent?.slice(0, 50)
@@ -125,26 +147,35 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!existingOpen) {
-      // Record the open event (even if send record doesn't exist - for development testing)
+      // Only record legitimate opens (not bots, not development tests)
+      if (!sendRecord) {
+        console.log('⚠️ Send record not found - skipping recording (likely development test)');
+        
+        // Don't record anything for missing send records (development tests)
+        const pixel = Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          'base64'
+        );
+        return new NextResponse(pixel, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+      }
+
+      // Record the legitimate open event
       const openRecord = {
         send_id: sendId,
         campaign_id: campaignId,
         subscriber_id: subscriberId,
         ip_address: ip,
         user_agent: userAgent,
-        opened_at: new Date().toISOString(),
-        // Add metadata about the open type
-        metadata: {
-          is_prefetcher: isPrefetcher,
-          opened_within_seconds: openedWithinSeconds
-        }
+        opened_at: new Date().toISOString()
       };
-
-      if (!sendRecord) {
-        console.log('⚠️ Send record not found in production DB - likely development testing');
-        // Add a note to track that this was a development test
-        openRecord.ip_address = `DEV-TEST: ${ip}`;
-      }
 
       const { error: insertError } = await supabase
         .from('email_opens')
@@ -153,7 +184,7 @@ export async function GET(request: NextRequest) {
       if (insertError) {
         console.error('❌ Error recording email open:', insertError);
       } else {
-        console.log('✅ Email open recorded successfully', sendRecord ? '(production)' : '(dev test)', {
+        console.log('✅ Email open recorded successfully', {
           isPrefetcher,
           openedWithinSeconds
         });
@@ -182,7 +213,7 @@ export async function GET(request: NextRequest) {
               console.log(`📊 Updated campaign open count to ${newCount}`);
             }
           } else {
-            console.log('⚠️ Campaign not found in production DB - likely development testing');
+            console.log('⚠️ Campaign not found - unable to update stats');
           }
         } catch (statsError) {
           console.error('❌ Exception updating campaign stats:', statsError);

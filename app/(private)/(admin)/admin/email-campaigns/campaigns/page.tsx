@@ -637,6 +637,10 @@ function CampaignsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
   const [campaignToDelete, setCampaignToDelete] = useState<any>(null);
+  const [showDeliverabilityModal, setShowDeliverabilityModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [deliverabilityData, setDeliverabilityData] = useState<any>(null);
+  const [loadingDeliverability, setLoadingDeliverability] = useState(false);
   const [audiences, setAudiences] = useState<any[]>([]);
   const [campaignAudienceData, setCampaignAudienceData] = useState<Record<string, {
     audienceIds: string[];
@@ -1053,23 +1057,23 @@ function CampaignsPage() {
 
   const filteredCampaigns = campaigns
     .filter((campaign: any) => {
-      // First filter by search term
-      const matchesSearch = campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (!matchesSearch) return false;
-      
-      // Then filter by tab
-      switch (activeTab) {
-        case 'drafts':
-          return campaign.status === 'draft';
-        case 'scheduled':
-          return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
-        case 'sent':
-          return campaign.status === 'sent' || campaign.status === 'completed';
-        default:
-          return campaign.status === 'draft';
-      }
+    // First filter by search term
+    const matchesSearch = campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campaign.subject?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Then filter by tab
+    switch (activeTab) {
+      case 'drafts':
+        return campaign.status === 'draft';
+      case 'scheduled':
+        return campaign.status === 'scheduled' || (campaign.scheduled_at && new Date(campaign.scheduled_at) > new Date());
+      case 'sent':
+        return campaign.status === 'sent' || campaign.status === 'completed';
+      default:
+        return campaign.status === 'draft';
+    }
     })
     .sort((a: any, b: any) => {
       const aValue = getSortValue(a, sortField);
@@ -1080,7 +1084,7 @@ function CampaignsPage() {
       if (aValue > bValue) comparison = 1;
       
       return sortDirection === 'asc' ? comparison : -comparison;
-    });
+  });
 
   const stats = [
     {
@@ -1308,6 +1312,39 @@ function CampaignsPage() {
     setCampaignToDelete(null);
   };
 
+  // Fetch detailed deliverability metrics for a campaign
+  const fetchDeliverabilityData = async (campaignId: string) => {
+    setLoadingDeliverability(true);
+    try {
+      const response = await fetch(`/api/email-campaigns/campaigns/${campaignId}`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDeliverabilityData(data.campaign);
+      } else {
+        console.error('Failed to fetch deliverability data:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching deliverability data:', error);
+    } finally {
+      setLoadingDeliverability(false);
+    }
+  };
+
+  const handleShowDeliverabilityModal = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setShowDeliverabilityModal(true);
+    fetchDeliverabilityData(campaign.id);
+  };
+
+  const handleCloseDeliverabilityModal = () => {
+    setShowDeliverabilityModal(false);
+    setSelectedCampaign(null);
+    setDeliverabilityData(null);
+  };
+
   return (
     <>
       <NextSEO
@@ -1434,9 +1471,9 @@ function CampaignsPage() {
                     animate="visible"
                     custom={index}
                     onClick={() => {
-                      // Prevent editing sent campaigns
+                      // Show deliverability modal for sent campaigns
                       if (campaign.status === 'sent' || campaign.status === 'completed') {
-                        error('Sent campaigns cannot be edited.', 3000);
+                        handleShowDeliverabilityModal(campaign);
                         return;
                       }
                       handleCampaignAction('edit', campaign.id);
@@ -1813,6 +1850,146 @@ function CampaignsPage() {
                 </ModalButton>
                 <ModalButton variant="danger" onClick={handleDeleteConfirm}>
                   Yes, Delete Campaign
+                </ModalButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
+
+      {/* Deliverability Modal */}
+      <AnimatePresence>
+        {showDeliverabilityModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCloseDeliverabilityModal}
+          >
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '700px', width: '90vw' }}
+            >
+              <ModalTitle>
+                <FaChartLine />
+                Deliverability Metrics
+              </ModalTitle>
+              
+              {selectedCampaign && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    {selectedCampaign.name || 'Untitled Campaign'}
+                  </h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Subject: {selectedCampaign.subject || 'No subject'}
+                  </p>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Sent: {selectedCampaign.sent_at 
+                      ? new Date(selectedCampaign.sent_at).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'N/A'
+                    }
+                  </p>
+                </div>
+              )}
+
+              {loadingDeliverability ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    style={{ 
+                      width: '24px', 
+                      height: '24px', 
+                      border: '3px solid rgba(108, 99, 255, 0.3)', 
+                      borderTop: '3px solid var(--primary)', 
+                      borderRadius: '50%',
+                      marginRight: '1rem'
+                    }}
+                  />
+                  Loading deliverability data...
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={{ 
+                    backgroundColor: 'var(--surface)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                      {selectedCampaign?.emails_sent || 0}
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Total Sent</div>
+                  </div>
+                  
+                  <div style={{ 
+                    backgroundColor: 'var(--surface)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10B981' }}>
+                      {selectedCampaign?.emails_sent > 0 
+                        ? `${((selectedCampaign?.emails_opened || 0) / selectedCampaign?.emails_sent * 100).toFixed(1)}%`
+                        : '0%'
+                      }
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Open Rate</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                      {selectedCampaign?.emails_opened || 0} opens
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    backgroundColor: 'var(--surface)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3B82F6' }}>
+                      {selectedCampaign?.emails_sent > 0 
+                        ? `${((selectedCampaign?.emails_clicked || 0) / selectedCampaign?.emails_sent * 100).toFixed(1)}%`
+                        : '0%'
+                      }
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Click Rate</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                      {selectedCampaign?.emails_clicked || 0} clicks
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    backgroundColor: 'var(--surface)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#F59E0B' }}>
+                      {selectedCampaign?.emails_sent > 0 
+                        ? `${(((selectedCampaign?.emails_sent || 0) - (selectedCampaign?.emails_bounced || 0)) / selectedCampaign?.emails_sent * 100).toFixed(1)}%`
+                        : '0%'
+                      }
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Delivery Rate</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                      {(selectedCampaign?.emails_sent || 0) - (selectedCampaign?.emails_bounced || 0)} delivered
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ModalActions>
+                <ModalButton onClick={handleCloseDeliverabilityModal}>
+                  Close
                 </ModalButton>
               </ModalActions>
             </ModalContent>
