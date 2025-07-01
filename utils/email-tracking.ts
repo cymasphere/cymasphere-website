@@ -39,7 +39,10 @@ const SUSPICIOUS_IPS = [
   '::1',
   '::ffff:127.0.0.1',
   'localhost',
-  'DEV-TEST:'
+  'DEV-TEST:',
+  '10.0.0.',    // Private network ranges
+  '192.168.',   // Private network ranges
+  '172.16.',    // Private network ranges
 ];
 
 /**
@@ -57,20 +60,27 @@ export function isLikelyBotOpen(
   // Check user agent for bot patterns
   if (userAgent) {
     const ua = userAgent.toLowerCase();
-    if (BOT_USER_AGENTS.some(botPattern => ua.includes(botPattern.toLowerCase()))) {
-      return true;
+    for (const botPattern of BOT_USER_AGENTS) {
+      if (ua.includes(botPattern.toLowerCase())) {
+        console.log(`🤖 Bot pattern matched: "${botPattern}" in "${ua.slice(0, 100)}"`);
+        return true;
+      }
     }
   }
 
-  // Check IP address for suspicious patterns
+  // Check IP address for suspicious patterns  
   if (ipAddress) {
-    if (SUSPICIOUS_IPS.some(suspiciousIp => ipAddress.includes(suspiciousIp))) {
-      return true;
+    for (const suspiciousIp of SUSPICIOUS_IPS) {
+      if (ipAddress.includes(suspiciousIp)) {
+        console.log(`🚨 Suspicious IP matched: "${suspiciousIp}" in "${ipAddress}"`);
+        return true;
+      }
     }
   }
 
   // Check for suspiciously fast opens (opened within 2 seconds of sending)
   if (openedWithinSeconds !== undefined && openedWithinSeconds < 2) {
+    console.log(`⚡ Fast open detected: ${openedWithinSeconds}s`);
     return true;
   }
 

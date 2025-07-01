@@ -69,18 +69,31 @@ export async function GET(request: NextRequest) {
                'unknown';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // TEMPORARILY DISABLED: Check if this is likely a bot/automated open FIRST (before database operations)
+    // Check if this is likely a bot/automated open FIRST (before database operations)
     const isBot = isLikelyBotOpen(userAgent, ip);
     const isPrefetcher = isKnownPrefetcher(userAgent);
 
-    // TEMP FIX: Log bot detection but don't block recording for testing
     if (isBot) {
-      console.log('🤖 Bot/automated open detected - LOGGING BUT ALLOWING:', {
+      console.log('🤖 Bot/automated open detected - not recording:', {
         userAgent: userAgent?.slice(0, 50),
         ip,
-        reason: 'Failed bot detection - TEMP DISABLED'
+        reason: 'Failed bot detection'
       });
-      // Continue processing instead of returning early
+      
+      // Still return pixel but don't record the open
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      return new NextResponse(pixel, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
     }
 
     // Check if the send record exists (for proper tracking)
@@ -97,13 +110,26 @@ export async function GET(request: NextRequest) {
       const openTime = new Date().getTime();
       openedWithinSeconds = (openTime - sentTime) / 1000;
       
-      // TEMP DISABLED: Additional bot check for suspiciously fast opens
+      // Additional bot check for suspiciously fast opens
       if (openedWithinSeconds < 2) {
-        console.log('🤖 Suspiciously fast open detected - LOGGING BUT ALLOWING:', {
+        console.log('🤖 Suspiciously fast open detected - not recording:', {
           openedWithinSeconds,
           userAgent: userAgent?.slice(0, 50)
         });
-        // Continue processing instead of blocking
+        
+        const pixel = Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          'base64'
+        );
+        return new NextResponse(pixel, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
       }
     }
 
