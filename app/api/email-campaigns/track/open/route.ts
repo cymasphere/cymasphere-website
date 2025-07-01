@@ -78,15 +78,32 @@ export async function GET(request: NextRequest) {
       userAgent: userAgent?.slice(0, 50)
     });
 
-    // COMPLETELY DISABLE BOT DETECTION FOR DEBUGGING
-    console.log('🚨 BOT DETECTION COMPLETELY DISABLED FOR DEBUGGING:', {
-      userAgent: userAgent?.slice(0, 50),
-      ip: ip || 'unknown',
-      note: 'ALL opens will be recorded - no filtering'
-    });
-    
-    const isBot = false; // FORCE DISABLED
-    const isPrefetcher = false; // FORCE DISABLED
+    // Re-enable proper bot detection (not too aggressive)
+    const isBot = isLikelyBotOpen(userAgent, ip || null);
+    const isPrefetcher = isKnownPrefetcher(userAgent);
+
+    if (isBot) {
+      console.log('🤖 Bot/automated open detected - not recording:', {
+        userAgent: userAgent?.slice(0, 50),
+        ip: ip || 'null',
+        reason: 'Failed bot detection'
+      });
+      
+      // Still return pixel but don't record the open
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      return new NextResponse(pixel, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    }
 
     // Check if the send record exists (for proper tracking)
     const { data: sendRecord } = await supabase
@@ -102,11 +119,27 @@ export async function GET(request: NextRequest) {
       const openTime = new Date().getTime();
       openedWithinSeconds = (openTime - sentTime) / 1000;
       
-      // TIMING CHECK ALSO DISABLED FOR DEBUGGING
-      console.log('⏱️ TIMING CHECK DISABLED - Recording regardless of timing:', {
-        openedWithinSeconds,
-        note: 'Fast opens will be recorded'
-      });
+      // Check for suspiciously fast opens (reasonable threshold)
+      if (openedWithinSeconds < 1) {
+        console.log('🤖 Suspiciously fast open detected - not recording:', {
+          openedWithinSeconds,
+          userAgent: userAgent?.slice(0, 50)
+        });
+        
+        const pixel = Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          'base64'
+        );
+        return new NextResponse(pixel, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+      }
     }
 
     if (isPrefetcher) {
@@ -115,23 +148,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // DEDUPLICATION ALSO DISABLED FOR DEBUGGING
-    console.log('🔄 DEDUPLICATION DISABLED - Checking but allowing multiple opens for debugging');
-    
+    // Check if this open has already been recorded for this specific email send (prevent duplicates)
     const { data: existingOpen } = await supabase
       .from('email_opens')
       .select('id')
       .eq('send_id', sendId)
       .single();
 
-    console.log('📊 Existing open check result:', {
-      existingOpenFound: !!existingOpen,
-      existingOpenId: existingOpen?.id,
-      willProceedAnyway: true
-    });
-
-    // FORCE PROCEED EVEN IF OPEN EXISTS (for debugging)
-    if (true) {
+    if (!existingOpen) {
       // Only record legitimate opens (not bots, not development tests)
       if (!sendRecord) {
         console.log('⚠️ Send record not found - skipping recording (likely development test)');
