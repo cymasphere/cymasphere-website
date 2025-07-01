@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
       const openTime = new Date().getTime();
       openedWithinSeconds = (openTime - sentTime) / 1000;
       
-      // Additional bot check for suspiciously fast opens
-      if (openedWithinSeconds < 2) {
+      // Additional bot check for suspiciously fast opens (reduced threshold)
+      if (openedWithinSeconds < 0.5) {
         console.log('🤖 Suspiciously fast open detected - not recording:', {
           openedWithinSeconds,
           userAgent: userAgent?.slice(0, 50)
@@ -177,12 +177,15 @@ export async function GET(request: NextRequest) {
         opened_at: new Date().toISOString()
       };
 
+      console.log('🔄 Attempting to insert open record:', openRecord);
+
       const { error: insertError } = await supabase
         .from('email_opens')
         .insert(openRecord);
 
       if (insertError) {
         console.error('❌ Error recording email open:', insertError);
+        console.error('❌ Full error details:', JSON.stringify(insertError, null, 2));
       } else {
         console.log('✅ Email open recorded successfully', {
           isPrefetcher,

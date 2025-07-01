@@ -40,9 +40,8 @@ const SUSPICIOUS_IPS = [
   '::ffff:127.0.0.1',
   'localhost',
   'DEV-TEST:',
-  '10.0.0.',    // Private network ranges
-  '192.168.',   // Private network ranges
-  '172.16.',    // Private network ranges
+  // Removed private network ranges - these are legitimate user IPs!
+  // Home and office networks commonly use 192.168.x.x, 10.x.x.x, etc.
 ];
 
 /**
