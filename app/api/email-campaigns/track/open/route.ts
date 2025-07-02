@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  console.log('🔥 FIXED BOT DETECTION - ALLOW GMAIL');
+  console.log('🔥 UNIQUE OPENS TRACKING - DEDUPLICATION');
   
   try {
     const { searchParams } = new URL(request.url);
@@ -44,48 +44,67 @@ export async function GET(request: NextRequest) {
     } else if (isServerFakeAgent) {
       console.log('🎭 Blocking server fake user agent:', userAgent);
     } else if (sendId && campaignId && subscriberId) {
-      console.log('✅ Recording legitimate email open...');
+      console.log('✅ Processing email open...');
       
-      const openRecord = {
-        send_id: sendId,
-        campaign_id: campaignId,
-        subscriber_id: subscriberId,
-        ip_address: ip,
-        user_agent: userAgent,
-        opened_at: new Date().toISOString()
-      };
-
-      console.log('🔥 Insert record:', openRecord);
-
-      const { data: insertData, error: insertError } = await supabase
+      // CHECK FOR EXISTING OPEN (DEDUPLICATION)
+      console.log('🔍 Checking for existing opens for this email send...');
+      const { data: existingOpens, error: existingError } = await supabase
         .from('email_opens')
-        .insert(openRecord)
-        .select();
+        .select('id')
+        .eq('send_id', sendId)
+        .limit(1);
 
-      console.log('🔥 Insert result:', { insertData, insertError });
+      console.log('🔍 Existing opens check:', { existingOpens, existingError });
 
-      if (insertError) {
-        console.error('🔥 INSERT ERROR:', JSON.stringify(insertError, null, 2));
+      if (existingError) {
+        console.error('❌ Error checking existing opens:', existingError);
+      } else if (existingOpens && existingOpens.length > 0) {
+        console.log('📧 DUPLICATE OPEN - This email was already opened (deduplication)');
+        console.log('✅ Returning pixel without recording duplicate');
       } else {
-        console.log('🔥 SUCCESS - EMAIL OPEN RECORDED!');
+        console.log('🆕 UNIQUE OPEN - Recording first open for this email send');
         
-        // Update campaign stats
-        console.log('🔥 Updating campaign stats...');
-        
-        const { data: currentCampaign } = await supabase
-          .from('email_campaigns')
-          .select('emails_opened')
-          .eq('id', campaignId)
-          .single();
+        const openRecord = {
+          send_id: sendId,
+          campaign_id: campaignId,
+          subscriber_id: subscriberId,
+          ip_address: ip,
+          user_agent: userAgent,
+          opened_at: new Date().toISOString()
+        };
+
+        console.log('🔥 Insert record:', openRecord);
+
+        const { data: insertData, error: insertError } = await supabase
+          .from('email_opens')
+          .insert(openRecord)
+          .select();
+
+        console.log('🔥 Insert result:', { insertData, insertError });
+
+        if (insertError) {
+          console.error('🔥 INSERT ERROR:', JSON.stringify(insertError, null, 2));
+        } else {
+          console.log('🔥 SUCCESS - UNIQUE EMAIL OPEN RECORDED!');
           
-        const newCount = (currentCampaign?.emails_opened || 0) + 1;
-        
-        const { error: updateError } = await supabase
-          .from('email_campaigns')
-          .update({ emails_opened: newCount })
-          .eq('id', campaignId);
+          // Update campaign stats (only for unique opens)
+          console.log('🔥 Updating campaign stats...');
           
-        console.log('🔥 Stats update:', { newCount, updateError });
+          const { data: currentCampaign } = await supabase
+            .from('email_campaigns')
+            .select('emails_opened')
+            .eq('id', campaignId)
+            .single();
+            
+          const newCount = (currentCampaign?.emails_opened || 0) + 1;
+          
+          const { error: updateError } = await supabase
+            .from('email_campaigns')
+            .update({ emails_opened: newCount })
+            .eq('id', campaignId);
+            
+          console.log('🔥 Stats update:', { newCount, updateError });
+        }
       }
     }
 
