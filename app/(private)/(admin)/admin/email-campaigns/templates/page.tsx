@@ -9,15 +9,9 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaEye,
   FaCopy,
-  FaCode,
-  FaImage,
-  FaEnvelope,
   FaCalendarAlt,
-  FaEllipsisV,
-  FaDownload,
-  FaShare
+  FaEllipsisV
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -542,8 +536,6 @@ function TemplatesPage() {
     if (action === 'view' || action === 'edit') {
       // Navigate to edit page with proper route
       router.push(`/admin/email-campaigns/templates/edit/${templateId}`);
-    } else if (action === 'browse') {
-      router.push('/admin/email-campaigns/templates/library');
     } else if (action === 'use') {
       // Create a new campaign from this template
       const template = templates.find(t => t.id === templateId);
@@ -627,16 +619,10 @@ function TemplatesPage() {
             />
           </SearchContainer>
           
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <CreateButton onClick={() => handleTemplateAction('browse', '')}>
-              <FaImage />
-              Browse Templates
-            </CreateButton>
-            <CreateButton onClick={() => handleTemplateAction('create', '')}>
-              <FaPlus />
-              Create Template
-            </CreateButton>
-          </div>
+          <CreateButton onClick={() => handleTemplateAction('create', '')}>
+            <FaPlus />
+            Create Template
+          </CreateButton>
         </ActionsRow>
 
         <TemplatesGrid>
@@ -714,28 +700,6 @@ function TemplatesPage() {
                           </DropdownButton>
                           <DropdownContent isOpen={openDropdown === template.id}>
                             <DropdownItem 
-                              variant="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('use', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaEnvelope />
-                              Use Template
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('preview', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaEye />
-                              Preview
-                            </DropdownItem>
-                            <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleTemplateAction('edit', template.id);
@@ -754,37 +718,6 @@ function TemplatesPage() {
                             >
                               <FaCopy />
                               Duplicate
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('download', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaDownload />
-                              Export
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('share', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaShare />
-                              Share
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('code', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaCode />
-                              View Code
                             </DropdownItem>
                             <DropdownDivider />
                             <DropdownItem 
