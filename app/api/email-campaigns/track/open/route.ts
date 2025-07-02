@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  console.log('🔥 MINIMAL BOT DETECTION TRACKING');
+  console.log('🔥 ENHANCED BOT DETECTION TRACKING');
   
   try {
     const { searchParams } = new URL(request.url);
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     console.log('🔥 User Agent:', userAgent?.slice(0, 50));
     console.log('🔥 IP:', ip);
 
-    // MINIMAL bot detection - only block obvious test patterns
+    // ENHANCED bot detection - block obvious tests AND server-side requests
     const isObviousBot = userAgent.toLowerCase().includes('nuclear-test') || 
                         userAgent.toLowerCase().includes('monitor-') ||
                         userAgent.toLowerCase().includes('quick-status') ||
@@ -36,8 +36,23 @@ export async function GET(request: NextRequest) {
                         userAgent.toLowerCase().includes('test-') ||
                         userAgent.toLowerCase().includes('bot-check');
 
+    // Block server-side/internal requests (the real culprit!)
+    const isServerSideRequest = ip.includes('127.0.0.1') || 
+                               ip.includes('localhost') ||
+                               ip.includes('::ffff:127.0.0.1') ||
+                               ip.includes('::1');
+
+    // Block fake user agents (like the Chrome/Edge combo we detected)
+    const isFakeUserAgent = userAgent.includes('Chrome/42.0.2311.135') ||
+                           userAgent.includes('Edge/12.246') ||
+                           (userAgent.includes('Chrome/') && userAgent.includes('Edge/'));
+
     if (isObviousBot) {
       console.log('🤖 Blocking obvious test/bot request:', userAgent);
+    } else if (isServerSideRequest) {
+      console.log('🏠 Blocking server-side/localhost request:', ip);
+    } else if (isFakeUserAgent) {
+      console.log('🎭 Blocking fake user agent:', userAgent);
     } else if (sendId && campaignId && subscriberId) {
       console.log('✅ Recording legitimate email open...');
       
