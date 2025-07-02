@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  console.log('🔥 SIMPLIFIED TRACKING - FORCING IT TO WORK');
+  console.log('🔥 MINIMAL BOT DETECTION TRACKING');
   
   try {
     const { searchParams } = new URL(request.url);
@@ -28,9 +28,18 @@ export async function GET(request: NextRequest) {
     console.log('🔥 User Agent:', userAgent?.slice(0, 50));
     console.log('🔥 IP:', ip);
 
-    // FORCE INSERT - NO VALIDATION, NO BOT DETECTION, NO DEDUPLICATION
-    if (sendId && campaignId && subscriberId) {
-      console.log('🔥 FORCING DATABASE INSERT...');
+    // MINIMAL bot detection - only block obvious test patterns
+    const isObviousBot = userAgent.toLowerCase().includes('nuclear-test') || 
+                        userAgent.toLowerCase().includes('monitor-') ||
+                        userAgent.toLowerCase().includes('quick-status') ||
+                        userAgent.toLowerCase().includes('curl/') ||
+                        userAgent.toLowerCase().includes('test-') ||
+                        userAgent.toLowerCase().includes('bot-check');
+
+    if (isObviousBot) {
+      console.log('🤖 Blocking obvious test/bot request:', userAgent);
+    } else if (sendId && campaignId && subscriberId) {
+      console.log('✅ Recording legitimate email open...');
       
       const openRecord = {
         send_id: sendId,
@@ -53,10 +62,10 @@ export async function GET(request: NextRequest) {
       if (insertError) {
         console.error('🔥 INSERT ERROR:', JSON.stringify(insertError, null, 2));
       } else {
-        console.log('🔥 SUCCESS - FORCED INSERT WORKED!');
+        console.log('🔥 SUCCESS - EMAIL OPEN RECORDED!');
         
-        // FORCE UPDATE CAMPAIGN STATS
-        console.log('🔥 FORCING CAMPAIGN STATS UPDATE...');
+        // Update campaign stats
+        console.log('🔥 Updating campaign stats...');
         
         const { data: currentCampaign } = await supabase
           .from('email_campaigns')
