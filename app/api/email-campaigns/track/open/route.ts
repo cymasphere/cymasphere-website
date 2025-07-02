@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  console.log('🔥 ENHANCED BOT DETECTION TRACKING');
+  console.log('🔥 FIXED BOT DETECTION - ALLOW GMAIL');
   
   try {
     const { searchParams } = new URL(request.url);
@@ -28,31 +28,21 @@ export async function GET(request: NextRequest) {
     console.log('🔥 User Agent:', userAgent?.slice(0, 50));
     console.log('🔥 IP:', ip);
 
-    // ENHANCED bot detection - block obvious tests AND server-side requests
-    const isObviousBot = userAgent.toLowerCase().includes('nuclear-test') || 
-                        userAgent.toLowerCase().includes('monitor-') ||
-                        userAgent.toLowerCase().includes('quick-status') ||
-                        userAgent.toLowerCase().includes('curl/') ||
-                        userAgent.toLowerCase().includes('test-') ||
-                        userAgent.toLowerCase().includes('bot-check');
+    // MINIMAL bot detection - only block obvious test patterns
+    const isObviousTestBot = userAgent.toLowerCase().includes('nuclear-test') || 
+                            userAgent.toLowerCase().includes('monitor-') ||
+                            userAgent.toLowerCase().includes('quick-status') ||
+                            userAgent.toLowerCase().includes('test-should-be-blocked') ||
+                            userAgent.toLowerCase().includes('test-deployment');
 
-    // Block server-side/internal requests (the real culprit!)
-    const isServerSideRequest = ip.includes('127.0.0.1') || 
-                               ip.includes('localhost') ||
-                               ip.includes('::ffff:127.0.0.1') ||
-                               ip.includes('::1');
+    // Only block the specific fake user agent from server-side requests  
+    const isServerFakeAgent = userAgent.includes('Chrome/42.0.2311.135') &&
+                             userAgent.includes('Edge/12.246');
 
-    // Block fake user agents (like the Chrome/Edge combo we detected)
-    const isFakeUserAgent = userAgent.includes('Chrome/42.0.2311.135') ||
-                           userAgent.includes('Edge/12.246') ||
-                           (userAgent.includes('Chrome/') && userAgent.includes('Edge/'));
-
-    if (isObviousBot) {
-      console.log('🤖 Blocking obvious test/bot request:', userAgent);
-    } else if (isServerSideRequest) {
-      console.log('🏠 Blocking server-side/localhost request:', ip);
-    } else if (isFakeUserAgent) {
-      console.log('🎭 Blocking fake user agent:', userAgent);
+    if (isObviousTestBot) {
+      console.log('🤖 Blocking obvious test request:', userAgent);
+    } else if (isServerFakeAgent) {
+      console.log('🎭 Blocking server fake user agent:', userAgent);
     } else if (sendId && campaignId && subscriberId) {
       console.log('✅ Recording legitimate email open...');
       
