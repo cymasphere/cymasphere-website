@@ -213,7 +213,7 @@ export function injectOpenTracking(
   baseUrl?: string
 ): string {
   const trackingPixelUrl = generateTrackingPixelUrl(campaignId, subscriberId, sendId, baseUrl);
-  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`;
+  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:block;border:0;margin:0;padding:0;" alt="" />`;
   
   // Try to insert before closing body tag, otherwise append to end
   if (htmlContent.includes('</body>')) {
@@ -279,7 +279,7 @@ export function injectEmailTracking(
   // Step 2: Add tracking pixel
   const trackingPixel = `
     <!-- Email Open Tracking -->
-    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:none;border:0;outline:0;" alt="" />`;
+    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:block;border:0;margin:0;padding:0;" alt="" />`;
 
   console.log('📧 Generated tracking pixel:', trackingPixel.trim());
 

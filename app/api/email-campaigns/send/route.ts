@@ -765,7 +765,7 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
       : 'https://cymasphere.com';
     const trackingPixel = `
     <!-- Email Open Tracking -->
-    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:none;border:0;outline:0;" alt="" />`;
+    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:block;border:0;margin:0;padding:0;" alt="" />`;
     
     html += trackingPixel;
   }

@@ -4399,6 +4399,9 @@ function CreateCampaignPage() {
                         targetTab = 'scheduled';
                       } else if (campaignResult.status === 'sent' || campaignResult.status === 'completed') {
                         targetTab = 'sent';
+                      } else if (campaignData.scheduleType === 'immediate') {
+                        // For immediate sends, always go to sent tab (even if status isn't properly set)
+                        targetTab = 'sent';
                       }
                       router.push(`/admin/email-campaigns/campaigns?tab=${targetTab}`);
                     }}
