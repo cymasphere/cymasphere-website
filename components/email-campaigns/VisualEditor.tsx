@@ -1284,8 +1284,8 @@ export default function VisualEditor({
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
               background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '1rem' : '0',
-              borderRadius: element.fullWidth ? '8px' : '0'
+              padding: element.fullWidth ? '0.5rem 0' : '0',
+              borderRadius: element.fullWidth ? '0' : '0'
             }}
           >
             {element.content}
@@ -1346,8 +1346,8 @@ export default function VisualEditor({
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
               background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '1rem' : '0',
-              borderRadius: element.fullWidth ? '8px' : '0',
+              padding: element.fullWidth ? '0.5rem 0' : '0',
+              borderRadius: element.fullWidth ? '0' : '0',
               textAlign: element.fullWidth ? 'left' : 'inherit'
             }}
           >
@@ -1417,18 +1417,18 @@ export default function VisualEditor({
               }}
               style={{
                 display: element.fullWidth ? 'block' : 'inline-block',
-                padding: '1.25rem 2.5rem',
+                padding: element.fullWidth ? '1.25rem 0' : '1.25rem 2.5rem',
                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                 color: 'white',
                 textDecoration: 'none',
-                borderRadius: element.fullWidth ? '8px' : '50px',
+                borderRadius: element.fullWidth ? '0' : '50px',
                 fontWeight: '700',
                 fontSize: '1rem',
                 cursor: isEditing ? 'text' : 'pointer',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
-                boxShadow: '0 8px 25px rgba(108, 99, 255, 0.3)',
+                boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
                 minHeight: '1em',
                 width: element.fullWidth ? '100%' : 'auto',
                 textAlign: 'center'
@@ -1722,7 +1722,7 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '2rem' : '2rem',
+            padding: element.fullWidth ? '2rem 0' : '2rem',
             fontSize: '0.8rem', 
             color: '#666',
             background: element.fullWidth 
@@ -1823,7 +1823,7 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: '20px',
+            padding: element.fullWidth ? '20px 0' : '20px',
             background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
             display: 'flex',
             alignItems: 'center',
