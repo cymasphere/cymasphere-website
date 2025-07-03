@@ -164,8 +164,8 @@ const EmailFooter = styled.div`
 const EmailElement = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing',
 })<{ selected: boolean; editing: boolean }>`
-  margin: 0;
-  padding: 0;
+  margin: 0 0 12px 0;
+  padding: 8px;
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -191,7 +191,7 @@ const EmailElement = styled.div.withConfig({
       transform: translateY(-50%) scale(1.05);
     }
   }
-
+  
   &:active {
     cursor: grabbing;
   }
@@ -202,6 +202,10 @@ const EmailElement = styled.div.withConfig({
 
   &[draggable="true"]:active {
     cursor: grabbing;
+  }
+  
+  .drag-handle {
+    opacity: 0.8;
   }
 
   .element-controls {
@@ -266,35 +270,42 @@ const DragHandle = styled.div.withConfig({
   shouldForwardProp: (prop) => true,
 })`
   position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 40px;
+  left: 4px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
   background: rgba(108, 99, 255, 0.9);
-  border-radius: 6px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
-  opacity: 0.3;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
   color: white;
   user-select: none;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  pointer-events: auto;
   
   &:hover {
     opacity: 1 !important;
     background: var(--primary);
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
     cursor: grab;
   }
   
   &:active {
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
+    cursor: grabbing;
+  }
+  
+  &[draggable="true"] {
+    cursor: grab;
+  }
+  
+  &[draggable="true"]:active {
     cursor: grabbing;
   }
 `;
@@ -370,18 +381,35 @@ const FileInput = styled.input`
   display: none;
 `;
 
+// ✨ NEW: Spinning animation for upload indicators
+const SpinKeyframes = styled.div`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const EditableText = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'editing',
 })<{ editing: boolean }>`
   outline: ${props => props.editing ? '2px solid var(--primary)' : 'none'};
   border-radius: 4px;
-  padding: ${props => props.editing ? '0.5rem' : '0'};
+  padding: ${props => props.editing ? '0.5rem' : '0.25rem'};
   background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
   transition: all 0.3s ease;
 
+  &:hover {
+    background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'rgba(108, 99, 255, 0.05)'};
+  }
+
   &:focus {
-    outline: 2px solid var(--primary);
-    background: rgba(108, 99, 255, 0.1);
+    outline: 2px solid var(--primary) !important;
+    background: rgba(108, 99, 255, 0.1) !important;
+  }
+  
+  &:focus-within {
+    outline: 2px solid var(--primary) !important;
+    background: rgba(108, 99, 255, 0.1) !important;
   }
 `;
 
@@ -533,6 +561,47 @@ const VariableTag = styled.div`
   }
 `;
 
+const ElementBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: grab;
+  transition: all 0.3s ease;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  user-select: none;
+
+  &:hover {
+    background: rgba(108, 99, 255, 0.1);
+    border-color: rgba(108, 99, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
+    color: var(--primary);
+  }
+
+  &:active {
+    transform: translateY(0);
+    cursor: grabbing;
+  }
+
+  &[draggable="true"]:hover {
+    cursor: grab;
+  }
+
+  &[draggable="true"]:active {
+    cursor: grabbing;
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+`;
+
 // ✨ NEW: Padding control components
 const PaddingControl = styled.div`
   display: flex;
@@ -647,6 +716,8 @@ export default function VisualEditor({
   
   // ✨ NEW: Image upload state
   const [imageUploadElement, setImageUploadElement] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ✨ NEW: Update design setting
@@ -674,36 +745,67 @@ export default function VisualEditor({
   };
 
   // ✨ NEW: Image upload functions
+  const uploadImageToSupabase = async (file: File, elementId: string) => {
+    try {
+      setImageUploading(elementId);
+      setUploadError(null);
+      
+      console.log('📤 Uploading image to Supabase storage:', file.name);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Upload to API endpoint
+      const response = await fetch('/api/email-campaigns/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Image uploaded successfully:', result.data.publicUrl);
+        
+        // Update element with public URL
+        updateElement(elementId, { 
+          src: result.data.publicUrl,
+          alt: file.name
+        });
+        
+        setUploadError(null);
+      } else {
+        console.error('❌ Image upload failed:', result.error);
+        setUploadError(result.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      setUploadError('Network error occurred while uploading image');
+    } finally {
+      setImageUploading(null);
+    }
+  };
+
   const handleImageUpload = (elementId: string) => {
     setImageUploadElement(elementId);
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && imageUploadElement) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const src = event.target?.result as string;
-        updateElement(imageUploadElement, { src });
-        setImageUploadElement(null);
-      };
-      reader.readAsDataURL(file);
+      await uploadImageToSupabase(file, imageUploadElement);
+      setImageUploadElement(null);
     }
   };
 
-  const handleImageDrop = (e: React.DragEvent, elementId: string) => {
+  const handleImageDrop = async (e: React.DragEvent, elementId: string) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
       if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const src = event.target?.result as string;
-          updateElement(elementId, { src });
-        };
-        reader.readAsDataURL(file);
+        await uploadImageToSupabase(file, elementId);
       }
     }
   };
@@ -711,9 +813,17 @@ export default function VisualEditor({
   // Element reordering drag handlers
   const handleElementDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
     
-    // Only show drop indicator if we're dragging an element (not adding a new one)
+    // Check if we're dragging a new element from the palette
+    const elementType = e.dataTransfer.getData('text/element-type');
+    if (elementType) {
+      e.dataTransfer.dropEffect = 'copy';
+      setElementDragOverIndex(index);
+      return;
+    }
+    
+    // Handle reordering existing elements
+    e.dataTransfer.dropEffect = 'move';
     if (draggedElementId) {
       setElementDragOverIndex(index);
     }
@@ -722,6 +832,21 @@ export default function VisualEditor({
   const handleElementDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     console.log('💧 Drop attempted at index:', dropIndex);
+    
+    // Check if we're dropping a new element from the palette
+    const elementType = e.dataTransfer.getData('text/element-type');
+    if (elementType) {
+      console.log('🆕 Creating new element:', elementType, 'at index:', dropIndex);
+      const newElement = createNewElement(elementType);
+      const newElements = [...emailElements];
+      newElements.splice(dropIndex, 0, newElement);
+      setEmailElements(newElements);
+      console.log('🎉 New element added successfully!');
+      setElementDragOverIndex(null);
+      return;
+    }
+    
+    // Otherwise, handle reordering existing elements
     const elementId = e.dataTransfer.getData('text/element-id');
     const dragIndex = parseInt(e.dataTransfer.getData('text/element-index'));
     console.log('📦 Dropped element ID:', elementId, 'from index:', dragIndex);
@@ -853,6 +978,7 @@ export default function VisualEditor({
   const selectElement = (elementId: string) => {
     setSelectedElementId(elementId);
     setEditingElementId(null);
+    setUploadError(null); // Clear any upload errors when selecting different element
   };
 
   const startEditing = (elementId: string) => {
@@ -910,7 +1036,23 @@ export default function VisualEditor({
       console.log('🚀 DRAG START - Element:', element.id, 'Index:', index, 'Type:', element.type);
       console.log('🚀 Event target:', e.target);
       console.log('🚀 Current target:', e.currentTarget);
-      e.stopPropagation();
+      console.log('🚀 Target class name:', (e.target as HTMLElement).className);
+      console.log('🚀 Current target class name:', (e.currentTarget as HTMLElement).className);
+      
+      // Prevent drag if element is being edited
+      if (isEditing) {
+        console.log('❌ Preventing drag - element is being edited');
+        e.preventDefault();
+        return;
+      }
+      
+      // Prevent drag if clicking on editable text
+      const target = e.target as HTMLElement;
+      if (target.closest('.editable-text') || target.contentEditable === 'true') {
+        console.log('❌ Preventing drag - clicking on editable text');
+        e.preventDefault();
+        return;
+      }
       
       // Set drag data
       setDraggedElementId(element.id);
@@ -922,11 +1064,13 @@ export default function VisualEditor({
       // Change cursor
       document.body.style.cursor = 'grabbing';
       console.log('✅ Drag data set successfully for element:', element.id);
+      console.log('✅ Dragged element ID set to:', element.id);
     };
 
     const handleDragEnd = (e: React.DragEvent) => {
       console.log('🎯 DRAG END - Element:', element.id);
       console.log('🎯 Event target:', e.target);
+      console.log('🎯 Target class name:', (e.target as HTMLElement).className);
       e.stopPropagation();
       
       // Reset drag state
@@ -937,20 +1081,39 @@ export default function VisualEditor({
       // Reset cursor
       document.body.style.cursor = '';
       console.log('✅ Drag ended, state cleared for element:', element.id);
+      console.log('✅ All drag state reset');
     };
 
     const handleClickCapture = (e: React.MouseEvent) => {
-      // Prevent drag handle from interfering with element selection
-      if (!(e.target as Element).closest('.drag-handle')) {
-        selectElement(element.id);
+      const target = e.target as HTMLElement;
+      
+      // If clicking on drag handle, don't interfere
+      if (target.closest('.drag-handle')) {
+        return;
       }
+      
+      // If clicking on editable text, start editing immediately
+      if (target.closest('.editable-text') || target.contentEditable === 'true') {
+        e.stopPropagation();
+        startEditing(element.id);
+        return;
+      }
+      
+      // Otherwise just select the element
+      selectElement(element.id);
     };
 
     const handleDoubleClickCapture = (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
       // Prevent drag handle from interfering with editing
-      if (!(e.target as Element).closest('.drag-handle')) {
-        handleElementDoubleClick(element.id);
+      if (target.closest('.drag-handle')) {
+        return;
       }
+      
+      // Start editing on double click
+      e.stopPropagation();
+      startEditing(element.id);
     };
 
     return (
@@ -958,7 +1121,7 @@ export default function VisualEditor({
         key={element.id}
         selected={isSelected}
         editing={isEditing}
-        draggable={true}
+        draggable={!isEditing}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onClickCapture={handleClickCapture}
@@ -973,7 +1136,7 @@ export default function VisualEditor({
           transform: draggedElementId === element.id ? 'scale(0.95)' : 'scale(1)',
           transition: 'opacity 0.2s ease, transform 0.2s ease',
           borderTop: elementDragOverIndex === index ? '3px solid var(--primary)' : 'none',
-          cursor: draggedElementId === element.id ? 'grabbing' : 'grab'
+          cursor: isEditing ? 'default' : (draggedElementId === element.id ? 'grabbing' : 'grab')
         }}
       >
         <div className="element-controls">
@@ -991,33 +1154,42 @@ export default function VisualEditor({
         <DragHandle 
           className="drag-handle" 
           title="Drag to reorder this element"
-          draggable={true}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
           onMouseDown={(e) => {
             e.stopPropagation();
             console.log('🖱️ Drag handle mousedown for element:', element.id);
           }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
           style={{ userSelect: 'none' }}
         >
-          <FaGripVertical size={14} style={{ pointerEvents: 'none', userSelect: 'none' }} />
+          <FaGripVertical size={10} style={{ pointerEvents: 'none', userSelect: 'none' }} />
         </DragHandle>
         {element.type === 'header' && (
           <EditableText
+            className="editable-text"
             editing={isEditing}
-            contentEditable={isEditing}
+            contentEditable={true}
             suppressContentEditableWarning={true}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
             onInput={handleInput}
             onMouseUp={isEditing ? handleTextSelect : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isEditing) {
+                startEditing(element.id);
+              }
+            }}
             style={{
               fontSize: '2rem',
               fontWeight: 'bold',
               color: '#333',
               textAlign: 'center',
               margin: 0,
-              position: 'relative'
+              position: 'relative',
+              cursor: isEditing ? 'text' : 'pointer',
+              minHeight: '1em'
             }}
           >
             {element.content}
@@ -1054,19 +1226,28 @@ export default function VisualEditor({
         )}
         {element.type === 'text' && (
           <EditableText
+            className="editable-text"
             editing={isEditing}
-            contentEditable={isEditing}
+            contentEditable={true}
             suppressContentEditableWarning={true}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
             onInput={handleInput}
             onMouseUp={isEditing ? handleTextSelect : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isEditing) {
+                startEditing(element.id);
+              }
+            }}
             style={{
               fontSize: '1rem',
               lineHeight: '1.6',
               color: '#333',
               margin: 0,
-              position: 'relative'
+              position: 'relative',
+              cursor: isEditing ? 'text' : 'pointer',
+              minHeight: '1em'
             }}
           >
             {element.content}
@@ -1116,12 +1297,19 @@ export default function VisualEditor({
         {element.type === 'button' && (
           <div style={{ textAlign: 'center', margin: 0 }}>
             <EditableText
+              className="editable-text"
               editing={isEditing}
-              contentEditable={isEditing}
+              contentEditable={true}
               suppressContentEditableWarning={true}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
               onInput={handleInput}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isEditing) {
+                  startEditing(element.id);
+                }
+              }}
               style={{
                 display: 'inline-block',
                 padding: '1.25rem 2.5rem',
@@ -1131,11 +1319,12 @@ export default function VisualEditor({
                 borderRadius: '50px',
                 fontWeight: '700',
                 fontSize: '1rem',
-                cursor: 'pointer',
+                cursor: isEditing ? 'text' : 'pointer',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
-                boxShadow: '0 8px 25px rgba(108, 99, 255, 0.3)'
+                boxShadow: '0 8px 25px rgba(108, 99, 255, 0.3)',
+                minHeight: '1em'
               }}
             >
               {element.content}
@@ -1144,6 +1333,63 @@ export default function VisualEditor({
         )}
         {element.type === 'image' && (
           <div style={{ textAlign: 'center', margin: 0, position: 'relative' }}>
+            {/* Upload progress indicator */}
+            {imageUploading === element.id && (
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(108, 99, 255, 0.1)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                backdropFilter: 'blur(2px)'
+              }}>
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.8)',
+                  color: 'white',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Uploading to storage...
+                </div>
+              </div>
+            )}
+            
+            {/* Error message */}
+            {uploadError && isSelected && (
+              <div style={{
+                position: 'absolute',
+                top: '-60px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(239, 68, 68, 0.9)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                zIndex: 15,
+                whiteSpace: 'nowrap'
+              }}>
+                {uploadError}
+              </div>
+            )}
+            
             {element.src ? (
               <div style={{ position: 'relative' }}>
             <img 
@@ -1153,11 +1399,13 @@ export default function VisualEditor({
                 maxWidth: '100%', 
                 height: 'auto', 
                 borderRadius: '8px',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                opacity: imageUploading === element.id ? 0.5 : 1,
+                transition: 'opacity 0.3s ease'
               }} 
             />
                 {/* ✨ NEW: Image upload overlay when selected */}
-                {isSelected && (
+                {isSelected && imageUploading !== element.id && (
                   <div style={{
                     position: 'absolute',
                     top: '50%',
@@ -1194,26 +1442,54 @@ export default function VisualEditor({
             ) : (
               /* ✨ NEW: Image upload area when no image */
               (<ImageUploadArea
-                onClick={() => handleImageUpload(element.id)}
-                onDrop={(e) => handleImageDrop(e, element.id)}
+                onClick={() => imageUploading !== element.id && handleImageUpload(element.id)}
+                onDrop={(e) => imageUploading !== element.id && handleImageDrop(e, element.id)}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  e.currentTarget.classList.add('dragover');
+                  if (imageUploading !== element.id) {
+                    e.currentTarget.classList.add('dragover');
+                  }
                 }}
                 onDragLeave={(e) => {
                   e.currentTarget.classList.remove('dragover');
                 }}
+                style={{
+                  opacity: imageUploading === element.id ? 0.5 : 1,
+                  cursor: imageUploading === element.id ? 'not-allowed' : 'pointer'
+                }}
               >
-                <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
-                <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Upload an Image
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                  Click to browse or drag and drop
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#999' }}>
-                  Supports JPG, PNG, GIF (max 5MB)
-                </div>
+                {imageUploading === element.id ? (
+                  <>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      border: '3px solid rgba(108, 99, 255, 0.3)',
+                      borderTop: '3px solid #6c63ff',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      marginBottom: '1rem'
+                    }} />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                      Uploading to Storage...
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Please wait while we save your image
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                      Upload an Image
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
+                      Click to browse or drag and drop
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#999' }}>
+                      Supports JPG, PNG, GIF (max 10MB)
+                    </div>
+                  </>
+                )}
               </ImageUploadArea>)
             )}
           </div>
@@ -1320,12 +1596,170 @@ export default function VisualEditor({
 
   return (
     <>
+      {/* Keyframes for animations */}
+      <SpinKeyframes />
       {/* Visual Email Canvas */}
+      {/* Element Palette - Horizontal Top Bar */}
+      <div style={{ 
+        marginBottom: '1rem',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
+        borderRadius: '12px',
+        padding: '0.75rem',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        display: 'flex', 
+        gap: '0.75rem', 
+        flexWrap: 'wrap',
+        justifyContent: 'center'
+      }}>
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging header element from palette');
+            e.dataTransfer.setData('text/element-type', 'header');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('header');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaFont size={14} />
+          <span>Header</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging text element from palette');
+            e.dataTransfer.setData('text/element-type', 'text');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('text');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaFont size={12} />
+          <span>Text</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging button element from palette');
+            e.dataTransfer.setData('text/element-type', 'button');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('button');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaMousePointer size={12} />
+          <span>Button</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging image element from palette');
+            e.dataTransfer.setData('text/element-type', 'image');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('image');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaImage size={12} />
+          <span>Image</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging divider element from palette');
+            e.dataTransfer.setData('text/element-type', 'divider');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('divider');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaDivide size={12} />
+          <span>Divider</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging spacer element from palette');
+            e.dataTransfer.setData('text/element-type', 'spacer');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('spacer');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaExpandArrowsAlt size={12} />
+          <span>Spacer</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging social element from palette');
+            e.dataTransfer.setData('text/element-type', 'social');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('social');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaShareAlt size={12} />
+          <span>Social</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging columns element from palette');
+            e.dataTransfer.setData('text/element-type', 'columns');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('columns');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaColumns size={12} />
+          <span>Columns</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging video element from palette');
+            e.dataTransfer.setData('text/element-type', 'video');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('video');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaVideo size={12} />
+          <span>Video</span>
+        </ElementBlock>
+      </div>
+
       <div style={{ 
         display: 'flex',
         gap: '2rem', 
         minHeight: '600px',
-        marginTop: '1rem',
         overflow: 'visible'
       }}>
         
@@ -1426,11 +1860,32 @@ export default function VisualEditor({
                       </div>
                     </div>
                   </EmailHeader>
-                  <EmailBody>
+                  <EmailBody
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      const elementType = e.dataTransfer.getData('text/element-type');
+                      if (elementType || draggedElementId) {
+                        e.dataTransfer.dropEffect = elementType ? 'copy' : 'move';
+                        if (emailElements.length === 0) {
+                          setElementDragOverIndex(0);
+                        }
+                      }
+                    }}
+                    onDrop={(e) => {
+                      if (emailElements.length === 0) {
+                        handleElementDrop(e, 0);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (emailElements.length === 0) {
+                        setElementDragOverIndex(null);
+                      }
+                    }}
+                  >
                     {emailElements.map((element, index) => (
                       <React.Fragment key={element.id}>
                         {/* Element reordering drop zone at the beginning */}
-                        {index === 0 && draggedElementId && (
+                        {index === 0 && (
                           <div
                             onDragOver={(e) => handleElementDragOver(e, 0)}
                             onDrop={(e) => handleElementDrop(e, 0)}
@@ -1447,19 +1902,17 @@ export default function VisualEditor({
                         {renderEmailElement(element, index)}
                         
                         {/* Element reordering drop zone after each element */}
-                        {draggedElementId && (
-                          <div
-                            onDragOver={(e) => handleElementDragOver(e, index + 1)}
-                            onDrop={(e) => handleElementDrop(e, index + 1)}
-                            style={{
-                              height: elementDragOverIndex === index + 1 ? '6px' : '2px',
-                              background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
-                              transition: 'all 0.2s ease',
-                              margin: '8px 0',
-                              borderRadius: '2px'
-                            }}
+                        <div
+                          onDragOver={(e) => handleElementDragOver(e, index + 1)}
+                          onDrop={(e) => handleElementDrop(e, index + 1)}
+                          style={{
+                            height: elementDragOverIndex === index + 1 ? '6px' : '2px',
+                            background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
+                            transition: 'all 0.2s ease',
+                            margin: '8px 0',
+                            borderRadius: '2px'
+                          }}
                         />
-                        )}
                       </React.Fragment>
                     ))}
                     
@@ -1469,14 +1922,18 @@ export default function VisualEditor({
                         textAlign: 'center',
                         padding: '4rem 2rem',
                         color: '#666',
-                        fontSize: '1.1rem'
+                        fontSize: '1.1rem',
+                        border: elementDragOverIndex === 0 ? '2px dashed var(--primary)' : '2px dashed transparent',
+                        borderRadius: '12px',
+                        background: elementDragOverIndex === 0 ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+                        transition: 'all 0.3s ease'
                       }}>
                         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📝</div>
                         <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-                          Start Building Your Email
+                          {elementDragOverIndex === 0 ? 'Drop element here!' : 'Start Building Your Email'}
                         </div>
                         <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-                          Your email content will appear here as you add elements
+                          {elementDragOverIndex === 0 ? 'Release to add the element' : 'Drag elements from above or click to add them'}
                         </div>
                       </div>
                     )}

@@ -2527,12 +2527,13 @@ function CreateCampaignPage() {
         setSendingMessage(`Campaign ${isUpdating ? 'updated' : 'saved'} as draft successfully!`);
         setTimeout(() => setSendingMessage(''), 3000);
       } else {
-        console.error(`Error ${isUpdating ? 'updating' : 'saving'} campaign:`, result.error);
-        setSendingMessage(`Error ${isUpdating ? 'updating' : 'saving'} campaign: ${result.error}`);
+        // Handle validation errors gracefully without throwing
+        console.log(`Validation error ${isUpdating ? 'updating' : 'saving'} campaign:`, result.error);
+        setSendingMessage(result.error || `Error ${isUpdating ? 'updating' : 'saving'} campaign`);
         setTimeout(() => setSendingMessage(''), 5000);
       }
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'saving'} campaign:`, error);
+      console.log(`Error ${isEditMode ? 'updating' : 'saving'} campaign:`, error);
       setSendingMessage(`Error ${isEditMode ? 'updating' : 'saving'} campaign. Please try again.`);
       setTimeout(() => setSendingMessage(''), 5000);
     }

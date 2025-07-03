@@ -389,6 +389,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create a real campaign record for immediate sends (if not already provided)
+    let realCampaignId = campaignId;
+    
+    // For immediate sends, create a campaign record to get a proper UUID
+    if (scheduleType === 'immediate' && (!campaignId || !campaignId.match(/^[0-9a-f-]{36}$/i))) {
+      console.log('📝 Creating campaign record for immediate send...');
+      
+      // Use service role client for campaign creation to bypass RLS
+      const { createClient } = require('@supabase/supabase-js');
+      const serviceSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      
+      const { data: newCampaign, error: campaignError } = await serviceSupabase
+        .from('email_campaigns')
+        .insert({
+          name,
+          subject,
+          sender_name: 'Cymasphere',
+          sender_email: 'support@cymasphere.com',
+          html_content: generateHtmlFromElements(emailElements, subject),
+          text_content: generateTextFromElements(emailElements),
+          status: 'sending'
+          // created_by omitted - will use default or null
+        })
+        .select('id')
+        .single();
+      
+      if (campaignError) {
+        console.error('❌ Failed to create campaign record:', campaignError.message);
+        return NextResponse.json(
+          { success: false, error: 'Failed to create campaign record' },
+          { status: 500 }
+        );
+      }
+      
+      realCampaignId = newCampaign.id;
+      console.log('✅ Created campaign record with UUID:', realCampaignId);
+    }
+
     // Generate base HTML and text content (without tracking yet)
     const baseHtmlContent = generateHtmlFromElements(emailElements, subject);
     const textContent = generateTextFromElements(emailElements);
@@ -417,10 +458,17 @@ export async function POST(request: NextRequest) {
     for (const subscriber of targetSubscribers) {
       try {
         // Create email_sends record first to get tracking ID
-        const { data: sendRecord, error: sendError } = await supabase
+        // Use service role client for send record creation to bypass RLS
+        const { createClient } = require('@supabase/supabase-js');
+        const serviceSupabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        const { data: sendRecord, error: sendError } = await serviceSupabase
           .from('email_sends')
           .insert({
-            campaign_id: campaignId,
+            campaign_id: realCampaignId,
             subscriber_id: subscriber.id,
             email: subscriber.email,
             status: 'pending'
@@ -445,18 +493,18 @@ export async function POST(request: NextRequest) {
         // Generate tracking-enabled HTML content
         console.log(`🔧 Generating tracked HTML for ${subscriber.email}:`, {
           emailElementsCount: emailElements.length,
-          campaignId,
+          campaignId: realCampaignId,
           subscriberId: subscriber.id,
           sendId,
           elementsPreview: emailElements.slice(0, 2)
         });
         
-        const trackedHtmlContent = generateHtmlFromElements(emailElements, subject, campaignId, subscriber.id, sendId);
+        const trackedHtmlContent = generateHtmlFromElements(emailElements, subject, realCampaignId, subscriber.id, sendId);
         
         console.log(`📧 Generated tracked HTML for ${subscriber.email}:`, {
           length: trackedHtmlContent.length,
           hasTrackingPixel: trackedHtmlContent.includes('/api/email-campaigns/track/open'),
-          hasTrackingParams: trackedHtmlContent.includes(`c=${campaignId}`),
+          hasTrackingParams: trackedHtmlContent.includes(`c=${realCampaignId}`),
           lastChars: trackedHtmlContent.slice(-200)
         });
         
@@ -485,7 +533,7 @@ export async function POST(request: NextRequest) {
 
         if (result.success) {
           // Update send record to sent status
-          await supabase
+          await serviceSupabase
             .from('email_sends')
             .update({
               status: 'sent',
@@ -505,7 +553,7 @@ export async function POST(request: NextRequest) {
           console.log(`   - Send ID: ${sendId}`);
         } else {
           // Update send record to failed status
-          await supabase
+          await serviceSupabase
             .from('email_sends')
             .update({
               status: 'failed',
@@ -545,7 +593,7 @@ export async function POST(request: NextRequest) {
     const totalCount = targetSubscribers.length;
 
     // Update campaign statistics AND store the tracked HTML template
-    if (campaignId) {
+    if (realCampaignId) {
       try {
         // Generate a sample tracked HTML template
         const sampleSubscriber = targetSubscribers[0];
@@ -555,11 +603,18 @@ export async function POST(request: NextRequest) {
         if (sampleSubscriber) {
           // Use existing send ID if available, otherwise generate a placeholder ID for template
           sampleSendId = results.find(r => r.subscriberId === sampleSubscriber.id)?.sendId || 'template-placeholder-id';
-          trackedHtmlTemplate = generateHtmlFromElements(emailElements, subject, campaignId, sampleSubscriber.id, sampleSendId);
+          trackedHtmlTemplate = generateHtmlFromElements(emailElements, subject, realCampaignId, sampleSubscriber.id, sampleSendId);
         }
         
         if (trackedHtmlTemplate) {
-          await supabase
+          // Use service role client for campaign stats update
+          const { createClient } = require('@supabase/supabase-js');
+          const serviceSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          
+          await serviceSupabase
             .from('email_campaigns')
             .update({
               emails_sent: successCount,
@@ -568,13 +623,20 @@ export async function POST(request: NextRequest) {
               status: successCount > 0 ? 'sent' : 'draft',
               html_content: trackedHtmlTemplate  // Store the tracked HTML template
             })
-            .eq('id', campaignId);
+            .eq('id', realCampaignId);
           
           console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total`);
           console.log(`📧 Updated campaign with tracked HTML template (${trackedHtmlTemplate.length} chars)`);
         } else {
           // Fallback: update without HTML if we can't generate template
-          await supabase
+          // Use service role client for campaign stats update
+          const { createClient } = require('@supabase/supabase-js');
+          const serviceSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          
+          await serviceSupabase
             .from('email_campaigns')
             .update({
               emails_sent: successCount,
@@ -582,7 +644,7 @@ export async function POST(request: NextRequest) {
               sent_at: successCount > 0 ? new Date().toISOString() : null,
               status: successCount > 0 ? 'sent' : 'draft'
             })
-            .eq('id', campaignId);
+            .eq('id', realCampaignId);
           
           console.log(`📊 Updated campaign stats: ${successCount} sent, ${totalCount} total (no HTML update)`);
         }
@@ -599,7 +661,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Campaign sent successfully to ${successCount} out of ${totalCount} subscribers`,
-      campaignId: campaignId || `campaign_${Date.now()}`,
+      campaignId: realCampaignId,
       stats: {
         total: totalCount,
         sent: successCount,

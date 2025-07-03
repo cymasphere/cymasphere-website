@@ -313,14 +313,27 @@ export async function DELETE(
       }, { status: 404 });
     }
 
-    // Prevent deletion of sent campaigns for data integrity
+    console.log(`🗑️ Deleting campaign: "${campaign.name}" (Status: ${campaign.status})`);
+
+    // Special logging for sent campaigns (important for audit trail)
     if (campaign.status === 'sent') {
-      return NextResponse.json({ 
-        error: 'Cannot delete sent campaigns. Archive them instead.' 
-      }, { status: 400 });
+      console.log(`⚠️ IMPORTANT: Deleting SENT campaign - this will remove all data and analytics for "${campaign.name}"`);
     }
 
-    console.log(`🗑️ Deleting campaign: "${campaign.name}" (Status: ${campaign.status})`);
+    // Delete associated send records first (for sent campaigns)
+    if (campaign.status === 'sent') {
+      const { error: sendsDeleteError } = await supabase
+        .from('email_sends')
+        .delete()
+        .eq('campaign_id', campaignId);
+
+      if (sendsDeleteError) {
+        console.error('Error deleting campaign send records:', sendsDeleteError);
+        // Continue with deletion anyway - this is not critical
+      } else {
+        console.log('✅ Deleted associated send records');
+      }
+    }
 
     // Delete associated audience relationships first (foreign key constraints)
     const { error: audienceDeleteError } = await supabase

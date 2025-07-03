@@ -2114,6 +2114,10 @@ function CampaignsPage() {
                                     <FaClone />
                                     Duplicate
                                   </DropdownItem>
+                                  <DropdownItem onClick={(e) => { e.stopPropagation(); handleCampaignAction('delete', campaign.id); }}>
+                                    <FaTrash />
+                                    Delete
+                                  </DropdownItem>
                                 </>
                               )}
 
