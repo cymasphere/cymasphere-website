@@ -162,12 +162,13 @@ const EmailFooter = styled.div`
 `;
 
 const EmailElement = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing',
-})<{ selected: boolean; editing: boolean }>`
-  margin: 0 0 12px 0;
-  padding: 8px;
+  shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
+})<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
+  margin: ${props => props.fullWidth ? '0 -2.5rem 12px -2.5rem' : '0 auto 12px auto'};
+  padding: ${props => props.fullWidth ? '8px 2.5rem' : '8px'};
+  max-width: ${props => props.fullWidth ? 'none' : 'none'};
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
-  border-radius: 12px;
+  border-radius: ${props => props.fullWidth ? '0' : '12px'};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   cursor: grab;
@@ -175,7 +176,7 @@ const EmailElement = styled.div.withConfig({
   background: ${props => 
     props.editing ? 'rgba(108, 99, 255, 0.1)' :
     props.selected ? 'rgba(108, 99, 255, 0.05)' : 
-    'transparent'
+    props.fullWidth ? 'rgba(108, 99, 255, 0.02)' : 'transparent'
   };
 
   &:hover {
@@ -191,7 +192,7 @@ const EmailElement = styled.div.withConfig({
       transform: translateY(-50%) scale(1.05);
     }
   }
-  
+
   &:active {
     cursor: grabbing;
   }
@@ -703,7 +704,7 @@ export default function VisualEditor({
   // ✨ NEW: Design settings state
   const [designSettings, setDesignSettings] = useState({
     backgroundColor: '#ffffff',
-    contentWidth: '600px',
+    contentWidth: '700px',
     fontFamily: 'Arial, sans-serif',
     fontSize: '16px',
     primaryColor: '#6c63ff',
@@ -795,7 +796,7 @@ export default function VisualEditor({
     const file = e.target.files?.[0];
     if (file && imageUploadElement) {
       await uploadImageToSupabase(file, imageUploadElement);
-      setImageUploadElement(null);
+        setImageUploadElement(null);
     }
   };
 
@@ -880,17 +881,18 @@ export default function VisualEditor({
   const createNewElement = (type: string) => {
     const id = type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    // ✨ NEW: Base element with padding properties
+    // ✨ NEW: Base element with padding and width properties
     const baseElement = {
       id,
       type,
       paddingTop: 16,    // Default 16px top padding
-      paddingBottom: 16  // Default 16px bottom padding  
+      paddingBottom: 16, // Default 16px bottom padding
+      fullWidth: false   // Default to constrained width with margins
     };
     
     switch (type) {
       case 'header':
-        return { ...baseElement, content: 'Your Header Text Here' };
+        return { ...baseElement, content: 'Your Header Text Here', fullWidth: true };
       case 'text':
         return { ...baseElement, content: 'Add your text content here. You can edit this by double-clicking.' };
       case 'button':
@@ -916,6 +918,35 @@ export default function VisualEditor({
         ]};
       case 'video':
         return { ...baseElement, thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
+      case 'footer':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
+            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
+            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+          ],
+          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          unsubscribeText: 'Unsubscribe',
+          unsubscribeUrl: '#unsubscribe',
+          privacyText: 'Privacy Policy',
+          privacyUrl: '#privacy',
+          contactText: 'Contact Us',
+          contactUrl: '#contact'
+        };
+      
+      case 'brand-header':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          content: 'CYMASPHERE',
+          backgroundColor: 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+          textColor: '#ffffff',
+          logoStyle: 'gradient' // 'solid', 'gradient', 'outline'
+        };
       default:
         return { ...baseElement, content: 'New element' };
     }
@@ -1156,7 +1187,7 @@ export default function VisualEditor({
       }
       
       // Otherwise just select the element
-      selectElement(element.id);
+        selectElement(element.id);
     };
 
     const handleDoubleClickCapture = (e: React.MouseEvent) => {
@@ -1177,6 +1208,7 @@ export default function VisualEditor({
         key={element.id}
         selected={isSelected}
         editing={isEditing}
+        fullWidth={element.fullWidth}
         draggable={!isEditing}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -1503,7 +1535,7 @@ export default function VisualEditor({
                 onDragOver={(e) => {
                   e.preventDefault();
                   if (imageUploading !== element.id) {
-                    e.currentTarget.classList.add('dragover');
+                  e.currentTarget.classList.add('dragover');
                   }
                 }}
                 onDragLeave={(e) => {
@@ -1534,16 +1566,16 @@ export default function VisualEditor({
                   </>
                 ) : (
                   <>
-                    <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                      Upload an Image
-                    </div>
-                    <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                      Click to browse or drag and drop
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#999' }}>
+                <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
+                <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  Upload an Image
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
+                  Click to browse or drag and drop
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#999' }}>
                       Supports JPG, PNG, GIF (max 10MB)
-                    </div>
+                </div>
                   </>
                 )}
               </ImageUploadArea>)
@@ -1654,6 +1686,180 @@ export default function VisualEditor({
                 ▶️
               </div>
             </div>
+          </div>
+        )}
+        {element.type === 'footer' && (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '2rem',
+            fontSize: '0.8rem', 
+            color: '#666',
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            borderTop: '1px solid #dee2e6',
+            margin: 0 
+          }}>
+            {/* Social Links */}
+            {element.socialLinks && element.socialLinks.length > 0 && (
+              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                {element.socialLinks.map((social: any, idx: number) => (
+                  <a key={idx} href={social.url} style={{ 
+                    color: '#6c63ff', 
+                    textDecoration: 'none',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    padding: '0.5rem',
+                    borderRadius: '6px',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {social.platform === 'facebook' && <FaFacebookF size={16} />}
+                    {social.platform === 'twitter' && <FaXTwitter size={16} />}
+                    {social.platform === 'instagram' && <FaInstagram size={16} />}
+                    {social.platform === 'youtube' && <FaYoutube size={16} />}
+                    {social.platform === 'discord' && <FaDiscord size={16} />}
+                  </a>
+                ))}
+              </div>
+            )}
+            
+            {/* Footer Text */}
+            <EditableText
+              className="editable-text"
+              editing={isEditing && selectedElementId === element.id}
+              contentEditable={isEditing && selectedElementId === element.id}
+              suppressContentEditableWarning={true}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              onInput={(e) => {
+                const newContent = e.currentTarget.textContent || '';
+                updateElement(element.id, { footerText: newContent });
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isEditing) {
+                  startEditing(element.id);
+                }
+              }}
+              style={{
+                marginBottom: '1rem',
+                cursor: isEditing ? 'text' : 'pointer',
+                outline: 'none',
+                minHeight: '1em'
+              }}
+            >
+              {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+            </EditableText>
+            
+            {/* Footer Links */}
+            <div>
+              <a href={element.unsubscribeUrl || '#unsubscribe'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
+                {element.unsubscribeText || 'Unsubscribe'}
+              </a>
+              {' | '}
+              <a href={element.privacyUrl || '#privacy'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
+                {element.privacyText || 'Privacy Policy'}
+              </a>
+              {' | '}
+              <a href={element.contactUrl || '#contact'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
+                {element.contactText || 'Contact Us'}
+              </a>
+            </div>
+            
+            {/* Edit hint when selected */}
+            {isSelected && !isEditing && (
+              <div style={{
+                position: 'absolute',
+                top: '-30px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '0.4rem 0.8rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                whiteSpace: 'nowrap',
+                zIndex: 10
+              }}>
+                Double-click to edit footer content
+              </div>
+            )}
+          </div>
+        )}
+        {element.type === 'brand-header' && (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '20px',
+            background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '60px'
+          }}>
+            <EditableText
+              className="editable-text brand-header"
+              editing={isEditing && selectedElementId === element.id}
+              contentEditable={isEditing && selectedElementId === element.id}
+              suppressContentEditableWarning={true}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              onInput={(e) => {
+                const newContent = e.currentTarget.textContent || '';
+                updateElement(element.id, { content: newContent });
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isEditing) {
+                  startEditing(element.id);
+                }
+              }}
+              style={{
+                color: element.textColor || '#ffffff',
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                cursor: isEditing ? 'text' : 'pointer',
+                outline: 'none',
+                minHeight: '1em'
+              }}
+            >
+              {element.logoStyle === 'gradient' ? (
+                <>
+                  <span style={{
+                    background: 'linear-gradient(90deg, #6c63ff, #4ecdc4)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
+                    {element.content ? element.content.slice(0, 4) : 'CYMA'}
+                  </span>
+                  <span>
+                    {element.content ? element.content.slice(4) : 'SPHERE'}
+                  </span>
+                </>
+              ) : (
+                <span>{element.content || 'CYMASPHERE'}</span>
+              )}
+            </EditableText>
+            
+            {/* Edit hint when selected */}
+            {isSelected && !isEditing && (
+              <div style={{
+                position: 'absolute',
+                top: '-30px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '0.4rem 0.8rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                whiteSpace: 'nowrap',
+                zIndex: 10
+              }}>
+                Double-click to edit brand header
+              </div>
+            )}
           </div>
         )}
       </EmailElement>
@@ -1820,18 +2026,50 @@ export default function VisualEditor({
           <FaVideo size={12} />
           <span>Video</span>
         </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging footer element from palette');
+            e.dataTransfer.setData('text/element-type', 'footer');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('footer');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaCog size={12} />
+          <span>Footer</span>
+        </ElementBlock>
+
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging brand-header element from palette');
+            e.dataTransfer.setData('text/element-type', 'brand-header');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('brand-header');
+            setEmailElements([...emailElements, newElement]);
+          }}
+        >
+          <FaBold size={12} />
+          <span>Brand Header</span>
+        </ElementBlock>
       </div>
 
       <div style={{ 
         display: 'flex',
-        gap: '2rem', 
+        gap: '1.5rem', 
         minHeight: '600px',
         overflow: 'visible'
       }}>
         
         {/* Visual Email Canvas - Left */}
         <div style={{ 
-          flex: rightPanelState ? '1' : '1 1 auto',
+          flex: rightPanelState ? '3' : '1 1 auto',
           display: 'flex', 
           flexDirection: 'column',
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -1888,6 +2126,9 @@ export default function VisualEditor({
                       </>
                     )}
                   </div>
+                  
+
+                  
                   {emailElements.map((element, index) => (
                     <div key={element.id} style={{ marginBottom: '1rem' }}>
                       {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{element.content}</div>}
@@ -1896,36 +2137,48 @@ export default function VisualEditor({
                       {element.type === 'image' && <div style={{ fontStyle: 'italic' }}>[IMAGE: {element.src}]</div>}
                       {element.type === 'divider' && <div>{'─'.repeat(50)}</div>}
                       {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
-                    </div>
-                  ))}
+                      {element.type === 'footer' && (
                   <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
-                    Cymasphere by NNAudio | Unsubscribe | Privacy Policy
+                          {/* Social Links */}
+                          {element.socialLinks && element.socialLinks.length > 0 && (
+                            <div style={{ marginBottom: '1rem' }}>
+                              Social Links: {element.socialLinks.map((social: any, idx: number) => (
+                                `${social.platform}: ${social.url}`
+                              )).join(' | ')}
                   </div>
+                          )}
+                          {/* Footer Text */}
+                          <div style={{ marginBottom: '0.5rem' }}>
+                            {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                          </div>
+                          {/* Footer Links */}
+                          <div>
+                            {element.unsubscribeText || 'Unsubscribe'}: {element.unsubscribeUrl || '#unsubscribe'} | 
+                            {element.privacyText || 'Privacy Policy'}: {element.privacyUrl || '#privacy'} | 
+                            {element.contactText || 'Contact Us'}: {element.contactUrl || '#contact'}
+                          </div>
+                        </div>
+                      )}
+                      {element.type === 'brand-header' && (
+                      <div style={{ 
+                          textAlign: 'center', 
+                          marginBottom: '2rem', 
+                          paddingBottom: '1rem', 
+                          borderBottom: '2px solid #ddd',
+                        fontSize: '1.5rem',
+                          fontWeight: 'bold',
+                          letterSpacing: '0.2em'
+                      }}>
+                          {element.content || 'CYMASPHERE'}
+                      </div>
+                      )}
+                      </div>
+                  ))}
                 </div>)
               ) : (
                 // Visual view (desktop/mobile)
                 (<>
-                  <EmailHeader>
-                    <div style={{ textAlign: 'center', padding: '2rem' }}>
-                      <div style={{ 
-                        width: '60px', 
-                        height: '60px', 
-                        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                        borderRadius: '50%',
-                        margin: '0 auto 1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.5rem',
-                        color: 'white'
-                      }}>
-                        🎵
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>
-                        Having trouble viewing this email? <a href="#" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '600' }}>View in browser</a>
-                      </div>
-                    </div>
-                  </EmailHeader>
+
                   <EmailBody
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1968,16 +2221,16 @@ export default function VisualEditor({
                         {renderEmailElement(element, index)}
                         
                         {/* Element reordering drop zone after each element */}
-                        <div
-                          onDragOver={(e) => handleElementDragOver(e, index + 1)}
-                          onDrop={(e) => handleElementDrop(e, index + 1)}
-                          style={{
-                            height: elementDragOverIndex === index + 1 ? '6px' : '2px',
-                            background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
-                            transition: 'all 0.2s ease',
-                            margin: '8px 0',
-                            borderRadius: '2px'
-                          }}
+                          <div
+                            onDragOver={(e) => handleElementDragOver(e, index + 1)}
+                            onDrop={(e) => handleElementDrop(e, index + 1)}
+                            style={{
+                              height: elementDragOverIndex === index + 1 ? '6px' : '2px',
+                              background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
+                              transition: 'all 0.2s ease',
+                              margin: '8px 0',
+                              borderRadius: '2px'
+                            }}
                         />
                       </React.Fragment>
                     ))}
@@ -2004,75 +2257,6 @@ export default function VisualEditor({
                       </div>
                     )}
                   </EmailBody>
-                  <EmailFooter>
-                    <div style={{ textAlign: 'center', padding: '2rem', fontSize: '0.8rem', color: '#666' }}>
-                      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                        <a href="#" style={{ 
-                          color: '#6c63ff', 
-                          textDecoration: 'none', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          <FaFacebookF size={16} />
-                        </a>
-                        <a href="#" style={{ 
-                          color: '#6c63ff', 
-                          textDecoration: 'none',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          <FaXTwitter size={16} />
-                        </a>
-                        <a href="#" style={{ 
-                          color: '#6c63ff', 
-                          textDecoration: 'none',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          <FaInstagram size={16} />
-                        </a>
-                        <a href="#" style={{ 
-                          color: '#6c63ff', 
-                          textDecoration: 'none',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          <FaYoutube size={16} />
-                        </a>
-                        <a href="#" style={{ 
-                          color: '#6c63ff', 
-                          textDecoration: 'none',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          <FaDiscord size={16} />
-                        </a>
-                      </div>
-                      <div>
-                        Cymasphere by NNAudio | <a href="#" style={{ color: '#999', textDecoration: 'none' }}>Unsubscribe</a> | <a href="#" style={{ color: '#999', textDecoration: 'none' }}>Privacy Policy</a>
-                      </div>
-                    </div>
-                  </EmailFooter>
                 </>)
               )}
             </EmailContainer>
@@ -2081,7 +2265,8 @@ export default function VisualEditor({
 
         {/* Settings Panels - Right */}
         <div style={{ 
-          width: rightPanelState ? '400px' : '60px',
+          width: rightPanelState ? '340px' : '60px',
+          flexShrink: 0,
           display: 'flex', 
           flexDirection: 'column', 
           gap: '1.5rem', 
@@ -2178,6 +2363,80 @@ export default function VisualEditor({
                       </div>
                     </PaddingControl>
                     
+                    {/* Full Width Toggle */}
+                    <ControlGroup>
+                      <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={emailElements.find(el => el.id === selectedElementId)?.fullWidth ?? false}
+                          onChange={(e) => updateElement(selectedElementId, { fullWidth: e.target.checked })}
+                          style={{
+                            width: '16px',
+                            height: '16px',
+                            accentColor: 'var(--primary)',
+                            cursor: 'pointer'
+                          }}
+                        />
+                        Full Width
+                        {emailElements.find(el => el.id === selectedElementId)?.fullWidth && (
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            background: 'var(--primary)', 
+                            color: 'white', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            fontWeight: 'bold'
+                          }}>
+                            FULL
+                          </span>
+                        )}
+                      </ControlLabel>
+                      <div style={{ 
+                        fontSize: '0.8rem', 
+                        color: 'var(--text-secondary)', 
+                        opacity: 0.8,
+                        marginTop: '0.25rem'
+                      }}>
+                        {emailElements.find(el => el.id === selectedElementId)?.fullWidth 
+                          ? '✨ Element extends to email container edges' 
+                          : 'Expand element to full email width'}
+                      </div>
+                    </ControlGroup>
+
+                    {/* Brand Header Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'brand-header' && (
+                      <>
+                        <ControlGroup>
+                          <ControlLabel>Background Color</ControlLabel>
+                          <ColorInput 
+                            type="color" 
+                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#1a1a1a'}
+                            onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                          />
+                        </ControlGroup>
+                        
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput 
+                            type="color" 
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Logo Style</ControlLabel>
+                          <ControlSelect 
+                            value={emailElements.find(el => el.id === selectedElementId)?.logoStyle || 'gradient'}
+                            onChange={(e) => updateElement(selectedElementId, { logoStyle: e.target.value })}
+                          >
+                            <option value="gradient">Gradient</option>
+                            <option value="solid">Solid</option>
+                          </ControlSelect>
+                        </ControlGroup>
+                      </>
+                    )}
+                    
                     <ControlGroup>
                       <ControlLabel>Element ID</ControlLabel>
                       <div style={{ 
@@ -2216,7 +2475,21 @@ export default function VisualEditor({
                     />
                   </ControlGroup>
                   <ControlGroup>
-                    <ControlLabel>Content Width</ControlLabel>
+                    <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      Content Width
+                      {parseInt(designSettings.contentWidth) >= 800 && (
+                        <span style={{ 
+                          fontSize: '0.7rem', 
+                          background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
+                          color: 'white', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontWeight: 'bold'
+                        }}>
+                          WIDE
+                        </span>
+                      )}
+                    </ControlLabel>
                     <ControlSelect 
                       value={designSettings.contentWidth}
                       onChange={(e) => updateDesignSetting('contentWidth', e.target.value)}
@@ -2225,7 +2498,17 @@ export default function VisualEditor({
                       <option value="600px">600px (Standard)</option>
                       <option value="700px">700px (Wide)</option>
                       <option value="800px">800px (Extra Wide)</option>
+                      <option value="900px">900px (Spacious)</option>
+                      <option value="1000px">1000px (Maximum)</option>
                     </ControlSelect>
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      color: 'var(--text-secondary)', 
+                      opacity: 0.8,
+                      marginTop: '0.25rem'
+                    }}>
+                      ✨ Now with expanded workspace for larger designs
+                    </div>
                   </ControlGroup>
                   <ControlGroup>
                     <ControlLabel>Font Family</ControlLabel>
