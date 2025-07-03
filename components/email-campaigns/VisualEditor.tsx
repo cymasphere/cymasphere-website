@@ -994,10 +994,66 @@ export default function VisualEditor({
     startEditing(elementId);
   };
 
-  const handleContentChange = (elementId: string, newContent: string) => {
+  // ✨ FIXED: Cursor position preservation for contentEditable
+  const saveCursorPosition = (element: HTMLElement) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    
+    return preCaretRange.toString().length;
+  };
+  
+  const restoreCursorPosition = (element: HTMLElement, cursorPosition: number) => {
+    const selection = window.getSelection();
+    if (!selection) return;
+    
+    let charCount = 0;
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+      const textLength = node.textContent?.length || 0;
+      if (charCount + textLength >= cursorPosition) {
+        const range = document.createRange();
+        range.setStart(node, cursorPosition - charCount);
+        range.setEnd(node, cursorPosition - charCount);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return;
+      }
+      charCount += textLength;
+    }
+    
+    // If we can't find the exact position, place cursor at the end
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+
+  const handleContentChange = (elementId: string, newContent: string, elementRef?: HTMLElement) => {
+    // Save cursor position before state update
+    const cursorPosition = elementRef ? saveCursorPosition(elementRef) : null;
+    
     setEmailElements(emailElements.map(el => 
       el.id === elementId ? { ...el, content: newContent } : el
     ));
+    
+    // Restore cursor position after React re-render
+    if (elementRef && cursorPosition !== null) {
+      setTimeout(() => {
+        restoreCursorPosition(elementRef, cursorPosition);
+      }, 0);
+    }
   };
 
   const updateElement = (elementId: string, updates: any) => {
@@ -1029,7 +1085,7 @@ export default function VisualEditor({
     };
 
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-      handleContentChange(element.id, e.currentTarget.textContent || '');
+      handleContentChange(element.id, e.currentTarget.textContent || '', e.currentTarget);
     };
 
     const handleDragStart = (e: React.DragEvent) => {
@@ -1546,9 +1602,19 @@ export default function VisualEditor({
                   onKeyDown={handleKeyDown}
                   onBlur={handleBlur}
                   onInput={(e) => {
+                    // Save cursor position before update
+                    const cursorPosition = saveCursorPosition(e.currentTarget);
+                    
                     const newColumns = [...element.columns];
                     newColumns[idx] = { ...newColumns[idx], content: e.currentTarget.textContent || '' };
                     updateElement(element.id, { columns: newColumns });
+                    
+                    // Restore cursor position after update
+                    if (cursorPosition !== null) {
+                      setTimeout(() => {
+                        restoreCursorPosition(e.currentTarget, cursorPosition);
+                      }, 0);
+                    }
                   }}
                 >
                   {column.content}

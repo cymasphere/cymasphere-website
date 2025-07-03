@@ -2004,7 +2004,8 @@ interface CampaignData {
 const SendingFeedback = styled(motion.div)<{ type?: 'success' | 'error' | 'info' }>`
   position: fixed;
   top: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 1rem 1.5rem;
   border-radius: 8px;
   color: white;
