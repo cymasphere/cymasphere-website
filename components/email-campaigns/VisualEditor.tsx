@@ -176,8 +176,12 @@ const EmailElement = styled.div.withConfig({
   background: ${props => 
     props.editing ? 'rgba(108, 99, 255, 0.1)' :
     props.selected ? 'rgba(108, 99, 255, 0.05)' : 
-    props.fullWidth ? 'rgba(108, 99, 255, 0.02)' : 'transparent'
+    props.fullWidth ? 'rgba(108, 99, 255, 0.03)' : 'transparent'
   };
+  
+  ${props => props.fullWidth && `
+    box-shadow: inset 2px 0 0 rgba(108, 99, 255, 0.3), inset -2px 0 0 rgba(108, 99, 255, 0.3);
+  `}
 
   &:hover {
     border-color: ${props => props.selected ? 'var(--primary)' : 'rgba(108, 99, 255, 0.5)'};
@@ -1273,11 +1277,15 @@ export default function VisualEditor({
               fontSize: '2rem',
               fontWeight: 'bold',
               color: '#333',
-              textAlign: 'center',
+              textAlign: element.fullWidth ? 'left' : 'center',
               margin: 0,
               position: 'relative',
               cursor: isEditing ? 'text' : 'pointer',
-              minHeight: '1em'
+              minHeight: '1em',
+              width: element.fullWidth ? '100%' : 'auto',
+              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+              padding: element.fullWidth ? '1rem' : '0',
+              borderRadius: element.fullWidth ? '8px' : '0'
             }}
           >
             {element.content}
@@ -1335,7 +1343,12 @@ export default function VisualEditor({
               margin: 0,
               position: 'relative',
               cursor: isEditing ? 'text' : 'pointer',
-              minHeight: '1em'
+              minHeight: '1em',
+              width: element.fullWidth ? '100%' : 'auto',
+              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+              padding: element.fullWidth ? '1rem' : '0',
+              borderRadius: element.fullWidth ? '8px' : '0',
+              textAlign: element.fullWidth ? 'left' : 'inherit'
             }}
           >
             {element.content}
@@ -1383,7 +1396,11 @@ export default function VisualEditor({
           </EditableText>
         )}
         {element.type === 'button' && (
-          <div style={{ textAlign: 'center', margin: 0 }}>
+          <div style={{ 
+            textAlign: element.fullWidth ? 'left' : 'center', 
+            margin: 0,
+            width: element.fullWidth ? '100%' : 'auto'
+          }}>
             <EditableText
               className="editable-text"
               editing={isEditing}
@@ -1399,12 +1416,12 @@ export default function VisualEditor({
                 }
               }}
               style={{
-                display: 'inline-block',
+                display: element.fullWidth ? 'block' : 'inline-block',
                 padding: '1.25rem 2.5rem',
                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                 color: 'white',
                 textDecoration: 'none',
-                borderRadius: '50px',
+                borderRadius: element.fullWidth ? '8px' : '50px',
                 fontWeight: '700',
                 fontSize: '1rem',
                 cursor: isEditing ? 'text' : 'pointer',
@@ -1412,7 +1429,9 @@ export default function VisualEditor({
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 boxShadow: '0 8px 25px rgba(108, 99, 255, 0.3)',
-                minHeight: '1em'
+                minHeight: '1em',
+                width: element.fullWidth ? '100%' : 'auto',
+                textAlign: 'center'
               }}
             >
               {element.content}
@@ -1420,7 +1439,12 @@ export default function VisualEditor({
           </div>
         )}
         {element.type === 'image' && (
-          <div style={{ textAlign: 'center', margin: 0, position: 'relative' }}>
+          <div style={{ 
+            textAlign: element.fullWidth ? 'left' : 'center', 
+            margin: 0, 
+            position: 'relative',
+            width: element.fullWidth ? '100%' : 'auto'
+          }}>
             {/* Upload progress indicator */}
             {imageUploading === element.id && (
               <div style={{
@@ -1485,9 +1509,10 @@ export default function VisualEditor({
               alt={element.alt || 'Email image'} 
               style={{ 
                 maxWidth: '100%', 
+                width: element.fullWidth ? '100%' : 'auto',
                 height: 'auto', 
-                borderRadius: '8px',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                borderRadius: element.fullWidth ? '0' : '8px',
+                boxShadow: element.fullWidth ? 'none' : '0 4px 15px rgba(0, 0, 0, 0.1)',
                 opacity: imageUploading === element.id ? 0.5 : 1,
                 transition: 'opacity 0.3s ease'
               }} 
@@ -1583,10 +1608,16 @@ export default function VisualEditor({
           </div>
         )}
         {element.type === 'divider' && (
-          <div style={{ margin: 0, textAlign: 'center' }}>
+          <div style={{ 
+            margin: 0, 
+            textAlign: 'center',
+            width: element.fullWidth ? '100%' : 'auto'
+          }}>
             <div style={{
               height: '2px',
-              background: 'linear-gradient(90deg, transparent, #ddd, transparent)',
+              background: element.fullWidth 
+                ? 'linear-gradient(90deg, #ddd, #ddd, #ddd)' 
+                : 'linear-gradient(90deg, transparent, #ddd, transparent)',
               width: '100%'
             }} />
           </div>
@@ -1691,12 +1722,16 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: '2rem',
+            padding: element.fullWidth ? '2rem' : '2rem',
             fontSize: '0.8rem', 
             color: '#666',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            borderTop: '1px solid #dee2e6',
-            margin: 0 
+            background: element.fullWidth 
+              ? 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' 
+              : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            borderTop: element.fullWidth ? 'none' : '1px solid #dee2e6',
+            margin: 0,
+            width: element.fullWidth ? '100%' : 'auto',
+            borderRadius: element.fullWidth ? '0' : 'inherit'
           }}>
             {/* Social Links */}
             {element.socialLinks && element.socialLinks.length > 0 && (
