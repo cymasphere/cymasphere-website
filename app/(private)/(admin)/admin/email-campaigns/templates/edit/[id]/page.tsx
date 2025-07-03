@@ -25,10 +25,10 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
 import VisualEditor from "@/components/email-campaigns/VisualEditor";
 
-const CreateContainer = styled.div`
+const CreateContainer = styled.div<{ $isDesignStep: boolean }>`
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: ${props => props.$isDesignStep ? 'none' : '1200px'};
+  margin: ${props => props.$isDesignStep ? '0' : '0 auto'};
   padding: 40px 20px;
 
   @media (max-width: 768px) {
@@ -164,13 +164,15 @@ const StepConnector = styled.div.withConfig({
   }
 `;
 
-const StepContent = styled(motion.div)`
+const StepContent = styled(motion.div)<{ $isDesignStep?: boolean }>`
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 2rem;
+  padding: ${props => props.$isDesignStep ? '1rem' : '2rem'};
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 2rem;
   min-height: 600px;
+  width: 100%;
+  max-width: ${props => props.$isDesignStep ? 'none' : 'none'};
 `;
 
 const FormGrid = styled.div`
@@ -977,7 +979,7 @@ function EditTemplatePage() {
     switch (currentStep) {
       case 1:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
             <StepTitle>
               <FaInfoCircle />
               Template Setup
@@ -1233,7 +1235,7 @@ function EditTemplatePage() {
 
       case 2:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={true}>
             <StepTitle>
               <FaEdit />
               Design Your Template
@@ -1267,7 +1269,7 @@ function EditTemplatePage() {
         description={isNewTemplate ? "Create a new email template with visual editor" : "Edit email template with visual editor"}
       />
       
-      <CreateContainer>
+      <CreateContainer $isDesignStep={currentStep === 2}>
         <Breadcrumbs>
           <BreadcrumbLink href="/admin/email-campaigns">Email Campaigns</BreadcrumbLink>
           <FaChevronRight />

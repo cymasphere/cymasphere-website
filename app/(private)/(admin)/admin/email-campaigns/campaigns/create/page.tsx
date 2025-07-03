@@ -67,10 +67,10 @@ const Spinner = styled.div`
   animation: ${spin} 1s linear infinite;
 `;
 
-const CreateContainer = styled.div`
+const CreateContainer = styled.div<{ $isDesignStep: boolean }>`
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: ${props => props.$isDesignStep ? 'none' : '1200px'};
+  margin: ${props => props.$isDesignStep ? '0' : '0 auto'};
   padding: 40px 20px;
 
   @media (max-width: 768px) {
@@ -192,13 +192,15 @@ const StepConnector = styled.div<{ $completed: boolean }>`
   }
 `;
 
-const StepContent = styled(motion.div)`
+const StepContent = styled(motion.div)<{ $isDesignStep?: boolean }>`
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 2rem;
+  padding: ${props => props.$isDesignStep ? '1rem' : '2rem'};
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 2rem;
   min-height: 600px;
+  width: 100%;
+  max-width: ${props => props.$isDesignStep ? 'none' : 'none'};
 `;
 
 const StepTitle = styled.h2`
@@ -1990,6 +1992,7 @@ interface CampaignData {
   replyToEmail: string;
   preheader: string;
   description: string;
+  brandHeader: string; // Editable brand header content
   audienceIds: string[]; // Array of selected audience IDs
   excludedAudienceIds: string[]; // Array of excluded audience IDs
   template: string;
@@ -2185,6 +2188,7 @@ function CreateCampaignPage() {
       replyToEmail: "",
     preheader: "",
     description: "",
+      brandHeader: "CYMASPHERE", // Default brand header text
       audienceIds: [],
       excludedAudienceIds: [],
     template: "",
@@ -2396,6 +2400,7 @@ function CreateCampaignPage() {
               replyToEmail: campaign.replyToEmail || '',
               preheader: campaign.preheader || '',
               description: campaign.description || '',
+              brandHeader: campaign.brandHeader || 'CYMASPHERE',
               audienceIds: campaign.audienceIds || [],
               excludedAudienceIds: campaign.excludedAudienceIds || [],
               template: campaign.template_id || '',
@@ -2631,6 +2636,7 @@ function CreateCampaignPage() {
             campaignId: result.campaign?.id,
             name: campaignData.name,
             subject: campaignData.subject,
+            brandHeader: campaignData.brandHeader,
             audienceIds: campaignData.audienceIds,
             excludedAudienceIds: campaignData.excludedAudienceIds,
             emailElements: emailElements,
@@ -2779,29 +2785,76 @@ function CreateCampaignPage() {
   };
 
   const createNewElement = (type: string) => {
-    const id = `${type}_${Date.now()}`;
+    const id = type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // ✨ NEW: Base element with padding and width properties
+    const baseElement = {
+      id,
+      type,
+      paddingTop: 16,    // Default 16px top padding
+      paddingBottom: 16, // Default 16px bottom padding
+      fullWidth: false   // Default to constrained width with margins
+    };
     
     switch (type) {
       case 'header':
-        return { id, type: 'header', content: 'New Header' };
+        return { ...baseElement, content: 'Your Header Text Here', fullWidth: true };
       case 'text':
-        return { id, type: 'text', content: 'Add your text content here...' };
+        return { ...baseElement, content: 'Add your text content here. You can edit this by double-clicking.' };
       case 'button':
-        return { id, type: 'button', content: 'Click Here', url: '#' };
+        return { ...baseElement, content: 'Click Here', url: '#' };
       case 'image':
-        return { id, type: 'image', src: 'https://via.placeholder.com/600x200/6c63ff/ffffff?text=New+Image' };
+        return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
-        return { id, type: 'divider' };
-      case 'spacer':
-        return { id, type: 'spacer', height: '20px' };
+        return { ...baseElement };
       case 'social':
-        return { id, type: 'social', content: 'Social Media Links' };
+        return { ...baseElement, links: [
+          { platform: 'facebook', url: '#' },
+          { platform: 'twitter', url: '#' },
+          { platform: 'instagram', url: '#' },
+          { platform: 'youtube', url: '#' },
+          { platform: 'discord', url: '#' }
+        ]};
+      case 'spacer':
+        return { ...baseElement, height: '30px' };
       case 'columns':
-        return { id, type: 'columns', content: 'Two Column Layout' };
+        return { ...baseElement, columns: [
+          { content: 'Column 1 content' },
+          { content: 'Column 2 content' }
+        ]};
       case 'video':
-        return { id, type: 'video', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', content: 'Video Content' };
+        return { ...baseElement, thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
+      case 'footer':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
+            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
+            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+          ],
+          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          unsubscribeText: 'Unsubscribe',
+          unsubscribeUrl: '#unsubscribe',
+          privacyText: 'Privacy Policy',
+          privacyUrl: '#privacy',
+          contactText: 'Contact Us',
+          contactUrl: '#contact'
+        };
+      
+      case 'brand-header':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          content: 'CYMASPHERE',
+          backgroundColor: 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+          textColor: '#ffffff',
+          logoStyle: 'gradient' // 'solid', 'gradient', 'outline'
+        };
       default:
-        return { id, type: 'text', content: 'New Element' };
+        return { ...baseElement, content: 'New element' };
     }
   };
 
@@ -2904,27 +2957,34 @@ function CreateCampaignPage() {
   // Generate HTML from email elements
   const generatePreviewHtml = () => {
     const elementHtml = emailElements.map(element => {
+      // Determine container styling based on fullWidth
+      const containerStyle = element.fullWidth 
+        ? 'margin: 0; padding: 0;' 
+        : 'margin: 0 auto; max-width: 100%;';
+      
+      const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
+      
       switch (element.type) {
         case 'header':
-          return `<h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${element.content}</h1>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</h1></div>`;
         
         case 'text':
-          return `<p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${element.content}</p>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</p></div>`;
         
         case 'button':
-          return `<div style="text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
         
         case 'image':
-          return `<div style="text-align: center; margin: 2rem 0;"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${element.fullWidth ? 'padding: 0;' : ''}"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
         
         case 'divider':
-          return `<div style="margin: 2rem 0; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem ${element.fullWidth ? '0' : '0'}; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
         
         case 'spacer':
-          return `<div style="height: ${element.height || '20px'};"></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} height: ${element.height || '20px'};"></div>`;
         
         default:
-          return `<div>${element.content || ''}</div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}">${element.content || ''}</div>`;
       }
     }).join('');
 
@@ -2983,6 +3043,17 @@ function CreateCampaignPage() {
             color: #6c63ff;
             text-decoration: none;
         }
+        .full-width {
+            width: 100%;
+            margin-left: calc(-30px);
+            margin-right: calc(-30px);
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+        .constrained-width {
+            max-width: 100%;
+            margin: 0 auto;
+        }
         
         /* Responsive styles */
         @media only screen and (max-width: 600px) {
@@ -3031,7 +3102,7 @@ function CreateCampaignPage() {
     <div class="container">
         <div class="header">
             <div class="logo">
-                <span class="cyma">CYMA</span><span>SPHERE</span>
+                ${campaignData.brandHeader || 'CYMASPHERE'}
             </div>
         </div>
         
@@ -3236,7 +3307,7 @@ function CreateCampaignPage() {
     switch (currentStep) {
       case 1:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
             <StepTitle>
               <FaInfoCircle />
               Campaign Setup
@@ -3519,7 +3590,7 @@ function CreateCampaignPage() {
 
       case 2:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={true}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
                 <StepTitle>
@@ -3553,17 +3624,19 @@ function CreateCampaignPage() {
             <VisualEditor
               emailElements={emailElements}
               setEmailElements={setEmailElements}
-              selectedElementId={selectedElementId}
-              setSelectedElementId={setSelectedElementId}
-              editingElementId={editingElementId}
-              setEditingElementId={setEditingElementId}
+              campaignData={{
+                senderName: campaignData.senderName,
+                subject: campaignData.subject,
+                preheader: campaignData.preheader
+              }}
+              rightPanelExpanded={true}
             />
           </StepContent>
         );
 
       case 3:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
             <StepTitle>
               <FaEye />
               Review & Schedule
@@ -3818,7 +3891,7 @@ function CreateCampaignPage() {
         description={isEditMode ? "Edit email campaign details and content" : "Create a new email marketing campaign"}
       />
       
-      <CreateContainer>
+      <CreateContainer $isDesignStep={currentStep === 2}>
         <Header>
           <Title>
             <FaEnvelopeOpen />

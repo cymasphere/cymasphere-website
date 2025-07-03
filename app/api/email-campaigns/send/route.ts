@@ -25,6 +25,7 @@ interface SendCampaignRequest {
   campaignId?: string;
   name: string;
   subject: string;
+  brandHeader?: string;
   audienceIds: string[]; // Updated to match new audience system
   excludedAudienceIds?: string[];
   emailElements: any[];
@@ -215,6 +216,7 @@ export async function POST(request: NextRequest) {
       campaignId,
       name, 
       subject, 
+      brandHeader,
       audienceIds,
       excludedAudienceIds = [],
       emailElements, 
@@ -410,7 +412,7 @@ export async function POST(request: NextRequest) {
           subject,
           sender_name: 'Cymasphere',
           sender_email: 'support@cymasphere.com',
-          html_content: generateHtmlFromElements(emailElements, subject),
+          html_content: generateHtmlFromElements(emailElements, subject, undefined, undefined, undefined),
           text_content: generateTextFromElements(emailElements),
           status: 'sending'
           // created_by omitted - will use default or null
@@ -431,7 +433,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate base HTML and text content (without tracking yet)
-    const baseHtmlContent = generateHtmlFromElements(emailElements, subject);
+          const baseHtmlContent = generateHtmlFromElements(emailElements, subject, undefined, undefined, undefined);
     const textContent = generateTextFromElements(emailElements);
 
     console.log(`🚀 Starting to send campaign "${name}" to ${targetSubscribers.length} subscribers...`);
@@ -717,24 +719,62 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
   };
   
   const elementHtml = elements.map(element => {
+    const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
+    
     switch (element.type) {
       case 'header':
-        return `<h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">${element.content}</h1>`;
+        return `<div class="${wrapperClass}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
       
       case 'text':
-        return `<p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem;">${element.content}</p>`;
+        return `<div class="${wrapperClass}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin: 0 0 1rem 0;">${element.content}</p></div>`;
       
       case 'button':
-        return `<div style="text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+        return `<div class="${wrapperClass}" style="text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
       
       case 'image':
-        return `<div style="text-align: center; margin: 1.5rem 0;"><img src="${element.src}" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: 8px;" /></div>`;
+        return `<div class="${wrapperClass}" style="text-align: center; margin: 1.5rem 0;"><img src="${element.src}" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'};" /></div>`;
       
       case 'divider':
-        return `<hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" />`;
+        return `<div class="${wrapperClass}"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
       
       case 'spacer':
-        return `<div style="height: ${element.height || '20px'};"></div>`;
+        return `<div class="${wrapperClass}" style="height: ${element.height || '20px'};"></div>`;
+      
+      case 'footer':
+        // Generate social links HTML
+        const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0 
+          ? element.socialLinks.map((social: any) => {
+              const icons = {
+                facebook: '📘',
+                twitter: '🐦',
+                instagram: '📷',
+                youtube: '📺',
+                discord: '🎮'
+              };
+              return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${icons[social.platform as keyof typeof icons] || '🔗'}</a>`;
+            }).join('')
+          : '';
+        
+        return `
+          <div class="${wrapperClass}" style="text-align: center; padding: 2rem; font-size: 0.8rem; color: #666; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-top: 1px solid #dee2e6; margin-top: 2rem;">
+            ${socialLinksHtml ? `<div style="margin-bottom: 1rem;">${socialLinksHtml}</div>` : ''}
+            <div style="margin-bottom: 1rem;">${element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}</div>
+            <div>
+              <a href="${element.unsubscribeUrl || '#unsubscribe'}" style="color: #6c63ff; text-decoration: none;">${element.unsubscribeText || 'Unsubscribe'}</a>
+              | 
+              <a href="${element.privacyUrl || '#privacy'}" style="color: #6c63ff; text-decoration: none;">${element.privacyText || 'Privacy Policy'}</a>
+              | 
+              <a href="${element.contactUrl || '#contact'}" style="color: #6c63ff; text-decoration: none;">${element.contactText || 'Contact Us'}</a>
+            </div>
+          </div>`;
+      
+      case 'brand-header':
+        const brandContent = element.content || 'CYMASPHERE';
+        const brandHeaderHtml = element.logoStyle === 'gradient' 
+          ? `<span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${brandContent.slice(0, 4)}</span><span>${brandContent.slice(4)}</span>`
+          : brandContent;
+        
+        return `<div class="${wrapperClass}" style="background: ${element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)'}; padding: 20px; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">${brandHeaderHtml}</div>`;
       
       default:
         return `<div style="color: #555; margin: 1rem 0;">${element.content || ''}</div>`;
@@ -765,23 +805,7 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
             overflow: hidden;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
         }
-        .header {
-            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
-            padding: 20px;
-            text-align: center;
-        }
-        .logo {
-            color: #ffffff;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .logo .cyma {
-            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+
         .content {
             padding: 30px;
         }
@@ -797,24 +821,24 @@ function generateHtmlFromElements(elements: any[], subject: string, campaignId?:
             color: #6c63ff;
             text-decoration: none;
         }
+        .full-width {
+            margin-left: -30px;
+            margin-right: -30px;
+            padding-left: 30px;
+            padding-right: 30px;
+            border-radius: 0;
+        }
+        .constrained-width {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">
-                <span class="cyma">CYMA</span><span>SPHERE</span>
-            </div>
-        </div>
-        
         <div class="content">
             ${elementHtml}
-        </div>
-        
-        <div class="footer">
-            <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
-            <p><a href="https://cymasphere.com/unsubscribe">Unsubscribe</a> | <a href="https://cymasphere.com">Visit our website</a></p>
-            <p>© 2024 Cymasphere. All rights reserved.</p>
         </div>
     </div>`;
 
@@ -858,25 +882,19 @@ function generateTextFromElements(elements: any[]): string {
         return `${'─'.repeat(50)}\n`;
       case 'spacer':
         return '\n';
+      case 'footer':
+        const socialText = element.socialLinks && element.socialLinks.length > 0 
+          ? element.socialLinks.map((social: any) => `${social.platform}: ${social.url}`).join(' | ')
+          : '';
+        return `\n${'─'.repeat(50)}\n${socialText ? socialText + '\n' : ''}${element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}\n${element.unsubscribeText || 'Unsubscribe'}: ${element.unsubscribeUrl || '#unsubscribe'} | ${element.privacyText || 'Privacy Policy'}: ${element.privacyUrl || '#privacy'} | ${element.contactText || 'Contact Us'}: ${element.contactUrl || '#contact'}\n`;
+      case 'brand-header':
+        return `${element.content || 'CYMASPHERE'}\n${'='.repeat((element.content || 'CYMASPHERE').length)}\n`;
       default:
         return `${element.content || ''}\n`;
     }
   }).join('\n');
 
-  return `
-CYMASPHERE
-
-${textContent}
-
-──────────────────────────────────────────────────
-
-You're receiving this email because you're subscribed to Cymasphere updates.
-
-Unsubscribe: https://cymasphere.com/unsubscribe
-Website: https://cymasphere.com
-
-© 2024 Cymasphere. All rights reserved.
-  `.trim();
+  return textContent.trim();
 }
 
 // Helper function to personalize content with subscriber data

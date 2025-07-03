@@ -91,10 +91,10 @@ const EmailCanvas = styled.div`
   flex: 1;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 0.75rem;
   overflow: visible;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 600px;
   position: relative;
   box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -120,6 +120,8 @@ const EmailContainer = styled.div`
   position: relative;
   z-index: 1;
   transition: box-shadow 0.3s ease;
+  width: 100%;
+  max-width: none;
 `;
 
 const EmailHeader = styled.div`
@@ -165,7 +167,7 @@ const EmailElement = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
 })<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
   margin: ${props => props.fullWidth ? '0 -2.5rem 12px -2.5rem' : '0 auto 12px auto'};
-  padding: ${props => props.fullWidth ? '8px 2.5rem' : '8px'};
+  padding: ${props => props.fullWidth ? '0' : '8px'};
   max-width: ${props => props.fullWidth ? 'none' : 'none'};
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
   border-radius: ${props => props.fullWidth ? '0' : '12px'};
@@ -708,7 +710,7 @@ export default function VisualEditor({
   // ✨ NEW: Design settings state
   const [designSettings, setDesignSettings] = useState({
     backgroundColor: '#ffffff',
-    contentWidth: '700px',
+    contentWidth: '1200px',
     fontFamily: 'Arial, sans-serif',
     fontSize: '16px',
     primaryColor: '#6c63ff',
@@ -885,22 +887,47 @@ export default function VisualEditor({
   const createNewElement = (type: string) => {
     const id = type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    // ✨ NEW: Base element with padding and width properties
+    // ✨ NEW: Base element with padding, width, and formatting properties
     const baseElement = {
       id,
       type,
       paddingTop: 16,    // Default 16px top padding
       paddingBottom: 16, // Default 16px bottom padding
-      fullWidth: false   // Default to constrained width with margins
+      fullWidth: false,  // Default to constrained width with margins
+      // Rich text formatting properties
+      fontSize: '16px',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textAlign: 'left'
     };
     
     switch (type) {
       case 'header':
-        return { ...baseElement, content: 'Your Header Text Here', fullWidth: true };
+        return { 
+          ...baseElement, 
+          content: 'Your Header Text Here', 
+          fullWidth: true,
+          fontSize: '32px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        };
       case 'text':
-        return { ...baseElement, content: 'Add your text content here. You can edit this by double-clicking.' };
+        return { 
+          ...baseElement, 
+          content: 'Add your text content here. You can edit this by double-clicking.',
+          fontSize: '16px',
+          textAlign: 'left'
+        };
       case 'button':
-        return { ...baseElement, content: 'Click Here', url: '#' };
+        return { 
+          ...baseElement, 
+          content: 'Click Here', 
+          url: '#',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        };
       case 'image':
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
@@ -1274,17 +1301,19 @@ export default function VisualEditor({
               }
             }}
             style={{
-              fontSize: '2rem',
-              fontWeight: 'bold',
+              fontSize: element.fontSize || '32px',
+              fontWeight: element.fontWeight || 'bold',
+              fontStyle: element.fontStyle || 'normal',
+              textDecoration: element.textDecoration || 'none',
               color: '#333',
-              textAlign: element.fullWidth ? 'left' : 'center',
+              textAlign: element.fullWidth ? (element.textAlign || 'left') : (element.textAlign || 'center'),
               margin: 0,
               position: 'relative',
               cursor: isEditing ? 'text' : 'pointer',
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
               background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '0.5rem 0' : '0',
+              padding: element.fullWidth ? '0' : '0',
               borderRadius: element.fullWidth ? '0' : '0'
             }}
           >
@@ -1337,7 +1366,10 @@ export default function VisualEditor({
               }
             }}
             style={{
-              fontSize: '1rem',
+              fontSize: element.fontSize || '16px',
+              fontWeight: element.fontWeight || 'normal',
+              fontStyle: element.fontStyle || 'normal',
+              textDecoration: element.textDecoration || 'none',
               lineHeight: '1.6',
               color: '#333',
               margin: 0,
@@ -1346,9 +1378,9 @@ export default function VisualEditor({
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
               background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '0.5rem 0' : '0',
+              padding: element.fullWidth ? '0' : '0',
               borderRadius: element.fullWidth ? '0' : '0',
-              textAlign: element.fullWidth ? 'left' : 'inherit'
+              textAlign: element.textAlign || 'left'
             }}
           >
             {element.content}
@@ -1417,7 +1449,7 @@ export default function VisualEditor({
               }}
               style={{
                 display: element.fullWidth ? 'block' : 'inline-block',
-                padding: element.fullWidth ? '1.25rem 0' : '1.25rem 2.5rem',
+                padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                 color: 'white',
                 textDecoration: 'none',
@@ -1722,7 +1754,7 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '2rem 0' : '2rem',
+            padding: element.fullWidth ? '0' : '2rem',
             fontSize: '0.8rem', 
             color: '#666',
             background: element.fullWidth 
@@ -1823,7 +1855,7 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '20px 0' : '20px',
+            padding: element.fullWidth ? '0' : '20px',
             background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
             display: 'flex',
             alignItems: 'center',
@@ -2097,23 +2129,25 @@ export default function VisualEditor({
 
       <div style={{ 
         display: 'flex',
-        gap: '1.5rem', 
+        gap: '0.5rem', 
         minHeight: '600px',
-        overflow: 'visible'
+        overflow: 'visible',
+        width: '100%'
       }}>
         
         {/* Visual Email Canvas - Left */}
         <div style={{ 
-          flex: rightPanelState ? '3' : '1 1 auto',
+          flex: rightPanelState ? '8' : '1 1 auto',
           display: 'flex', 
           flexDirection: 'column',
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
           borderRadius: '16px',
-          padding: '1rem',
+          padding: '0.5rem',
           border: '1px solid rgba(255, 255, 255, 0.05)',
           alignSelf: 'flex-start',
           transition: 'all 0.3s ease',
-          overflow: 'visible'
+          overflow: 'visible',
+          minWidth: 0
         }}>
           <ViewToggleContainer>
             <ViewToggle 
@@ -2141,7 +2175,7 @@ export default function VisualEditor({
 
           <EmailCanvas>
             <EmailContainer style={{
-              width: currentView === 'mobile' ? '375px' : currentView === 'text' ? '100%' : designSettings.contentWidth,
+              width: currentView === 'mobile' ? '375px' : '100%',
               maxWidth: currentView === 'text' ? '500px' : 'none',
               backgroundColor: currentView === 'text' ? '#f8f9fa' : designSettings.backgroundColor,
               fontFamily: designSettings.fontFamily,
@@ -2300,14 +2334,14 @@ export default function VisualEditor({
 
         {/* Settings Panels - Right */}
         <div style={{ 
-          width: rightPanelState ? '340px' : '60px',
+          width: rightPanelState ? '320px' : '50px',
           flexShrink: 0,
           display: 'flex', 
           flexDirection: 'column', 
           gap: '1.5rem', 
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
           borderRadius: '16px',
-          padding: rightPanelState ? '1rem' : '0.5rem',
+          padding: rightPanelState ? '0.5rem' : '0.25rem',
           border: '1px solid rgba(255, 255, 255, 0.05)',
           alignSelf: 'flex-start',
           transition: 'all 0.3s ease',
@@ -2534,7 +2568,10 @@ export default function VisualEditor({
                       <option value="700px">700px (Wide)</option>
                       <option value="800px">800px (Extra Wide)</option>
                       <option value="900px">900px (Spacious)</option>
-                      <option value="1000px">1000px (Maximum)</option>
+                      <option value="1000px">1000px (Full)</option>
+                      <option value="1200px">1200px (Expanded)</option>
+                      <option value="1400px">1400px (Wide)</option>
+                      <option value="1600px">1600px (Maximum)</option>
                     </ControlSelect>
                     <div style={{ 
                       fontSize: '0.8rem', 
