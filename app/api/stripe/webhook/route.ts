@@ -1,63 +1,101 @@
 "use server";
 
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServiceRole } from "@/utils/supabase/service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
-  const payload = await request.text();
-  const response = await JSON.parse(payload);
-  const sig = request.headers.get("Stripe-Signature")!;
-  
-  // Initialize Supabase client directly with environment variables
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const dateTime = new Date(response?.created * 1000).toLocaleDateString();
+  const sig = request.headers.get("stripe-signature") as string;
+  let event: Stripe.Event;
 
   try {
-    const event = stripe.webhooks.constructEvent(
-      payload,
-      sig!,
+    const body = await request.text();
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  const supabase = await createSupabaseServiceRole();
+  const dateTime = new Date(event.created * 1000).toISOString();
+
+  try {
+    console.log("Processing Stripe event:", event.type, "at", dateTime);
 
     switch (event.type) {
-      case "customer.created": {
-        const customer = event.data.object as Stripe.Customer;
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log("Checkout session completed:", session.id);
 
-        if (!customer.email) {
-          console.error("Customer created without email");
-          break;
+        // Update user subscription status based on session
+        if (session.customer && session.mode === "subscription") {
+          const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
+          
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          );
+          
+          // Find user by customer ID
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            // Update subscription status
+            const subscriptionType = 
+              subscription.items.data[0]?.price.id === process.env.STRIPE_PRICE_ID_MONTHLY 
+                ? "monthly" 
+                : subscription.items.data[0]?.price.id === process.env.STRIPE_PRICE_ID_ANNUAL
+                ? "annual" 
+                : "none";
+
+            await supabase
+              .from("profiles")
+              .update({
+                subscription: subscriptionType,
+                subscription_expiration: new Date(subscription.current_period_end * 1000).toISOString(),
+                trial_expiration: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+              })
+              .eq("id", profile.id);
+          }
         }
-
-        // Store customer information in the customers table
-        const { error: customerError } = await supabase
-          .from("customers")
-          .upsert({
-            stripe_customer_id: customer.id,
-            email: customer.email,
-          });
-
-        if (customerError) {
-          console.error("Error storing customer:", customerError);
-          break;
-        }
-
-        // Send invite to create account
-        await supabase.auth.admin.inviteUserByEmail(customer.email, {
-          redirectTo: process.env.NEXT_PUBLIC_SITE_URL + "/reset-password",
-          data: { customer_id: customer.id },
-        });
         break;
       }
 
       case "charge.succeeded": {
         const charge = event.data.object as Stripe.Charge;
+
+        // Find subscriber by customer ID
+        let subscriber_id = null;
+        if (charge.customer) {
+          const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer.id;
+          
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            const { data: subscriber } = await supabase
+              .from("subscribers")
+              .select("id")
+              .eq("user_id", profile.id)
+              .single();
+            
+            if (subscriber) {
+              subscriber_id = subscriber.id;
+            }
+          }
+        }
 
         // Fetch the payment intent to get product information
         if (charge.payment_intent) {
@@ -67,34 +105,24 @@ export async function POST(request: NextRequest) {
 
           // Get the line items to find product information
           if (paymentIntent.metadata.productId) {
-            const { error: upsertError } = await supabase
-              .from("customer_purchases")
-              .upsert(
-                {
-                  customer_id: charge.customer,
+            // Since customer_purchases table doesn't exist in the database types, 
+            // we'll create automation events directly instead
+            if (subscriber_id) {
+              // Create automation event for purchase
+              await supabase.rpc('create_automation_event', {
+                p_event_type: 'purchase',
+                p_subscriber_id: subscriber_id,
+                p_event_data: {
+                  customer_id: typeof charge.customer === 'string' ? charge.customer : charge.customer?.id,
                   product_id: paymentIntent.metadata.productId,
-                  status: charge.status,
+                  purchase_type: paymentIntent.metadata.purchaseType || "one-time",
                   amount: charge.amount,
                   currency: charge.currency,
-                  last_updated: new Date().toISOString(),
                   charge_id: charge.id,
-                  purchase_type:
-                    paymentIntent.metadata.purchaseType || "one-time", // one-time, lifetime, or subscription
-                  expires_at:
-                    paymentIntent.metadata.purchaseType === "lifetime"
-                      ? null
-                      : paymentIntent.metadata.expiresAt ||
-                        new Date(
-                          Date.now() + 30 * 24 * 60 * 60 * 1000
-                        ).toISOString(), // 30 days default for one-time
+                  purchase_date: new Date().toISOString()
                 },
-                {
-                  onConflict: "customer_id,product_id",
-                }
-              );
-
-            if (upsertError) {
-              console.error("Error upserting purchase:", upsertError);
+                p_source: 'stripe_webhook'
+              });
             }
           }
         }
@@ -104,37 +132,51 @@ export async function POST(request: NextRequest) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
 
-        // Fetch the payment intent to get product information
-        if (charge.payment_intent) {
+        // Find subscriber by customer ID
+        let subscriber_id = null;
+        if (charge.customer) {
+          const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer.id;
+          
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            const { data: subscriber } = await supabase
+              .from("subscribers")
+              .select("id")
+              .eq("user_id", profile.id)
+              .single();
+            
+            if (subscriber) {
+              subscriber_id = subscriber.id;
+            }
+          }
+        }
+
+        // Create refund event for automation
+        if (subscriber_id && charge.payment_intent) {
           const paymentIntent = await stripe.paymentIntents.retrieve(
             charge.payment_intent as string
           );
 
-          // Get the line items to find product information
           if (paymentIntent.metadata.productId) {
-            const { error: upsertError } = await supabase
-              .from("customer_purchases")
-              .upsert(
-                {
-                  customer_id: charge.customer,
+            await supabase.rpc('create_automation_event', {
+              p_event_type: 'purchase_refunded',
+              p_subscriber_id: subscriber_id,
+              p_event_data: {
+                customer_id: typeof charge.customer === 'string' ? charge.customer : charge.customer?.id,
                   product_id: paymentIntent.metadata.productId,
-                  status: charge.status,
+                purchase_type: paymentIntent.metadata.purchaseType || "one-time",
                   amount: charge.amount,
                   currency: charge.currency,
-                  last_updated: new Date().toISOString(),
                   charge_id: charge.id,
-                  purchase_type:
-                    paymentIntent.metadata.purchaseType || "one-time",
-                  expires_at: new Date().toISOString(), // Set expiration to now for refunds
-                },
-                {
-                  onConflict: "customer_id,product_id",
-                }
-              );
-
-            if (upsertError) {
-              console.error("Error upserting purchase:", upsertError);
-            }
+                refund_date: new Date().toISOString()
+              },
+              p_source: 'stripe_webhook'
+            });
           }
         }
         break;
@@ -144,33 +186,48 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
+        // Find subscriber by customer ID
+        let subscriber_id = null;
+        if (subscription.customer) {
+          const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+          
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            const { data: subscriber } = await supabase
+              .from("subscribers")
+              .select("id")
+              .eq("user_id", profile.id)
+              .single();
+            
+            if (subscriber) {
+              subscriber_id = subscriber.id;
+            }
+          }
+        }
+
         // Get the product ID from the subscription items
         const subscriptionItem = subscription.items.data[0];
-        if (subscriptionItem) {
-          const { error: upsertError } = await supabase
-            .from("customer_purchases")
-            .upsert(
-              {
-                customer_id: subscription.customer as string,
-                product_id: subscriptionItem.price.product as string,
-                status: subscription.status,
+        if (subscriptionItem && subscriber_id && event.type === "customer.subscription.created") {
+          // Create automation event for new subscription
+          await supabase.rpc('create_automation_event', {
+            p_event_type: 'purchase',
+            p_subscriber_id: subscriber_id,
+            p_event_data: {
+              customer_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
+              product_id: typeof subscriptionItem.price.product === 'string' ? subscriptionItem.price.product : subscriptionItem.price.product?.id,
+              purchase_type: "subscription",
                 amount: subscriptionItem.price.unit_amount || 0,
                 currency: subscription.currency,
-                last_updated: new Date().toISOString(),
-                charge_id: subscription.latest_invoice as string,
-                purchase_type: "subscription",
-                expires_at: new Date(
-                  subscription.current_period_end * 1000
-                ).toISOString(),
-              },
-              {
-                onConflict: "customer_id,product_id",
-              }
-            );
-
-          if (upsertError) {
-            console.error("Error upserting subscription:", upsertError);
-          }
+              subscription_id: subscription.id,
+              purchase_date: new Date().toISOString()
+            },
+            p_source: 'stripe_webhook'
+          });
         }
         break;
       }
@@ -178,31 +235,47 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        // Get the product ID from the subscription items
+        // Find subscriber by customer ID
+        let subscriber_id = null;
+        if (subscription.customer) {
+          const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+          
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            const { data: subscriber } = await supabase
+              .from("subscribers")
+              .select("id")
+              .eq("user_id", profile.id)
+              .single();
+            
+            if (subscriber) {
+              subscriber_id = subscriber.id;
+            }
+          }
+        }
+
+        // Create subscription cancellation event
         const subscriptionItem = subscription.items.data[0];
-        if (subscriptionItem) {
-          const { error: upsertError } = await supabase
-            .from("customer_purchases")
-            .upsert(
-              {
-                customer_id: subscription.customer as string,
-                product_id: subscriptionItem.price.product as string,
-                status: "canceled",
+        if (subscriptionItem && subscriber_id) {
+          await supabase.rpc('create_automation_event', {
+            p_event_type: 'subscription_cancelled',
+            p_subscriber_id: subscriber_id,
+            p_event_data: {
+              customer_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
+              product_id: typeof subscriptionItem.price.product === 'string' ? subscriptionItem.price.product : subscriptionItem.price.product?.id,
+              purchase_type: "subscription",
                 amount: subscriptionItem.price.unit_amount || 0,
                 currency: subscription.currency,
-                last_updated: new Date().toISOString(),
-                charge_id: subscription.latest_invoice as string,
-                purchase_type: "subscription",
-                expires_at: new Date().toISOString(), // Set expiration to now for canceled subscriptions
-              },
-              {
-                onConflict: "customer_id,product_id",
-              }
-            );
-
-          if (upsertError) {
-            console.error("Error upserting subscription:", upsertError);
-          }
+              subscription_id: subscription.id,
+              cancellation_date: new Date().toISOString()
+            },
+            p_source: 'stripe_webhook'
+          });
         }
         break;
       }

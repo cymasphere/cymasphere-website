@@ -1,35 +1,26 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import NextSEO from "@/components/NextSEO";
-import { useTranslation } from "react-i18next";
-import useLanguage from "@/hooks/useLanguage";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createSupabaseBrowser } from '@/utils/supabase/client';
+import { motion } from "framer-motion";
 import { 
-  FaCogs, 
+  FaRobot, 
   FaSearch,
   FaPlus,
   FaEdit,
   FaTrash,
-  FaEye,
   FaPlay,
   FaPause,
-  FaStop,
-  FaChartLine,
-  FaCalendarAlt,
-  FaUsers,
-  FaRobot,
-  FaClock,
-  FaEnvelope,
+  FaEye,
   FaEllipsisV,
-  FaCopy,
-  FaDownload,
-  FaShare,
-  FaHistory
+  FaSort,
+  FaSortUp,
+  FaSortDown
 } from "react-icons/fa";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import styled from "styled-components";
-import { motion } from "framer-motion";
+import NextSEO from "@/components/NextSEO";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import useLanguage from "@/hooks/useLanguage";
+import styled from "styled-components";
 
 const AutomationsContainer = styled.div`
   width: 100%;
@@ -185,12 +176,13 @@ const AutomationsGrid = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
+  overflow: visible;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  overflow: visible;
 `;
 
 const TableHeader = styled.thead`
@@ -208,10 +200,15 @@ const TableHeaderCell = styled.th`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: all 0.2s ease;
+  user-select: none;
 
   &:hover {
     color: var(--text);
     background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+    text-align: center;
   }
 
   &:last-child {
@@ -220,6 +217,26 @@ const TableHeaderCell = styled.th`
     &:hover {
       background-color: transparent;
     }
+  }
+`;
+
+const SortableHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &.center {
+    justify-content: center;
+  }
+  
+  svg {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+  
+  &:hover svg {
+    opacity: 1;
   }
 `;
 
@@ -244,6 +261,10 @@ const TableCell = styled.td`
   color: var(--text);
   font-size: 0.9rem;
   vertical-align: middle;
+
+  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+    text-align: center;
+  }
 
   &:last-child {
     text-align: center;
@@ -286,7 +307,12 @@ const StatusBadge = styled.span<{ status: string }>`
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case 'stopped':
+      case 'testing':
+        return `
+          background-color: rgba(108, 99, 255, 0.2);
+          color: var(--primary);
+        `;
+      case 'archived':
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -300,52 +326,13 @@ const StatusBadge = styled.span<{ status: string }>`
   }}
 `;
 
-const WorkflowSteps = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-`;
-
-const StepIcon = styled.span<{ type: string }>`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  
-  ${(props) => {
-    switch (props.type) {
-      case 'trigger':
-        return `
-          background-color: rgba(40, 167, 69, 0.2);
-          color: #28a745;
-        `;
-      case 'condition':
-        return `
-          background-color: rgba(255, 193, 7, 0.2);
-          color: #ffc107;
-        `;
-      case 'action':
-        return `
-          background-color: rgba(108, 99, 255, 0.2);
+const TriggerBadge = styled.span`
+  padding: 4px 8px;
+  background: rgba(108, 99, 255, 0.1);
           color: var(--primary);
-        `;
-      default:
-        return `
-          background-color: rgba(108, 117, 125, 0.2);
-          color: #6c757d;
-        `;
-    }
-  }}
-`;
-
-const StepArrow = styled.span`
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  margin: 0 0.25rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
 `;
 
 const MetricValue = styled.div`
@@ -353,324 +340,259 @@ const MetricValue = styled.div`
   color: var(--text);
 `;
 
-const ActionsContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  align-items: center;
+const MetricLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.8rem;
+const ActionsContainer = styled.div`
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  min-width: 32px;
-  height: 32px;
+  justify-content: center;
+`;
+
+const MoreButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
   justify-content: center;
 
-  ${(props) => {
-    switch (props.variant) {
-      case 'primary':
-        return `
-          background-color: var(--primary);
-          color: white;
           &:hover {
-            background-color: var(--accent);
-          }
-        `;
-      case 'warning':
-        return `
-          background-color: #ffc107;
-          color: #212529;
-          &:hover {
-            background-color: #e0a800;
-          }
-        `;
-      case 'danger':
-        return `
-          background-color: #dc3545;
-          color: white;
-          &:hover {
-            background-color: #c82333;
-          }
-        `;
-      default:
-        return `
           background-color: rgba(255, 255, 255, 0.1);
-          color: var(--text-secondary);
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.2);
             color: var(--text);
           }
-        `;
-    }
-  }}
-`;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-secondary);
-  
   svg {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-  
-  h3 {
-    margin-bottom: 0.5rem;
-    color: var(--text);
+    font-size: 0.9rem;
   }
 `;
 
-const DropdownMenu = styled.div<{ isOpen: boolean }>`
-  position: relative;
-  display: inline-block;
-`;
-
-const DropdownButton = styled.button`
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--text);
-  }
-`;
-
-const DropdownContent = styled.div<{ isOpen: boolean }>`
+const DropdownMenu = styled(motion.div)`
   position: absolute;
-  right: 0;
   top: 100%;
-  min-width: 200px;
+  right: 0;
   background-color: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  min-width: 150px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
   z-index: 1000;
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
-  transition: all 0.2s ease;
-  overflow: hidden;
 `;
 
-const DropdownItem = styled.button<{ variant?: 'primary' | 'danger' | 'warning' }>`
+const DropdownItem = styled.button`
   width: 100%;
-  padding: 12px 16px;
-  border: none;
   background: none;
+  border: none;
   color: var(--text);
+  padding: 8px 16px;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.9rem;
-  text-align: left;
+  gap: 8px;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
 
-  ${props => props.variant === 'primary' && `
-    color: var(--primary);
-    font-weight: 600;
-    
-    &:hover {
-      background-color: rgba(108, 99, 255, 0.1);
-    }
-  `}
-
-  ${props => props.variant === 'warning' && `
-    color: #ffc107;
-    
-    &:hover {
-      background-color: rgba(255, 193, 7, 0.1);
-    }
-  `}
-
-  ${props => props.variant === 'danger' && `
+  &.danger {
     color: #dc3545;
     
     &:hover {
       background-color: rgba(220, 53, 69, 0.1);
     }
-  `}
+  }
 
   svg {
     font-size: 0.8rem;
-    opacity: 0.7;
   }
 `;
 
-const DropdownDivider = styled.div`
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 4px 0;
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+
+  svg {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-tertiary);
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  p {
+    margin-bottom: 0;
+  }
 `;
 
-// Mock data
-const mockAutomations = [
-  {
-    id: "1",
-    title: "Welcome Series",
-    description: "3-email welcome sequence for new subscribers",
-    status: "active",
-    trigger: "User signup",
-    steps: [
-      { type: "trigger", icon: "👋", label: "Signup" },
-      { type: "condition", icon: "⏱️", label: "Wait 1h" },
-      { type: "action", icon: "📧", label: "Send Email" },
-    ],
-    subscribers: 1250,
-    sent: 3750,
-    openRate: 24.5,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "Abandoned Cart Recovery",
-    description: "Recover abandoned carts with targeted emails",
-    status: "active",
-    trigger: "Cart abandoned",
-    steps: [
-      { type: "trigger", icon: "🛒", label: "Cart Left" },
-      { type: "condition", icon: "⏱️", label: "Wait 2h" },
-      { type: "action", icon: "📧", label: "Reminder" },
-    ],
-    subscribers: 890,
-    sent: 2670,
-    openRate: 31.2,
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "3",
-    title: "Re-engagement Campaign",
-    description: "Win back inactive subscribers",
-    status: "paused",
-    trigger: "30 days inactive",
-    steps: [
-      { type: "trigger", icon: "😴", label: "Inactive" },
-      { type: "condition", icon: "🎯", label: "Segment" },
-      { type: "action", icon: "📧", label: "Re-engage" },
-    ],
-    subscribers: 445,
-    sent: 445,
-    openRate: 18.7,
-    createdAt: "2024-01-12",
-  },
-  {
-    id: "4",
-    title: "Birthday Campaign",
-    description: "Send birthday wishes with special offers",
-    status: "draft",
-    trigger: "Birthday date",
-    steps: [
-      { type: "trigger", icon: "🎂", label: "Birthday" },
-      { type: "condition", icon: "🎁", label: "Add Offer" },
-      { type: "action", icon: "📧", label: "Send Wish" },
-    ],
-    subscribers: 0,
-    sent: 0,
-    openRate: 0,
-    createdAt: "2024-01-18",
-  },
-  {
-    id: "5",
-    title: "Product Education Series",
-    description: "Educate users about product features",
-    status: "active",
-    trigger: "Feature usage",
-    steps: [
-      { type: "trigger", icon: "🎵", label: "Use Feature" },
-      { type: "condition", icon: "📊", label: "Check Usage" },
-      { type: "action", icon: "📧", label: "Send Tips" },
-    ],
-    subscribers: 2100,
-    sent: 6300,
-    openRate: 28.9,
-    createdAt: "2024-01-05",
-  },
-];
+interface Automation {
+  id: string;
+  name: string | null;
+  description: string | null;
+  trigger_type: string | null;
+  status: 'draft' | 'active' | 'paused' | 'archived' | 'testing' | null;
+  total_enrollments: number | null;
+  active_enrollments: number | null;
+  completed_enrollments: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 function AutomationsPage() {
-  const { user } = useAuth();
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
-  const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
+  const supabase = createSupabaseBrowser();
+  const [automations, setAutomations] = useState<Automation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
-    }
+    if (languageLoading) return;
   }, [languageLoading]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('[data-dropdown]')) {
-        setOpenDropdown(null);
+    fetchAutomations();
+  }, []);
+
+  async function fetchAutomations() {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('email_automations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching automations:', error);
+        return;
+      }
+      
+      setAutomations(data || []);
+    } catch (error) {
+      console.error('Error fetching automations:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function calculateCompletionRate(automation: Automation) {
+    if (!automation.total_enrollments || automation.total_enrollments === 0) return 0;
+    return Math.round(((automation.completed_enrollments || 0) / automation.total_enrollments) * 100);
+  }
+
+  function getTriggerLabel(triggerType: string | null) {
+    const labels: Record<string, string> = {
+      signup: 'New Signup',
+      purchase: 'Purchase',
+      abandonment: 'Cart Abandon',
+      email_open: 'Email Open',
+      email_click: 'Email Click',
+      anniversary: 'Anniversary',
+      behavior: 'Behavior',
+      custom_event: 'Custom Event'
+    };
+    
+    return labels[triggerType || ''] || triggerType || 'Unknown';
+  }
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const renderSortableHeader = (label: string, field: string, centered: boolean = false) => {
+    const isActive = sortField === field;
+    const direction = isActive ? sortDirection : null;
+    
+    return (
+      <SortableHeader className={centered ? 'center' : ''}>
+        {label}
+        {direction === 'asc' ? <FaSortUp /> : direction === 'desc' ? <FaSortDown /> : <FaSort />}
+      </SortableHeader>
+    );
+  };
 
-  if (languageLoading || !translationsLoaded) {
+  const handleDropdownToggle = (automationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDropdownOpen(dropdownOpen === automationId ? null : automationId);
+  };
+
+  const filteredAndSortedAutomations = automations
+    .filter(automation => 
+      (automation.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (automation.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (automation.trigger_type || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      let aValue = a[sortField as keyof Automation];
+      let bValue = b[sortField as keyof Automation];
+      
+      if (aValue === null) aValue = '';
+      if (bValue === null) bValue = '';
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      return 0;
+    });
+
+  if (languageLoading) {
     return <LoadingComponent />;
   }
 
-  if (!user) {
+  if (loading) {
     return <LoadingComponent />;
   }
-
-  const filteredAutomations = mockAutomations.filter(automation =>
-    automation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    automation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    automation.trigger.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const stats = [
     {
-      value: mockAutomations.length.toString(),
-      label: "Total Automations",
+      label: 'Total Automations',
+      value: automations.length.toString()
     },
     {
-      value: mockAutomations.filter(a => a.status === "active").length.toString(),
-      label: "Active Automations",
+      label: 'Active Automations',
+      value: automations.filter(a => a.status === 'active').length.toString()
     },
     {
-      value: mockAutomations.reduce((sum, a) => sum + a.subscribers, 0).toLocaleString(),
-      label: "Total Subscribers",
+      label: 'Total Enrollments',
+      value: automations.reduce((sum, a) => sum + (a.total_enrollments || 0), 0).toLocaleString()
     },
     {
-      value: "26.8%",
-      label: "Avg Open Rate",
-    },
+      label: 'Avg. Completion Rate',
+      value: automations.length > 0 
+        ? Math.round(automations.reduce((sum, a) => sum + calculateCompletionRate(a), 0) / automations.length) + '%'
+        : '0%'
+    }
   ];
 
   const cardVariants = {
@@ -678,54 +600,28 @@ function AutomationsPage() {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: {
+        delay: i * 0.1,
+        duration: 0.5,
+        ease: "easeOut",
+      },
     }),
-  };
-
-  const handleAutomationAction = (action: string, automationId: string) => {
-    console.log(`${action} automation:`, automationId);
-    if (action === 'view' || action === 'edit') {
-      router.push(`/admin/email-campaigns/automations/${automationId}`);
-    } else if (action === 'create') {
-      router.push('/admin/email-campaigns/automations/create');
-    } else if (action === 'duplicate') {
-      console.log('Duplicate automation:', automationId);
-    } else if (action === 'pause') {
-      console.log('Pause automation:', automationId);
-    } else if (action === 'resume' || action === 'start') {
-      console.log('Start/Resume automation:', automationId);
-    } else if (action === 'stop') {
-      console.log('Stop automation:', automationId);
-    } else if (action === 'analytics') {
-      console.log('View analytics for automation:', automationId);
-    } else if (action === 'export') {
-      console.log('Export automation:', automationId);
-    } else if (action === 'share') {
-      console.log('Share automation:', automationId);
-    } else if (action === 'history') {
-      console.log('View automation history:', automationId);
-    } else if (action === 'delete') {
-      if (window.confirm('Are you sure you want to delete this automation?')) {
-        console.log('Delete automation:', automationId);
-      }
-    }
-    // Implement other automation actions here
   };
 
   return (
     <>
       <NextSEO
         title="Email Automations"
-        description="Manage and monitor your email automation workflows"
+        description="Create and manage automated email workflows"
       />
       
       <AutomationsContainer>
         <AutomationsTitle>
-          <FaCogs />
+          <FaRobot />
           Email Automations
         </AutomationsTitle>
         <AutomationsSubtitle>
-          Create and manage automated email workflows and sequences
+          Create and manage automated email workflows
         </AutomationsSubtitle>
 
         <StatsRow>
@@ -756,7 +652,7 @@ function AutomationsPage() {
             />
           </SearchContainer>
           
-          <CreateButton onClick={() => handleAutomationAction('create', '')}>
+          <CreateButton onClick={() => router.push('/admin/email-campaigns/automations/create')}>
             <FaPlus />
             Create Automation
           </CreateButton>
@@ -766,222 +662,133 @@ function AutomationsPage() {
           <Table>
             <TableHeader>
               <tr>
-                <TableHeaderCell>Automation</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Trigger</TableHeaderCell>
-                <TableHeaderCell>Workflow</TableHeaderCell>
-                <TableHeaderCell>Subscribers</TableHeaderCell>
-                <TableHeaderCell>Open Rate</TableHeaderCell>
-                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('name')}>
+                  {renderSortableHeader('Automation', 'name')}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('status')}>
+                  {renderSortableHeader('Status', 'status', true)}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('trigger_type')}>
+                  {renderSortableHeader('Trigger', 'trigger_type', true)}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('total_enrollments')}>
+                  {renderSortableHeader('Enrollments', 'total_enrollments', true)}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('active_enrollments')}>
+                  {renderSortableHeader('Active', 'active_enrollments', true)}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {renderSortableHeader('Completion', 'completion_rate', true)}
+                </TableHeaderCell>
+                <TableHeaderCell onClick={() => handleSort('created_at')}>
+                  {renderSortableHeader('Created', 'created_at', true)}
+                </TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredAutomations.length === 0 ? (
+              {filteredAndSortedAutomations.length === 0 ? (
                 <tr>
                   <TableCell colSpan={8}>
                     <EmptyState>
-                      <FaCogs />
+                      <FaRobot />
                       <h3>No automations found</h3>
                       <p>Try adjusting your search criteria or create a new automation.</p>
                     </EmptyState>
                   </TableCell>
                 </tr>
               ) : (
-                filteredAutomations.map((automation, index) => (
+                filteredAndSortedAutomations.map((automation, index) => (
                   <TableRow
                     key={automation.id}
                     variants={cardVariants}
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() => handleAutomationAction('view', automation.id)}
+                    onClick={() => router.push(`/admin/email-campaigns/automations/${automation.id}`)}
                   >
                     <TableCell>
-                      <AutomationTitle>{automation.title}</AutomationTitle>
-                      <AutomationDescription>{automation.description}</AutomationDescription>
+                      <AutomationTitle>{automation.name || 'Untitled Automation'}</AutomationTitle>
+                      <AutomationDescription>{automation.description || 'No description'}</AutomationDescription>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={automation.status}>
-                        {automation.status}
+                      <StatusBadge status={automation.status || 'draft'}>
+                        {automation.status || 'draft'}
                       </StatusBadge>
                     </TableCell>
-                    <TableCell>{automation.trigger}</TableCell>
                     <TableCell>
-                      <WorkflowSteps>
-                        {automation.steps.map((step, stepIndex) => (
-                          <React.Fragment key={stepIndex}>
-                            <StepIcon type={step.type}>
-                              {step.icon}
-                            </StepIcon>
-                            {stepIndex < automation.steps.length - 1 && (
-                              <StepArrow>→</StepArrow>
-                            )}
-                          </React.Fragment>
-                        ))}
-                      </WorkflowSteps>
+                      <TriggerBadge>
+                        {getTriggerLabel(automation.trigger_type)}
+                      </TriggerBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{automation.subscribers.toLocaleString()}</MetricValue>
+                      <MetricValue>{(automation.total_enrollments || 0).toLocaleString()}</MetricValue>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{automation.openRate}%</MetricValue>
+                      <MetricValue>{(automation.active_enrollments || 0).toLocaleString()}</MetricValue>
                     </TableCell>
                     <TableCell>
-                      {new Date(automation.createdAt).toLocaleDateString()}
+                      <MetricValue>{calculateCompletionRate(automation)}%</MetricValue>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell>
+                      <MetricValue>
+                        {automation.created_at 
+                          ? new Date(automation.created_at).toLocaleDateString()
+                          : 'Unknown'
+                        }
+                      </MetricValue>
+                    </TableCell>
+                    <TableCell>
                       <ActionsContainer>
+                        <MoreButton onClick={(e) => handleDropdownToggle(automation.id, e)}>
+                          <FaEllipsisV />
+                        </MoreButton>
+                        {dropdownOpen === automation.id && (
                         <DropdownMenu 
-                          isOpen={openDropdown === automation.id}
-                          data-dropdown
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
                         >
-                          <DropdownButton 
-                            onClick={(e) => {
+                            <DropdownItem onClick={(e) => {
                               e.stopPropagation();
-                              setOpenDropdown(openDropdown === automation.id ? null : automation.id);
-                            }}
-                          >
-                            <FaEllipsisV />
-                          </DropdownButton>
-                          <DropdownContent isOpen={openDropdown === automation.id}>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('view', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
+                              router.push(`/admin/email-campaigns/automations/${automation.id}`);
+                            }}>
                               <FaEye />
-                              View Details
+                              View
                             </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
+                            <DropdownItem onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction('edit', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
+                              router.push(`/admin/email-campaigns/automations/${automation.id}/edit`);
+                            }}>
                               <FaEdit />
-                              Edit Automation
+                              Edit
                             </DropdownItem>
-                            <DropdownDivider />
                             {automation.status === 'active' ? (
-                              <DropdownItem 
-                                variant="warning"
-                                onClick={(e) => {
+                              <DropdownItem onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction('pause', automation.id);
-                                  setOpenDropdown(null);
-                                }}
-                              >
+                                // Handle pause automation
+                              }}>
                                 <FaPause />
                                 Pause
                               </DropdownItem>
-                            ) : automation.status === 'paused' ? (
-                              <DropdownItem 
-                                variant="primary"
-                                onClick={(e) => {
+                            ) : (
+                              <DropdownItem onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAutomationAction('resume', automation.id);
-                                  setOpenDropdown(null);
-                                }}
-                              >
+                                // Handle activate automation
+                              }}>
                                 <FaPlay />
-                                Resume
-                              </DropdownItem>
-                            ) : automation.status === 'draft' ? (
-                              <DropdownItem 
-                                variant="primary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAutomationAction('start', automation.id);
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                <FaPlay />
-                                Start
-                              </DropdownItem>
-                            ) : null}
-                            {automation.status === 'active' && (
-                              <DropdownItem 
-                                variant="danger"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAutomationAction('stop', automation.id);
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                <FaStop />
-                                Stop
+                                Activate
                               </DropdownItem>
                             )}
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
+                            <DropdownItem className="danger" onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutomationAction('analytics', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaChartLine />
-                              Analytics
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('duplicate', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaCopy />
-                              Duplicate
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('history', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaHistory />
-                              View History
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('export', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaDownload />
-                              Export
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('share', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaShare />
-                              Share
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              variant="danger"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAutomationAction('delete', automation.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
+                              // Handle delete automation
+                            }}>
                               <FaTrash />
                               Delete
                             </DropdownItem>
-                          </DropdownContent>
                         </DropdownMenu>
+                        )}
                       </ActionsContainer>
                     </TableCell>
                   </TableRow>

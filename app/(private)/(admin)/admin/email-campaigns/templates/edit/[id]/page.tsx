@@ -265,6 +265,46 @@ const NavigationButtons = styled.div`
   margin-top: 2rem;
 `;
 
+const StatusToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1rem;
+`;
+
+const StatusToggle = styled.div<{ $isActive: boolean }>`
+  position: relative;
+  width: 60px;
+  height: 30px;
+  background-color: ${props => props.$isActive ? '#28a745' : '#ffc107'};
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: ${props => props.$isActive ? '33px' : '3px'};
+    width: 24px;
+    height: 24px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const StatusLabel = styled.span<{ $isActive: boolean }>`
+  font-weight: 600;
+  color: ${props => props.$isActive ? '#28a745' : '#ffc107'};
+  font-size: 0.9rem;
+`;
+
 const NavButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant'
 })<{ variant?: 'primary' | 'secondary' }>`
@@ -587,6 +627,7 @@ interface TemplateData {
   preheader: string;
   description: string;
   type: string;
+  status: string;
   audienceIds: string[];
   excludedAudienceIds: string[];
 }
@@ -622,6 +663,7 @@ function EditTemplatePage() {
     preheader: isNewTemplate ? "" : "We're excited to have you join our community",
     description: isNewTemplate ? "" : "A warm welcome message for new subscribers",
     type: "welcome",
+    status: "draft",
     audienceIds: [],
     excludedAudienceIds: []
   });
@@ -710,6 +752,7 @@ function EditTemplatePage() {
             preheader: template.preheader || '',
             description: template.description || '',
             type: template.type || 'custom',
+            status: template.status || 'draft',
             audienceIds: template.audienceIds || [],
             excludedAudienceIds: template.excludedAudienceIds || []
           });
@@ -794,7 +837,7 @@ function EditTemplatePage() {
     }
   };
 
-  const handleSave = async (asDraft: boolean = true) => {
+  const handleSave = async () => {
     setIsSaving(true);
     setSavingMessage('Saving template...');
     
@@ -840,7 +883,7 @@ function EditTemplatePage() {
         htmlContent: htmlContent,
         textContent: textContent,
         template_type: templateData.type || 'custom',
-        status: asDraft ? 'draft' : 'active',
+        status: templateData.status,
         audienceIds: templateData.audienceIds,
         excludedAudienceIds: templateData.excludedAudienceIds,
         variables: {} // Could extract variables from content in the future
@@ -869,7 +912,7 @@ function EditTemplatePage() {
       const result = await response.json();
       console.log('Template saved:', result);
       
-      if (asDraft) {
+      if (templateData.status === 'draft') {
         setSavingMessage('Template saved as draft!');
         // Don't redirect when saving as draft, let user continue editing
         setTimeout(() => setSavingMessage(''), 3000);
@@ -889,8 +932,12 @@ function EditTemplatePage() {
     }
   };
 
-  const handleSaveAsDraft = () => handleSave(true);
-  const handleSaveAsActive = () => handleSave(false);
+  const handleStatusToggle = () => {
+    setTemplateData(prev => ({
+      ...prev,
+      status: prev.status === 'active' ? 'draft' : 'active'
+    }));
+  };
 
   const stepVariants = {
     hidden: { opacity: 0, x: 20 },
@@ -1311,6 +1358,22 @@ function EditTemplatePage() {
           {renderStepContent()}
         </AnimatePresence>
 
+        {/* Status Toggle */}
+        <StatusToggleContainer>
+          <StatusLabel $isActive={templateData.status === 'active'}>
+            {templateData.status === 'active' ? 'Active' : 'Draft'}
+          </StatusLabel>
+          <StatusToggle 
+            $isActive={templateData.status === 'active'} 
+            onClick={handleStatusToggle}
+          />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            {templateData.status === 'active' 
+              ? 'Template is active and available for automations' 
+              : 'Template is a draft and not available for automations'}
+          </span>
+        </StatusToggleContainer>
+
         <NavigationButtons>
           <NavButton onClick={() => router.back()}>
             <FaArrowLeft />
@@ -1325,21 +1388,15 @@ function EditTemplatePage() {
               </NavButton>
             )}
             
-            {/* Save as Draft button - available on all steps */}
-            <NavButton onClick={handleSaveAsDraft} disabled={isSaving}>
-              <FaSave />
-              {isSaving ? 'Saving...' : 'Save as Draft'}
-            </NavButton>
-            
             {currentStep < steps.length ? (
               <NavButton variant="primary" onClick={nextStep}>
                 Next
                 <FaArrowRight />
               </NavButton>
             ) : (
-              <NavButton variant="primary" onClick={handleSaveAsActive} disabled={isSaving}>
+              <NavButton variant="primary" onClick={handleSave} disabled={isSaving}>
                 <FaSave />
-                {isSaving ? 'Saving...' : (isNewTemplate ? 'Create Template' : 'Update Template')}
+                {isSaving ? 'Saving...' : (isNewTemplate ? 'Create Template' : 'Save Template')}
               </NavButton>
             )}
           </div>

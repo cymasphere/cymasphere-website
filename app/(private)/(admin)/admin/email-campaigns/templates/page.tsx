@@ -294,6 +294,39 @@ const MetricValue = styled.div`
   color: var(--text);
 `;
 
+const StatusBadge = styled.span<{ status: string }>`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  
+  ${(props) => {
+    switch (props.status) {
+      case 'active':
+        return `
+          background-color: rgba(40, 167, 69, 0.2);
+          color: #28a745;
+        `;
+      case 'draft':
+        return `
+          background-color: rgba(255, 193, 7, 0.2);
+          color: #ffc107;
+        `;
+      case 'archived':
+        return `
+          background-color: rgba(108, 117, 125, 0.2);
+          color: #6c757d;
+        `;
+      default:
+        return `
+          background-color: rgba(108, 117, 125, 0.2);
+          color: #6c757d;
+        `;
+    }
+  }}
+`;
+
 const ActionsContainer = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -631,6 +664,7 @@ function TemplatesPage() {
               <tr>
                 <TableHeaderCell>Template</TableHeaderCell>
                 <TableHeaderCell>Type</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
                 <TableHeaderCell>Usage Count</TableHeaderCell>
                 <TableHeaderCell>Last Used</TableHeaderCell>
                 <TableHeaderCell>Created</TableHeaderCell>
@@ -640,7 +674,7 @@ function TemplatesPage() {
             <TableBody>
               {loading ? (
                 <tr>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <EmptyState>
                       <div style={{ color: 'var(--text-secondary)' }}>Loading templates...</div>
                     </EmptyState>
@@ -648,7 +682,7 @@ function TemplatesPage() {
                 </tr>
               ) : filteredTemplates.length === 0 ? (
                 <tr>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <EmptyState>
                       <FaFileAlt />
                       <h3>No templates found</h3>
@@ -674,6 +708,11 @@ function TemplatesPage() {
                       <TypeBadge type={template.type}>
                         {template.type}
                       </TypeBadge>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={template.status}>
+                        {template.status}
+                      </StatusBadge>
                     </TableCell>
                     <TableCell>
                       <MetricValue>{template.usage_count}</MetricValue>

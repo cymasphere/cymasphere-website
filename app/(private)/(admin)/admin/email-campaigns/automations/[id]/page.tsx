@@ -32,7 +32,7 @@ import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
 
-const EditContainer = styled.div`
+const Container = styled.div`
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
@@ -84,7 +84,7 @@ const HeaderLeft = styled.div`
   flex: 1;
 `;
 
-const AutomationTitle = styled.h1`
+const Title = styled.h1`
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   color: var(--text);
@@ -101,7 +101,17 @@ const AutomationTitle = styled.h1`
   }
 `;
 
-const AutomationMeta = styled.div`
+const Subtitle = styled.p`
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const MetaRow = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -163,32 +173,36 @@ const HeaderActions = styled.div`
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 
   @media (max-width: 768px) {
     justify-content: flex-end;
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
+const ActionButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' | 'danger' | 'warning' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
 
   ${(props) => {
     switch (props.variant) {
       case 'primary':
         return `
-          background-color: var(--primary);
+          background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
           &:hover {
-            background-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
         `;
       case 'warning':
@@ -219,20 +233,14 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
         `;
     }
   }}
-`;
 
-const BackButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-  margin-bottom: 1rem;
-
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   &:hover {
-    color: var(--primary);
+      transform: none;
+      box-shadow: none;
+    }
   }
 `;
 
@@ -292,6 +300,10 @@ const FormGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -371,7 +383,7 @@ const Select = styled.select`
 
 const WorkflowBuilder = styled.div`
   background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 1.5rem;
@@ -388,7 +400,7 @@ const WorkflowStep = styled.div<{ type: string }>`
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 2px solid ${props => {
     switch (props.type) {
       case 'trigger': return 'rgba(40, 167, 69, 0.3)';
@@ -402,46 +414,34 @@ const WorkflowStep = styled.div<{ type: string }>`
       case 'trigger': return 'rgba(40, 167, 69, 0.1)';
       case 'condition': return 'rgba(255, 193, 7, 0.1)';
       case 'action': return 'rgba(108, 99, 255, 0.1)';
-      default: return 'rgba(255, 255, 255, 0.02)';
+      default: return 'rgba(255, 255, 255, 0.05)';
     }
   }};
-  position: relative;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 `;
 
 const StepIcon = styled.div<{ type: string }>`
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
-  
-  ${(props) => {
+  background-color: ${props => {
     switch (props.type) {
-      case 'trigger':
-        return `
-          background-color: rgba(40, 167, 69, 0.2);
-          color: #28a745;
-        `;
-      case 'condition':
-        return `
-          background-color: rgba(255, 193, 7, 0.2);
-          color: #ffc107;
-        `;
-      case 'action':
-        return `
-          background-color: rgba(108, 99, 255, 0.2);
-          color: var(--primary);
-        `;
-      default:
-        return `
-          background-color: rgba(108, 117, 125, 0.2);
-          color: #6c757d;
-        `;
+      case 'trigger': return '#28a745';
+      case 'condition': return '#ffc107';
+      case 'action': return 'var(--primary)';
+      default: return 'var(--text-secondary)';
     }
-  }}
+  }};
+  color: white;
+  font-size: 1.2rem;
 `;
 
 const StepContent = styled.div`
@@ -449,15 +449,16 @@ const StepContent = styled.div`
 `;
 
 const StepTitle = styled.h4`
-  margin: 0 0 0.5rem 0;
-  color: var(--text);
   font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  font-weight: 600;
 `;
 
 const StepDescription = styled.p`
-  margin: 0;
-  color: var(--text-secondary);
   font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
 `;
 
 const StepActions = styled.div`
@@ -466,40 +467,21 @@ const StepActions = styled.div`
 `;
 
 const StepButton = styled.button`
-  padding: 6px 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: none;
-  border-radius: 4px;
   background-color: rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.2);
     color: var(--text);
-  }
-`;
-
-const AddStepButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  background: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  font-size: 0.9rem;
-
-  &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background-color: rgba(108, 99, 255, 0.05);
   }
 `;
 
@@ -512,8 +494,58 @@ const StepConnector = styled.div`
 const ConnectorLine = styled.div`
   width: 2px;
   height: 20px;
-  background: linear-gradient(to bottom, var(--primary), var(--accent));
-  border-radius: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+`;
+
+const AddStepButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  &:hover {
+    border-color: var(--primary);
+    background-color: rgba(108, 99, 255, 0.05);
+    color: var(--primary);
+    transform: translateY(-2px);
+  }
+`;
+
+const AnalyticsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const AnalyticsCard = styled.div`
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+`;
+
+const AnalyticsValue = styled.div`
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+`;
+
+const AnalyticsLabel = styled.div`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 // Type definitions
@@ -553,123 +585,74 @@ interface Automation {
   steps: AutomationStep[];
 }
 
-// Mock data
-const mockAutomation: Automation = {
+function AutomationEditPage() {
+  const [activeTab, setActiveTab] = useState("details");
+  const [automation, setAutomation] = useState<Automation>({
   id: "1",
-  title: "Welcome Series Automation",
-  description: "3-email welcome sequence for new subscribers",
+    title: "Welcome Series",
+    description: "Automated welcome email series for new subscribers",
   status: "active",
   trigger: "User signup",
   subscribers: 1250,
-  sent: 3750,
-  openRate: 24.5,
+    sent: 3420,
+    openRate: 68.5,
   createdAt: "2024-01-15",
   steps: [
     {
       id: "1",
       type: "trigger",
-      title: "User Signs Up",
-      description: "When a new user creates an account",
-      config: {
-        event: "user_signup",
-        conditions: []
-      } as TriggerConfig
+        title: "User Signup",
+        description: "When a new user signs up",
+        config: { event: "signup", conditions: [] }
     },
     {
       id: "2",
-      type: "condition",
-      title: "Wait 1 Hour",
-      description: "Delay before sending first email",
-      config: {
-        delay: "1h",
-        delayType: "time"
-      } as ConditionConfig
-    },
-    {
-      id: "3",
       type: "action",
-      title: "Send Welcome Email",
-      description: "Send the first welcome email",
-      config: {
-        template: "welcome-email-1",
-        subject: "Welcome to Cymasphere!"
-      } as ActionConfig
+        title: "Welcome Email",
+        description: "Send welcome email immediately",
+        config: { template: "welcome", subject: "Welcome to Cymasphere!" }
     },
     {
-      id: "4",
+        id: "3",
       type: "condition",
-      title: "Wait 3 Days",
-      description: "Wait before sending follow-up",
-      config: {
-        delay: "3d",
-        delayType: "time"
-      } as ConditionConfig
+        title: "Wait 1 Day",
+        description: "Wait 24 hours before next step",
+        config: { delay: "1", delayType: "days" }
     },
     {
-      id: "5",
+        id: "4",
       type: "action",
-      title: "Send Tutorial Email",
-      description: "Send tutorial and tips email",
-      config: {
-        template: "tutorial-email",
-        subject: "Get started with your first track"
-      } as ActionConfig
+        title: "Getting Started Email",
+        description: "Send getting started guide",
+        config: { template: "getting-started", subject: "Get started with Cymasphere" }
     }
   ]
-};
+  });
 
-function AutomationEditPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
-  const [automation, setAutomation] = useState(mockAutomation);
-  
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
-  useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
-    }
-  }, [languageLoading]);
-
-  if (languageLoading || !translationsLoaded) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
   const handleSave = () => {
-    console.log("Saving automation:", automation);
-    // Implement save logic here
+    console.log("Saving automation...", automation);
   };
 
   const handleAction = (action: string) => {
-    console.log(`${action} automation:`, automation.id);
-    // Implement action logic here
+    console.log("Performing action:", action);
   };
 
   const addStep = (type: 'trigger' | 'condition' | 'action') => {
-    let config: TriggerConfig | ConditionConfig | ActionConfig;
-    
-    if (type === 'trigger') {
-      config = { event: "user_signup", conditions: [] };
-    } else if (type === 'condition') {
-      config = { delay: "1h", delayType: "time" };
-    } else {
-      config = { template: "default-template", subject: "Default Subject" };
-    }
-
     const newStep: AutomationStep = {
       id: Date.now().toString(),
       type,
-      title: `New ${type}`,
-      description: `Configure this ${type}`,
-      config
+      title: type === 'trigger' ? 'New Trigger' : 
+             type === 'condition' ? 'New Condition' : 'New Action',
+      description: `Configure your ${type}`,
+      config: type === 'trigger' ? { event: '', conditions: [] } :
+              type === 'condition' ? { delay: '1', delayType: 'hours' } :
+              { template: '', subject: '' }
     };
     
     setAutomation({
@@ -690,6 +673,10 @@ function AutomationEditPage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   };
 
+  if (languageLoading) {
+    return <LoadingComponent />;
+  }
+
   return (
     <>
       <NextSEO
@@ -697,27 +684,27 @@ function AutomationEditPage() {
         description="Edit email automation workflow, triggers, and actions"
       />
       
-      <EditContainer>
-        <BackButton href="/admin/email-campaigns/automations">
-          <FaArrowLeft />
-          Back to Automations
-        </BackButton>
-
+      <Container>
         <Breadcrumbs>
           <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
           <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/automations">Email Automations</BreadcrumbLink>
+          <BreadcrumbLink href="/admin/email-campaigns">Email Campaigns</BreadcrumbLink>
+          <FaChevronRight />
+          <BreadcrumbLink href="/admin/email-campaigns/automations">Automations</BreadcrumbLink>
           <FaChevronRight />
           <BreadcrumbCurrent>{automation.title}</BreadcrumbCurrent>
         </Breadcrumbs>
 
         <Header>
           <HeaderLeft>
-            <AutomationTitle>
+            <Title>
               <FaCogs />
               {automation.title}
-            </AutomationTitle>
-            <AutomationMeta>
+            </Title>
+            <Subtitle>
+              Edit automation workflow, triggers, and actions
+            </Subtitle>
+            <MetaRow>
               <StatusBadge status={automation.status}>{automation.status}</StatusBadge>
               <MetricItem>
                 <FaUsers />
@@ -727,7 +714,7 @@ function AutomationEditPage() {
                 <FaChartLine />
                 <strong>{automation.openRate}%</strong> open rate
               </MetricItem>
-            </AutomationMeta>
+            </MetaRow>
           </HeaderLeft>
           <HeaderActions>
             <ActionButton onClick={() => handleAction('test')}>
@@ -899,87 +886,30 @@ function AutomationEditPage() {
             <Section>
               <SectionTitle>
                 <FaChartLine />
-                Automation Analytics
+                Analytics & Performance
               </SectionTitle>
-              <FormGrid>
-                <div style={{ 
-                  background: 'rgba(40, 167, 69, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(40, 167, 69, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>Total Subscribers</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-                    {automation.subscribers.toLocaleString()}
-                  </p>
-                </div>
-                <div style={{ 
-                  background: 'rgba(108, 99, 255, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(108, 99, 255, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>Emails Sent</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-                    {automation.sent.toLocaleString()}
-                  </p>
-                </div>
-                <div style={{ 
-                  background: 'rgba(255, 193, 7, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 193, 7, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#ffc107' }}>Open Rate</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-                    {automation.openRate}%
-                  </p>
-                </div>
-                <div style={{ 
-                  background: 'rgba(23, 162, 184, 0.1)', 
-                  padding: '1.5rem', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(23, 162, 184, 0.2)'
-                }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#17a2b8' }}>Conversion Rate</h4>
-                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-                    3.2%
-                  </p>
-                </div>
-              </FormGrid>
-              
-              <div style={{ 
-                background: 'rgba(255, 255, 255, 0.02)', 
-                padding: '1.5rem', 
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                marginTop: '1.5rem'
-              }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text)' }}>Step Performance</h4>
-                {automation.steps.filter(step => step.type === 'action').map((step, index) => (
-                  <div key={step.id} style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '0.75rem 0',
-                    borderBottom: index < automation.steps.filter(s => s.type === 'action').length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
-                  }}>
-                    <span style={{ color: 'var(--text)' }}>{step.title}</span>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        {Math.floor(Math.random() * 1000 + 500)} sent
-                      </span>
-                      <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>
-                        {(Math.random() * 30 + 15).toFixed(1)}% open
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <AnalyticsGrid>
+                <AnalyticsCard>
+                  <AnalyticsValue>{automation.subscribers.toLocaleString()}</AnalyticsValue>
+                  <AnalyticsLabel>Total Subscribers</AnalyticsLabel>
+                </AnalyticsCard>
+                <AnalyticsCard>
+                  <AnalyticsValue>{automation.sent.toLocaleString()}</AnalyticsValue>
+                  <AnalyticsLabel>Emails Sent</AnalyticsLabel>
+                </AnalyticsCard>
+                <AnalyticsCard>
+                  <AnalyticsValue>{automation.openRate}%</AnalyticsValue>
+                  <AnalyticsLabel>Open Rate</AnalyticsLabel>
+                </AnalyticsCard>
+                <AnalyticsCard>
+                  <AnalyticsValue>45.2%</AnalyticsValue>
+                  <AnalyticsLabel>Click Rate</AnalyticsLabel>
+                </AnalyticsCard>
+              </AnalyticsGrid>
             </Section>
           )}
         </TabContent>
-      </EditContainer>
+      </Container>
     </>
   );
 }
