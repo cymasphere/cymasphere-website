@@ -204,7 +204,7 @@ export async function getRecentActivity(
 
     // Get recent payment intents
     const { data: paymentIntents, error: piError } = await supabase
-      .schema("stripe_tables")
+      .schema("stripe_tables" as any)
       .from("stripe_payment_intents")
       .select("*")
       .order("created", { ascending: false })
@@ -218,12 +218,12 @@ export async function getRecentActivity(
           let customerEmail = "";
           if (pi.customer) {
             const { data: customer } = await supabase
-              .schema("stripe_tables")
+              .schema("stripe_tables" as any)
               .from("stripe_customers")
               .select("email")
               .eq("id", pi.customer)
               .single();
-            customerEmail = customer?.email || "";
+            customerEmail = (customer as any)?.email || "";
           }
 
           activities.push({
@@ -249,7 +249,7 @@ export async function getRecentActivity(
 
     // Get recent invoices
     const { data: invoices, error: invoicesError } = await supabase
-      .schema("stripe_tables")
+      .schema("stripe_tables" as any)
       .from("stripe_invoices")
       .select("*")
       .order("period_end", { ascending: false })
@@ -257,28 +257,28 @@ export async function getRecentActivity(
 
     if (!invoicesError && invoices) {
       for (const invoice of invoices) {
-        if (invoice.status === "paid") {
+        if ((invoice as any).status === "paid") {
           // Get customer email
           let customerEmail = "";
-          if (invoice.customer) {
+          if ((invoice as any).customer) {
             const { data: customer } = await supabase
-              .schema("stripe_tables")
+              .schema("stripe_tables" as any)
               .from("stripe_customers")
               .select("email")
-              .eq("id", invoice.customer)
+              .eq("id", (invoice as any).customer)
               .single();
-            customerEmail = customer?.email || "";
+            customerEmail = (customer as any)?.email || "";
           }
 
           activities.push({
-            id: invoice.id || "",
+            id: (invoice as any).id || "",
             type: "subscription",
             description: `Subscription payment of $${(
-              (invoice.total || 0) / 100
+              ((invoice as any).total || 0) / 100
             ).toFixed(2)} by ${customerEmail}`,
-            amount: (invoice.total || 0) / 100,
-            currency: invoice.currency || "usd",
-            timestamp: invoice.period_end || new Date().toISOString(),
+            amount: ((invoice as any).total || 0) / 100,
+            currency: (invoice as any).currency || "usd",
+            timestamp: (invoice as any).period_end || new Date().toISOString(),
             userEmail: customerEmail,
           });
         }
@@ -425,30 +425,30 @@ export async function getAllUsersForCRM(
       if (profile.customer_id) {
         // Get total from invoices
         const { data: customerInvoices } = await supabase
-          .schema("stripe_tables")
+          .schema("stripe_tables" as any)
           .from("stripe_invoices")
           .select("total, status")
           .eq("customer", profile.customer_id);
 
         const invoiceTotal =
           customerInvoices
-            ?.filter((inv) => inv.status === "paid")
-            .reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+            ?.filter((inv: any) => inv.status === "paid")
+            .reduce((sum: number, inv: any) => sum + (inv.total || 0), 0) || 0;
 
         // Get total from payment intents
         const { data: customerPayments } = await supabase
-          .schema("stripe_tables")
+          .schema("stripe_tables" as any)
           .from("stripe_payment_intents")
           .select("amount, attrs")
           .eq("customer", profile.customer_id);
 
         const paymentTotal =
           customerPayments
-            ?.filter((pi) => {
+            ?.filter((pi: any) => {
               const attrs = pi.attrs as any;
               return attrs?.status === "succeeded" && !attrs?.refunded;
             })
-            .reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
+            .reduce((sum: number, pi: any) => sum + (pi.amount || 0), 0) || 0;
 
         totalSpent = (invoiceTotal + paymentTotal) / 100;
       }
@@ -506,7 +506,7 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
 
       // Get invoices for this month
       const { data: invoices } = await supabase
-        .schema("stripe_tables")
+        .schema("stripe_tables" as any)
         .from("stripe_invoices")
         .select("total, status")
         .gte("period_end", monthStart.toISOString())
@@ -515,21 +515,21 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
 
       // Get payment intents for this month
       const { data: payments } = await supabase
-        .schema("stripe_tables")
+        .schema("stripe_tables" as any)
         .from("stripe_payment_intents")
         .select("amount, attrs")
         .gte("created", monthStart.toISOString())
         .lte("created", monthEnd.toISOString());
 
       const invoiceRevenue =
-        invoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+        invoices?.reduce((sum: number, inv: any) => sum + (inv.total || 0), 0) || 0;
       const paymentRevenue =
         payments
-          ?.filter((pi) => {
+          ?.filter((pi: any) => {
             const attrs = pi.attrs as any;
             return attrs?.status === "succeeded" && !attrs?.refunded;
           })
-          .reduce((sum, pi) => sum + (pi.amount || 0), 0) || 0;
+          .reduce((sum: number, pi: any) => sum + (pi.amount || 0), 0) || 0;
 
       data.push((invoiceRevenue + paymentRevenue) / 100);
     }

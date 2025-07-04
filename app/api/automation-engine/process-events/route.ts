@@ -328,7 +328,7 @@ function evaluateFieldCondition(fieldValue: any, operator: string, targetValue: 
     case 'is_empty':
       return !field || field === '';
     case 'is_not_empty':
-      return field && field !== '';
+      return Boolean(field && field !== '');
     default:
       return false;
   }
