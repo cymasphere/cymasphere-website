@@ -226,6 +226,7 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const auth = useAuth() || {};
   const router = useRouter();
   
@@ -239,6 +240,14 @@ function Login() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Handle redirect after successful login and auth context update
+  useEffect(() => {
+    if (loginSuccess && auth.user && !auth.loading) {
+      console.log("Auth context updated, redirecting to dashboard");
+      router.push('/dashboard');
+    }
+  }, [loginSuccess, auth.user, auth.loading, router]);
 
   // Render a loading indicator if translations aren't loaded yet
   if (!translationsLoaded) {
@@ -286,8 +295,8 @@ function Login() {
         }
       } else {
         console.log("User logged in successfully");
-        // After successful login, redirect to dashboard
-        router.push(`/dashboard`);
+        // Set success flag and let useEffect handle redirect after auth context updates
+        setLoginSuccess(true);
       }
     } catch (error: unknown) {
       console.error("Login error:", error);
