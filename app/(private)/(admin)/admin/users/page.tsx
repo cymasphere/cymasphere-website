@@ -32,6 +32,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { getAllUsersForCRM, UserData } from "@/utils/stripe/admin-analytics";
@@ -1486,20 +1487,20 @@ export default function AdminCRM() {
         <StatsGrid>
           <StatCard variants={fadeIn}>
             <StatContent>
-              <StatValue>{totalCount}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : totalCount}</StatValue>
               <StatLabel>Total Users</StatLabel>
             </StatContent>
           </StatCard>
           <StatCard variants={fadeIn}>
             <StatContent>
-              <StatValue>{users.filter(u => u.subscription !== "none").length}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : users.filter(u => u.subscription !== "none").length}</StatValue>
               <StatLabel>Paid Users</StatLabel>
             </StatContent>
           </StatCard>
           <StatCard variants={fadeIn}>
             <StatContent>
               <StatValue>
-                {formatCurrency(users.reduce((sum, u) => sum + u.totalSpent, 0))}
+                {loading ? <StatLoadingSpinner size={20} /> : formatCurrency(users.reduce((sum, u) => sum + u.totalSpent, 0))}
               </StatValue>
               <StatLabel>Total Revenue</StatLabel>
             </StatContent>

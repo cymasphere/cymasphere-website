@@ -13,6 +13,7 @@ import {
   FaFilter,
   FaDownload
 } from 'react-icons/fa';
+import StatLoadingSpinner from '@/components/common/StatLoadingSpinner';
 
 const Container = styled.div`
   max-width: 1400px;
@@ -348,13 +349,7 @@ export default function AnalyticsPage() {
   const clickRate = totalOpened > 0 ? (totalClicked / totalOpened * 100).toFixed(1) : '0';
   const unsubscribeRate = totalSent > 0 ? (totalUnsubscribed / totalSent * 100).toFixed(2) : '0';
 
-  if (loading) {
-    return (
-      <Container>
-        <LoadingState>Loading analytics...</LoadingState>
-      </Container>
-    );
-  }
+
 
   return (
     <Container>
@@ -392,7 +387,7 @@ export default function AnalyticsPage() {
               <FaEnvelope />
             </StatIcon>
           </StatHeader>
-          <StatValue>{totalSent.toLocaleString()}</StatValue>
+          <StatValue>{loading ? <StatLoadingSpinner size={20} /> : totalSent.toLocaleString()}</StatValue>
           <StatLabel>Emails Sent</StatLabel>
           <StatChange positive={true}>+12.5% from last period</StatChange>
         </StatCard>
@@ -407,7 +402,7 @@ export default function AnalyticsPage() {
               <FaUsers />
             </StatIcon>
           </StatHeader>
-          <StatValue>{deliveryRate}%</StatValue>
+          <StatValue>{loading ? <StatLoadingSpinner size={20} /> : `${deliveryRate}%`}</StatValue>
           <StatLabel>Delivery Rate</StatLabel>
           <StatChange positive={true}>+0.8% from last period</StatChange>
         </StatCard>
@@ -422,7 +417,7 @@ export default function AnalyticsPage() {
               <FaEye />
             </StatIcon>
           </StatHeader>
-          <StatValue>{openRate}%</StatValue>
+          <StatValue>{loading ? <StatLoadingSpinner size={20} /> : `${openRate}%`}</StatValue>
           <StatLabel>Open Rate</StatLabel>
           <StatChange positive={false}>-2.1% from last period</StatChange>
         </StatCard>
@@ -437,7 +432,7 @@ export default function AnalyticsPage() {
               <FaMousePointer />
             </StatIcon>
           </StatHeader>
-          <StatValue>{clickRate}%</StatValue>
+          <StatValue>{loading ? <StatLoadingSpinner size={20} /> : `${clickRate}%`}</StatValue>
           <StatLabel>Click Rate</StatLabel>
           <StatChange positive={true}>+5.3% from last period</StatChange>
         </StatCard>

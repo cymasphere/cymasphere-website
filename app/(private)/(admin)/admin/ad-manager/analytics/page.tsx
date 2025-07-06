@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import Link from "next/link";
 
 const Container = styled.div`
@@ -623,7 +624,7 @@ export default function AnalyticsPage() {
               {getTrendIcon(data.trends.spentTrend)} 12.5%
             </MetricTrend>
           </MetricHeader>
-          <MetricValue>{formatCurrency(data.overview.totalSpent)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatCurrency(data.overview.totalSpent)}</MetricValue>
           <MetricLabel>Total Spent</MetricLabel>
         </MetricCard>
 
@@ -640,7 +641,7 @@ export default function AnalyticsPage() {
               {getTrendIcon(data.trends.impressionsTrend)} 8.3%
             </MetricTrend>
           </MetricHeader>
-          <MetricValue>{formatNumber(data.overview.totalImpressions)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatNumber(data.overview.totalImpressions)}</MetricValue>
           <MetricLabel>Total Impressions</MetricLabel>
         </MetricCard>
 
@@ -657,7 +658,7 @@ export default function AnalyticsPage() {
               {getTrendIcon(data.trends.clicksTrend)} 3.2%
             </MetricTrend>
           </MetricHeader>
-          <MetricValue>{formatNumber(data.overview.totalClicks)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatNumber(data.overview.totalClicks)}</MetricValue>
           <MetricLabel>Total Clicks</MetricLabel>
         </MetricCard>
 
@@ -674,7 +675,7 @@ export default function AnalyticsPage() {
               {getTrendIcon(data.trends.conversionsTrend)} 15.7%
             </MetricTrend>
           </MetricHeader>
-          <MetricValue>{formatNumber(data.overview.totalConversions)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatNumber(data.overview.totalConversions)}</MetricValue>
           <MetricLabel>Total Conversions</MetricLabel>
         </MetricCard>
 
@@ -688,7 +689,7 @@ export default function AnalyticsPage() {
               <FaMousePointer />
             </MetricIcon>
           </MetricHeader>
-          <MetricValue>{formatPercentage(data.overview.averageCTR)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatPercentage(data.overview.averageCTR)}</MetricValue>
           <MetricLabel>Average CTR</MetricLabel>
         </MetricCard>
 
@@ -702,7 +703,7 @@ export default function AnalyticsPage() {
               <FaDollarSign />
             </MetricIcon>
           </MetricHeader>
-          <MetricValue>{formatCurrency(data.overview.averageCPC)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatCurrency(data.overview.averageCPC)}</MetricValue>
           <MetricLabel>Average CPC</MetricLabel>
         </MetricCard>
 
@@ -716,7 +717,7 @@ export default function AnalyticsPage() {
               <FaDollarSign />
             </MetricIcon>
           </MetricHeader>
-          <MetricValue>{formatCurrency(data.overview.averageCPM)}</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : formatCurrency(data.overview.averageCPM)}</MetricValue>
           <MetricLabel>Average CPM</MetricLabel>
         </MetricCard>
 
@@ -730,7 +731,7 @@ export default function AnalyticsPage() {
               <FaChartLine />
             </MetricIcon>
           </MetricHeader>
-          <MetricValue>{data.overview.roas.toFixed(1)}x</MetricValue>
+          <MetricValue>{loading ? <StatLoadingSpinner size={20} /> : `${data.overview.roas.toFixed(1)}x`}</MetricValue>
           <MetricLabel>ROAS</MetricLabel>
         </MetricCard>
       </MetricsGrid>

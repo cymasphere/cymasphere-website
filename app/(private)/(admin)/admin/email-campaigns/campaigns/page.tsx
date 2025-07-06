@@ -38,6 +38,7 @@ import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -1750,7 +1751,7 @@ function CampaignsPage() {
               animate="visible"
               custom={index}
             >
-              <StatValue>{stat.value}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stat.value}</StatValue>
               <StatLabel>{stat.label}</StatLabel>
             </StatCard>
           ))}

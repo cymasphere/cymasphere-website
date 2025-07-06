@@ -20,6 +20,7 @@ import {
 import NextSEO from "@/components/NextSEO";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import useLanguage from "@/hooks/useLanguage";
 import styled from "styled-components";
 
@@ -629,7 +630,7 @@ function AutomationsPage() {
               animate="visible"
               custom={index}
             >
-              <StatValue>{stat.value}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stat.value}</StatValue>
               <StatLabel>{stat.label}</StatLabel>
             </StatCard>
           ))}

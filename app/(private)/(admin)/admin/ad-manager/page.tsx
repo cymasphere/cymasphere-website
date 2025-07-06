@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import {
   FaFacebook,
   FaInstagram,
@@ -496,6 +497,7 @@ export default function AdManagerPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [isDevelopmentMode, setIsDevelopmentMode] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [stats, setStats] = useState<AdManagerStats>(mockStats);
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
 
@@ -533,6 +535,7 @@ export default function AdManagerPage() {
   };
 
   const fetchStats = async () => {
+    setStatsLoading(true);
     try {
       const response = await fetch('/api/facebook-ads/stats');
       const data = await response.json();
@@ -541,6 +544,8 @@ export default function AdManagerPage() {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -672,7 +677,7 @@ export default function AdManagerPage() {
                   <FaChartLine />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{stats.totalCampaigns}</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : stats.totalCampaigns}</StatValue>
               <StatLabel>Total Campaigns</StatLabel>
             </StatCard>
 
@@ -686,7 +691,7 @@ export default function AdManagerPage() {
                   <FaPlay />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{stats.activeCampaigns}</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : stats.activeCampaigns}</StatValue>
               <StatLabel>Active Campaigns</StatLabel>
             </StatCard>
 
@@ -700,7 +705,7 @@ export default function AdManagerPage() {
                   <FaDollarSign />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{formatCurrency(stats.totalSpent)}</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : formatCurrency(stats.totalSpent)}</StatValue>
               <StatLabel>Total Spent</StatLabel>
             </StatCard>
 
@@ -714,7 +719,7 @@ export default function AdManagerPage() {
                   <FaEye />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{formatNumber(stats.totalImpressions)}</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : formatNumber(stats.totalImpressions)}</StatValue>
               <StatLabel>Total Impressions</StatLabel>
             </StatCard>
 
@@ -728,7 +733,7 @@ export default function AdManagerPage() {
                   <FaMousePointer />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{formatNumber(stats.totalClicks)}</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : formatNumber(stats.totalClicks)}</StatValue>
               <StatLabel>Total Clicks</StatLabel>
             </StatCard>
 
@@ -742,7 +747,7 @@ export default function AdManagerPage() {
                   <FaUsers />
                 </StatIcon>
               </StatHeader>
-              <StatValue>{stats.averageCTR}%</StatValue>
+              <StatValue>{statsLoading ? <StatLoadingSpinner size={20} /> : `${stats.averageCTR}%`}</StatValue>
               <StatLabel>Average CTR</StatLabel>
             </StatCard>
           </StatsGrid>

@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 const TemplatesContainer = styled.div`
   width: 100%;
@@ -633,7 +634,7 @@ function TemplatesPage() {
               animate="visible"
               custom={index}
             >
-              <StatValue>{stat.value}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stat.value}</StatValue>
               <StatLabel>{stat.label}</StatLabel>
             </StatCard>
           ))}

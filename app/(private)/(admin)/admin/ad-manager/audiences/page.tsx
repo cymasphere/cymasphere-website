@@ -26,6 +26,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -781,7 +782,7 @@ export default function AudiencesPage() {
     ? audiences.reduce((sum, a) => sum + (a.subscriber_count || 0), 0) / audiences.length 
     : 0;
 
-  if (!user || loading) {
+  if (!user) {
     return <LoadingComponent />;
   }
 
@@ -807,7 +808,7 @@ export default function AudiencesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <StatValue>{totalAudiences}</StatValue>
+            <StatValue>{loading ? <StatLoadingSpinner size={20} /> : totalAudiences}</StatValue>
             <StatLabel>Total Audiences</StatLabel>
           </StatCard>
 
@@ -816,7 +817,7 @@ export default function AudiencesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <StatValue>{activeAudiences}</StatValue>
+            <StatValue>{loading ? <StatLoadingSpinner size={20} /> : activeAudiences}</StatValue>
             <StatLabel>Active Audiences</StatLabel>
           </StatCard>
 
@@ -825,7 +826,7 @@ export default function AudiencesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <StatValue>{formatNumber(totalSubscribers)}</StatValue>
+            <StatValue>{loading ? <StatLoadingSpinner size={20} /> : formatNumber(totalSubscribers)}</StatValue>
             <StatLabel>Total Subscribers</StatLabel>
           </StatCard>
 
@@ -834,7 +835,7 @@ export default function AudiencesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <StatValue>{formatNumber(Math.round(avgAudienceSize))}</StatValue>
+            <StatValue>{loading ? <StatLoadingSpinner size={20} /> : formatNumber(Math.round(avgAudienceSize))}</StatValue>
             <StatLabel>Avg. Audience Size</StatLabel>
           </StatCard>
         </StatsGrid>
