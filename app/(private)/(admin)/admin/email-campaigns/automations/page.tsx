@@ -465,12 +465,10 @@ function AutomationsPage() {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
-    if (languageLoading) return;
+    if (!languageLoading) {
+      fetchAutomations();
+    }
   }, [languageLoading]);
-
-  useEffect(() => {
-    fetchAutomations();
-  }, []);
 
   async function fetchAutomations() {
     try {
@@ -483,12 +481,13 @@ function AutomationsPage() {
       
       if (error) {
         console.error('Error fetching automations:', error);
-        return;
+        setAutomations([]); // Set empty array on error
+      } else {
+        setAutomations(data || []);
       }
-      
-      setAutomations(data || []);
     } catch (error) {
       console.error('Error fetching automations:', error);
+      setAutomations([]); // Set empty array on exception
     } finally {
       setLoading(false);
     }

@@ -29,12 +29,13 @@ import {
   FaSync,
   FaCog,
   FaFlag,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaEllipsisV
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 
 const DeliverabilityContainer = styled.div`
@@ -465,21 +466,73 @@ const ActionsContainer = styled.div`
   display: flex;
   gap: 0.25rem;
   align-items: center;
+  position: relative;
 `;
 
-const TableActionButton = styled.button`
-  padding: 6px 8px;
+const MoreButton = styled.button`
+  padding: 8px;
   border: none;
   border-radius: 4px;
   background-color: rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--primary);
+    color: white;
+  }
+
+  &.active {
+    background-color: var(--primary);
+    color: white;
+  }
+`;
+
+const DropdownMenu = styled(motion.div)`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 180px;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
     color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  svg {
+    font-size: 0.9rem;
+    width: 16px;
   }
 `;
 
@@ -589,6 +642,9 @@ function DeliverabilityPage() {
   const [domainFilter, setDomainFilter] = useState("all");
   const [bounceFilter, setBounceFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<'domains' | 'bounces'>('domains');
+  const [deliverabilityData, setDeliverabilityData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -599,25 +655,78 @@ function DeliverabilityPage() {
     }
   }, [languageLoading]);
 
-  if (languageLoading || !translationsLoaded) {
+  useEffect(() => {
+    const fetchDeliverabilityData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/email-campaigns/deliverability', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Real deliverability data loaded:', data);
+          console.log('📊 Domains in response:', data.domains?.length || 0);
+          console.log('📊 Bounces in response:', data.bounces?.length || 0);
+          console.log('📊 Sample domain:', data.domains?.[0]);
+          console.log('📊 Sample bounce:', data.bounces?.[0]);
+          setDeliverabilityData(data);
+        } else {
+          console.error('Failed to fetch deliverability data:', response.status, response.statusText);
+          console.log('🔄 Falling back to mock data');
+          // Fall back to mock data if API fails
+          setDeliverabilityData(mockDeliverabilityData);
+        }
+      } catch (error) {
+        console.error('Error fetching deliverability data:', error);
+        // Fall back to mock data if API fails
+        setDeliverabilityData(mockDeliverabilityData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (translationsLoaded && user) {
+      fetchDeliverabilityData();
+    }
+  }, [translationsLoaded, user]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Early returns after all hooks have been called
+  if (languageLoading || !translationsLoaded || loading) {
     return <LoadingComponent />;
   }
 
-  if (!user) {
+  if (!user || !deliverabilityData) {
     return <LoadingComponent />;
   }
 
-  const filteredDomains = mockDeliverabilityData.domains.filter(domain => {
+  const filteredDomains = deliverabilityData.domains.filter((domain: any) => {
     const matchesSearch = domain.domain.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  const filteredBounces = mockDeliverabilityData.bounces.filter(bounce => {
+  const filteredBounces = deliverabilityData.bounces.filter((bounce: any) => {
     const matchesSearch = bounce.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          bounce.domain.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = bounceFilter === "all" || bounce.type === bounceFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // Debug what's being displayed
+  console.log('🖥️ Displaying domains:', filteredDomains.length, filteredDomains);
+  console.log('🖥️ Displaying bounces:', filteredBounces.length, filteredBounces);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -638,6 +747,34 @@ function DeliverabilityPage() {
     // Implement bounce actions here
   };
 
+  const handleRefresh = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/email-campaigns/deliverability', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Real deliverability data refreshed:', data);
+        console.log('📊 Refreshed - Domains:', data.domains?.length || 0);
+        console.log('📊 Refreshed - Bounces:', data.bounces?.length || 0);
+        setDeliverabilityData(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing deliverability data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDropdownToggle = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdown(openDropdown === id ? null : id);
+  };
+
   return (
     <>
       <NextSEO
@@ -652,6 +789,23 @@ function DeliverabilityPage() {
         </DeliverabilityTitle>
         <DeliverabilitySubtitle>
           Monitor your email reputation, delivery rates, and manage bounces
+          {deliverabilityData?.metadata && (
+            <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <span style={{ color: 'var(--primary)', fontWeight: '600' }}>
+                • Live data from {deliverabilityData.metadata.totalCampaigns} campaigns
+              </span>
+              {deliverabilityData.metadata.totalSent > 0 && (
+                <span style={{ marginLeft: '1rem' }}>
+                  • {deliverabilityData.metadata.totalSent.toLocaleString()} emails sent
+                </span>
+              )}
+              {deliverabilityData.metadata.totalSubscribers > 0 && (
+                <span style={{ marginLeft: '1rem' }}>
+                  • {deliverabilityData.metadata.totalSubscribers.toLocaleString()} active subscribers
+                </span>
+              )}
+            </span>
+          )}
         </DeliverabilitySubtitle>
 
         <OverviewGrid>
@@ -668,7 +822,7 @@ function DeliverabilityPage() {
                 <FaCheckCircle />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="success">{mockDeliverabilityData.overview.deliveryRate}%</CardValue>
+            <CardValue variant="success">{deliverabilityData.overview.deliveryRate}%</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +2.3% from last month
@@ -688,7 +842,7 @@ function DeliverabilityPage() {
                 <FaBan />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="danger">{mockDeliverabilityData.overview.bounceRate}%</CardValue>
+            <CardValue variant="danger">{deliverabilityData.overview.bounceRate}%</CardValue>
             <CardChange positive={false}>
               <FaArrowDown />
               -0.5% from last month
@@ -708,7 +862,7 @@ function DeliverabilityPage() {
                 <FaSpam />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="warning">{mockDeliverabilityData.overview.spamRate}%</CardValue>
+            <CardValue variant="warning">{deliverabilityData.overview.spamRate}%</CardValue>
             <CardChange positive={false}>
               <FaArrowUp />
               +0.2% from last month
@@ -727,7 +881,7 @@ function DeliverabilityPage() {
                 <FaShieldAlt />
               </CardIcon>
             </CardHeader>
-            <CardValue>{mockDeliverabilityData.overview.reputation}</CardValue>
+            <CardValue>{deliverabilityData.overview.reputation}</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +3 points this month
@@ -750,9 +904,9 @@ function DeliverabilityPage() {
                 <FaBan />
                 Bounces
               </ActionButton>
-              <ActionButton>
+              <ActionButton onClick={handleRefresh} disabled={loading}>
                 <FaSync />
-                Refresh
+                {loading ? 'Loading...' : 'Refresh'}
               </ActionButton>
               <ActionButton>
                 <FaDownload />
@@ -810,7 +964,7 @@ function DeliverabilityPage() {
                     </TableCell>
                   </tr>
                 ) : (
-                  filteredDomains.map((domain, index) => (
+                  filteredDomains.map((domain: any, index: number) => (
                     <TableRow
                       key={domain.id}
                       variants={cardVariants}
@@ -841,19 +995,53 @@ function DeliverabilityPage() {
                         <span style={{ color: '#ffc107' }}>{domain.spam.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
-                        {new Date(domain.lastChecked).toLocaleString()}
+                        {new Date(domain.lastChecked).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <ActionsContainer>
-                          <TableActionButton onClick={() => handleDomainAction('view', domain.id)}>
+                        <ActionsContainer data-dropdown>
+                          <MoreButton 
+                            onClick={(e) => handleDropdownToggle(domain.id, e)}
+                            className={openDropdown === domain.id ? 'active' : ''}
+                          >
+                            <FaEllipsisV />
+                          </MoreButton>
+                          <AnimatePresence>
+                            {openDropdown === domain.id && (
+                              <DropdownMenu
+                                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('view', domain.id); }}>
                             <FaEye />
-                          </TableActionButton>
-                          <TableActionButton onClick={() => handleDomainAction('analyze', domain.id)}>
+                                View Details
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('analyze', domain.id); }}>
                             <FaChartLine />
-                          </TableActionButton>
-                          <TableActionButton onClick={() => handleDomainAction('settings', domain.id)}>
+                                Analyze Performance
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('settings', domain.id); }}>
                             <FaCog />
-                          </TableActionButton>
+                                Domain Settings
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('test', domain.id); }}>
+                                <FaFlag />
+                                Test Deliverability
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('export', domain.id); }}>
+                                <FaExternalLinkAlt />
+                                                                 Export Report
+                               </DropdownItem>
+                              </DropdownMenu>
+                            )}
+                          </AnimatePresence>
                         </ActionsContainer>
                       </TableCell>
                     </TableRow>
@@ -885,7 +1073,7 @@ function DeliverabilityPage() {
                     </TableCell>
                   </tr>
                 ) : (
-                  filteredBounces.map((bounce, index) => (
+                  filteredBounces.map((bounce: any, index: number) => (
                     <TableRow
                       key={bounce.id}
                       variants={cardVariants}
@@ -913,16 +1101,44 @@ function DeliverabilityPage() {
                         {new Date(bounce.timestamp).toLocaleString()}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <ActionsContainer>
-                          <TableActionButton onClick={() => handleBounceAction('view', bounce.id)}>
+                        <ActionsContainer data-dropdown>
+                          <MoreButton 
+                            onClick={(e) => handleDropdownToggle(bounce.id, e)}
+                            className={openDropdown === bounce.id ? 'active' : ''}
+                          >
+                            <FaEllipsisV />
+                          </MoreButton>
+                          <AnimatePresence>
+                            {openDropdown === bounce.id && (
+                              <DropdownMenu
+                                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('view', bounce.id); }}>
                             <FaEye />
-                          </TableActionButton>
-                          <TableActionButton onClick={() => handleBounceAction('suppress', bounce.id)}>
+                                View Details
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('retry', bounce.id); }}>
+                                <FaSync />
+                                Retry Send
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('suppress', bounce.id); }}>
                             <FaBan />
-                          </TableActionButton>
-                          <TableActionButton onClick={() => handleBounceAction('delete', bounce.id)}>
+                                Suppress Email
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('export', bounce.id); }}>
+                                <FaDownload />
+                                Export Data
+                              </DropdownItem>
+                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('delete', bounce.id); }}>
                             <FaTrash />
-                          </TableActionButton>
+                                                                 Delete Record
+                               </DropdownItem>
+                              </DropdownMenu>
+                            )}
+                          </AnimatePresence>
                         </ActionsContainer>
                       </TableCell>
                     </TableRow>

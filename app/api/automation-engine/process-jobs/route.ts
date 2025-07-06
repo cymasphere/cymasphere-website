@@ -14,15 +14,16 @@ const supabase = createClient(
 );
 
 interface AutomationJob {
-  id: string;
+  job_id: string;
   job_type: string;
   automation_id: string;
   enrollment_id?: string;
-  step_index?: number;
-  step_config?: any;
-  subscriber_id?: string;
-  scheduled_for: string;
-  priority: number;
+  payload: {
+    subscriber_id?: string;
+    step_index?: number;
+    step_config?: any;
+    [key: string]: any;
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function processAutomationJob(job: AutomationJob) {
-  console.log(`🔄 Processing job: ${job.id} (type: ${job.job_type})`);
+  console.log(`🔄 Processing job: ${job.job_id} (type: ${job.job_type})`);
   
   switch (job.job_type) {
     case 'step_execution':
@@ -107,11 +108,11 @@ async function processAutomationJob(job: AutomationJob) {
 }
 
 async function executeAutomationStep(job: AutomationJob) {
-  if (!job.enrollment_id || !job.step_config) {
+  if (!job.enrollment_id || !job.payload.step_config) {
     throw new Error('Missing enrollment_id or step_config for step execution');
   }
   
-  const stepType = job.step_config.type;
+  const stepType = job.payload.step_config.type;
   console.log(`🎯 Executing step: ${stepType}`);
   
   let stepResult: any = { success: false };
@@ -149,11 +150,11 @@ async function executeAutomationStep(job: AutomationJob) {
       .insert({
         enrollment_id: job.enrollment_id,
         automation_id: job.automation_id,
-        subscriber_id: job.subscriber_id,
-        step_index: job.step_index || 0,
-        step_id: job.step_config.id || crypto.randomUUID(),
+        subscriber_id: job.payload.subscriber_id,
+        step_index: job.payload.step_index || 0,
+        step_id: job.payload.step_config.id || crypto.randomUUID(),
         step_type: stepType,
-        step_config: job.step_config,
+        step_config: job.payload.step_config,
         status: stepResult.success ? 'completed' : 'failed',
         completed_at: new Date().toISOString(),
         execution_result: stepResult,
@@ -167,7 +168,7 @@ async function executeAutomationStep(job: AutomationJob) {
     
     // Mark job as completed
     await supabase.rpc('complete_automation_job', {
-      p_job_id: job.id,
+      p_job_id: job.job_id,
       p_status: stepResult.success ? 'completed' : 'failed',
       p_result: stepResult,
       p_error_message: stepResult.error || null
@@ -182,11 +183,11 @@ async function executeAutomationStep(job: AutomationJob) {
       .insert({
         enrollment_id: job.enrollment_id,
         automation_id: job.automation_id,
-        subscriber_id: job.subscriber_id,
-        step_index: job.step_index || 0,
-        step_id: job.step_config.id || crypto.randomUUID(),
+        subscriber_id: job.payload.subscriber_id,
+        step_index: job.payload.step_index || 0,
+        step_id: job.payload.step_config.id || crypto.randomUUID(),
         step_type: stepType,
-        step_config: job.step_config,
+        step_config: job.payload.step_config,
         status: 'failed',
         completed_at: new Date().toISOString(),
         execution_result: { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
@@ -202,14 +203,14 @@ async function executeEmailStep(job: AutomationJob): Promise<any> {
   const { data: subscriber, error: subscriberError } = await supabase
     .from('subscribers')
     .select('*')
-    .eq('id', job.subscriber_id)
+    .eq('id', job.payload.subscriber_id)
     .single();
   
   if (subscriberError || !subscriber) {
     throw new Error(`Failed to get subscriber: ${subscriberError?.message}`);
   }
   
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   
   // Get template if specified
   let emailContent = {
@@ -232,10 +233,13 @@ async function executeEmailStep(job: AutomationJob): Promise<any> {
         text_content: template.text_content || ''
       };
       
-      // Update template last used
+      // Update template last used and increment usage count
       await supabase
         .from('email_templates')
-        .update({ last_used_at: new Date().toISOString() })
+        .update({ 
+          last_used_at: new Date().toISOString(),
+          usage_count: (template.usage_count || 0) + 1
+        })
         .eq('id', template.id);
     }
   }
@@ -261,7 +265,7 @@ async function executeEmailStep(job: AutomationJob): Promise<any> {
 }
 
 async function executeDelayStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const delayAmount = stepConfig.delay_amount || 1;
   const delayUnit = stepConfig.delay_unit || 'hours'; // minutes, hours, days
   
@@ -297,17 +301,17 @@ async function executeDelayStep(job: AutomationJob): Promise<any> {
 }
 
 async function executeAudienceAddStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const audienceId = stepConfig.audience_id;
   
-  if (!audienceId || !job.subscriber_id) {
+  if (!audienceId || !job.payload.subscriber_id) {
     throw new Error('Missing audience_id or subscriber_id for audience add step');
   }
   
   // Use the database function to add subscriber to audience
   const { data: result, error } = await supabase
     .rpc('add_subscriber_to_audience', {
-      p_subscriber_id: job.subscriber_id,
+      p_subscriber_id: job.payload.subscriber_id,
       p_audience_id: audienceId
     });
   
@@ -319,22 +323,22 @@ async function executeAudienceAddStep(job: AutomationJob): Promise<any> {
     success: true,
     action: 'audience_add',
     audience_id: audienceId,
-    subscriber_id: job.subscriber_id
+    subscriber_id: job.payload.subscriber_id
   };
 }
 
 async function executeAudienceRemoveStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const audienceId = stepConfig.audience_id;
   
-  if (!audienceId || !job.subscriber_id) {
+  if (!audienceId || !job.payload.subscriber_id) {
     throw new Error('Missing audience_id or subscriber_id for audience remove step');
   }
   
   // Use the database function to remove subscriber from audience
   const { data: result, error } = await supabase
     .rpc('remove_subscriber_from_audience', {
-      p_subscriber_id: job.subscriber_id,
+      p_subscriber_id: job.payload.subscriber_id,
       p_audience_id: audienceId
     });
   
@@ -346,15 +350,15 @@ async function executeAudienceRemoveStep(job: AutomationJob): Promise<any> {
     success: true,
     action: 'audience_remove',
     audience_id: audienceId,
-    subscriber_id: job.subscriber_id
+    subscriber_id: job.payload.subscriber_id
   };
 }
 
 async function executeTagAddStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const tagName = stepConfig.tag_name;
   
-  if (!tagName || !job.subscriber_id) {
+  if (!tagName || !job.payload.subscriber_id) {
     throw new Error('Missing tag_name or subscriber_id for tag add step');
   }
   
@@ -362,7 +366,7 @@ async function executeTagAddStep(job: AutomationJob): Promise<any> {
   const { data: currentSubscriber } = await supabase
     .from('subscribers')
     .select('tags')
-    .eq('id', job.subscriber_id)
+    .eq('id', job.payload.subscriber_id)
     .single();
   
   if (currentSubscriber && !currentSubscriber.tags?.includes(tagName)) {
@@ -373,7 +377,7 @@ async function executeTagAddStep(job: AutomationJob): Promise<any> {
         tags: newTags,
         updated_at: new Date().toISOString()
       })
-      .eq('id', job.subscriber_id);
+      .eq('id', job.payload.subscriber_id);
     
     if (error) {
       throw new Error(`Failed to add tag: ${error.message}`);
@@ -384,15 +388,15 @@ async function executeTagAddStep(job: AutomationJob): Promise<any> {
     success: true,
     action: 'tag_add',
     tag_name: tagName,
-    subscriber_id: job.subscriber_id
+    subscriber_id: job.payload.subscriber_id
   };
 }
 
 async function executeTagRemoveStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const tagName = stepConfig.tag_name;
   
-  if (!tagName || !job.subscriber_id) {
+  if (!tagName || !job.payload.subscriber_id) {
     throw new Error('Missing tag_name or subscriber_id for tag remove step');
   }
   
@@ -400,7 +404,7 @@ async function executeTagRemoveStep(job: AutomationJob): Promise<any> {
   const { data: currentSubscriber } = await supabase
     .from('subscribers')
     .select('tags')
-    .eq('id', job.subscriber_id)
+    .eq('id', job.payload.subscriber_id)
     .single();
   
   if (currentSubscriber && currentSubscriber.tags?.includes(tagName)) {
@@ -411,7 +415,7 @@ async function executeTagRemoveStep(job: AutomationJob): Promise<any> {
         tags: newTags,
         updated_at: new Date().toISOString()
       })
-      .eq('id', job.subscriber_id);
+      .eq('id', job.payload.subscriber_id);
     
     if (error) {
       throw new Error(`Failed to remove tag: ${error.message}`);
@@ -422,15 +426,15 @@ async function executeTagRemoveStep(job: AutomationJob): Promise<any> {
     success: true,
     action: 'tag_remove',
     tag_name: tagName,
-    subscriber_id: job.subscriber_id
+    subscriber_id: job.payload.subscriber_id
   };
 }
 
 async function executeConditionStep(job: AutomationJob): Promise<any> {
-  const stepConfig = job.step_config;
+  const stepConfig = job.payload.step_config;
   const conditions = stepConfig.conditions;
   
-  if (!conditions || !job.subscriber_id) {
+  if (!conditions || !job.payload.subscriber_id) {
     throw new Error('Missing conditions or subscriber_id for condition step');
   }
   
@@ -438,8 +442,8 @@ async function executeConditionStep(job: AutomationJob): Promise<any> {
   const { data: conditionMet, error } = await supabase
     .rpc('evaluate_automation_conditions', {
       p_conditions: conditions,
-      p_subscriber_id: job.subscriber_id,
-      p_event_data: job.step_config.event_data || {}
+      p_subscriber_id: job.payload.subscriber_id,
+      p_event_data: job.payload.step_config.event_data || {}
     });
   
   if (error) {
@@ -455,7 +459,7 @@ async function executeConditionStep(job: AutomationJob): Promise<any> {
 }
 
 async function scheduleNextStep(job: AutomationJob) {
-  if (!job.enrollment_id || job.step_index === undefined) {
+  if (!job.enrollment_id || job.payload.step_index === undefined) {
     return;
   }
   
@@ -473,7 +477,7 @@ async function scheduleNextStep(job: AutomationJob) {
   
   const workflow = automation.workflow_definition as any;
   const steps = workflow.steps || [];
-  const nextStepIndex = job.step_index + 1;
+  const nextStepIndex = job.payload.step_index + 1;
   
   if (nextStepIndex < steps.length) {
     const nextStep = steps[nextStepIndex];
@@ -485,7 +489,7 @@ async function scheduleNextStep(job: AutomationJob) {
       p_enrollment_id: job.enrollment_id,
       p_step_index: nextStepIndex,
       p_step_config: nextStep,
-      p_subscriber_id: job.subscriber_id,
+      p_subscriber_id: job.payload.subscriber_id,
       p_scheduled_for: new Date().toISOString(),
       p_priority: 5
     });
@@ -504,10 +508,10 @@ async function scheduleNextStep(job: AutomationJob) {
 async function processEmailSend(job: AutomationJob) {
   // This would integrate with the existing email sending infrastructure
   // For now, we'll just mark it as completed
-  console.log('📧 Processing email send job:', job.id);
+  console.log('📧 Processing email send job:', job.job_id);
   
   await supabase.rpc('complete_automation_job', {
-    p_job_id: job.id,
+    p_job_id: job.job_id,
     p_status: 'completed',
     p_result: { success: true, message: 'Email send processed' }
   });
@@ -538,19 +542,112 @@ function personalizeEmailContent(content: any, subscriber: any): any {
 }
 
 async function sendAutomationEmail(subscriber: any, content: any, automationId: string): Promise<any> {
-  // This would integrate with the existing AWS SES email sending service
-  // For now, we'll simulate email sending
-  console.log(`📧 Sending automation email to: ${subscriber.email}`);
-  
-  // In a real implementation, this would:
-  // 1. Create email_sends record
-  // 2. Send via AWS SES
-  // 3. Track delivery, opens, clicks
-  
-  return {
-    success: true,
-    message: 'Email sent successfully',
-    recipient: subscriber.email,
-    subject: content.subject
-  };
+  try {
+    // Import the email utility
+    const { sendEmail } = await import('../../../../utils/email');
+    
+    // Override email for testing - send to ryan@cymasphere.com instead of subscriber
+    const testEmailOverride = process.env.AUTOMATION_TEST_EMAIL_OVERRIDE || 'ryan@cymasphere.com';
+    const recipientEmail = process.env.NODE_ENV === 'production' ? subscriber.email : testEmailOverride;
+    
+    console.log(`📧 Sending automation email to: ${recipientEmail} ${recipientEmail !== subscriber.email ? `(overridden from ${subscriber.email})` : ''}`);
+    
+    // Create email_sends record for tracking
+    const { data: emailSend, error: emailSendError } = await supabase
+      .from('email_sends')
+      .insert({
+        subscriber_id: subscriber.id,
+        email: recipientEmail,
+        status: 'pending',
+        automation_id: automationId,
+        message_id: null, // Will be updated when SES returns message ID
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (emailSendError) {
+      console.error('❌ Failed to create email_sends record:', emailSendError);
+      throw new Error(`Failed to create email send record: ${emailSendError.message}`);
+    }
+
+    // Personalize content with subscriber data
+    const personalizedContent = personalizeEmailContent(content, subscriber);
+    
+    // Add automation context to email
+    const emailSubject = `[Automation] ${personalizedContent.subject}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 12px; color: #6c757d;">
+          📧 This email was sent by an automation workflow
+          ${recipientEmail !== subscriber.email ? `<br>Original recipient: ${subscriber.email}` : ''}
+        </div>
+        ${personalizedContent.html_content}
+      </div>
+    `;
+
+    // Send email via AWS SES
+    const emailResult = await sendEmail({
+      to: recipientEmail,
+      subject: emailSubject,
+      html: emailHtml,
+      text: personalizedContent.text_content,
+      from: 'support@cymasphere.com',
+      replyTo: 'support@cymasphere.com'
+    });
+
+    if (emailResult.success) {
+      // Update email_sends record with success
+      await supabase
+        .from('email_sends')
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          message_id: emailResult.messageId
+        })
+        .eq('id', emailSend.id);
+
+      console.log(`✅ Automation email sent successfully to ${recipientEmail}`);
+      console.log(`   Message ID: ${emailResult.messageId}`);
+      console.log(`   Subject: ${emailSubject}`);
+
+      return {
+        success: true,
+        message: 'Email sent successfully',
+        recipient: recipientEmail,
+        originalRecipient: subscriber.email,
+        subject: emailSubject,
+        messageId: emailResult.messageId,
+        sendRecordId: emailSend.id
+      };
+    } else {
+      // Update email_sends record with failure
+      await supabase
+        .from('email_sends')
+        .update({
+          status: 'failed',
+          bounce_reason: emailResult.error || 'Unknown error'
+        })
+        .eq('id', emailSend.id);
+
+      console.error(`❌ Failed to send automation email: ${emailResult.error}`);
+      
+      return {
+        success: false,
+        error: emailResult.error || 'Failed to send email',
+        recipient: recipientEmail,
+        originalRecipient: subscriber.email,
+        subject: emailSubject
+      };
+    }
+  } catch (error) {
+    console.error('❌ Error in sendAutomationEmail:', error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error sending automation email',
+      recipient: subscriber.email,
+      subject: content.subject
+    };
+  }
 } 

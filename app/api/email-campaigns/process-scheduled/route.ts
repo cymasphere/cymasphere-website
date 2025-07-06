@@ -355,6 +355,17 @@ export async function POST(request: NextRequest) {
             if (emailResult.success) {
               sentCount++;
               console.log(`✅ Sent to ${subscriber.email} with tracking`);
+              
+              // Update send record with message_id if we have one
+              if (sendId && emailResult.messageId) {
+                await supabase
+                  .from('email_sends')
+                  .update({
+                    status: 'sent',
+                    message_id: emailResult.messageId
+                  })
+                  .eq('id', sendId);
+              }
             } else {
               failedCount++;
               console.log(`❌ Failed to send to ${subscriber.email}:`, emailResult.error);

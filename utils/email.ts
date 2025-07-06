@@ -68,6 +68,7 @@ export async function sendEmail({
         },
       },
       ...(replyToAddresses && { ReplyToAddresses: replyToAddresses }),
+      ConfigurationSetName: 'cymasphere-email-events', // Enable event tracking
     };
 
     // Send the email

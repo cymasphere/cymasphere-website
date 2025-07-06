@@ -534,12 +534,13 @@ export async function POST(request: NextRequest) {
         console.log(`📬 sendEmail result:`, JSON.stringify(result, null, 2));
 
         if (result.success) {
-          // Update send record to sent status
+          // Update send record to sent status with message_id
           await serviceSupabase
             .from('email_sends')
             .update({
               status: 'sent',
-              sent_at: new Date().toISOString()
+              sent_at: new Date().toISOString(),
+              message_id: result.messageId
             })
             .eq('id', sendId);
 
