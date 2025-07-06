@@ -37,6 +37,7 @@ import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 
 const DeliverabilityContainer = styled.div`
   width: 100%;
@@ -704,25 +705,25 @@ function DeliverabilityPage() {
   }, []);
 
   // Early returns after all hooks have been called
-  if (languageLoading || !translationsLoaded || loading) {
+  if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
 
-  if (!user || !deliverabilityData) {
+  if (!user) {
     return <LoadingComponent />;
   }
 
-  const filteredDomains = deliverabilityData.domains.filter((domain: any) => {
+  const filteredDomains = deliverabilityData?.domains?.filter((domain: any) => {
     const matchesSearch = domain.domain.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
-  });
+  }) || [];
 
-  const filteredBounces = deliverabilityData.bounces.filter((bounce: any) => {
+  const filteredBounces = deliverabilityData?.bounces?.filter((bounce: any) => {
     const matchesSearch = bounce.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          bounce.domain.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = bounceFilter === "all" || bounce.type === bounceFilter;
     return matchesSearch && matchesFilter;
-  });
+  }) || [];
 
   // Debug what's being displayed
   console.log('🖥️ Displaying domains:', filteredDomains.length, filteredDomains);
@@ -822,7 +823,7 @@ function DeliverabilityPage() {
                 <FaCheckCircle />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="success">{deliverabilityData.overview.deliveryRate}%</CardValue>
+            <CardValue variant="success">{deliverabilityData?.overview?.deliveryRate || 0}%</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +2.3% from last month
@@ -842,7 +843,7 @@ function DeliverabilityPage() {
                 <FaBan />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="danger">{deliverabilityData.overview.bounceRate}%</CardValue>
+            <CardValue variant="danger">{deliverabilityData?.overview?.bounceRate || 0}%</CardValue>
             <CardChange positive={false}>
               <FaArrowDown />
               -0.5% from last month
@@ -862,7 +863,7 @@ function DeliverabilityPage() {
                 <FaSpam />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="warning">{deliverabilityData.overview.spamRate}%</CardValue>
+            <CardValue variant="warning">{deliverabilityData?.overview?.spamRate || 0}%</CardValue>
             <CardChange positive={false}>
               <FaArrowUp />
               +0.2% from last month
@@ -881,7 +882,7 @@ function DeliverabilityPage() {
                 <FaShieldAlt />
               </CardIcon>
             </CardHeader>
-            <CardValue>{deliverabilityData.overview.reputation}</CardValue>
+            <CardValue>{deliverabilityData?.overview?.reputation || 0}</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +3 points this month
@@ -953,7 +954,9 @@ function DeliverabilityPage() {
                 </tr>
               </TableHeader>
               <TableBody>
-                {filteredDomains.length === 0 ? (
+                {loading || !deliverabilityData ? (
+                  <TableLoadingRow colSpan={7} message="Loading domains..." />
+                ) : filteredDomains.length === 0 ? (
                   <tr>
                     <TableCell colSpan={7}>
                       <EmptyState>
@@ -1062,7 +1065,9 @@ function DeliverabilityPage() {
                 </tr>
               </TableHeader>
               <TableBody>
-                {filteredBounces.length === 0 ? (
+                {loading || !deliverabilityData ? (
+                  <TableLoadingRow colSpan={6} message="Loading bounces..." />
+                ) : filteredBounces.length === 0 ? (
                   <tr>
                     <TableCell colSpan={6}>
                       <EmptyState>

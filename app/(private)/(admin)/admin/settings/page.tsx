@@ -7,7 +7,7 @@ import { FaCog, FaServer, FaShieldAlt, FaUsers } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 
 const SettingsContainer = styled.div`
   width: 100%;
@@ -124,12 +124,8 @@ function AdminSettingsPage() {
     }
   }, [languageLoading]);
 
-  if (languageLoading || !translationsLoaded) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
+  if (languageLoading || !translationsLoaded || !user) {
+    return null;
   }
 
   // Temporarily disabled admin check for testing

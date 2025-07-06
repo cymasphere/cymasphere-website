@@ -36,8 +36,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled, { css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
 
 // Global styles for animations
@@ -717,13 +717,8 @@ function AudiencesPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || loading) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && user;
 
   const filteredAudiences = audiences.filter((audience: any) => {
     const matchesSearch = audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -941,11 +936,14 @@ function AudiencesPage() {
       <AudiencesContainer>
         <AudiencesTitle>
           <FaUsers />
-          Email Audiences
+          {showContent ? t("admin.audiencesPage.title", "Email Audiences") : "Email Audiences"}
         </AudiencesTitle>
         <AudiencesSubtitle>
-          Create, manage, and analyze your audience segments for targeted email campaigns
+          {showContent ? t("admin.audiencesPage.subtitle", "Create, manage, and analyze your audience segments for targeted email campaigns") : "Create, manage, and analyze your audience segments for targeted email campaigns"}
         </AudiencesSubtitle>
+
+        {showContent && (
+          <>
 
         <ActionsRow>
           <LeftActions>
@@ -994,7 +992,9 @@ function AudiencesPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredAudiences.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow colSpan={7} message="Loading audiences..." />
+              ) : filteredAudiences.length === 0 ? (
                 <tr>
                   <TableCell colSpan={7}>
                     <EmptyState>
@@ -1094,6 +1094,8 @@ function AudiencesPage() {
             </TableBody>
           </Table>
         </AudiencesTable>
+        </>
+        )}
 
         {/* Create Audience Modal */}
         <AnimatePresence>

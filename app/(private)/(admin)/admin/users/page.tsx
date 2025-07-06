@@ -32,7 +32,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { getAllUsersForCRM, UserData } from "@/utils/stripe/admin-analytics";
 import { 
   refundPaymentIntent, 
@@ -1437,19 +1438,13 @@ export default function AdminCRM() {
     }
   }, [refundError]);
 
-  // Handle loading and auth states in render logic instead of early returns
-  if (languageLoading || !user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && user;
 
   // Temporarily disabled admin check for testing
   // if (user.profile?.subscription !== "admin") {
   //   return null;
   // }
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
 
   if (error) {
     return (
@@ -1480,10 +1475,13 @@ export default function AdminCRM() {
         <Header>
           <Title>
             <FaUsers />
-            Users Management
+            {showContent ? t("admin.usersPage.title", "Users Management") : "Users Management"}
           </Title>
-          <Subtitle>Manage users, subscriptions, purchases, and invoices</Subtitle>
+          <Subtitle>{showContent ? t("admin.usersPage.subtitle", "Manage users, subscriptions, purchases, and invoices") : "Manage users, subscriptions, purchases, and invoices"}</Subtitle>
         </Header>
+
+        {showContent && (
+          <>
 
         <StatsGrid>
           <StatCard variants={fadeIn}>
@@ -1579,7 +1577,9 @@ export default function AdminCRM() {
               </tr>
             </TableHeader>
             <TableBody>
-              {users.map((userData, index) => {
+              {loading ? (
+                <TableLoadingRow colSpan={8} message="Loading users..." />
+              ) : users.map((userData, index) => {
                 const supportTicketCount = getSupportTicketCount(userData.id);
                 return (
                 <TableRow
@@ -1718,6 +1718,8 @@ export default function AdminCRM() {
             </PaginationButtons>
           </Pagination>
         </TableContainer>
+        </>
+        )}
 
         {/* User Detail Modal */}
         {showUserModal && selectedUser && (

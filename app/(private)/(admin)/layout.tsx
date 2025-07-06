@@ -32,7 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 
 const LayoutContainer = styled.div`
@@ -662,12 +662,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }),
   };
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
-  if (!user.is_admin) {
-    return <LoadingComponent />;
+  if (!user || !user.is_admin) {
+    return null;
   }
 
   // Temporarily disabled admin check for testing

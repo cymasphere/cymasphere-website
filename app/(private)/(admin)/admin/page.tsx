@@ -12,7 +12,7 @@ import {
   FaCrown,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 import { getAdminDashboardStats, AdminDashboardStats, AdminActivity } from "@/utils/stripe/admin-analytics";
 
 const Container = styled.div`
@@ -404,18 +404,14 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  if (!user) {
-    return <LoadingComponent />;
+  if (!user || loading) {
+    return null;
   }
 
   // Temporarily disabled admin check for testing
   // if (user.profile?.subscription !== "admin") {
   //   return null;
   // }
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
 
   if (error) {
     return (

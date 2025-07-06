@@ -22,7 +22,8 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import Link from "next/link";
 
 const Container = styled.div`
@@ -549,9 +550,8 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = user;
 
   return (
     <Container>
@@ -561,12 +561,15 @@ export default function AnalyticsPage() {
         </BackButton>
         <Title>
           <FaChartLine />
-          Ad Analytics
+          {showContent ? "Ad Analytics" : "Ad Analytics"}
         </Title>
         <Subtitle>
-          Comprehensive performance analytics for your Facebook and Instagram campaigns
+          {showContent ? "Comprehensive performance analytics for your Facebook and Instagram campaigns" : "Comprehensive performance analytics for your Facebook and Instagram campaigns"}
         </Subtitle>
       </Header>
+
+      {showContent && (
+        <>
 
       <Controls>
         <FilterGroup>
@@ -816,7 +819,9 @@ export default function AnalyticsPage() {
             <div>CTR</div>
             <div>CPC</div>
           </TableHeaderRow>
-          {data.campaigns.map((campaign) => (
+          {loading ? (
+            <TableLoadingRow colSpan={7} message="Loading campaigns..." />
+          ) : data.campaigns.map((campaign) => (
             <TableRow key={campaign.id}>
               <CampaignName>{campaign.name}</CampaignName>
               <CampaignStatus $status={campaign.status}>
@@ -832,6 +837,8 @@ export default function AnalyticsPage() {
           ))}
         </Table>
       </CampaignTable>
+      </>
+      )}
     </Container>
   );
 } 

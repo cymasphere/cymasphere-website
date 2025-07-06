@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import NextSEO from "@/components/NextSEO";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import useLanguage from "@/hooks/useLanguage";
 import styled from "styled-components";
 
@@ -569,10 +570,6 @@ function AutomationsPage() {
     return <LoadingComponent />;
   }
 
-  if (loading) {
-    return <LoadingComponent />;
-  }
-
   const stats = [
     {
       label: 'Total Automations',
@@ -686,7 +683,9 @@ function AutomationsPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedAutomations.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow colSpan={8} message="Loading automations..." />
+              ) : filteredAndSortedAutomations.length === 0 ? (
                 <tr>
                   <TableCell colSpan={8}>
                     <EmptyState>

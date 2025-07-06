@@ -616,10 +616,6 @@ function PerformancePage() {
     return <LoadingComponent />;
   }
 
-  if (loading) {
-    return <LoadingComponent />;
-  }
-
   if (error) {
     return (
       <PerformanceContainer>

@@ -36,7 +36,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -1273,13 +1274,8 @@ function CampaignsPage() {
     setSortDirection('desc');
   }, [activeTab]);
 
-  if (languageLoading || !translationsLoaded || loading) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && translationsLoaded && user;
 
   // Handle sorting
   const handleSort = (field: string) => {
@@ -1736,11 +1732,14 @@ function CampaignsPage() {
       <CampaignsContainer>
         <CampaignsTitle>
           <FaEnvelopeOpen />
-          Email Campaigns
+          {showContent ? t("admin.campaignsPage.title", "Email Campaigns") : "Email Campaigns"}
         </CampaignsTitle>
         <CampaignsSubtitle>
-          Create, manage, and monitor your email marketing campaigns
+          {showContent ? t("admin.campaignsPage.subtitle", "Create, manage, and monitor your email marketing campaigns") : "Create, manage, and monitor your email marketing campaigns"}
         </CampaignsSubtitle>
+
+        {showContent && (
+          <>
 
         <StatsRow>
           {stats.map((stat, index) => (
@@ -1833,7 +1832,12 @@ function CampaignsPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredCampaigns.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow 
+                  colSpan={activeTab === 'scheduled' ? 6 : 7} 
+                  message="Loading campaigns..." 
+                />
+              ) : filteredCampaigns.length === 0 ? (
                 <tr>
                   <TableCell colSpan={activeTab === 'scheduled' ? 6 : 7}>
                     <EmptyState>
@@ -2170,6 +2174,8 @@ function CampaignsPage() {
             </TableBody>
           </Table>
         </CampaignsGrid>
+        </>
+        )}
       </CampaignsContainer>
 
       {/* Cancel Schedule Confirmation Modal */}

@@ -57,7 +57,8 @@ const Spinner = styled.div`
   `}
 `;
 
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -1040,12 +1041,8 @@ function AudienceDetailPage() {
     }
   };
 
-  if (languageLoading || loading) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
+  if (languageLoading || loading || !user) {
+    return null;
   }
 
   if (error) {
@@ -1109,7 +1106,7 @@ function AudienceDetailPage() {
   }
 
   if (!audienceData) {
-    return <LoadingComponent />;
+    return null;
   }
 
   // No need to filter on frontend since the API handles filtering
@@ -1865,27 +1862,7 @@ function AudienceDetailPage() {
                   </TableHeader>
                   <TableBody>
                     {subscribersLoading ? (
-                      <tr>
-                        <TableCell colSpan={7}>
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'center', 
-                            alignItems: 'center', 
-                            padding: '3rem 0',
-                            color: 'var(--text-secondary)'
-                          }}>
-                                                          <div style={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                gap: '1rem' 
-                              }}>
-                              <Spinner />
-                              <span>Loading subscribers...</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </tr>
+                      <TableLoadingRow colSpan={7} message="Loading subscribers..." />
                     ) : filteredSubscribers.length === 0 ? (
                       <tr>
                         <TableCell colSpan={7}>

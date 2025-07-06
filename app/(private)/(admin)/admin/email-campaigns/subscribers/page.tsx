@@ -28,7 +28,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
 
 const SubscribersContainer = styled.div`
@@ -553,13 +554,8 @@ function SubscribersPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || !translationsLoaded || loading) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && translationsLoaded && user;
 
   // Use real data instead of filtering mock data
   const filteredSubscribers = subscribers;
@@ -623,11 +619,14 @@ function SubscribersPage() {
       <SubscribersContainer>
         <SubscribersTitle>
           <FaUsers />
-          Subscribers
+          {showContent ? t("admin.subscribersPage.title", "Subscribers") : "Subscribers"}
         </SubscribersTitle>
         <SubscribersSubtitle>
-          Manage your email subscribers, segments, and engagement analytics
+          {showContent ? t("admin.subscribersPage.subtitle", "Manage your email subscribers, segments, and engagement analytics") : "Manage your email subscribers, segments, and engagement analytics"}
         </SubscribersSubtitle>
+
+        {showContent && (
+          <>
 
         <StatsRow>
           {statsDisplay.map((stat: any, index: number) => (
@@ -697,7 +696,9 @@ function SubscribersPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredSubscribers.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow colSpan={7} message="Loading subscribers..." />
+              ) : filteredSubscribers.length === 0 ? (
                 <tr>
                   <TableCell colSpan={7}>
                     <EmptyState>
@@ -805,6 +806,8 @@ function SubscribersPage() {
             </TableBody>
           </Table>
         </SubscribersGrid>
+        </>
+        )}
       </SubscribersContainer>
     </>
   );
