@@ -525,7 +525,12 @@ function personalizeEmailContent(content: any, subscriber: any): any {
     '{{firstName}}': metadata.first_name || subscriber.first_name || 'there',
     '{{lastName}}': metadata.last_name || subscriber.last_name || '',
     '{{email}}': subscriber.email || '',
-    '{{name}}': [metadata.first_name || subscriber.first_name, metadata.last_name || subscriber.last_name].filter(Boolean).join(' ') || 'there'
+    '{{fullName}}': [metadata.first_name || subscriber.first_name, metadata.last_name || subscriber.last_name].filter(Boolean).join(' ') || 'there',
+    '{{subscription}}': metadata.subscription || 'none',
+    '{{lifetimePurchase}}': metadata.lifetime_purchase || metadata.lifetimePurchase || 'false',
+    '{{companyName}}': metadata.company_name || metadata.companyName || '',
+    '{{unsubscribeUrl}}': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email=${encodeURIComponent(subscriber.email)}`,
+    '{{currentDate}}': new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   };
   
   const personalizedContent = { ...content };

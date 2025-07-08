@@ -900,8 +900,19 @@ function generateTextFromElements(elements: any[]): string {
 
 // Helper function to personalize content with subscriber data
 function personalizeContent(content: string, subscriber: any): string {
+  const metadata = subscriber.metadata || {};
+  const firstName = metadata.first_name || subscriber.first_name || subscriber.name?.split(' ')[0] || 'there';
+  const lastName = metadata.last_name || subscriber.last_name || subscriber.name?.split(' ').slice(1).join(' ') || '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || subscriber.name || 'there';
+  
   return content
-    .replace(/\{\{firstName\}\}/g, subscriber.name.split(' ')[0])
-    .replace(/\{\{fullName\}\}/g, subscriber.name)
-    .replace(/\{\{email\}\}/g, subscriber.email);
+    .replace(/\{\{firstName\}\}/g, firstName)
+    .replace(/\{\{lastName\}\}/g, lastName)
+    .replace(/\{\{fullName\}\}/g, fullName)
+    .replace(/\{\{email\}\}/g, subscriber.email)
+    .replace(/\{\{subscription\}\}/g, metadata.subscription || 'none')
+    .replace(/\{\{lifetimePurchase\}\}/g, metadata.lifetime_purchase || metadata.lifetimePurchase || 'false')
+    .replace(/\{\{companyName\}\}/g, metadata.company_name || metadata.companyName || '')
+    .replace(/\{\{unsubscribeUrl\}\}/g, `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email=${encodeURIComponent(subscriber.email)}`)
+    .replace(/\{\{currentDate\}\}/g, new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
 } 

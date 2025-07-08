@@ -16,6 +16,7 @@ import {
   FaEnvelope,
   FaTrash,
   FaEdit,
+  FaTimes,
   FaCog,
   FaPaintBrush,
   FaTextHeight,
@@ -31,12 +32,14 @@ import {
   FaAlignLeft,
   FaAlignCenter,
   FaAlignRight,
-  FaList,
-  FaListOl,
+
   FaYoutube,
   FaFacebookF,
   FaInstagram,
-  FaDiscord
+  FaDiscord,
+  FaEye,
+  FaCode,
+  FaSave
 } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -221,31 +224,14 @@ const EmailElement = styled.div.withConfig({
     right: 0.5rem;
     display: flex;
     gap: 0.5rem;
-    opacity: ${props => props.selected || props.editing ? 1 : 0};
+    opacity: 1;
     transition: opacity 0.3s ease;
     z-index: 10;
+    pointer-events: auto;
   }
 
   &:hover .element-controls {
     opacity: 1;
-  }
-
-  &::before {
-    content: ${props => props.selected ? '"✨ Selected"' : '""'};
-    position: absolute;
-    top: -8px;
-    left: 12px;
-    background: var(--primary);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    opacity: ${props => props.selected ? 1 : 0};
-    transform: ${props => props.selected ? 'translateY(0)' : 'translateY(-5px)'};
-    transition: all 0.3s ease;
-    z-index: 5;
-    pointer-events: none;
   }
 `;
 
@@ -539,33 +525,153 @@ const VariableTag = styled.div`
   text-align: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: visible;
-  backdrop-filter: blur(10px);
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 23px;
-  }
 
   &:hover {
     border-color: var(--primary);
-    color: var(--text);
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.25);
-
-    &:before {
-      opacity: 0.15;
-    }
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(108, 99, 255, 0.1) 100%);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
   }
+`;
+
+// Modal components
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(5px);
+`;
+
+const ModalContent = styled.div`
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 300px;
+  max-width: 400px;
+  width: 90%;
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0 0 1.5rem 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+`;
+
+const ModalInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+`;
+
+const ColorPickerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const ColorInputModal = styled.input`
+  width: 100%;
+  height: 80px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  background: transparent;
+  
+  &::-webkit-color-swatch-wrapper {
+    padding: 4px;
+    border-radius: 8px;
+  }
+  
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  &::-moz-color-swatch {
+    border: none;
+    border-radius: 8px;
+  }
+  
+  &:hover {
+    border-color: var(--primary);
+    transform: scale(1.02);
+  }
+`;
+
+const ColorPresets = styled.div`
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.5rem;
+`;
+
+const ColorPreset = styled.button`
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+    border-color: var(--primary);
+  }
+`;
+
+const ModalButtons = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+`;
+
+const ModalButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  ${props => props.$variant === 'primary' ? `
+    background: var(--primary);
+    color: white;
+    
+    &:hover {
+      background: var(--accent);
+      transform: translateY(-1px);
+    }
+  ` : `
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  `}
 `;
 
 const ElementBlock = styled.div`
@@ -673,9 +779,33 @@ const PaddingValue = styled.span`
   color: var(--primary);
   font-weight: 700;
   font-size: 0.75rem;
-  background: rgba(108, 99, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
+`;
+
+const UrlInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+  }
 `;
 
 interface VisualEditorProps {
@@ -703,7 +833,7 @@ export default function VisualEditor({
   const [elementDragOverIndex, setElementDragOverIndex] = useState<number | null>(null);
   
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const [editingElement, setEditingElement] = useState<string | null>(null);
   const [rightPanelState, setRightPanelState] = useState(rightPanelExpanded);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
@@ -719,13 +849,29 @@ export default function VisualEditor({
 
   // ✨ NEW: Rich text formatting state
   const [showFormattingToolbar, setShowFormattingToolbar] = useState(false);
-  const [textSelection, setTextSelection] = useState<Selection | null>(null);
+  const [showRawHtmlElements, setShowRawHtmlElements] = useState<Record<string, boolean>>({}); // Toggle between raw HTML and rendered HTML per element
   
   // ✨ NEW: Image upload state
   const [imageUploadElement, setImageUploadElement] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Link and color picker modals
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#000000');
+  const [colorPickerType, setColorPickerType] = useState<'text' | 'background'>('text');
+  const [savedSelection, setSavedSelection] = useState<Range | null>(null);
+  const [selectionInfo, setSelectionInfo] = useState<{
+    startOffset: number;
+    endOffset: number;
+    selectedText: string;
+    elementId: string;
+  } | null>(null);
 
   // ✨ NEW: Update design setting
   const updateDesignSetting = (key: string, value: string) => {
@@ -735,21 +881,408 @@ export default function VisualEditor({
     }));
   };
 
-  // ✨ NEW: Rich text formatting functions
+  // ✨ NEW: Modern rich text formatting functions
   const applyFormat = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    setShowFormattingToolbar(false);
-  };
+    console.log(`🎨 Applying format: ${command}${value ? ` with value: ${value}` : ''}`);
+    
+    if (!editingElement) {
+      console.warn('❌ No editing element found');
+      return;
+    }
 
-  const handleTextSelect = () => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) {
-      setTextSelection(selection);
-      setShowFormattingToolbar(true);
-    } else {
-      setShowFormattingToolbar(false);
+    try {
+      // Find the currently editing element
+      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      if (!editingElementDOM) {
+        console.warn('❌ Could not find editing element in DOM');
+        return;
+      }
+      
+      console.log(`🎯 Found editing element:`, editingElementDOM);
+      
+      // Make sure the element is focused before applying formatting
+      editingElementDOM.focus();
+      
+      // Handle different commands
+      switch (command) {
+        case 'bold':
+        case 'italic':
+        case 'underline':
+          document.execCommand(command, false);
+          break;
+        case 'createLink':
+          if (value) {
+            document.execCommand(command, false, value);
+          }
+          break;
+        case 'foreColor':
+        case 'backColor':
+          if (value) {
+            document.execCommand(command, false, value);
+          }
+          break;
+        case 'justifyLeft':
+        case 'justifyCenter':
+        case 'justifyRight':
+          const align = command.replace('justify', '').toLowerCase();
+          // For alignment, we'll update the element's textAlign style
+          updateElement(editingElement, { textAlign: align });
+          return;
+        default:
+          document.execCommand(command, false, value);
+      }
+      
+      // No need to update state - content will be saved when editing stops
+      console.log(`📄 Formatting applied to element:`, editingElement);
+    } catch (error) {
+      console.error('❌ Error applying format:', error);
     }
   };
+
+  const handleTextSelect = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't update toolbar state during editing to avoid re-renders
+    // Toolbar is always visible when editing anyway
+  };
+
+
+
+  // Link and color picker handlers
+  const openLinkModal = () => {
+    // Only work if we're editing an element
+    if (!editingElement) {
+      return;
+    }
+    
+    // Get the editing element
+    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    if (!editingElementDOM) return;
+    
+    // Save the current selection with text-based positioning
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const selectedText = selection.toString().trim();
+      
+      // Get the full text content of the element
+      const fullText = editingElementDOM.textContent || '';
+      
+      // Find the position of the selected text within the full text
+      const selectionStart = fullText.indexOf(selectedText);
+      const selectionEnd = selectionStart + selectedText.length;
+      
+      console.log('💾 Saving selection info:', {
+        selectedText,
+        fullText,
+        selectionStart,
+        selectionEnd,
+        elementId: editingElement
+      });
+      
+      setSelectionInfo({
+        startOffset: selectionStart,
+        endOffset: selectionEnd,
+        selectedText,
+        elementId: editingElement
+      });
+      
+      setLinkText(selectedText);
+    } else {
+      setSelectionInfo(null);
+      setLinkText('');
+      console.log('❌ No selection to save for link');
+    }
+    
+    setLinkUrl('');
+    setShowLinkModal(true);
+  };
+
+  const closeLinkModal = () => {
+    setShowLinkModal(false);
+    setLinkUrl('');
+    setLinkText('');
+    setSavedSelection(null);
+    setSelectionInfo(null);
+  };
+
+  const applyLink = () => {
+    console.log('🔗 Applying link:', { linkUrl, linkText, editingElement, selectionInfo });
+    
+    if (!linkUrl.trim() || !linkText.trim()) {
+      console.log('❌ Missing URL or text');
+      return;
+    }
+
+    if (!editingElement) {
+      console.log('❌ No editing element');
+      closeLinkModal();
+      return;
+    }
+
+    // Get the editing element
+    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    console.log('📝 Found editing element:', editingElementDOM);
+    
+    if (editingElementDOM) {
+      if (selectionInfo && selectionInfo.selectedText) {
+        console.log('📝 Current HTML content:', editingElementDOM.innerHTML);
+        console.log('🎯 Target selection:', selectionInfo);
+        
+        // Use a more sophisticated approach that preserves HTML structure
+        const currentHtml = editingElementDOM.innerHTML;
+        const selectedText = selectionInfo.selectedText;
+        
+        // Create the link HTML - use the text from the modal (allows user to change the text)
+        const linkHtml = `<a href="${linkUrl.trim()}" target="_blank" rel="noopener noreferrer">${linkText.trim()}</a>`;
+        
+        // Find and replace the selected text in the HTML, being careful to preserve other HTML tags
+        // Use a more precise replacement that handles HTML content
+        let newHtml = currentHtml;
+        
+        // Try to find the exact text match in the HTML
+        const textIndex = currentHtml.indexOf(selectedText);
+        if (textIndex !== -1) {
+          // Simple case: the selected text appears as plain text in the HTML
+          newHtml = currentHtml.substring(0, textIndex) + linkHtml + currentHtml.substring(textIndex + selectedText.length);
+          console.log('✅ Found plain text match, replacing directly');
+        } else {
+          // More complex case: the selected text might span across HTML tags
+          // Use a temporary element to help with the replacement
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = currentHtml;
+          
+          // Use the Selection API on the temporary element
+          const walker = document.createTreeWalker(
+            tempDiv,
+            NodeFilter.SHOW_TEXT,
+            null
+          );
+          
+          let textNodes = [];
+          let currentNode;
+          while (currentNode = walker.nextNode()) {
+            textNodes.push(currentNode);
+          }
+          
+          // Find the text nodes that contain our selected text
+          let combinedText = '';
+          let startNode = null;
+          let endNode = null;
+          let startOffset = 0;
+          let endOffset = 0;
+          
+          for (let i = 0; i < textNodes.length; i++) {
+            const nodeText = textNodes[i].textContent || '';
+            const beforeLength = combinedText.length;
+            combinedText += nodeText;
+            
+            if (combinedText.includes(selectedText) && !startNode) {
+              const selectionStart = combinedText.indexOf(selectedText);
+              const selectionEnd = selectionStart + selectedText.length;
+              
+              // Find which nodes contain the start and end of our selection
+              let currentLength = 0;
+              for (let j = 0; j <= i; j++) {
+                const nodeLength = textNodes[j].textContent?.length || 0;
+                if (currentLength <= selectionStart && currentLength + nodeLength > selectionStart) {
+                  startNode = textNodes[j];
+                  startOffset = selectionStart - currentLength;
+                }
+                if (currentLength < selectionEnd && currentLength + nodeLength >= selectionEnd) {
+                  endNode = textNodes[j];
+                  endOffset = selectionEnd - currentLength;
+                  break;
+                }
+                currentLength += nodeLength;
+              }
+              break;
+            }
+          }
+          
+          if (startNode && endNode) {
+            // Create a range and replace the content
+            const range = document.createRange();
+            range.setStart(startNode, startOffset);
+            range.setEnd(endNode, endOffset);
+            
+            // Create the link element
+            const linkElement = document.createElement('a');
+            linkElement.href = linkUrl.trim();
+            linkElement.target = '_blank';
+            linkElement.rel = 'noopener noreferrer';
+            linkElement.textContent = linkText.trim();
+            
+            // Replace the range content with the link
+            range.deleteContents();
+            range.insertNode(linkElement);
+            
+            newHtml = tempDiv.innerHTML;
+            console.log('✅ Applied link using complex HTML-aware replacement');
+          } else {
+            // Fallback: append to the end
+            newHtml = currentHtml + ' ' + linkHtml;
+            console.log('✅ Fallback: appended link to end');
+          }
+        }
+        
+                 console.log('🔄 New HTML content:', newHtml);
+         editingElementDOM.innerHTML = newHtml;
+         console.log('✅ Link applied while preserving HTML structure');
+       } else {
+          // No selection info, append link to the end
+          const displayText = linkText?.trim() || 'Click here';
+          const linkHtml = `<a href="${linkUrl.trim()}" target="_blank" rel="noopener noreferrer">${displayText}</a>`;
+          editingElementDOM.innerHTML += ' ' + linkHtml;
+          console.log('✅ Link appended to element (no selection)');
+        }
+      
+      console.log('✅ Link applied to DOM (will save on Save button click)');
+      console.log('🔍 Current DOM content after link:', editingElementDOM.innerHTML);
+    }
+    
+    closeLinkModal();
+  };
+
+  const openColorPicker = (type: 'text' | 'background') => {
+    // Only work if we're editing an element
+    if (!editingElement) {
+      return;
+    }
+    
+    // Get the editing element
+    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    if (!editingElementDOM) return;
+    
+    // Save the current selection with text-based positioning
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const selectedText = selection.toString().trim();
+      
+      // Get the full text content of the element
+      const fullText = editingElementDOM.textContent || '';
+      
+      // Find the position of the selected text within the full text
+      const selectionStart = fullText.indexOf(selectedText);
+      const selectionEnd = selectionStart + selectedText.length;
+      
+      console.log('💾 Saving color selection info:', {
+        selectedText,
+        fullText,
+        selectionStart,
+        selectionEnd,
+        elementId: editingElement,
+        type
+      });
+      
+      setSelectionInfo({
+        startOffset: selectionStart,
+        endOffset: selectionEnd,
+        selectedText,
+        elementId: editingElement
+      });
+    } else {
+      setSelectionInfo(null);
+      console.log('❌ No selection to save for color');
+    }
+    
+    setColorPickerType(type);
+    setSelectedColor('#000000');
+    setShowColorPicker(true);
+  };
+
+  const closeColorPicker = () => {
+    setShowColorPicker(false);
+    setSelectedColor('#000000');
+    setSavedSelection(null);
+    setSelectionInfo(null);
+  };
+
+  const applyColor = () => {
+    console.log('🎨 Applying color:', { selectedColor, colorPickerType, editingElement });
+    
+    if (!selectedColor || !editingElement) {
+      console.log('❌ Missing color or editing element');
+      closeColorPicker();
+      return;
+    }
+
+    // Get the editing element
+    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    console.log('📝 Found editing element:', editingElementDOM);
+    
+    if (editingElementDOM) {
+      // Focus the element to ensure selection works
+      editingElementDOM.focus();
+      
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const selectedText = range.toString();
+        
+        console.log('🎯 Current selection:', selectedText);
+        
+        if (selectedText.length > 0) {
+          // Apply color to selected text only
+          const span = document.createElement('span');
+          const styleProperty = colorPickerType === 'text' ? 'color' : 'background-color';
+          span.style.setProperty(styleProperty, selectedColor);
+          
+          try {
+            // Extract the selected content and wrap it in the styled span
+            const contents = range.extractContents();
+            span.appendChild(contents);
+            range.insertNode(span);
+            
+            // Clear the selection
+            selection.removeAllRanges();
+            
+            console.log('✅ Color applied to selected text only');
+            console.log('🔍 DOM after color application:', editingElementDOM.innerHTML);
+          } catch (error) {
+            console.error('❌ Error applying color to selection:', error);
+            // Fallback: apply to entire element
+            const currentText = editingElementDOM.textContent || '';
+            const styledContent = `<span style="${styleProperty}: ${selectedColor};">${currentText}</span>`;
+            editingElementDOM.innerHTML = styledContent;
+            console.log('✅ Fallback: Color applied to entire element');
+          }
+        } else {
+          // No text selected, apply to entire element
+          const currentText = editingElementDOM.textContent || '';
+          const styleProperty = colorPickerType === 'text' ? 'color' : 'background-color';
+          const styledContent = `<span style="${styleProperty}: ${selectedColor};">${currentText}</span>`;
+          editingElementDOM.innerHTML = styledContent;
+          console.log('✅ Color applied to entire element (no selection)');
+        }
+      } else {
+        // No selection, apply to entire element
+        const currentText = editingElementDOM.textContent || '';
+        const styleProperty = colorPickerType === 'text' ? 'color' : 'background-color';
+        const styledContent = `<span style="${styleProperty}: ${selectedColor};">${currentText}</span>`;
+        editingElementDOM.innerHTML = styledContent;
+        console.log('✅ Color applied to entire element (no selection API)');
+      }
+      
+      console.log('✅ Color applied to DOM (will save on Save button click)');
+    }
+    
+    closeColorPicker();
+  };
+
+  const colorPresets = [
+    // Grayscale
+    '#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF',
+    // Primary colors
+    '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+    // Dark colors
+    '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+    // Bright colors
+    '#FFA500', '#FFC0CB', '#A52A2A', '#90EE90', '#87CEEB', '#DDA0DD',
+    // Professional colors
+    '#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#6A994E', '#582F0E',
+    // Modern colors
+    '#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#E76F51', '#E63946'
+  ];
 
   // ✨ NEW: Image upload functions
   const uploadImageToSupabase = async (file: File, elementId: string) => {
@@ -1010,7 +1543,7 @@ export default function VisualEditor({
   // ✨ NEW: Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Delete key - remove selected element
-    if (e.key === 'Delete' && selectedElementId && editingElementId !== selectedElementId) {
+    if (e.key === 'Delete' && selectedElementId && editingElement !== selectedElementId) {
       e.preventDefault();
       removeElement(selectedElementId);
     }
@@ -1021,13 +1554,13 @@ export default function VisualEditor({
       duplicateElement(selectedElementId);
     }
     
-    // Escape key - deselect element
+    // Escape key - deselect element and stop editing
     if (e.key === 'Escape') {
       e.preventDefault();
-    setSelectedElementId(null);
-    setEditingElementId(null);
+      setSelectedElementId(null);
+      setEditingElement(null);
     }
-  }, [selectedElementId, editingElementId]);
+  }, [selectedElementId, editingElement]);
 
   // ✨ NEW: Add keyboard event listeners
   useEffect(() => {
@@ -1039,17 +1572,80 @@ export default function VisualEditor({
 
   const selectElement = (elementId: string) => {
     setSelectedElementId(elementId);
-    setEditingElementId(null);
+    // DON'T clear editing state when selecting - only clear when explicitly stopping edit
+    // setEditingElement(null);
     setUploadError(null); // Clear any upload errors when selecting different element
   };
 
   const startEditing = (elementId: string) => {
-    setEditingElementId(elementId);
-    setSelectedElementId(elementId);
+    console.log('🎯 START EDITING called for element:', elementId);
+    console.log('🎯 Current editingElement state:', editingElement);
+    setEditingElement(elementId);
+    console.log('🎯 Called setEditingElement with:', elementId);
+    
+    // Set the DOM content when editing starts (since we're not using dangerouslySetInnerHTML in edit mode)
+    setTimeout(() => {
+      const element = emailElements.find(el => el.id === elementId);
+      const domElement = document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+      if (domElement && element) {
+        domElement.innerHTML = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
+        domElement.focus();
+        console.log('🎯 Set DOM content for editing:', domElement.innerHTML);
+      }
+    }, 0);
   };
 
-  const stopEditing = () => {
-    setEditingElementId(null);
+  const saveAndStopEditing = () => {
+    console.log('💾 SAVE AND STOP EDITING called');
+    
+    // Save the current content before stopping editing
+    if (editingElement) {
+      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      if (editingElementDOM) {
+        const currentContent = editingElementDOM.innerHTML;
+        const previousContent = emailElements.find(el => el.id === editingElement)?.content;
+        
+        console.log('💾 SAVING CONTENT:');
+        console.log('💾 Previous:', previousContent);
+        console.log('💾 Current:', currentContent);
+        console.log('💾 Has colors?', currentContent.includes('color:') || currentContent.includes('style='));
+        console.log('💾 Has spans?', currentContent.includes('<span'));
+        console.log('💾 Has links?', currentContent.includes('<a'));
+        
+        setEmailElements(emailElements.map(el => 
+          el.id === editingElement ? { ...el, content: currentContent } : el
+        ));
+        
+        console.log('✅ Content saved successfully');
+      } else {
+        console.error('❌ Could not find editing element DOM');
+      }
+    } else {
+      console.error('❌ No editing element to save');
+    }
+    
+    setEditingElement(null);
+  };
+
+  const cancelEditing = () => {
+    console.log('❌ CANCEL EDITING called');
+    
+    // Restore original content without saving changes
+    if (editingElement) {
+      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      const originalElement = emailElements.find(el => el.id === editingElement);
+      
+      if (editingElementDOM && originalElement) {
+        // Restore the original content to the DOM
+        editingElementDOM.innerHTML = originalElement.content || '';
+      }
+    }
+    
+    setEditingElement(null);
+  };
+
+  const isElementEditing = (elementId: string) => {
+    return editingElement === elementId;
   };
 
   const handleElementDoubleClick = (elementId: string) => {
@@ -1131,23 +1727,96 @@ export default function VisualEditor({
     ));
   };
 
+  // ✨ NEW: Insert variable into selected element content
+  const insertVariable = (variable: string) => {
+    if (!selectedElementId) {
+      alert('Please select a text or header element first, then click the variable to insert it.');
+      return;
+    }
+    
+    const selectedElement = emailElements.find(el => el.id === selectedElementId);
+    if (!selectedElement || !['text', 'header', 'button'].includes(selectedElement.type)) {
+      alert('Variables can only be inserted into text, header, or button elements.');
+      return;
+    }
+    
+    // Insert the variable at the end of the current content
+    const currentContent = selectedElement.content || '';
+    const newContent = currentContent + (currentContent ? ' ' : '') + variable;
+    
+    updateElement(selectedElementId, { content: newContent });
+  };
+
+  // Helper functions for HTML toggle per element
+  const toggleRawHtml = (elementId: string) => {
+    setShowRawHtmlElements(prev => ({
+      ...prev,
+      [elementId]: !prev[elementId]
+    }));
+  };
+
+  const isShowingRawHtml = (elementId: string) => {
+    return showRawHtmlElements[elementId] || false;
+  };
+
   const renderEmailElement = (element: any, index: number) => {
     const isSelected = selectedElementId === element.id;
-    const isEditing = editingElementId === element.id;
+    const isEditing = isElementEditing(element.id);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
+        // Allow Enter to create new lines (don't prevent default)
+        // Only Shift+Enter or Escape will exit editing mode
+        if (e.shiftKey) {
+          e.preventDefault();
+          saveAndStopEditing();
+        }
+        // Regular Enter creates a new line (browser default behavior)
+      } else if (e.key === 'Escape') {
         e.preventDefault();
-        stopEditing();
+        cancelEditing();
       }
     };
 
-    const handleBlur = () => {
-      stopEditing();
+    const handleBlur = (e: React.FocusEvent) => {
+      console.log('💡 BLUR EVENT triggered for element:', element.id);
+      console.log('💡 Related target:', e.relatedTarget);
+      console.log('💡 Current target:', e.currentTarget);
+      
+      // Delay blur handling to allow toolbar clicks to process
+      setTimeout(() => {
+        const relatedTarget = e.relatedTarget as HTMLElement;
+        
+        console.log('💡 Checking blur conditions...');
+        console.log('💡 Related target after timeout:', relatedTarget);
+        
+        // Don't stop editing if:
+        // 1. No related target (internal cursor movement)
+        // 2. Clicking on toolbar buttons
+        // 3. Clicking within the same contentEditable element
+        // 4. Clicking on other contentEditable elements (for multi-selection)
+        if (!relatedTarget || (relatedTarget && (
+          relatedTarget.closest('.formatting-toolbar') ||
+          relatedTarget.closest('[data-toolbar-button]') ||
+          relatedTarget.matches('[data-toolbar-button]') ||
+          relatedTarget.contentEditable === 'true' ||
+          relatedTarget.closest('.editable-text') ||
+          relatedTarget.closest('.email-element') // Don't exit when clicking within the same element container
+        ))) {
+          console.log('🎯 Staying in edit mode - safe target or no target');
+          return;
+        }
+        
+        // Only exit if truly clicking outside the editing area
+        console.log('👋 Exiting edit mode due to blur outside editing area');
+        saveAndStopEditing();
+      }, 150);
     };
 
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-      handleContentChange(element.id, e.currentTarget.textContent || '', e.currentTarget);
+      // DO NOTHING during editing to prevent re-renders from wiping out formatting
+      // All changes (including colors and links) will be saved when user clicks Save
+      console.log('📝 Input detected but not updating state (preserving DOM changes)');
     };
 
     const handleDragStart = (e: React.DragEvent) => {
@@ -1164,10 +1833,10 @@ export default function VisualEditor({
         return;
       }
       
-      // Prevent drag if clicking on editable text
+      // Only allow drag from the drag handle
       const target = e.target as HTMLElement;
-      if (target.closest('.editable-text') || target.contentEditable === 'true') {
-        console.log('❌ Preventing drag - clicking on editable text');
+      if (!target.closest('.drag-handle')) {
+        console.log('❌ Preventing drag - not initiated from drag handle');
         e.preventDefault();
         return;
       }
@@ -1210,29 +1879,12 @@ export default function VisualEditor({
         return;
       }
       
-      // If clicking on editable text, start editing immediately
-      if (target.closest('.editable-text') || target.contentEditable === 'true') {
-        e.stopPropagation();
-        startEditing(element.id);
-        return;
-      }
-      
-      // Otherwise just select the element
-        selectElement(element.id);
+      // NEVER start editing directly - only Edit button should do that
+      e.stopPropagation();
+      selectElement(element.id);
     };
 
-    const handleDoubleClickCapture = (e: React.MouseEvent) => {
-      const target = e.target as HTMLElement;
-      
-      // Prevent drag handle from interfering with editing
-      if (target.closest('.drag-handle')) {
-        return;
-      }
-      
-      // Start editing on double click
-      e.stopPropagation();
-      startEditing(element.id);
-    };
+
 
     return (
       <EmailElement
@@ -1240,11 +1892,8 @@ export default function VisualEditor({
         selected={isSelected}
         editing={isEditing}
         fullWidth={element.fullWidth}
-        draggable={!isEditing}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onClickCapture={handleClickCapture}
-        onDoubleClickCapture={handleDoubleClickCapture}
+        draggable={false}
+        // onClickCapture={handleClickCapture}
         onDragOver={(e) => handleElementDragOver(e, index)}
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
@@ -1259,20 +1908,48 @@ export default function VisualEditor({
         }}
       >
         <div className="element-controls">
-          <ElementControl onClick={(e) => { e.stopPropagation(); startEditing(element.id); }} title="Edit">
-            <FaEdit size={12} />
-          </ElementControl>
-          <ElementControl onClick={(e) => { e.stopPropagation(); duplicateElement(element.id); }} title="Duplicate">
-            <FaCopy size={12} />
-          </ElementControl>
-          <ElementControl onClick={(e) => { e.stopPropagation(); removeElement(element.id); }} title="Delete">
-            <FaTrash size={12} />
-          </ElementControl>
+          {isEditing ? (
+            <>
+              <ElementControl onClick={(e) => { e.stopPropagation(); saveAndStopEditing(); }} title="Save Changes">
+                <FaSave size={12} />
+              </ElementControl>
+              <ElementControl onClick={(e) => { e.stopPropagation(); cancelEditing(); }} title="Cancel (Discard Changes)">
+                <FaTimes size={12} />
+              </ElementControl>
+            </>
+          ) : (
+            <>
+              <ElementControl onClick={(e) => { 
+                console.log('🔥 EDIT BUTTON CLICKED for element:', element.id);
+                e.stopPropagation(); 
+                startEditing(element.id); 
+              }} title="Edit">
+                <FaEdit size={12} />
+              </ElementControl>
+              <ElementControl onClick={(e) => { 
+                console.log('🔥 DUPLICATE BUTTON CLICKED for element:', element.id);
+                e.stopPropagation(); 
+                duplicateElement(element.id); 
+              }} title="Duplicate">
+                <FaCopy size={12} />
+              </ElementControl>
+              <ElementControl onClick={(e) => { 
+                console.log('🔥 DELETE BUTTON CLICKED for element:', element.id);
+                e.stopPropagation(); 
+                removeElement(element.id); 
+              }} title="Delete">
+                <FaTrash size={12} />
+              </ElementControl>
+            </>
+          )}
         </div>
         {/* Enhanced Drag handle for visual feedback */}
         <DragHandle 
           className="drag-handle" 
           title="Drag to reorder this element"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
           onMouseDown={(e) => {
             e.stopPropagation();
             console.log('🖱️ Drag handle mousedown for element:', element.id);
@@ -1285,147 +1962,218 @@ export default function VisualEditor({
           <FaGripVertical size={10} style={{ pointerEvents: 'none', userSelect: 'none' }} />
         </DragHandle>
         {element.type === 'header' && (
-          <EditableText
-            className="editable-text"
-            editing={isEditing}
-            contentEditable={true}
-            suppressContentEditableWarning={true}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            onInput={handleInput}
-            onMouseUp={isEditing ? handleTextSelect : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isEditing) {
-                startEditing(element.id);
-              }
-            }}
-            style={{
-              fontSize: element.fontSize || '32px',
-              fontWeight: element.fontWeight || 'bold',
-              fontStyle: element.fontStyle || 'normal',
-              textDecoration: element.textDecoration || 'none',
-              color: '#333',
-              textAlign: element.fullWidth ? (element.textAlign || 'left') : (element.textAlign || 'center'),
-              margin: 0,
-              position: 'relative',
-              cursor: isEditing ? 'text' : 'pointer',
-              minHeight: '1em',
-              width: element.fullWidth ? '100%' : 'auto',
-              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '0' : '0',
-              borderRadius: element.fullWidth ? '0' : '0'
-            }}
-          >
-            {element.content}
-            {/* ✨ NEW: Rich text formatting toolbar */}
+          <div style={{ position: 'relative' }}>
+            {isShowingRawHtml(element.id) ? (
+              <textarea
+                value={element.content}
+                onChange={(e) => handleContentChange(element.id, e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: '3em',
+                  background: 'transparent',
+                  border: '1px dashed rgba(108, 99, 255, 0.3)',
+                  borderRadius: '4px',
+                  padding: '0.5rem',
+                  fontFamily: 'monospace',
+                  fontSize: '0.9em',
+                  color: '#333',
+                  resize: 'vertical'
+                }}
+              />
+            ) : (
+              <EditableText
+                className="editable-text"
+                editing={isEditing}
+                contentEditable={isEditing}
+                suppressContentEditableWarning={true}
+                onKeyDown={handleKeyDown}
+                // onBlur={handleBlur}
+                onInput={handleInput}
+                onMouseUp={isEditing ? handleTextSelect : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Only select element if NOT in editing mode
+                  if (!isEditing) {
+                    selectElement(element.id);
+                  }
+                }}
+                dangerouslySetInnerHTML={!isEditing ? { __html: element.content || 'Enter header text...' } : undefined}
+                data-element-id={element.id}
+                style={{
+                  fontSize: element.fontSize || '28px',
+                  fontWeight: element.fontWeight || 'bold',
+                  fontStyle: element.fontStyle || 'normal',
+                  textDecoration: element.textDecoration || 'none',
+                  lineHeight: '1.2',
+                  color: element.textColor || '#333',
+                  margin: 0,
+                  position: 'relative',
+                  cursor: isEditing ? 'text' : 'default',
+                  minHeight: '1em',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+                  padding: element.fullWidth ? '0' : '0',
+                  borderRadius: element.fullWidth ? '0' : '0',
+                  textAlign: element.textAlign || 'left',
+                  outline: 'none'
+                }}
+              />
+            )}
+            
+            {/* ✨ UPDATED: Always show toolbar when editing */}
             {isEditing && (
-              <FormattingToolbar className={showFormattingToolbar ? 'show' : ''}>
-                <FormatButton onClick={() => applyFormat('bold')} title="Bold">
-                  <FaBold />
+              <FormattingToolbar className="show formatting-toolbar">
+                <FormatButton 
+                  data-toolbar-button="true"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => toggleRawHtml(element.id)} 
+                  title={isShowingRawHtml(element.id) ? "Switch to Visual Editor" : "Switch to Raw HTML"}
+                  style={{
+                    background: isShowingRawHtml(element.id) ? '#6c63ff' : 'transparent',
+                    color: 'white'
+                  }}
+                >
+                  {isShowingRawHtml(element.id) ? <FaEye /> : <FaCode />}
                 </FormatButton>
-                <FormatButton onClick={() => applyFormat('italic')} title="Italic">
-                  <FaItalic />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('underline')} title="Underline">
-                  <FaUnderline />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyLeft')} title="Align Left">
-                  <FaAlignLeft />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyCenter')} title="Align Center">
-                  <FaAlignCenter />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyRight')} title="Align Right">
-                  <FaAlignRight />
-                </FormatButton>
-                <FormatButton onClick={() => {
-                  const url = prompt('Enter URL:');
-                  if (url) applyFormat('createLink', url);
-                }} title="Add Link">
-                  <FaLink />
-                </FormatButton>
+                
+                {!isShowingRawHtml(element.id) && (
+                  <>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} title="Bold">
+                      <FaBold />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} title="Italic">
+                      <FaItalic />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} title="Underline">
+                      <FaUnderline />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={openLinkModal} title="Add Link">
+                      <FaLink />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => openColorPicker('text')} title="Text Color">
+                      <FaPalette />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyLeft')} title="Align Left">
+                      <FaAlignLeft />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyCenter')} title="Align Center">
+                      <FaAlignCenter />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyRight')} title="Align Right">
+                      <FaAlignRight />
+                    </FormatButton>
+                  </>
+                )}
               </FormattingToolbar>
             )}
-          </EditableText>
+          </div>
         )}
         {element.type === 'text' && (
-          <EditableText
-            className="editable-text"
-            editing={isEditing}
-            contentEditable={true}
-            suppressContentEditableWarning={true}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            onInput={handleInput}
-            onMouseUp={isEditing ? handleTextSelect : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isEditing) {
-                startEditing(element.id);
-              }
-            }}
-            style={{
-              fontSize: element.fontSize || '16px',
-              fontWeight: element.fontWeight || 'normal',
-              fontStyle: element.fontStyle || 'normal',
-              textDecoration: element.textDecoration || 'none',
-              lineHeight: '1.6',
-              color: '#333',
-              margin: 0,
-              position: 'relative',
-              cursor: isEditing ? 'text' : 'pointer',
-              minHeight: '1em',
-              width: element.fullWidth ? '100%' : 'auto',
-              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '0' : '0',
-              borderRadius: element.fullWidth ? '0' : '0',
-              textAlign: element.textAlign || 'left'
-            }}
-          >
-            {element.content}
-            {/* ✨ NEW: Rich text formatting toolbar */}
+          <div style={{ position: 'relative' }}>
+            {isShowingRawHtml(element.id) ? (
+              <textarea
+                value={element.content}
+                onChange={(e) => handleContentChange(element.id, e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: '3em',
+                  background: 'transparent',
+                  border: '1px dashed rgba(108, 99, 255, 0.3)',
+                  borderRadius: '4px',
+                  padding: '0.5rem',
+                  fontFamily: 'monospace',
+                  fontSize: '0.9em',
+                  color: '#333',
+                  resize: 'vertical'
+                }}
+              />
+            ) : (
+              <EditableText
+                className="editable-text"
+                editing={isEditing}
+                contentEditable={isEditing}
+                suppressContentEditableWarning={true}
+                onKeyDown={handleKeyDown}
+                // onBlur={handleBlur}
+                onInput={handleInput}
+                onMouseUp={isEditing ? handleTextSelect : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Only select element if NOT in editing mode
+                  if (!isEditing) {
+                    selectElement(element.id);
+                  }
+                }}
+                dangerouslySetInnerHTML={!isEditing ? { __html: element.content || 'Enter your text...' } : undefined}
+                data-element-id={element.id}
+                style={{
+                  fontSize: element.fontSize || '16px',
+                  fontWeight: element.fontWeight || 'normal',
+                  fontStyle: element.fontStyle || 'normal',
+                  textDecoration: element.textDecoration || 'none',
+                  lineHeight: '1.6',
+                  color: '#333',
+                  margin: 0,
+                  position: 'relative',
+                  cursor: isEditing ? 'text' : 'default',
+                  minHeight: '1em',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+                  padding: element.fullWidth ? '0' : '0',
+                  borderRadius: element.fullWidth ? '0' : '0',
+                  textAlign: element.textAlign || 'left',
+                  outline: 'none'
+                }}
+              />
+            )}
+            
+            {/* ✨ UPDATED: Always show toolbar when editing */}
             {isEditing && (
-              <FormattingToolbar className={showFormattingToolbar ? 'show' : ''}>
-                <FormatButton onClick={() => applyFormat('bold')} title="Bold">
-                  <FaBold />
+              <FormattingToolbar className="show formatting-toolbar">
+                <FormatButton 
+                  data-toolbar-button="true"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => toggleRawHtml(element.id)} 
+                  title={isShowingRawHtml(element.id) ? "Switch to Visual Editor" : "Switch to Raw HTML"}
+                  style={{
+                    background: isShowingRawHtml(element.id) ? '#6c63ff' : 'transparent',
+                    color: 'white'
+                  }}
+                >
+                  {isShowingRawHtml(element.id) ? <FaEye /> : <FaCode />}
                 </FormatButton>
-                <FormatButton onClick={() => applyFormat('italic')} title="Italic">
-                  <FaItalic />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('underline')} title="Underline">
-                  <FaUnderline />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('insertUnorderedList')} title="Bullet List">
-                  <FaList />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('insertOrderedList')} title="Numbered List">
-                  <FaListOl />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyLeft')} title="Align Left">
-                  <FaAlignLeft />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyCenter')} title="Align Center">
-                  <FaAlignCenter />
-                </FormatButton>
-                <FormatButton onClick={() => applyFormat('justifyRight')} title="Align Right">
-                  <FaAlignRight />
-                </FormatButton>
-                <FormatButton onClick={() => {
-                  const url = prompt('Enter URL:');
-                  if (url) applyFormat('createLink', url);
-                }} title="Add Link">
-                  <FaLink />
-                </FormatButton>
-                <FormatButton onClick={() => {
-                  const color = prompt('Enter color (e.g., #ff0000):');
-                  if (color) applyFormat('foreColor', color);
-                }} title="Text Color">
-                  <FaPalette />
-                </FormatButton>
+                
+                {!isShowingRawHtml(element.id) && (
+                  <>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} title="Bold">
+                      <FaBold />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} title="Italic">
+                      <FaItalic />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} title="Underline">
+                      <FaUnderline />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={openLinkModal} title="Add Link">
+                      <FaLink />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => openColorPicker('text')} title="Text Color">
+                      <FaPalette />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyLeft')} title="Align Left">
+                      <FaAlignLeft />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyCenter')} title="Align Center">
+                      <FaAlignCenter />
+                    </FormatButton>
+                    <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyRight')} title="Align Right">
+                      <FaAlignRight />
+                    </FormatButton>
+                  </>
+                )}
               </FormattingToolbar>
             )}
-          </EditableText>
+          </div>
         )}
         {element.type === 'button' && (
           <div style={{ 
@@ -1433,41 +2181,91 @@ export default function VisualEditor({
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto'
           }}>
-            <EditableText
-              className="editable-text"
-              editing={isEditing}
-              contentEditable={true}
-              suppressContentEditableWarning={true}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-              onInput={handleInput}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isEditing) {
+            {isEditing ? (
+              <EditableText
+                className="editable-text"
+                editing={isEditing}
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onKeyDown={handleKeyDown}
+                // onBlur={handleBlur}
+                onInput={handleInput}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                style={{
+                  display: element.fullWidth ? 'block' : 'inline-block',
+                  padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: element.fullWidth ? '0' : '50px',
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  cursor: 'text',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                  minHeight: '1em',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  textAlign: 'center'
+                }}
+              >
+                {element.content}
+              </EditableText>
+            ) : (
+              <a
+                href={element.url || '#'}
+                target={element.url && element.url.startsWith('http') ? '_blank' : '_self'}
+                rel={element.url && element.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   startEditing(element.id);
-                }
-              }}
-              style={{
-                display: element.fullWidth ? 'block' : 'inline-block',
-                padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                }}
+                style={{
+                  display: element.fullWidth ? 'block' : 'inline-block',
+                  padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: element.fullWidth ? '0' : '50px',
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  textAlign: 'center'
+                }}
+                dangerouslySetInnerHTML={{ __html: element.content }}
+              />
+            )}
+            
+            {/* URL hint when selected but not editing */}
+            {isSelected && !isEditing && element.url && element.url !== '#' && (
+              <div style={{
+                position: 'absolute',
+                top: '-40px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
-                textDecoration: 'none',
-                borderRadius: element.fullWidth ? '0' : '50px',
-                fontWeight: '700',
-                fontSize: '1rem',
-                cursor: isEditing ? 'text' : 'pointer',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
-                minHeight: '1em',
-                width: element.fullWidth ? '100%' : 'auto',
-                textAlign: 'center'
-              }}
-            >
-              {element.content}
-            </EditableText>
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                whiteSpace: 'nowrap',
+                zIndex: 10,
+                maxWidth: '300px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                🔗 Links to: {element.url}
+              </div>
+            )}
           </div>
         )}
         {element.type === 'image' && (
@@ -1934,7 +2732,7 @@ export default function VisualEditor({
   };
 
   return (
-    <>
+    <div>
       {/* Keyframes for animations */}
       <SpinKeyframes />
       {/* Visual Email Canvas */}
@@ -2198,11 +2996,19 @@ export default function VisualEditor({
                   
 
                   
-                  {emailElements.map((element, index) => (
+                  {emailElements.map((element, index) => {
+                    // Helper function to strip HTML tags for text-only view
+                    const stripHtml = (html: string) => {
+                      const div = document.createElement('div');
+                      div.innerHTML = html;
+                      return div.textContent || div.innerText || '';
+                    };
+                    
+                    return (
                     <div key={element.id} style={{ marginBottom: '1rem' }}>
-                      {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{element.content}</div>}
-                      {element.type === 'text' && <div>{element.content}</div>}
-                      {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {element.content}]</div>}
+                      {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{stripHtml(element.content)}</div>}
+                      {element.type === 'text' && <div>{stripHtml(element.content)}</div>}
+                      {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {stripHtml(element.content)}]</div>}
                       {element.type === 'image' && <div style={{ fontStyle: 'italic' }}>[IMAGE: {element.src}]</div>}
                       {element.type === 'divider' && <div>{'─'.repeat(50)}</div>}
                       {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
@@ -2242,7 +3048,8 @@ export default function VisualEditor({
                       </div>
                       )}
                       </div>
-                  ))}
+                    );
+                  })}
                 </div>)
               ) : (
                 // Visual view (desktop/mobile)
@@ -2472,6 +3279,30 @@ export default function VisualEditor({
                       </div>
                     </ControlGroup>
 
+                    {/* Button Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
+                      <ControlGroup>
+                        <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <FaLink size={14} />
+                          Button URL
+                        </ControlLabel>
+                        <UrlInput
+                          type="url"
+                          placeholder="https://example.com or #anchor"
+                          value={emailElements.find(el => el.id === selectedElementId)?.url || '#'}
+                          onChange={(e) => updateElement(selectedElementId, { url: e.target.value })}
+                        />
+                        <div style={{ 
+                          fontSize: '0.8rem', 
+                          color: 'var(--text-secondary)', 
+                          opacity: 0.8,
+                          marginTop: '0.25rem'
+                        }}>
+                          🔗 Link destination when button is clicked
+                        </div>
+                      </ControlGroup>
+                    )}
+
                     {/* Brand Header Specific Controls */}
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'brand-header' && (
                       <>
@@ -2624,13 +3455,19 @@ export default function VisualEditor({
                   <PanelIcon><FaTextHeight /></PanelIcon>
                   <PanelTitle>Variables</PanelTitle>
                 </PanelHeader>
+                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(108, 99, 255, 0.1)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  💡 Select a text, header, or button element, then click a variable to insert it.
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <VariableTag>{'{{firstName}}'}</VariableTag>
-                  <VariableTag>{'{{lastName}}'}</VariableTag>
-                  <VariableTag>{'{{email}}'}</VariableTag>
-                  <VariableTag>{'{{companyName}}'}</VariableTag>
-                  <VariableTag>{'{{unsubscribeUrl}}'}</VariableTag>
-                  <VariableTag>{'{{currentDate}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{firstName}}')}>{'{{firstName}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{lastName}}')}>{'{{lastName}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{fullName}}')}>{'{{fullName}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{email}}')}>{'{{email}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{companyName}}')}>{'{{companyName}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{subscription}}')}>{'{{subscription}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{lifetimePurchase}}')}>{'{{lifetimePurchase}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{unsubscribeUrl}}')}>{'{{unsubscribeUrl}}'}</VariableTag>
+                  <VariableTag onClick={() => insertVariable('{{currentDate}}')}>{'{{currentDate}}'}</VariableTag>
                 </div>
               </SidebarPanel>
             </>
@@ -2702,6 +3539,162 @@ export default function VisualEditor({
           🎯 <strong>Email Editor:</strong> Drag handles to reorder • Rich text formatting • Image upload • Padding controls
         </span>
       </div>
-    </>
+
+      {/* Link Modal */}
+      {showLinkModal && (
+        <ModalOverlay onClick={closeLinkModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalTitle>Add Link</ModalTitle>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: 'var(--text)', 
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}>
+                Link Text (required)
+              </label>
+              <ModalInput
+                type="text"
+                placeholder="Enter the text to display (e.g., Click here)"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: 'var(--text)', 
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}>
+                URL (required)
+              </label>
+              <ModalInput
+                type="url"
+                placeholder="Enter URL (e.g., https://example.com)"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && linkText.trim() && linkUrl.trim()) {
+                    applyLink();
+                  } else if (e.key === 'Escape') {
+                    closeLinkModal();
+                  }
+                }}
+              />
+            </div>
+            <ModalButtons>
+              <ModalButton $variant="secondary" onClick={closeLinkModal}>
+                Cancel
+              </ModalButton>
+              <ModalButton 
+                $variant="primary" 
+                onClick={applyLink}
+                style={{ 
+                  opacity: (!linkText.trim() || !linkUrl.trim()) ? 0.5 : 1,
+                  cursor: (!linkText.trim() || !linkUrl.trim()) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Add Link
+              </ModalButton>
+            </ModalButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Color Picker Modal */}
+      {showColorPicker && (
+        <ModalOverlay onClick={closeColorPicker}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalTitle>
+              Choose {colorPickerType === 'text' ? 'Text' : 'Background'} Color
+            </ModalTitle>
+            <ColorPickerContainer>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: 'var(--text)', 
+                  fontSize: '0.9rem',
+                  fontWeight: '600'
+                }}>
+                  Color Picker
+                </label>
+                <ColorInputModal
+                  type="color"
+                  value={selectedColor}
+                  onChange={(e) => setSelectedColor(e.target.value)}
+                />
+              </div>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '1rem', 
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  backgroundColor: selectedColor,
+                  borderRadius: '8px',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                }} />
+                <div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text)', fontWeight: '600' }}>
+                    Selected Color
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                    {selectedColor.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: 'var(--text)', 
+                  fontSize: '0.9rem',
+                  fontWeight: '600'
+                }}>
+                  Quick Colors
+                </label>
+                <ColorPresets>
+                  {colorPresets.map((color) => (
+                    <ColorPreset
+                      key={color}
+                      style={{ 
+                        backgroundColor: color,
+                        border: selectedColor === color ? '3px solid var(--primary)' : '2px solid rgba(255, 255, 255, 0.2)'
+                      }}
+                      onClick={() => setSelectedColor(color)}
+                      title={color}
+                    />
+                  ))}
+                </ColorPresets>
+              </div>
+            </ColorPickerContainer>
+            <ModalButtons>
+              <ModalButton $variant="secondary" onClick={closeColorPicker}>
+                Cancel
+              </ModalButton>
+              <ModalButton $variant="primary" onClick={applyColor}>
+                Apply {colorPickerType === 'text' ? 'Text' : 'Background'} Color
+              </ModalButton>
+            </ModalButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </div>
   );
 } 

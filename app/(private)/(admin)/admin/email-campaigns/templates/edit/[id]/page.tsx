@@ -10,12 +10,16 @@ import {
   FaChevronRight,
   FaInfoCircle,
   FaEdit,
+  FaEye,
   FaSave,
   FaUsers,
   FaPalette,
   FaSearch,
   FaTimes,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaExpandArrowsAlt,
+  FaDesktop,
+  FaMobileAlt
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
@@ -617,6 +621,51 @@ const StepDescription = styled.p`
   font-size: 1.1rem;
 `;
 
+// Preview-related styled components
+const PreviewSection = styled.div`
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.5rem;
+`;
+
+const PreviewTitle = styled.h3`
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  
+  svg:first-child {
+    color: var(--primary);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+`;
+
+const ExpandPreviewButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+`;
+
 interface TemplateData {
   id: string;
   name: string;
@@ -640,7 +689,111 @@ interface Audience {
   type: 'static' | 'dynamic';
 }
 
-
+// HTML parser to convert saved HTML content back to visual editor elements
+const parseHtmlToElements = (htmlContent: string): any[] => {
+  if (!htmlContent) return [];
+  
+  const elements: any[] = [];
+  
+  // Create a temporary DOM element to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+  
+  // Process each child element
+  Array.from(tempDiv.children).forEach((element, index) => {
+    const id = `parsed_${Date.now()}_${index}`;
+    
+    switch (element.tagName.toLowerCase()) {
+      case 'h1':
+        elements.push({
+          id,
+          type: 'header',
+          content: element.innerHTML || '',
+          fontSize: '32px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          fullWidth: true
+        });
+        break;
+        
+      case 'p':
+        elements.push({
+          id,
+          type: 'text',
+          content: element.innerHTML || '',
+          fontSize: '16px',
+          textAlign: 'left'
+        });
+        break;
+        
+      case 'a':
+        const aElement = element as HTMLAnchorElement;
+        elements.push({
+          id,
+          type: 'button',
+          content: element.innerHTML || '',
+          url: aElement.href || '#',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        });
+        break;
+        
+      case 'img':
+        const imgElement = element as HTMLImageElement;
+        elements.push({
+          id,
+          type: 'image',
+          src: imgElement.src || '',
+          alt: imgElement.alt || ''
+        });
+        break;
+        
+      case 'hr':
+        elements.push({
+          id,
+          type: 'divider'
+        });
+        break;
+        
+      case 'div':
+        // Check if it's a spacer (div with height style)
+        const style = (element as HTMLElement).style;
+        if (style.height) {
+          elements.push({
+            id,
+            type: 'spacer',
+            height: style.height
+          });
+        } else {
+          // Generic div content - treat as text
+          elements.push({
+            id,
+            type: 'text',
+            content: element.innerHTML || '',
+            fontSize: '16px',
+            textAlign: 'left'
+          });
+        }
+        break;
+        
+      default:
+        // For any other elements, extract HTML content
+        if (element.innerHTML && element.innerHTML.trim()) {
+          elements.push({
+            id,
+            type: 'text',
+            content: element.innerHTML,
+            fontSize: '16px',
+            textAlign: 'left'
+          });
+        }
+        break;
+    }
+  });
+  
+  return elements;
+};
 
 function EditTemplatePage() {
   const { user } = useAuth();
@@ -680,6 +833,10 @@ function EditTemplatePage() {
     { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' },
           { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=Welcome+to+Cymasphere' }
   ]);
+
+  // Preview state variables
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -689,6 +846,25 @@ function EditTemplatePage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Handle ESC key for closing preview modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showPreviewModal) {
+        setShowPreviewModal(false);
+      }
+    };
+
+    if (showPreviewModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset'; // Restore scrolling
+    };
+  }, [showPreviewModal]);
 
   // Load audiences on component mount (must be before early returns)
   useEffect(() => {
@@ -739,7 +915,6 @@ function EditTemplatePage() {
           console.log('Loaded template data:', template);
           console.log('Template audiences:', template.audiences);
           console.log('Template excluded audiences:', template.excludedAudiences);
-          console.log('Current audiences state:', audiences);
           
           // Update template data state
           setTemplateData({
@@ -757,33 +932,28 @@ function EditTemplatePage() {
             excludedAudienceIds: template.excludedAudienceIds || []
           });
 
-          // If template has audience data, merge it with the existing audiences list
-          if (template.audiences || template.excludedAudiences) {
-            const templateAudiences = [
-              ...(template.audiences || []),
-              ...(template.excludedAudiences || [])
-            ];
-            
-            // Merge with existing audiences, avoiding duplicates
-            setAudiences(prevAudiences => {
-              const existingIds = new Set(prevAudiences.map(a => a.id));
-              const newAudiences = templateAudiences.filter(a => !existingIds.has(a.id));
-              return [...prevAudiences, ...newAudiences];
-            });
-          }
+          // Template audience IDs are already stored in templateData.audienceIds and templateData.excludedAudienceIds
+          // No need to merge audience objects here since audiences are loaded separately
 
           // Parse HTML content back to email elements if available
           if (template.htmlContent || template.html_content) {
             const htmlContent = template.htmlContent || template.html_content;
-            // For now, set a basic text element with the HTML content
-            // TODO: Parse HTML back to structured elements
-            setEmailElements([
-              { 
-                id: 'loaded_content_' + Date.now(), 
-                type: 'text', 
-                content: htmlContent.replace(/<[^>]*>/g, '') // Strip HTML tags for now
-              }
-            ]);
+            
+            // Check if template has visual_elements in variables (new format)
+            if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {
+              console.log('🎨 Loading template with visual elements:', template.variables.visual_elements.length);
+              setEmailElements(template.variables.visual_elements);
+            } else {
+              // Fallback: Parse HTML content back to structured elements
+              const parsedElements = parseHtmlToElements(htmlContent);
+              setEmailElements(parsedElements.length > 0 ? parsedElements : [
+                { 
+                  id: 'loaded_content_' + Date.now(), 
+                  type: 'text', 
+                  content: htmlContent.replace(/<[^>]*>/g, '') // Fallback for unparseable content
+                }
+              ]);
+            }
           }
           
         } else {
@@ -814,9 +984,186 @@ function EditTemplatePage() {
     return <LoadingComponent text="Loading template..." />;
   }
 
+  // Generate HTML preview from email elements
+  const generatePreviewHtml = () => {
+    const elementHtml = emailElements.map(element => {
+      // Type-safe property access
+      const fullWidth = (element as any).fullWidth || false;
+      const elementUrl = (element as any).url || '#';
+      const elementSrc = (element as any).src || 'https://via.placeholder.com/600x300';
+      const elementAlt = (element as any).alt || 'Email Image';
+      const elementHeight = (element as any).height || '20px';
+      
+      // Determine container styling based on fullWidth
+      const containerStyle = fullWidth 
+        ? 'margin: 0; padding: 0;' 
+        : 'margin: 0 auto; max-width: 100%;';
+      
+      const wrapperClass = fullWidth ? 'full-width' : 'constrained-width';
+      
+      switch (element.type) {
+        case 'header':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; ${fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</h1></div>`;
+        
+        case 'text':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem; ${fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</p></div>`;
+        
+        case 'button':
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0;"><a href="${elementUrl}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+        
+        case 'image':
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${fullWidth ? 'padding: 0;' : ''}"><img src="${elementSrc}" alt="${elementAlt}" style="max-width: 100%; height: auto; border-radius: ${fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
+        
+        case 'divider':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem ${fullWidth ? '0' : '0'}; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
+        
+        case 'spacer':
+          return `<div class="${wrapperClass}" style="${containerStyle} height: ${elementHeight};"></div>`;
+        
+        default:
+          return `<div class="${wrapperClass}" style="${containerStyle}">${element.content || ''}</div>`;
+      }
+    }).join('');
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${templateData.subject || 'Template Preview'}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo .cyma {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            color: #666666;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #6c63ff;
+            text-decoration: none;
+        }
+        .full-width {
+            width: 100%;
+            margin-left: calc(-30px);
+            margin-right: calc(-30px);
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+        .constrained-width {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 15px;
+            }
+            .logo {
+                font-size: 1.2rem;
+                letter-spacing: 1px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .footer {
+                padding: 15px;
+                font-size: 11px;
+            }
+            h1 {
+                font-size: 2rem !important;
+            }
+            p {
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .content {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8rem !important;
+            }
+            p {
+                font-size: 0.85rem !important;
+            }
+            .logo {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="cyma">CYMA</span><span>SPHERE</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            ${elementHtml}
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
+            <p>
+                <a href="#">Unsubscribe</a> | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+  };
+
   const steps = [
     { number: 1, title: "Template Setup", icon: FaInfoCircle },
-    { number: 2, title: "Content", icon: FaEdit }
+    { number: 2, title: "Content", icon: FaEdit },
+    { number: 3, title: "Preview", icon: FaEye }
   ];
 
   const nextStep = () => {
@@ -886,7 +1233,9 @@ function EditTemplatePage() {
         status: templateData.status,
         audienceIds: templateData.audienceIds,
         excludedAudienceIds: templateData.excludedAudienceIds,
-        variables: {} // Could extract variables from content in the future
+        variables: { 
+          visual_elements: emailElements // Store visual elements for editor persistence
+        }
       };
 
       console.log('🚀 Sending template payload:', templatePayload);
@@ -1019,8 +1368,6 @@ function EditTemplatePage() {
       audience.type.toLowerCase().includes(searchTerm)
     );
   };
-
-
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1304,6 +1651,137 @@ function EditTemplatePage() {
           </StepContent>
         );
 
+      case 3:
+        return (
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
+            <StepTitle>
+              <FaEye />
+              Preview Your Template
+            </StepTitle>
+            <StepDescription>
+              Review how your template will look when sent to subscribers.
+            </StepDescription>
+            
+            {/* Template Summary */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaInfoCircle style={{ color: 'var(--primary)' }} />
+                Template Summary
+              </h3>
+              <FormGrid>
+                <div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px' }}>
+                    <p><strong>Name:</strong> {templateData.name || "Untitled Template"}</p>
+                    <p><strong>Subject:</strong> {templateData.subject || "No subject"}</p>
+                    <p><strong>Type:</strong> {templateData.type || "Custom"}</p>
+                    <p><strong>Status:</strong> {templateData.status === 'active' ? '🟢 Active' : '🟡 Draft'}</p>
+                    <p><strong>Default Audiences:</strong> {
+                      templateData.audienceIds.length === 0 
+                        ? "No default audiences selected" 
+                        : templateData.audienceIds.map(id => {
+                            const audience = audiences.find(a => a.id === id);
+                            return audience ? audience.name : 'Unknown';
+                          }).join(', ')
+                    }</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <PreviewSection>
+                    <PreviewTitle>
+                      <FaEye />
+                      Template Preview
+                      <ExpandPreviewButton 
+                        onClick={() => setShowPreviewModal(true)}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        <FaExpandArrowsAlt />
+                        Full Screen Preview
+                      </ExpandPreviewButton>
+                    </PreviewTitle>
+                    <div style={{ 
+                      position: 'relative',
+                      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      overflow: 'hidden'
+                    }}>
+                      {/* Email preview with subtle shadow */}
+                      <div style={{
+                        background: 'white',
+                        borderRadius: '8px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                        overflow: 'hidden',
+                        maxHeight: '280px',
+                        position: 'relative'
+                      }}>
+                        <iframe
+                          srcDoc={generatePreviewHtml()}
+                          style={{
+                            width: '100%',
+                            height: '380px',
+                            border: 'none',
+                            transform: 'scale(0.7)',
+                            transformOrigin: 'top left',
+                            pointerEvents: 'none'
+                          }}
+                          title="Template Preview"
+                        />
+                        
+                        {/* Fade overlay to indicate more content */}
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: '60px',
+                          background: 'linear-gradient(transparent, rgba(255, 255, 255, 0.95))',
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          justifyContent: 'center',
+                          paddingBottom: '0.75rem'
+                        }}>
+                          <div style={{
+                            background: 'rgba(0, 0, 0, 0.1)',
+                            color: '#666',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '16px',
+                            fontSize: '0.75rem',
+                            fontWeight: '500',
+                            backdropFilter: 'blur(10px)'
+                          }}>
+                            Scroll to see more content
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview info */}
+                      <div style={{
+                        marginTop: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '1rem',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <FaDesktop style={{ color: 'var(--primary)' }} />
+                          Desktop View
+                        </span>
+                        <span>•</span>
+                        <span>70% Scale</span>
+                      </div>
+                    </div>
+                  </PreviewSection>
+                </div>
+              </FormGrid>
+            </div>
+          </StepContent>
+        );
+
       default:
         return null;
     }
@@ -1389,10 +1867,19 @@ function EditTemplatePage() {
             )}
             
             {currentStep < steps.length ? (
-              <NavButton variant="primary" onClick={nextStep}>
-                Next
-                <FaArrowRight />
-              </NavButton>
+              <>
+                {/* Add Save button for Design step (step 2) */}
+                {currentStep === 2 && (
+                  <NavButton onClick={handleSave} disabled={isSaving}>
+                    <FaSave />
+                    {isSaving ? 'Saving...' : 'Save Template'}
+                  </NavButton>
+                )}
+                <NavButton variant="primary" onClick={nextStep}>
+                  Next
+                  <FaArrowRight />
+                </NavButton>
+              </>
             ) : (
               <NavButton variant="primary" onClick={handleSave} disabled={isSaving}>
                 <FaSave />
@@ -1424,6 +1911,203 @@ function EditTemplatePage() {
               transition={{ duration: 0.3 }}
             >
               {savingMessage}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Full Screen Preview Modal */}
+        <AnimatePresence>
+          {showPreviewModal && (
+            <motion.div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: '#0a0a0a',
+                display: 'flex',
+                flexDirection: 'column',
+                zIndex: 10000,
+                padding: 0
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPreviewModal(false)}
+            >
+              <motion.div
+                style={{
+                  background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden',
+                  border: 'none',
+                  boxShadow: 'none',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '1.5rem 2rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%)',
+                  backdropFilter: 'blur(20px)',
+                  flexShrink: 0
+                }}>
+                  <h3 style={{
+                    color: '#ffffff',
+                    margin: 0,
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
+                    📧 {templateData.subject || 'Template Preview'}
+                  </h3>
+                  
+                  {/* Device Controls */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      padding: '0.25rem'
+                    }}>
+                      <button
+                        onClick={() => setPreviewDevice('desktop')}
+                        style={{
+                          background: previewDevice === 'desktop' ? 'var(--primary)' : 'transparent',
+                          border: 'none',
+                          color: previewDevice === 'desktop' ? 'white' : 'var(--text-secondary)',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <FaDesktop />
+                        Desktop
+                      </button>
+                      <button
+                        onClick={() => setPreviewDevice('mobile')}
+                        style={{
+                          background: previewDevice === 'mobile' ? 'var(--primary)' : 'transparent',
+                          border: 'none',
+                          color: previewDevice === 'mobile' ? 'white' : 'var(--text-secondary)',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <FaMobileAlt />
+                        Mobile
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={() => setShowPreviewModal(false)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#ffffff',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        transition: 'all 0.3s ease',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                
+                                {/* Preview Body */}
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  overflow: 'auto',
+                  padding: '2rem',
+                  background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)'
+                }}>
+                  <div style={{
+                    width: previewDevice === 'mobile' ? '375px' : '600px',
+                    maxWidth: '100%',
+                    transition: 'all 0.3s ease',
+                    paddingBottom: '2rem' // Extra padding for better scrolling
+                  }}>
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      overflow: 'visible',
+                      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <iframe
+                        srcDoc={generatePreviewHtml()}
+                        style={{
+                          width: '100%',
+                          height: '800px', // Fixed height that allows for longer content
+                          border: 'none',
+                          display: 'block'
+                        }}
+                        scrolling="yes"
+                        title="Full Template Preview"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Info */}
+                <div style={{
+                  padding: '1rem 2rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.9rem'
+                  }}>
+                    Preview Mode: {previewDevice === 'mobile' ? '📱 Mobile (375px)' : '🖥️ Desktop (600px)'}
+                  </div>
+                  <div style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.9rem'
+                  }}>
+                    Press ESC or click outside to close
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
