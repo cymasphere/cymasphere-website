@@ -538,10 +538,10 @@ const VariableTag = styled.div`
 // Modal components
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
@@ -615,7 +615,7 @@ const ColorInputModal = styled.input`
     border: none;
     border-radius: 8px;
   }
-  
+
   &:hover {
     border-color: var(--primary);
     transform: scale(1.02);
@@ -667,7 +667,7 @@ const ModalButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   ` : `
     background: rgba(255, 255, 255, 0.1);
     color: var(--text);
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.2);
     }
@@ -912,7 +912,7 @@ export default function VisualEditor({
           break;
         case 'createLink':
           if (value) {
-            document.execCommand(command, false, value);
+    document.execCommand(command, false, value);
           }
           break;
         case 'foreColor':
@@ -1005,7 +1005,23 @@ export default function VisualEditor({
   };
 
   const applyLink = () => {
-    console.log('🔗 Applying link:', { linkUrl, linkText, editingElement, selectionInfo });
+    console.log('🔗 Applying link:', { linkUrl, linkText, editingElement, selectionInfo, selectedElementId });
+    
+    // Check if this is for a button element (when not editing but selected)
+    if (!editingElement && selectedElementId) {
+      const selectedElement = emailElements.find(el => el.id === selectedElementId);
+      if (selectedElement?.type === 'button') {
+        if (!linkUrl.trim()) {
+          console.log('❌ Missing URL for button');
+          return;
+        }
+        // Update button URL directly
+        updateElement(selectedElementId, { url: linkUrl.trim() });
+        console.log('✅ Button URL updated');
+        closeLinkModal();
+        return;
+      }
+    }
     
     if (!linkUrl.trim() || !linkText.trim()) {
       console.log('❌ Missing URL or text');
@@ -1557,7 +1573,7 @@ export default function VisualEditor({
     // Escape key - deselect element and stop editing
     if (e.key === 'Escape') {
       e.preventDefault();
-      setSelectedElementId(null);
+    setSelectedElementId(null);
       setEditingElement(null);
     }
   }, [selectedElementId, editingElement]);
@@ -1768,9 +1784,9 @@ export default function VisualEditor({
         // Allow Enter to create new lines (don't prevent default)
         // Only Shift+Enter or Escape will exit editing mode
         if (e.shiftKey) {
-          e.preventDefault();
+        e.preventDefault();
           saveAndStopEditing();
-        }
+      }
         // Regular Enter creates a new line (browser default behavior)
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -1880,8 +1896,8 @@ export default function VisualEditor({
       }
       
       // NEVER start editing directly - only Edit button should do that
-      e.stopPropagation();
-      selectElement(element.id);
+        e.stopPropagation();
+        selectElement(element.id);
     };
 
 
@@ -1924,22 +1940,22 @@ export default function VisualEditor({
                 e.stopPropagation(); 
                 startEditing(element.id); 
               }} title="Edit">
-                <FaEdit size={12} />
-              </ElementControl>
+            <FaEdit size={12} />
+          </ElementControl>
               <ElementControl onClick={(e) => { 
                 console.log('🔥 DUPLICATE BUTTON CLICKED for element:', element.id);
                 e.stopPropagation(); 
                 duplicateElement(element.id); 
               }} title="Duplicate">
-                <FaCopy size={12} />
-              </ElementControl>
+            <FaCopy size={12} />
+          </ElementControl>
               <ElementControl onClick={(e) => { 
                 console.log('🔥 DELETE BUTTON CLICKED for element:', element.id);
                 e.stopPropagation(); 
                 removeElement(element.id); 
               }} title="Delete">
-                <FaTrash size={12} />
-              </ElementControl>
+            <FaTrash size={12} />
+          </ElementControl>
             </>
           )}
         </div>
@@ -1981,38 +1997,38 @@ export default function VisualEditor({
                 }}
               />
             ) : (
-              <EditableText
-                className="editable-text"
-                editing={isEditing}
+          <EditableText
+            className="editable-text"
+            editing={isEditing}
                 contentEditable={isEditing}
-                suppressContentEditableWarning={true}
-                onKeyDown={handleKeyDown}
+            suppressContentEditableWarning={true}
+            onKeyDown={handleKeyDown}
                 // onBlur={handleBlur}
-                onInput={handleInput}
-                onMouseUp={isEditing ? handleTextSelect : undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
+            onInput={handleInput}
+            onMouseUp={isEditing ? handleTextSelect : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
                   // Only select element if NOT in editing mode
-                  if (!isEditing) {
+              if (!isEditing) {
                     selectElement(element.id);
-                  }
-                }}
+              }
+            }}
                 dangerouslySetInnerHTML={!isEditing ? { __html: element.content || 'Enter header text...' } : undefined}
                 data-element-id={element.id}
-                style={{
+            style={{
                   fontSize: element.fontSize || '28px',
-                  fontWeight: element.fontWeight || 'bold',
-                  fontStyle: element.fontStyle || 'normal',
-                  textDecoration: element.textDecoration || 'none',
+              fontWeight: element.fontWeight || 'bold',
+              fontStyle: element.fontStyle || 'normal',
+              textDecoration: element.textDecoration || 'none',
                   lineHeight: '1.2',
                   color: element.textColor || '#333',
-                  margin: 0,
-                  position: 'relative',
+              margin: 0,
+              position: 'relative',
                   cursor: isEditing ? 'text' : 'default',
-                  minHeight: '1em',
-                  width: element.fullWidth ? '100%' : 'auto',
-                  background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-                  padding: element.fullWidth ? '0' : '0',
+              minHeight: '1em',
+              width: element.fullWidth ? '100%' : 'auto',
+              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+              padding: element.fullWidth ? '0' : '0',
                   borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
                   outline: 'none'
@@ -2039,14 +2055,14 @@ export default function VisualEditor({
                 {!isShowingRawHtml(element.id) && (
                   <>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} title="Bold">
-                      <FaBold />
-                    </FormatButton>
+                  <FaBold />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} title="Italic">
-                      <FaItalic />
-                    </FormatButton>
+                  <FaItalic />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} title="Underline">
-                      <FaUnderline />
-                    </FormatButton>
+                  <FaUnderline />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={openLinkModal} title="Add Link">
                       <FaLink />
                     </FormatButton>
@@ -2054,14 +2070,14 @@ export default function VisualEditor({
                       <FaPalette />
                     </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyLeft')} title="Align Left">
-                      <FaAlignLeft />
-                    </FormatButton>
+                  <FaAlignLeft />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyCenter')} title="Align Center">
-                      <FaAlignCenter />
-                    </FormatButton>
+                  <FaAlignCenter />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyRight')} title="Align Right">
-                      <FaAlignRight />
-                    </FormatButton>
+                  <FaAlignRight />
+                </FormatButton>
                   </>
                 )}
               </FormattingToolbar>
@@ -2088,39 +2104,39 @@ export default function VisualEditor({
                 }}
               />
             ) : (
-              <EditableText
-                className="editable-text"
-                editing={isEditing}
+          <EditableText
+            className="editable-text"
+            editing={isEditing}
                 contentEditable={isEditing}
-                suppressContentEditableWarning={true}
-                onKeyDown={handleKeyDown}
+            suppressContentEditableWarning={true}
+            onKeyDown={handleKeyDown}
                 // onBlur={handleBlur}
-                onInput={handleInput}
-                onMouseUp={isEditing ? handleTextSelect : undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
+            onInput={handleInput}
+            onMouseUp={isEditing ? handleTextSelect : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
                   // Only select element if NOT in editing mode
-                  if (!isEditing) {
+              if (!isEditing) {
                     selectElement(element.id);
-                  }
-                }}
+              }
+            }}
                 dangerouslySetInnerHTML={!isEditing ? { __html: element.content || 'Enter your text...' } : undefined}
                 data-element-id={element.id}
-                style={{
-                  fontSize: element.fontSize || '16px',
-                  fontWeight: element.fontWeight || 'normal',
-                  fontStyle: element.fontStyle || 'normal',
-                  textDecoration: element.textDecoration || 'none',
-                  lineHeight: '1.6',
-                  color: '#333',
-                  margin: 0,
-                  position: 'relative',
+            style={{
+              fontSize: element.fontSize || '16px',
+              fontWeight: element.fontWeight || 'normal',
+              fontStyle: element.fontStyle || 'normal',
+              textDecoration: element.textDecoration || 'none',
+              lineHeight: '1.6',
+              color: '#333',
+              margin: 0,
+              position: 'relative',
                   cursor: isEditing ? 'text' : 'default',
-                  minHeight: '1em',
-                  width: element.fullWidth ? '100%' : 'auto',
-                  background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-                  padding: element.fullWidth ? '0' : '0',
-                  borderRadius: element.fullWidth ? '0' : '0',
+              minHeight: '1em',
+              width: element.fullWidth ? '100%' : 'auto',
+              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+              padding: element.fullWidth ? '0' : '0',
+              borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
                   outline: 'none'
                 }}
@@ -2146,29 +2162,29 @@ export default function VisualEditor({
                 {!isShowingRawHtml(element.id) && (
                   <>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} title="Bold">
-                      <FaBold />
-                    </FormatButton>
+                  <FaBold />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} title="Italic">
-                      <FaItalic />
-                    </FormatButton>
+                  <FaItalic />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} title="Underline">
-                      <FaUnderline />
-                    </FormatButton>
+                  <FaUnderline />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={openLinkModal} title="Add Link">
                       <FaLink />
-                    </FormatButton>
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => openColorPicker('text')} title="Text Color">
                       <FaPalette />
-                    </FormatButton>
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyLeft')} title="Align Left">
-                      <FaAlignLeft />
-                    </FormatButton>
+                  <FaAlignLeft />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyCenter')} title="Align Center">
-                      <FaAlignCenter />
-                    </FormatButton>
+                  <FaAlignCenter />
+                </FormatButton>
                     <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyRight')} title="Align Right">
-                      <FaAlignRight />
-                    </FormatButton>
+                  <FaAlignRight />
+                </FormatButton>
                   </>
                 )}
               </FormattingToolbar>
@@ -2179,41 +2195,89 @@ export default function VisualEditor({
           <div style={{ 
             textAlign: element.fullWidth ? 'left' : 'center', 
             margin: 0,
-            width: element.fullWidth ? '100%' : 'auto'
+            width: element.fullWidth ? '100%' : 'auto',
+            position: 'relative'
           }}>
+            {/* ✨ NEW: Formatting toolbar for button text - ABOVE the button */}
+            {isEditing && (
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                <FormattingToolbar className="show formatting-toolbar">
+                  <FormatButton 
+                    data-toolbar-button="true"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => toggleRawHtml(element.id)} 
+                    title={isShowingRawHtml(element.id) ? "Switch to Visual Editor" : "Switch to Raw HTML"}
+                    style={{
+                      background: isShowingRawHtml(element.id) ? '#6c63ff' : 'transparent',
+                      color: 'white'
+                    }}
+                  >
+                    {isShowingRawHtml(element.id) ? <FaEye /> : <FaCode />}
+                  </FormatButton>
+                  
+                  {!isShowingRawHtml(element.id) && (
+                    <>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} title="Bold">
+                        <FaBold />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} title="Italic">
+                        <FaItalic />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} title="Underline">
+                        <FaUnderline />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => openColorPicker('text')} title="Text Color">
+                        <FaPalette />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyLeft')} title="Align Left">
+                        <FaAlignLeft />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyCenter')} title="Align Center">
+                        <FaAlignCenter />
+                      </FormatButton>
+                      <FormatButton data-toolbar-button="true" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('justifyRight')} title="Align Right">
+                        <FaAlignRight />
+                      </FormatButton>
+                    </>
+                  )}
+                </FormattingToolbar>
+              </div>
+            )}
+            
             {isEditing ? (
-              <EditableText
-                className="editable-text"
-                editing={isEditing}
-                contentEditable={true}
-                suppressContentEditableWarning={true}
-                onKeyDown={handleKeyDown}
+            <EditableText
+              className="editable-text"
+              editing={isEditing}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onKeyDown={handleKeyDown}
                 // onBlur={handleBlur}
-                onInput={handleInput}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                style={{
-                  display: element.fullWidth ? 'block' : 'inline-block',
-                  padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: element.fullWidth ? '0' : '50px',
-                  fontWeight: '700',
-                  fontSize: '1rem',
+              onInput={handleInput}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              data-element-id={element.id}
+              style={{
+                display: element.fullWidth ? 'block' : 'inline-block',
+                padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: element.fullWidth ? '0' : '50px',
+                fontWeight: '700',
+                fontSize: '1rem',
                   cursor: 'text',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
-                  minHeight: '1em',
-                  width: element.fullWidth ? '100%' : 'auto',
-                  textAlign: 'center'
-                }}
-              >
-                {element.content}
-              </EditableText>
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                minHeight: '1em',
+                width: element.fullWidth ? '100%' : 'auto',
+                textAlign: 'center'
+              }}
+            >
+              {element.content}
+            </EditableText>
             ) : (
               <a
                 href={element.url || '#'}
@@ -2266,6 +2330,54 @@ export default function VisualEditor({
                 🔗 Links to: {element.url}
               </div>
             )}
+            
+            {/* ✨ Link icon next to button when editing */}
+            {isEditing && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                right: '-60px',
+                transform: 'translateY(-50%)',
+                zIndex: 20
+              }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLinkUrl(element.url || '');
+                    setShowLinkModal(true);
+                  }}
+                  style={{
+                    background: 'var(--primary)',
+                    border: '2px solid white',
+                    color: 'white',
+                    padding: '0.75rem',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(108, 99, 255, 0.5)',
+                    transition: 'all 0.3s ease',
+                    width: '44px',
+                    height: '44px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--accent)';
+                    e.currentTarget.style.transform = 'scale(1.15)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(108, 99, 255, 0.7)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--primary)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.5)';
+                  }}
+                  title="Edit Button URL"
+                >
+                  <FaLink size={16} />
+                </button>
+              </div>
+            )}
+
           </div>
         )}
         {element.type === 'image' && (
@@ -3544,25 +3656,34 @@ export default function VisualEditor({
       {showLinkModal && (
         <ModalOverlay onClick={closeLinkModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalTitle>Add Link</ModalTitle>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                color: 'var(--text)', 
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}>
-                Link Text (required)
-              </label>
-              <ModalInput
-                type="text"
-                placeholder="Enter the text to display (e.g., Click here)"
-                value={linkText}
-                onChange={(e) => setLinkText(e.target.value)}
-                autoFocus
-              />
-            </div>
+            <ModalTitle>
+              {!editingElement && selectedElementId && emailElements.find(el => el.id === selectedElementId)?.type === 'button' 
+                ? 'Edit Button URL' 
+                : 'Add Link'}
+            </ModalTitle>
+            
+            {/* Show text input only for inline links, not for button URLs */}
+            {editingElement && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: 'var(--text)', 
+                  fontSize: '0.9rem',
+                  fontWeight: '600'
+                }}>
+                  Link Text (required)
+                </label>
+                <ModalInput
+                  type="text"
+                  placeholder="Enter the text to display (e.g., Click here)"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+            
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ 
                 display: 'block', 
@@ -3578,15 +3699,24 @@ export default function VisualEditor({
                 placeholder="Enter URL (e.g., https://example.com)"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
+                autoFocus={!editingElement}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && linkText.trim() && linkUrl.trim()) {
-                    applyLink();
+                  if (e.key === 'Enter') {
+                    // For buttons, only URL is required
+                    if (!editingElement && selectedElementId && linkUrl.trim()) {
+                      applyLink();
+                    }
+                    // For text links, both text and URL are required
+                    else if (editingElement && linkText.trim() && linkUrl.trim()) {
+                      applyLink();
+                    }
                   } else if (e.key === 'Escape') {
                     closeLinkModal();
                   }
                 }}
               />
             </div>
+            
             <ModalButtons>
               <ModalButton $variant="secondary" onClick={closeLinkModal}>
                 Cancel
@@ -3595,11 +3725,27 @@ export default function VisualEditor({
                 $variant="primary" 
                 onClick={applyLink}
                 style={{ 
-                  opacity: (!linkText.trim() || !linkUrl.trim()) ? 0.5 : 1,
-                  cursor: (!linkText.trim() || !linkUrl.trim()) ? 'not-allowed' : 'pointer'
+                  opacity: (() => {
+                    // For buttons, only URL is required
+                    if (!editingElement && selectedElementId) {
+                      return linkUrl.trim() ? 1 : 0.5;
+                    }
+                    // For text links, both text and URL are required
+                    return (linkText.trim() && linkUrl.trim()) ? 1 : 0.5;
+                  })(),
+                  cursor: (() => {
+                    // For buttons, only URL is required
+                    if (!editingElement && selectedElementId) {
+                      return linkUrl.trim() ? 'pointer' : 'not-allowed';
+                    }
+                    // For text links, both text and URL are required
+                    return (linkText.trim() && linkUrl.trim()) ? 'pointer' : 'not-allowed';
+                  })()
                 }}
               >
-                Add Link
+                {!editingElement && selectedElementId && emailElements.find(el => el.id === selectedElementId)?.type === 'button' 
+                  ? 'Update Button URL' 
+                  : 'Add Link'}
               </ModalButton>
             </ModalButtons>
           </ModalContent>
