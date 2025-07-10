@@ -318,28 +318,33 @@ function ResetPassword() {
     setLoading(true);
 
     try {
+      console.log("Attempting to reset password for email:", email);
+
       // Send password reset email
       const result = await resetPassword(email);
+
+      console.log("Reset password result:", result);
 
       // Check if there was an error
       if (result.error) {
         console.error("Password reset error:", result.error);
 
         // Handle specific errors
-        if (result.error.code === "user_not_found") {
+        if (result.error.message?.includes("User not found")) {
           setError(
             t(
               "resetPassword.errors.userNotFound",
               "No user found with this email address"
             )
           );
-        } else if (result.error.code === "email_address_invalid") {
+        } else if (result.error.message?.includes("Invalid email")) {
           setError(
             t("resetPassword.errors.invalidEmail", "Invalid email address")
           );
         } else if (
-          result.error.message.includes("email rate limit exceeded") ||
-          result.error.message.includes("rate limit")
+          result.error.message?.includes("email rate limit exceeded") ||
+          result.error.message?.includes("rate limit") ||
+          result.error.message?.includes("Email rate limit exceeded")
         ) {
           setError(
             t(
@@ -349,20 +354,23 @@ function ResetPassword() {
           );
         } else {
           setError(
-            t(
-              "resetPassword.errors.generic",
-              "Failed to send password reset email. Please try again."
-            )
+            result.error.message ||
+              t(
+                "resetPassword.errors.generic",
+                "Failed to send password reset email. Please try again."
+              )
           );
         }
       } else {
         // Success - no error returned
+        console.log("Password reset email sent successfully");
         setMessage(
           t(
             "resetPassword.successMessage",
             "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder."
           )
         );
+        setEmail(""); // Clear the email field on success
       }
     } catch (error) {
       console.error("Unexpected error during password reset:", error);

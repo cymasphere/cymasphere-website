@@ -461,6 +461,31 @@
       "generic": "Failed to send password reset email. Please try again."
     }
   },
+  "createPassword": {
+    "title": "Set New Password",
+    "description": "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere.",
+    "backToLogin": "Back to Login",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your new password",
+    "setPassword": "Set New Password",
+    "updating": "Updating...",
+    "success": "Your password has been successfully reset!",
+    "proceedToLogin": "Proceed to Login",
+    "rememberPassword": "Remember your password?",
+    "login": "Log in",
+    "requestNewLink": "Please request a new password reset link.",
+    "requestHere": "Click here to request one.",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "invalidSession": "Invalid or expired session. Please request a new password reset.",
+      "generic": "An unexpected error occurred. Please try again.",
+      "linkExpired": "The password reset link has expired. Please request a new one.",
+      "accessDenied": "The password reset link is invalid or has expired. Please request a new one.",
+      "invalidLink": "The password reset link is invalid. Please request a new one."
+    }
+  },
   "dashboard": {
     "layout": {
       "dashboard": "Dashboard",

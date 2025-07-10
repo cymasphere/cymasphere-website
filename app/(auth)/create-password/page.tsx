@@ -1,11 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import EnergyBall from "@/components/common/EnergyBall";
+import { useTranslation } from "react-i18next";
+import useLanguage from "@/hooks/useLanguage";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -304,6 +308,7 @@ const CustomLogo = () => {
 };
 
 function CreatePassword() {
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -311,7 +316,52 @@ function CreatePassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [urlError, setUrlError] = useState("");
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const { supabase } = useAuth();
+
+  // Initialize translations
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+
+  // Check for URL error parameters on component mount
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    const errorCode = searchParams.get("error_code");
+    const errorDescription = searchParams.get("error_description");
+
+    if (errorParam) {
+      let errorMessage = "";
+
+      if (errorCode === "otp_expired") {
+        errorMessage = t(
+          "createPassword.errors.linkExpired",
+          "The password reset link has expired. Please request a new one."
+        );
+      } else if (errorCode === "access_denied") {
+        errorMessage = t(
+          "createPassword.errors.accessDenied",
+          "The password reset link is invalid or has expired. Please request a new one."
+        );
+      } else if (errorDescription) {
+        errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, " "));
+      } else {
+        errorMessage = t(
+          "createPassword.errors.invalidLink",
+          "The password reset link is invalid. Please request a new one."
+        );
+      }
+
+      setUrlError(errorMessage);
+    }
+  }, [searchParams, t]);
+
+  // Wait for translations to load
+  useEffect(() => {
+    if (!languageLoading) {
+      setTranslationsLoaded(true);
+    }
+  }, [languageLoading]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -322,7 +372,9 @@ function CreatePassword() {
 
     // Only validate that passwords match
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(
+        t("createPassword.errors.passwordMismatch", "Passwords do not match")
+      );
       return;
     }
 
@@ -331,46 +383,90 @@ function CreatePassword() {
     setLoading(true);
 
     try {
+      console.log("Attempting to update password...");
+
       // Use updateUser with the current session
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
+
+      console.log("Password update result:", updateError);
 
       if (updateError) {
         console.error("Password reset error:", updateError);
 
         // Handle specific errors
         if (
-          updateError.message.includes("token") ||
-          updateError.message.includes("session")
+          updateError.message?.includes("token") ||
+          updateError.message?.includes("session") ||
+          updateError.message?.includes("expired") ||
+          updateError.message?.includes("invalid")
         ) {
           setError(
-            "Invalid or expired session. Please request a new password reset."
+            t(
+              "createPassword.errors.invalidSession",
+              "Invalid or expired session. Please request a new password reset."
+            )
           );
         } else {
-          setError("Failed to reset password. Please try again.");
+          setError(
+            updateError.message ||
+              t(
+                "createPassword.errors.generic",
+                "Failed to reset password. Please try again."
+              )
+          );
         }
       } else {
         // Success
-        setMessage("Your password has been successfully reset!");
+        console.log("Password updated successfully");
+        setMessage(
+          t(
+            "createPassword.success",
+            "Your password has been successfully reset!"
+          )
+        );
         // Clear form
         setPassword("");
         setConfirmPassword("");
       }
     } catch (err) {
       console.error("Error resetting password:", err);
-      setError("An unexpected error occurred. Please try again.");
+      setError(
+        t(
+          "createPassword.errors.generic",
+          "An unexpected error occurred. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // If translations are still loading, show loading component
+  if (!translationsLoaded) {
+    return (
+      <AuthContainer>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <LoadingComponent text={t("common.loading", "Loading...")} />
+        </div>
+      </AuthContainer>
+    );
+  }
 
   return (
     <AuthContainer>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       <Link href="/login" legacyBehavior>
         <BackButton>
-          <FaArrowLeft /> Back to Login
+          <FaArrowLeft /> {t("createPassword.backToLogin", "Back to Login")}
         </BackButton>
       </Link>
 
@@ -390,17 +486,47 @@ function CreatePassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          Set New Password
+          {t("createPassword.title", "Set New Password")}
         </Title>
 
-        <Description
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          {`Create a new password for your account. For security, please choose a
-          strong password that you don't use elsewhere.`}
-        </Description>
+        {/* Show URL error if present */}
+        {urlError ? (
+          <>
+            <ErrorMessage
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {urlError}
+            </ErrorMessage>
+
+            <Description
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              {t(
+                "createPassword.requestNewLink",
+                "Please request a new password reset link."
+              )}
+              <br />
+              <Link href="/reset-password">
+                {t("createPassword.requestHere", "Click here to request one.")}
+              </Link>
+            </Description>
+          </>
+        ) : (
+          <Description
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            {t(
+              "createPassword.description",
+              "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
+            )}
+          </Description>
+        )}
 
         {error && (
           <ErrorMessage
@@ -429,24 +555,29 @@ function CreatePassword() {
                     textDecoration: "none",
                   }}
                 >
-                  Proceed to Login
+                  {t("createPassword.proceedToLogin", "Proceed to Login")}
                 </Button>
               </Link>
             </div>
           </SuccessMessage>
         )}
 
-        {!message && (
+        {!message && !urlError && (
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">
+                {t("createPassword.newPasswordLabel", "New Password")}
+              </Label>
               <Input
                 type={showPassword ? "text" : "password"}
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Enter your new password"
+                placeholder={t(
+                  "createPassword.newPasswordPlaceholder",
+                  "Enter your new password"
+                )}
               />
               <PasswordToggle
                 type="button"
@@ -458,14 +589,19 @@ function CreatePassword() {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">
+                {t("createPassword.confirmPasswordLabel", "Confirm Password")}
+              </Label>
               <Input
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                placeholder="Confirm your new password"
+                placeholder={t(
+                  "createPassword.confirmPasswordPlaceholder",
+                  "Confirm your new password"
+                )}
               />
               <PasswordToggle
                 type="button"
@@ -485,14 +621,17 @@ function CreatePassword() {
               whileHover="hover"
               whileTap="tap"
             >
-              Set New Password
+              {loading
+                ? t("createPassword.updating", "Updating...")
+                : t("createPassword.setPassword", "Set New Password")}
             </Button>
           </Form>
         )}
 
         {!message && (
           <LinkText>
-            Remember your password? <Link href="/login">Log in</Link>
+            {t("createPassword.rememberPassword", "Remember your password?")}{" "}
+            <Link href="/login">{t("createPassword.login", "Log in")}</Link>
           </LinkText>
         )}
       </FormCard>
