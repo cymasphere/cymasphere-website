@@ -36,7 +36,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 
 const TicketsContainer = styled.div`
   width: 100%;
@@ -1108,13 +1109,8 @@ function SupportTicketsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  if (languageLoading || !translationsLoaded) {
-    return <LoadingComponent />;
-  }
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && translationsLoaded && user;
 
   // Temporarily disabled admin check for testing
   // if (user.profile?.subscription !== "admin") {
@@ -1362,11 +1358,14 @@ function SupportTicketsPage() {
       <TicketsContainer>
         <TicketsTitle>
           <FaTicketAlt />
-          {t("admin.supportTickets.title", "Support Tickets")}
+          {showContent ? t("admin.supportTickets.title", "Support Tickets") : "Support Tickets"}
         </TicketsTitle>
         <TicketsSubtitle>
-          {t("admin.supportTickets.subtitle", "Manage customer support requests and issues")}
+          {showContent ? t("admin.supportTickets.subtitle", "Manage customer support requests and issues") : "Manage customer support requests and issues"}
         </TicketsSubtitle>
+
+        {showContent && (
+          <>
 
         <StatsRow>
           {stats.map((stat, index) => (
@@ -1458,7 +1457,13 @@ function SupportTicketsPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {paginatedTickets.map((ticket) => (
+              {paginatedTickets.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                    No support tickets found
+                  </td>
+                </tr>
+              ) : paginatedTickets.map((ticket) => (
                 <React.Fragment key={ticket.id}>
                   <TableRow>
                   <TableCell>
@@ -1669,6 +1674,8 @@ function SupportTicketsPage() {
             </PaginationButtons>
           </Pagination>
         </TableContainer>
+        </>
+        )}
       </TicketsContainer>
     </>
   );

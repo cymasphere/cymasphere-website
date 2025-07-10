@@ -12,8 +12,9 @@ import {
   FaCrown,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 import { getAdminDashboardStats, AdminDashboardStats, AdminActivity } from "@/utils/stripe/admin-analytics";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 const Container = styled.div`
   width: 100%;
@@ -404,18 +405,14 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  if (!user) {
-    return <LoadingComponent />;
+  if (!user || loading) {
+    return null;
   }
 
   // Temporarily disabled admin check for testing
   // if (user.profile?.subscription !== "admin") {
   //   return null;
   // }
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
 
   if (error) {
     return (
@@ -534,10 +531,10 @@ export default function AdminDashboard() {
                 <FaUsers />
               </StatIcon>
               <StatContent>
-                <StatValue>{stats.totalUsers.toLocaleString()}</StatValue>
+                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.totalUsers.toLocaleString()}</StatValue>
                 <StatLabel>Total Users</StatLabel>
                 <StatDetail>
-                  {stats.freeUsers} free, {stats.activeSubscriptions} paid
+                  {loading ? <StatLoadingSpinner size={12} /> : `${stats.freeUsers} free, ${stats.activeSubscriptions} paid`}
                 </StatDetail>
               </StatContent>
             </StatCard>
@@ -547,10 +544,10 @@ export default function AdminDashboard() {
                 <FaMoneyBillWave />
               </StatIcon>
               <StatContent>
-                <StatValue>{stats.activeSubscriptions}</StatValue>
+                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.activeSubscriptions}</StatValue>
                 <StatLabel>Active Subscriptions</StatLabel>
                 <StatDetail>
-                  {stats.monthlySubscribers} monthly, {stats.annualSubscribers} annual
+                  {loading ? <StatLoadingSpinner size={12} /> : `${stats.monthlySubscribers} monthly, ${stats.annualSubscribers} annual`}
                 </StatDetail>
               </StatContent>
             </StatCard>
@@ -560,7 +557,7 @@ export default function AdminDashboard() {
                 <FaTicketAlt />
               </StatIcon>
               <StatContent>
-                <StatValue>{stats.lifetimeCustomers}</StatValue>
+                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.lifetimeCustomers}</StatValue>
                 <StatLabel>Lifetime Customers</StatLabel>
                 <StatDetail>
                   One-time purchases
@@ -573,7 +570,7 @@ export default function AdminDashboard() {
                 <FaChartLine />
               </StatIcon>
               <StatContent>
-                <StatValue>{formatCurrency(stats.monthlyRevenue)}</StatValue>
+                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : formatCurrency(stats.monthlyRevenue)}</StatValue>
                 <StatLabel>Monthly Revenue</StatLabel>
                 <StatDetail>
                   Last 30 days
@@ -688,22 +685,22 @@ export default function AdminDashboard() {
           <AdditionalStatsGrid>
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Total Revenue</StatLabel>
-              <StatValue>{formatCurrency(stats.lifetimeRevenue)}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : formatCurrency(stats.lifetimeRevenue)}</StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Trial Users</StatLabel>
-              <StatValue>{stats.trialUsers}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : stats.trialUsers}</StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Churn Rate</StatLabel>
-              <StatValue>{stats.churnRate.toFixed(1)}%</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : `${stats.churnRate.toFixed(1)}%`}</StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Admin Users</StatLabel>
-              <StatValue>{stats.adminUsers}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : stats.adminUsers}</StatValue>
             </AdditionalStatCard>
           </AdditionalStatsGrid>
         </motion.div>

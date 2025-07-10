@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 import { 
   createOneTimeDiscountCode, 
   listPromotionCodes, 
@@ -638,13 +638,8 @@ export default function AdminCoupons() {
     (code.coupon.name && code.coupon.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = user && !loading;
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -659,10 +654,13 @@ export default function AdminCoupons() {
         <Header>
           <Title>
             <FaTicketAlt />
-            Coupon Management
+            {showContent ? "Coupon Management" : "Coupon Management"}
           </Title>
-          <Subtitle>Create and manage discount codes and promotion coupons</Subtitle>
+          <Subtitle>{showContent ? "Create and manage discount codes and promotion coupons" : "Create and manage discount codes and promotion coupons"}</Subtitle>
         </Header>
+
+        {showContent && (
+          <>
 
         <ActionsBar>
           <SearchContainer>
@@ -868,6 +866,8 @@ export default function AdminCoupons() {
             {notification.type === 'success' ? <FaCheck /> : <FaExclamationTriangle />}
             {notification.message}
           </Notification>
+        )}
+        </>
         )}
       </motion.div>
     </Container>

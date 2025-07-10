@@ -9,21 +9,16 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaEye,
   FaCopy,
-  FaCode,
-  FaImage,
-  FaEnvelope,
   FaCalendarAlt,
-  FaEllipsisV,
-  FaDownload,
-  FaShare
+  FaEllipsisV
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 const TemplatesContainer = styled.div`
   width: 100%;
@@ -254,6 +249,7 @@ const TemplateDescription = styled.div`
   color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.4;
+  padding-bottom: 1rem;
 `;
 
 const TypeBadge = styled.span<{ type: string }>`
@@ -297,6 +293,39 @@ const TypeBadge = styled.span<{ type: string }>`
 const MetricValue = styled.div`
   font-weight: 600;
   color: var(--text);
+`;
+
+const StatusBadge = styled.span<{ status: string }>`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  
+  ${(props) => {
+    switch (props.status) {
+      case 'active':
+        return `
+          background-color: rgba(40, 167, 69, 0.2);
+          color: #28a745;
+        `;
+      case 'draft':
+        return `
+          background-color: rgba(255, 193, 7, 0.2);
+          color: #ffc107;
+        `;
+      case 'archived':
+        return `
+          background-color: rgba(108, 117, 125, 0.2);
+          color: #6c757d;
+        `;
+      default:
+        return `
+          background-color: rgba(108, 117, 125, 0.2);
+          color: #6c757d;
+        `;
+    }
+  }}
 `;
 
 const ActionsContainer = styled.div`
@@ -416,168 +445,28 @@ const EmptyState = styled.div`
   }
 `;
 
-// Mock data
-const mockTemplates = [
-  {
-    id: "1",
-    name: "Welcome Email",
-    subject: "Welcome to Cymasphere! 🎵",
-    senderName: "Cymasphere Team",
-    preheader: "Let's get you started on your music creation journey",
-    description: "A warm welcome message for new subscribers",
-    type: "welcome",
-    usageCount: 45,
-    lastUsed: "2024-01-18",
-    bgColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    createdAt: "2024-01-10",
-    audience: "new",
-    template: "welcome",
-    content: `Welcome to Cymasphere! We're excited to have you join our community of music creators.`,
-    emailElements: [
-      { id: 'header1', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
-      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
-      { id: 'button1', type: 'button', content: '🚀 Get Started Now', url: '/dashboard' },
-      { id: 'image1', type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=🎵+Welcome+to+Cymasphere' }
-    ],
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "2",
-    name: "Monthly Newsletter",
-    subject: "🎵 This Month in Music Production",
-    senderName: "Cymasphere Newsletter",
-    preheader: "The latest tips, trends, and updates from the music production world",
-    description: "Regular newsletter template with featured content",
-    type: "newsletter",
-    usageCount: 12,
-    lastUsed: "2024-01-15",
-    bgColor: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    createdAt: "2024-01-05",
-    audience: "all",
-    template: "newsletter",
-    content: `This Month in Music Production - Latest tips and updates`,
-    emailElements: [
-      { id: 'header2', type: 'header', content: 'This Month in Music Production' },
-      { id: 'text2', type: 'text', content: 'Here are the latest tips, tricks, and updates from the world of electronic music production.' },
-      { id: 'divider1', type: 'divider' },
-      { id: 'text3', type: 'text', content: 'Featured content and tutorials this month...' },
-      { id: 'button2', type: 'button', content: 'Read More', url: '/blog' }
-    ],
-    scheduleType: "scheduled",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "3",
-    name: "Product Launch",
-    subject: "🚀 New Synthesizer Features Available Now!",
-    senderName: "Cymasphere Product Team",
-    preheader: "Revolutionary new features that will transform your music production",
-    description: "Promotional template for new product announcements",
-    type: "promotional",
-    usageCount: 8,
-    lastUsed: "2024-01-12",
-    bgColor: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    createdAt: "2024-01-08",
-    audience: "active",
-    template: "promotional",
-    content: `Exciting New Features Just Launched!`,
-    emailElements: [
-      { id: 'header3', type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
-      { id: 'image2', type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=🚀+New+Features' },
-      { id: 'text4', type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
-      { id: 'button3', type: 'button', content: 'Explore New Features', url: '/features' },
-      { id: 'spacer1', type: 'spacer', height: '30px' }
-    ],
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "4",
-    name: "Order Confirmation",
-    subject: "Order Confirmed: Your Cymasphere Purchase",
-    senderName: "Cymasphere Orders",
-    preheader: "Thank you for your purchase! Here are your order details",
-    description: "Transactional email for order confirmations",
-    type: "transactional",
-    usageCount: 156,
-    lastUsed: "2024-01-20",
-    bgColor: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    createdAt: "2024-01-01",
-    audience: "customers",
-    template: "custom",
-    content: `Order Confirmation - Thank you for your purchase`,
-    emailElements: [
-      { id: 'header4', type: 'header', content: 'Order Confirmed ✅' },
-      { id: 'text5', type: 'text', content: 'Hi {{firstName}}, Thank you for your purchase! Your order has been confirmed and is being processed.' },
-      { id: 'text6', type: 'text', content: 'Order Number: {{orderNumber}}\nTotal: {{orderTotal}}' },
-      { id: 'button4', type: 'button', content: 'View Order Details', url: '/orders/{{orderNumber}}' }
-    ],
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "5",
-    name: "Password Reset",
-    subject: "Reset Your Cymasphere Password",
-    senderName: "Cymasphere Security",
-    preheader: "Click here to securely reset your password",
-    description: "Security template for password reset requests",
-    type: "transactional",
-    usageCount: 23,
-    lastUsed: "2024-01-19",
-    bgColor: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-    createdAt: "2024-01-03",
-    audience: "users",
-    template: "custom",
-    content: `Password Reset Request`,
-    emailElements: [
-      { id: 'header5', type: 'header', content: 'Password Reset Request 🔒' },
-      { id: 'text7', type: 'text', content: 'Hi {{firstName}}, We received a request to reset your password for your Cymasphere account.' },
-      { id: 'button5', type: 'button', content: 'Reset Password', url: '/reset-password/{{resetToken}}' },
-      { id: 'text8', type: 'text', content: 'If you did not request this, please ignore this email.' }
-    ],
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "6",
-    name: "Special Offer",
-    subject: "Limited Time: 50% Off Premium Features! 🎉",
-    senderName: "Cymasphere Offers",
-    preheader: "Don't miss out on this exclusive discount",
-    description: "Eye-catching template for special promotions",
-    type: "promotional",
-    usageCount: 34,
-    lastUsed: "2024-01-16",
-    bgColor: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-    createdAt: "2024-01-12",
-    audience: "active",
-    template: "promotional",
-    content: `Special Limited Time Offer`,
-    emailElements: [
-      { id: 'header6', type: 'header', content: 'Limited Time Offer! 🎉' },
-      { id: 'text9', type: 'text', content: 'Hi {{firstName}}, For a limited time only, get 50% off all premium features!' },
-      { id: 'image3', type: 'image', src: 'https://via.placeholder.com/600x200/a8edea/333333?text=50%25+OFF' },
-      { id: 'button6', type: 'button', content: 'Claim Offer Now', url: '/upgrade?offer=50off' },
-      { id: 'text10', type: 'text', content: 'Offer expires in 48 hours. Don\'t miss out!' }
-    ],
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-];
+// Template interface
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  subject: string;
+  template_type: string;
+  type: string;
+  status: string;
+  usage_count: number;
+  last_used_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 function TemplatesPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -588,6 +477,32 @@ function TemplatesPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Load templates from API
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/email-campaigns/templates');
+        if (response.ok) {
+          const data = await response.json();
+          setTemplates(data.templates || []);
+        } else {
+          console.error('Failed to load templates');
+          setTemplates([]);
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        setTemplates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      loadTemplates();
+    }
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -610,28 +525,29 @@ function TemplatesPage() {
     return <LoadingComponent />;
   }
 
-  const filteredTemplates = mockTemplates.filter(template =>
+  const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (template.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
     {
-      value: mockTemplates.length.toString(),
+      value: templates.length.toString(),
       label: "Total Templates",
     },
     {
-      value: mockTemplates.reduce((sum, t) => sum + t.usageCount, 0).toString(),
+      value: templates.reduce((sum, t) => sum + t.usage_count, 0).toString(),
       label: "Total Usage",
     },
     {
-      value: new Set(mockTemplates.map(t => t.type)).size.toString(),
+      value: new Set(templates.map(t => t.type)).size.toString(),
       label: "Template Types",
     },
     {
-      value: mockTemplates.filter(t => {
-        const lastUsed = new Date(t.lastUsed);
+      value: templates.filter(t => {
+        if (!t.last_used_at) return false;
+        const lastUsed = new Date(t.last_used_at);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return lastUsed > weekAgo;
@@ -654,11 +570,9 @@ function TemplatesPage() {
     if (action === 'view' || action === 'edit') {
       // Navigate to edit page with proper route
       router.push(`/admin/email-campaigns/templates/edit/${templateId}`);
-    } else if (action === 'browse') {
-      router.push('/admin/email-campaigns/templates/library');
     } else if (action === 'use') {
       // Create a new campaign from this template
-      const template = mockTemplates.find(t => t.id === templateId);
+      const template = templates.find(t => t.id === templateId);
       if (template) {
         // Navigate to create campaign with template data
         const queryParams = new URLSearchParams({
@@ -668,19 +582,14 @@ function TemplatesPage() {
         router.push(`/admin/email-campaigns/campaigns/create?${queryParams.toString()}`);
       }
     } else if (action === 'create') {
-      router.push('/admin/email-campaigns/templates/create');
+      // Navigate to edit page for creating new template
+      router.push('/admin/email-campaigns/templates/edit/new');
     } else if (action === 'preview') {
       // Open preview modal or page
       console.log('Preview template:', templateId);
     } else if (action === 'duplicate') {
-      // Duplicate template and navigate to create page with pre-filled data
-      const template = mockTemplates.find(t => t.id === templateId);
-      if (template) {
-        const queryParams = new URLSearchParams({
-          duplicate: templateId
-        });
-        router.push(`/admin/email-campaigns/templates/create?${queryParams.toString()}`);
-      }
+      // Navigate to edit page with template ID to duplicate
+      router.push(`/admin/email-campaigns/templates/edit/new?duplicate=${templateId}`);
     } else if (action === 'download' || action === 'export') {
       // Export template
       console.log('Export template:', templateId);
@@ -725,7 +634,7 @@ function TemplatesPage() {
               animate="visible"
               custom={index}
             >
-              <StatValue>{stat.value}</StatValue>
+              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stat.value}</StatValue>
               <StatLabel>{stat.label}</StatLabel>
             </StatCard>
           ))}
@@ -744,16 +653,10 @@ function TemplatesPage() {
             />
           </SearchContainer>
           
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <CreateButton onClick={() => handleTemplateAction('browse', '')}>
-              <FaImage />
-              Browse Templates
-            </CreateButton>
-            <CreateButton onClick={() => handleTemplateAction('create', '')}>
-              <FaPlus />
-              Create Template
-            </CreateButton>
-          </div>
+          <CreateButton onClick={() => handleTemplateAction('create', '')}>
+            <FaPlus />
+            Create Template
+          </CreateButton>
         </ActionsRow>
 
         <TemplatesGrid>
@@ -762,6 +665,7 @@ function TemplatesPage() {
               <tr>
                 <TableHeaderCell>Template</TableHeaderCell>
                 <TableHeaderCell>Type</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
                 <TableHeaderCell>Usage Count</TableHeaderCell>
                 <TableHeaderCell>Last Used</TableHeaderCell>
                 <TableHeaderCell>Created</TableHeaderCell>
@@ -769,9 +673,30 @@ function TemplatesPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredTemplates.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
+                    <EmptyState>
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }}>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          style={{ 
+                            width: '20px', 
+                            height: '20px', 
+                            border: '3px solid rgba(108, 99, 255, 0.3)', 
+                            borderTop: '3px solid var(--primary)', 
+                            borderRadius: '50%' 
+                          }}
+                        />
+                        Loading templates...
+                      </span>
+                    </EmptyState>
+                  </TableCell>
+                </tr>
+              ) : filteredTemplates.length === 0 ? (
+                <tr>
+                  <TableCell colSpan={7}>
                     <EmptyState>
                       <FaFileAlt />
                       <h3>No templates found</h3>
@@ -799,13 +724,18 @@ function TemplatesPage() {
                       </TypeBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{template.usageCount}</MetricValue>
+                      <StatusBadge status={template.status}>
+                        {template.status}
+                      </StatusBadge>
                     </TableCell>
                     <TableCell>
-                      {new Date(template.lastUsed).toLocaleDateString()}
+                      <MetricValue>{template.usage_count}</MetricValue>
                     </TableCell>
                     <TableCell>
-                      {new Date(template.createdAt).toLocaleDateString()}
+                      {template.last_used_at ? new Date(template.last_used_at).toLocaleDateString() : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(template.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <ActionsContainer>
@@ -822,28 +752,6 @@ function TemplatesPage() {
                             <FaEllipsisV />
                           </DropdownButton>
                           <DropdownContent isOpen={openDropdown === template.id}>
-                            <DropdownItem 
-                              variant="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('use', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaEnvelope />
-                              Use Template
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('preview', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaEye />
-                              Preview
-                            </DropdownItem>
                             <DropdownItem 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -863,37 +771,6 @@ function TemplatesPage() {
                             >
                               <FaCopy />
                               Duplicate
-                            </DropdownItem>
-                            <DropdownDivider />
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('download', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaDownload />
-                              Export
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('share', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaShare />
-                              Share
-                            </DropdownItem>
-                            <DropdownItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTemplateAction('code', template.id);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              <FaCode />
-                              View Code
                             </DropdownItem>
                             <DropdownDivider />
                             <DropdownItem 

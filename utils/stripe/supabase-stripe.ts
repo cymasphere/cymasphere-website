@@ -47,7 +47,7 @@ export async function customerPurchasedProFromSupabase(
 
     // First check for lifetime purchase directly from payment intents
     const { data: paymentIntents, error: piError } = await supabase
-      .schema("stripe_tables")
+      .schema("stripe_tables" as any)
       .from("stripe_payment_intents")
       .select("*")
       .eq("customer", customer_id)
@@ -65,7 +65,7 @@ export async function customerPurchasedProFromSupabase(
     // Check payment intents for lifetime purchase
     for (const paymentIntent of paymentIntents) {
       const attrs =
-        (paymentIntent.attrs as {
+        ((paymentIntent as any).attrs as {
           metadata?: { purchase_type?: string };
           status?: string;
           dispute?: unknown | null;
@@ -86,7 +86,7 @@ export async function customerPurchasedProFromSupabase(
 
     // Check for active subscriptions (even if we found a lifetime purchase)
     const { data: subscriptions, error: subscriptionsError } = await supabase
-      .schema("stripe_tables")
+      .schema("stripe_tables" as any)
       .from("stripe_subscriptions")
       .select("*")
       .eq("customer", customer_id)
@@ -110,7 +110,7 @@ export async function customerPurchasedProFromSupabase(
 
     for (const subscription of subscriptions || []) {
       // Skip canceled or incomplete subscriptions
-      const attrs = subscription.attrs as StripeSubscriptionAttrs | null;
+      const attrs = (subscription as any).attrs as StripeSubscriptionAttrs | null;
 
       switch (attrs?.status) {
         case "active":
@@ -131,11 +131,11 @@ export async function customerPurchasedProFromSupabase(
           hasActiveSubscription = true;
           activeSubscriptionType =
             priceId === monthlyPriceId ? "monthly" : "annual";
-          activeSubscriptionId = subscription.id || undefined;
+          activeSubscriptionId = (subscription as any).id || undefined;
 
           // Set expiration date
-          if (subscription.current_period_end) {
-            current_period_end = new Date(subscription.current_period_end);
+          if ((subscription as any).current_period_end) {
+            current_period_end = new Date((subscription as any).current_period_end);
           }
 
           // Check for trial end date
@@ -218,7 +218,7 @@ export async function getCustomerInvoices(
 
     // Query the stripe_invoices table for invoices belonging to this customer
     const { data, error } = await supabase
-      .schema("stripe_tables")
+      .schema("stripe_tables" as any)
       .from("stripe_invoices")
       .select("*")
       .eq("customer", customerId)
@@ -232,7 +232,7 @@ export async function getCustomerInvoices(
 
     // Format the invoice data for the UI
     const invoices: InvoiceData[] = (data || []).map((invoice) => {
-      const attrs = invoice.attrs as {
+      const attrs = (invoice as any).attrs as {
         hosted_invoice_url?: string;
         invoice_pdf?: string;
         created?: number;
@@ -240,14 +240,14 @@ export async function getCustomerInvoices(
       } | null;
 
       return {
-        id: invoice.id || "",
+        id: String((invoice as any).id || ""),
         number: attrs?.number,
-        amount: (invoice.total || 0) / 100, // Convert cents to dollars
-        status: invoice.status || "unknown",
+        amount: ((invoice as any).total || 0) / 100, // Convert cents to dollars
+        status: (invoice as any).status || "unknown",
         created: new Date(
           attrs?.created ? attrs.created * 1000 : Date.now()
         ).toISOString(),
-        currency: invoice.currency || "usd",
+        currency: (invoice as any).currency || "usd",
         pdf_url: attrs?.invoice_pdf,
         receipt_url: attrs?.hosted_invoice_url,
       };

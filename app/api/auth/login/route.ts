@@ -68,8 +68,16 @@ export async function POST(
     console.log("clientIp", clientIp);
     console.log("userAgent", userAgent);
 
-    // Reject login attempts not from the Cymasphere app
-    if (!userAgent || !userAgent.startsWith("cymasphere:")) {
+    // Allow both Cymasphere app and web browser user agents
+    if (!userAgent) {
+      return err("invalid_credentials", "Invalid credentials");
+    }
+    
+    // Allow web browsers (for web app) and Cymasphere app (for mobile)
+    const isWebBrowser = userAgent.includes("Mozilla") || userAgent.includes("Chrome") || userAgent.includes("Safari") || userAgent.includes("Firefox");
+    const isCymasphereApp = userAgent.startsWith("cymasphere:");
+    
+    if (!isWebBrowser && !isCymasphereApp) {
       return err("invalid_credentials", "Invalid credentials");
     }
 

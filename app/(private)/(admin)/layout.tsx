@@ -21,12 +21,18 @@ import {
   FaChevronDown,
   FaChevronRight,
   FaUser,
+  FaFacebook,
+  FaBullhorn,
+  FaChartLine,
+  FaPlus,
+  FaImage,
+  FaBullseye,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 
 const LayoutContainer = styled.div`
@@ -547,6 +553,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emailCampaignsExpanded, setEmailCampaignsExpanded] = useState(false);
+  const [adManagerExpanded, setAdManagerExpanded] = useState(false);
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -599,10 +606,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return pathname.startsWith("/admin/email-campaigns");
   };
 
+  // Helper function to check if any ad manager sub-routes are active
+  const isAdManagerActive = () => {
+    return pathname.startsWith("/admin/ad-manager");
+  };
+
   // Auto-expand email campaigns section if any sub-route is active
   useEffect(() => {
     if (isEmailCampaignsActive()) {
       setEmailCampaignsExpanded(true);
+    }
+    if (isAdManagerActive()) {
+      setAdManagerExpanded(true);
     }
   }, [pathname]);
 
@@ -647,12 +662,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }),
   };
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
-  if (!user.is_admin) {
-    return <LoadingComponent />;
+  if (!user || !user.is_admin) {
+    return null;
   }
 
   // Temporarily disabled admin check for testing
@@ -856,6 +867,98 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
           </NavSection>
 
+          <NavSection>
+            <NavSectionHeader
+              $expanded={adManagerExpanded}
+              onClick={() => setAdManagerExpanded(!adManagerExpanded)}
+              style={{ cursor: "pointer" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <FaFacebook />
+                Ad Manager
+              </div>
+              {adManagerExpanded ? <FaChevronDown /> : <FaChevronRight />}
+            </NavSectionHeader>
+            {adManagerExpanded && (
+              <SubNavItems
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <Link href="/admin/ad-manager" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={pathname === "/admin/ad-manager" ? "true" : "false"}
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
+                  >
+                    <FaChartBar /> Dashboard
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/ad-manager/campaigns" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={
+                      pathname === "/admin/ad-manager/campaigns" ||
+                      pathname.startsWith("/admin/ad-manager/campaigns/")
+                        ? "true"
+                        : "false"
+                    }
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/campaigns")}
+                  >
+                    <FaBullhorn /> Campaigns
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/ad-manager/ads/create" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={
+                      pathname === "/admin/ad-manager/ads/create" ||
+                      pathname.startsWith("/admin/ad-manager/ads/")
+                        ? "true"
+                        : "false"
+                    }
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/ads/create")}
+                  >
+                    <FaImage /> Create Ad
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/ad-manager/audiences" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={
+                      pathname === "/admin/ad-manager/audiences" ? "true" : "false"
+                    }
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/audiences")}
+                  >
+                    <FaBullseye /> Audiences
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/ad-manager/analytics" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={
+                      pathname === "/admin/ad-manager/analytics" ? "true" : "false"
+                    }
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/analytics")}
+                  >
+                    <FaChartLine /> Analytics
+                  </SubNavItem>
+                </Link>
+                <Link href="/admin/ad-manager/settings" passHref legacyBehavior>
+                  <SubNavItem
+                    $active={
+                      pathname === "/admin/ad-manager/settings" ? "true" : "false"
+                    }
+                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/settings")}
+                  >
+                    <FaCog /> Settings
+                  </SubNavItem>
+                </Link>
+              </SubNavItems>
+            )}
+          </NavSection>
           <Link href="/admin/analytics" passHref legacyBehavior>
             <NavItem
               $active={pathname === "/admin/analytics" ? "true" : "false"}
@@ -1094,11 +1197,105 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/admin/ad-manager" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/ad-manager" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={10}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
+            >
+              <FaChartBar /> Ad Dashboard
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/ad-manager/campaigns" passHref legacyBehavior>
+            <MobileNavItem
+              $active={
+                pathname === "/admin/ad-manager/campaigns" ||
+                pathname.startsWith("/admin/ad-manager/campaigns/")
+                  ? "true"
+                  : "false"
+              }
+              variants={menuItemVariants}
+              custom={11}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager/campaigns")}
+            >
+              <FaBullhorn /> Ad Campaigns
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/ad-manager/ads/create" passHref legacyBehavior>
+            <MobileNavItem
+              $active={
+                pathname === "/admin/ad-manager/ads/create" ||
+                pathname.startsWith("/admin/ad-manager/ads/")
+                  ? "true"
+                  : "false"
+              }
+              variants={menuItemVariants}
+              custom={12}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager/ads/create")}
+            >
+              <FaImage /> Create Ad
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/ad-manager/audiences" passHref legacyBehavior>
+            <MobileNavItem
+              $active={
+                pathname === "/admin/ad-manager/audiences" ? "true" : "false"
+              }
+              variants={menuItemVariants}
+              custom={13}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager/audiences")}
+            >
+              <FaBullseye /> Ad Audiences
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/ad-manager/analytics" passHref legacyBehavior>
+            <MobileNavItem
+              $active={
+                pathname === "/admin/ad-manager/analytics" ? "true" : "false"
+              }
+              variants={menuItemVariants}
+              custom={14}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager/analytics")}
+            >
+              <FaChartLine /> Ad Analytics
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/ad-manager/settings" passHref legacyBehavior>
+            <MobileNavItem
+              $active={
+                pathname === "/admin/ad-manager/settings" ? "true" : "false"
+              }
+              variants={menuItemVariants}
+              custom={15}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/ad-manager/settings")}
+            >
+              <FaCog /> Ad Settings
+            </MobileNavItem>
+          </Link>
+
           <Link href="/admin/analytics" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/admin/analytics" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={10}
+              custom={16}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/analytics")}
@@ -1111,7 +1308,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active={pathname === "/admin/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={11}
+              custom={17}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/admin/settings")}
@@ -1124,7 +1321,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={12}
+              custom={18}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}

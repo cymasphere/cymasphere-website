@@ -34,10 +34,19 @@ import {
   FaCheck
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import styled from "styled-components";
+import styled, { css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
+
+// Global styles for animations
+const GlobalStyles = createGlobalStyle`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
 
 const AudiencesContainer = styled.div`
   width: 100%;
@@ -558,123 +567,143 @@ const ModalActions = styled.div`
   margin-top: 2rem;
 `;
 
-// Mock data for audiences
-const mockAudiences = [
-  {
-    id: "1",
-    name: "Highly Engaged Users",
-    description: "Users who opened emails in the last 30 days and clicked at least once",
-    subscribers: 4567,
-    growthRate: "+12.3%",
-    engagementRate: "42.5%",
-    lastActive: "2024-01-22",
-    tags: [
-      { text: "Active", type: "status" as const },
-      { text: "High Value", type: "segment" as const },
-      { text: "Engaged", type: "behavior" as const }
-    ],
-    criteria: "Opened email in last 30 days AND clicked at least 1 link",
-    type: "dynamic" as const
-  },
-  {
-    id: "2",
-    name: "New Subscribers",
-    description: "Users who joined in the last 7 days",
-    subscribers: 234,
-    growthRate: "+45.2%",
-    engagementRate: "0%",
-    lastActive: "2024-01-22",
-    tags: [
-      { text: "New", type: "status" as const },
-      { text: "Onboarding", type: "segment" as const }
-    ],
-    criteria: "Subscribed in the last 7 days",
-    type: "dynamic" as const
-  },
-  {
-    id: "3",
-    name: "Music Producers",
-    description: "Professional music producers and beatmakers",
-    subscribers: 1890,
-    growthRate: "+5.7%",
-    engagementRate: "38.2%",
-    lastActive: "2024-01-21",
-    tags: [
-      { text: "Professional", type: "segment" as const },
-      { text: "Producer", type: "behavior" as const }
-    ],
-    criteria: "Tagged as 'Producer' OR purchased Pro features",
-    type: "static" as const
-  },
-  {
-    id: "4", 
-    name: "Inactive Users",
-    description: "Users who haven't opened emails in 60+ days",
-    subscribers: 2156,
-    growthRate: "-8.9%",
-    engagementRate: "2.1%",
-    lastActive: "2023-11-15",
-    tags: [
-      { text: "Inactive", type: "status" as const },
-      { text: "Re-engagement", type: "segment" as const }
-    ],
-    criteria: "No email opens in the last 60 days",
-    type: "dynamic" as const
-  },
-  {
-    id: "5",
-    name: "Premium Subscribers",
-    description: "Users with active premium subscriptions",
-    subscribers: 892,
-    growthRate: "+18.4%",
-    engagementRate: "56.8%",
-    lastActive: "2024-01-22",
-    tags: [
-      { text: "Premium", type: "segment" as const },
-      { text: "High Value", type: "behavior" as const }
-    ],
-    criteria: "Has active premium subscription",
-    type: "dynamic" as const
-  },
-  {
-    id: "6",
-    name: "Beta Testers",
-    description: "Users participating in beta programs",
-    subscribers: 145,
-    growthRate: "+3.2%",
-    engagementRate: "71.5%",
-    lastActive: "2024-01-22",
-    tags: [
-      { text: "Beta", type: "segment" as const },
-      { text: "Early Adopter", type: "behavior" as const }
-    ],
-    criteria: "Manually added to beta testing list",
-    type: "static" as const
+// Define the database audience interface
+interface DatabaseAudience {
+  id: string;
+  name: string;
+  description: string | null;
+  filters: any;
+  subscriber_count: number | null;
+  created_by: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+// Fetch audiences from API
+const fetchAudiences = async (): Promise<DatabaseAudience[]> => {
+  try {
+    console.log('Fetching audiences from API...');
+    const response = await fetch('/api/email-campaigns/audiences', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(`Failed to fetch audiences: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Fetched audiences data:', data);
+    return data.audiences || [];
+  } catch (error) {
+    console.error('Error fetching audiences:', error);
+    return [];
   }
-];
+};
+
+// Convert database audience to display format
+const convertToDisplayAudience = (dbAudience: DatabaseAudience, realTimeCount?: number) => {
+  // Determine audience type from filters
+  const filters = dbAudience.filters || {};
+  const audienceType = filters.audience_type === 'static' ? 'static' : 'dynamic';
+  
+  // Use real-time count if provided, otherwise fall back to cached count
+  const subscriberCount = realTimeCount !== undefined ? realTimeCount : (dbAudience.subscriber_count || 0);
+  
+  return {
+  id: dbAudience.id,
+  name: dbAudience.name,
+  description: dbAudience.description || "No description provided",
+    subscribers: subscriberCount,
+  growthRate: "+0%", // This would need to be calculated from historical data
+  engagementRate: "N/A", // This would need to be calculated from email metrics
+  lastActive: dbAudience.updated_at ? new Date(dbAudience.updated_at).toISOString().split('T')[0] : "Unknown",
+    tags: [
+      { text: audienceType === 'static' ? "Static" : "Dynamic", type: "status" as const }
+    ],
+    criteria: audienceType === 'static' 
+      ? "Subscriber management" 
+      : `Custom filters: ${Object.keys(dbAudience.filters || {}).length} rules`,
+    type: audienceType as 'static' | 'dynamic',
+    originalFilters: dbAudience.filters // Store original filters for cloning
+  };
+};
 
 function AudiencesPage() {
   const { user } = useAuth();
-  const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [audienceToDelete, setAudienceToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newAudience, setNewAudience] = useState({
     name: "",
     description: "",
     type: "dynamic" as "dynamic" | "static"
   });
+  const [audiences, setAudiences] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
+  // Load audiences from API
+    const loadAudiences = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+      console.log('🔄 Loading audiences...');
+        const dbAudiences = await fetchAudiences();
+      console.log('📊 Received audiences from API:', dbAudiences);
+      
+      // Get real-time subscriber counts for all audiences
+      console.log('🔄 Fetching real-time subscriber counts...');
+      const displayAudiences = await Promise.all(
+        dbAudiences.map(async (dbAudience) => {
+          try {
+            // Call the API to get real-time count
+            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+            if (response.ok) {
+              const data = await response.json();
+              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+              console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
+              return convertToDisplayAudience(dbAudience, realTimeCount);
+            } else {
+              console.warn(`Failed to get real-time count for ${dbAudience.name}, using cached count`);
+              return convertToDisplayAudience(dbAudience);
+            }
+          } catch (error) {
+            console.warn(`Error getting real-time count for ${dbAudience.name}:`, error);
+            return convertToDisplayAudience(dbAudience);
+          }
+        })
+      );
+      
+      console.log('🎯 Converted to display format with real-time counts:', displayAudiences);
+        setAudiences(displayAudiences);
+      } catch (error) {
+        console.error('Failed to load audiences:', error);
+        setAudiences([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
   useEffect(() => {
-    if (!languageLoading) {
-      setTranslationsLoaded(true);
+    if (user && !languageLoading) {
+      loadAudiences();
     }
-  }, [languageLoading]);
+  }, [user, languageLoading]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -688,15 +717,10 @@ function AudiencesPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || !translationsLoaded) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && user;
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
-  const filteredAudiences = mockAudiences.filter(audience => {
+  const filteredAudiences = audiences.filter((audience: any) => {
     const matchesSearch = audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          audience.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = statusFilter === "all" || audience.type === statusFilter;
@@ -717,23 +741,132 @@ function AudiencesPage() {
     setOpenDropdown(null);
     switch (action) {
       case 'edit':
-        // Handle edit action
-        break;
-      case 'view':
-        router.push(`/admin/email-campaigns/subscribers?audience=${audienceId}`);
+        router.push(`/admin/email-campaigns/audiences/${audienceId}`);
         break;
       case 'export':
-        // Handle export action
+        handleExportAudience(audienceId);
         break;
       case 'delete':
-        // Handle delete action
+        handleDeleteAudience(audienceId);
         break;
       case 'clone':
-        // Handle clone action
+        handleCloneAudience(audienceId);
         break;
       case 'email':
         router.push(`/admin/email-campaigns/campaigns/create?audience=${audienceId}`);
         break;
+    }
+  };
+
+  const handleExportAudience = async (audienceId: string) => {
+    try {
+      // Find the audience data
+      const audience = audiences.find(a => a.id === audienceId);
+      if (!audience) return;
+
+      // Create CSV content
+      const csvContent = [
+        ['Audience Name', 'Description', 'Subscribers', 'Type', 'Last Updated'],
+        [
+          audience.name,
+          audience.description,
+          audience.subscribers.toString(),
+          audience.type,
+          audience.lastActive
+        ]
+      ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `audience-${audience.name.toLowerCase().replace(/\s+/g, '-')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('Audience exported successfully');
+    } catch (error) {
+      console.error('Error exporting audience:', error);
+    }
+  };
+
+  const handleDeleteAudience = (audienceId: string) => {
+    const audience = audiences.find(a => a.id === audienceId);
+    if (!audience) return;
+
+    setAudienceToDelete(audience);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAudience = async () => {
+    if (!audienceToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/email-campaigns/audiences/${audienceToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setAudiences(prev => prev.filter(a => a.id !== audienceToDelete.id));
+        console.log('Audience deleted successfully');
+        setShowDeleteModal(false);
+        setAudienceToDelete(null);
+      } else {
+        const error = await response.json();
+        console.error('Error deleting audience:', error);
+        // Keep modal open to show error state
+      }
+    } catch (error) {
+      console.error('Error deleting audience:', error);
+      // Keep modal open to show error state
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteAudience = () => {
+    setShowDeleteModal(false);
+    setAudienceToDelete(null);
+    setIsDeleting(false);
+  };
+
+  const handleCloneAudience = async (audienceId: string) => {
+    try {
+      const audience = audiences.find(a => a.id === audienceId);
+      if (!audience) return;
+
+      const response = await fetch('/api/email-campaigns/audiences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${audience.name} (Copy)`,
+          description: audience.description,
+          filters: audience.originalFilters // Use original filters for cloning
+        }),
+      });
+
+      if (response.ok) {
+        const { audience: newAudience } = await response.json();
+        // Reload audiences to include the new one
+        const dbAudiences = await fetchAudiences();
+        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
+        setAudiences(displayAudiences);
+        console.log('Audience cloned successfully');
+      } else {
+        const error = await response.json();
+        console.error('Error cloning audience:', error);
+        // Could show error notification instead of alert
+      }
+    } catch (error) {
+      console.error('Error cloning audience:', error);
+      // Could show error notification instead of alert
     }
   };
 
@@ -746,15 +879,55 @@ function AudiencesPage() {
     router.push(`/admin/email-campaigns/audiences/${audienceId}`);
   };
 
-  const handleCreateAudience = () => {
-    console.log("Creating audience:", newAudience);
-    // Here you would make an API call to create the audience
+  const handleCreateAudience = async () => {
+    if (!newAudience.name.trim()) {
+      // Could add proper form validation here instead of alert
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/email-campaigns/audiences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newAudience.name,
+          description: newAudience.description,
+          filters: {} // Start with empty filters - user can edit later
+        }),
+      });
+
+      if (response.ok) {
+        const { audience: createdAudience } = await response.json();
+        
+        // Reload audiences to include the new one
+        const dbAudiences = await fetchAudiences();
+        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
+        setAudiences(displayAudiences);
+        
+        // Close modal and reset form
     setShowCreateModal(false);
     setNewAudience({ name: "", description: "", type: "dynamic" });
+        
+        console.log('Audience created successfully');
+        
+        // Navigate to edit the new audience
+        router.push(`/admin/email-campaigns/audiences/${createdAudience.id}`);
+      } else {
+        const error = await response.json();
+        console.error('Error creating audience:', error);
+        // Could show error state in modal instead of alert
+      }
+    } catch (error) {
+      console.error('Error creating audience:', error);
+      // Could show error state in modal instead of alert
+    }
   };
 
   return (
     <>
+      <GlobalStyles />
       <NextSEO
         title="Email Audiences"
         description="Manage and segment your email audiences for targeted campaigns"
@@ -763,11 +936,14 @@ function AudiencesPage() {
       <AudiencesContainer>
         <AudiencesTitle>
           <FaUsers />
-          Email Audiences
+          {showContent ? t("admin.audiencesPage.title", "Email Audiences") : "Email Audiences"}
         </AudiencesTitle>
         <AudiencesSubtitle>
-          Create, manage, and analyze your audience segments for targeted email campaigns
+          {showContent ? t("admin.audiencesPage.subtitle", "Create, manage, and analyze your audience segments for targeted email campaigns") : "Create, manage, and analyze your audience segments for targeted email campaigns"}
         </AudiencesSubtitle>
+
+        {showContent && (
+          <>
 
         <ActionsRow>
           <LeftActions>
@@ -791,13 +967,9 @@ function AudiencesPage() {
           </LeftActions>
           
           <RightActions>
-            <ActionButton>
-              <FaFileImport />
-              Import
-            </ActionButton>
-            <ActionButton>
-              <FaFileExport />
-              Export All
+            <ActionButton onClick={loadAudiences} disabled={loading}>
+              <FaSync />
+              {loading ? 'Refreshing...' : 'Refresh'}
             </ActionButton>
             <ActionButton variant="primary" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
@@ -820,7 +992,9 @@ function AudiencesPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredAudiences.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow colSpan={7} message="Loading audiences..." />
+              ) : filteredAudiences.length === 0 ? (
                 <tr>
                   <TableCell colSpan={7}>
                     <EmptyState>
@@ -860,7 +1034,7 @@ function AudiencesPage() {
                     </TableCell>
                     <TableCell>
                       <TagsList>
-                        {audience.tags.slice(0, 2).map((tag, tagIndex) => (
+                        {audience.tags.slice(0, 2).map((tag: any, tagIndex: number) => (
                           <Tag key={tagIndex} type={tag.type}>
                             {tag.text}
                           </Tag>
@@ -889,10 +1063,6 @@ function AudiencesPage() {
                               exit={{ opacity: 0, scale: 0.8, y: -10 }}
                               transition={{ duration: 0.15 }}
                             >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('view', audience.id); }}>
-                                <FaEye />
-                                View Details
-                              </DropdownItem>
                               <DropdownItem onClick={(e) => { e.stopPropagation(); handleAudienceAction('edit', audience.id); }}>
                                 <FaEdit />
                                 Edit Audience
@@ -924,6 +1094,8 @@ function AudiencesPage() {
             </TableBody>
           </Table>
         </AudiencesTable>
+        </>
+        )}
 
         {/* Create Audience Modal */}
         <AnimatePresence>
@@ -983,6 +1155,97 @@ function AudiencesPage() {
                   <ActionButton variant="primary" onClick={handleCreateAudience}>
                     <FaPlus />
                     Create Audience
+                  </ActionButton>
+                </ModalActions>
+              </ModalContent>
+            </CreateAudienceModal>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && audienceToDelete && (
+            <CreateAudienceModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={cancelDeleteAudience}
+            >
+              <ModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '500px' }}
+              >
+                <ModalTitle style={{ color: 'var(--error-color)' }}>
+                  <FaTrash />
+                  Delete Audience
+                </ModalTitle>
+                
+                <div style={{ 
+                  padding: '1.5rem 0', 
+                  textAlign: 'center',
+                  lineHeight: '1.6'
+                }}>
+                  <p style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                    Are you sure you want to delete the audience
+                  </p>
+                  <p style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: '1.2rem',
+                    color: 'var(--primary-color)',
+                    marginBottom: '1rem'
+                  }}>
+                    "{audienceToDelete.name}"
+                  </p>
+                  <p style={{ 
+                    color: 'var(--error-color)', 
+                    fontSize: '0.95rem',
+                    backgroundColor: 'var(--error-bg)',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--error-border)'
+                  }}>
+                    ⚠️ This action cannot be undone. All data associated with this audience will be permanently deleted.
+                  </p>
+                </div>
+
+                <ModalActions>
+                  <ActionButton 
+                    onClick={cancelDeleteAudience}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </ActionButton>
+                  <ActionButton 
+                    variant="danger" 
+                    onClick={confirmDeleteAudience}
+                    disabled={isDeleting}
+                    style={{
+                      backgroundColor: 'var(--error-color)',
+                      borderColor: 'var(--error-color)'
+                    }}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid white',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                          marginRight: '0.5rem'
+                        }} />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FaTrash />
+                        Delete Audience
+                      </>
+                    )}
                   </ActionButton>
                 </ModalActions>
               </ModalContent>

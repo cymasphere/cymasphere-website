@@ -28,7 +28,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import LoadingComponent from "@/components/common/LoadingComponent";
+
+import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
 
 const SubscribersContainer = styled.div`
@@ -473,74 +474,7 @@ const EmptyState = styled.div`
   }
 `;
 
-// Mock data
-const mockSubscribers = [
-  {
-    id: "1",
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    status: "active",
-    subscribeDate: "2024-01-15",
-    lastActivity: "2024-01-20",
-    location: "New York, US",
-    tags: ["VIP", "Producer"],
-    engagement: "High",
-    totalOpens: 45,
-    totalClicks: 12
-  },
-  {
-    id: "2",
-    name: "Sarah Chen",
-    email: "sarah.chen@example.com",
-    status: "active",
-    subscribeDate: "2024-01-10",
-    lastActivity: "2024-01-22",
-    location: "San Francisco, US",
-    tags: ["Beginner"],
-    engagement: "Medium",
-    totalOpens: 23,
-    totalClicks: 5
-  },
-  {
-    id: "3",
-    name: "Mike Rodriguez",
-    email: "mike.rodriguez@example.com",
-    status: "unsubscribed",
-    subscribeDate: "2023-12-20",
-    lastActivity: "2024-01-18",
-    location: "Los Angeles, US",
-    tags: ["DJ", "Professional"],
-    engagement: "Low",
-    totalOpens: 8,
-    totalClicks: 1
-  },
-  {
-    id: "4",
-    name: "Emma Wilson",
-    email: "emma.wilson@example.com",
-    status: "active",
-    subscribeDate: "2024-01-18",
-    lastActivity: "2024-01-21",
-    location: "London, UK",
-    tags: ["Student"],
-    engagement: "High",
-    totalOpens: 34,
-    totalClicks: 9
-  },
-  {
-    id: "5",
-    name: "David Kim",
-    email: "david.kim@example.com",
-    status: "bounced",
-    subscribeDate: "2024-01-12",
-    lastActivity: "2024-01-19",
-    location: "Seoul, KR",
-    tags: ["Producer", "Advanced"],
-    engagement: "Medium",
-    totalOpens: 18,
-    totalClicks: 3
-  }
-];
+// Real subscriber data will be fetched from API
 
 function SubscribersPage() {
   const { user } = useAuth();
@@ -548,6 +482,15 @@ function SubscribersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [subscriberStats, setSubscriberStats] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0
+  });
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -558,6 +501,46 @@ function SubscribersPage() {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Fetch subscribers data
+  const fetchSubscribers = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: searchTerm,
+        status: statusFilter,
+        page: (pagination?.page || 1).toString(),
+        limit: (pagination?.limit || 50).toString()
+      });
+
+      const response = await fetch(`/api/email-campaigns/subscribers?${params}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscribers(data.subscribers);
+        setSubscriberStats(data.stats || {});
+        setPagination(data.pagination || {
+          page: 1,
+          limit: 50,
+          total: 0,
+          totalPages: 0
+        });
+      } else {
+        console.error('Failed to fetch subscribers');
+      }
+    } catch (error) {
+      console.error('Error fetching subscribers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data when component mounts or filters change
+  useEffect(() => {
+    if (translationsLoaded && user) {
+      fetchSubscribers();
+    }
+  }, [translationsLoaded, user, searchTerm, statusFilter, pagination?.page]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -571,36 +554,27 @@ function SubscribersPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  if (languageLoading || !translationsLoaded) {
-    return <LoadingComponent />;
-  }
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && translationsLoaded && user;
 
-  if (!user) {
-    return <LoadingComponent />;
-  }
+  // Use real data instead of filtering mock data
+  const filteredSubscribers = subscribers;
 
-  const filteredSubscribers = mockSubscribers.filter(subscriber => {
-    const matchesSearch = subscriber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         subscriber.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || subscriber.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const stats = [
+  const statsDisplay = [
     {
-      value: mockSubscribers.length.toString(),
+      value: subscriberStats?.total?.toString() || "0",
       label: "Total Subscribers",
     },
     {
-      value: mockSubscribers.filter(s => s.status === "active").length.toString(),
+      value: subscriberStats?.active?.toString() || "0",
       label: "Active Subscribers",
     },
     {
-      value: mockSubscribers.filter(s => s.engagement === "High").length.toString(),
+      value: subscriberStats?.highEngagement?.toString() || "0",
       label: "High Engagement",
     },
     {
-      value: "2.3%",
+      value: subscriberStats?.growthRate || "0%",
       label: "Growth Rate",
     },
   ];
@@ -645,14 +619,17 @@ function SubscribersPage() {
       <SubscribersContainer>
         <SubscribersTitle>
           <FaUsers />
-          Subscribers
+          {showContent ? t("admin.subscribersPage.title", "Subscribers") : "Subscribers"}
         </SubscribersTitle>
         <SubscribersSubtitle>
-          Manage your email subscribers, segments, and engagement analytics
+          {showContent ? t("admin.subscribersPage.subtitle", "Manage your email subscribers, segments, and engagement analytics") : "Manage your email subscribers, segments, and engagement analytics"}
         </SubscribersSubtitle>
 
+        {showContent && (
+          <>
+
         <StatsRow>
-          {stats.map((stat, index) => (
+          {statsDisplay.map((stat: any, index: number) => (
             <StatCard
               key={stat.label}
               variants={cardVariants}
@@ -719,7 +696,9 @@ function SubscribersPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredSubscribers.length === 0 ? (
+              {loading ? (
+                <TableLoadingRow colSpan={7} message="Loading subscribers..." />
+              ) : filteredSubscribers.length === 0 ? (
                 <tr>
                   <TableCell colSpan={7}>
                     <EmptyState>
@@ -742,7 +721,7 @@ function SubscribersPage() {
                     <TableCell>
                       <SubscriberInfo>
                         <Avatar color={getAvatarColor(subscriber.name)}>
-                          {subscriber.name.split(' ').map(n => n[0]).join('')}
+                          {subscriber.name.split(' ').map((n: string) => n[0]).join('')}
                         </Avatar>
                         <SubscriberDetails>
                           <SubscriberName>{subscriber.name}</SubscriberName>
@@ -771,7 +750,7 @@ function SubscribersPage() {
                     </TableCell>
                     <TableCell>
                       <TagsContainer>
-                        {subscriber.tags.map((tag, tagIndex) => (
+                        {subscriber.tags.map((tag: string, tagIndex: number) => (
                           <Tag key={tagIndex}>{tag}</Tag>
                         ))}
                       </TagsContainer>
@@ -827,6 +806,8 @@ function SubscribersPage() {
             </TableBody>
           </Table>
         </SubscribersGrid>
+        </>
+        )}
       </SubscribersContainer>
     </>
   );

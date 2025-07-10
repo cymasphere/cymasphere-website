@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -37,19 +37,40 @@ import {
   FaEnvelope,
   FaPaintBrush,
   FaTextHeight,
-  FaPuzzlePiece
+  FaPuzzlePiece,
+  FaTimes,
+  FaExclamationTriangle,
+  FaSearch,
+  FaGlobe,
+  FaTabletAlt
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import styled from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
+import VisualEditor from "@/components/email-campaigns/VisualEditor";
 
-const CreateContainer = styled.div`
+// Keyframes for spinner animation
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(108, 99, 255, 0.3);
+  border-top: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+`;
+
+const CreateContainer = styled.div<{ $isDesignStep: boolean }>`
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: ${props => props.$isDesignStep ? 'none' : '1200px'};
+  margin: ${props => props.$isDesignStep ? '0' : '0 auto'};
   padding: 40px 20px;
 
   @media (max-width: 768px) {
@@ -122,7 +143,7 @@ const StepIndicator = styled.div`
   }
 `;
 
-const Step = styled.div<{ active: boolean; completed: boolean }>`
+const Step = styled.div<{ $active: boolean; $completed: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -133,13 +154,13 @@ const Step = styled.div<{ active: boolean; completed: boolean }>`
   transition: all 0.3s ease;
   
   ${props => {
-    if (props.completed) {
+    if (props.$completed) {
       return `
         background-color: rgba(40, 167, 69, 0.2);
         color: #28a745;
         border: 2px solid #28a745;
       `;
-    } else if (props.active) {
+    } else if (props.$active) {
       return `
         background-color: rgba(108, 99, 255, 0.2);
         color: var(--primary);
@@ -160,10 +181,10 @@ const Step = styled.div<{ active: boolean; completed: boolean }>`
   }
 `;
 
-const StepConnector = styled.div<{ completed: boolean }>`
+const StepConnector = styled.div<{ $completed: boolean }>`
   width: 40px;
   height: 2px;
-  background-color: ${props => props.completed ? '#28a745' : 'rgba(255, 255, 255, 0.1)'};
+  background-color: ${props => props.$completed ? '#28a745' : 'rgba(255, 255, 255, 0.1)'};
   transition: background-color 0.3s ease;
 
   @media (max-width: 768px) {
@@ -171,13 +192,15 @@ const StepConnector = styled.div<{ completed: boolean }>`
   }
 `;
 
-const StepContent = styled(motion.div)`
+const StepContent = styled(motion.div)<{ $isDesignStep?: boolean }>`
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 2rem;
+  padding: ${props => props.$isDesignStep ? '1rem' : '2rem'};
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 2rem;
   min-height: 600px;
+  width: 100%;
+  max-width: ${props => props.$isDesignStep ? 'none' : 'none'};
 `;
 
 const StepTitle = styled.h2`
@@ -367,6 +390,7 @@ const TemplateTitle = styled.h4`
 const TemplateDescription = styled.p`
   color: var(--text-secondary);
   font-size: 0.8rem;
+  padding-bottom: 0.5rem;
 `;
 
 const ContentEditor = styled.div`
@@ -385,19 +409,19 @@ const EditorToolbar = styled.div`
   flex-wrap: wrap;
 `;
 
-const ToolbarButton = styled.button<{ active?: boolean }>`
+const ToolbarButton = styled.button<{ $active?: boolean }>`
   padding: 8px 12px;
   border: none;
   border-radius: 4px;
-  background-color: ${props => props.active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  background-color: ${props => props.$active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.8rem;
 
   &:hover {
-    background-color: ${props => props.active ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)'};
-    color: ${props => props.active ? 'white' : 'var(--text)'};
+    background-color: ${props => props.$active ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)'};
+    color: ${props => props.$active ? 'white' : 'var(--text)'};
   }
 `;
 
@@ -451,7 +475,9 @@ const NavigationButtons = styled.div`
   margin-top: 2rem;
 `;
 
-const NavButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const NavButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -510,6 +536,12 @@ const PreviewTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  
+  svg:first-child {
+    color: var(--primary);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
 `;
 
 const PreviewContent = styled.div`
@@ -625,16 +657,14 @@ const DragElement = styled.div`
   }
 `;
 
-const ViewToggle = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
-})<{ active: boolean }>`
+const ViewToggle = styled.button<{ $active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
-  background: ${props => props.active 
+  background: ${props => props.$active 
     ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
     : 'rgba(255, 255, 255, 0.08)'};
-  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.85rem;
@@ -657,7 +687,7 @@ const ViewToggle = styled.button.withConfig({
   }
 
   &:hover {
-    background: ${props => props.active 
+    background: ${props => props.$active 
       ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
       : 'rgba(255, 255, 255, 0.15)'};
     transform: translateY(-2px);
@@ -964,6 +994,265 @@ const PreviewButton = styled.button`
   }
 `;
 
+const PreviewModal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  z-index: 10000;
+  padding: 0;
+`;
+
+const PreviewModalContent = styled(motion.div)`
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+`;
+
+const PreviewModalTitle = styled.h3`
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  &:before {
+    content: '📧';
+    font-size: 1.5rem;
+  }
+`;
+
+const PreviewModalClose = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+`;
+
+const PreviewModalBody = styled.div`
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  display: flex;
+  flex-direction: column;
+`;
+
+const PreviewEmailFrame = styled.div`
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const ExpandPreviewButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(108, 99, 255, 0.4);
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+
+    &:before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+  }
+`;
+
+const DeviceToggleContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const DeviceToggle = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: ${props => props.$active 
+    ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
+    : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.15)'};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    background: ${props => props.$active 
+      ? 'linear-gradient(135deg, var(--accent), var(--primary))' 
+      : 'rgba(255, 255, 255, 0.15)'};
+    color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+    border-color: ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.25)'};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+
+    &:before {
+      left: 100%;
+    }
+  }
+`;
+
+const PreviewContainer = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
+    }
+  }};
+  max-width: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return 'min(1400px, calc(100vw - 4rem))';
+      default: return 'min(1400px, calc(100vw - 4rem))';
+    }
+  }};
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const DeviceFrame = styled.div<{ $device: 'mobile' | 'tablet' | 'desktop' }>`
+  position: relative;
+  background: ${props => props.$device === 'desktop' ? 'transparent' : '#000'};
+  border-radius: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '25px';
+      case 'tablet': return '20px';
+      case 'desktop': return '8px';
+      default: return '8px';
+    }
+  }};
+  padding: ${props => {
+    switch (props.$device) {
+      case 'mobile': return '20px 8px';
+      case 'tablet': return '15px 10px';
+      case 'desktop': return '0';
+      default: return '0';
+    }
+  }};
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: ${props => props.$device === 'mobile' ? '8px' : '6px'};
+    left: 50%;
+    transform: translateX(-50%);
+    width: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '60px';
+        case 'tablet': return '80px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    height: ${props => {
+      switch (props.$device) {
+        case 'mobile': return '4px';
+        case 'tablet': return '3px';
+        case 'desktop': return '0px';
+        default: return '0px';
+      }
+    }};
+    background: #333;
+    border-radius: 2px;
+    display: ${props => props.$device === 'desktop' ? 'none' : 'block'};
+  }
+`;
+
 const SidebarPanel = styled.div`
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
   border-radius: 16px;
@@ -1199,6 +1488,254 @@ const ContentElementsBar = styled.div`
   }
 `;
 
+const AudienceSelectionContainer = styled.div`
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const SearchInputContainer = styled.div`
+  position: relative;
+  margin-bottom: 1.5rem;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 12px 16px 12px 45px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const SearchIcon = styled.div`
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  pointer-events: none;
+`;
+
+const ClearSearchButton = styled.button`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const AudienceList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const AudienceItem = styled.div<{ $isSelected: boolean; $isExcluded: boolean }>`
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: ${props => {
+    if (props.$isExcluded) return 'rgba(220, 53, 69, 0.1)';
+    if (props.$isSelected) return 'rgba(40, 167, 69, 0.15)';
+    return 'rgba(255, 255, 255, 0.02)';
+  }};
+  border: 1px solid ${props => {
+    if (props.$isExcluded) return 'rgba(220, 53, 69, 0.3)';
+    if (props.$isSelected) return 'rgba(40, 167, 69, 0.4)';
+    return 'rgba(255, 255, 255, 0.05)';
+  }};
+  transition: all 0.3s ease;
+  cursor: pointer;
+  gap: 0.75rem;
+  
+  &:hover {
+    background: ${props => {
+      if (props.$isExcluded) return 'rgba(220, 53, 69, 0.15)';
+      if (props.$isSelected) return 'rgba(40, 167, 69, 0.2)';
+      return 'rgba(255, 255, 255, 0.05)';
+    }};
+    border-color: ${props => {
+      if (props.$isExcluded) return 'rgba(220, 53, 69, 0.5)';
+      if (props.$isSelected) return 'rgba(40, 167, 69, 0.6)';
+      return 'rgba(255, 255, 255, 0.1)';
+    }};
+    transform: translateY(-1px);
+  }
+`;
+
+const AudienceCheckbox = styled.input`
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #28a745;
+  flex-shrink: 0;
+`;
+
+const AudienceInfo = styled.div`
+  flex: 1;
+  cursor: pointer;
+  min-width: 0; /* Allow text truncation */
+`;
+
+const AudienceName = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.125rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const AudienceDetails = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+`;
+
+const AudienceCount = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+`;
+
+const AudienceType = styled.span<{ $type: 'static' | 'dynamic' }>`
+  background: ${props => props.$type === 'static' ? 'rgba(255,193,7,0.2)' : 'rgba(40,167,69,0.2)'};
+  color: ${props => props.$type === 'static' ? '#ffc107' : '#28a745'};
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+`;
+
+const ExcludeButton = styled.button<{ $isExcluded: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid ${props => props.$isExcluded ? '#dc3545' : 'rgba(255, 255, 255, 0.2)'};
+  border-radius: 4px;
+  background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  color: ${props => props.$isExcluded ? '#dc3545' : 'var(--text-secondary)'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  &:hover {
+    background: ${props => props.$isExcluded ? 'rgba(220, 53, 69, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+    border-color: ${props => props.$isExcluded ? '#dc3545' : 'rgba(255, 255, 255, 0.3)'};
+    transform: translateY(-1px);
+  }
+  
+  svg {
+    font-size: 0.7rem;
+  }
+`;
+
+const AudienceStatsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const AudienceStatItem = styled.div`
+  text-align: center;
+`;
+
+const AudienceStatValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+`;
+
+const AudienceStatLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
 const ContentElementButton = styled.div`
   display: flex;
   flex-direction: column;
@@ -1346,37 +1883,14 @@ const EditableText = styled.div.withConfig({
   ` : ''}
 `;
 
-// Mock data
-const audienceSegments = [
-  {
-    id: "all",
-    title: "All Subscribers",
-    description: "Send to all active subscribers",
-    count: 12890,
-    engagement: "Mixed"
-  },
-  {
-    id: "active",
-    title: "Highly Engaged",
-    description: "Subscribers who opened emails in the last 30 days",
-    count: 4567,
-    engagement: "High"
-  },
-  {
-    id: "new",
-    title: "New Subscribers",
-    description: "Subscribers who joined in the last 7 days",
-    count: 234,
-    engagement: "Unknown"
-  },
-  {
-    id: "inactive",
-    title: "Re-engagement",
-    description: "Subscribers who haven't opened emails in 60+ days",
-    count: 1890,
-    engagement: "Low"
-  }
-];
+// Audience interface
+interface Audience {
+  id: string;
+  name: string;
+  description: string;
+  subscriber_count: number;
+  type: 'static' | 'dynamic';
+}
 
 const templates = [
   {
@@ -1433,7 +1947,7 @@ const templatePresets = {
     content: `Exciting New Features Just Launched!`,
     emailElements: [
       { id: 'header_' + Date.now(), type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
-      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=🚀+New+Features' },
+              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=New+Features' },
       { id: 'text_' + Date.now(), type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
       { id: 'button_' + Date.now(), type: 'button', content: 'Explore New Features', url: '#' },
       { id: 'spacer_' + Date.now(), type: 'spacer', height: '30px' }
@@ -1451,7 +1965,7 @@ const templatePresets = {
       { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
       { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
       { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' },
-      { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=🎵+Welcome+to+Cymasphere' }
+              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=Welcome+to+Cymasphere' }
     ]
   },
   custom: {
@@ -1474,9 +1988,13 @@ interface CampaignData {
   name: string;
   subject: string;
   senderName: string;
+  senderEmail: string;
+  replyToEmail: string;
   preheader: string;
   description: string;
-  audience: string;
+  brandHeader: string; // Editable brand header content
+  audienceIds: string[]; // Array of selected audience IDs
+  excludedAudienceIds: string[]; // Array of excluded audience IDs
   template: string;
   content: string;
   scheduleType: string;
@@ -1484,89 +2002,13 @@ interface CampaignData {
   scheduleTime: string;
 }
 
-// Mock campaigns data for editing
-const mockCampaigns = [
-  {
-    id: "1",
-    name: "Welcome Series",
-    subject: "Welcome to Cymasphere! 🎵",
-    senderName: "Cymasphere Team",
-    preheader: "Let's get you started on your music creation journey",
-    description: "Automated welcome email sequence for new subscribers",
-    audience: "new",
-    template: "welcome",
-    content: `
-      <h2>Welcome to Cymasphere!</h2>
-      <p>We're excited to have you join our community of music creators and synthesizer enthusiasts.</p>
-      <p>Here's what you can expect:</p>
-      <ul>
-        <li>Access to our powerful web-based synthesizer</li>
-        <li>Regular updates on new features and sounds</li>
-        <li>Tips and tutorials from our team</li>
-      </ul>
-      <p>Get started by exploring our synthesizer and creating your first track!</p>
-    `,
-    scheduleType: "immediate",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "2",
-    name: "Product Launch Announcement",
-    subject: "🚀 New Synthesizer Features Available Now!",
-    senderName: "Cymasphere Product Team",
-    preheader: "Revolutionary new features that will transform your music production",
-    description: "Announcing our latest synthesizer features",
-    audience: "active",
-    template: "promotional",
-    content: `
-      <h2>Exciting New Features Just Launched! 🚀</h2>
-      <p>We've been working hard to bring you some amazing new synthesizer capabilities...</p>
-    `,
-    scheduleType: "scheduled",
-    scheduleDate: "2024-02-01",
-    scheduleTime: "10:00"
-  },
-  {
-    id: "3",
-    name: "Monthly Newsletter",
-    subject: "🎵 This Month in Music Production",
-    senderName: "Cymasphere Newsletter",
-    preheader: "The latest tips, trends, and updates from the music production world",
-    description: "Regular updates and tips for music producers",
-    audience: "all",
-    template: "newsletter",
-    content: `
-      <h2>This Month in Music Production</h2>
-      <p>Here are the latest tips, tricks, and updates from the world of electronic music...</p>
-    `,
-    scheduleType: "draft",
-    scheduleDate: "",
-    scheduleTime: ""
-  },
-  {
-    id: "4",
-    name: "Re-engagement Campaign",
-    subject: "We Miss You! Come Back and Create 🎶",
-    senderName: "Cymasphere Support",
-    preheader: "Special offers and new features waiting for you",
-    description: "Win back inactive subscribers",
-    audience: "inactive",
-    template: "custom",
-    content: `
-      <h2>We Miss You!</h2>
-      <p>It's been a while since we've seen you creating music with Cymasphere...</p>
-    `,
-    scheduleType: "trigger",
-    scheduleDate: "",
-    scheduleTime: ""
-  }
-];
+// Campaign email elements will be loaded from the database when editing existing campaigns
 
 const SendingFeedback = styled(motion.div)<{ type?: 'success' | 'error' | 'info' }>`
   position: fixed;
   top: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 1rem 1.5rem;
   border-radius: 8px;
   color: white;
@@ -1622,7 +2064,7 @@ const ModalTitle = styled.h2`
 
 const ModalStats = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin: 1.5rem 0;
 `;
@@ -1663,16 +2105,26 @@ const LoadingSpinner = styled(motion.div)`
 `;
 
 function CreateCampaignPage() {
+  // Add audience state
+  const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [audiencesLoading, setAudiencesLoading] = useState(true);
+  const [audienceSearchTerm, setAudienceSearchTerm] = useState('');
+  const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
   const templateId = searchParams.get('template');
   const shouldPrefill = searchParams.get('prefill') === 'true';
+  const stepParam = searchParams.get('step');
+  const scheduleTypeParam = searchParams.get('scheduleType');
   const isEditMode = Boolean(editId);
   
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const step = stepParam ? parseInt(stepParam, 10) : 1;
+    return step >= 1 && step <= 3 ? step : 1;
+  });
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
   
@@ -1681,21 +2133,29 @@ function CreateCampaignPage() {
   const [sendingMessage, setSendingMessage] = useState('');
   const [campaignResult, setCampaignResult] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   
-  // Initialize email elements based on campaign content or template
+  // Reach calculation state
+  const [reachData, setReachData] = useState<{
+    totalIncluded: number;
+    totalExcluded: number;
+    estimatedReach: number;
+    includedCount: number;
+    excludedCount: number;
+    isLoading: boolean;
+  }>({
+    totalIncluded: 0,
+    totalExcluded: 0,
+    estimatedReach: 0,
+    includedCount: 0,
+    excludedCount: 0,
+    isLoading: false
+  });
+  
+  // Initialize email elements based on template
   const getInitialEmailElements = () => {
-    if (isEditMode && editId) {
-      const existingCampaign = mockCampaigns.find(c => c.id === editId);
-      if (existingCampaign && existingCampaign.content) {
-        // Convert HTML content to email elements for the visual editor
-        // This is a simplified version - in a real app you'd parse the HTML properly
-        return [
-          { id: 'header', type: 'header', content: existingCampaign.subject },
-          { id: 'text1', type: 'text', content: existingCampaign.content.replace(/<[^>]*>/g, '') },
-          { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' }
-        ];
-      }
-    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
+    if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
       // Initialize from template
       const preset = templatePresets[templateId as keyof typeof templatePresets];
       return preset.emailElements.map(element => ({
@@ -1707,7 +2167,7 @@ function CreateCampaignPage() {
       { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
       { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
       { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' },
-      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎵+Create+Amazing+Music' }
+      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Create+Amazing+Music' }
     ];
   };
 
@@ -1719,41 +2179,23 @@ function CreateCampaignPage() {
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   
   // Initialize campaign data based on edit mode or template
-  const getInitialCampaignData = () => {
-    if (isEditMode && editId) {
-      const existingCampaign = mockCampaigns.find(c => c.id === editId);
-      if (existingCampaign) {
-        return existingCampaign;
-      }
-    } else if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
-      // Initialize from template
-      const preset = templatePresets[templateId as keyof typeof templatePresets];
-      return {
-        name: preset.name,
-        subject: preset.subject,
-        senderName: preset.senderName,
-        preheader: preset.preheader,
-        description: preset.description,
-        audience: preset.audience,
-        template: templateId,
-        content: preset.content,
-        scheduleType: "",
-        scheduleDate: "",
-        scheduleTime: ""
-      };
-    }
+  const getInitialCampaignData = (): CampaignData => {
     return {
     name: "",
     subject: "",
-    senderName: "",
+      senderName: "Cymasphere",
+      senderEmail: "support@cymasphere.com",
+      replyToEmail: "",
     preheader: "",
     description: "",
-    audience: "",
+      brandHeader: "CYMASPHERE", // Default brand header text
+      audienceIds: [],
+      excludedAudienceIds: [],
     template: "",
     content: "",
-    scheduleType: "",
+    scheduleType: scheduleTypeParam || "immediate", // Use URL parameter or default to "Send Now"
     scheduleDate: "",
-    scheduleTime: ""
+    scheduleTime: "09:00" // Default send time to 9:00 AM
     };
   };
   
@@ -1762,11 +2204,266 @@ function CreateCampaignPage() {
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
+  // Define reach calculation function using useCallback so it can be used in useEffect
+  const updateReachCalculation = useCallback(async () => {
+    console.log(`🎯🎯🎯 =====EDIT MODAL DEBUG=====`);
+    console.log(`Campaign data audienceIds:`, campaignData.audienceIds);
+    console.log(`Campaign data excludedAudienceIds:`, campaignData.excludedAudienceIds);
+    console.log(`Available audiences in edit modal:`, audiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+    
+    if (campaignData.audienceIds.length === 0) {
+      console.log(`🎯 Edit modal: No audiences selected, setting reach to 0`);
+      setReachData({
+        totalIncluded: 0,
+        totalExcluded: 0,
+        estimatedReach: 0,
+        includedCount: 0,
+        excludedCount: 0,
+        isLoading: false
+      });
+      return;
+    }
+
+    setReachData(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      console.log(`🎯 Edit modal calling reach API with:`, {
+        audienceIds: campaignData.audienceIds,
+        excludedAudienceIds: campaignData.excludedAudienceIds
+      });
+
+      const response = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          audienceIds: campaignData.audienceIds,
+          excludedAudienceIds: campaignData.excludedAudienceIds
+        })
+      });
+
+      console.log(`🎯 Edit modal reach API response status:`, response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`🎯 Edit modal reach API response data:`, JSON.stringify(data, null, 2));
+        
+        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+        
+        console.log(`🎯 Edit modal matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        console.log(`🎯 Edit modal matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+        
+        const finalReachData = {
+          totalIncluded: data.details?.totalIncluded || 0,
+          totalExcluded: data.details?.totalExcluded || 0,
+          estimatedReach: data.uniqueCount || 0,
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        };
+        
+        console.log(`🎯 Edit modal final reach data:`, finalReachData);
+        console.log(`🎯 EDIT MODAL KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
+        
+        setReachData(finalReachData);
+      } else {
+        console.error('Failed to calculate reach:', response.status);
+        // Fallback to simple calculation
+        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+        const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+        
+        setReachData({
+          totalIncluded,
+          totalExcluded,
+          estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+          includedCount: includedAudiences.length,
+          excludedCount: excludedAudiences.length,
+          isLoading: false
+        });
+      }
+    } catch (error) {
+      console.error('Error calculating reach:', error);
+      // Fallback to simple calculation
+      const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+      const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      
+      setReachData({
+        totalIncluded,
+        totalExcluded,
+        estimatedReach: Math.max(0, totalIncluded - totalExcluded),
+        includedCount: includedAudiences.length,
+        excludedCount: excludedAudiences.length,
+        isLoading: false
+      });
+    }
+  }, [campaignData.audienceIds, campaignData.excludedAudienceIds, audiences, setReachData]);
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Handle URL parameter changes for scheduleType
+  useEffect(() => {
+    if (scheduleTypeParam && scheduleTypeParam !== campaignData.scheduleType) {
+      setCampaignData(prev => ({
+        ...prev,
+        scheduleType: scheduleTypeParam
+      }));
+    }
+  }, [scheduleTypeParam]);
+
+  // Load audiences from API
+  useEffect(() => {
+    const loadAudiences = async () => {
+      try {
+        const response = await fetch('/api/email-campaigns/audiences', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAudiences(data.audiences || []);
+        } else {
+          console.error('Failed to load audiences:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading audiences:', error);
+      } finally {
+        setAudiencesLoading(false);
+      }
+    };
+
+    if (user) {
+      loadAudiences();
+    }
+  }, [user]);
+
+  // Update reach calculation when audience selection changes or when reaching review step
+  useEffect(() => {
+    updateReachCalculation();
+  }, [updateReachCalculation]);
+
+  // Trigger reach calculation when user reaches the review step
+  useEffect(() => {
+    if (currentStep === 3 && campaignData.audienceIds.length > 0) {
+      updateReachCalculation();
+    }
+  }, [currentStep, updateReachCalculation]);
+
+  // Load campaign data for editing
+  useEffect(() => {
+    console.log('🔍 Campaign loading effect triggered:', {
+      isEditMode,
+      editId,
+      hasUser: !!user,
+      searchParams: searchParams.toString(),
+      currentURL: window.location.href
+    });
+    
+    const loadCampaignData = async () => {
+      if (isEditMode && editId && user) {
+        console.log('🔍 Starting campaign load for ID:', editId);
+        setIsLoadingCampaign(true);
+        try {
+          const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const campaign = data.campaign;
+            
+            console.log('🔍 Frontend received campaign data:', JSON.stringify(data, null, 2));
+            console.log('🔍 Campaign object:', JSON.stringify(campaign, null, 2));
+            console.log('🔍 Field values:');
+            console.log('  - campaign.name:', campaign.name);
+            console.log('  - campaign.subject:', campaign.subject);
+            console.log('  - campaign.senderName:', campaign.senderName);
+            console.log('  - campaign.senderEmail:', campaign.senderEmail);
+            console.log('  - campaign.replyToEmail:', campaign.replyToEmail);
+            console.log('  - campaign.audienceIds:', campaign.audienceIds);
+            
+            // Update campaign data state
+            setCampaignData({
+              name: campaign.name || '',
+              subject: campaign.subject || '',
+              senderName: campaign.senderName || 'Cymasphere',
+              senderEmail: campaign.senderEmail || 'support@cymasphere.com',
+              replyToEmail: campaign.replyToEmail || '',
+              preheader: campaign.preheader || '',
+              description: campaign.description || '',
+              brandHeader: campaign.brandHeader || 'CYMASPHERE',
+              audienceIds: campaign.audienceIds || [],
+              excludedAudienceIds: campaign.excludedAudienceIds || [],
+              template: campaign.template_id || '',
+              content: campaign.html_content || '',
+              scheduleType: campaign.scheduled_at ? 'scheduled' : '',
+              scheduleDate: campaign.scheduled_at ? (() => {
+                const scheduledDate = new Date(campaign.scheduled_at);
+                console.log('📅 Loading scheduled time for editing:', {
+                  storedValue: campaign.scheduled_at,
+                  parsedDate: scheduledDate.toString(),
+                  localDateString: scheduledDate.toLocaleDateString('en-CA'), // YYYY-MM-DD format
+                  localTimeString: scheduledDate.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' }) // HH:MM format
+                });
+                return scheduledDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+              })() : '',
+              scheduleTime: campaign.scheduled_at ? (() => {
+                const scheduledDate = new Date(campaign.scheduled_at);
+                return scheduledDate.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' }); // HH:MM format
+              })() : ''
+            });
+            
+            // Parse email elements from html_content if available
+            if (campaign.html_content) {
+              // Simple parsing - in a real app you'd have a proper HTML to elements parser
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(campaign.html_content, 'text/html');
+              const elements = Array.from(doc.body.children).map((element, index) => ({
+                id: `element_${index}`,
+                type: element.tagName.toLowerCase() === 'h1' ? 'header' : 'text',
+                content: element.textContent || ''
+              }));
+              
+              if (elements.length > 0) {
+                setEmailElements(elements);
+              }
+            }
+          } else if (response.status === 404) {
+            console.warn(`Campaign with ID ${editId} not found, creating new campaign instead`);
+            // Campaign doesn't exist, treat as create mode
+            // Clear the edit parameter from URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('edit');
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            console.error('Failed to load campaign:', response.status);
+          }
+        } catch (error) {
+          console.error('Error loading campaign:', error);
+        } finally {
+          setIsLoadingCampaign(false);
+        }
+      } else {
+        console.log('🔍 Campaign loading skipped:', {
+          isEditMode,
+          editId,
+          hasUser: !!user,
+          reason: !isEditMode ? 'not in edit mode' : !editId ? 'no edit ID' : !user ? 'no user' : 'unknown'
+        });
+      }
+    };
+
+    loadCampaignData();
+  }, [isEditMode, editId, user]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -1774,6 +2471,10 @@ function CreateCampaignPage() {
 
   if (!user) {
     return <LoadingComponent />;
+  }
+
+  if (isLoadingCampaign) {
+    return <LoadingComponent text="Loading campaign..." />;
   }
 
   const steps = [
@@ -1798,43 +2499,55 @@ function CreateCampaignPage() {
     console.log("Saving campaign:", campaignData);
     
     try {
-      const response = await fetch('/api/email-campaigns/send', {
-        method: 'POST',
+      // Use PUT for editing existing campaigns, POST for creating new ones
+      const isUpdating = isEditMode && editId;
+      const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
+      const method = isUpdating ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          campaignId: editId,
           name: campaignData.name,
           subject: campaignData.subject,
-          audience: campaignData.audience,
-          emailElements,
-          scheduleType: 'draft'
+          senderName: campaignData.senderName,           // ✅ FIXED
+          senderEmail: campaignData.senderEmail,         // ✅ FIXED
+          replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
+          preheader: campaignData.preheader,
+          description: campaignData.description,         // ✅ ADDED
+          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
+          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          audienceIds: campaignData.audienceIds,         // ✅ FIXED
+          excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
+          status: 'draft'
         }),
       });
 
       const result = await response.json();
       
-      if (result.success) {
-        console.log('Campaign saved as draft:', result);
-        // Show success message
-        setSendingMessage('Campaign saved as draft successfully!');
+      if (response.ok) {
+        console.log(`Campaign ${isUpdating ? 'updated' : 'saved'} as draft:`, result);
+        setSendingMessage(`Campaign ${isUpdating ? 'updated' : 'saved'} as draft successfully!`);
         setTimeout(() => setSendingMessage(''), 3000);
       } else {
-        console.error('Error saving campaign:', result.error);
-        setSendingMessage(`Error saving campaign: ${result.error}`);
+        // Handle validation errors gracefully without throwing
+        console.log(`Validation error ${isUpdating ? 'updating' : 'saving'} campaign:`, result.error);
+        setSendingMessage(result.error || `Error ${isUpdating ? 'updating' : 'saving'} campaign`);
         setTimeout(() => setSendingMessage(''), 5000);
       }
     } catch (error) {
-      console.error('Error saving campaign:', error);
-      setSendingMessage('Error saving campaign. Please try again.');
+      console.log(`Error ${isEditMode ? 'updating' : 'saving'} campaign:`, error);
+      setSendingMessage(`Error ${isEditMode ? 'updating' : 'saving'} campaign. Please try again.`);
       setTimeout(() => setSendingMessage(''), 5000);
     }
   };
 
   const handleSend = async () => {
     // Validate required fields
-    if (!campaignData.name || !campaignData.subject || !campaignData.audience) {
+    if (!campaignData.name || !campaignData.subject || campaignData.audienceIds.length === 0) {
       setSendingMessage('Please fill in all required fields (name, subject, audience)');
       setTimeout(() => setSendingMessage(''), 5000);
       return;
@@ -1851,44 +2564,118 @@ function CreateCampaignPage() {
     setCampaignResult(null);
 
     try {
-      const response = await fetch('/api/email-campaigns/send', {
-        method: 'POST',
+      // First save the campaign (use PUT if editing, POST if creating)
+      const isUpdating = isEditMode && editId;
+      const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
+      const method = isUpdating ? 'PUT' : 'POST';
+      
+      const saveResponse = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          campaignId: editId,
           name: campaignData.name,
           subject: campaignData.subject,
-          audience: campaignData.audience,
-          emailElements,
-          scheduleType: campaignData.scheduleType,
-          scheduleDate: campaignData.scheduleDate,
-          scheduleTime: campaignData.scheduleTime
+          senderName: campaignData.senderName,           // ✅ FIXED
+          senderEmail: campaignData.senderEmail,         // ✅ FIXED
+          replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
+          preheader: campaignData.preheader,
+          description: campaignData.description,         // ✅ ADDED
+          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
+          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          audienceIds: campaignData.audienceIds,         // ✅ FIXED
+          excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
+          status: campaignData.scheduleType === 'scheduled' ? 'scheduled' : 'sent',
+          scheduled_at: campaignData.scheduleType === 'scheduled' ? 
+            (() => {
+              // Preserve local timezone by adding timezone offset explicitly
+              const localDateTime = new Date(`${campaignData.scheduleDate}T${campaignData.scheduleTime}:00`);
+              const timezoneOffset = localDateTime.getTimezoneOffset();
+              const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60);
+              const offsetMinutes = Math.abs(timezoneOffset) % 60;
+              const offsetSign = timezoneOffset <= 0 ? '+' : '-';
+              const offsetString = `${offsetSign}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
+              const localDateTimeString = `${campaignData.scheduleDate}T${campaignData.scheduleTime}:00${offsetString}`;
+              
+              console.log('📅 Saving scheduled time:', {
+                originalDate: campaignData.scheduleDate,
+                originalTime: campaignData.scheduleTime,
+                timezoneOffset,
+                offsetString,
+                localDateTimeString,
+                parsedBack: new Date(localDateTimeString).toString()
+              });
+              
+              return localDateTimeString;
+            })() : null
         }),
       });
 
-      const result = await response.json();
+      const result = await saveResponse.json();
       
-      if (result.success) {
-        console.log('Campaign result:', result);
-        setCampaignResult(result);
-        setShowResultModal(true);
+      if (saveResponse.ok) {
+        console.log('Campaign saved:', result);
         
-        if (result.status === 'draft') {
-          setSendingMessage('Campaign saved as draft!');
-        } else if (result.status === 'scheduled') {
-          setSendingMessage(`Campaign scheduled successfully!`);
+        // Call the send API for all schedule types (it handles immediate, scheduled, timezone, and draft)
+        setSendingMessage(
+          campaignData.scheduleType === 'immediate' ? 'Sending emails now...' :
+          campaignData.scheduleType === 'scheduled' ? 'Scheduling campaign...' :
+          campaignData.scheduleType === 'timezone' ? 'Setting up timezone-based delivery...' :
+          'Saving as draft...'
+        );
+        
+        const sendResponse = await fetch('/api/email-campaigns/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            campaignId: result.campaign?.id,
+            name: campaignData.name,
+            subject: campaignData.subject,
+            brandHeader: campaignData.brandHeader,
+            audienceIds: campaignData.audienceIds,
+            excludedAudienceIds: campaignData.excludedAudienceIds,
+            emailElements: emailElements,
+            scheduleType: campaignData.scheduleType,
+            scheduleDate: campaignData.scheduleDate,
+            scheduleTime: campaignData.scheduleTime
+          }),
+        });
+
+        const sendResult = await sendResponse.json();
+        
+        if (sendResponse.ok) {
+          console.log('📧 Send result:', sendResult);
+          setCampaignResult(sendResult);
+          setShowResultModal(true);
+          
+          // Update message based on actual result
+          if (sendResult.status === 'scheduled') {
+            setSendingMessage(
+              sendResult.scheduleType === 'timezone' 
+                ? `Campaign scheduled for timezone-based delivery at ${sendResult.stats?.sendTime}!`
+                : `Campaign scheduled for ${new Date(sendResult.scheduledFor).toLocaleString()}!`
+            );
+          } else if (sendResult.status === 'draft') {
+            setSendingMessage('Campaign saved as draft!');
+          } else {
+            setSendingMessage(`Campaign sent successfully to ${sendResult.stats?.sent || 0} subscribers!`);
+          }
         } else {
-          setSendingMessage(`Campaign sent to ${result.stats?.sent || 0} subscribers!`);
+          console.error('❌ Error with campaign:', sendResult.error);
+          setSendingMessage(`Error: ${sendResult.error}`);
         }
       } else {
-        console.error('Error sending campaign:', result.error);
+        console.error('Error creating campaign:', result.error);
         setSendingMessage(`Error: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error sending campaign:', error);
-      setSendingMessage('Error sending campaign. Please try again.');
+      console.error('Error creating campaign:', error);
+      setSendingMessage('Error creating campaign. Please try again.');
     } finally {
       setIsSending(false);
       setTimeout(() => {
@@ -1998,29 +2785,76 @@ function CreateCampaignPage() {
   };
 
   const createNewElement = (type: string) => {
-    const id = `${type}_${Date.now()}`;
+    const id = type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // ✨ NEW: Base element with padding and width properties
+    const baseElement = {
+      id,
+      type,
+      paddingTop: 16,    // Default 16px top padding
+      paddingBottom: 16, // Default 16px bottom padding
+      fullWidth: false   // Default to constrained width with margins
+    };
     
     switch (type) {
       case 'header':
-        return { id, type: 'header', content: 'New Header' };
+        return { ...baseElement, content: 'Your Header Text Here', fullWidth: true };
       case 'text':
-        return { id, type: 'text', content: 'Add your text content here...' };
+        return { ...baseElement, content: 'Add your text content here. You can edit this by double-clicking.' };
       case 'button':
-        return { id, type: 'button', content: 'Click Here', url: '#' };
+        return { ...baseElement, content: 'Click Here', url: '#' };
       case 'image':
-        return { id, type: 'image', src: 'https://via.placeholder.com/600x200/6c63ff/ffffff?text=New+Image' };
+        return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
-        return { id, type: 'divider' };
-      case 'spacer':
-        return { id, type: 'spacer', height: '20px' };
+        return { ...baseElement };
       case 'social':
-        return { id, type: 'social', content: 'Social Media Links' };
+        return { ...baseElement, links: [
+          { platform: 'facebook', url: '#' },
+          { platform: 'twitter', url: '#' },
+          { platform: 'instagram', url: '#' },
+          { platform: 'youtube', url: '#' },
+          { platform: 'discord', url: '#' }
+        ]};
+      case 'spacer':
+        return { ...baseElement, height: '30px' };
       case 'columns':
-        return { id, type: 'columns', content: 'Two Column Layout' };
+        return { ...baseElement, columns: [
+          { content: 'Column 1 content' },
+          { content: 'Column 2 content' }
+        ]};
       case 'video':
-        return { id, type: 'video', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=🎬+Video+Placeholder', content: 'Video Content' };
+        return { ...baseElement, thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
+      case 'footer':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
+            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
+            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+          ],
+          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          unsubscribeText: 'Unsubscribe',
+          unsubscribeUrl: '#unsubscribe',
+          privacyText: 'Privacy Policy',
+          privacyUrl: '#privacy',
+          contactText: 'Contact Us',
+          contactUrl: '#contact'
+        };
+      
+      case 'brand-header':
+        return { 
+          ...baseElement, 
+          fullWidth: true,
+          content: 'CYMASPHERE',
+          backgroundColor: 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+          textColor: '#ffffff',
+          logoStyle: 'gradient' // 'solid', 'gradient', 'outline'
+        };
       default:
-        return { id, type: 'text', content: 'New Element' };
+        return { ...baseElement, content: 'New element' };
     }
   };
 
@@ -2040,7 +2874,7 @@ function CreateCampaignPage() {
         senderName: preset.senderName || campaignData.senderName,
         preheader: preset.preheader || campaignData.preheader,
         description: preset.description || campaignData.description,
-        audience: preset.audience || campaignData.audience,
+        audienceIds: campaignData.audienceIds,
         content: preset.content || campaignData.content
       });
       
@@ -2054,6 +2888,239 @@ function CreateCampaignPage() {
       // Just set the template without copying data
       setCampaignData({...campaignData, template: templateId});
     }
+  };
+
+  const handleAudienceToggle = (audienceId: string, isChecked: boolean) => {
+    if (isChecked) {
+      setCampaignData({
+        ...campaignData,
+        audienceIds: [...campaignData.audienceIds, audienceId],
+        excludedAudienceIds: campaignData.excludedAudienceIds.filter(id => id !== audienceId)
+      });
+    } else {
+      setCampaignData({
+        ...campaignData,
+        audienceIds: campaignData.audienceIds.filter(id => id !== audienceId)
+      });
+    }
+  };
+
+  const handleAudienceExclude = (audienceId: string) => {
+    const isCurrentlyExcluded = campaignData.excludedAudienceIds.includes(audienceId);
+    
+    if (isCurrentlyExcluded) {
+      // Remove from excluded
+      setCampaignData({
+        ...campaignData,
+        excludedAudienceIds: campaignData.excludedAudienceIds.filter(id => id !== audienceId)
+      });
+    } else {
+      // Add to excluded and remove from included
+      setCampaignData({
+        ...campaignData,
+        audienceIds: campaignData.audienceIds.filter(id => id !== audienceId),
+        excludedAudienceIds: [...campaignData.excludedAudienceIds, audienceId]
+      });
+    }
+  };
+
+  const calculateAudienceStats = () => {
+    const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+    const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+    
+    // Calculate fallback totals from audience subscriber_count
+    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    
+    return {
+      totalIncluded: reachData.isLoading ? fallbackTotalIncluded : (reachData.totalIncluded || fallbackTotalIncluded),
+      totalExcluded: reachData.isLoading ? fallbackTotalExcluded : (reachData.totalExcluded || fallbackTotalExcluded),
+      estimatedReach: reachData.isLoading ? Math.max(0, fallbackTotalIncluded - fallbackTotalExcluded) : (reachData.estimatedReach || Math.max(0, fallbackTotalIncluded - fallbackTotalExcluded)),
+      includedCount: includedAudiences.length,
+      excludedCount: excludedAudiences.length
+    };
+  };
+
+  const getFilteredAudiences = () => {
+    if (!audienceSearchTerm.trim()) {
+      return audiences;
+    }
+    
+    const searchTerm = audienceSearchTerm.toLowerCase();
+    return audiences.filter(audience => 
+      audience.name?.toLowerCase().includes(searchTerm) ||
+      (audience.description && audience.description.toLowerCase().includes(searchTerm)) ||
+      audience.type?.toLowerCase().includes(searchTerm)
+    );
+  };
+
+  // Generate HTML from email elements
+  const generatePreviewHtml = () => {
+    const elementHtml = emailElements.map(element => {
+      // Determine container styling based on fullWidth
+      const containerStyle = element.fullWidth 
+        ? 'margin: 0; padding: 0;' 
+        : 'margin: 0 auto; max-width: 100%;';
+      
+      const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
+      
+      switch (element.type) {
+        case 'header':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</h1></div>`;
+        
+        case 'text':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</p></div>`;
+        
+        case 'button':
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+        
+        case 'image':
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${element.fullWidth ? 'padding: 0;' : ''}"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
+        
+        case 'divider':
+          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem ${element.fullWidth ? '0' : '0'}; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
+        
+        case 'spacer':
+          return `<div class="${wrapperClass}" style="${containerStyle} height: ${element.height || '20px'};"></div>`;
+        
+        default:
+          return `<div class="${wrapperClass}" style="${containerStyle}">${element.content || ''}</div>`;
+      }
+    }).join('');
+
+         return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${campaignData.subject || 'Email Preview'}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo .cyma {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            color: #666666;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #6c63ff;
+            text-decoration: none;
+        }
+        .full-width {
+            width: 100%;
+            margin-left: calc(-30px);
+            margin-right: calc(-30px);
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+        .constrained-width {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 15px;
+            }
+            .logo {
+                font-size: 1.2rem;
+                letter-spacing: 1px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .footer {
+                padding: 15px;
+                font-size: 11px;
+            }
+            h1 {
+                font-size: 2rem !important;
+            }
+            p {
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .content {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8rem !important;
+            }
+            p {
+                font-size: 0.85rem !important;
+            }
+            .logo {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                ${campaignData.brandHeader || 'CYMASPHERE'}
+            </div>
+        </div>
+        
+        <div class="content">
+            ${elementHtml}
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
+            <p>
+                <a href="#">Unsubscribe</a> | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
   };
 
   const renderEmailElement = (element: any, index: number) => {
@@ -2240,7 +3307,7 @@ function CreateCampaignPage() {
     switch (currentStep) {
       case 1:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
             <StepTitle>
               <FaInfoCircle />
               Campaign Setup
@@ -2248,6 +3315,28 @@ function CreateCampaignPage() {
             <StepDescription>
               Set up your campaign details, select your audience, and choose a template.
             </StepDescription>
+            
+            {/* Template Selection Section */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaPalette style={{ color: 'var(--primary)' }} />
+                Choose Template
+              </h3>
+              <FormGroup>
+                <Label>Email Template</Label>
+                <Select
+                  value={campaignData.template}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
+                >
+                  <option value="">Choose a template...</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.title} - {template.description}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            </div>
             
             {/* Campaign Details Section */}
             <div style={{ marginBottom: '2.5rem' }}>
@@ -2286,6 +3375,26 @@ function CreateCampaignPage() {
                 />
               </FormGroup>
               <FormGroup>
+                <Label>Sender Email</Label>
+                <Input
+                  type="email"
+                  value={campaignData.senderEmail}
+                  onChange={(e) => setCampaignData({...campaignData, senderEmail: e.target.value})}
+                  placeholder="e.g. support@cymasphere.com"
+                />
+              </FormGroup>
+            </FormGrid>
+            <FormGrid>
+              <FormGroup>
+                <Label>Reply-To Email (Optional)</Label>
+                <Input
+                  type="email"
+                  value={campaignData.replyToEmail}
+                  onChange={(e) => setCampaignData({...campaignData, replyToEmail: e.target.value})}
+                  placeholder="e.g. noreply@cymasphere.com"
+                />
+              </FormGroup>
+              <FormGroup>
                 <Label>Preheader Text</Label>
                 <Input
                   type="text"
@@ -2306,63 +3415,191 @@ function CreateCampaignPage() {
             </div>
 
             {/* Audience Selection Section */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AudienceSelectionContainer>
+              <h3 style={{ color: 'var(--text)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FaUsers style={{ color: 'var(--primary)' }} />
-                Select Audience
+                Select Target Audiences
               </h3>
-              <FormGroup>
-                <Label>Target Audience</Label>
-                <Select
-                  value={campaignData.audience}
-                  onChange={(e) => setCampaignData({...campaignData, audience: e.target.value})}
-                >
-                  <option value="">Choose an audience...</option>
-                  {audienceSegments.map((segment) => (
-                    <option key={segment.id} value={segment.id}>
-                      {segment.title} - {segment.count.toLocaleString()} subscribers ({segment.engagement} engagement)
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
+              
+              {!audiencesLoading && audiences.length > 0 && (
+                <SearchInputContainer>
+                  <SearchIcon>
+                    <FaSearch />
+                  </SearchIcon>
+                  <SearchInput
+                    type="text"
+                    placeholder="Search audiences by name, description, or type..."
+                    value={audienceSearchTerm}
+                    onChange={(e) => setAudienceSearchTerm(e.target.value)}
+                  />
+                  {audienceSearchTerm && (
+                    <ClearSearchButton
+                      onClick={() => setAudienceSearchTerm('')}
+                      title="Clear search"
+                    >
+                      <FaTimes />
+                    </ClearSearchButton>
+                  )}
+                </SearchInputContainer>
+              )}
+              
+              {audiencesLoading ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  Loading audiences...
             </div>
+              ) : audiences.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem', 
+                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <FaExclamationTriangle style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--accent)' }} />
+                  <div>No audiences available. Create an audience first.</div>
+                </div>
+              ) : (
+                <>
+                  {getFilteredAudiences().length === 0 && audienceSearchTerm ? (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '2rem', 
+                      color: 'var(--text-secondary)',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.05)'
+                    }}>
+                      <FaSearch style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-secondary)' }} />
+                      <div>No audiences found matching "{audienceSearchTerm}"</div>
+                      <div style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        Try searching for a different term or{' '}
+                        <button 
+                          onClick={() => setAudienceSearchTerm('')}
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            color: 'var(--primary)', 
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          clear the search
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <AudienceList>
+                      {getFilteredAudiences().map((audience) => {
+                        const isIncluded = campaignData.audienceIds.includes(audience.id);
+                        const isExcluded = campaignData.excludedAudienceIds.includes(audience.id);
+                        
+                        return (
+                          <AudienceItem 
+                            key={audience.id}
+                            $isSelected={isIncluded}
+                            $isExcluded={isExcluded}
+                          >
+                            <AudienceCheckbox
+                              type="checkbox"
+                              id={`audience-${audience.id}`}
+                              checked={isIncluded}
+                              onChange={(e) => handleAudienceToggle(audience.id, e.target.checked)}
+                            />
+                            
+                            <AudienceInfo onClick={() => handleAudienceToggle(audience.id, !isIncluded)}>
+                              <AudienceName>{audience.name}</AudienceName>
+                              <AudienceDetails>
+                                <AudienceCount>
+                                  <FaUsers />
+                                  {audience.subscriber_count.toLocaleString()} subscribers
+                                </AudienceCount>
+                                <AudienceType $type={audience.type}>
+                                  {audience.type}
+                                </AudienceType>
+                              </AudienceDetails>
+                            </AudienceInfo>
+                            
+                            <ExcludeButton
+                              $isExcluded={isExcluded}
+                              onClick={() => handleAudienceExclude(audience.id)}
+                              title={isExcluded ? 'Remove from exclusions' : 'Exclude from campaign'}
+                            >
+                              <FaTimes />
+                              {isExcluded ? 'Excluded' : 'Exclude'}
+                            </ExcludeButton>
+                          </AudienceItem>
+                        );
+                      })}
+                    </AudienceList>
+                  )}
+                  
+                  {/* Audience Statistics */}
+                  {(campaignData.audienceIds.length > 0 || campaignData.excludedAudienceIds.length > 0) && (
+                    <AudienceStatsContainer>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().includedCount}</AudienceStatValue>
+                        <AudienceStatLabel>Included</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().excludedCount}</AudienceStatValue>
+                        <AudienceStatLabel>Excluded</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().totalIncluded.toLocaleString()}</AudienceStatValue>
+                        <AudienceStatLabel>Total Included</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue>{calculateAudienceStats().totalExcluded.toLocaleString()}</AudienceStatValue>
+                        <AudienceStatLabel>Total Excluded</AudienceStatLabel>
+                      </AudienceStatItem>
+                      <AudienceStatItem>
+                        <AudienceStatValue style={{ color: 'var(--accent)' }}>
+                          {reachData.isLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <Spinner />
+                              Calculating...
+            </div>
+                          ) : (
+                            <>
+                              {calculateAudienceStats().estimatedReach.toLocaleString()}
+                              {campaignData.audienceIds.length > 1 && (
+                                <div style={{ 
+                                  fontSize: '0.7rem', 
+                                  color: 'var(--text-secondary)', 
+                                  marginTop: '0.2rem',
+                                  fontStyle: 'italic'
+                                }}>
+                                  ✨ Unique subscribers only
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </AudienceStatValue>
+                        <AudienceStatLabel>Estimated Reach</AudienceStatLabel>
+                      </AudienceStatItem>
+                    </AudienceStatsContainer>
+                  )}
+                </>
+              )}
+            </AudienceSelectionContainer>
 
-            {/* Template Selection Section */}
-            <div>
-              <h3 style={{ color: 'var(--text)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FaPalette style={{ color: 'var(--primary)' }} />
-                Choose Template
-              </h3>
-              <FormGroup>
-                <Label>Email Template</Label>
-                <Select
-                  value={campaignData.template}
-                  onChange={(e) => handleTemplateSelect(e.target.value)}
-                >
-                  <option value="">Choose a template...</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.title} - {template.description}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            </div>
+
           </StepContent>
         );
 
       case 2:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={true}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
-            <StepTitle>
-              <FaEdit />
+                <StepTitle>
+                  <FaEdit />
                   Design Your Email
-            </StepTitle>
-            <StepDescription>
+                </StepTitle>
+                <StepDescription>
                   Drag and drop elements to build your email. See live preview as you design.
-            </StepDescription>
+                </StepDescription>
               </div>
               
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
@@ -2383,384 +3620,23 @@ function CreateCampaignPage() {
               </div>
             </div>
             
-            <DragPreview ref={dragPreviewRef} />
-            
-            {/* Content Elements Bar - Horizontal at Top */}
-            <ContentElementsBar>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'header')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaHeading className="icon" />
-                <span className="label">Header</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'text')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaFont className="icon" />
-                <span className="label">Text Block</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'button')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaMousePointer className="icon" />
-                <span className="label">Button</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'image')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaImage className="icon" />
-                <span className="label">Image</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'divider')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaDivide className="icon" />
-                <span className="label">Divider</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'social')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaShareAlt className="icon" />
-                <span className="label">Social Links</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'spacer')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaExpandArrowsAlt className="icon" />
-                <span className="label">Spacer</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'columns')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaColumns className="icon" />
-                <span className="label">Columns</span>
-              </ContentElementButton>
-              <ContentElementButton 
-                draggable 
-                onDragStart={(e) => handleDragStart(e, 'video')}
-                onDragEnd={handleDragEnd}
-              >
-                <FaVideo className="icon" />
-                <span className="label">Video</span>
-              </ContentElementButton>
-            </ContentElementsBar>
-            
-            <div style={{ 
-              display: 'flex',
-              gap: '2rem', 
-              minHeight: '600px',
-              marginTop: '1rem'
-            }}>
-              
-              {/* Visual Email Canvas - Left */}
-              <div style={{ 
-                flex: rightPanelExpanded ? '1' : '1 1 auto',
-                display: 'flex', 
-                flexDirection: 'column',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                borderRadius: '16px',
-                padding: '1rem',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                alignSelf: 'flex-start',
-                transition: 'all 0.3s ease'
-              }}>
-                <ViewToggleContainer>
-                  <ViewToggle 
-                    active={currentView === 'desktop'}
-                    onClick={() => setCurrentView('desktop')}
-                  >
-                    <FaDesktop style={{ marginRight: '0.5rem' }} />
-                    Desktop
-                  </ViewToggle>
-                  <ViewToggle 
-                    active={currentView === 'mobile'}
-                    onClick={() => setCurrentView('mobile')}
-                  >
-                    <FaMobileAlt style={{ marginRight: '0.5rem' }} />
-                    Mobile
-                  </ViewToggle>
-                  <ViewToggle 
-                    active={currentView === 'text'}
-                    onClick={() => setCurrentView('text')}
-                  >
-                    <FaEnvelope style={{ marginRight: '0.5rem' }} />
-                    Text Only
-                  </ViewToggle>
-                </ViewToggleContainer>
-
-                <EmailCanvas>
-                  <EmailContainer style={{
-                    width: currentView === 'mobile' ? '375px' : currentView === 'text' ? '100%' : '600px',
-                    maxWidth: currentView === 'text' ? '500px' : 'none',
-                    backgroundColor: currentView === 'text' ? '#f8f9fa' : 'white',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    {currentView === 'text' ? (
-                      // Text-only view
-                      <div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                        <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #ddd' }}>
-                          <strong>From:</strong> {campaignData.senderName || 'Sender Name'}<br/>
-                          <strong>Subject:</strong> {campaignData.subject || 'Email Subject'}<br/>
-                          {campaignData.preheader && (
-                            <>
-                              <strong>Preheader:</strong> {campaignData.preheader}<br/>
-                            </>
-                          )}
-                        </div>
-                        {emailElements.map((element, index) => (
-                          <div key={element.id} style={{ marginBottom: '1rem' }}>
-                            {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{element.content}</div>}
-                            {element.type === 'text' && <div>{element.content}</div>}
-                            {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {element.content}]</div>}
-                            {element.type === 'image' && <div style={{ fontStyle: 'italic' }}>[IMAGE: {element.src}]</div>}
-                            {element.type === 'divider' && <div>{'─'.repeat(50)}</div>}
-                            {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
-                          </div>
-                        ))}
-                        <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
-                          Cymasphere Inc. | Unsubscribe | Privacy Policy
-                        </div>
-                      </div>
-                    ) : (
-                      // Visual view (desktop/mobile)
-                      <>
-                        <EmailHeader>
-                          <div style={{ textAlign: 'center', padding: '2rem' }}>
-                            <div style={{ 
-                              width: '60px', 
-                              height: '60px', 
-                              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                              borderRadius: '50%',
-                              margin: '0 auto 1rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '1.5rem',
-                              color: 'white'
-                            }}>
-                              🎵
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>
-                              Having trouble viewing this email? <a href="#" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '600' }}>View in browser</a>
-                            </div>
-                          </div>
-                        </EmailHeader>
-
-                        <EmailBody
-                          onDragOver={(e) => handleDragOver(e)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e)}
-                        >
-                          {/* Drop zone at the beginning */}
-                          <DroppableArea 
-                            isDragOver={draggedElement !== null && dragOverIndex === 0}
-                            onDragOver={(e) => handleDragOver(e, 0)}
-                            onDrop={(e) => handleDrop(e, 0)}
-                          />
-                          
-                          {emailElements.map((element, index) => (
-                            <React.Fragment key={element.id}>
-                              {renderEmailElement(element, index)}
-                              
-                              {/* Drop zone between elements */}
-                              <DroppableArea 
-                                isDragOver={draggedElement !== null && dragOverIndex === index + 1}
-                                onDragOver={(e) => handleDragOver(e, index + 1)}
-                                onDrop={(e) => handleDrop(e, index + 1)}
-                              />
-                            </React.Fragment>
-                          ))}
-                          
-                          {/* Final drop zone */}
-                          {emailElements.length === 0 && (
-                            <DropZone
-                              onDragOver={(e) => handleDragOver(e)}
-                              onDrop={(e) => handleDrop(e)}
-                            >
-                              <span>📦</span>
-                              <span>Drop elements here to start building your email</span>
-                              <small style={{ opacity: 0.7, fontSize: '0.85rem' }}>
-                                Drag any element from the toolbar above to build your email
-                              </small>
-                            </DropZone>
-                          )}
-                        </EmailBody>
-
-                        <EmailFooter>
-                          <div style={{ padding: '2.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#999' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                              <SocialLink href="#">📘 Facebook</SocialLink>
-                              <SocialLink href="#">🐦 Twitter</SocialLink>
-                              <SocialLink href="#">📷 Instagram</SocialLink>
-                              <SocialLink href="#">🎵 YouTube</SocialLink>
-                            </div>
-                            <div style={{ marginBottom: '1rem', fontWeight: '600', color: '#666' }}>
-                              Cymasphere Inc. | 123 Music Street, Audio City, AC 12345
-                            </div>
-                            <div>
-                              <FooterLink href="#">Unsubscribe</FooterLink>
-                              <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
-                              <FooterLink href="#">Update Preferences</FooterLink>
-                              <span style={{ margin: '0 0.5rem', color: '#ccc' }}>•</span>
-                              <FooterLink href="#">Privacy Policy</FooterLink>
-                            </div>
-                          </div>
-                        </EmailFooter>
-                      </>
-                    )}
-                  </EmailContainer>
-                </EmailCanvas>
-              </div>
-
-              {/* Settings Panels - Right */}
-              <div style={{ 
-                width: rightPanelExpanded ? '400px' : '60px',
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '1.5rem', 
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                borderRadius: '16px',
-                padding: rightPanelExpanded ? '1rem' : '0.5rem',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                alignSelf: 'flex-start',
-                transition: 'all 0.3s ease',
-                overflow: 'hidden'
-              }}>
-                
-                {/* Toggle Button */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: rightPanelExpanded ? 'flex-end' : 'center',
-                  marginBottom: rightPanelExpanded ? '0' : '1rem'
-                }}>
-                  <button
-                    onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-                  style={{ 
-                      padding: '0.75rem',
-                      background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                    border: 'none', 
-                      borderRadius: '12px',
-                      color: 'white',
-                      cursor: 'pointer',
-                      fontSize: '1rem',
-                      transition: 'all 0.3s ease',
-                      boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: '40px',
-                      minHeight: '40px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.05)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(108, 99, 255, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.3)';
-                    }}
-                  >
-                    {rightPanelExpanded ? '→' : '←'}
-                  </button>
-                </div>
-
-                {rightPanelExpanded && (
-                  <>
-                    {/* Element Properties */}
-                    <SidebarPanel>
-                      <PanelHeader>
-                        <PanelIcon><FaCog /></PanelIcon>
-                        <PanelTitle>Element Properties</PanelTitle>
-                      </PanelHeader>
-                      <EmptyState>
-                        <span style={{ fontSize: '2rem', opacity: 0.5 }}>🔧</span>
-                        <span style={{ fontWeight: '500' }}>Select an element to edit its properties</span>
-                      </EmptyState>
-                    </SidebarPanel>
-
-                    {/* Design Settings */}
-                    <SidebarPanel>
-                      <PanelHeader>
-                        <PanelIcon><FaPaintBrush /></PanelIcon>
-                        <PanelTitle>Design Settings</PanelTitle>
-                      </PanelHeader>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <ControlGroup>
-                          <ControlLabel>Background Color</ControlLabel>
-                          <ColorInput type="color" defaultValue="#ffffff" />
-                        </ControlGroup>
-                        <ControlGroup>
-                          <ControlLabel>Content Width</ControlLabel>
-                          <ControlSelect>
-                            <option>600px (Standard)</option>
-                            <option>500px (Narrow)</option>
-                            <option>700px (Wide)</option>
-                          </ControlSelect>
-                        </ControlGroup>
-                        <ControlGroup>
-                          <ControlLabel>Font Family</ControlLabel>
-                          <ControlSelect>
-                            <option>Arial</option>
-                            <option>Helvetica</option>
-                            <option>Georgia</option>
-                            <option>Times New Roman</option>
-                          </ControlSelect>
-                        </ControlGroup>
-                        <ControlGroup>
-                          <ControlLabel>Font Size</ControlLabel>
-                          <ControlSelect>
-                            <option>14px</option>
-                            <option>16px (Recommended)</option>
-                            <option>18px</option>
-                            <option>20px</option>
-                          </ControlSelect>
-                        </ControlGroup>
-                      </div>
-                    </SidebarPanel>
-
-                    {/* Variables */}
-                    <SidebarPanel>
-                      <PanelHeader>
-                        <PanelIcon><FaTextHeight /></PanelIcon>
-                        <PanelTitle>Variables</PanelTitle>
-                      </PanelHeader>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <VariableTag>{'{{firstName}}'}</VariableTag>
-                        <VariableTag>{'{{lastName}}'}</VariableTag>
-                        <VariableTag>{'{{email}}'}</VariableTag>
-                        <VariableTag>{'{{companyName}}'}</VariableTag>
-                        <VariableTag>{'{{unsubscribeUrl}}'}</VariableTag>
-                        <VariableTag>{'{{currentDate}}'}</VariableTag>
-                      </div>
-                    </SidebarPanel>
-                  </>
-                )}
-
-              </div>
-
-            </div>
+            {/* Use the shared VisualEditor component */}
+            <VisualEditor
+              emailElements={emailElements}
+              setEmailElements={setEmailElements}
+              campaignData={{
+                senderName: campaignData.senderName,
+                subject: campaignData.subject,
+                preheader: campaignData.preheader
+              }}
+              rightPanelExpanded={true}
+            />
           </StepContent>
         );
 
       case 3:
         return (
-          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit">
+          <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
             <StepTitle>
               <FaEye />
               Review & Schedule
@@ -2780,7 +3656,35 @@ function CreateCampaignPage() {
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px' }}>
                     <p><strong>Name:</strong> {campaignData.name || "Untitled Campaign"}</p>
                     <p><strong>Subject:</strong> {campaignData.subject || "No subject"}</p>
-                    <p><strong>Audience:</strong> {audienceSegments.find(a => a.id === campaignData.audience)?.title || "No audience selected"}</p>
+                    <p><strong>Audiences:</strong> {
+                  campaignData.audienceIds.length === 0 
+                    ? "No audiences selected" 
+                    : campaignData.audienceIds.map(id => {
+                        const audience = audiences.find(a => a.id === id);
+                        return audience ? audience.name : 'Unknown';
+                      }).join(', ')
+                }</p>
+                    {campaignData.audienceIds.length > 0 && (
+                      <p><strong>Total Recipients:</strong> {
+                        reachData.isLoading ? (
+                          <span style={{ color: 'var(--text-secondary)' }}>Calculating...</span>
+                        ) : (
+                          <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+                            {(() => {
+                              const reachValue = reachData.estimatedReach || calculateAudienceStats().estimatedReach;
+                              console.log(`🎯 EDIT MODAL DISPLAY VALUE:`, {
+                                'reachData.estimatedReach': reachData.estimatedReach,
+                                'calculateAudienceStats().estimatedReach': calculateAudienceStats().estimatedReach,
+                                'finalDisplayValue': reachValue,
+                                'reachData': reachData,
+                                'calculateAudienceStats()': calculateAudienceStats()
+                              });
+                              return reachValue.toLocaleString();
+                            })()} subscribers
+                          </span>
+                        )
+                      }</p>
+                    )}
                     <p><strong>Template:</strong> {templates.find(t => t.id === campaignData.template)?.title || "No template selected"}</p>
                   </div>
                 </div>
@@ -2789,13 +3693,90 @@ function CreateCampaignPage() {
                     <PreviewTitle>
                       <FaEye />
                       Email Preview
+                      <ExpandPreviewButton 
+                        onClick={() => setShowPreviewModal(true)}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        <FaExpandArrowsAlt />
+                        Full Screen Preview
+                      </ExpandPreviewButton>
                     </PreviewTitle>
                     <PreviewContent>
-                      <h2 style={{ color: '#333', marginBottom: '1rem' }}>
-                        {campaignData.subject || "Email Subject"}
-                      </h2>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>
-                        {campaignData.content || "Email content will appear here..."}
+                      <div style={{ 
+                        position: 'relative',
+                        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Email preview with subtle shadow */}
+                        <div style={{
+                          background: 'white',
+                          borderRadius: '8px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                          overflow: 'hidden',
+                          maxHeight: '280px',
+                          position: 'relative'
+                        }}>
+                          <iframe
+                            srcDoc={generatePreviewHtml()}
+                            style={{
+                              width: '100%',
+                              height: '380px',
+                              border: 'none',
+                              transform: 'scale(0.7)',
+                              transformOrigin: 'top left',
+                              pointerEvents: 'none'
+                            }}
+                            title="Email Preview"
+                          />
+                          
+                          {/* Fade overlay to indicate more content */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '60px',
+                            background: 'linear-gradient(transparent, rgba(255, 255, 255, 0.95))',
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            paddingBottom: '0.75rem'
+                          }}>
+                            <div style={{
+                              background: 'rgba(0, 0, 0, 0.1)',
+                              color: '#666',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '16px',
+                              fontSize: '0.75rem',
+                              fontWeight: '500',
+                              backdropFilter: 'blur(10px)'
+                            }}>
+                              Scroll to see more content
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Preview info */}
+                        <div style={{
+                          marginTop: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '1rem',
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaDesktop style={{ color: 'var(--primary)' }} />
+                            Desktop View
+                          </span>
+                          <span>•</span>
+                          <span>70% Scale</span>
+                        </div>
                       </div>
                     </PreviewContent>
                   </PreviewSection>
@@ -2827,12 +3808,12 @@ function CreateCampaignPage() {
                 <ScheduleDescription>Choose a specific date and time</ScheduleDescription>
               </ScheduleOption>
               <ScheduleOption
-                selected={campaignData.scheduleType === "draft"}
-                onClick={() => setCampaignData({...campaignData, scheduleType: "draft"})}
+                selected={campaignData.scheduleType === "timezone"}
+                onClick={() => setCampaignData({...campaignData, scheduleType: "timezone"})}
               >
-                <ScheduleIcon><FaSave /></ScheduleIcon>
-                <ScheduleTitle>Save as Draft</ScheduleTitle>
-                <ScheduleDescription>Save and send later manually</ScheduleDescription>
+                <ScheduleIcon><FaGlobe /></ScheduleIcon>
+                <ScheduleTitle>Send by Timezone</ScheduleTitle>
+                <ScheduleDescription>Send at optimal time for each subscriber's timezone</ScheduleDescription>
               </ScheduleOption>
             </ScheduleOptions>
             {campaignData.scheduleType === "scheduled" && (
@@ -2855,6 +3836,45 @@ function CreateCampaignPage() {
                 </FormGroup>
               </FormGrid>
             )}
+
+            {campaignData.scheduleType === "timezone" && (
+              <FormGrid>
+                <FormGroup>
+                  <Label>Send Time (in each subscriber's timezone)</Label>
+                  <Input
+                    type="time"
+                    value={campaignData.scheduleTime || "09:00"}
+                    onChange={(e) => setCampaignData({...campaignData, scheduleTime: e.target.value})}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    💡 Best times: 9:00 AM or 2:00 PM for maximum engagement
+                  </div>
+                </FormGroup>
+                <FormGroup>
+                  <Label>Delivery Window</Label>
+                  <select 
+                    style={{
+                      width: '100%',
+                      padding: '0.9rem 1rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      color: 'var(--text)',
+                      fontSize: '1rem'
+                    }}
+                    value={campaignData.scheduleDate || "24hours"}
+                    onChange={(e) => setCampaignData({...campaignData, scheduleDate: e.target.value})}
+                  >
+                    <option value="24hours">Over 24 hours (recommended)</option>
+                    <option value="12hours">Over 12 hours (faster)</option>
+                    <option value="6hours">Over 6 hours (urgent)</option>
+                  </select>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    🌍 Emails will be sent when it's the specified time in each subscriber's timezone
+                  </div>
+                </FormGroup>
+              </FormGrid>
+            )}
                 </div>
           </StepContent>
         );
@@ -2871,7 +3891,7 @@ function CreateCampaignPage() {
         description={isEditMode ? "Edit email campaign details and content" : "Create a new email marketing campaign"}
       />
       
-      <CreateContainer>
+      <CreateContainer $isDesignStep={currentStep === 2}>
         <Header>
           <Title>
             <FaEnvelopeOpen />
@@ -2889,8 +3909,8 @@ function CreateCampaignPage() {
           {steps.map((step, index) => (
             <React.Fragment key={step.number}>
               <Step 
-                active={currentStep === step.number}
-                completed={currentStep > step.number}
+                $active={currentStep === step.number}
+                $completed={currentStep > step.number}
                 onClick={() => setCurrentStep(step.number)}
                 style={{ cursor: 'pointer' }}
               >
@@ -2898,7 +3918,7 @@ function CreateCampaignPage() {
                 {step.title}
               </Step>
               {index < steps.length - 1 && (
-                <StepConnector completed={currentStep > step.number} />
+                <StepConnector $completed={currentStep > step.number} />
               )}
             </React.Fragment>
           ))}
@@ -2928,10 +3948,18 @@ function CreateCampaignPage() {
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
                 )}
-                <FaPaperPlane />
+                {campaignData.scheduleType === 'immediate' && <FaPaperPlane />}
+                {campaignData.scheduleType === 'scheduled' && <FaClock />}
+                {campaignData.scheduleType === 'timezone' && <FaGlobe />}
+                {!campaignData.scheduleType && <FaPaperPlane />}
                 {isSending 
-                  ? 'Sending...' 
-                  : (isEditMode ? 'Update Campaign' : 'Send Campaign')
+                  ? 'Processing...' 
+                  : (() => {
+                      if (campaignData.scheduleType === 'immediate') return 'Send Now';
+                      if (campaignData.scheduleType === 'scheduled') return 'Schedule Campaign';
+                      if (campaignData.scheduleType === 'timezone') return 'Send by Timezone';
+                      return 'Send Now'; // Default
+                    })()
                 }
               </NavButton>
             ) : (
@@ -2985,22 +4013,51 @@ function CreateCampaignPage() {
 
                 {campaignResult.stats && (
                   <ModalStats>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.total}</StatValue>
-                      <StatLabel>Total Recipients</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.sent}</StatValue>
-                      <StatLabel>Successfully Sent</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.failed}</StatValue>
-                      <StatLabel>Failed</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                      <StatValue>{campaignResult.stats.successRate}%</StatValue>
-                      <StatLabel>Success Rate</StatLabel>
-                    </StatItem>
+                    {/* For immediate sends, show delivery stats */}
+                    {campaignResult.status !== 'scheduled' && (
+                      <>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.total}</StatValue>
+                          <StatLabel>Total Recipients</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.sent}</StatValue>
+                          <StatLabel>Successfully Sent</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.failed}</StatValue>
+                          <StatLabel>Failed</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.successRate}%</StatValue>
+                          <StatLabel>Success Rate</StatLabel>
+                        </StatItem>
+                      </>
+                    )}
+                    
+                    {/* For scheduled sends, show schedule details */}
+                    {campaignResult.status === 'scheduled' && (
+                      <>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.audienceCount || 0}</StatValue>
+                          <StatLabel>Target Audiences</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.excludedAudienceCount || 0}</StatValue>
+                          <StatLabel>Excluded Audiences</StatLabel>
+                        </StatItem>
+                        <StatItem>
+                          <StatValue>{campaignResult.stats.scheduleType || 'scheduled'}</StatValue>
+                          <StatLabel>Schedule Type</StatLabel>
+                        </StatItem>
+                        {campaignResult.stats.deliveryWindow && (
+                          <StatItem>
+                            <StatValue>{campaignResult.stats.deliveryWindow}</StatValue>
+                            <StatLabel>Delivery Window</StatLabel>
+                          </StatItem>
+                        )}
+                      </>
+                    )}
                   </ModalStats>
                 )}
 
@@ -3011,11 +4068,33 @@ function CreateCampaignPage() {
                     borderRadius: '8px',
                     margin: '1rem 0'
                   }}>
-                    <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
-                      <FaClock style={{ marginRight: '0.5rem' }} />
-                      Scheduled for: {campaignResult.scheduledFor ? 
-                        new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
-                    </p>
+                    {campaignResult.scheduleType === 'timezone' ? (
+                      <div>
+                        <p style={{ color: 'var(--primary)', fontWeight: '600', margin: '0 0 0.5rem 0' }}>
+                          <FaGlobe style={{ marginRight: '0.5rem' }} />
+                          Timezone-Based Delivery
+                        </p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+                          Send Time: {campaignResult.stats?.sendTime} (in each subscriber's timezone)
+                        </p>
+                        {campaignResult.stats?.deliveryWindow && (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+                            Delivery Window: {campaignResult.stats.deliveryWindow}
+                          </p>
+                        )}
+                        {campaignResult.stats?.estimatedCompletionTime && (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+                            Estimated Completion: {campaignResult.stats.estimatedCompletionTime}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
+                        <FaClock style={{ marginRight: '0.5rem' }} />
+                        Scheduled for: {campaignResult.scheduledFor ? 
+                          new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -3027,7 +4106,17 @@ function CreateCampaignPage() {
                     variant="primary" 
                     onClick={() => {
                       setShowResultModal(false);
-                      router.push("/admin/email-campaigns/campaigns");
+                      // Determine which tab to navigate to based on campaign status
+                      let targetTab = 'drafts'; // default
+                      if (campaignResult.status === 'scheduled') {
+                        targetTab = 'scheduled';
+                      } else if (campaignResult.status === 'sent' || campaignResult.status === 'completed') {
+                        targetTab = 'sent';
+                      } else if (campaignData.scheduleType === 'immediate') {
+                        // For immediate sends, always go to sent tab (even if status isn't properly set)
+                        targetTab = 'sent';
+                      }
+                      router.push(`/admin/email-campaigns/campaigns?tab=${targetTab}`);
                     }}
                   >
                     View Campaigns
@@ -3035,6 +4124,120 @@ function CreateCampaignPage() {
                 </ModalActions>
               </ModalContent>
             </ResultModal>
+          )}
+        </AnimatePresence>
+
+        {/* Email Preview Modal */}
+        <AnimatePresence>
+          {showPreviewModal && (
+            <PreviewModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPreviewModal(false)}
+            >
+              <PreviewModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <PreviewModalHeader>
+                  <PreviewModalTitle>
+                    {campaignData.subject || 'Email Preview'}
+                  </PreviewModalTitle>
+                  
+                  {/* Device Controls in Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                  }}>
+                    <DeviceToggleContainer style={{ margin: 0, background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '0.3rem' }}>
+                      <DeviceToggle 
+                        $active={previewDevice === 'mobile'}
+                        onClick={() => setPreviewDevice('mobile')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaMobileAlt />
+                        Mobile
+                      </DeviceToggle>
+                      <DeviceToggle 
+                        $active={previewDevice === 'tablet'}
+                        onClick={() => setPreviewDevice('tablet')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaTabletAlt />
+                        Tablet
+                      </DeviceToggle>
+                      <DeviceToggle 
+                        $active={previewDevice === 'desktop'}
+                        onClick={() => setPreviewDevice('desktop')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaDesktop />
+                        Desktop
+                      </DeviceToggle>
+                    </DeviceToggleContainer>
+                    
+                    <PreviewModalClose onClick={() => setShowPreviewModal(false)}>
+                      <FaTimes />
+                    </PreviewModalClose>
+                  </div>
+                </PreviewModalHeader>
+                
+                <PreviewModalBody>
+                  {/* Preview Area - Container handles scrolling */}
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                    overflow: 'auto',
+                    padding: '2rem',
+                    background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)'
+                  }}>
+                    <PreviewContainer $device={previewDevice}>
+                      <DeviceFrame $device={previewDevice}>
+                        <div style={{
+                          background: 'white',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <iframe
+                            srcDoc={generatePreviewHtml()}
+                            style={{
+                              width: '100%',
+                              height: 'calc(100vh - 200px)',
+                              border: 'none',
+                              display: 'block',
+                              overflow: 'hidden'
+                            }}
+                            scrolling="no"
+                            title="Full Email Preview"
+                          />
+                        </div>
+                      </DeviceFrame>
+                    </PreviewContainer>
+                  </div>
+
+                  {/* Footer Info - Fixed at bottom */}
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem 2rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    fontSize: '0.8rem',
+                    color: '#999',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    flexShrink: 0
+                  }}>
+                    💡 Use the device buttons in the header to test how your email looks across different screen sizes
+                  </div>
+                </PreviewModalBody>
+              </PreviewModalContent>
+            </PreviewModal>
           )}
         </AnimatePresence>
       </CreateContainer>

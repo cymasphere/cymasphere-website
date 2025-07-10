@@ -9,22 +9,22 @@ import {
 // Animation for toast appearance
 const slideIn = keyframes`
   from {
-    transform: translate(-50%, calc(-50% + 50px));
+    transform: translateX(-50%) translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
 `;
 
 const slideOut = keyframes`
   from {
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
   to {
-    transform: translate(-50%, calc(-50% - 50px));
+    transform: translateX(-50%) translateY(-100%);
     opacity: 0;
   }
 `;
@@ -42,10 +42,10 @@ interface IconContainerProps {
 // Toast container
 const ToastContainer = styled.div<ToastContainerProps>`
   position: fixed;
-  top: 50%;
+  top: 20px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
+  transform: translateX(-50%);
+  z-index: 999;
   display: flex;
   align-items: center;
   background: rgba(25, 23, 36, 0.9);

@@ -253,7 +253,9 @@ const MetricValue = styled.div<{ variant?: string }>`
   margin-bottom: 0.5rem;
 `;
 
-const MetricChange = styled.div<{ positive: boolean }>`
+const MetricChange = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'positive',
+})<{ positive: boolean }>`
   font-size: 0.8rem;
   color: ${props => props.positive ? '#28a745' : '#dc3545'};
   font-weight: 600;
@@ -481,87 +483,40 @@ const StatusBadge = styled.span<{ status: string }>`
   }}
 `;
 
-// Mock data
-const mockPerformanceData = {
+interface PerformanceData {
   overview: {
-    totalSent: 45230,
-    totalOpens: 12456,
-    totalClicks: 2891,
-    totalUnsubscribes: 234,
-    openRate: 27.5,
-    clickRate: 6.4,
-    unsubscribeRate: 0.5,
-    bounceRate: 2.1
-  },
+    totalSent: number;
+    totalOpens: number;
+    totalClicks: number;
+    totalUnsubscribes: number;
+    openRate: number;
+    clickRate: number;
+    unsubscribeRate: number;
+    bounceRate: number;
+  };
   trends: {
-    openRateChange: 3.2,
-    clickRateChange: -1.1,
-    unsubscribeRateChange: -0.2,
-    bounceRateChange: 0.3
-  },
+    openRateChange: number;
+    clickRateChange: number;
+    unsubscribeRateChange: number;
+    bounceRateChange: number;
+  };
   devices: {
-    mobile: 58.3,
-    desktop: 32.1,
-    tablet: 9.6
-  },
-  campaigns: [
-    {
-      id: "1",
-      name: "Summer Sale Newsletter",
-      sent: 8500,
-      opens: 2380,
-      clicks: 567,
-      openRate: 28.0,
-      clickRate: 6.7,
-      performance: "excellent",
-      sentDate: "2024-01-18"
-    },
-    {
-      id: "2", 
-      name: "Product Update Announcement",
-      sent: 12300,
-      opens: 3321,
-      clicks: 743,
-      openRate: 27.0,
-      clickRate: 6.0,
-      performance: "good",
-      sentDate: "2024-01-15"
-    },
-    {
-      id: "3",
-      name: "Welcome Series - Part 1",
-      sent: 6750,
-      opens: 1755,
-      clicks: 389,
-      openRate: 26.0,
-      clickRate: 5.8,
-      performance: "good",
-      sentDate: "2024-01-12"
-    },
-    {
-      id: "4",
-      name: "Monthly Newsletter #45",
-      sent: 15200,
-      opens: 3648,
-      clicks: 729,
-      openRate: 24.0,
-      clickRate: 4.8,
-      performance: "average",
-      sentDate: "2024-01-10"
-    },
-    {
-      id: "5",
-      name: "Flash Sale Alert",
-      sent: 2480,
-      opens: 496,
-      clicks: 74,
-      openRate: 20.0,
-      clickRate: 3.0,
-      performance: "poor",
-      sentDate: "2024-01-08"
-    }
-  ]
-};
+    mobile: number;
+    desktop: number;
+    tablet: number;
+  };
+  campaigns: Array<{
+    id: string;
+    name: string;
+    sent: number;
+    opens: number;
+    clicks: number;
+    openRate: number;
+    clickRate: number;
+    performance: string;
+    sentDate: string;
+  }>;
+}
 
 function PerformancePage() {
   const { user } = useAuth();
@@ -569,9 +524,77 @@ function PerformancePage() {
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [timeRange, setTimeRange] = useState("30d");
   const [campaignFilter, setCampaignFilter] = useState("all");
+  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+
+  // Fetch performance data
+  const fetchPerformanceData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/email-campaigns/analytics?timeRange=${timeRange}&campaignType=${campaignFilter}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch performance data');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Transform analytics data to performance format
+        const { summary, campaigns } = result.data;
+        
+        const transformedData: PerformanceData = {
+          overview: {
+            totalSent: summary.totalSent,
+            totalOpens: summary.totalOpened,
+            totalClicks: summary.totalClicked,
+            totalUnsubscribes: 0, // TODO: Track unsubscribes
+            openRate: summary.openRate,
+            clickRate: summary.clickRate,
+            unsubscribeRate: 0, // TODO: Calculate unsubscribe rate
+            bounceRate: summary.bounceRate
+          },
+          trends: {
+            openRateChange: 0, // TODO: Calculate trends
+            clickRateChange: 0,
+            unsubscribeRateChange: 0,
+            bounceRateChange: 0
+          },
+          devices: {
+            mobile: 58.3, // TODO: Track device metrics
+            desktop: 32.1,
+            tablet: 9.6
+          },
+          campaigns: campaigns.map((campaign: any) => ({
+            id: campaign.id,
+            name: campaign.name,
+            sent: campaign.sent,
+            opens: campaign.opens,
+            clicks: campaign.clicks,
+            openRate: campaign.openRate,
+            clickRate: campaign.clickRate,
+            performance: campaign.openRate > 25 ? 'excellent' : campaign.openRate > 20 ? 'good' : campaign.openRate > 15 ? 'average' : 'poor',
+            sentDate: campaign.sentDate
+          }))
+        };
+        
+        setPerformanceData(transformedData);
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Error fetching performance data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load performance data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!languageLoading) {
@@ -579,12 +602,33 @@ function PerformancePage() {
     }
   }, [languageLoading]);
 
+  useEffect(() => {
+    if (user && translationsLoaded) {
+      fetchPerformanceData();
+    }
+  }, [user, translationsLoaded, timeRange, campaignFilter]);
+
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
   }
 
   if (!user) {
     return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <PerformanceContainer>
+        <div style={{ color: 'var(--color-error)', textAlign: 'center', padding: '2rem' }}>
+          <FaExclamationTriangle size={48} style={{ marginBottom: '1rem' }} />
+          <h3>Error Loading Performance Data</h3>
+          <p>{error}</p>
+          <button onClick={fetchPerformanceData} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      </PerformanceContainer>
+    );
   }
 
   const cardVariants = {
@@ -659,7 +703,7 @@ function PerformancePage() {
                 <FaEnvelope />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue>{mockPerformanceData.overview.totalSent.toLocaleString()}</MetricValue>
+            <MetricValue>{performanceData?.overview.totalSent.toLocaleString()}</MetricValue>
             <MetricChange positive={true}>
               <FaArrowUp />
               +12.5% from last period
@@ -679,10 +723,10 @@ function PerformancePage() {
                 <FaEnvelopeOpen />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue variant="success">{mockPerformanceData.overview.openRate}%</MetricValue>
-            <MetricChange positive={mockPerformanceData.trends.openRateChange > 0}>
-              {mockPerformanceData.trends.openRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
-              {Math.abs(mockPerformanceData.trends.openRateChange)}% from last period
+            <MetricValue variant="success">{performanceData?.overview.openRate.toFixed(1)}%</MetricValue>
+            <MetricChange positive={(performanceData?.trends.openRateChange || 0) > 0}>
+              {(performanceData?.trends.openRateChange || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(performanceData?.trends.openRateChange || 0).toFixed(1)}% from last period
             </MetricChange>
           </MetricCard>
 
@@ -698,10 +742,10 @@ function PerformancePage() {
                 <FaMousePointer />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue>{mockPerformanceData.overview.clickRate}%</MetricValue>
-            <MetricChange positive={mockPerformanceData.trends.clickRateChange > 0}>
-              {mockPerformanceData.trends.clickRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
-              {Math.abs(mockPerformanceData.trends.clickRateChange)}% from last period
+            <MetricValue>{performanceData?.overview.clickRate.toFixed(1)}%</MetricValue>
+            <MetricChange positive={(performanceData?.trends.clickRateChange || 0) > 0}>
+              {(performanceData?.trends.clickRateChange || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(performanceData?.trends.clickRateChange || 0).toFixed(1)}% from last period
             </MetricChange>
           </MetricCard>
 
@@ -718,10 +762,10 @@ function PerformancePage() {
                 <FaBan />
               </MetricIcon>
             </MetricHeader>
-            <MetricValue variant="warning">{mockPerformanceData.overview.unsubscribeRate}%</MetricValue>
-            <MetricChange positive={mockPerformanceData.trends.unsubscribeRateChange < 0}>
-              {mockPerformanceData.trends.unsubscribeRateChange > 0 ? <FaArrowUp /> : <FaArrowDown />}
-              {Math.abs(mockPerformanceData.trends.unsubscribeRateChange)}% from last period
+            <MetricValue variant="warning">{performanceData?.overview.unsubscribeRate.toFixed(1)}%</MetricValue>
+            <MetricChange positive={(performanceData?.trends.unsubscribeRateChange || 0) < 0}>
+              {(performanceData?.trends.unsubscribeRateChange || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
+              {Math.abs(performanceData?.trends.unsubscribeRateChange || 0).toFixed(1)}% from last period
             </MetricChange>
           </MetricCard>
         </MetricsGrid>
@@ -762,7 +806,7 @@ function PerformancePage() {
               <FaMobile />
             </DeviceIcon>
             <DeviceLabel>Mobile</DeviceLabel>
-            <DevicePercentage>{mockPerformanceData.devices.mobile}%</DevicePercentage>
+            <DevicePercentage>{performanceData?.devices.mobile}%</DevicePercentage>
           </DeviceCard>
           
           <DeviceCard>
@@ -770,7 +814,7 @@ function PerformancePage() {
               <FaDesktop />
             </DeviceIcon>
             <DeviceLabel>Desktop</DeviceLabel>
-            <DevicePercentage>{mockPerformanceData.devices.desktop}%</DevicePercentage>
+            <DevicePercentage>{performanceData?.devices.desktop}%</DevicePercentage>
           </DeviceCard>
           
           <DeviceCard>
@@ -778,7 +822,7 @@ function PerformancePage() {
               <FaTablet />
             </DeviceIcon>
             <DeviceLabel>Tablet</DeviceLabel>
-            <DevicePercentage>{mockPerformanceData.devices.tablet}%</DevicePercentage>
+            <DevicePercentage>{performanceData?.devices.tablet}%</DevicePercentage>
           </DeviceCard>
         </DeviceBreakdownGrid>
 
@@ -806,7 +850,7 @@ function PerformancePage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {mockPerformanceData.campaigns.map((campaign, index) => (
+              {performanceData?.campaigns.map((campaign, index) => (
                 <TableRow
                   key={campaign.id}
                   variants={cardVariants}
