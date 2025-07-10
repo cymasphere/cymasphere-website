@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import styled from 'styled-components';
-import { useRouter, useParams } from 'next/navigation';
-import { createSupabaseBrowser } from '@/utils/supabase/client';
-import useLanguage from '@/hooks/useLanguage';
-import { FaCogs, FaChevronRight, FaSave, FaPlay, FaArrowLeft } from 'react-icons/fa';
-import Link from 'next/link';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { useRouter, useParams } from "next/navigation";
+import { createSupabaseBrowser } from "@/utils/supabase/client";
+import useLanguage from "@/hooks/useLanguage";
+import {
+  FaCogs,
+  FaChevronRight,
+  FaSave,
+  FaPlay,
+  FaArrowLeft,
+} from "react-icons/fa";
+import Link from "next/link";
 
 const Container = styled.div`
   width: 100%;
@@ -99,8 +105,8 @@ const HeaderActions = styled.div`
 `;
 
 const Button = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'variant'
-})<{ variant?: 'primary' | 'secondary' }>`
+  shouldForwardProp: (prop) => prop !== "variant",
+})<{ variant?: "primary" | "secondary" }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -112,7 +118,9 @@ const Button = styled.button.withConfig({
   font-size: 0.9rem;
   font-weight: 600;
 
-  ${props => props.variant === 'primary' ? `
+  ${(props) =>
+    props.variant === "primary"
+      ? `
           background: linear-gradient(90deg, var(--primary), var(--accent));
           color: white;
     
@@ -120,7 +128,8 @@ const Button = styled.button.withConfig({
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
           }
-  ` : `
+  `
+      : `
           background-color: rgba(255, 255, 255, 0.1);
           color: var(--text-secondary);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -134,7 +143,7 @@ const Button = styled.button.withConfig({
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  &:hover {
+    &:hover {
       transform: none;
       box-shadow: none;
     }
@@ -301,16 +310,18 @@ const Canvas = styled.div`
 `;
 
 const TriggerStep = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isActive'
+  shouldForwardProp: (prop) => prop !== "isActive",
 })<{ isActive?: boolean }>`
-  background-color: ${props => props.isActive ? 'rgba(40, 167, 69, 0.1)' : 'rgba(40, 167, 69, 0.05)'};
-  border: 2px solid ${props => props.isActive ? '#28a745' : 'rgba(40, 167, 69, 0.3)'};
+  background-color: ${(props) =>
+    props.isActive ? "rgba(40, 167, 69, 0.1)" : "rgba(40, 167, 69, 0.05)"};
+  border: 2px solid
+    ${(props) => (props.isActive ? "#28a745" : "rgba(40, 167, 69, 0.3)")};
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     border-color: #28a745;
     transform: translateY(-2px);
@@ -319,10 +330,13 @@ const TriggerStep = styled.div.withConfig({
 `;
 
 const WorkflowStep = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isActive'
+  shouldForwardProp: (prop) => prop !== "isActive",
 })<{ isActive?: boolean }>`
-  background-color: ${props => props.isActive ? 'rgba(108, 99, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
-  border: 2px solid ${props => props.isActive ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)'};
+  background-color: ${(props) =>
+    props.isActive ? "rgba(108, 99, 255, 0.1)" : "rgba(255, 255, 255, 0.05)"};
+  border: 2px solid
+    ${(props) =>
+      props.isActive ? "var(--primary)" : "rgba(255, 255, 255, 0.1)"};
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1rem 0;
@@ -351,32 +365,32 @@ const StepTitle = styled.h4`
 `;
 
 const StepType = styled.span.withConfig({
-  shouldForwardProp: (prop) => prop !== 'type'
+  shouldForwardProp: (prop) => prop !== "type",
 })<{ type: string }>`
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  
-  ${props => {
+
+  ${(props) => {
     switch (props.type) {
-      case 'trigger':
+      case "trigger":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'email':
+      case "email":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case 'delay':
+      case "delay":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'condition':
+      case "condition":
         return `
           background-color: rgba(23, 162, 184, 0.2);
           color: #17a2b8;
@@ -475,7 +489,16 @@ const HelpText = styled.div`
 
 interface AutomationStep {
   id: string;
-  type: 'email' | 'delay' | 'condition' | 'webhook' | 'tag' | 'audience_add' | 'audience_remove' | 'tag_add' | 'tag_remove';
+  type:
+    | "email"
+    | "delay"
+    | "condition"
+    | "webhook"
+    | "tag"
+    | "audience_add"
+    | "audience_remove"
+    | "tag_add"
+    | "tag_remove";
   title: string;
   config: any;
 }
@@ -484,27 +507,34 @@ interface AutomationData {
   id: string;
   name: string;
   description: string;
-  trigger_type: string;
+  trigger_type:
+    | "signup"
+    | "purchase"
+    | "abandonment"
+    | "anniversary"
+    | "behavior"
+    | "custom"
+    | null;
   trigger_config: any;
   workflow_definition: {
-  steps: AutomationStep[];
+    steps: AutomationStep[];
   };
-  status: 'draft' | 'active' | 'paused';
+  status: "draft" | "active" | "paused" | "archived" | "testing";
 }
 
 interface EmailTemplate {
   id: string;
   name: string;
-  subject: string;
-  template_type: string;
-  status: string;
-  description?: string;
+  subject: string | null;
+  template_type: string | null;
+  status: string | null;
+  description?: string | null;
 }
 
 interface Audience {
   id: string;
   name: string;
-  subscriber_count: number;
+  subscriber_count: number | null;
 }
 
 export default function AutomationEditPage() {
@@ -513,19 +543,19 @@ export default function AutomationEditPage() {
   const params = useParams();
   const automationId = params.id as string;
   const supabase = createSupabaseBrowser();
-  
+
   const [automationData, setAutomationData] = useState<AutomationData>({
-    id: '',
-    name: '',
-    description: '',
-    trigger_type: '',
+    id: "",
+    name: "",
+    description: "",
+    trigger_type: null,
     trigger_config: {},
     workflow_definition: {
-      steps: []
+      steps: [],
     },
-    status: 'draft'
+    status: "draft",
   });
-  
+
   const [activeStep, setActiveStep] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -545,38 +575,46 @@ export default function AutomationEditPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Load automation data
       const { data: automation, error: automationError } = await supabase
-        .from('email_automations')
-        .select('*')
-        .eq('id', automationId)
+        .from("email_automations")
+        .select("*")
+        .eq("id", automationId)
         .single();
-      
+
       if (automationError) {
-        console.error('Error fetching automation:', automationError);
-        setError('Failed to load automation');
+        console.error("Error fetching automation:", automationError);
+        setError("Failed to load automation");
         return;
       }
-      
+
       if (automation) {
         setAutomationData({
           id: automation.id,
-          name: automation.name || '',
-          description: automation.description || '',
-          trigger_type: automation.trigger_type || '',
-          trigger_config: automation.trigger_config || {},
-          workflow_definition: automation.workflow_definition || { steps: [] },
-          status: automation.status || 'draft'
+          name: automation.name || "",
+          description: automation.description || "",
+          trigger_type: automation.trigger_type || null,
+          trigger_config: (automation as any).trigger_conditions || {},
+          workflow_definition:
+            automation.workflow_definition &&
+            typeof automation.workflow_definition === "object" &&
+            !Array.isArray(automation.workflow_definition) &&
+            "steps" in automation.workflow_definition
+              ? (automation.workflow_definition as unknown as {
+                  steps: AutomationStep[];
+                })
+              : { steps: [] },
+          status: automation.status || "draft",
         });
       }
 
       // Load templates
       const { data: templatesData, error: templatesError } = await supabase
-        .from('email_templates')
-        .select('*')
-        .order('name');
-      
+        .from("email_templates")
+        .select("*")
+        .order("name");
+
       if (!templatesError && templatesData) {
         setTemplates(templatesData);
       }
@@ -584,103 +622,104 @@ export default function AutomationEditPage() {
 
       // Load audiences
       const { data: audiencesData, error: audiencesError } = await supabase
-        .from('email_audiences')
-        .select('*')
-        .order('name');
-      
+        .from("email_audiences")
+        .select("*")
+        .order("name");
+
       if (!audiencesError && audiencesData) {
         setAudiences(audiencesData);
       }
       setAudiencesLoading(false);
-      
     } catch (error) {
-      console.error('Error loading data:', error);
-      setError('Failed to load automation data');
+      console.error("Error loading data:", error);
+      setError("Failed to load automation data");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setAutomationData(prev => ({
+    setAutomationData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const addStep = () => {
     const newStep: AutomationStep = {
       id: Date.now().toString(),
-      type: 'email',
-      title: 'Send Email',
-      config: getDefaultStepConfig('email')
+      type: "email",
+      title: "Send Email",
+      config: getDefaultStepConfig("email"),
     };
-    
-    setAutomationData(prev => ({
+
+    setAutomationData((prev) => ({
       ...prev,
       workflow_definition: {
         ...prev.workflow_definition,
-        steps: [...prev.workflow_definition.steps, newStep]
-      }
+        steps: [...prev.workflow_definition.steps, newStep],
+      },
     }));
-    
+
     setActiveStep(newStep.id);
   };
 
   const updateStep = (stepId: string, updates: Partial<AutomationStep>) => {
-    setAutomationData(prev => ({
+    setAutomationData((prev) => ({
       ...prev,
       workflow_definition: {
         ...prev.workflow_definition,
-        steps: prev.workflow_definition.steps.map(step =>
+        steps: prev.workflow_definition.steps.map((step) =>
           step.id === stepId ? { ...step, ...updates } : step
-        )
-      }
+        ),
+      },
     }));
   };
 
   const removeStep = (stepId: string) => {
-    setAutomationData(prev => ({
+    setAutomationData((prev) => ({
       ...prev,
       workflow_definition: {
         ...prev.workflow_definition,
-        steps: prev.workflow_definition.steps.filter(step => step.id !== stepId)
-      }
+        steps: prev.workflow_definition.steps.filter(
+          (step) => step.id !== stepId
+        ),
+      },
     }));
-    
+
     if (activeStep === stepId) {
       setActiveStep(null);
     }
   };
 
-  const saveAutomation = async (status: 'draft' | 'active') => {
+  const saveAutomation = async (status: "draft" | "active") => {
     try {
       setIsSaving(true);
-      
+
       const automationToSave = {
         name: automationData.name,
         description: automationData.description,
         trigger_type: automationData.trigger_type,
-        trigger_config: automationData.trigger_config,
-        workflow_definition: automationData.workflow_definition,
-        status: status
+        trigger_conditions: automationData.trigger_config,
+        workflow_definition: automationData.workflow_definition as any,
+        status: status,
       };
-      
+
       const { data, error } = await supabase
-        .from('email_automations')
+        .from("email_automations")
         .update(automationToSave)
-        .eq('id', automationId);
+        .eq("id", automationId);
 
       if (error) {
-        console.error('Error updating automation:', error);
-        setError('Failed to save automation');
+        console.error("Error updating automation:", error);
+        setError("Failed to save automation");
       } else {
-        console.log('Automation updated:', data);
-        router.push('/admin/email-campaigns/automations');
+        console.log("Automation updated:", data);
+        router.push("/admin/email-campaigns/automations");
       }
     } catch (error) {
-      console.error('Error updating automation:', error);
-      setError('Failed to save automation');
+      console.error("Error updating automation:", error);
+      setError("Failed to save automation");
     } finally {
       setIsSaving(false);
     }
@@ -688,96 +727,110 @@ export default function AutomationEditPage() {
 
   const getStepTitle = (type: string) => {
     switch (type) {
-      case 'email': return 'Send Email';
-      case 'delay': return 'Wait';
-      case 'condition': return 'Check Condition';
-      case 'webhook': return 'Send Webhook';
-      case 'tag': return 'Manage Tags';
-      case 'audience_add': return 'Add to Audience';
-      case 'audience_remove': return 'Remove from Audience';
-      case 'tag_add': return 'Add Tag';
-      case 'tag_remove': return 'Remove Tag';
-      default: return 'New Step';
+      case "email":
+        return "Send Email";
+      case "delay":
+        return "Wait";
+      case "condition":
+        return "Check Condition";
+      case "webhook":
+        return "Send Webhook";
+      case "tag":
+        return "Manage Tags";
+      case "audience_add":
+        return "Add to Audience";
+      case "audience_remove":
+        return "Remove from Audience";
+      case "tag_add":
+        return "Add Tag";
+      case "tag_remove":
+        return "Remove Tag";
+      default:
+        return "New Step";
     }
   };
 
   const getTriggerDescription = (triggerType: string, triggerConfig?: any) => {
     switch (triggerType) {
-      case 'signup':
-        return 'When a new user signs up';
-      case 'purchase':
-        return 'When a user makes a purchase';
-      case 'purchase_refunded':
-        return 'When a purchase is refunded';
-      case 'subscription_change':
-        return 'When a subscription is changed';
-      case 'subscription_cancelled':
-        return 'When a subscription is cancelled';
-      case 'segment_entry':
-        return `When added to audience: ${triggerConfig?.audience_name || 'Unknown'}`;
-      case 'segment_exit':
-        return `When removed from audience: ${triggerConfig?.audience_name || 'Unknown'}`;
-      case 'abandonment':
-        return 'When a cart is abandoned';
-      case 'email_open':
-        return 'When an email is opened';
-      case 'email_click':
-        return 'When an email link is clicked';
+      case "signup":
+        return "When a new user signs up";
+      case "purchase":
+        return "When a user makes a purchase";
+      case "purchase_refunded":
+        return "When a purchase is refunded";
+      case "subscription_change":
+        return "When a subscription is changed";
+      case "subscription_cancelled":
+        return "When a subscription is cancelled";
+      case "segment_entry":
+        return `When added to audience: ${
+          triggerConfig?.audience_name || "Unknown"
+        }`;
+      case "segment_exit":
+        return `When removed from audience: ${
+          triggerConfig?.audience_name || "Unknown"
+        }`;
+      case "abandonment":
+        return "When a cart is abandoned";
+      case "email_open":
+        return "When an email is opened";
+      case "email_click":
+        return "When an email link is clicked";
       default:
-        return 'Select a trigger to start this automation';
+        return "Select a trigger to start this automation";
     }
   };
 
   const getDefaultStepConfig = (type: string) => {
     switch (type) {
-      case 'email':
+      case "email":
         return {
           template_id: null,
-          subject: '',
-          personalization: {}
+          subject: "",
+          personalization: {},
         };
-      case 'delay':
+      case "delay":
         return {
           delay_amount: 1,
-          delay_unit: 'hours'
+          delay_unit: "hours",
         };
-      case 'condition':
+      case "condition":
         return {
           conditions: [],
-          operator: 'and'
+          operator: "and",
         };
-      case 'webhook':
+      case "webhook":
         return {
-          url: '',
-          method: 'POST',
-          headers: {}
+          url: "",
+          method: "POST",
+          headers: {},
         };
-      case 'tag':
+      case "tag":
         return {
-          action: 'add',
-          tags: []
+          action: "add",
+          tags: [],
         };
-      case 'audience_add':
-        return {
-          audience_id: null,
-          audience_name: ''
-        };
-      case 'audience_remove':
+      case "audience_add":
         return {
           audience_id: null,
-          audience_name: ''
+          audience_name: "",
         };
-      case 'tag_add':
+      case "audience_remove":
+        return {
+          audience_id: null,
+          audience_name: "",
+        };
+      case "tag_add":
         return {
           tag_id: null,
-          tag_name: '',
-          custom_tag_name: ''
+          tag_name: "",
+          custom_tag_name: "",
         };
-      case 'tag_remove':
+      case "tag_remove":
         return {
           tag_id: null,
-          tag_name: '',
-          custom_tag_name: ''
+          tag_name: "",
+          custom_tag_name: "",
         };
       default:
         return {};
@@ -785,50 +838,61 @@ export default function AutomationEditPage() {
   };
 
   const getEffectiveTagName = (config: any) => {
-    return config.custom_tag_name || config.tag_name || 'No tag specified';
+    return config.custom_tag_name || config.tag_name || "No tag specified";
   };
 
   const renderStepConfig = (step: AutomationStep) => {
     switch (step.type) {
-      case 'email':
-        const selectedTemplate = templates.find(t => t.id === step.config.template_id);
+      case "email":
+        const selectedTemplate = templates.find(
+          (t) => t.id === step.config.template_id
+        );
 
-  return (
-    <>
+        return (
+          <>
             <FormGroup>
               <Label>Email Template</Label>
               <Select
-                value={step.config.template_id || ''}
+                value={step.config.template_id || ""}
                 onChange={(e) => {
                   const templateId = e.target.value;
-                  const template = templates.find(t => t.id === templateId);
-                  
+                  const template = templates.find((t) => t.id === templateId);
+
                   updateStep(step.id, {
-                    config: { 
-                      ...step.config, 
+                    config: {
+                      ...step.config,
                       template_id: templateId,
-                      subject: template?.subject || step.config.subject || ''
-                    }
+                      subject: template?.subject || step.config.subject || "",
+                    },
                   });
                 }}
                 disabled={templatesLoading}
               >
                 <option value="">
-                  {templatesLoading ? 'Loading templates...' : 'Select template'}
+                  {templatesLoading
+                    ? "Loading templates..."
+                    : "Select template"}
                 </option>
-                {templates.filter(t => t.status === 'active').map(template => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} - {template.template_type}
-                  </option>
-                ))}
+                {templates
+                  .filter((t) => t.status === "active")
+                  .map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} - {template.template_type}
+                    </option>
+                  ))}
               </Select>
-              {templates.filter(t => t.status === 'active').length === 0 && !templatesLoading && (
-                <NoTemplatesMessage>
-                  No active templates found. <a href="/admin/email-campaigns/templates" target="_blank">Create templates</a> first.
-                </NoTemplatesMessage>
-              )}
+              {templates.filter((t) => t.status === "active").length === 0 &&
+                !templatesLoading && (
+                  <NoTemplatesMessage>
+                    No active templates found.{" "}
+                    <a href="/admin/email-campaigns/templates" target="_blank">
+                      Create templates
+                    </a>{" "}
+                    first.
+                  </NoTemplatesMessage>
+                )}
             </FormGroup>
-            
+
             {selectedTemplate && (
               <TemplatePreview>
                 <PreviewTitle>Template Preview</PreviewTitle>
@@ -845,50 +909,65 @@ export default function AutomationEditPage() {
                 )}
               </TemplatePreview>
             )}
-            
+
             <FormGroup>
               <Label>
-                Email Subject 
+                Email Subject
                 {selectedTemplate && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-secondary)",
+                      fontWeight: "normal",
+                    }}
+                  >
                     (override template subject)
                   </span>
                 )}
               </Label>
               <Input
                 type="text"
-                value={step.config.subject || ''}
-                onChange={(e) => updateStep(step.id, {
-                  config: { ...step.config, subject: e.target.value }
-                })}
+                value={step.config.subject || ""}
+                onChange={(e) =>
+                  updateStep(step.id, {
+                    config: { ...step.config, subject: e.target.value },
+                  })
+                }
                 placeholder={selectedTemplate?.subject || "Enter email subject"}
               />
               <HelpText>
-                Use variables like {'{{firstName}}'} for personalization
+                Use variables like {"{{firstName}}"} for personalization
               </HelpText>
             </FormGroup>
           </>
         );
-      
-      case 'delay':
+
+      case "delay":
         return (
           <FormGroup>
             <Label>Delay Duration</Label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <Input
                 type="number"
                 value={step.config.delay_amount || 1}
-                onChange={(e) => updateStep(step.id, {
-                  config: { ...step.config, delay_amount: parseInt(e.target.value) }
-                })}
+                onChange={(e) =>
+                  updateStep(step.id, {
+                    config: {
+                      ...step.config,
+                      delay_amount: parseInt(e.target.value),
+                    },
+                  })
+                }
                 min="1"
                 style={{ flex: 1 }}
               />
               <Select
-                value={step.config.delay_unit || 'hours'}
-                onChange={(e) => updateStep(step.id, {
-                  config: { ...step.config, delay_unit: e.target.value }
-                })}
+                value={step.config.delay_unit || "hours"}
+                onChange={(e) =>
+                  updateStep(step.id, {
+                    config: { ...step.config, delay_unit: e.target.value },
+                  })
+                }
                 style={{ flex: 1 }}
               >
                 <option value="minutes">Minutes</option>
@@ -898,64 +977,66 @@ export default function AutomationEditPage() {
             </div>
           </FormGroup>
         );
-      
-      case 'audience_add':
+
+      case "audience_add":
         return (
           <FormGroup>
             <Label>Select Audience</Label>
             <Select
-              value={step.config.audience_id || ''}
+              value={step.config.audience_id || ""}
               onChange={(e) => {
                 const audienceId = e.target.value;
-                const audience = audiences.find(a => a.id === audienceId);
+                const audience = audiences.find((a) => a.id === audienceId);
                 updateStep(step.id, {
-                  config: { 
-                    ...step.config, 
+                  config: {
+                    ...step.config,
                     audience_id: audienceId,
-                    audience_name: audience?.name || ''
-                  }
+                    audience_name: audience?.name || "",
+                  },
                 });
               }}
               disabled={audiencesLoading}
             >
               <option value="">
-                {audiencesLoading ? 'Loading audiences...' : 'Select an audience'}
+                {audiencesLoading
+                  ? "Loading audiences..."
+                  : "Select an audience"}
               </option>
-              {audiences.map(audience => (
+              {audiences.map((audience) => (
                 <option key={audience.id} value={audience.id}>
                   {audience.name} ({audience.subscriber_count || 0} subscribers)
                 </option>
               ))}
             </Select>
-            <HelpText>
-              Add the subscriber to the selected audience
-            </HelpText>
+            <HelpText>Add the subscriber to the selected audience</HelpText>
           </FormGroup>
         );
-      
-      case 'audience_remove':
+
+      case "audience_remove":
         return (
           <FormGroup>
             <Label>Select Audience</Label>
             <Select
-              value={step.config.audience_id || ''}
+              value={step.config.audience_id || ""}
               onChange={(e) => {
                 const audienceId = e.target.value;
-                const audience = audiences.find(a => a.id === audienceId);
+                const audience = audiences.find((a) => a.id === audienceId);
                 updateStep(step.id, {
-                  config: { 
-                    ...step.config, 
+                  config: {
+                    ...step.config,
                     audience_id: audienceId,
-                    audience_name: audience?.name || ''
-                  }
+                    audience_name: audience?.name || "",
+                  },
                 });
               }}
               disabled={audiencesLoading}
             >
               <option value="">
-                {audiencesLoading ? 'Loading audiences...' : 'Select an audience'}
+                {audiencesLoading
+                  ? "Loading audiences..."
+                  : "Select an audience"}
               </option>
-              {audiences.map(audience => (
+              {audiences.map((audience) => (
                 <option key={audience.id} value={audience.id}>
                   {audience.name} ({audience.subscriber_count || 0} subscribers)
                 </option>
@@ -966,10 +1047,10 @@ export default function AutomationEditPage() {
             </HelpText>
           </FormGroup>
         );
-      
+
       default:
         return (
-          <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+          <p style={{ color: "var(--text-secondary)", fontStyle: "italic" }}>
             Configuration for {step.type} steps coming soon.
           </p>
         );
@@ -983,10 +1064,12 @@ export default function AutomationEditPage() {
   if (error) {
     return (
       <Container>
-        <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
           <h3>Error Loading Automation</h3>
           <p>{error}</p>
-          <Button onClick={() => router.push('/admin/email-campaigns/automations')}>
+          <Button
+            onClick={() => router.push("/admin/email-campaigns/automations")}
+          >
             <FaArrowLeft />
             Back to Automations
           </Button>
@@ -996,60 +1079,64 @@ export default function AutomationEditPage() {
   }
 
   return (
-      <Container>
-        <Breadcrumbs>
-          <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
-          <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns">Email Campaigns</BreadcrumbLink>
-          <FaChevronRight />
-          <BreadcrumbLink href="/admin/email-campaigns/automations">Automations</BreadcrumbLink>
-          <FaChevronRight />
+    <Container>
+      <Breadcrumbs>
+        <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
+        <FaChevronRight />
+        <BreadcrumbLink href="/admin/email-campaigns">
+          Email Campaigns
+        </BreadcrumbLink>
+        <FaChevronRight />
+        <BreadcrumbLink href="/admin/email-campaigns/automations">
+          Automations
+        </BreadcrumbLink>
+        <FaChevronRight />
         <BreadcrumbCurrent>{automationData.name}</BreadcrumbCurrent>
-        </Breadcrumbs>
+      </Breadcrumbs>
 
-        <Header>
-          <HeaderLeft>
-            <Title>
-              <FaCogs />
+      <Header>
+        <HeaderLeft>
+          <Title>
+            <FaCogs />
             Edit Automation
-            </Title>
-            <Subtitle>
-            Modify automation workflow, triggers, and actions
-            </Subtitle>
-          </HeaderLeft>
-          <HeaderActions>
-          <Button onClick={() => saveAutomation('draft')} disabled={isSaving}>
-              <FaSave />
+          </Title>
+          <Subtitle>Modify automation workflow, triggers, and actions</Subtitle>
+        </HeaderLeft>
+        <HeaderActions>
+          <Button onClick={() => saveAutomation("draft")} disabled={isSaving}>
+            <FaSave />
             Save Draft
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={() => saveAutomation('active')} 
+          <Button
+            variant="primary"
+            onClick={() => saveAutomation("active")}
             disabled={isSaving || !automationData.name}
           >
             <FaPlay />
             Save & Activate
           </Button>
-          </HeaderActions>
-        </Header>
+        </HeaderActions>
+      </Header>
 
       <WorkflowBuilder>
         <MainContent>
           <AutomationSettings>
-                <FormGroup>
-                  <Label>Automation Name</Label>
-                  <Input
-                    type="text"
+            <FormGroup>
+              <Label>Automation Name</Label>
+              <Input
+                type="text"
                 value={automationData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Enter automation name"
-                  />
-                </FormGroup>
-                <FormGroup>
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter automation name"
+              />
+            </FormGroup>
+            <FormGroup>
               <Label>Description</Label>
               <Textarea
                 value={automationData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Describe what this automation does"
                 rows={3}
               />
@@ -1058,71 +1145,57 @@ export default function AutomationEditPage() {
 
           <Canvas>
             <SectionTitle>Workflow Canvas</SectionTitle>
-            
+
             {/* Trigger Step */}
             <TriggerStep
-              isActive={activeStep === 'trigger'}
-              onClick={() => setActiveStep('trigger')}
+              isActive={activeStep === "trigger"}
+              onClick={() => setActiveStep("trigger")}
             >
               <StepHeader>
                 <StepTitle>Trigger</StepTitle>
                 <StepType type="trigger">TRIGGER</StepType>
               </StepHeader>
               <StepDescription>
-                {automationData.trigger_type ? getTriggerDescription(automationData.trigger_type, automationData.trigger_config) : 'Select a trigger to start this automation'}
+                {automationData.trigger_type
+                  ? getTriggerDescription(
+                      automationData.trigger_type,
+                      automationData.trigger_config
+                    )
+                  : "Select a trigger to start this automation"}
               </StepDescription>
-              {activeStep === 'trigger' && (
+              {activeStep === "trigger" && (
                 <StepConfig>
                   <FormGroup>
                     <Label>Trigger Type</Label>
-                  <Select
-                      value={automationData.trigger_type}
-                      onChange={(e) => handleInputChange('trigger_type', e.target.value)}
+                    <Select
+                      value={automationData.trigger_type || ""}
+                      onChange={(e) =>
+                        handleInputChange("trigger_type", e.target.value)
+                      }
                     >
                       <option value="">Select a trigger...</option>
                       <option value="signup">User Signup</option>
                       <option value="purchase">Purchase Made</option>
-                      <option value="purchase_refunded">Purchase Refunded</option>
-                      <option value="subscription_change">Subscription Changed</option>
-                      <option value="subscription_cancelled">Subscription Cancelled</option>
+                      <option value="purchase_refunded">
+                        Purchase Refunded
+                      </option>
+                      <option value="subscription_change">
+                        Subscription Changed
+                      </option>
+                      <option value="subscription_cancelled">
+                        Subscription Cancelled
+                      </option>
                       <option value="segment_entry">Added to Audience</option>
-                      <option value="segment_exit">Removed from Audience</option>
+                      <option value="segment_exit">
+                        Removed from Audience
+                      </option>
                       <option value="abandonment">Cart Abandoned</option>
                       <option value="email_open">Email Opened</option>
                       <option value="email_click">Email Clicked</option>
-                  </Select>
-                </FormGroup>
-                  
-                  {(automationData.trigger_type === 'segment_entry' || automationData.trigger_type === 'segment_exit') && (
-                <FormGroup>
-                      <Label>Select Audience</Label>
-                  <Select
-                        value={automationData.trigger_config?.audience_id || ''}
-                        onChange={(e) => {
-                          const audienceId = e.target.value;
-                          const audience = audiences.find(a => a.id === audienceId);
-                          handleInputChange('trigger_config', {
-                            ...automationData.trigger_config,
-                            audience_id: audienceId,
-                            audience_name: audience?.name || ''
-                          });
-                        }}
-                        disabled={audiencesLoading}
-                      >
-                        <option value="">
-                          {audiencesLoading ? 'Loading audiences...' : 'Select an audience'}
-                        </option>
-                        {audiences.map(audience => (
-                          <option key={audience.id} value={audience.id}>
-                            {audience.name} ({audience.subscriber_count || 0} subscribers)
-                          </option>
-                        ))}
-                  </Select>
-                      <HelpText>
-                        This automation will trigger when users are {automationData.trigger_type === 'segment_entry' ? 'added to' : 'removed from'} this audience
-                      </HelpText>
-                </FormGroup>
-                  )}
+                    </Select>
+                  </FormGroup>
+
+                  {/* Segment-based triggers not currently supported in database schema */}
                 </StepConfig>
               )}
             </TriggerStep>
@@ -1139,32 +1212,47 @@ export default function AutomationEditPage() {
                   <StepType type={step.type}>{step.type}</StepType>
                 </StepHeader>
                 <StepDescription>
-                  {step.type === 'email' && `Send email: ${step.config.subject || 'No subject'}`}
-                  {step.type === 'delay' && `Wait ${step.config.delay_amount || 1} ${step.config.delay_unit || 'hours'}`}
-                  {step.type === 'condition' && (
-                    step.config.conditions && step.config.conditions.length > 0 
-                      ? `Check ${step.config.conditions.length} condition${step.config.conditions.length > 1 ? 's' : ''} (${step.config.operator || 'and'})`
-                      : 'No conditions configured'
-                  )}
-                  {step.type === 'webhook' && `Send webhook to ${step.config.url || 'No URL'}`}
-                  {step.type === 'audience_add' && `Add to audience: ${step.config.audience_name || 'No audience selected'}`}
-                  {step.type === 'audience_remove' && `Remove from audience: ${step.config.audience_name || 'No audience selected'}`}
-                  {step.type === 'tag_add' && `Add tag: ${getEffectiveTagName(step.config)}`}
-                  {step.type === 'tag_remove' && `Remove tag: ${getEffectiveTagName(step.config)}`}
+                  {step.type === "email" &&
+                    `Send email: ${step.config.subject || "No subject"}`}
+                  {step.type === "delay" &&
+                    `Wait ${step.config.delay_amount || 1} ${
+                      step.config.delay_unit || "hours"
+                    }`}
+                  {step.type === "condition" &&
+                    (step.config.conditions && step.config.conditions.length > 0
+                      ? `Check ${step.config.conditions.length} condition${
+                          step.config.conditions.length > 1 ? "s" : ""
+                        } (${step.config.operator || "and"})`
+                      : "No conditions configured")}
+                  {step.type === "webhook" &&
+                    `Send webhook to ${step.config.url || "No URL"}`}
+                  {step.type === "audience_add" &&
+                    `Add to audience: ${
+                      step.config.audience_name || "No audience selected"
+                    }`}
+                  {step.type === "audience_remove" &&
+                    `Remove from audience: ${
+                      step.config.audience_name || "No audience selected"
+                    }`}
+                  {step.type === "tag_add" &&
+                    `Add tag: ${getEffectiveTagName(step.config)}`}
+                  {step.type === "tag_remove" &&
+                    `Remove tag: ${getEffectiveTagName(step.config)}`}
                 </StepDescription>
-                
+
                 {activeStep === step.id && (
                   <StepConfig>
-              <FormGroup>
+                    <FormGroup>
                       <Label>Step Type</Label>
                       <Select
                         value={step.type}
                         onChange={(e) => {
-                          const newType = e.target.value as AutomationStep['type'];
+                          const newType = e.target
+                            .value as AutomationStep["type"];
                           updateStep(step.id, {
                             type: newType,
                             title: getStepTitle(newType),
-                            config: getDefaultStepConfig(newType)
+                            config: getDefaultStepConfig(newType),
                           });
                         }}
                       >
@@ -1172,43 +1260,48 @@ export default function AutomationEditPage() {
                         <option value="delay">Wait/Delay</option>
                         <option value="condition">Condition Check</option>
                         <option value="audience_add">Add to Audience</option>
-                        <option value="audience_remove">Remove from Audience</option>
+                        <option value="audience_remove">
+                          Remove from Audience
+                        </option>
                         <option value="tag_add">Add Tag</option>
                         <option value="tag_remove">Remove Tag</option>
                         <option value="webhook">Send Webhook</option>
                       </Select>
-              </FormGroup>
+                    </FormGroup>
                     {renderStepConfig(step)}
                   </StepConfig>
                 )}
-                
-                <div style={{ marginTop: '1rem' }}>
+
+                <div style={{ marginTop: "1rem" }}>
                   <Button onClick={() => removeStep(step.id)}>
                     Remove Step
                   </Button>
                 </div>
-                      </WorkflowStep>
+              </WorkflowStep>
             ))}
 
             {/* Add Step Button */}
             <AddStepContainer>
-              <AddStepButton onClick={addStep}>
-                + Add Step
-                    </AddStepButton>
+              <AddStepButton onClick={addStep}>+ Add Step</AddStepButton>
             </AddStepContainer>
 
             {automationData.workflow_definition.steps.length === 0 && (
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '3rem', 
-                color: 'var(--text-secondary)' 
-              }}>
-                <p>No steps added yet. Click "Add Step" to create your first automation step.</p>
-                  </div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "3rem",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <p>
+                  No steps added yet. Click "Add Step" to create your first
+                  automation step.
+                </p>
+              </div>
             )}
           </Canvas>
         </MainContent>
       </WorkflowBuilder>
-      </Container>
+    </Container>
   );
 }
