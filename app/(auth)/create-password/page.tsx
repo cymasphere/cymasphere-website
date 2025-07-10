@@ -545,7 +545,7 @@ function CreatePassword() {
             transition={{ duration: 0.3 }}
           >
             {message}
-            <div style={{ marginTop: "10px" }}>
+            <div style={{ marginTop: "10px", textAlign: "center" }}>
               <Link href="/login" legacyBehavior>
                 <Button
                   as="a"
