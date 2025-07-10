@@ -255,28 +255,38 @@ const customStyles = `
 // Custom logo component specifically for the reset password page
 const CustomLogo = () => {
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ marginRight: '10px' }}>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ marginRight: "10px" }}>
         <EnergyBall size="48px" />
       </div>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center',
-        textTransform: 'uppercase',
-        letterSpacing: '2.5px',
-        fontSize: '1.8rem',
-        fontWeight: 700,
-        fontFamily: 'var(--font-montserrat), sans-serif'
-      }}>
-        <span style={{
-          background: 'linear-gradient(90deg, var(--primary), var(--accent))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>CYMA</span>
-        <span style={{
-          color: '#FFFFFF',
-          WebkitTextFillColor: '#FFFFFF'
-        }}>SPHERE</span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          textTransform: "uppercase",
+          letterSpacing: "2.5px",
+          fontSize: "1.8rem",
+          fontWeight: 700,
+          fontFamily: "var(--font-montserrat), sans-serif",
+        }}
+      >
+        <span
+          style={{
+            background: "linear-gradient(90deg, var(--primary), var(--accent))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          CYMA
+        </span>
+        <span
+          style={{
+            color: "#FFFFFF",
+            WebkitTextFillColor: "#FFFFFF",
+          }}
+        >
+          SPHERE
+        </span>
       </div>
     </div>
   );
@@ -289,11 +299,11 @@ function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const { resetPassword } = useAuth();
-  
+
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  
+
   // Wait for translations to load
   useEffect(() => {
     if (!languageLoading) {
@@ -307,39 +317,79 @@ function ResetPassword() {
     setMessage("");
     setLoading(true);
 
-    // Send password reset email
-    const result = await resetPassword(email);
+    try {
+      // Send password reset email
+      const result = await resetPassword(email);
 
-    // Check if there was an error
-    if (result.error) {
-      console.error("Password reset error:", result.error);
+      // Check if there was an error
+      if (result.error) {
+        console.error("Password reset error:", result.error);
 
-      // Handle specific errors
-      if (result.error.code === "user_not_found") {
-        setError(t("resetPassword.errors.userNotFound", "No user found with this email address"));
-      } else if (result.error.code === "email_address_invalid") {
-        setError(t("resetPassword.errors.invalidEmail", "Invalid email address"));
-      } else if (result.error.message.includes("email rate limit exceeded") || 
-                 result.error.message.includes("rate limit")) {
-        setError(t("resetPassword.errors.rateLimit", "Too many password reset attempts. Please wait a few minutes before trying again."));
+        // Handle specific errors
+        if (result.error.code === "user_not_found") {
+          setError(
+            t(
+              "resetPassword.errors.userNotFound",
+              "No user found with this email address"
+            )
+          );
+        } else if (result.error.code === "email_address_invalid") {
+          setError(
+            t("resetPassword.errors.invalidEmail", "Invalid email address")
+          );
+        } else if (
+          result.error.message.includes("email rate limit exceeded") ||
+          result.error.message.includes("rate limit")
+        ) {
+          setError(
+            t(
+              "resetPassword.errors.rateLimit",
+              "Too many password reset attempts. Please wait a few minutes before trying again."
+            )
+          );
+        } else {
+          setError(
+            t(
+              "resetPassword.errors.generic",
+              "Failed to send password reset email. Please try again."
+            )
+          );
+        }
       } else {
-        setError(t("resetPassword.errors.generic", "Failed to send password reset email. Please try again."));
+        // Success - no error returned
+        setMessage(
+          t(
+            "resetPassword.successMessage",
+            "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder."
+          )
+        );
       }
-    } else {
-      // Success - no error returned
-      setMessage(
-        t("resetPassword.successMessage", "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder.")
+    } catch (error) {
+      console.error("Unexpected error during password reset:", error);
+      setError(
+        t(
+          "resetPassword.errors.generic",
+          "Failed to send password reset email. Please try again."
+        )
       );
+    } finally {
+      // Always ensure loading is reset, regardless of success or failure
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   // If translations are still loading, show loading component
   if (!translationsLoaded) {
     return (
       <AuthContainer>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
           <LoadingComponent text={t("common.loading", "Loading...")} />
         </div>
       </AuthContainer>
@@ -379,7 +429,10 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          {t("resetPassword.description", "Enter your email address and we'll send you instructions to reset your password.")}
+          {t(
+            "resetPassword.description",
+            "Enter your email address and we'll send you instructions to reset your password."
+          )}
         </Description>
 
         {error && (
@@ -404,14 +457,19 @@ function ResetPassword() {
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="email">{t("resetPassword.emailLabel", "Email Address")}</Label>
+            <Label htmlFor="email">
+              {t("resetPassword.emailLabel", "Email Address")}
+            </Label>
             <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder={t("resetPassword.emailPlaceholder", "Enter your registered email")}
+              placeholder={t(
+                "resetPassword.emailPlaceholder",
+                "Enter your registered email"
+              )}
             />
           </FormGroup>
 
@@ -422,14 +480,15 @@ function ResetPassword() {
             whileHover="hover"
             whileTap="tap"
           >
-            {loading ? 
-              t("resetPassword.sendingLink", "Sending...") : 
-              t("resetPassword.sendLink", "Send Reset Link")}
+            {loading
+              ? t("resetPassword.sendingLink", "Sending...")
+              : t("resetPassword.sendLink", "Send Reset Link")}
           </Button>
         </Form>
 
         <LinkText>
-          {t("resetPassword.rememberPassword", "Remember your password?")} <Link href="/login">{t("resetPassword.login", "Log in")}</Link>
+          {t("resetPassword.rememberPassword", "Remember your password?")}{" "}
+          <Link href="/login">{t("resetPassword.login", "Log in")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>
