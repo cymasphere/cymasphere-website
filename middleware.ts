@@ -1,17 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
-
-// List of authentication-related routes
-const AUTH_ROUTES = [
-  '/login', 
-  '/signup', 
-  '/reset-password', 
-  '/create-password',
-  '/signup-success',
-  '/signup-account-exists',
-  '/checkout-success',
-  '/checkout-canceled'
-];
 
 export async function middleware(request: NextRequest) {
   // Handle Supabase authentication session

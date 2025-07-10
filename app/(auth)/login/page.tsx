@@ -10,6 +10,7 @@ import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
+import { getSafeRedirectUrl } from "@/utils/redirectValidation";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -229,11 +230,14 @@ function Login() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const auth = useAuth() || {};
   const router = useRouter();
-  
+
+  // Get redirect parameter from URL
+  const redirectTo = searchParams.get("redirect");
+
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  
+
   // Wait for translations to load
   useEffect(() => {
     if (!languageLoading) {
@@ -244,21 +248,39 @@ function Login() {
   // Handle redirect after successful login and auth context update
   useEffect(() => {
     if (loginSuccess && auth.user && !auth.loading) {
-      console.log("Auth context updated, redirecting to dashboard");
-      router.push('/dashboard');
+      console.log("Auth context updated, redirecting...");
+
+      // Use secure redirect validation
+      const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
+
+      if (safeRedirectUrl) {
+        console.log("Redirecting to:", safeRedirectUrl);
+        router.push(safeRedirectUrl);
+      } else {
+        if (redirectTo) {
+          console.log(
+            "Invalid redirect parameter detected, going to dashboard for security"
+          );
+        } else {
+          console.log("No redirect parameter, going to dashboard");
+        }
+        router.push("/dashboard");
+      }
     }
-  }, [loginSuccess, auth.user, auth.loading, router]);
+  }, [loginSuccess, auth.user, auth.loading, router, redirectTo]);
 
   // Render a loading indicator if translations aren't loaded yet
   if (!translationsLoaded) {
     return (
-      <div style={{ 
-        height: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        backgroundColor: "var(--background)"
-      }}>
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "var(--background)",
+        }}
+      >
         <LoadingComponent size="40px" />
       </div>
     );
@@ -281,17 +303,34 @@ function Login() {
 
         // Handle specific error codes
         if (result.error.code === "user_not_found") {
-          setError(t("login.errors.userNotFound", "No account found with this email. Please sign up first."));
+          setError(
+            t(
+              "login.errors.userNotFound",
+              "No account found with this email. Please sign up first."
+            )
+          );
         } else if (result.error.code === "invalid_credentials") {
-          setError(t("login.errors.invalidCredentials", "Incorrect password. Please try again."));
+          setError(
+            t(
+              "login.errors.invalidCredentials",
+              "Incorrect password. Please try again."
+            )
+          );
         } else if (result.error.code === "email_address_invalid") {
           setError(t("login.errors.invalidEmail", "Invalid email format."));
         } else if (result.error.code === "over_request_rate_limit") {
           setError(
-            t("login.errors.rateLimit", "Too many failed login attempts. Please try again later or reset your password.")
+            t(
+              "login.errors.rateLimit",
+              "Too many failed login attempts. Please try again later or reset your password."
+            )
           );
         } else {
-          setError(t("login.errors.generic", "Failed to log in: {{message}}", { message: result.error.message }));
+          setError(
+            t("login.errors.generic", "Failed to log in: {{message}}", {
+              message: result.error.message,
+            })
+          );
         }
       } else {
         console.log("User logged in successfully");
@@ -301,8 +340,8 @@ function Login() {
     } catch (error: unknown) {
       console.error("Login error:", error);
       setError(
-        t("login.errors.unknown", "Failed to log in: {{message}}", { 
-          message: error instanceof Error ? error.message : String(error)
+        t("login.errors.unknown", "Failed to log in: {{message}}", {
+          message: error instanceof Error ? error.message : String(error),
         })
       );
     } finally {
@@ -353,7 +392,9 @@ function Login() {
           />
         </div>
 
-        <Subtitle>{t("login.subtitle", "Login to access your account")}</Subtitle>
+        <Subtitle>
+          {t("login.subtitle", "Login to access your account")}
+        </Subtitle>
 
         {error && (
           <ErrorMessage
@@ -389,7 +430,9 @@ function Login() {
           </FormGroup>
 
           <ForgotPassword>
-            <Link href="/reset-password">{t("login.forgotPassword", "Forgot password?")}</Link>
+            <Link href="/reset-password">
+              {t("login.forgotPassword", "Forgot password?")}
+            </Link>
           </ForgotPassword>
 
           <Button type="submit" disabled={loading}>
@@ -409,7 +452,8 @@ function Login() {
         </Form>
 
         <LinkText>
-          {t("login.noAccount", "Don't have an account?")} <Link href={`/signup`}>{t("login.signUp", "Sign up")}</Link>
+          {t("login.noAccount", "Don't have an account?")}{" "}
+          <Link href={`/signup`}>{t("login.signUp", "Sign up")}</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>

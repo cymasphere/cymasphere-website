@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isValidLocalRedirect } from "@/utils/redirectValidation";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -38,15 +39,36 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    // const url = request.nextUrl.clone();
-    // url.pathname = "/login";
-    // return NextResponse.redirect(url);
+  // Define routes that require authentication
+  const protectedRoutes = [
+    "/dashboard",
+    "/profile",
+    "/billing",
+    "/downloads",
+    "/settings",
+    "/admin",
+  ];
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  // If user is not authenticated and trying to access a protected route
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+
+    // Build the redirect path (pathname + search params)
+    const redirectPath = request.nextUrl.pathname + request.nextUrl.search;
+
+    // Only add redirect parameter if the path is valid and safe
+    if (isValidLocalRedirect(redirectPath)) {
+      url.searchParams.set("redirect", encodeURIComponent(redirectPath));
+    }
+    // If path is invalid, we still redirect to login but without the redirect parameter
+    // This ensures users can still log in even if there's a malformed URL
+
+    return NextResponse.redirect(url);
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
