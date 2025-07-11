@@ -18,8 +18,24 @@ export async function GET(request: NextRequest) {
       type,
       token_hash,
     });
+
     if (!error) {
-      redirect("/dashboard");
+      // Check the OTP type to determine where to redirect
+      if (type === "recovery") {
+        // Password reset flow - redirect to create-password page
+        redirect("/create-password");
+      } else {
+        // Other types (signup confirmation, etc.) - redirect to dashboard
+        redirect("/dashboard");
+      }
+    } else {
+      // If there's an error, redirect to create-password with error parameters
+      const errorParams = new URLSearchParams({
+        error: "true",
+        error_code: error.code || "unknown",
+        error_description: error.message || "An error occurred",
+      });
+      redirect(`/create-password?${errorParams.toString()}`);
     }
   }
 

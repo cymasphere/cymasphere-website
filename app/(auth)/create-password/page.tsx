@@ -318,7 +318,8 @@ function CreatePassword() {
   const [loading, setLoading] = useState(false);
   const [urlError, setUrlError] = useState("");
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const { supabase } = useAuth();
+  const [sessionReady, setSessionReady] = useState(false);
+  const { supabase, session, user } = useAuth();
 
   // Initialize translations
   const { t } = useTranslation();
@@ -363,12 +364,53 @@ function CreatePassword() {
     }
   }, [languageLoading]);
 
+  // Monitor session state for debugging
+  useEffect(() => {
+    console.log("Create password page - Auth state:", {
+      hasSession: !!session,
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+    });
+
+    // Set session ready when we have a session and user
+    if (session && user) {
+      setSessionReady(true);
+      console.log("✅ Session ready for password update");
+    } else {
+      setSessionReady(false);
+      console.log("⏳ Waiting for session...");
+    }
+  }, [session, user]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Reset state
     setError("");
     setMessage("");
+
+    // Check if there are URL errors (invalid/expired link)
+    if (urlError) {
+      setError(
+        t(
+          "createPassword.errors.invalidLink",
+          "Cannot update password with invalid link. Please request a new password reset."
+        )
+      );
+      return;
+    }
+
+    // Check if session is ready
+    if (!sessionReady) {
+      setError(
+        t(
+          "createPassword.errors.noSession",
+          "Session not ready. Please wait a moment and try again, or request a new password reset link."
+        )
+      );
+      return;
+    }
 
     // Only validate that passwords match
     if (password !== confirmPassword) {
@@ -384,6 +426,27 @@ function CreatePassword() {
 
     try {
       console.log("Attempting to update password...");
+      console.log("Current session:", session ? "exists" : "null");
+      console.log("Current user:", user ? user.email : "null");
+
+      // Double-check session before proceeding
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      console.log(
+        "Current session from getSession:",
+        currentSession ? "exists" : "null"
+      );
+
+      if (!currentSession) {
+        setError(
+          t(
+            "createPassword.errors.invalidSession",
+            "Invalid or expired session. Please request a new password reset."
+          )
+        );
+        return;
+      }
 
       // Use updateUser with the current session
       const { error: updateError } = await supabase.auth.updateUser({
@@ -616,13 +679,18 @@ function CreatePassword() {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !sessionReady}
               variants={buttonVariants}
               whileHover="hover"
               whileTap="tap"
             >
               {loading
                 ? t("createPassword.updating", "Updating...")
+                : !sessionReady
+                ? t(
+                    "createPassword.waitingForSession",
+                    "Waiting for session..."
+                  )
                 : t("createPassword.setPassword", "Set New Password")}
             </Button>
           </Form>
