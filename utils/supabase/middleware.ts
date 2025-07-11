@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isValidLocalRedirect } from "@/utils/redirectValidation";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -16,8 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -31,48 +29,30 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // Do not run code between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: DO NOT REMOVE auth.getUser()
 
-  // Define routes that require authentication
-  const protectedRoutes = [
-    "/dashboard",
-    "/profile",
-    "/billing",
-    "/downloads",
-    "/settings",
-    "/admin",
-  ];
+  // const {
+  //   data: { user },
+  // } =
+  await supabase.auth.getUser();
 
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  );
+  // if (
+  //   !user &&
+  //   !request.nextUrl.pathname.startsWith("/login") &&
+  //   !request.nextUrl.pathname.startsWith("/auth")
+  // ) {
+  // no user, potentially respond by redirecting the user to the login page
+  // const url = request.nextUrl.clone();
+  // url.pathname = "/login";
+  // return NextResponse.redirect(url);
+  // }
 
-  // If user is not authenticated and trying to access a protected route
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-
-    // Build the redirect path (pathname + search params)
-    const redirectPath = request.nextUrl.pathname + request.nextUrl.search;
-
-    // Only add redirect parameter if the path is valid and safe
-    if (isValidLocalRedirect(redirectPath)) {
-      url.searchParams.set("redirect", encodeURIComponent(redirectPath));
-    }
-    // If path is invalid, we still redirect to login but without the redirect parameter
-    // This ensures users can still log in even if there's a malformed URL
-
-    return NextResponse.redirect(url);
-  }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
-  // creating a new response object with NextResponse.next() make sure to:
+  // IMPORTANT: You *must* return the supabaseResponse object as it is.
+  // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:
   //    const myNewResponse = NextResponse.next({ request })
   // 2. Copy over the cookies, like so:

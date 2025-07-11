@@ -15,7 +15,7 @@ import {
   signUpWithStripe,
   updateStripe,
 } from "@/utils/supabase/actions";
-import { createSupabaseBrowser } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -45,7 +45,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const supabase = createSupabaseBrowser();
+const supabase = createClient();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -90,34 +90,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUserFromSession = async () => {
-    try {
-      setLoading(user === null);
-      const {
-        data: { user: logged_in_user },
-      } = await supabase.auth.getUser();
+  // Simple session update effect - based on working project
+  useEffect(() => {
+    const updateUserFromSession = async () => {
+      try {
+        setLoading(user === null);
+        const {
+          data: { user: logged_in_user },
+        } = await supabase.auth.getUser();
 
-      if (logged_in_user) {
-        const { profile, error } = await fetchProfile(logged_in_user.id);
-        if (error) {
-          setUser(null);
-          return;
-        }
+        if (logged_in_user) {
+          const { profile, error } = await fetchProfile(logged_in_user.id);
+          if (error) {
+            console.log("error fetching profile", JSON.stringify(error));
+            setUser(null);
+            return;
+          }
 
-        const { is_admin, error: adminError } = await fetchIsAdmin(
-          logged_in_user.id
-        );
-        if (adminError) {
-          // Don't fail completely if admin check fails, just set is_admin to false
-        }
+          const { is_admin, error: adminError } = await fetchIsAdmin(
+            logged_in_user.id
+          );
+          if (adminError) {
+            console.log(
+              "error fetching admin status",
+              JSON.stringify(adminError)
+            );
+          }
 
-        if (profile) {
-          // Set user immediately, then update Stripe async
-          setUser({ ...logged_in_user, profile, is_admin: is_admin || false });
+          if (profile) {
+            // Set user immediately with basic profile data
+            setUser({
+              ...logged_in_user,
+              profile,
+              is_admin: is_admin || false,
+            });
 
-          // Update Stripe subscription status asynchronously (non-blocking)
-          updateStripe(logged_in_user.email!, profile)
-            .then(({ success, profile: updatedProfile }) => {
+            // Update Stripe subscription status asynchronously (non-blocking)
+            try {
+              const { success, profile: updatedProfile } = await updateStripe(
+                logged_in_user.email!,
+                profile
+              );
               if (success && updatedProfile) {
                 setUser({
                   ...logged_in_user,
@@ -125,118 +138,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   is_admin: is_admin || false,
                 });
               }
-            })
-            .catch(() => {
-              // Keep the user logged in even if Stripe fails
-            });
+            } catch (stripeError) {
+              // Keep the user logged in even if Stripe update fails
+              console.log("Stripe update failed:", stripeError);
+            }
+          }
         } else {
           setUser(null);
         }
-      } else {
+      } catch (error) {
+        console.log("error updating user from session", JSON.stringify(error));
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
+    updateUserFromSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  // Simple auth state change handler - based on working project
   useEffect(() => {
+    console.log("auth context triggered");
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Handle password recovery events
-      if (event === "PASSWORD_RECOVERY" && session) {
-        setSession(session);
-        return;
-      }
-
-      // Prevent unnecessary re-renders during auth operations
-      if (event === "TOKEN_REFRESHED" && session) {
-        setSession(session);
-        return;
-      }
-
+      console.log("auth state changed", event);
       setSession(session);
     });
 
-    // Token refresh to prevent login redirects
-    const refreshInterval = setInterval(async () => {
-      try {
-        const {
-          data: { session: currentSession },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) {
-          return;
-        }
-
-        if (currentSession) {
-          const now = Date.now() / 1000;
-          const expiresAt = currentSession.expires_at || 0;
-          const timeUntilExpiry = expiresAt - now;
-
-          // Refresh 10 minutes before expiry
-          if (timeUntilExpiry < 600) {
-            const { data, error: refreshError } =
-              await supabase.auth.refreshSession();
-
-            if (refreshError) {
-              // Only sign out if refresh fails with specific errors
-              if (
-                refreshError.message.includes("refresh_token_not_found") ||
-                refreshError.message.includes("invalid_grant")
-              ) {
-                await supabase.auth.signOut();
-              }
-            } else if (data.session) {
-              setSession(data.session);
-            }
-          }
-        }
-      } catch {
-        // Silent fail for token refresh errors
-      }
-    }, 30000); // Check every 30 seconds
-
-    // Initial session check
-    const checkInitialSession = async () => {
-      try {
-        const {
-          data: { session: initialSession },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (!error && initialSession) {
-          setSession(initialSession);
-        }
-      } catch {
-        // Silent fail for initial session check
-      }
-    };
-
-    checkInitialSession();
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
     };
   }, []);
-
-  useEffect(() => {
-    // Only update user when session actually changes
-    if (session?.user && session.user.id !== user?.id) {
-      updateUserFromSession();
-    } else if (!session && user) {
-      setUser(null);
-      setLoading(false);
-    } else if (session && user && session.user.id === user.id) {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]); // Only trigger when user ID changes
 
   const signIn = async (email: string, password: string) => {
     return await supabase.auth.signInWithPassword({ email, password });
@@ -257,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
     });
   };
 

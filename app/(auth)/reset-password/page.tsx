@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import EnergyBall from "@/components/common/EnergyBall";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -139,6 +140,7 @@ const Form = styled.form`
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
+  position: relative;
 `;
 
 const Label = styled.label`
@@ -162,6 +164,20 @@ const Input = styled.input`
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+`;
+
+const PasswordToggle = styled.button`
+  position: absolute;
+  right: 12px;
+  top: 38px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
   }
 `;
 
@@ -252,7 +268,7 @@ const customStyles = `
   }
 `;
 
-// Custom logo component specifically for the reset password page
+// Custom logo component
 const CustomLogo = () => {
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
@@ -293,16 +309,34 @@ const CustomLogo = () => {
 };
 
 function ResetPassword() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isReset, setIsReset] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  const { resetPassword } = useAuth();
+  const { resetPassword, supabase } = useAuth();
 
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+
+  // Check if this is a password reset (has code) or password request
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      setIsReset(true);
+      console.log("✅ ResetPassword: Code found, showing password reset form");
+    } else {
+      setIsReset(false);
+      console.log("ℹ️ ResetPassword: No code found, showing email form");
+    }
+  }, [searchParams]);
 
   // Wait for translations to load
   useEffect(() => {
@@ -311,7 +345,7 @@ function ResetPassword() {
     }
   }, [languageLoading]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleResetRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setMessage("");
@@ -372,16 +406,74 @@ function ResetPassword() {
         );
         setEmail(""); // Clear the email field on success
       }
-    } catch (error) {
-      console.error("Unexpected error during password reset:", error);
+    } catch (err) {
+      console.error("Password reset request failed:", err);
       setError(
         t(
           "resetPassword.errors.generic",
-          "Failed to send password reset email. Please try again."
+          "An unexpected error occurred. Please try again."
         )
       );
     } finally {
-      // Always ensure loading is reset, regardless of success or failure
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    // Basic validation
+    if (password !== confirmPassword) {
+      setError(
+        t("createPassword.errors.passwordMismatch", "Passwords do not match")
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      setError(
+        t(
+          "createPassword.errors.passwordTooShort",
+          "Password must be at least 6 characters"
+        )
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log("🔄 ResetPassword: Updating password directly");
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        console.error("❌ ResetPassword: Password update failed:", error);
+        setError(
+          error.message ||
+            t("createPassword.errors.generic", "Failed to update password")
+        );
+        return;
+      }
+
+      console.log("✅ ResetPassword: Password updated successfully");
+      setMessage(
+        t(
+          "createPassword.success",
+          "Your password has been updated successfully! You are now logged in."
+        )
+      );
+
+      // Clear form
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      console.error("💥 ResetPassword: Update password error:", err);
+      setError(
+        t("createPassword.errors.generic", "An unexpected error occurred")
+      );
+    } finally {
       setLoading(false);
     }
   };
@@ -429,7 +521,9 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {t("resetPassword.title", "Reset Password")}
+          {isReset
+            ? t("createPassword.title", "Set New Password")
+            : t("resetPassword.title", "Reset Password")}
         </Title>
 
         <Description
@@ -437,10 +531,15 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          {t(
-            "resetPassword.description",
-            "Enter your email address and we'll send you instructions to reset your password."
-          )}
+          {isReset
+            ? t(
+                "createPassword.description",
+                "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
+              )
+            : t(
+                "resetPassword.description",
+                "Enter your email address and we'll send you instructions to reset your password."
+              )}
         </Description>
 
         {error && (
@@ -460,39 +559,132 @@ function ResetPassword() {
             transition={{ duration: 0.3 }}
           >
             {message}
+            {isReset && (
+              <div style={{ marginTop: "10px", textAlign: "center" }}>
+                <Link href="/dashboard" legacyBehavior>
+                  <Button
+                    as="a"
+                    style={{
+                      display: "inline-block",
+                      textAlign: "center",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {t("createPassword.proceedToDashboard", "Go to Dashboard")}
+                  </Button>
+                </Link>
+              </div>
+            )}
           </SuccessMessage>
         )}
 
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="email">
-              {t("resetPassword.emailLabel", "Email Address")}
-            </Label>
-            <Input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder={t(
-                "resetPassword.emailPlaceholder",
-                "Enter your registered email"
-              )}
-            />
-          </FormGroup>
+        {!message && (
+          <>
+            {isReset ? (
+              <Form onSubmit={handlePasswordUpdate}>
+                <FormGroup>
+                  <Label htmlFor="password">
+                    {t("createPassword.newPasswordLabel", "New Password")}
+                  </Label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder={t(
+                      "createPassword.newPasswordPlaceholder",
+                      "Enter your new password"
+                    )}
+                  />
+                  <PasswordToggle
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </PasswordToggle>
+                </FormGroup>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            variants={buttonVariants}
-            whileHover="hover"
-            whileTap="tap"
-          >
-            {loading
-              ? t("resetPassword.sendingLink", "Sending...")
-              : t("resetPassword.sendLink", "Send Reset Link")}
-          </Button>
-        </Form>
+                <FormGroup>
+                  <Label htmlFor="confirmPassword">
+                    {t(
+                      "createPassword.confirmPasswordLabel",
+                      "Confirm Password"
+                    )}
+                  </Label>
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder={t(
+                      "createPassword.confirmPasswordPlaceholder",
+                      "Confirm your new password"
+                    )}
+                  />
+                  <PasswordToggle
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </PasswordToggle>
+                </FormGroup>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {loading
+                    ? t("createPassword.updating", "Updating...")
+                    : t("createPassword.setPassword", "Set New Password")}
+                </Button>
+              </Form>
+            ) : (
+              <Form onSubmit={handleResetRequest}>
+                <FormGroup>
+                  <Label htmlFor="email">
+                    {t("resetPassword.emailLabel", "Email Address")}
+                  </Label>
+                  <Input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder={t(
+                      "resetPassword.emailPlaceholder",
+                      "Enter your registered email"
+                    )}
+                  />
+                </FormGroup>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {loading
+                    ? t("resetPassword.sendingLink", "Sending...")
+                    : t("resetPassword.sendLink", "Send Reset Link")}
+                </Button>
+              </Form>
+            )}
+          </>
+        )}
 
         <LinkText>
           {t("resetPassword.rememberPassword", "Remember your password?")}{" "}

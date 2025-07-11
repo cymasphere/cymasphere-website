@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // Redirect based on the type of OTP verification
       if (type === "recovery") {
-        redirect("/create-password");
+        redirect("/reset-password");
       } else {
         redirect("/dashboard");
       }
