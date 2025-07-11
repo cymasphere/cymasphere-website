@@ -65,21 +65,12 @@ export async function POST(
       request.headers.get("x-real-ip");
     const userAgent = request.headers.get("user-agent");
 
-    console.log("clientIp", clientIp);
-    console.log("userAgent", userAgent);
-
     // Allow both Cymasphere app and web browser user agents
     if (!userAgent) {
       return err("invalid_credentials", "Invalid credentials");
     }
-    
-    // Allow web browsers (for web app) and Cymasphere app (for mobile)
-    const isWebBrowser = userAgent.includes("Mozilla") || userAgent.includes("Chrome") || userAgent.includes("Safari") || userAgent.includes("Firefox");
-    const isCymasphereApp = userAgent.startsWith("cymasphere:");
-    
-    if (!isWebBrowser && !isCymasphereApp) {
-      return err("invalid_credentials", "Invalid credentials");
-    }
+
+    // Allow both web browsers (for web app) and Cymasphere app (for mobile)
 
     const allHeaders: Record<string, string> = {};
     if (clientIp) {
@@ -127,7 +118,7 @@ export async function POST(
         .eq("user_id", user.id);
 
       if (sessionsError) {
-        console.error("Error fetching user sessions:", sessionsError);
+        // Handle session fetch error silently
       } else {
         // Count sessions with user agent starting with "cymasphere:"
         const cymasphereUserAgents =
@@ -180,8 +171,7 @@ export async function POST(
               session.expires_at || null
             );
           }
-        } catch (stripeError) {
-          console.error("Error updating Stripe data:", stripeError);
+        } catch {
           // Continue with original profile if Stripe update fails
         }
 
@@ -195,8 +185,7 @@ export async function POST(
     }
 
     return err("unexpected_failure", "An unexpected error occured");
-  } catch (error) {
-    console.log(error);
+  } catch {
     return err("unexpected_failure", "An unexpected error occured");
   }
 }

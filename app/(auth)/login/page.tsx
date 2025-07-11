@@ -245,25 +245,29 @@ function Login() {
     }
   }, [languageLoading]);
 
-  // Handle redirect after successful login and auth context update
+  // Check if user is already authenticated and redirect them
   useEffect(() => {
-    if (loginSuccess && auth.user && !auth.loading) {
-      console.log("Auth context updated, redirecting...");
-
+    if (auth.user && !auth.loading) {
       // Use secure redirect validation
       const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
 
       if (safeRedirectUrl) {
-        console.log("Redirecting to:", safeRedirectUrl);
         router.push(safeRedirectUrl);
       } else {
-        if (redirectTo) {
-          console.log(
-            "Invalid redirect parameter detected, going to dashboard for security"
-          );
-        } else {
-          console.log("No redirect parameter, going to dashboard");
-        }
+        router.push("/dashboard");
+      }
+    }
+  }, [auth.user, auth.loading, router, redirectTo]);
+
+  // Handle redirect after successful login and auth context update
+  useEffect(() => {
+    if (loginSuccess && auth.user && !auth.loading) {
+      // Use secure redirect validation
+      const safeRedirectUrl = getSafeRedirectUrl(redirectTo);
+
+      if (safeRedirectUrl) {
+        router.push(safeRedirectUrl);
+      } else {
         router.push("/dashboard");
       }
     }
@@ -299,8 +303,6 @@ function Login() {
       const result = await auth.signIn(email, password);
 
       if (result.error) {
-        console.error("Login error:", result.error);
-
         // Handle specific error codes
         if (result.error.code === "user_not_found") {
           setError(
@@ -333,12 +335,10 @@ function Login() {
           );
         }
       } else {
-        console.log("User logged in successfully");
         // Set success flag and let useEffect handle redirect after auth context updates
         setLoginSuccess(true);
       }
     } catch (error: unknown) {
-      console.error("Login error:", error);
       setError(
         t("login.errors.unknown", "Failed to log in: {{message}}", {
           message: error instanceof Error ? error.message : String(error),

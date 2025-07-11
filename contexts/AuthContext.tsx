@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { profile, error } = await fetchProfile(session.user.id);
         if (error) {
-          console.log(JSON.stringify(error));
           return;
         }
 
@@ -65,7 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           session.user.id
         );
         if (adminError) {
-          console.log(JSON.stringify(adminError));
           return;
         }
 
@@ -86,8 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser({ ...session.user, profile, is_admin });
           }
         }
-      } catch (error) {
-        console.error("Error refreshing user:", error);
+      } catch {
+        console.error("Error refreshing user");
       }
     }
   };
@@ -100,11 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (logged_in_user) {
-        console.log("👤 Fetching user profile for:", logged_in_user.email);
-
         const { profile, error } = await fetchProfile(logged_in_user.id);
         if (error) {
-          console.log("❌ Error fetching profile", JSON.stringify(error));
           setUser(null);
           return;
         }
@@ -113,10 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logged_in_user.id
         );
         if (adminError) {
-          console.log(
-            "❌ Error fetching admin status",
-            JSON.stringify(adminError)
-          );
           // Don't fail completely if admin check fails, just set is_admin to false
         }
 
@@ -128,7 +119,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           updateStripe(logged_in_user.email!, profile)
             .then(({ success, profile: updatedProfile }) => {
               if (success && updatedProfile) {
-                console.log("✅ Stripe data updated");
                 setUser({
                   ...logged_in_user,
                   profile: updatedProfile,
@@ -136,23 +126,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 });
               }
             })
-            .catch((stripeError) => {
-              console.warn(
-                "⚠️ Stripe update failed (non-critical):",
-                stripeError
-              );
+            .catch(() => {
               // Keep the user logged in even if Stripe fails
             });
         } else {
-          console.log("❌ No profile found for user");
           setUser(null);
         }
       } else {
-        console.log("ℹ️ No authenticated user found");
         setUser(null);
       }
-    } catch (error) {
-      console.error("❌ Error in updateUserFromSession:", error);
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
@@ -160,29 +143,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    console.log("🔐 AuthContext initializing...");
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`🔐 Auth state changed: ${event}`, {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        expiresAt: session?.expires_at,
-      });
-
       // Handle password recovery events
       if (event === "PASSWORD_RECOVERY" && session) {
-        console.log(
-          "🔐 Password recovery event detected - session established for password reset"
-        );
         setSession(session);
         return;
       }
 
       // Prevent unnecessary re-renders during auth operations
       if (event === "TOKEN_REFRESHED" && session) {
-        console.log("✅ Token refreshed successfully");
         setSession(session);
         return;
       }
@@ -199,7 +170,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("❌ Error getting session:", error);
           return;
         }
 
@@ -210,39 +180,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Refresh 10 minutes before expiry
           if (timeUntilExpiry < 600) {
-            console.log(
-              `🔄 Auto-refreshing token (expires in ${Math.round(
-                timeUntilExpiry / 60
-              )} minutes)...`
-            );
-
             const { data, error: refreshError } =
               await supabase.auth.refreshSession();
 
             if (refreshError) {
-              console.error("❌ Failed to refresh session:", refreshError);
               // Only sign out if refresh fails with specific errors
               if (
                 refreshError.message.includes("refresh_token_not_found") ||
                 refreshError.message.includes("invalid_grant")
               ) {
-                console.log("🚪 Invalid refresh token, signing out...");
                 await supabase.auth.signOut();
               }
             } else if (data.session) {
-              console.log("✅ Session refreshed successfully");
               setSession(data.session);
             }
-          } else {
-            console.log(
-              `⏰ Token valid for ${Math.round(
-                timeUntilExpiry / 60
-              )} more minutes`
-            );
           }
         }
-      } catch (error) {
-        console.error("❌ Error in token refresh interval:", error);
+      } catch {
+        // Silent fail for token refresh errors
       }
     }, 30000); // Check every 30 seconds
 
@@ -254,26 +209,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error,
         } = await supabase.auth.getSession();
 
-        if (error) {
-          console.error("❌ Error getting initial session:", error);
-        } else if (initialSession) {
-          console.log("✅ Initial session found:", {
-            userId: initialSession.user?.id,
-            expiresAt: initialSession.expires_at,
-          });
+        if (!error && initialSession) {
           setSession(initialSession);
-        } else {
-          console.log("ℹ️ No initial session found");
         }
-      } catch (error) {
-        console.error("❌ Error checking initial session:", error);
+      } catch {
+        // Silent fail for initial session check
       }
     };
 
     checkInitialSession();
 
     return () => {
-      console.log("🔐 AuthContext cleanup");
       subscription.unsubscribe();
       clearInterval(refreshInterval);
     };
@@ -282,14 +228,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only update user when session actually changes
     if (session?.user && session.user.id !== user?.id) {
-      console.log("🔄 Session changed, updating user profile...");
       updateUserFromSession();
     } else if (!session && user) {
-      console.log("🚪 Session cleared, clearing user...");
       setUser(null);
       setLoading(false);
     } else if (session && user && session.user.id === user.id) {
-      console.log("✅ Session matches current user, no update needed");
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,7 +268,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .update(profile)
         .eq("id", profile.id!);
       if (error) {
-        console.log(JSON.stringify(error));
         return { error: error.message };
       }
 

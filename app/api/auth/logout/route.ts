@@ -72,8 +72,7 @@ export async function POST(
     }
 
     return ok();
-  } catch (error) {
-    console.error(error);
+  } catch {
     return err("unexpected_failure", "An unexpected error occurred");
   }
 }
