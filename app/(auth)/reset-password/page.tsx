@@ -329,6 +329,43 @@ function ResetPassword() {
   // Check if this is a password reset (has code) or password request
   useEffect(() => {
     const code = searchParams.get("code");
+    const errorParam = searchParams.get("error");
+    const errorCode = searchParams.get("error_code");
+    const errorDescription = searchParams.get("error_description");
+
+    // Handle URL errors first
+    if (errorParam) {
+      let errorMessage = "";
+
+      if (errorCode === "otp_expired") {
+        errorMessage = t(
+          "resetPassword.errors.linkExpired",
+          "The password reset link has expired. Please request a new one."
+        );
+      } else if (
+        errorCode === "access_denied" ||
+        errorParam === "access_denied"
+      ) {
+        errorMessage = t(
+          "resetPassword.errors.accessDenied",
+          "The password reset link is invalid or has expired. Please request a new one."
+        );
+      } else if (errorDescription) {
+        errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, " "));
+      } else {
+        errorMessage = t(
+          "resetPassword.errors.invalidLink",
+          "The password reset link is invalid. Please request a new one."
+        );
+      }
+
+      console.log("❌ ResetPassword: URL error detected:", errorMessage);
+      setError(errorMessage);
+      setIsReset(false); // Show email form so user can request new link
+      return;
+    }
+
+    // If no errors, check for code
     if (code) {
       setIsReset(true);
       console.log("✅ ResetPassword: Code found, showing password reset form");
@@ -336,7 +373,7 @@ function ResetPassword() {
       setIsReset(false);
       console.log("ℹ️ ResetPassword: No code found, showing email form");
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   // Wait for translations to load
   useEffect(() => {
@@ -347,7 +384,7 @@ function ResetPassword() {
 
   const handleResetRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Clear any URL errors when requesting new reset
     setMessage("");
     setLoading(true);
 
@@ -661,7 +698,10 @@ function ResetPassword() {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError(""); // Clear URL errors when user starts typing
+                    }}
                     required
                     placeholder={t(
                       "resetPassword.emailPlaceholder",

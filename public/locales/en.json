@@ -458,7 +458,10 @@
       "userNotFound": "No user found with this email address",
       "invalidEmail": "Invalid email address",
       "rateLimit": "Too many password reset attempts. Please wait a few minutes before trying again.",
-      "generic": "Failed to send password reset email. Please try again."
+      "generic": "Failed to send password reset email. Please try again.",
+      "linkExpired": "The password reset link has expired. Please request a new one.",
+      "accessDenied": "The password reset link is invalid or has expired. Please request a new one.",
+      "invalidLink": "The password reset link is invalid. Please request a new one."
     }
   },
   "createPassword": {
