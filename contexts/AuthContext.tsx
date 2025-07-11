@@ -171,6 +171,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         expiresAt: session?.expires_at,
       });
 
+      // Handle password recovery events
+      if (event === "PASSWORD_RECOVERY" && session) {
+        console.log(
+          "🔐 Password recovery event detected - session established for password reset"
+        );
+        setSession(session);
+        return;
+      }
+
       // Prevent unnecessary re-renders during auth operations
       if (event === "TOKEN_REFRESHED" && session) {
         console.log("✅ Token refreshed successfully");

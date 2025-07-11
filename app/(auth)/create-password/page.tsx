@@ -364,7 +364,7 @@ function CreatePassword() {
     }
   }, [languageLoading]);
 
-  // Monitor session state for debugging
+  // Monitor session state for password recovery
   useEffect(() => {
     console.log("Create password page - Auth state:", {
       hasSession: !!session,
@@ -373,13 +373,13 @@ function CreatePassword() {
       userEmail: user?.email,
     });
 
-    // Set session ready when we have a session and user
-    if (session && user) {
+    // Session is ready when we have a session (PASSWORD_RECOVERY event establishes this)
+    if (session) {
       setSessionReady(true);
       console.log("✅ Session ready for password update");
     } else {
       setSessionReady(false);
-      console.log("⏳ Waiting for session...");
+      console.log("⏳ Waiting for password recovery session...");
     }
   }, [session, user]);
 
@@ -401,12 +401,12 @@ function CreatePassword() {
       return;
     }
 
-    // Check if session is ready
-    if (!sessionReady) {
+    // Check if we have a valid session for password recovery
+    if (!session) {
       setError(
         t(
           "createPassword.errors.noSession",
-          "Session not ready. Please wait a moment and try again, or request a new password reset link."
+          "No active password recovery session. Please use the link from your password reset email."
         )
       );
       return;
@@ -429,26 +429,7 @@ function CreatePassword() {
       console.log("Current session:", session ? "exists" : "null");
       console.log("Current user:", user ? user.email : "null");
 
-      // Double-check session before proceeding
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession();
-      console.log(
-        "Current session from getSession:",
-        currentSession ? "exists" : "null"
-      );
-
-      if (!currentSession) {
-        setError(
-          t(
-            "createPassword.errors.invalidSession",
-            "Invalid or expired session. Please request a new password reset."
-          )
-        );
-        return;
-      }
-
-      // Use updateUser with the current session
+      // Use updateUser to set the new password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
