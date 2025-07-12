@@ -1,33 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 // GET /api/email-campaigns/audiences/[id] - Get single audience
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createSupabaseServer();
-  
+  const supabase = await createClient();
+
   // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Authentication required' 
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Authentication required",
+      },
+      { status: 401 }
+    );
   }
 
   // Check if user is admin
   const { data: adminCheck } = await supabase
-    .from('admins')
-    .select('*')
-    .eq('user', user.id)
+    .from("admins")
+    .select("*")
+    .eq("user", user.id)
     .single();
 
   if (!adminCheck) {
-    return NextResponse.json({ 
-      error: 'Admin access required' 
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Admin access required",
+      },
+      { status: 403 }
+    );
   }
 
   try {
@@ -35,30 +44,38 @@ export async function GET(
     const { id } = await params;
 
     const { data: audience, error } = await supabase
-      .from('email_audiences')
-      .select('*')
-      .eq('id', id)
+      .from("email_audiences")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ 
-          error: 'Audience not found' 
-        }, { status: 404 });
+      if (error.code === "PGRST116") {
+        return NextResponse.json(
+          {
+            error: "Audience not found",
+          },
+          { status: 404 }
+        );
       }
-      console.error('Error fetching audience:', error);
-      return NextResponse.json({ 
-        error: 'Failed to fetch audience' 
-      }, { status: 500 });
+      console.error("Error fetching audience:", error);
+      return NextResponse.json(
+        {
+          error: "Failed to fetch audience",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ audience });
-
   } catch (error) {
-    console.error('Get audience API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error("Get audience API error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -67,28 +84,37 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createSupabaseServer();
-  
+  const supabase = await createClient();
+
   // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Authentication required' 
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Authentication required",
+      },
+      { status: 401 }
+    );
   }
 
   // Check if user is admin
   const { data: adminCheck } = await supabase
-    .from('admins')
-    .select('*')
-    .eq('user', user.id)
+    .from("admins")
+    .select("*")
+    .eq("user", user.id)
     .single();
 
   if (!adminCheck) {
-    return NextResponse.json({ 
-      error: 'Admin access required' 
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Admin access required",
+      },
+      { status: 403 }
+    );
   }
 
   try {
@@ -98,41 +124,50 @@ export async function PUT(
     const body = await request.json();
     const { name, description, filters, subscriber_count } = body;
 
-    const updateData: any = {
-      updated_at: new Date().toISOString()
+    const updateData: { [key: string]: unknown } = {
+      updated_at: new Date().toISOString(),
     };
 
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (filters !== undefined) updateData.filters = filters;
-    if (subscriber_count !== undefined) updateData.subscriber_count = subscriber_count;
+    if (subscriber_count !== undefined)
+      updateData.subscriber_count = subscriber_count;
 
     const { data: audience, error } = await supabase
-      .from('email_audiences')
+      .from("email_audiences")
       .update(updateData)
-      .eq('id', id)
-      .select('*')
+      .eq("id", id)
+      .select("*")
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ 
-          error: 'Audience not found' 
-        }, { status: 404 });
+      if (error.code === "PGRST116") {
+        return NextResponse.json(
+          {
+            error: "Audience not found",
+          },
+          { status: 404 }
+        );
       }
-      console.error('Error updating audience:', error);
-      return NextResponse.json({ 
-        error: 'Failed to update audience' 
-      }, { status: 500 });
+      console.error("Error updating audience:", error);
+      return NextResponse.json(
+        {
+          error: "Failed to update audience",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ audience });
-
   } catch (error) {
-    console.error('Update audience API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error("Update audience API error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -141,28 +176,37 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createSupabaseServer();
-  
+  const supabase = await createClient();
+
   // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Authentication required' 
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Authentication required",
+      },
+      { status: 401 }
+    );
   }
 
   // Check if user is admin
   const { data: adminCheck } = await supabase
-    .from('admins')
-    .select('*')
-    .eq('user', user.id)
+    .from("admins")
+    .select("*")
+    .eq("user", user.id)
     .single();
 
   if (!adminCheck) {
-    return NextResponse.json({ 
-      error: 'Admin access required' 
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Admin access required",
+      },
+      { status: 403 }
+    );
   }
 
   try {
@@ -170,25 +214,30 @@ export async function DELETE(
     const { id } = await params;
 
     const { error } = await supabase
-      .from('email_audiences')
+      .from("email_audiences")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      console.error('Error deleting audience:', error);
-      return NextResponse.json({ 
-        error: 'Failed to delete audience' 
-      }, { status: 500 });
+      console.error("Error deleting audience:", error);
+      return NextResponse.json(
+        {
+          error: "Failed to delete audience",
+        },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ 
-      message: 'Audience deleted successfully' 
+    return NextResponse.json({
+      message: "Audience deleted successfully",
     });
-
   } catch (error) {
-    console.error('Delete audience API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error("Delete audience API error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
-} 
+}

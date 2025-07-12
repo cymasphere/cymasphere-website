@@ -1,42 +1,66 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 // Helper function to get unique subscribers across multiple audiences
-async function calculateUniqueReach(supabase: any, audienceIds: string[], excludedAudienceIds: string[] = []) {
+async function calculateUniqueReach(
+  supabase: any,
+  audienceIds: string[],
+  excludedAudienceIds: string[] = []
+) {
   try {
-    console.log('🎯 Calculating unique reach for audiences:', audienceIds);
-    console.log('🚫 Excluding audiences:', excludedAudienceIds);
+    console.log("🎯 Calculating unique reach for audiences:", audienceIds);
+    console.log("🚫 Excluding audiences:", excludedAudienceIds);
 
     if (audienceIds.length === 0) {
-      return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
+      return {
+        uniqueCount: 0,
+        details: {
+          totalIncluded: 0,
+          totalExcluded: 0,
+          includedAudiences: 0,
+          excludedAudiences: 0,
+        },
+      };
     }
 
     // Get all audiences to understand their types and filters
     const { data: audiences } = await supabase
-      .from('email_audiences')
-      .select('id, name, filters')
-      .in('id', [...audienceIds, ...excludedAudienceIds]);
+      .from("email_audiences")
+      .select("id, name, filters")
+      .in("id", [...audienceIds, ...excludedAudienceIds]);
 
     if (!audiences) {
-      return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
+      return {
+        uniqueCount: 0,
+        details: {
+          totalIncluded: 0,
+          totalExcluded: 0,
+          includedAudiences: 0,
+          excludedAudiences: 0,
+        },
+      };
     }
 
-    const includedAudiences = audiences.filter((a: any) => audienceIds.includes(a.id));
-    const excludedAudiences = audiences.filter((a: any) => excludedAudienceIds.includes(a.id));
+    const includedAudiences = audiences.filter((a: any) =>
+      audienceIds.includes(a.id)
+    );
+    const excludedAudiences = audiences.filter((a: any) =>
+      excludedAudienceIds.includes(a.id)
+    );
 
-    let allIncludedSubscriberIds = new Set<string>();
-    let allExcludedSubscriberIds = new Set<string>();
+    const allIncludedSubscriberIds = new Set<string>();
+    const allExcludedSubscriberIds = new Set<string>();
 
     // Process included audiences
     for (const audience of includedAudiences) {
-      const filters = audience.filters as any || {};
-      
-      if (filters.audience_type === 'static') {
+      const filters = (audience.filters as any) || {};
+
+      if (filters.audience_type === "static") {
         // For static audiences, get subscribers from junction table
         const { data: relations } = await supabase
-          .from('email_audience_subscribers')
-          .select('subscriber_id')
-          .eq('audience_id', audience.id);
+          .from("email_audience_subscribers")
+          .select("subscriber_id")
+          .eq("audience_id", audience.id);
 
         if (relations) {
           relations.forEach((r: any) => {
@@ -47,20 +71,23 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
         }
       } else {
         // For dynamic audiences, calculate from filters
-        const subscriberIds = await getSubscriberIdsFromFilters(supabase, filters);
-        subscriberIds.forEach(id => allIncludedSubscriberIds.add(id));
+        const subscriberIds = await getSubscriberIdsFromFilters(
+          supabase,
+          filters
+        );
+        subscriberIds.forEach((id) => allIncludedSubscriberIds.add(id));
       }
     }
 
     // Process excluded audiences
     for (const audience of excludedAudiences) {
-      const filters = audience.filters as any || {};
-      
-      if (filters.audience_type === 'static') {
+      const filters = (audience.filters as any) || {};
+
+      if (filters.audience_type === "static") {
         const { data: relations } = await supabase
-          .from('email_audience_subscribers')
-          .select('subscriber_id')
-          .eq('audience_id', audience.id);
+          .from("email_audience_subscribers")
+          .select("subscriber_id")
+          .eq("audience_id", audience.id);
 
         if (relations) {
           relations.forEach((r: any) => {
@@ -70,8 +97,11 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
           });
         }
       } else {
-        const subscriberIds = await getSubscriberIdsFromFilters(supabase, filters);
-        subscriberIds.forEach(id => allExcludedSubscriberIds.add(id));
+        const subscriberIds = await getSubscriberIdsFromFilters(
+          supabase,
+          filters
+        );
+        subscriberIds.forEach((id) => allExcludedSubscriberIds.add(id));
       }
     }
 
@@ -79,14 +109,16 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
     const originalIncludedCount = allIncludedSubscriberIds.size;
 
     // Remove excluded subscribers from included set
-    allExcludedSubscriberIds.forEach(id => {
+    allExcludedSubscriberIds.forEach((id) => {
       allIncludedSubscriberIds.delete(id);
     });
 
     const uniqueCount = allIncludedSubscriberIds.size;
 
     console.log(`✅ Unique reach calculated: ${uniqueCount} subscribers`);
-    console.log(`📊 Original included: ${originalIncludedCount}, Excluded: ${allExcludedSubscriberIds.size}, Final: ${uniqueCount}`);
+    console.log(
+      `📊 Original included: ${originalIncludedCount}, Excluded: ${allExcludedSubscriberIds.size}, Final: ${uniqueCount}`
+    );
 
     return {
       uniqueCount,
@@ -94,13 +126,20 @@ async function calculateUniqueReach(supabase: any, audienceIds: string[], exclud
         totalIncluded: originalIncludedCount,
         totalExcluded: allExcludedSubscriberIds.size,
         includedAudiences: includedAudiences.length,
-        excludedAudiences: excludedAudiences.length
-      }
+        excludedAudiences: excludedAudiences.length,
+      },
     };
-
   } catch (error) {
-    console.error('❌ Error calculating unique reach:', error);
-    return { uniqueCount: 0, details: { totalIncluded: 0, totalExcluded: 0, includedAudiences: 0, excludedAudiences: 0 } };
+    console.error("❌ Error calculating unique reach:", error);
+    return {
+      uniqueCount: 0,
+      details: {
+        totalIncluded: 0,
+        totalExcluded: 0,
+        includedAudiences: 0,
+        excludedAudiences: 0,
+      },
+    };
   }
 }
 
@@ -111,76 +150,83 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
 
     // Handle new format with rules array first
     if (filters.rules && Array.isArray(filters.rules)) {
-      console.log('Processing rules array:', filters.rules);
-      
+      console.log("Processing rules array:", filters.rules);
+
       let hasSubscriptionRule = false;
       let hasStatusRule = false;
       let subscriptionValue = null;
       let statusValue = null;
-      
+
       // Extract all rule values
       for (const rule of filters.rules) {
-        if (rule.field === 'subscription') {
+        if (rule.field === "subscription") {
           hasSubscriptionRule = true;
           subscriptionValue = rule.value;
-        } else if (rule.field === 'status') {
+        } else if (rule.field === "status") {
           hasStatusRule = true;
           statusValue = rule.value;
         }
       }
-      
+
       // If we have both subscription and status rules, we need to join
       if (hasSubscriptionRule && hasStatusRule) {
-        console.log(`Joining: subscription=${subscriptionValue} AND status=${statusValue}`);
-        
+        console.log(
+          `Joining: subscription=${subscriptionValue} AND status=${statusValue}`
+        );
+
         // Get profiles with subscription first
         const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('subscription', subscriptionValue);
-        
+          .from("profiles")
+          .select("id")
+          .eq("subscription", subscriptionValue);
+
         if (!profilesData || profilesData.length === 0) {
-          console.log('No profiles found with subscription:', subscriptionValue);
+          console.log(
+            "No profiles found with subscription:",
+            subscriptionValue
+          );
           return [];
         }
-        
+
         const profileIds = profilesData.map((p: any) => p.id);
-        console.log(`Found ${profileIds.length} profiles with subscription ${subscriptionValue}`);
-        
+        console.log(
+          `Found ${profileIds.length} profiles with subscription ${subscriptionValue}`
+        );
+
         // Then get subscribers with status and matching profile IDs
         const { data: subscribersData } = await supabase
-          .from('subscribers')
-          .select('id')
-          .eq('status', statusValue)
-          .in('user_id', profileIds);
-        
+          .from("subscribers")
+          .select("id")
+          .eq("status", statusValue)
+          .in("user_id", profileIds);
+
         if (subscribersData) {
           subscribersData.forEach((s: any) => subscriberIds.push(s.id));
         }
-        
+
         console.log(`Final count after joining: ${subscriberIds.length}`);
         return subscriberIds;
       }
-      
+
       // Handle single rule cases
       if (hasSubscriptionRule && !hasStatusRule) {
         const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('subscription', subscriptionValue);
-        
+          .from("profiles")
+          .select("id")
+          .eq("subscription", subscriptionValue);
+
         if (profilesData) {
           profilesData.forEach((p: any) => subscriberIds.push(p.id));
         }
         return subscriberIds;
       }
-      
+
       if (hasStatusRule && !hasSubscriptionRule) {
         const { data: subscribersData } = await supabase
-          .from('subscribers')
-          .select('id')
-          .eq('status', statusValue);
-        
+          .from("subscribers")
+          .select("id")
+          .eq("status", statusValue);
+
         if (subscribersData) {
           subscribersData.forEach((s: any) => subscriberIds.push(s.id));
         }
@@ -189,65 +235,105 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
     }
 
     // Initialize queries for both tables (fallback for old format)
-    let profileQuery = supabase.from('profiles').select('id');
-    let subscriberQuery = supabase.from('subscribers').select('id');
+    let profileQuery = supabase.from("profiles").select("id");
+    let subscriberQuery = supabase.from("subscribers").select("id");
     let useProfiles = false;
     let useSubscribers = false;
     let needsJoin = false;
 
     // Process each filter (similar to calculateSubscriberCount but return IDs)
     for (const [field, value] of Object.entries(filters)) {
-      if (field === 'audience_type' || field === 'rules') {
+      if (field === "audience_type" || field === "rules") {
         continue;
-      } else if (field === 'subscription') {
+      } else if (field === "subscription") {
         useProfiles = true;
-        if (typeof value === 'string') {
-          profileQuery = profileQuery.eq('subscription', value);
-        } else if (value && typeof value === 'object' && 'operator' in value && 'value' in value) {
+        if (typeof value === "string") {
+          profileQuery = profileQuery.eq("subscription", value);
+        } else if (
+          value &&
+          typeof value === "object" &&
+          "operator" in value &&
+          "value" in value
+        ) {
           const filterValue = value as { operator: string; value: any };
-          if (filterValue.operator === 'in') {
-            profileQuery = profileQuery.in('subscription', filterValue.value);
+          if (filterValue.operator === "in") {
+            profileQuery = profileQuery.in("subscription", filterValue.value);
           }
         }
-      } else if (field === 'status') {
+      } else if (field === "status") {
         useSubscribers = true;
-        if (typeof value === 'string') {
-          subscriberQuery = subscriberQuery.eq('status', value);
+        if (typeof value === "string") {
+          subscriberQuery = subscriberQuery.eq("status", value);
         }
-      } else if (field === 'trial_expiration') {
+      } else if (field === "trial_expiration") {
         useProfiles = true;
-        if (value && typeof value === 'object' && 'operator' in value && 'value' in value) {
+        if (
+          value &&
+          typeof value === "object" &&
+          "operator" in value &&
+          "value" in value
+        ) {
           const filterValue = value as { operator: string; value: any };
-          if (filterValue.operator === 'gt') {
-            profileQuery = profileQuery.gt('trial_expiration', filterValue.value);
-          } else if (filterValue.operator === 'lt') {
-            profileQuery = profileQuery.lt('trial_expiration', filterValue.value);
+          if (filterValue.operator === "gt") {
+            profileQuery = profileQuery.gt(
+              "trial_expiration",
+              filterValue.value
+            );
+          } else if (filterValue.operator === "lt") {
+            profileQuery = profileQuery.lt(
+              "trial_expiration",
+              filterValue.value
+            );
           }
         }
-      } else if (field === 'created_at') {
+      } else if (field === "created_at") {
         useSubscribers = true;
-        if (value && typeof value === 'object' && 'operator' in value && 'value' in value) {
+        if (
+          value &&
+          typeof value === "object" &&
+          "operator" in value &&
+          "value" in value
+        ) {
           const filterValue = value as { operator: string; value: any };
-          if (filterValue.operator === 'gte') {
-            subscriberQuery = subscriberQuery.gte('created_at', filterValue.value);
+          if (filterValue.operator === "gte") {
+            subscriberQuery = subscriberQuery.gte(
+              "created_at",
+              filterValue.value
+            );
           }
         }
-      } else if (field === 'updated_at') {
-        if (value && typeof value === 'object' && 'operator' in value) {
-          const filterValue = value as { operator: string; start?: any; end?: any };
-          if (filterValue.operator === 'between' && 'start' in filterValue && 'end' in filterValue) {
+      } else if (field === "updated_at") {
+        if (value && typeof value === "object" && "operator" in value) {
+          const filterValue = value as {
+            operator: string;
+            start?: any;
+            end?: any;
+          };
+          if (
+            filterValue.operator === "between" &&
+            "start" in filterValue &&
+            "end" in filterValue
+          ) {
             useSubscribers = true;
             subscriberQuery = subscriberQuery
-              .gte('updated_at', filterValue.start)
-              .lte('updated_at', filterValue.end);
+              .gte("updated_at", filterValue.start)
+              .lte("updated_at", filterValue.end);
           }
         }
-      } else if (field === 'tags') {
+      } else if (field === "tags") {
         useSubscribers = true;
-        if (value && typeof value === 'object' && 'operator' in value && 'value' in value) {
+        if (
+          value &&
+          typeof value === "object" &&
+          "operator" in value &&
+          "value" in value
+        ) {
           const filterValue = value as { operator: string; value: any };
-          if (filterValue.operator === 'contains') {
-            subscriberQuery = subscriberQuery.overlaps('tags', filterValue.value);
+          if (filterValue.operator === "contains") {
+            subscriberQuery = subscriberQuery.overlaps(
+              "tags",
+              filterValue.value
+            );
           }
         }
       }
@@ -265,11 +351,11 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
         if (profilesData && profilesData.length > 0) {
           const profileIds = profilesData.map((p: any) => p.id);
           const { data: subscribersData } = await supabase
-            .from('subscribers')
-            .select('id')
-            .eq('status', filters.status)
-            .in('user_id', profileIds);
-          
+            .from("subscribers")
+            .select("id")
+            .eq("status", filters.status)
+            .in("user_id", profileIds);
+
           if (subscribersData) {
             subscribersData.forEach((s: any) => subscriberIds.push(s.id));
           }
@@ -288,37 +374,45 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
     }
 
     return subscriberIds;
-
   } catch (error) {
-    console.error('Error getting subscriber IDs from filters:', error);
+    console.error("Error getting subscriber IDs from filters:", error);
     return [];
   }
 }
 
 // POST /api/email-campaigns/campaigns/calculate-reach
 export async function POST(request: NextRequest) {
-  const supabase = await createSupabaseServer();
-  
+  const supabase = await createClient();
+
   // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Authentication required' 
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Authentication required",
+      },
+      { status: 401 }
+    );
   }
 
   // Check if user is admin
   const { data: adminCheck } = await supabase
-    .from('admins')
-    .select('*')
-    .eq('user', user.id)
+    .from("admins")
+    .select("*")
+    .eq("user", user.id)
     .single();
 
   if (!adminCheck) {
-    return NextResponse.json({ 
-      error: 'Admin access required' 
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Admin access required",
+      },
+      { status: 403 }
+    );
   }
 
   try {
@@ -326,19 +420,28 @@ export async function POST(request: NextRequest) {
     const { audienceIds = [], excludedAudienceIds = [] } = body;
 
     if (!Array.isArray(audienceIds)) {
-      return NextResponse.json({ 
-        error: 'audienceIds must be an array' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "audienceIds must be an array",
+        },
+        { status: 400 }
+      );
     }
 
-    const result = await calculateUniqueReach(supabase, audienceIds, excludedAudienceIds);
+    const result = await calculateUniqueReach(
+      supabase,
+      audienceIds,
+      excludedAudienceIds
+    );
 
     return NextResponse.json(result);
-
   } catch (error) {
-    console.error('Calculate reach API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error("Calculate reach API error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
-} 
+}

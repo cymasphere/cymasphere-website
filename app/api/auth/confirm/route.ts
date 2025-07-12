@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
+      // Add a small delay to ensure the session is fully established
+      // This prevents race conditions where the client gets SIGNED_IN event
+      // before the session is completely ready
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Redirect based on the type of OTP verification
       if (type === "recovery") {
         redirect("/reset-password");

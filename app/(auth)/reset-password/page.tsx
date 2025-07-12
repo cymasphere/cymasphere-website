@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { Suspense, useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -308,72 +309,32 @@ const CustomLogo = () => {
   );
 };
 
-function ResetPassword() {
-  const searchParams = useSearchParams();
+function ResetPasswordClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isReset, setIsReset] = useState(false);
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+
+  const router = useRouter();
   const { resetPassword, supabase } = useAuth();
+  const searchParams = useSearchParams();
 
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
 
-  // Check if this is a password reset (has code) or password request
+  // Check if this is a password reset (has valid session) or password request
   useEffect(() => {
-    const code = searchParams.get("code");
-    const errorParam = searchParams.get("error");
-    const errorCode = searchParams.get("error_code");
-    const errorDescription = searchParams.get("error_description");
-
-    // Handle URL errors first
-    if (errorParam) {
-      let errorMessage = "";
-
-      if (errorCode === "otp_expired") {
-        errorMessage = t(
-          "resetPassword.errors.linkExpired",
-          "The password reset link has expired. Please request a new one."
-        );
-      } else if (
-        errorCode === "access_denied" ||
-        errorParam === "access_denied"
-      ) {
-        errorMessage = t(
-          "resetPassword.errors.accessDenied",
-          "The password reset link is invalid or has expired. Please request a new one."
-        );
-      } else if (errorDescription) {
-        errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, " "));
-      } else {
-        errorMessage = t(
-          "resetPassword.errors.invalidLink",
-          "The password reset link is invalid. Please request a new one."
-        );
-      }
-
-      console.log("❌ ResetPassword: URL error detected:", errorMessage);
-      setError(errorMessage);
-      setIsReset(false); // Show email form so user can request new link
-      return;
-    }
-
-    // If no errors, check for code
-    if (code) {
+    if (searchParams.get("code")) {
       setIsReset(true);
-      console.log("✅ ResetPassword: Code found, showing password reset form");
-    } else {
-      setIsReset(false);
-      console.log("ℹ️ ResetPassword: No code found, showing email form");
     }
-  }, [searchParams, t]);
+  }, [searchParams]);
 
   // Wait for translations to load
   useEffect(() => {
@@ -382,135 +343,71 @@ function ResetPassword() {
     }
   }, [languageLoading]);
 
-  const handleResetRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear any URL errors when requesting new reset
-    setMessage("");
+    setError(null);
+    setMessage(null);
     setLoading(true);
 
     try {
-      console.log("Attempting to reset password for email:", email);
+      const { error } = await resetPassword(email);
 
-      // Send password reset email
-      const result = await resetPassword(email);
-
-      console.log("Reset password result:", result);
-
-      // Check if there was an error
-      if (result.error) {
-        console.error("Password reset error:", result.error);
-
-        // Handle specific errors
-        if (result.error.message?.includes("User not found")) {
-          setError(
-            t(
-              "resetPassword.errors.userNotFound",
-              "No user found with this email address"
-            )
-          );
-        } else if (result.error.message?.includes("Invalid email")) {
-          setError(
-            t("resetPassword.errors.invalidEmail", "Invalid email address")
-          );
-        } else if (
-          result.error.message?.includes("email rate limit exceeded") ||
-          result.error.message?.includes("rate limit") ||
-          result.error.message?.includes("Email rate limit exceeded")
-        ) {
-          setError(
-            t(
-              "resetPassword.errors.rateLimit",
-              "Too many password reset attempts. Please wait a few minutes before trying again."
-            )
-          );
-        } else {
-          setError(
-            result.error.message ||
-              t(
-                "resetPassword.errors.generic",
-                "Failed to send password reset email. Please try again."
-              )
-          );
-        }
-      } else {
-        // Success - no error returned
-        console.log("Password reset email sent successfully");
-        setMessage(
-          t(
-            "resetPassword.successMessage",
-            "If an account exists with this email address, we've sent instructions to reset your password. Please check your inbox and spam folder."
-          )
-        );
-        setEmail(""); // Clear the email field on success
+      if (error) {
+        setError(error.message);
+        return;
       }
+
+      setMessage("Password reset instructions have been sent to your email");
     } catch (err) {
-      console.error("Password reset request failed:", err);
-      setError(
-        t(
-          "resetPassword.errors.generic",
-          "An unexpected error occurred. Please try again."
-        )
-      );
+      console.error("Reset password error:", err);
+      setError("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    setError(null);
+    setMessage(null);
 
     // Basic validation
     if (password !== confirmPassword) {
-      setError(
-        t("createPassword.errors.passwordMismatch", "Passwords do not match")
-      );
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError(
-        t(
-          "createPassword.errors.passwordTooShort",
-          "Password must be at least 6 characters"
-        )
-      );
+      setError("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
 
     try {
-      console.log("🔄 ResetPassword: Updating password directly");
+      console.log("[Reset Password] Starting password update...");
+
       const { error } = await supabase.auth.updateUser({ password });
 
+      console.log("[Reset Password] Password update completed, error:", error);
+
       if (error) {
-        console.error("❌ ResetPassword: Password update failed:", error);
-        setError(
-          error.message ||
-            t("createPassword.errors.generic", "Failed to update password")
-        );
+        setError(error.message);
         return;
       }
 
-      console.log("✅ ResetPassword: Password updated successfully");
-      setMessage(
-        t(
-          "createPassword.success",
-          "Your password has been updated successfully! You are now logged in."
-        )
-      );
-
-      // Clear form
-      setPassword("");
-      setConfirmPassword("");
+      setMessage("Your password has been updated successfully");
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
     } catch (err) {
-      console.error("💥 ResetPassword: Update password error:", err);
+      console.error("Update password error:", err);
       setError(
-        t("createPassword.errors.generic", "An unexpected error occurred")
+        err instanceof Error ? err.message : "An unexpected error occurred"
       );
     } finally {
+      console.log("[Reset Password] Setting loading to false");
       setLoading(false);
     }
   };
@@ -558,9 +455,7 @@ function ResetPassword() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {isReset
-            ? t("createPassword.title", "Set New Password")
-            : t("resetPassword.title", "Reset Password")}
+          {isReset ? "Set New Password" : "Reset Password"}
         </Title>
 
         <Description
@@ -569,14 +464,8 @@ function ResetPassword() {
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           {isReset
-            ? t(
-                "createPassword.description",
-                "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
-              )
-            : t(
-                "resetPassword.description",
-                "Enter your email address and we'll send you instructions to reset your password."
-              )}
+            ? "Create a new password for your account. For security, please choose a strong password that you don't use elsewhere."
+            : "Enter your email address and we'll send you instructions to reset your password."}
         </Description>
 
         {error && (
@@ -596,22 +485,6 @@ function ResetPassword() {
             transition={{ duration: 0.3 }}
           >
             {message}
-            {isReset && (
-              <div style={{ marginTop: "10px", textAlign: "center" }}>
-                <Link href="/dashboard" legacyBehavior>
-                  <Button
-                    as="a"
-                    style={{
-                      display: "inline-block",
-                      textAlign: "center",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {t("createPassword.proceedToDashboard", "Go to Dashboard")}
-                  </Button>
-                </Link>
-              </div>
-            )}
           </SuccessMessage>
         )}
 
@@ -620,9 +493,7 @@ function ResetPassword() {
             {isReset ? (
               <Form onSubmit={handlePasswordUpdate}>
                 <FormGroup>
-                  <Label htmlFor="password">
-                    {t("createPassword.newPasswordLabel", "New Password")}
-                  </Label>
+                  <Label htmlFor="password">New Password</Label>
                   <Input
                     type={showPassword ? "text" : "password"}
                     id="password"
@@ -630,10 +501,7 @@ function ResetPassword() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder={t(
-                      "createPassword.newPasswordPlaceholder",
-                      "Enter your new password"
-                    )}
+                    placeholder="Enter your new password"
                   />
                   <PasswordToggle
                     type="button"
@@ -647,12 +515,7 @@ function ResetPassword() {
                 </FormGroup>
 
                 <FormGroup>
-                  <Label htmlFor="confirmPassword">
-                    {t(
-                      "createPassword.confirmPasswordLabel",
-                      "Confirm Password"
-                    )}
-                  </Label>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <Input
                     type={showConfirmPassword ? "text" : "password"}
                     id="confirmPassword"
@@ -660,10 +523,7 @@ function ResetPassword() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder={t(
-                      "createPassword.confirmPasswordPlaceholder",
-                      "Confirm your new password"
-                    )}
+                    placeholder="Confirm your new password"
                   />
                   <PasswordToggle
                     type="button"
@@ -678,35 +538,25 @@ function ResetPassword() {
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || message != null}
                   variants={buttonVariants}
                   whileHover="hover"
                   whileTap="tap"
                 >
-                  {loading
-                    ? t("createPassword.updating", "Updating...")
-                    : t("createPassword.setPassword", "Set New Password")}
+                  {loading ? "Updating..." : "Update Password"}
                 </Button>
               </Form>
             ) : (
               <Form onSubmit={handleResetRequest}>
                 <FormGroup>
-                  <Label htmlFor="email">
-                    {t("resetPassword.emailLabel", "Email Address")}
-                  </Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (error) setError(""); // Clear URL errors when user starts typing
-                    }}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder={t(
-                      "resetPassword.emailPlaceholder",
-                      "Enter your registered email"
-                    )}
+                    placeholder="Enter your registered email"
                   />
                 </FormGroup>
 
@@ -717,9 +567,7 @@ function ResetPassword() {
                   whileHover="hover"
                   whileTap="tap"
                 >
-                  {loading
-                    ? t("resetPassword.sendingLink", "Sending...")
-                    : t("resetPassword.sendLink", "Send Reset Link")}
+                  {loading ? "Sending..." : "Send Reset Instructions"}
                 </Button>
               </Form>
             )}
@@ -727,12 +575,30 @@ function ResetPassword() {
         )}
 
         <LinkText>
-          {t("resetPassword.rememberPassword", "Remember your password?")}{" "}
-          <Link href="/login">{t("resetPassword.login", "Log in")}</Link>
+          Remember your password? <Link href="/login">Back to Login</Link>
         </LinkText>
       </FormCard>
     </AuthContainer>
   );
 }
 
-export default ResetPassword;
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <LoadingComponent text="Loading..." />
+        </div>
+      }
+    >
+      <ResetPasswordClient />
+    </Suspense>
+  );
+}

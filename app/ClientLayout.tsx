@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
@@ -9,7 +9,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
-import { initializeTimezoneTracking } from "@/utils/supabase/timezone-tracker";
 
 // Theme configuration
 const theme = {
@@ -88,36 +87,34 @@ interface ClientLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ClientLayout({
-  children
-}: ClientLayoutProps) {
+export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
-  
-  // Initialize timezone tracking
-  useEffect(() => {
-    initializeTimezoneTracking();
-  }, []);
-  
+
+  // Timezone tracking is now handled directly in AuthContext
+
   // Check if the route is in the auth directory
-  const isAuthRoute = pathname?.startsWith('/login') || 
-                      pathname?.startsWith('/signup') || 
-                      pathname?.startsWith('/reset-password') || 
-                      pathname?.startsWith('/create-password') ||
-                      pathname?.startsWith('/checkout-success') ||
-                      pathname?.startsWith('/checkout-canceled');
-                      
+  const isAuthRoute =
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/signup") ||
+    pathname?.startsWith("/reset-password") ||
+    pathname?.startsWith("/create-password") ||
+    pathname?.startsWith("/checkout-success") ||
+    pathname?.startsWith("/checkout-canceled");
+
   // Check if the route is in the dashboard section
-  const isDashboardRoute = pathname?.includes('/dashboard') || 
-                          pathname?.includes('/profile') || 
-                          pathname?.includes('/billing') || 
-                          pathname?.includes('/downloads') || 
-                          pathname?.includes('/settings');
+  const isDashboardRoute =
+    pathname?.includes("/dashboard") ||
+    pathname?.includes("/profile") ||
+    pathname?.includes("/billing") ||
+    pathname?.includes("/downloads") ||
+    pathname?.includes("/settings");
 
   // Check if the route is in the admin section
-  const isAdminRoute = pathname?.includes('/admin');
+  const isAdminRoute = pathname?.includes("/admin");
 
   // Hide header and footer for auth routes, dashboard routes, and admin routes
-  const shouldHideHeaderFooter = isAuthRoute || isDashboardRoute || isAdminRoute;
+  const shouldHideHeaderFooter =
+    isAuthRoute || isDashboardRoute || isAdminRoute;
 
   return (
     <ThemeProvider theme={theme}>
@@ -125,7 +122,12 @@ export default function ClientLayout({
         <AuthProvider>
           <LayoutWrapper>
             {!shouldHideHeaderFooter && <NextHeader />}
-            <Main initial="initial" animate="in" exit="exit" variants={pageVariants}>
+            <Main
+              initial="initial"
+              animate="in"
+              exit="exit"
+              variants={pageVariants}
+            >
               {children}
             </Main>
             {!shouldHideHeaderFooter && <Footer />}
@@ -134,4 +136,4 @@ export default function ClientLayout({
       </ToastProvider>
     </ThemeProvider>
   );
-} 
+}

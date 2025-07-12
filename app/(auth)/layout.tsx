@@ -60,4 +60,4 @@ export default function AuthLayout({ children }: LayoutProps) {
       </Main>
     </LayoutWrapper>
   );
-} 
+}
