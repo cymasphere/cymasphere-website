@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 // GET /api/email-campaigns/audiences/[id]/subscribers - Get subscribers for an audience
 export async function GET(
@@ -10,7 +11,6 @@ export async function GET(
 
   try {
     // More detailed debugging
-    const allHeaders = Object.fromEntries(request.headers.entries());
     const cookies = request.headers.get("cookie");
     const { id } = await params;
 
@@ -26,7 +26,7 @@ export async function GET(
       allCookies: cookies,
     });
 
-    const supabase = await createSupabaseServer();
+    const supabase = await createClient();
 
     // Get authenticated user
     const {
@@ -88,8 +88,7 @@ export async function GET(
     console.log("✅ Auth and admin check passed");
 
     // Create service role client for admin operations (bypasses RLS)
-    const { createClient } = require("@supabase/supabase-js");
-    const adminSupabase = createClient(
+    const adminSupabase = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -450,7 +449,7 @@ export async function POST(
   console.log("🚀 POST add subscriber API started");
 
   try {
-    const supabase = await createSupabaseServer();
+    const supabase = await createClient();
 
     // Get authenticated user
     const {
@@ -484,8 +483,7 @@ export async function POST(
     }
 
     // Create service role client for admin operations (bypasses RLS)
-    const { createClient } = require("@supabase/supabase-js");
-    const adminSupabase = createClient(
+    const adminSupabase = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -633,7 +631,7 @@ export async function DELETE(
   console.log("🚀 DELETE subscriber API started");
 
   try {
-    const supabase = await createSupabaseServer();
+    const supabase = await createClient();
 
     // Get authenticated user
     const {
@@ -667,8 +665,7 @@ export async function DELETE(
     }
 
     // Create service role client for admin operations (bypasses RLS)
-    const { createClient } = require("@supabase/supabase-js");
-    const adminSupabase = createClient(
+    const adminSupabase = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

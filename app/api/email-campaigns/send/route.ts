@@ -601,7 +601,7 @@ export async function POST(request: NextRequest) {
     // Send emails to all subscribers
     const results = [];
     const errors = [];
-    const supabase = await createSupabaseServer();
+    const supabase = await createClient();
 
     console.log(`\n🚀 Starting email send process...`);
     console.log(`📧 Target subscribers: ${targetSubscribers.length}`);
