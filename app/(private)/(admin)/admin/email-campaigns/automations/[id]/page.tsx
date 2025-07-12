@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useRouter, useParams } from "next/navigation";
-import { createSupabaseBrowser } from "@/utils/supabase/client";
+
 import useLanguage from "@/hooks/useLanguage";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   FaCogs,
   FaChevronRight,
@@ -539,10 +540,10 @@ interface Audience {
 
 export default function AutomationEditPage() {
   const { isLoading: languageLoading } = useLanguage();
+  const { supabase } = useAuth();
   const router = useRouter();
   const params = useParams();
   const automationId = params.id as string;
-  const supabase = createSupabaseBrowser();
 
   const [automationData, setAutomationData] = useState<AutomationData>({
     id: "",

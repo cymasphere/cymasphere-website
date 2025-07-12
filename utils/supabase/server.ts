@@ -31,10 +31,3 @@ export async function createClient(): Promise<SupabaseClient<Database>> {
     }
   );
 }
-
-// Keep the old function for backward compatibility
-export async function createSupabaseServer(): Promise<
-  SupabaseClient<Database>
-> {
-  return createClient();
-}

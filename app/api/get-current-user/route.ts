@@ -1,30 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/utils/supabase/server';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
-export async function GET(request: NextRequest) {
-  const supabase = await createSupabaseServer();
-  
+export async function GET() {
+  const supabase = await createClient();
+
   // Get the authenticated user using proper authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Not authenticated'
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Not authenticated",
+      },
+      { status: 401 }
+    );
   }
 
   // Get user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
     .single();
 
   // Check if user is admin
   const { data: adminCheck } = await supabase
-    .from('admins')
-    .select('*')
-    .eq('user', user.id)
+    .from("admins")
+    .select("*")
+    .eq("user", user.id)
     .single();
 
   return NextResponse.json({
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest) {
       email: user.email,
       profile,
       isAdmin: !!adminCheck,
-      adminRecord: adminCheck
-    }
+      adminRecord: adminCheck,
+    },
   });
-} 
+}

@@ -3,7 +3,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest } from "next/server";
 
-import { createSupabaseServer } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
 export async function GET(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
 
   if (token_hash && type) {
-    const supabase = await createSupabaseServer();
+    const supabase = await createClient();
 
     const { error } = await supabase.auth.verifyOtp({
       type,

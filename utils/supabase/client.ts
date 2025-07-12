@@ -11,8 +11,3 @@ export const createClient = (): SupabaseClient<Database> => {
 
   return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 };
-
-// Keep the old function for backward compatibility
-export function createSupabaseBrowser(): SupabaseClient<Database> {
-  return createClient();
-}

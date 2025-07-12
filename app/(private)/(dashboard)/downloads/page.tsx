@@ -9,7 +9,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { createSupabaseBrowser } from "@/utils/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DownloadsContainer = styled.div`
   width: 100%;
@@ -283,6 +283,7 @@ const ResourceLink = styled.a`
 
 function Downloads() {
   const { t } = useTranslation();
+  const { supabase } = useAuth();
   const [fileInfo, setFileInfo] = useState({
     windows: { size: "Loading...", lastModified: "Loading..." },
     macos: { size: "Loading...", lastModified: "Loading..." },
@@ -295,8 +296,6 @@ function Downloads() {
   useEffect(() => {
     const fetchFileInfo = async () => {
       try {
-        const supabase = createSupabaseBrowser();
-
         // Fetch version info from manifest file
         try {
           const { data: manifestData, error: manifestError } =

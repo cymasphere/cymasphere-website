@@ -1,10 +1,9 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createSupabaseBrowser } from '@/utils/supabase/client';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { 
-  FaRobot, 
+import {
+  FaRobot,
   FaSearch,
   FaPlus,
   FaEdit,
@@ -15,13 +14,14 @@ import {
   FaEllipsisV,
   FaSort,
   FaSortUp,
-  FaSortDown
+  FaSortDown,
 } from "react-icons/fa";
 import NextSEO from "@/components/NextSEO";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import useLanguage from "@/hooks/useLanguage";
+import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 
 const AutomationsContainer = styled.div`
@@ -209,7 +209,11 @@ const TableHeaderCell = styled.th`
     background-color: rgba(255, 255, 255, 0.02);
   }
 
-  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+  &:nth-child(2),
+  &:nth-child(3),
+  &:nth-child(4),
+  &:nth-child(5),
+  &:nth-child(6) {
     text-align: center;
   }
 
@@ -226,17 +230,17 @@ const SortableHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  
+
   &.center {
     justify-content: center;
   }
-  
+
   svg {
     font-size: 0.8rem;
     opacity: 0.6;
     transition: opacity 0.2s ease;
   }
-  
+
   &:hover svg {
     opacity: 1;
   }
@@ -264,7 +268,11 @@ const TableCell = styled.td`
   font-size: 0.9rem;
   vertical-align: middle;
 
-  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+  &:nth-child(2),
+  &:nth-child(3),
+  &:nth-child(4),
+  &:nth-child(5),
+  &:nth-child(6) {
     text-align: center;
   }
 
@@ -291,30 +299,30 @@ const StatusBadge = styled.span<{ status: string }>`
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-  
+
   ${(props) => {
     switch (props.status) {
-      case 'active':
+      case "active":
         return `
           background-color: rgba(40, 167, 69, 0.2);
           color: #28a745;
         `;
-      case 'paused':
+      case "paused":
         return `
           background-color: rgba(255, 193, 7, 0.2);
           color: #ffc107;
         `;
-      case 'draft':
+      case "draft":
         return `
           background-color: rgba(108, 117, 125, 0.2);
           color: #6c757d;
         `;
-      case 'testing':
+      case "testing":
         return `
           background-color: rgba(108, 99, 255, 0.2);
           color: var(--primary);
         `;
-      case 'archived':
+      case "archived":
         return `
           background-color: rgba(220, 53, 69, 0.2);
           color: #dc3545;
@@ -331,7 +339,7 @@ const StatusBadge = styled.span<{ status: string }>`
 const TriggerBadge = styled.span`
   padding: 4px 8px;
   background: rgba(108, 99, 255, 0.1);
-          color: var(--primary);
+  color: var(--primary);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -366,10 +374,10 @@ const MoreButton = styled.button`
   align-items: center;
   justify-content: center;
 
-          &:hover {
-          background-color: rgba(255, 255, 255, 0.1);
-            color: var(--text);
-          }
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
 
   svg {
     font-size: 0.9rem;
@@ -409,7 +417,7 @@ const DropdownItem = styled.button`
 
   &.danger {
     color: #dc3545;
-    
+
     &:hover {
       background-color: rgba(220, 53, 69, 0.1);
     }
@@ -447,7 +455,7 @@ interface Automation {
   name: string | null;
   description: string | null;
   trigger_type: string | null;
-  status: 'draft' | 'active' | 'paused' | 'archived' | 'testing' | null;
+  status: "draft" | "active" | "paused" | "archived" | "testing" | null;
   total_enrollments: number | null;
   active_enrollments: number | null;
   completed_enrollments: number | null;
@@ -457,13 +465,13 @@ interface Automation {
 
 function AutomationsPage() {
   const { isLoading: languageLoading } = useLanguage();
+  const { supabase } = useAuth();
   const router = useRouter();
-  const supabase = createSupabaseBrowser();
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<string>('created_at');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<string>("created_at");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -475,20 +483,20 @@ function AutomationsPage() {
   async function fetchAutomations() {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
-        .from('email_automations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
+        .from("email_automations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) {
-        console.error('Error fetching automations:', error);
+        console.error("Error fetching automations:", error);
         setAutomations([]); // Set empty array on error
       } else {
         setAutomations(data || []);
       }
     } catch (error) {
-      console.error('Error fetching automations:', error);
+      console.error("Error fetching automations:", error);
       setAutomations([]); // Set empty array on exception
     } finally {
       setLoading(false);
@@ -496,42 +504,56 @@ function AutomationsPage() {
   }
 
   function calculateCompletionRate(automation: Automation) {
-    if (!automation.total_enrollments || automation.total_enrollments === 0) return 0;
-    return Math.round(((automation.completed_enrollments || 0) / automation.total_enrollments) * 100);
+    if (!automation.total_enrollments || automation.total_enrollments === 0)
+      return 0;
+    return Math.round(
+      ((automation.completed_enrollments || 0) / automation.total_enrollments) *
+        100
+    );
   }
 
   function getTriggerLabel(triggerType: string | null) {
     const labels: Record<string, string> = {
-      signup: 'New Signup',
-      purchase: 'Purchase',
-      abandonment: 'Cart Abandon',
-      email_open: 'Email Open',
-      email_click: 'Email Click',
-      anniversary: 'Anniversary',
-      behavior: 'Behavior',
-      custom_event: 'Custom Event'
+      signup: "New Signup",
+      purchase: "Purchase",
+      abandonment: "Cart Abandon",
+      email_open: "Email Open",
+      email_click: "Email Click",
+      anniversary: "Anniversary",
+      behavior: "Behavior",
+      custom_event: "Custom Event",
     };
-    
-    return labels[triggerType || ''] || triggerType || 'Unknown';
+
+    return labels[triggerType || ""] || triggerType || "Unknown";
   }
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
-      }
-    };
+      setSortDirection("asc");
+    }
+  };
 
-  const renderSortableHeader = (label: string, field: string, centered: boolean = false) => {
+  const renderSortableHeader = (
+    label: string,
+    field: string,
+    centered: boolean = false
+  ) => {
     const isActive = sortField === field;
     const direction = isActive ? sortDirection : null;
-    
+
     return (
-      <SortableHeader className={centered ? 'center' : ''}>
+      <SortableHeader className={centered ? "center" : ""}>
         {label}
-        {direction === 'asc' ? <FaSortUp /> : direction === 'desc' ? <FaSortDown /> : <FaSort />}
+        {direction === "asc" ? (
+          <FaSortUp />
+        ) : direction === "desc" ? (
+          <FaSortDown />
+        ) : (
+          <FaSort />
+        )}
       </SortableHeader>
     );
   };
@@ -542,28 +564,35 @@ function AutomationsPage() {
   };
 
   const filteredAndSortedAutomations = automations
-    .filter(automation => 
-      (automation.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (automation.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (automation.trigger_type || '').toLowerCase().includes(searchTerm.toLowerCase())
+    .filter(
+      (automation) =>
+        (automation.name || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (automation.description || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (automation.trigger_type || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       let aValue = a[sortField as keyof Automation];
       let bValue = b[sortField as keyof Automation];
-      
-      if (aValue === null) aValue = '';
-      if (bValue === null) bValue = '';
 
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
+      if (aValue === null) aValue = "";
+      if (bValue === null) bValue = "";
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
       }
-      
+
       return 0;
     });
 
@@ -573,23 +602,31 @@ function AutomationsPage() {
 
   const stats = [
     {
-      label: 'Total Automations',
-      value: automations.length.toString()
+      label: "Total Automations",
+      value: automations.length.toString(),
     },
     {
-      label: 'Active Automations',
-      value: automations.filter(a => a.status === 'active').length.toString()
+      label: "Active Automations",
+      value: automations.filter((a) => a.status === "active").length.toString(),
     },
     {
-      label: 'Total Enrollments',
-      value: automations.reduce((sum, a) => sum + (a.total_enrollments || 0), 0).toLocaleString()
+      label: "Total Enrollments",
+      value: automations
+        .reduce((sum, a) => sum + (a.total_enrollments || 0), 0)
+        .toLocaleString(),
     },
     {
-      label: 'Avg. Completion Rate',
-      value: automations.length > 0 
-        ? Math.round(automations.reduce((sum, a) => sum + calculateCompletionRate(a), 0) / automations.length) + '%'
-        : '0%'
-    }
+      label: "Avg. Completion Rate",
+      value:
+        automations.length > 0
+          ? Math.round(
+              automations.reduce(
+                (sum, a) => sum + calculateCompletionRate(a),
+                0
+              ) / automations.length
+            ) + "%"
+          : "0%",
+    },
   ];
 
   const cardVariants = {
@@ -611,7 +648,7 @@ function AutomationsPage() {
         title="Email Automations"
         description="Create and manage automated email workflows"
       />
-      
+
       <AutomationsContainer>
         <AutomationsTitle>
           <FaRobot />
@@ -630,7 +667,9 @@ function AutomationsPage() {
               animate="visible"
               custom={index}
             >
-              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stat.value}</StatValue>
+              <StatValue>
+                {loading ? <StatLoadingSpinner size={20} /> : stat.value}
+              </StatValue>
               <StatLabel>{stat.label}</StatLabel>
             </StatCard>
           ))}
@@ -648,8 +687,12 @@ function AutomationsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </SearchContainer>
-          
-          <CreateButton onClick={() => router.push('/admin/email-campaigns/automations/create')}>
+
+          <CreateButton
+            onClick={() =>
+              router.push("/admin/email-campaigns/automations/create")
+            }
+          >
             <FaPlus />
             Create Automation
           </CreateButton>
@@ -659,26 +702,34 @@ function AutomationsPage() {
           <Table>
             <TableHeader>
               <tr>
-                <TableHeaderCell onClick={() => handleSort('name')}>
-                  {renderSortableHeader('Automation', 'name')}
+                <TableHeaderCell onClick={() => handleSort("name")}>
+                  {renderSortableHeader("Automation", "name")}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('status')}>
-                  {renderSortableHeader('Status', 'status', true)}
+                <TableHeaderCell onClick={() => handleSort("status")}>
+                  {renderSortableHeader("Status", "status", true)}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('trigger_type')}>
-                  {renderSortableHeader('Trigger', 'trigger_type', true)}
+                <TableHeaderCell onClick={() => handleSort("trigger_type")}>
+                  {renderSortableHeader("Trigger", "trigger_type", true)}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('total_enrollments')}>
-                  {renderSortableHeader('Enrollments', 'total_enrollments', true)}
+                <TableHeaderCell
+                  onClick={() => handleSort("total_enrollments")}
+                >
+                  {renderSortableHeader(
+                    "Enrollments",
+                    "total_enrollments",
+                    true
+                  )}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('active_enrollments')}>
-                  {renderSortableHeader('Active', 'active_enrollments', true)}
+                <TableHeaderCell
+                  onClick={() => handleSort("active_enrollments")}
+                >
+                  {renderSortableHeader("Active", "active_enrollments", true)}
                 </TableHeaderCell>
                 <TableHeaderCell>
-                  {renderSortableHeader('Completion', 'completion_rate', true)}
+                  {renderSortableHeader("Completion", "completion_rate", true)}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('created_at')}>
-                  {renderSortableHeader('Created', 'created_at', true)}
+                <TableHeaderCell onClick={() => handleSort("created_at")}>
+                  {renderSortableHeader("Created", "created_at", true)}
                 </TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
@@ -692,7 +743,10 @@ function AutomationsPage() {
                     <EmptyState>
                       <FaRobot />
                       <h3>No automations found</h3>
-                      <p>Try adjusting your search criteria or create a new automation.</p>
+                      <p>
+                        Try adjusting your search criteria or create a new
+                        automation.
+                      </p>
                     </EmptyState>
                   </TableCell>
                 </tr>
@@ -704,15 +758,23 @@ function AutomationsPage() {
                     initial="hidden"
                     animate="visible"
                     custom={index}
-                    onClick={() => router.push(`/admin/email-campaigns/automations/${automation.id}`)}
+                    onClick={() =>
+                      router.push(
+                        `/admin/email-campaigns/automations/${automation.id}`
+                      )
+                    }
                   >
                     <TableCell>
-                      <AutomationTitle>{automation.name || 'Untitled Automation'}</AutomationTitle>
-                      <AutomationDescription>{automation.description || 'No description'}</AutomationDescription>
+                      <AutomationTitle>
+                        {automation.name || "Untitled Automation"}
+                      </AutomationTitle>
+                      <AutomationDescription>
+                        {automation.description || "No description"}
+                      </AutomationDescription>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={automation.status || 'draft'}>
-                        {automation.status || 'draft'}
+                      <StatusBadge status={automation.status || "draft"}>
+                        {automation.status || "draft"}
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
@@ -721,72 +783,96 @@ function AutomationsPage() {
                       </TriggerBadge>
                     </TableCell>
                     <TableCell>
-                      <MetricValue>{(automation.total_enrollments || 0).toLocaleString()}</MetricValue>
-                    </TableCell>
-                    <TableCell>
-                      <MetricValue>{(automation.active_enrollments || 0).toLocaleString()}</MetricValue>
-                    </TableCell>
-                    <TableCell>
-                      <MetricValue>{calculateCompletionRate(automation)}%</MetricValue>
+                      <MetricValue>
+                        {(automation.total_enrollments || 0).toLocaleString()}
+                      </MetricValue>
                     </TableCell>
                     <TableCell>
                       <MetricValue>
-                        {automation.created_at 
+                        {(automation.active_enrollments || 0).toLocaleString()}
+                      </MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>
+                        {calculateCompletionRate(automation)}%
+                      </MetricValue>
+                    </TableCell>
+                    <TableCell>
+                      <MetricValue>
+                        {automation.created_at
                           ? new Date(automation.created_at).toLocaleDateString()
-                          : 'Unknown'
-                        }
+                          : "Unknown"}
                       </MetricValue>
                     </TableCell>
                     <TableCell>
                       <ActionsContainer>
-                        <MoreButton onClick={(e) => handleDropdownToggle(automation.id, e)}>
+                        <MoreButton
+                          onClick={(e) =>
+                            handleDropdownToggle(automation.id, e)
+                          }
+                        >
                           <FaEllipsisV />
                         </MoreButton>
                         {dropdownOpen === automation.id && (
-                        <DropdownMenu 
+                          <DropdownMenu
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                        >
-                            <DropdownItem onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/admin/email-campaigns/automations/${automation.id}`);
-                            }}>
+                          >
+                            <DropdownItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(
+                                  `/admin/email-campaigns/automations/${automation.id}`
+                                );
+                              }}
+                            >
                               <FaEye />
                               View
                             </DropdownItem>
-                            <DropdownItem onClick={(e) => {
+                            <DropdownItem
+                              onClick={(e) => {
                                 e.stopPropagation();
-                              router.push(`/admin/email-campaigns/automations/${automation.id}/edit`);
-                            }}>
+                                router.push(
+                                  `/admin/email-campaigns/automations/${automation.id}/edit`
+                                );
+                              }}
+                            >
                               <FaEdit />
                               Edit
                             </DropdownItem>
-                            {automation.status === 'active' ? (
-                              <DropdownItem onClick={(e) => {
+                            {automation.status === "active" ? (
+                              <DropdownItem
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                // Handle pause automation
-                              }}>
+                                  // Handle pause automation
+                                }}
+                              >
                                 <FaPause />
                                 Pause
                               </DropdownItem>
                             ) : (
-                              <DropdownItem onClick={(e) => {
+                              <DropdownItem
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                // Handle activate automation
-                              }}>
+                                  // Handle activate automation
+                                }}
+                              >
                                 <FaPlay />
                                 Activate
                               </DropdownItem>
                             )}
-                            <DropdownItem className="danger" onClick={(e) => {
+                            <DropdownItem
+                              className="danger"
+                              onClick={(e) => {
                                 e.stopPropagation();
-                              // Handle delete automation
-                            }}>
+                                // Handle delete automation
+                              }}
+                            >
                               <FaTrash />
                               Delete
                             </DropdownItem>
-                        </DropdownMenu>
+                          </DropdownMenu>
                         )}
                       </ActionsContainer>
                     </TableCell>
@@ -801,4 +887,4 @@ function AutomationsPage() {
   );
 }
 
-export default AutomationsPage; 
+export default AutomationsPage;
