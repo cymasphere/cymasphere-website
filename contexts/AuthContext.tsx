@@ -56,20 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     if (session?.user) {
       try {
-        console.log(
-          "[refreshUser] Starting to fetch profile for user:",
-          session.user.id
-        );
         const { profile, error } = await fetchProfile(session.user.id);
         if (error) {
           console.log("[refreshUser] Error fetching profile:", error);
           return;
         }
 
-        console.log(
-          "[refreshUser] Starting to fetch admin status for user:",
-          session.user.id
-        );
         const { is_admin, error: adminError } = await fetchIsAdmin(
           session.user.id
         );
@@ -80,36 +72,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (profile) {
           // Check Stripe subscription status
-          console.log(
-            "[refreshUser] Starting to update Stripe for user:",
-            session.user.email
-          );
           const { success, profile: updatedProfile } = await updateStripe(
             session.user.email!,
             profile
           );
 
           if (success && updatedProfile) {
-            console.log(
-              "[refreshUser] Successfully updated user with Stripe profile"
-            );
             setUser({
               ...session.user,
               profile: updatedProfile,
               is_admin,
             });
           } else if (profile) {
-            console.log(
-              "[refreshUser] Setting user with basic profile (no Stripe update)"
-            );
             setUser({ ...session.user, profile, is_admin });
           }
         }
       } catch (error) {
         console.error("[refreshUser] Error refreshing user:", error);
       }
-    } else {
-      console.log("[refreshUser] No session or user found, skipping refresh");
     }
   };
 
@@ -117,36 +97,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateUserFromSession = async () => {
       try {
-        console.log(
-          "[updateUserFromSession] Starting session update, current user:",
-          user?.id || "null"
-        );
         setLoading(user === null);
-        console.log(
-          "[updateUserFromSession] Getting current user from supabase auth"
-        );
         const {
           data: { user: logged_in_user },
         } = await supabase.auth.getUser();
 
         if (logged_in_user) {
-          console.log(
-            "[updateUserFromSession] Found logged in user:",
-            logged_in_user.id
-          );
-          console.log(
-            "[updateUserFromSession] Fetching profile for user:",
-            logged_in_user.id
-          );
           const { profile, error } = await fetchProfile(logged_in_user.id);
           if (error) {
-            console.log("error fetching profile", JSON.stringify(error));
+            console.log(
+              "error fetching profile",
+              error instanceof Error ? error.message : String(error)
+            );
             // Don't set user to null - keep them logged in even if profile fetch fails
             // This is important for password reset flow
             // Create a minimal profile object with required fields
-            console.log(
-              "[updateUserFromSession] Creating default profile due to fetch error"
-            );
             const defaultProfile: Profile = {
               id: logged_in_user.id,
               avatar_url: null,
@@ -159,9 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               trial_expiration: null,
               updated_at: null,
             };
-            console.log(
-              "[updateUserFromSession] Setting user with default profile"
-            );
             setUser({
               ...logged_in_user,
               profile: defaultProfile,
@@ -170,25 +132,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          console.log(
-            "[updateUserFromSession] Fetching admin status for user:",
-            logged_in_user.id
-          );
           const { is_admin, error: adminError } = await fetchIsAdmin(
             logged_in_user.id
           );
           if (adminError) {
             console.log(
               "error fetching admin status",
-              JSON.stringify(adminError)
+              adminError instanceof Error
+                ? adminError.message
+                : String(adminError)
             );
           }
 
           if (profile) {
             // Set user immediately with basic profile data
-            console.log(
-              "[updateUserFromSession] Setting user with basic profile data"
-            );
             setUser({
               ...logged_in_user,
               profile,
@@ -197,59 +154,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Update Stripe subscription status asynchronously (non-blocking)
             try {
-              console.log(
-                "[updateUserFromSession] Starting Stripe update for user:",
-                logged_in_user.email
-              );
               const { success, profile: updatedProfile } = await updateStripe(
                 logged_in_user.email!,
                 profile
               );
               if (success && updatedProfile) {
-                console.log(
-                  "[updateUserFromSession] Successfully updated user with Stripe profile"
-                );
                 setUser({
                   ...logged_in_user,
                   profile: updatedProfile,
                   is_admin: is_admin || false,
                 });
-              } else {
-                console.log(
-                  "[updateUserFromSession] Stripe update failed or returned no profile"
-                );
               }
             } catch (stripeError) {
               // Keep the user logged in even if Stripe update fails
               console.log("Stripe update failed:", stripeError);
             }
-          } else {
-            console.log("[updateUserFromSession] No profile found for user");
           }
         } else {
-          console.log(
-            "[updateUserFromSession] No logged in user found, setting user to null"
-          );
           setUser(null);
         }
       } catch (error) {
-        console.log("error updating user from session", JSON.stringify(error));
+        console.log(
+          "error updating user from session",
+          error instanceof Error ? error.message : String(error)
+        );
         // Only set user to null if we have a real auth error, not a profile fetch error
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.log("[updateUserFromSession] Error message:", errorMessage);
         if (errorMessage.includes("JWT") || errorMessage.includes("auth")) {
-          console.log(
-            "[updateUserFromSession] Auth error detected, setting user to null"
-          );
           setUser(null);
-        } else {
-          console.log(
-            "[updateUserFromSession] Non-auth error, keeping user logged in"
-          );
         }
       } finally {
-        console.log("[updateUserFromSession] Setting loading to false");
         setLoading(false);
       }
     };
@@ -260,17 +195,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Simple auth state change handler - based on working project
   useEffect(() => {
-    console.log("auth context triggered");
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("auth state changed", event);
-      console.log(
-        `[AuthContext] Session: ${session ? "EXISTS" : "NULL"}, User: ${
-          session?.user?.id || "NULL"
-        }`
-      );
       setSession(session);
 
       // Handle timezone tracking directly in AuthContext to ensure it runs
@@ -278,9 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       //   (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
       //   session?.user
       // ) {
-      //   console.log(
-      //     `[AuthContext] Triggering timezone update for user: ${session.user.id}`
-      //   );
       //   await updateSubscriberTimezone(session.user.id);
       // }
     });
