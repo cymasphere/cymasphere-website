@@ -574,7 +574,7 @@ const getSubscriberData = (id: string) => {
   const engagements = ['High', 'Medium', 'Low'];
   const statuses = ['active', 'unsubscribed', 'bounced', 'pending'];
   
-  const name = names[parseInt(id) % names.length];
+  const name = names[parseInt(id) % names.length] || 'Unknown User';
   
   return {
     id,
