@@ -14,8 +14,6 @@ import {
   FaDownload
 } from 'react-icons/fa';
 import StatLoadingSpinner from '@/components/common/StatLoadingSpinner';
-import { useAuth } from '@/contexts/AuthContext';
-import LoadingComponent from '@/components/common/LoadingComponent';
 
 const Container = styled.div`
   max-width: 1400px;
@@ -294,76 +292,51 @@ interface CampaignData {
 }
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('30d');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
 
-  // Fetch analytics data from API
-  const fetchAnalyticsData = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`/api/email-campaigns/analytics?timeRange=${timeRange}`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics data');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setCampaigns(data.data.campaigns || []);
-      } else {
-        throw new Error(data.error || 'Failed to load analytics data');
-      }
-      
-    } catch (err) {
-      console.error('Error fetching analytics data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
-      setCampaigns([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (user) {
-      fetchAnalyticsData();
-    }
-  }, [user, timeRange]);
-
-  if (!user) {
-    return <LoadingComponent />;
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <h3>Error Loading Analytics</h3>
-        <p>{error}</p>
-        <button 
-          onClick={fetchAnalyticsData}
-          style={{
-            padding: '0.5rem 1rem',
-            background: 'var(--primary)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+    // Simulate loading data
+    setTimeout(() => {
+      setCampaigns([
+        {
+          id: '1',
+          name: 'Welcome Series #1',
+          type: 'Automation',
+          sent: 1247,
+          delivered: 1198,
+          opened: 456,
+          clicked: 89,
+          unsubscribed: 3,
+          sentDate: '2024-01-15'
+        },
+        {
+          id: '2',
+          name: 'Monthly Newsletter',
+          type: 'Broadcast',
+          sent: 5420,
+          delivered: 5267,
+          opened: 1876,
+          clicked: 234,
+          unsubscribed: 12,
+          sentDate: '2024-01-10'
+        },
+        {
+          id: '3',
+          name: 'Product Launch',
+          type: 'Broadcast',
+          sent: 3200,
+          delivered: 3089,
+          opened: 1654,
+          clicked: 456,
+          unsubscribed: 8,
+          sentDate: '2024-01-08'
+        }
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, [timeRange]);
 
   const totalSent = campaigns.reduce((sum, campaign) => sum + campaign.sent, 0);
   const totalDelivered = campaigns.reduce((sum, campaign) => sum + campaign.delivered, 0);

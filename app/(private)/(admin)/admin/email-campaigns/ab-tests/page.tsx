@@ -541,6 +541,168 @@ const ComparisonValue = styled.div<{ trend?: 'up' | 'down' | 'neutral' }>`
   gap: 0.25rem;
 `;
 
+// Mock data
+const mockStats = [
+  { label: "Active Tests", value: "12" },
+  { label: "Completed Tests", value: "47" },
+  { label: "Total Variants", value: "94" },
+  { label: "Avg. Improvement", value: "+23%" }
+];
+
+const mockTests = [
+  {
+    id: "1",
+    title: "Subject Line Optimization",
+    description: "Testing different subject line approaches for the product launch campaign",
+    status: "running",
+    type: "Subject Line",
+    startDate: "2024-01-15",
+    endDate: "2024-01-22",
+    progress: 67,
+    totalSent: 5000,
+    variants: [
+      {
+        id: "A",
+        name: "Variant A (Control)",
+        subject: "🎵 Introducing Our New Synthesizer Features!",
+        sent: 2500,
+        opens: 780,
+        clicks: 156,
+        openRate: 31.2,
+        clickRate: 6.2,
+        isWinner: false
+      },
+      {
+        id: "B",
+        name: "Variant B",
+        subject: "Transform Your Music with Revolutionary Synth Technology",
+        sent: 2500,
+        opens: 925,
+        clicks: 203,
+        openRate: 37.0,
+        clickRate: 8.1,
+        isWinner: true
+      }
+    ]
+  },
+  {
+    id: "2",
+    title: "Send Time Optimization",
+    description: "Finding the optimal send time for maximum engagement",
+    status: "completed",
+    type: "Send Time",
+    startDate: "2024-01-08",
+    endDate: "2024-01-15",
+    progress: 100,
+    totalSent: 8000,
+    variants: [
+      {
+        id: "A",
+        name: "Morning (9 AM)",
+        subject: "Weekly Newsletter - New Features & Updates",
+        sent: 2667,
+        opens: 853,
+        clicks: 128,
+        openRate: 32.0,
+        clickRate: 4.8,
+        isWinner: false
+      },
+      {
+        id: "B",
+        name: "Afternoon (2 PM)",
+        subject: "Weekly Newsletter - New Features & Updates",
+        sent: 2667,
+        opens: 987,
+        clicks: 167,
+        openRate: 37.0,
+        clickRate: 6.3,
+        isWinner: true
+      },
+      {
+        id: "C",
+        name: "Evening (7 PM)",
+        subject: "Weekly Newsletter - New Features & Updates",
+        sent: 2666,
+        opens: 773,
+        clicks: 116,
+        openRate: 29.0,
+        clickRate: 4.4,
+        isWinner: false
+      }
+    ]
+  },
+  {
+    id: "3",
+    title: "CTA Button Color Test",
+    description: "Testing different call-to-action button colors for conversion optimization",
+    status: "paused",
+    type: "Design",
+    startDate: "2024-01-20",
+    endDate: "2024-01-27",
+    progress: 34,
+    totalSent: 3000,
+    variants: [
+      {
+        id: "A",
+        name: "Blue Button",
+        subject: "Upgrade Your Music Production Setup",
+        sent: 1020,
+        opens: 306,
+        clicks: 43,
+        openRate: 30.0,
+        clickRate: 4.2,
+        isWinner: false
+      },
+      {
+        id: "B",
+        name: "Orange Button",
+        subject: "Upgrade Your Music Production Setup",
+        sent: 1020,
+        opens: 316,
+        clicks: 57,
+        openRate: 31.0,
+        clickRate: 5.6,
+        isWinner: false
+      }
+    ]
+  },
+  {
+    id: "4",
+    title: "Email Length Comparison",
+    description: "Short vs. long email content performance analysis",
+    status: "draft",
+    type: "Content",
+    startDate: "2024-01-25",
+    endDate: "2024-02-01",
+    progress: 0,
+    totalSent: 0,
+    variants: [
+      {
+        id: "A",
+        name: "Short Email",
+        subject: "Quick Update: New Synth Pads Available",
+        sent: 0,
+        opens: 0,
+        clicks: 0,
+        openRate: 0,
+        clickRate: 0,
+        isWinner: false
+      },
+      {
+        id: "B",
+        name: "Detailed Email",
+        subject: "Quick Update: New Synth Pads Available",
+        sent: 0,
+        opens: 0,
+        clicks: 0,
+        openRate: 0,
+        clickRate: 0,
+        isWinner: false
+      }
+    ]
+  }
+];
+
 function ABTestsPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -549,65 +711,15 @@ function ABTestsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<any[]>([]);
-  const [tests, setTests] = useState<any[]>([]);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-
-  // Fetch A/B test data from API
-  const fetchABTestData = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // For now, we'll use empty arrays since A/B testing API doesn't exist yet
-      // This can be enhanced when the A/B testing feature is implemented
-      const mockStats = [
-        { label: "Active Tests", value: "0" },
-        { label: "Completed Tests", value: "0" },
-        { label: "Total Variants", value: "0" },
-        { label: "Avg. Improvement", value: "0%" }
-      ];
-      
-      setStats(mockStats);
-      setTests([]);
-      
-      // TODO: Replace with real API call when A/B testing is implemented
-      // const response = await fetch('/api/email-campaigns/ab-tests', {
-      //   credentials: 'include'
-      // });
-      // if (response.ok) {
-      //   const data = await response.json();
-      //   setStats(data.stats || []);
-      //   setTests(data.tests || []);
-      // } else {
-      //   throw new Error('Failed to fetch A/B test data');
-      // }
-      
-    } catch (err) {
-      console.error('Error fetching A/B test data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load A/B test data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
-
-  useEffect(() => {
-    if (translationsLoaded && user) {
-      fetchABTestData();
-    }
-  }, [translationsLoaded, user]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -617,33 +729,7 @@ function ABTestsPage() {
     return <LoadingComponent />;
   }
 
-  if (loading) {
-    return <LoadingComponent />;
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <h3>Error Loading A/B Tests</h3>
-        <p>{error}</p>
-        <button 
-          onClick={fetchABTestData}
-          style={{
-            padding: '0.5rem 1rem',
-            background: 'var(--primary)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const filteredTests = tests.filter(test => {
+  const filteredTests = mockTests.filter(test => {
     const matchesSearch = test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          test.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || test.status === statusFilter;
@@ -724,7 +810,7 @@ function ABTestsPage() {
         </Header>
 
         <StatsGrid>
-          {stats.map((stat, index) => (
+          {mockStats.map((stat, index) => (
             <StatCard
               key={stat.label}
               variants={cardVariants}
@@ -844,7 +930,7 @@ function ABTestsPage() {
                 )}
 
                 <VariantsGrid>
-                  {test.variants.map((variant: any) => (
+                  {test.variants.map((variant) => (
                     <VariantCard key={variant.id} isWinner={variant.isWinner}>
                       <VariantHeader>
                         <VariantTitle>
