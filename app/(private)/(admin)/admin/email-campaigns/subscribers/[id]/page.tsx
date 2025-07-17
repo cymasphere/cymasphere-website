@@ -521,77 +521,6 @@ const BulkButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   `}
 `;
 
-// Mock data
-const mockAudiences = [
-  {
-    id: "1",
-    name: "Highly Engaged Users",
-    description: "Users who opened emails in the last 30 days and clicked at least once",
-    subscribers: 4567,
-    type: "dynamic" as const
-  },
-  {
-    id: "2",
-    name: "New Subscribers", 
-    description: "Users who joined in the last 7 days",
-    subscribers: 234,
-    type: "dynamic" as const
-  },
-  {
-    id: "3",
-    name: "Music Producers",
-    description: "Professional music producers and beatmakers", 
-    subscribers: 1890,
-    type: "static" as const
-  },
-  {
-    id: "4",
-    name: "Inactive Users",
-    description: "Users who haven't opened emails in 60+ days",
-    subscribers: 2156,
-    type: "dynamic" as const
-  },
-  {
-    id: "5",
-    name: "Premium Subscribers",
-    description: "Users with active premium subscriptions",
-    subscribers: 892,
-    type: "dynamic" as const
-  },
-  {
-    id: "6",
-    name: "Beta Testers",
-    description: "Users participating in beta programs",
-    subscribers: 145,
-    type: "static" as const
-  }
-];
-
-const getSubscriberData = (id: string) => {
-  const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
-  const names = ['Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim'];
-  const locations = ['New York, US', 'San Francisco, US', 'Los Angeles, US', 'London, UK', 'Seoul, KR'];
-  const engagements = ['High', 'Medium', 'Low'];
-  const statuses = ['active', 'unsubscribed', 'bounced', 'pending'];
-  
-  const name = names[parseInt(id) % names.length] || 'Unknown User';
-  
-  return {
-    id,
-    name,
-    email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
-    status: statuses[parseInt(id) % statuses.length],
-    subscribeDate: "2024-01-15",
-    lastActivity: "2024-01-20",
-    location: locations[parseInt(id) % locations.length],
-    tags: ["VIP", "Producer"],
-    engagement: engagements[parseInt(id) % engagements.length],
-    totalOpens: 45,
-    totalClicks: 12,
-    avatar: colors[name.charCodeAt(0) % colors.length]
-  };
-};
-
 function SubscriberDetailPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
@@ -599,14 +528,16 @@ function SubscriberDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [subscriberAudiences, setSubscriberAudiences] = useState<{[key: string]: boolean}>({});
+  const [subscriber, setSubscriber] = useState<any>(null);
+  const [audiences, setAudiences] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const subscriberId = params.id as string;
-
-  const subscriber = getSubscriberData(subscriberId);
 
   useEffect(() => {
     if (!languageLoading) {
@@ -615,26 +546,64 @@ function SubscriberDetailPage() {
   }, [languageLoading]);
 
   useEffect(() => {
-    // Initialize form data
-    setFormData({
-      name: subscriber.name,
-      email: subscriber.email,
-      status: subscriber.status,
-      location: subscriber.location,
-      engagement: subscriber.engagement
-    });
+    if (translationsLoaded && subscriberId) {
+      fetchSubscriberData();
+      fetchAudiences();
+    }
+  }, [translationsLoaded, subscriberId]);
 
-    // Mock subscriber audience memberships
-    const mockMemberships = {
-      "1": true,  // Highly Engaged Users
-      "2": false, // New Subscribers
-      "3": true,  // Music Producers
-      "4": false, // Inactive Users
-      "5": false, // Premium Subscribers
-      "6": true   // Beta Testers
-    };
-    setSubscriberAudiences(mockMemberships);
-  }, [subscriber]);
+  const fetchSubscriberData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch subscriber: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setSubscriber(data.subscriber);
+      
+      // Initialize form data
+      setFormData({
+        name: data.subscriber.name,
+        email: data.subscriber.email,
+        status: data.subscriber.status,
+        location: data.subscriber.location || "Unknown",
+        engagement: data.subscriber.engagement || "Medium"
+      });
+      
+    } catch (err) {
+      console.error('Error fetching subscriber:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch subscriber');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAudiences = async () => {
+    try {
+      const response = await fetch('/api/email-campaigns/audiences');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audiences: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setAudiences(data.audiences || []);
+      
+      // Initialize audience memberships (all false for now)
+      const memberships: {[key: string]: boolean} = {};
+      data.audiences?.forEach((audience: any) => {
+        memberships[audience.id] = false;
+      });
+      setSubscriberAudiences(memberships);
+      
+    } catch (err) {
+      console.error('Error fetching audiences:', err);
+      // Don't set error here as it's not critical for the main page
+    }
+  };
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -644,7 +613,41 @@ function SubscriberDetailPage() {
     return <LoadingComponent />;
   }
 
-  const filteredAudiences = mockAudiences.filter(audience =>
+  if (loading) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <SubscriberContainer>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>Error Loading Subscriber</h2>
+          <p>{error}</p>
+          <ActionButton onClick={() => router.push('/admin/email-campaigns/subscribers')}>
+            <FaArrowLeft />
+            Back to Subscribers
+          </ActionButton>
+        </div>
+      </SubscriberContainer>
+    );
+  }
+
+  if (!subscriber) {
+    return (
+      <SubscriberContainer>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>Subscriber Not Found</h2>
+          <p>The requested subscriber could not be found.</p>
+          <ActionButton onClick={() => router.push('/admin/email-campaigns/subscribers')}>
+            <FaArrowLeft />
+            Back to Subscribers
+          </ActionButton>
+        </div>
+      </SubscriberContainer>
+    );
+  }
+
+  const filteredAudiences = audiences.filter(audience =>
     audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     audience.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -663,11 +666,27 @@ function SubscriberDetailPage() {
     }));
   };
 
-  const handleSave = () => {
-    console.log('Saving subscriber:', formData);
-    console.log('Audience memberships:', subscriberAudiences);
-    // Here you would make API calls to save the changes
-    setEditMode(false);
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update subscriber');
+      }
+
+      // Refresh subscriber data
+      await fetchSubscriberData();
+      setEditMode(false);
+    } catch (err) {
+      console.error('Error saving subscriber:', err);
+      alert('Failed to save changes. Please try again.');
+    }
   };
 
   const handleDelete = () => {
@@ -680,7 +699,7 @@ function SubscriberDetailPage() {
 
   const handleBulkAddAll = () => {
     const newMemberships: {[key: string]: boolean} = {};
-    mockAudiences.forEach(audience => {
+    audiences.forEach(audience => {
       newMemberships[audience.id] = true;
     });
     setSubscriberAudiences(newMemberships);
@@ -688,10 +707,16 @@ function SubscriberDetailPage() {
 
   const handleBulkRemoveAll = () => {
     const newMemberships: {[key: string]: boolean} = {};
-    mockAudiences.forEach(audience => {
+    audiences.forEach(audience => {
       newMemberships[audience.id] = false;
     });
     setSubscriberAudiences(newMemberships);
+  };
+
+  // Generate avatar color based on name
+  const getAvatarColor = (name: string) => {
+    const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+    return colors[name.charCodeAt(0) % colors.length];
   };
 
   return (
@@ -744,8 +769,8 @@ function SubscriberDetailPage() {
         </Header>
 
         <SubscriberInfo>
-          <Avatar color={subscriber.avatar}>
-            {subscriber.name.split(' ').map(n => n[0]).join('')}
+          <Avatar color={getAvatarColor(subscriber.name)}>
+            {subscriber.name.split(' ').map((n: string) => n[0]).join('')}
           </Avatar>
           <Details>
             <SubscriberName>{subscriber.name}</SubscriberName>
@@ -761,15 +786,15 @@ function SubscriberDetailPage() {
               </MetaItem>
               <MetaItem>
                 <FaMapMarkerAlt />
-                {subscriber.location}
+                {subscriber.location || "Unknown"}
               </MetaItem>
               <MetaItem>
                 <FaChartLine />
-                {subscriber.engagement} engagement
+                {subscriber.engagement || "Medium"} engagement
               </MetaItem>
               <MetaItem>
                 <FaEnvelope />
-                {subscriber.totalOpens} opens, {subscriber.totalClicks} clicks
+                {subscriber.totalOpens || 0} opens, {subscriber.totalClicks || 0} clicks
               </MetaItem>
             </SubscriberMeta>
           </Details>
