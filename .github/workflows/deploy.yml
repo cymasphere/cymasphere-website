@@ -60,8 +60,7 @@ NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
           STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
-          STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
-          EMAIL_TEST_MODE: ${{ secrets.EMAIL_TEST_MODE }}
+          STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}          EMAIL_TEST_MODE: ${{ secrets.EMAIL_TEST_MODE }}
           LIFETIME_PRICE_ID_2: ${{ secrets.LIFETIME_PRICE_ID_2 }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: bun run build
