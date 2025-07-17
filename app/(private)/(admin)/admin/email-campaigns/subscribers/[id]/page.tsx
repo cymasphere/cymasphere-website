@@ -620,13 +620,16 @@ function SubscriberDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Subscriber audience memberships loaded:', data);
         return data.memberships || {};
       } else {
         console.error('Failed to fetch subscriber audience memberships:', response.status);
+        // Return empty object instead of throwing error
         return {};
       }
     } catch (error) {
       console.error('Error fetching subscriber audience memberships:', error);
+      // Return empty object instead of throwing error
       return {};
     }
   };
