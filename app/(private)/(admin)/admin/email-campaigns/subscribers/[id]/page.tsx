@@ -567,10 +567,29 @@ const mockAudiences = [
   }
 ];
 
-// Helper function to generate avatar color
-const getAvatarColor = (name: string) => {
+const getSubscriberData = (id: string) => {
   const colors = ['#6c63ff', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
-  return colors[name.charCodeAt(0) % colors.length];
+  const names = ['Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim'];
+  const locations = ['New York, US', 'San Francisco, US', 'Los Angeles, US', 'London, UK', 'Seoul, KR'];
+  const engagements = ['High', 'Medium', 'Low'];
+  const statuses = ['active', 'unsubscribed', 'bounced', 'pending'];
+  
+  const name = names[parseInt(id) % names.length];
+  
+  return {
+    id,
+    name,
+    email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
+    status: statuses[parseInt(id) % statuses.length],
+    subscribeDate: "2024-01-15",
+    lastActivity: "2024-01-20",
+    location: locations[parseInt(id) % locations.length],
+    tags: ["VIP", "Producer"],
+    engagement: engagements[parseInt(id) % engagements.length],
+    totalOpens: 45,
+    totalClicks: 12,
+    avatar: colors[name.charCodeAt(0) % colors.length]
+  };
 };
 
 function SubscriberDetailPage() {
@@ -580,9 +599,6 @@ function SubscriberDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [subscriberAudiences, setSubscriberAudiences] = useState<{[key: string]: boolean}>({});
-  const [subscriber, setSubscriber] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -590,57 +606,7 @@ function SubscriberDetailPage() {
   const params = useParams();
   const subscriberId = params.id as string;
 
-  // Fetch subscriber data from API
-  const fetchSubscriberData = async () => {
-    if (!subscriberId) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('Subscriber not found');
-        } else if (response.status === 401 || response.status === 403) {
-          setError('Access denied');
-        } else {
-          setError('Failed to load subscriber data');
-        }
-        return;
-      }
-      
-      const data = await response.json();
-      setSubscriber(data.subscriber);
-      
-      // Initialize form data with real subscriber data
-      setFormData({
-        name: data.subscriber.name || '',
-        email: data.subscriber.email || '',
-        status: data.subscriber.status || 'active',
-        location: data.subscriber.location || 'Unknown',
-        engagement: data.subscriber.engagement || 'Medium'
-      });
-
-      // Mock subscriber audience memberships (this could be enhanced with real API data later)
-      const mockMemberships = {
-        "1": true,  // Highly Engaged Users
-        "2": false, // New Subscribers
-        "3": true,  // Music Producers
-        "4": false, // Inactive Users
-        "5": false, // Premium Subscribers
-        "6": true   // Beta Testers
-      };
-      setSubscriberAudiences(mockMemberships);
-      
-    } catch (error) {
-      console.error('Error fetching subscriber:', error);
-      setError('Failed to load subscriber data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const subscriber = getSubscriberData(subscriberId);
 
   useEffect(() => {
     if (!languageLoading) {
@@ -649,10 +615,26 @@ function SubscriberDetailPage() {
   }, [languageLoading]);
 
   useEffect(() => {
-    if (translationsLoaded && user && subscriberId) {
-      fetchSubscriberData();
-    }
-  }, [translationsLoaded, user, subscriberId]);
+    // Initialize form data
+    setFormData({
+      name: subscriber.name,
+      email: subscriber.email,
+      status: subscriber.status,
+      location: subscriber.location,
+      engagement: subscriber.engagement
+    });
+
+    // Mock subscriber audience memberships
+    const mockMemberships = {
+      "1": true,  // Highly Engaged Users
+      "2": false, // New Subscribers
+      "3": true,  // Music Producers
+      "4": false, // Inactive Users
+      "5": false, // Premium Subscribers
+      "6": true   // Beta Testers
+    };
+    setSubscriberAudiences(mockMemberships);
+  }, [subscriber]);
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
@@ -660,61 +642,6 @@ function SubscriberDetailPage() {
 
   if (!user) {
     return <LoadingComponent />;
-  }
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
-
-  if (error) {
-    return (
-      <SubscriberContainer>
-        <Header>
-          <HeaderLeft>
-            <BackButton href="/admin/email-campaigns/subscribers">
-              <FaArrowLeft />
-              Back to Subscribers
-            </BackButton>
-            <SubscriberTitle>
-              <FaUser />
-              Subscriber Details
-            </SubscriberTitle>
-          </HeaderLeft>
-        </Header>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h3>Error</h3>
-          <p>{error}</p>
-          <ActionButton onClick={() => router.push('/admin/email-campaigns/subscribers')}>
-            Back to Subscribers
-          </ActionButton>
-        </div>
-      </SubscriberContainer>
-    );
-  }
-
-  if (!subscriber) {
-    return (
-      <SubscriberContainer>
-        <Header>
-          <HeaderLeft>
-            <BackButton href="/admin/email-campaigns/subscribers">
-              <FaArrowLeft />
-              Back to Subscribers
-            </BackButton>
-            <SubscriberTitle>
-              <FaUser />
-              Subscriber Details
-            </SubscriberTitle>
-          </HeaderLeft>
-        </Header>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h3>Subscriber not found</h3>
-          <ActionButton onClick={() => router.push('/admin/email-campaigns/subscribers')}>
-            Back to Subscribers
-          </ActionButton>
-        </div>
-      </SubscriberContainer>
-    );
   }
 
   const filteredAudiences = mockAudiences.filter(audience =>
@@ -736,26 +663,11 @@ function SubscriberDetailPage() {
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch(`/api/email-campaigns/subscribers/${subscriber.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        // Refresh subscriber data
-        await fetchSubscriberData();
-        setEditMode(false);
-      } else {
-        console.error('Failed to update subscriber');
-      }
-    } catch (error) {
-      console.error('Error updating subscriber:', error);
-    }
+  const handleSave = () => {
+    console.log('Saving subscriber:', formData);
+    console.log('Audience memberships:', subscriberAudiences);
+    // Here you would make API calls to save the changes
+    setEditMode(false);
   };
 
   const handleDelete = () => {
@@ -832,8 +744,8 @@ function SubscriberDetailPage() {
         </Header>
 
         <SubscriberInfo>
-          <Avatar color={getAvatarColor(subscriber.name)}>
-            {subscriber.name.split(' ').map((n: string) => n[0]).join('')}
+          <Avatar color={subscriber.avatar}>
+            {subscriber.name.split(' ').map(n => n[0]).join('')}
           </Avatar>
           <Details>
             <SubscriberName>{subscriber.name}</SubscriberName>
