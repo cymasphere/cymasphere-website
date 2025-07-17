@@ -409,7 +409,9 @@ const AudiencesList = styled.div`
   gap: 1rem;
 `;
 
-const AudienceItem = styled.div<{ isMember: boolean }>`
+const AudienceItem = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMember'
+})<{ isMember: boolean }>`
   padding: 1rem;
   border-radius: 8px;
   border: 1px solid ${props => props.isMember ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
@@ -441,7 +443,9 @@ const AudienceItemDescription = styled.p`
   line-height: 1.4;
 `;
 
-const ToggleButton = styled.button<{ isActive: boolean }>`
+const ToggleButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive'
+})<{ isActive: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -468,7 +472,9 @@ const ToggleButton = styled.button<{ isActive: boolean }>`
   `}
 `;
 
-const MembershipBadge = styled.span<{ isMember: boolean }>`
+const MembershipBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMember'
+})<{ isMember: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -494,7 +500,9 @@ const BulkActions = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const BulkButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const BulkButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
