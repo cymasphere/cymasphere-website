@@ -73,20 +73,26 @@ export async function GET(
     });
 
     // Get actual memberships from the email_audience_subscribers table
-    const { data: membershipsData, error: membershipsError } = await supabase
-      .from("email_audience_subscribers")
-      .select("audience_id")
-      .eq("subscriber_id", subscriberId);
+    try {
+      const { data: membershipsData, error: membershipsError } = await supabase
+        .from("email_audience_subscribers")
+        .select("audience_id")
+        .eq("subscriber_id", subscriberId);
 
-    if (membershipsError) {
-      console.error('Error fetching subscriber memberships:', membershipsError);
-    } else {
-      // Mark audiences as true where the subscriber is a member
-      membershipsData?.forEach(membership => {
-        if (membership.audience_id) {
-          memberships[membership.audience_id] = true;
-        }
-      });
+      if (membershipsError) {
+        console.error('Error fetching subscriber memberships:', membershipsError);
+        // Don't fail the entire request, just return empty memberships
+      } else {
+        // Mark audiences as true where the subscriber is a member
+        membershipsData?.forEach(membership => {
+          if (membership.audience_id) {
+            memberships[membership.audience_id] = true;
+          }
+        });
+      }
+    } catch (membershipError) {
+      console.error('Exception fetching subscriber memberships:', membershipError);
+      // Don't fail the entire request, just return empty memberships
     }
 
     return NextResponse.json({ 
@@ -142,10 +148,15 @@ export async function PUT(
     // Update memberships in the email_audience_subscribers table
     try {
       // Delete existing memberships for this subscriber
-      await supabase
+      const { error: deleteError } = await supabase
         .from("email_audience_subscribers")
         .delete()
         .eq("subscriber_id", subscriberId);
+
+      if (deleteError) {
+        console.error('Error deleting existing memberships:', deleteError);
+        // Don't fail if delete fails, continue with insert
+      }
 
       // Insert new memberships
       const newMemberships = Object.entries(memberships)
