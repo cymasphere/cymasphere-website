@@ -521,51 +521,51 @@ const BulkButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   `}
 `;
 
-// Mock data
-const mockAudiences = [
-  {
-    id: "1",
-    name: "Highly Engaged Users",
-    description: "Users who opened emails in the last 30 days and clicked at least once",
-    subscribers: 4567,
-    type: "dynamic" as const
-  },
-  {
-    id: "2",
-    name: "New Subscribers", 
-    description: "Users who joined in the last 7 days",
-    subscribers: 234,
-    type: "dynamic" as const
-  },
-  {
-    id: "3",
-    name: "Music Producers",
-    description: "Professional music producers and beatmakers", 
-    subscribers: 1890,
-    type: "static" as const
-  },
-  {
-    id: "4",
-    name: "Inactive Users",
-    description: "Users who haven't opened emails in 60+ days",
-    subscribers: 2156,
-    type: "dynamic" as const
-  },
-  {
-    id: "5",
-    name: "Premium Subscribers",
-    description: "Users with active premium subscriptions",
-    subscribers: 892,
-    type: "dynamic" as const
-  },
-  {
-    id: "6",
-    name: "Beta Testers",
-    description: "Users participating in beta programs",
-    subscribers: 145,
-    type: "static" as const
-  }
-];
+// Mock data - REMOVED - Now using real API data
+// const mockAudiences = [
+//   {
+//     id: "1",
+//     name: "Highly Engaged Users",
+//     description: "Users who opened emails in the last 30 days and clicked at least once",
+//     subscribers: 4567,
+//     type: "dynamic" as const
+//   },
+//   {
+//     id: "2",
+//     name: "New Subscribers", 
+//     description: "Users who joined in the last 7 days",
+//     subscribers: 234,
+//     type: "dynamic" as const
+//   },
+//   {
+//     id: "3",
+//     name: "Music Producers",
+//     description: "Professional music producers and beatmakers", 
+//     subscribers: 1890,
+//     type: "static" as const
+//   },
+//   {
+//     id: "4",
+//     name: "Inactive Users",
+//     description: "Users who haven't opened emails in 60+ days",
+//     subscribers: 2156,
+//     type: "dynamic" as const
+//   },
+//   {
+//     id: "5",
+//     name: "Premium Subscribers",
+//     description: "Users with active premium subscriptions",
+//     subscribers: 892,
+//     type: "dynamic" as const
+//   },
+//   {
+//     id: "6",
+//     name: "Beta Testers",
+//     description: "Users participating in beta programs",
+//     subscribers: 145,
+//     type: "static" as const
+//   }
+// ];
 
 // Helper function to generate avatar color
 const getAvatarColor = (name: string) => {
@@ -581,6 +581,7 @@ function SubscriberDetailPage() {
   const [formData, setFormData] = useState<any>({});
   const [subscriberAudiences, setSubscriberAudiences] = useState<{[key: string]: boolean}>({});
   const [subscriber, setSubscriber] = useState<any>(null);
+  const [audiences, setAudiences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -590,6 +591,46 @@ function SubscriberDetailPage() {
   const params = useParams();
   const subscriberId = params.id as string;
 
+  // Fetch audiences from API
+  const fetchAudiences = async () => {
+    try {
+      const response = await fetch('/api/email-campaigns/audiences', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.audiences || [];
+      } else {
+        console.error('Failed to fetch audiences:', response.status);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching audiences:', error);
+      return [];
+    }
+  };
+
+  // Fetch subscriber audience memberships from API
+  const fetchSubscriberAudienceMemberships = async (subscriberId: string) => {
+    try {
+      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}/audiences`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.memberships || {};
+      } else {
+        console.error('Failed to fetch subscriber audience memberships:', response.status);
+        return {};
+      }
+    } catch (error) {
+      console.error('Error fetching subscriber audience memberships:', error);
+      return {};
+    }
+  };
+
   // Fetch subscriber data from API
   const fetchSubscriberData = async () => {
     if (!subscriberId) return;
@@ -598,12 +639,13 @@ function SubscriberDetailPage() {
     setError(null);
     
     try {
-      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
+      // Fetch subscriber data
+      const subscriberResponse = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
       
-      if (!response.ok) {
-        if (response.status === 404) {
+      if (!subscriberResponse.ok) {
+        if (subscriberResponse.status === 404) {
           setError('Subscriber not found');
-        } else if (response.status === 401 || response.status === 403) {
+        } else if (subscriberResponse.status === 401 || subscriberResponse.status === 403) {
           setError('Access denied');
         } else {
           setError('Failed to load subscriber data');
@@ -611,28 +653,26 @@ function SubscriberDetailPage() {
         return;
       }
       
-      const data = await response.json();
-      setSubscriber(data.subscriber);
+      const subscriberData = await subscriberResponse.json();
+      setSubscriber(subscriberData.subscriber);
       
       // Initialize form data with real subscriber data
       setFormData({
-        name: data.subscriber.name || '',
-        email: data.subscriber.email || '',
-        status: data.subscriber.status || 'active',
-        location: data.subscriber.location || 'Unknown',
-        engagement: data.subscriber.engagement || 'Medium'
+        name: subscriberData.subscriber.name || '',
+        email: subscriberData.subscriber.email || '',
+        status: subscriberData.subscriber.status || 'active',
+        location: subscriberData.subscriber.location || 'Unknown',
+        engagement: subscriberData.subscriber.engagement || 'Medium'
       });
 
-      // Mock subscriber audience memberships (this could be enhanced with real API data later)
-      const mockMemberships = {
-        "1": true,  // Highly Engaged Users
-        "2": false, // New Subscribers
-        "3": true,  // Music Producers
-        "4": false, // Inactive Users
-        "5": false, // Premium Subscribers
-        "6": true   // Beta Testers
-      };
-      setSubscriberAudiences(mockMemberships);
+      // Fetch audiences and subscriber memberships in parallel
+      const [audiencesData, membershipsData] = await Promise.all([
+        fetchAudiences(),
+        fetchSubscriberAudienceMemberships(subscriberId)
+      ]);
+      
+      setAudiences(audiencesData);
+      setSubscriberAudiences(membershipsData);
       
     } catch (error) {
       console.error('Error fetching subscriber:', error);
@@ -717,7 +757,7 @@ function SubscriberDetailPage() {
     );
   }
 
-  const filteredAudiences = mockAudiences.filter(audience =>
+  const filteredAudiences = audiences.filter(audience =>
     audience.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     audience.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -768,7 +808,7 @@ function SubscriberDetailPage() {
 
   const handleBulkAddAll = () => {
     const newMemberships: {[key: string]: boolean} = {};
-    mockAudiences.forEach(audience => {
+    audiences.forEach(audience => {
       newMemberships[audience.id] = true;
     });
     setSubscriberAudiences(newMemberships);
@@ -776,7 +816,7 @@ function SubscriberDetailPage() {
 
   const handleBulkRemoveAll = () => {
     const newMemberships: {[key: string]: boolean} = {};
-    mockAudiences.forEach(audience => {
+    audiences.forEach(audience => {
       newMemberships[audience.id] = false;
     });
     setSubscriberAudiences(newMemberships);
