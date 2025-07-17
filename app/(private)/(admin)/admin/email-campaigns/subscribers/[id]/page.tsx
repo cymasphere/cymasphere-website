@@ -3,6 +3,28 @@ import React, { useState, useEffect } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
+
+// Add error boundary wrapper
+const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  if (hasError) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2>Something went wrong</h2>
+        <p>{error?.message || 'An error occurred'}</p>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+      </div>
+    );
+  }
+
+  return (
+    <React.Fragment>
+      {children}
+    </React.Fragment>
+  );
+};
 import { 
   FaUser, 
   FaSearch,
@@ -594,7 +616,7 @@ function SubscriberDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { t } = useTranslation();
+    const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
   const params = useParams();
