@@ -26,6 +26,45 @@ const deepMerge = (target: any, source: any) => {
 const isObject = (item: any) =>
   item && typeof item === "object" && !Array.isArray(item);
 
+// Fallback translations for when file system access fails
+const getFallbackTranslations = (locale: string) => {
+  const fallbacks: { [key: string]: any } = {
+    en: {
+      common: {
+        loading: "Loading...",
+        error: "Error",
+        save: "Save",
+        cancel: "Cancel",
+        edit: "Edit",
+        delete: "Delete",
+        back: "Back",
+        search: "Search",
+        add: "Add",
+        remove: "Remove"
+      },
+      subscriber: {
+        details: "Subscriber Details",
+        information: "Subscriber Information",
+        audienceMemberships: "Audience Memberships",
+        name: "Name",
+        email: "Email",
+        status: "Status",
+        location: "Location",
+        engagement: "Engagement Level",
+        active: "Active",
+        unsubscribed: "Unsubscribed",
+        bounced: "Bounced",
+        pending: "Pending",
+        high: "High",
+        medium: "Medium",
+        low: "Low"
+      }
+    }
+  };
+  
+  return fallbacks[locale] || fallbacks.en;
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Get the locale from the query parameter
@@ -42,27 +81,35 @@ export async function GET(request: NextRequest) {
       locale = defaultLanguage;
     }
 
-    // Always load English translations as the base (fallback)
-    const engFilePath = path.join(
-      process.cwd(),
-      "public/locales",
-      `${defaultLanguage}.json`
-    );
-    const engFileContents = await fs.readFile(engFilePath, "utf8");
-    const engData = JSON.parse(engFileContents);
+    // Try to load English translations as the base (fallback)
+    let engData: any = {};
+    try {
+      const engFilePath = path.join(
+        process.cwd(),
+        "public/locales",
+        `${defaultLanguage}.json`
+      );
+      const engFileContents = await fs.readFile(engFilePath, "utf8");
+      engData = JSON.parse(engFileContents);
 
-    console.log(
-      `[translations-api] Loaded English base translations with ${
-        Object.keys(engData).length
-      } top-level keys`
-    );
+      console.log(
+        `[translations-api] Loaded English base translations with ${
+          Object.keys(engData).length
+        } top-level keys`
+      );
+    } catch (engError) {
+      console.error(`[translations-api] Failed to load English translations:`, engError);
+      // Use fallback translations
+      engData = getFallbackTranslations(defaultLanguage);
+      console.log(`[translations-api] Using fallback English translations`);
+    }
 
     // If locale is English, just return English translations
     if (locale === defaultLanguage) {
       return NextResponse.json(engData);
     }
 
-    // Otherwise, load requested locale and merge with English for fallback
+    // Otherwise, try to load requested locale and merge with English for fallback
     try {
       const filePath = path.join(
         process.cwd(),
@@ -90,16 +137,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(mergedData);
     } catch (localeError) {
       console.error(
-        `Error loading locale ${locale}, falling back to English:`,
+        `[translations-api] Error loading locale ${locale}, falling back to English:`,
         localeError
       );
-      return NextResponse.json(engData);
+      
+      // Try to get fallback translations for the requested locale
+      const fallbackData = getFallbackTranslations(locale);
+      const mergedData = deepMerge(engData, fallbackData);
+      
+      console.log(`[translations-api] Using fallback translations for ${locale}`);
+      return NextResponse.json(mergedData);
     }
   } catch (error) {
-    console.error("Error loading translations:", error);
-    return NextResponse.json(
-      { error: "Failed to load translations" },
-      { status: 500 }
-    );
+    console.error("[translations-api] Error loading translations:", error);
+    
+    // Return basic fallback translations to prevent complete failure
+    const fallbackData = getFallbackTranslations(defaultLanguage);
+    return NextResponse.json(fallbackData);
   }
 }
