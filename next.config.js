@@ -7,6 +7,7 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
+  productionBrowserSourceMaps: true,
 };
 
 module.exports = nextConfig;
