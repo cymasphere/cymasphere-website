@@ -5,7 +5,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔍 DEBUG: Subscriber API called');
+  console.log('🔍 DEBUG: Request URL:', request.url);
+  console.log('🔍 DEBUG: Request headers:', Object.fromEntries(request.headers.entries()));
+  
   const supabase = await createClient();
+  console.log('🔍 DEBUG: Supabase client created');
 
   // Check if user is authenticated and is admin
   const {
@@ -13,7 +18,14 @@ export async function GET(
     error: authError,
   } = await supabase.auth.getUser();
 
+  console.log('🔍 DEBUG: Auth check result:', { 
+    hasUser: !!user, 
+    userId: user?.id,
+    authError: authError?.message 
+  });
+
   if (authError || !user) {
+    console.log('❌ DEBUG: Authentication failed:', { authError: authError?.message, hasUser: !!user });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

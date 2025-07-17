@@ -1,0 +1,164 @@
+# version 1
+name: Deploy to AWS Lightsail
+
+on:
+  push:
+    branches:
+      - main # Trigger deployment on push to main branch
+  workflow_dispatch: # Allow manual triggering from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache dependencies and Next.js build
+        uses: actions/cache@v4
+        with:
+          # See here for caching with `yarn`, `bun` or other package managers https://github.com/actions/cache/blob/main/examples.md or you can leverage caching with actions/setup-node https://github.com/actions/setup-node
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/.next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}-
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.15.1"
+
+      - name: Set npm version
+        run: npm install -g npm@10.9.2
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.13
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build application
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
+          STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
+          STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
+          EMAIL_TEST_MODE: ${{ secrets.EMAIL_TEST_MODE }}
+          LIFETIME_PRICE_ID_2: ${{ secrets.LIFETIME_PRICE_ID_2 }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: bun run build
+
+      - name: Configure SSH
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # SSH configuration
+          cat >> ~/.ssh/config << EOF
+          Host $LIGHTSAIL_HOST
+            User $LIGHTSAIL_USER
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+          EOF
+
+      - name: Stop running application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Stop the current application with proper Node.js environment
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && export PATH=\$(npm bin -g):\$PATH && pm2 stop cymasphere || true'"
+
+      - name: Copy files to server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Create directories if they don't exist with proper structure
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
+
+          # Copy application files with proper directory structure using checksum-based comparison for efficiency
+          rsync -avz --delete --checksum --partial --compress-level=6 -e "ssh -o ConnectTimeout=60" \
+            .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
+
+          # Copy public directory with all subdirectories, preserve permissions, and only transfer changed files
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
+
+          # Verify public directory structure was copied correctly
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
+
+          # Copy package.json and other config files only if changed
+          rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+            package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Create environment file
+          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.production
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.production
+          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
+          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
+          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.production
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.production
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.production
+          echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.production
+          echo "EMAIL_TEST_MODE=${{ secrets.EMAIL_TEST_MODE }}" >> .env.production
+          echo "LIFETIME_PRICE_ID_2=${{ secrets.LIFETIME_PRICE_ID_2 }}" >> .env.production
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.production
+          # Copy environment file only if changed
+          rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+            .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Copy next.config.js if it exists and has changed
+          if [ -f "next.config.js" ]; then
+            rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+              next.config.js $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+          fi
+
+          # Copy next.config.ts if it exists and has changed
+          if [ -f "next.config.ts" ]; then
+            rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+              next.config.ts $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+          fi
+
+      - name: Install dependencies on server
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Install dependencies with nvm sourcing and npm global bin path
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && bun install'"
+
+      - name: Start application
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Start application with nvm sourcing and npm global bin path
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
