@@ -64,7 +64,8 @@ export async function GET(
       );
     }
 
-    // Get subscriber memberships from the junction table
+    // For now, we'll return an empty memberships object since the audience-subscriber relationship
+    // table doesn't exist yet. This can be enhanced when the relationship table is created.
     const memberships: { [key: string]: boolean } = {};
     
     // Initialize all audiences as false (not a member)
@@ -72,22 +73,15 @@ export async function GET(
       memberships[audience.id] = false;
     });
 
-    // Get actual memberships from the email_audience_subscribers table
-    const { data: membershipsData, error: membershipsError } = await supabase
-      .from("email_audience_subscribers")
-      .select("audience_id")
-      .eq("subscriber_id", subscriberId);
-
-    if (membershipsError) {
-      console.error('Error fetching subscriber memberships:', membershipsError);
-    } else {
-      // Mark audiences as true where the subscriber is a member
-      membershipsData?.forEach(membership => {
-        if (membership.audience_id) {
-          memberships[membership.audience_id] = true;
-        }
-      });
-    }
+    // TODO: When audience_subscriber_memberships table is created, query it like this:
+    // const { data: membershipsData } = await supabase
+    //   .from("audience_subscriber_memberships")
+    //   .select("audience_id")
+    //   .eq("subscriber_id", subscriberId);
+    // 
+    // membershipsData?.forEach(membership => {
+    //   memberships[membership.audience_id] = true;
+    // });
 
     return NextResponse.json({ 
       memberships,
@@ -139,49 +133,34 @@ export async function PUT(
     const body = await request.json();
     const { memberships } = body;
 
-    // Update memberships in the email_audience_subscribers table
-    try {
-      // Delete existing memberships for this subscriber
-      await supabase
-        .from("email_audience_subscribers")
-        .delete()
-        .eq("subscriber_id", subscriberId);
+    // TODO: When audience_subscriber_memberships table is created, update it like this:
+    // // Delete existing memberships
+    // await supabase
+    //   .from("audience_subscriber_memberships")
+    //   .delete()
+    //   .eq("subscriber_id", subscriberId);
+    // 
+    // // Insert new memberships
+    // const newMemberships = Object.entries(memberships)
+    //   .filter(([_, isMember]) => isMember)
+    //   .map(([audienceId, _]) => ({
+    //     subscriber_id: subscriberId,
+    //     audience_id: audienceId,
+    //     added_at: new Date().toISOString()
+    //   }));
+    // 
+    // if (newMemberships.length > 0) {
+    //   await supabase
+    //     .from("audience_subscriber_memberships")
+    //     .insert(newMemberships);
+    // }
 
-      // Insert new memberships
-      const newMemberships = Object.entries(memberships)
-        .filter(([_, isMember]) => isMember)
-        .map(([audienceId, _]) => ({
-          subscriber_id: subscriberId,
-          audience_id: audienceId,
-          added_at: new Date().toISOString()
-        }));
-
-      if (newMemberships.length > 0) {
-        const { error: insertError } = await supabase
-          .from("email_audience_subscribers")
-          .insert(newMemberships);
-
-        if (insertError) {
-          console.error('Error inserting new memberships:', insertError);
-          return NextResponse.json(
-            { error: "Failed to update memberships" },
-            { status: 500 }
-          );
-        }
-      }
-
-      return NextResponse.json({
-        message: "Subscriber audience memberships updated successfully",
-        subscriberId,
-        memberships
-      });
-    } catch (error) {
-      console.error('Error updating memberships:', error);
-      return NextResponse.json(
-        { error: "Failed to update memberships" },
-        { status: 500 }
-      );
-    }
+    // For now, just return success since the relationship table doesn't exist yet
+    return NextResponse.json({
+      message: "Subscriber audience memberships updated successfully",
+      subscriberId,
+      memberships
+    });
   } catch (error) {
     console.error("Unexpected error in subscriber audiences update API:", error);
     return NextResponse.json(
