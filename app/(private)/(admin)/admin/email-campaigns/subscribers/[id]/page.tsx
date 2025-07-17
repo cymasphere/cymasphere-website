@@ -677,20 +677,13 @@ function SubscriberDetailPage() {
       });
 
       // Fetch audiences and subscriber memberships in parallel
-      try {
-        const [audiencesData, membershipsData] = await Promise.all([
-          fetchAudiences(),
-          fetchSubscriberAudienceMemberships(subscriberId)
-        ]);
-        
-        setAudiences(audiencesData);
-        setSubscriberAudiences(membershipsData);
-      } catch (error) {
-        console.error('Error fetching audiences or memberships:', error);
-        // Don't fail the entire page load, just set empty data
-        setAudiences([]);
-        setSubscriberAudiences({});
-      }
+      const [audiencesData, membershipsData] = await Promise.all([
+        fetchAudiences(),
+        fetchSubscriberAudienceMemberships(subscriberId)
+      ]);
+      
+      setAudiences(audiencesData);
+      setSubscriberAudiences(membershipsData);
       
     } catch (error) {
       console.error('Error fetching subscriber:', error);
