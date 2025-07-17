@@ -532,12 +532,18 @@ function SubscriberDetailPage() {
   const [audiences, setAudiences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const subscriberId = params.id as string;
+
+  // Ensure we're on the client side before making API calls
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (!languageLoading) {
@@ -546,16 +552,18 @@ function SubscriberDetailPage() {
   }, [languageLoading]);
 
   useEffect(() => {
-    if (translationsLoaded && subscriberId) {
+    if (translationsLoaded && subscriberId && isClient && user) {
       fetchSubscriberData();
       fetchAudiences();
     }
-  }, [translationsLoaded, subscriberId]);
+  }, [translationsLoaded, subscriberId, isClient, user]);
 
   const fetchSubscriberData = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('Fetching subscriber data for ID:', subscriberId);
       
       const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
       if (!response.ok) {
@@ -563,6 +571,7 @@ function SubscriberDetailPage() {
       }
       
       const data = await response.json();
+      console.log('Subscriber data received:', data);
       setSubscriber(data.subscriber);
       
       // Initialize form data
@@ -584,12 +593,15 @@ function SubscriberDetailPage() {
 
   const fetchAudiences = async () => {
     try {
+      console.log('Fetching audiences...');
+      
       const response = await fetch('/api/email-campaigns/audiences');
       if (!response.ok) {
         throw new Error(`Failed to fetch audiences: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Audiences data received:', data);
       setAudiences(data.audiences || []);
       
       // Initialize audience memberships (all false for now)
@@ -599,11 +611,18 @@ function SubscriberDetailPage() {
       });
       setSubscriberAudiences(memberships);
       
+      console.log('✅ Subscriber audience memberships loaded:', memberships);
+      
     } catch (err) {
       console.error('Error fetching audiences:', err);
       // Don't set error here as it's not critical for the main page
     }
   };
+
+  // Don't render anything until we're on the client side
+  if (!isClient) {
+    return <LoadingComponent />;
+  }
 
   if (languageLoading || !translationsLoaded) {
     return <LoadingComponent />;
