@@ -647,38 +647,25 @@ function SubscriberDetailPage() {
   const fetchSubscriberData = async () => {
     if (!subscriberId) return;
     
-    console.log('🔍 DEBUG: Starting fetchSubscriberData for subscriber:', subscriberId);
-    console.log('🔍 DEBUG: Current user:', user);
-    console.log('🔍 DEBUG: Current URL:', window.location.href);
-    
     setLoading(true);
     setError(null);
     
     try {
       // Fetch subscriber data
-      console.log('🔍 DEBUG: Making API call to:', `/api/email-campaigns/subscribers/${subscriberId}`);
       const subscriberResponse = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
       
-      console.log('🔍 DEBUG: API response status:', subscriberResponse.status);
-      console.log('🔍 DEBUG: API response headers:', Object.fromEntries(subscriberResponse.headers.entries()));
-      
       if (!subscriberResponse.ok) {
-        console.log('❌ DEBUG: API call failed with status:', subscriberResponse.status);
-        const errorText = await subscriberResponse.text();
-        console.log('❌ DEBUG: Error response body:', errorText);
-        
         if (subscriberResponse.status === 404) {
           setError('Subscriber not found');
         } else if (subscriberResponse.status === 401 || subscriberResponse.status === 403) {
           setError('Access denied');
         } else {
-          setError(`Failed to load subscriber data: ${subscriberResponse.status} - ${errorText}`);
+          setError('Failed to load subscriber data');
         }
         return;
       }
       
       const subscriberData = await subscriberResponse.json();
-      console.log('✅ DEBUG: Subscriber data received:', subscriberData);
       setSubscriber(subscriberData.subscriber);
       
       // Initialize form data with real subscriber data
@@ -692,19 +679,15 @@ function SubscriberDetailPage() {
 
       // Fetch audiences and subscriber memberships in parallel
       try {
-        console.log('🔍 DEBUG: Fetching audiences and memberships in parallel');
         const [audiencesData, membershipsData] = await Promise.all([
           fetchAudiences(),
           fetchSubscriberAudienceMemberships(subscriberId)
         ]);
         
-        console.log('✅ DEBUG: Audiences data:', audiencesData);
-        console.log('✅ DEBUG: Memberships data:', membershipsData);
-        
         setAudiences(audiencesData);
         setSubscriberAudiences(membershipsData);
       } catch (error) {
-        console.error('❌ DEBUG: Error fetching audiences or memberships:', error);
+        console.error('Error fetching audiences or memberships:', error);
         // Don't fail the entire page load, just set empty data
         setAudiences([]);
         setSubscriberAudiences({});
