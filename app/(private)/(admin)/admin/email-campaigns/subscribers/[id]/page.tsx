@@ -582,7 +582,6 @@ const getAvatarColor = (name: string) => {
 };
 
 function SubscriberDetailPage() {
-  // Fixed production authentication issue - updated NEXT_PUBLIC_SITE_URL
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
