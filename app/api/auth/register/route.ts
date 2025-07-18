@@ -59,6 +59,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create subscriber for the new user
+    if (authData.user) {
+      try {
+        const { error: subscriberError } = await supabase
+          .from('subscribers')
+          .insert({
+            id: authData.user.id,
+            user_id: authData.user.id,
+            email: authData.user.email,
+            source: 'signup',
+            status: 'active',
+            tags: ['free-user'],
+            metadata: {
+              first_name: name?.split(' ')[0] || '',
+              last_name: name?.split(' ').slice(1).join(' ') || '',
+              subscription: 'none',
+              auth_created_at: authData.user.created_at,
+              profile_updated_at: new Date().toISOString()
+            }
+          });
+
+        if (subscriberError) {
+          console.error('Failed to create subscriber:', subscriberError);
+          // Don't fail the signup if subscriber creation fails
+        } else {
+          console.log('Subscriber created successfully for user:', authData.user.id);
+        }
+      } catch (subscriberError) {
+        console.error('Error creating subscriber:', subscriberError);
+        // Don't fail the signup if subscriber creation fails
+      }
+    }
+
     // Return success response
     return NextResponse.json({
       success: true,
