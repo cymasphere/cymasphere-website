@@ -37,7 +37,7 @@ export async function signUpWithStripe(
         const { error: subscriberError } = await supabase
           .from('subscribers')
           .insert({
-            id: authResponse.data.user.id,
+            id: authResponse.data.user.id, // Use user ID as subscriber ID
             user_id: authResponse.data.user.id,
             email: authResponse.data.user.email || email, // Use fallback email
             source: 'signup',
