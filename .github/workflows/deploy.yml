@@ -93,7 +93,7 @@ jobs:
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
           # Create directories if they don't exist with proper structure
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public"
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public ~/cymasphere/app ~/cymasphere/utils ~/cymasphere/contexts ~/cymasphere/components"
 
           # Copy application files with proper directory structure using checksum-based comparison for efficiency
           rsync -avz --delete --checksum --partial --compress-level=6 -e "ssh -o ConnectTimeout=60" \
@@ -102,6 +102,19 @@ jobs:
           # Copy public directory with all subdirectories, preserve permissions, and only transfer changed files
           rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
             public/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/public/
+
+          # Copy source code directories (critical for server-side code changes)
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            app/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/app/
+
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            utils/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/utils/
+
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            contexts/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/contexts/
+
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            components/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/components/
 
           # Verify public directory structure was copied correctly
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
@@ -157,3 +170,20 @@ jobs:
         run: |
           # Start application with nvm sourcing and npm global bin path
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
+
+      - name: Verify deployment
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          # Wait a moment for the application to start
+          sleep 10
+          
+          # Check if the application is running
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && export PATH=\$(npm bin -g):\$PATH && pm2 status'"
+          
+          # Check if the updated code is present
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/utils/supabase/actions.ts"
+          
+          # Test server response
+          curl -f ${{ secrets.NEXT_PUBLIC_SITE_URL }} || echo "Server not responding yet"
