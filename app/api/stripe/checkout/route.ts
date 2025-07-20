@@ -133,13 +133,16 @@ async function createCheckoutSession(
       };
     }
 
-    // Build session parameters
+    // Build session parameters with proper URL fallbacks
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    console.log('🔧 Creating checkout session with base URL:', baseUrl);
+    
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ["card"],
       mode,
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout-canceled`,
+      success_url: `${baseUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/checkout-canceled`,
       metadata: {
         plan_type: planType,
         customer_id: customerId,

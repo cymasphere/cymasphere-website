@@ -1898,8 +1898,15 @@ const PricingSection = () => {
       const result = await response.json();
 
       if (result.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.url;
+        // Validate URL before redirecting
+        try {
+          new URL(result.url);
+          // Redirect to Stripe Checkout
+          window.location.href = result.url;
+        } catch (urlError) {
+          console.error("Invalid checkout URL:", result.url, urlError);
+          // Handle error (could add toast notification here)
+        }
       } else if (result.error) {
         console.error("Checkout error:", result.error);
         // Handle error (could add toast notification here)
@@ -1967,11 +1974,21 @@ const PricingSection = () => {
       });
 
       const result = await checkoutResponse.json();
+      console.log('🔧 Checkout response:', { url: result.url, error: result.error });
 
       if (result.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.url;
-        return { success: true };
+        // Validate URL before redirecting
+        try {
+          new URL(result.url);
+          console.log('✅ Valid checkout URL, redirecting to:', result.url);
+          // Redirect to Stripe Checkout
+          window.location.href = result.url;
+          return { success: true };
+        } catch (urlError) {
+          console.error("❌ Invalid checkout URL:", result.url, urlError);
+          setCheckoutLoading(null);
+          return { success: false, error: "Invalid checkout URL received from server" };
+        }
       } else if (result.error) {
         console.error("Checkout error:", result.error);
         setCheckoutLoading(null);

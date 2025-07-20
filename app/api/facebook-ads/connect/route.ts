@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     
     if (isDevelopment && mockConnection) {
       // Simulate successful connection and redirect back to ad manager
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?connected=true&mock=true`);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?connected=true&mock=true`);
     }
 
     // Facebook OAuth configuration
     const clientId = process.env.FACEBOOK_APP_ID;
-    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/facebook-ads/callback`;
+    const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/facebook-ads/callback`;
     
     if (!clientId) {
       return NextResponse.json({

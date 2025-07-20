@@ -11,35 +11,35 @@ export async function GET(request: NextRequest) {
     // Check for OAuth errors
     if (error) {
       console.error('Facebook OAuth error:', error);
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=oauth_denied`);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?error=oauth_denied`);
     }
 
     // Verify state parameter for CSRF protection
     if (state !== 'facebook_ads_connect') {
       console.error('Invalid state parameter');
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=invalid_state`);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?error=invalid_state`);
     }
 
     if (!code) {
       console.error('No authorization code received');
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=no_code`);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?error=no_code`);
     }
 
     // Exchange authorization code for access token
     const accessToken = await exchangeCodeForToken(code);
     
     if (!accessToken) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=token_exchange_failed`);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?error=token_exchange_failed`);
     }
 
     // Store the access token (in production, this would be stored securely in database)
     storeFacebookToken(accessToken);
 
     // Redirect back to Ad Manager with success
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?connected=true`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?connected=true`);
   } catch (error) {
     console.error('Error handling Facebook OAuth callback:', error);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/ad-manager?error=callback_failed`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin/ad-manager?error=callback_failed`);
   }
 }
 
@@ -47,7 +47,7 @@ async function exchangeCodeForToken(code: string): Promise<string | null> {
   try {
     const clientId = process.env.FACEBOOK_APP_ID;
     const clientSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/facebook-ads/callback`;
+    const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/facebook-ads/callback`;
 
     if (!clientId || !clientSecret) {
       console.error('Facebook App credentials not configured');
