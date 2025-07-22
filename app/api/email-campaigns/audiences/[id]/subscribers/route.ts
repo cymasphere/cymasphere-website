@@ -465,17 +465,12 @@ export async function GET(
         });
 
         if (subscribersData && subscribersData.length > 0) {
-          // Get profile data for all subscribers - use separate queries to avoid join issues
-          const subscriberIds = subscribersData.map((sub: any) => sub.user_id || sub.id).filter(Boolean);
-          
-          let profilesData = null;
-          if (subscriberIds.length > 0) {
-            const { data: profilesResult } = await supabase
-              .from("profiles")
-              .select("id, first_name, last_name, subscription")
-              .in("id", subscriberIds);
-            profilesData = profilesResult;
-          }
+          // Get profile data for all subscribers
+          const subscriberIds = subscribersData.map((sub: any) => sub.user_id || sub.id);
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name, subscription")
+            .in("id", subscriberIds);
 
           // Create a map for quick lookup
           const profileMap = new Map();
