@@ -891,13 +891,12 @@ const transformAudienceData = (dbAudience: any) => {
 };
 
 function AudienceDetailPage() {
-  try {
-    const { t } = useTranslation();
-    const { isLoading: languageLoading } = useLanguage();
-    const { user } = useAuth();
-    const router = useRouter();
-    const params = useParams();
-    const audienceId = params.id as string;
+  const { t } = useTranslation();
+  const { isLoading: languageLoading } = useLanguage();
+  const { user } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const audienceId = params.id as string;
 
   const [loading, setLoading] = useState(true);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
@@ -2579,48 +2578,6 @@ function AudienceDetailPage() {
       </AnimatePresence>
     </>
   );
-  } catch (error) {
-    console.error("Error in AudienceDetailPage:", error);
-    return (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        padding: "2rem",
-        textAlign: "center",
-        backgroundColor: "#181818",
-        color: "#fff",
-      }}>
-        <h1 style={{ fontSize: "6rem", marginBottom: "1rem", color: "#ff5c5c" }}>
-          Render Error
-        </h1>
-        <h2 style={{ fontSize: "2rem", marginBottom: "2rem", color: "#fff" }}>
-          Something went wrong during component render
-        </h2>
-        <div style={{ 
-          background: '#222', 
-          color: '#ff5c5c', 
-          padding: 24, 
-          borderRadius: 12, 
-          margin: '2rem 0', 
-          maxWidth: 800, 
-          wordBreak: 'break-all', 
-          fontFamily: 'monospace', 
-          fontSize: '1.1rem',
-          textAlign: 'left'
-        }}>
-          <strong>Error:</strong> {error instanceof Error ? error.message : String(error)}
-          <br />
-          <strong>Stack:</strong>
-          <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.9rem' }}>
-            {error instanceof Error ? error.stack : 'No stack trace available'}
-          </pre>
-        </div>
-      </div>
-    );
-  }
 }
 
 export default AudienceDetailPage; 
