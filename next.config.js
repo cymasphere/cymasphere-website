@@ -12,9 +12,6 @@ const nextConfig = {
   },
   productionBrowserSourceMaps: true,
   transpilePackages: ['react-icons'],
-  experimental: {
-    showAllErrors: true,
-  },
 };
 
 module.exports = nextConfig;

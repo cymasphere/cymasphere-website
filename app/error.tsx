@@ -25,15 +25,14 @@ export default function Error({
         minHeight: "100vh",
         padding: "2rem",
         textAlign: "center",
-        backgroundColor: "#181818",
-        color: "#fff",
+        backgroundColor: "var(--background)",
       }}
     >
       <h1
         style={{
           fontSize: "6rem",
           marginBottom: "1rem",
-          color: "#ff5c5c",
+          color: "var(--error)",
         }}
       >
         Error
@@ -42,33 +41,23 @@ export default function Error({
         style={{
           fontSize: "2rem",
           marginBottom: "2rem",
-          color: "#fff",
+          color: "var(--text)",
         }}
       >
         Something went wrong
       </h2>
-      
-      {/* Display actual error details */}
-      <div style={{ 
-        background: '#222', 
-        color: '#ff5c5c', 
-        padding: 24, 
-        borderRadius: 12, 
-        margin: '2rem 0', 
-        maxWidth: 800, 
-        wordBreak: 'break-all', 
-        fontFamily: 'monospace', 
-        fontSize: '1.1rem',
-        textAlign: 'left'
-      }}>
-        <strong>Message:</strong> {error.message}
-        <br />
-        <strong>Digest:</strong> {error.digest || 'N/A'}
-        <br />
-        <strong>Stack:</strong>
-        <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.9rem' }}>{error.stack}</pre>
-      </div>
-      
+      <p
+        style={{
+          fontSize: "1.2rem",
+          marginBottom: "2rem",
+          maxWidth: "600px",
+          color: "var(--text-secondary)",
+        }}
+      >
+        {`Sorry, something went wrong on our server. We're working on fixing
+        the issue. Please try again later or contact support if the problem
+        persists.`}
+      </p>
       <div
         style={{
           display: "flex",
@@ -78,10 +67,10 @@ export default function Error({
         <button
           onClick={reset}
           style={{
-            backgroundColor: "#6c63ff",
+            backgroundColor: "var(--primary)",
             color: "white",
             padding: "0.8rem 1.5rem",
-            borderRadius: "8px",
+            borderRadius: "4px",
             fontWeight: "600",
             transition: "all 0.2s ease",
             border: "none",
@@ -94,13 +83,12 @@ export default function Error({
           href="/"
           style={{
             backgroundColor: "transparent",
-            color: "#fff",
+            color: "var(--text)",
             padding: "0.8rem 1.5rem",
-            borderRadius: "8px",
+            borderRadius: "4px",
             fontWeight: "600",
             transition: "all 0.2s ease",
-            border: "1px solid #fff",
-            textDecoration: "none",
+            border: "1px solid var(--border)",
           }}
         >
           Return to Home
