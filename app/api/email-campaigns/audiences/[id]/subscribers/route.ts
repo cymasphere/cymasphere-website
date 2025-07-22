@@ -117,6 +117,11 @@ export async function GET(
     const filters = (audience.filters as any) || {};
     console.log("Audience type:", filters.audience_type);
 
+    // Ensure filters.rules is always an array
+    if (!filters.rules || !Array.isArray(filters.rules) || filters.rules.length === 0) {
+      filters.rules = [{ field: 'status', operator: 'equals', value: 'active', timeframe: 'all_time' }];
+    }
+
     // For static audiences, get subscribers from the junction table
     if (filters.audience_type === "static") {
       console.log(
@@ -702,6 +707,11 @@ export async function POST(
         },
         { status: 400 }
       );
+    }
+
+    // Ensure filters.rules is always an array
+    if (!filters.rules || !Array.isArray(filters.rules) || filters.rules.length === 0) {
+      filters.rules = [{ field: 'status', operator: 'equals', value: 'active', timeframe: 'all_time' }];
     }
 
     // Find or create subscriber

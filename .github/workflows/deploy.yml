@@ -61,6 +61,23 @@ jobs:
           STRIPE_PRICE_ID_MONTHLY: ${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
           STRIPE_PRICE_ID_ANNUAL: ${{ secrets.STRIPE_PRICE_ID_ANNUAL }}
           STRIPE_PRICE_ID_LIFETIME: ${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # --- Additional variables below ---
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL || '' }}
+          REACT_APP_STRIPE_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY || '' }}
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || '' }}
+          FACEBOOK_MOCK_CONNECTION: ${{ secrets.FACEBOOK_MOCK_CONNECTION || '' }}
+          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID || '' }}
+          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET || '' }}
+          FACEBOOK_AD_ACCOUNT_ID: ${{ secrets.FACEBOOK_AD_ACCOUNT_ID || '' }}
+          AUTOMATION_TEST_EMAIL_OVERRIDE: ${{ secrets.AUTOMATION_TEST_EMAIL_OVERRIDE || '' }}
+          SCHEDULER_CRON: ${{ secrets.SCHEDULER_CRON || '' }}
+          ENABLE_SCHEDULER: ${{ secrets.ENABLE_SCHEDULER || '' }}
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || '' }}
+          NODE_ENV: production
         run: bun run build
 
       - name: Configure SSH
@@ -138,6 +155,19 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.production
           echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.production
           echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.production
+          # --- Additional variables below ---
+          echo "PUBLIC_URL=${{ secrets.PUBLIC_URL }}" >> .env.production
+          echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env.production
+          echo "FACEBOOK_MOCK_CONNECTION=${{ secrets.FACEBOOK_MOCK_CONNECTION }}" >> .env.production
+          echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env.production
+          echo "FACEBOOK_APP_SECRET=${{ secrets.FACEBOOK_APP_SECRET }}" >> .env.production
+          echo "FACEBOOK_AD_ACCOUNT_ID=${{ secrets.FACEBOOK_AD_ACCOUNT_ID }}" >> .env.production
+          echo "AUTOMATION_TEST_EMAIL_OVERRIDE=${{ secrets.AUTOMATION_TEST_EMAIL_OVERRIDE }}" >> .env.production
+          echo "SCHEDULER_CRON=${{ secrets.SCHEDULER_CRON }}" >> .env.production
+          echo "ENABLE_SCHEDULER=${{ secrets.ENABLE_SCHEDULER }}" >> .env.production
+          echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}" >> .env.production
+          echo "NODE_ENV=production" >> .env.production
 
           # Copy environment file only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \

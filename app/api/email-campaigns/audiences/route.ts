@@ -18,6 +18,11 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
       return 0; // Will be handled separately for static audiences
     }
 
+    // Ensure filters.rules is always an array
+    if (!filters.rules || !Array.isArray(filters.rules) || filters.rules.length === 0) {
+      filters.rules = [{ field: 'status', operator: 'equals', value: 'active', timeframe: 'all_time' }];
+    }
+
     // Handle different filter formats for dynamic audiences
     if (filters.rules && Array.isArray(filters.rules)) {
       // Handle new format with rules array - need to process ALL rules, not just first one
