@@ -430,7 +430,8 @@ export async function GET(
             email, 
             status, 
             subscribe_date, 
-            metadata
+            metadata,
+            user_id
           `)
           .eq("status", mappedStatus);
 
@@ -464,18 +465,35 @@ export async function GET(
         });
 
         if (subscribersData && subscribersData.length > 0) {
-          // For status-only filters, we don't have user_id, so we'll use subscriber data directly
-          // Transform to expected format without profile data
+          // Get profile data for all subscribers - use separate queries to avoid join issues
+          const subscriberIds = subscribersData.map((sub: any) => sub.user_id || sub.id).filter(Boolean);
+          
+          let profilesData = null;
+          if (subscriberIds.length > 0) {
+            const { data: profilesResult } = await supabase
+              .from("profiles")
+              .select("id, first_name, last_name, subscription")
+              .in("id", subscriberIds);
+            profilesData = profilesResult;
+          }
+
+          // Create a map for quick lookup
+          const profileMap = new Map();
+          if (profilesData) {
+            profilesData.forEach((profile: any) => {
+              profileMap.set(profile.id, profile);
+            });
+          }
+
+          // Transform to expected format
           const formattedSubscribers = subscribersData.map((sub: any) => {
-            // Try to get name from metadata if available
-            const metadata = sub.metadata || {};
-            const firstName = metadata.first_name || '';
-            const lastName = metadata.last_name || '';
-            const name = [firstName, lastName].filter(Boolean).join(" ") || "Unknown User";
-            
+            const profile = profileMap.get(sub.user_id || sub.id);
             return {
               id: sub.id,
-              name: name,
+              name:
+                [profile?.first_name, profile?.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "Unknown User",
               email: sub.email,
               status: sub.status || "active",
               subscribeDate: sub.subscribe_date || new Date().toISOString(),
@@ -483,8 +501,8 @@ export async function GET(
                 sub.subscribe_date || new Date().toISOString(),
               engagement: "Medium",
               source: "filter",
-              tags: metadata.tags || [],
-              subscriptionType: metadata.subscription || "unknown",
+              tags: sub.tags || [],
+              subscriptionType: profile?.subscription || "unknown",
             };
           });
 
