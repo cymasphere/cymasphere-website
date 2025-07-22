@@ -270,6 +270,7 @@ export async function GET(
           }
 
           if (hasStatusRule && !hasSubscriptionRule) {
+            // The subscribers table uses 'active' status directly
             const { count } = await supabase
               .from("subscribers")
               .select("*", { count: "exact", head: true })
@@ -301,6 +302,7 @@ export async function GET(
       let statusValue = null;
 
       // Extract rule values
+      let additionalFilters: any[] = [];
       for (const rule of filters.rules) {
         console.log("🔍 Processing rule:", rule);
         if (rule.field === "subscription") {
@@ -311,6 +313,10 @@ export async function GET(
           hasStatusRule = true;
           statusValue = rule.value;
           console.log("✅ Found status rule:", statusValue);
+        } else {
+          // Store additional filters for later processing
+          additionalFilters.push(rule);
+          console.log("✅ Found additional filter:", rule.field, rule.value);
         }
       }
 
@@ -321,7 +327,7 @@ export async function GET(
         statusValue,
       });
 
-      // If we have both subscription and status rules, get actual subscriber data
+      // Handle different rule combinations
       if (hasSubscriptionRule && hasStatusRule) {
         console.log(
           `🔍 Getting subscriber data: subscription=${subscriptionValue} AND status=${statusValue}`
@@ -407,9 +413,176 @@ export async function GET(
             subscriptionValue
           );
         }
+      } else if (hasStatusRule && !hasSubscriptionRule) {
+        // Handle status-only rules
+        console.log(
+          `🔍 Getting subscriber data: status=${statusValue} (no subscription filter)`
+        );
+
+        // Build query for subscribers with status and additional filters
+        // The subscribers table uses 'active' status directly
+        const mappedStatus = statusValue;
+        
+        let subscribersQuery = supabase
+          .from("subscribers")
+          .select(`
+            id, 
+            email, 
+            status, 
+            subscribe_date, 
+            metadata,
+            user_id
+          `)
+          .eq("status", mappedStatus);
+
+        // Apply additional filters
+        for (const filter of additionalFilters) {
+          console.log(`🔍 Applying additional filter: ${filter.field} ${filter.operator} ${filter.value}`);
+          
+          if (filter.field === "last_email_open") {
+            if (filter.operator === "older_than") {
+              const days = parseInt(filter.value.replace("_days", ""));
+              const cutoffDate = new Date();
+              cutoffDate.setDate(cutoffDate.getDate() - days);
+              subscribersQuery = subscribersQuery.lt("last_email_open", cutoffDate.toISOString());
+            }
+          } else if (filter.field === "signup_date") {
+            if (filter.operator === "within") {
+              const days = parseInt(filter.value.replace("_days", ""));
+              const cutoffDate = new Date();
+              cutoffDate.setDate(cutoffDate.getDate() - days);
+              subscribersQuery = subscribersQuery.gte("created_at", cutoffDate.toISOString());
+            }
+          }
+        }
+
+        const { data: subscribersData, error: subscribersError } = await subscribersQuery.limit(10);
+
+        console.log("🔍 Subscribers query result:", {
+          count: subscribersData?.length || 0,
+          error: subscribersError?.message || "none",
+          sample: subscribersData?.[0] || "none",
+        });
+
+        if (subscribersData && subscribersData.length > 0) {
+          // Get profile data for all subscribers
+          const subscriberIds = subscribersData.map((sub: any) => sub.user_id || sub.id);
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name, subscription")
+            .in("id", subscriberIds);
+
+          // Create a map for quick lookup
+          const profileMap = new Map();
+          if (profilesData) {
+            profilesData.forEach((profile: any) => {
+              profileMap.set(profile.id, profile);
+            });
+          }
+
+          // Transform to expected format
+          const formattedSubscribers = subscribersData.map((sub: any) => {
+            const profile = profileMap.get(sub.user_id || sub.id);
+            return {
+              id: sub.id,
+              name:
+                [profile?.first_name, profile?.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "Unknown User",
+              email: sub.email,
+              status: sub.status || "active",
+              subscribeDate: sub.subscribe_date || new Date().toISOString(),
+              lastActivity:
+                sub.subscribe_date || new Date().toISOString(),
+              engagement: "Medium",
+              source: "filter",
+              tags: sub.tags || [],
+              subscriptionType: profile?.subscription || "unknown",
+            };
+          });
+
+          console.log(
+            `✅ Returning ${formattedSubscribers.length} formatted subscribers`
+          );
+          console.log(
+            "🔍 Sample formatted subscriber:",
+            formattedSubscribers[0]
+          );
+
+          return NextResponse.json({
+            subscribers: formattedSubscribers,
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: subscriberCount, // Use the calculated count
+              totalPages: Math.ceil(subscriberCount / 10),
+            },
+          });
+        } else {
+          console.log("❌ No subscribers found matching the status criteria");
+        }
+      } else if (hasSubscriptionRule && !hasStatusRule) {
+        // Handle subscription-only rules
+        console.log(
+          `🔍 Getting subscriber data: subscription=${subscriptionValue} (no status filter)`
+        );
+
+        // Get profiles with subscription
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, subscription")
+          .eq("subscription", subscriptionValue)
+          .limit(10);
+
+        console.log("🔍 Profiles query result:", {
+          count: profilesData?.length || 0,
+          error: profilesError?.message || "none",
+          sample: profilesData?.[0] || "none",
+        });
+
+        if (profilesData && profilesData.length > 0) {
+          // Transform to expected format
+          const formattedSubscribers = profilesData.map((profile: any) => {
+            return {
+              id: profile.id,
+              name:
+                [profile?.first_name, profile?.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "Unknown User",
+              email: "N/A", // Profiles don't have email directly
+              status: "active", // Default status for profiles
+              subscribeDate: new Date().toISOString(),
+              lastActivity: new Date().toISOString(),
+              engagement: "Medium",
+              source: "filter",
+              tags: [],
+              subscriptionType: profile?.subscription || "unknown",
+            };
+          });
+
+          console.log(
+            `✅ Returning ${formattedSubscribers.length} formatted subscribers`
+          );
+          console.log(
+            "🔍 Sample formatted subscriber:",
+            formattedSubscribers[0]
+          );
+
+          return NextResponse.json({
+            subscribers: formattedSubscribers,
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: subscriberCount, // Use the calculated count
+              totalPages: Math.ceil(subscriberCount / 10),
+            },
+          });
+        } else {
+          console.log("❌ No profiles found matching the subscription criteria");
+        }
       } else {
         console.log(
-          "❌ Missing required rules - hasSubscription:",
+          "❌ No valid rules found - hasSubscription:",
           hasSubscriptionRule,
           "hasStatus:",
           hasStatusRule

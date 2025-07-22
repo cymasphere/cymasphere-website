@@ -19,6 +19,14 @@ create policy "Customers are insertable by service role" on public.customers
 create policy "Customers are updatable by service role" on public.customers
   for update using (auth.role() = 'service_role');
 
--- Create updated_at trigger
+-- Create updated_at trigger using a simple function
+create or replace function update_updated_at_column()
+returns trigger as $$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$$ language plpgsql;
+
 create trigger handle_updated_at before update on public.customers
-  for each row execute procedure moddatetime (updated_at); 
+  for each row execute procedure update_updated_at_column(); 
