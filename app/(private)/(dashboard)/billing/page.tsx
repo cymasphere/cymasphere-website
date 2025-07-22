@@ -30,9 +30,18 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 
 // Extended profile interface with additional fields we need
-interface ProfileWithSubscriptionDetails extends Profile {
+interface ProfileWithSubscriptionDetails {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  subscription: SubscriptionType;
   subscription_interval?: "month" | "year" | null;
   cancel_at_period_end?: boolean;
+  trial_expiration?: string | null;
+  subscription_expiration?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Helper functions for safely checking subscription status
