@@ -1,106 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import React from 'react';
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error);
-  }, [error]);
-
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   return (
-    <html lang="en">
-      <body>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-            padding: "2rem",
-            textAlign: "center",
-            backgroundColor:
-              "#0d0d15" /* Using direct color value as CSS variables may not be available */,
-            color: "#ffffff",
-          }}
-        >
-          <h1
-            style={{
-              fontSize: "6rem",
-              marginBottom: "1rem",
-              color: "#ff3366" /* Error color */,
-            }}
-          >
-            500
-          </h1>
-          <h2
-            style={{
-              fontSize: "2rem",
-              marginBottom: "2rem",
-              color: "#ffffff",
-            }}
-          >
-            Server Error
-          </h2>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              marginBottom: "2rem",
-              maxWidth: "600px",
-              color: "#cccccc",
-            }}
-          >
-            {`Sorry, something went wrong on our server. We're working on fixing
-            the issue. Please try again later or contact support if the problem
-            persists.`}
-          </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-            }}
-          >
-            <button
-              onClick={reset}
-              style={{
-                backgroundColor: "#6c63ff" /* Primary color */,
-                color: "white",
-                padding: "0.8rem 1.5rem",
-                borderRadius: "4px",
-                fontWeight: "600",
-                transition: "all 0.2s ease",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Try again
-            </button>
-            {/* Using standard a tag since Link requires client navigation */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <a
-              href="/"
-              style={{
-                backgroundColor: "transparent",
-                color: "#ffffff",
-                padding: "0.8rem 1.5rem",
-                borderRadius: "4px",
-                fontWeight: "600",
-                transition: "all 0.2s ease",
-                border: "1px solid #333333",
-                textDecoration: "none",
-              }}
-            >
-              Return to Home
-            </a>
-          </div>
+    <html>
+      <body style={{ background: '#181818', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <h1 style={{ color: '#ff5c5c', fontSize: '5rem', marginBottom: 0 }}>Error</h1>
+        <h2 style={{ fontWeight: 700, fontSize: '2.5rem', margin: '1rem 0' }}>Something went wrong</h2>
+        <div style={{ background: '#222', color: '#ff5c5c', padding: 24, borderRadius: 12, margin: '2rem 0', maxWidth: 800, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '1.1rem' }}>
+          <strong>Message:</strong> {error.message}
+          <br />
+          <strong>Stack:</strong>
+          <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{error.stack}</pre>
         </div>
+        <button onClick={reset} style={{ background: '#6c63ff', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 32px', fontSize: '1.2rem', cursor: 'pointer', marginRight: 16 }}>Try again</button>
+        <a href="/" style={{ background: 'none', color: '#fff', border: '1px solid #fff', borderRadius: 8, padding: '12px 32px', fontSize: '1.2rem', textDecoration: 'none', marginLeft: 16 }}>Return to Home</a>
       </body>
     </html>
   );
