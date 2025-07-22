@@ -8,6 +8,7 @@ const nextConfig = {
     styledComponents: true,
   },
   productionBrowserSourceMaps: true,
+  transpilePackages: ['react-icons'],
 };
 
 module.exports = nextConfig;
