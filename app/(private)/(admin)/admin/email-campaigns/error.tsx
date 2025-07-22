@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-export default function Error({
+export default function EmailCampaignsError({
   error,
   reset,
 }: {
@@ -12,7 +12,7 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error);
+    console.error("Email Campaigns Error:", error);
   }, [error]);
 
   return (
@@ -36,7 +36,7 @@ export default function Error({
           color: "#ff5c5c",
         }}
       >
-        Error
+        Email Campaigns Error
       </h1>
       <h2
         style={{
@@ -45,7 +45,7 @@ export default function Error({
           color: "#fff",
         }}
       >
-        Something went wrong
+        Something went wrong in the email campaigns section
       </h2>
       
       {/* Display actual error details */}
@@ -91,7 +91,7 @@ export default function Error({
           Try again
         </button>
         <Link
-          href="/"
+          href="/admin/email-campaigns"
           style={{
             backgroundColor: "transparent",
             color: "#fff",
@@ -103,9 +103,24 @@ export default function Error({
             textDecoration: "none",
           }}
         >
-          Return to Home
+          Return to Email Campaigns
+        </Link>
+        <Link
+          href="/admin"
+          style={{
+            backgroundColor: "transparent",
+            color: "#fff",
+            padding: "0.8rem 1.5rem",
+            borderRadius: "8px",
+            fontWeight: "600",
+            transition: "all 0.2s ease",
+            border: "1px solid #fff",
+            textDecoration: "none",
+          }}
+        >
+          Return to Admin
         </Link>
       </div>
     </div>
   );
-}
+} 

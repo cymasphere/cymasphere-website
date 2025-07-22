@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-export default function Error({
+export default function AdminError({
   error,
   reset,
 }: {
@@ -12,7 +12,7 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error);
+    console.error("Admin Error:", error);
   }, [error]);
 
   return (
@@ -36,7 +36,7 @@ export default function Error({
           color: "#ff5c5c",
         }}
       >
-        Error
+        Admin Error
       </h1>
       <h2
         style={{
@@ -45,7 +45,7 @@ export default function Error({
           color: "#fff",
         }}
       >
-        Something went wrong
+        Something went wrong in the admin section
       </h2>
       
       {/* Display actual error details */}
@@ -91,6 +91,21 @@ export default function Error({
           Try again
         </button>
         <Link
+          href="/admin"
+          style={{
+            backgroundColor: "transparent",
+            color: "#fff",
+            padding: "0.8rem 1.5rem",
+            borderRadius: "8px",
+            fontWeight: "600",
+            transition: "all 0.2s ease",
+            border: "1px solid #fff",
+            textDecoration: "none",
+          }}
+        >
+          Return to Admin
+        </Link>
+        <Link
           href="/"
           style={{
             backgroundColor: "transparent",
@@ -108,4 +123,4 @@ export default function Error({
       </div>
     </div>
   );
-}
+} 
