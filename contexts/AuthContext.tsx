@@ -232,8 +232,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    // Use appropriate URL based on environment
+    const baseUrl = process.env.NODE_ENV === "production"
+      ? "https://cymasphere.com"
+      : "http://localhost:3000";
+    
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+      redirectTo: `${baseUrl}/reset-password`,
     });
   };
 
