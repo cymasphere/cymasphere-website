@@ -23,7 +23,8 @@ import {
   FaFileExport,
   FaFileImport,
   FaEllipsisV,
-  FaClone
+  FaClone,
+  FaSync
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -31,6 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
+import LoadingComponent from "@/components/common/LoadingComponent";
 
 const SubscribersContainer = styled.div`
   width: 100%;
@@ -485,6 +487,8 @@ function SubscribersPage() {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [subscriberStats, setSubscriberStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -496,6 +500,11 @@ function SubscribersPage() {
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
+  // Ensure we're on the client side before making API calls
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
@@ -505,6 +514,7 @@ function SubscribersPage() {
   // Fetch subscribers data
   const fetchSubscribers = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         search: searchTerm,
@@ -526,10 +536,11 @@ function SubscribersPage() {
           totalPages: 0
         });
       } else {
-        console.error('Failed to fetch subscribers');
+        throw new Error(`Failed to fetch subscribers: ${response.status}`);
       }
     } catch (error) {
       console.error('Error fetching subscribers:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch subscribers');
     } finally {
       setLoading(false);
     }
@@ -537,10 +548,10 @@ function SubscribersPage() {
 
   // Fetch data when component mounts or filters change
   useEffect(() => {
-    if (translationsLoaded && user) {
+    if (translationsLoaded && isClient && user) {
       fetchSubscribers();
     }
-  }, [translationsLoaded, user, searchTerm, statusFilter, pagination?.page]);
+  }, [translationsLoaded, isClient, user, searchTerm, statusFilter, pagination?.page]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -554,8 +565,37 @@ function SubscribersPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  // Show page immediately - no early returns
-  const showContent = !languageLoading && translationsLoaded && user;
+  // Don't render anything until we're on the client side
+  if (!isClient) {
+    return <LoadingComponent />;
+  }
+
+  if (languageLoading || !translationsLoaded) {
+    return <LoadingComponent />;
+  }
+
+  if (!user) {
+    return <LoadingComponent />;
+  }
+
+  if (loading) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <SubscribersContainer>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>Error Loading Subscribers</h2>
+          <p>{error}</p>
+          <ActionButton onClick={() => window.location.reload()}>
+            <FaSync />
+            Retry
+          </ActionButton>
+        </div>
+      </SubscribersContainer>
+    );
+  }
 
   // Use real data instead of filtering mock data
   const filteredSubscribers = subscribers;
@@ -619,14 +659,11 @@ function SubscribersPage() {
       <SubscribersContainer>
         <SubscribersTitle>
           <FaUsers />
-          {showContent ? t("admin.subscribersPage.title", "Subscribers") : "Subscribers"}
+          {t("admin.subscribersPage.title", "Subscribers")}
         </SubscribersTitle>
         <SubscribersSubtitle>
-          {showContent ? t("admin.subscribersPage.subtitle", "Manage your email subscribers, segments, and engagement analytics") : "Manage your email subscribers, segments, and engagement analytics"}
+          {t("admin.subscribersPage.subtitle", "Manage your email subscribers, segments, and engagement analytics")}
         </SubscribersSubtitle>
-
-        {showContent && (
-          <>
 
         <StatsRow>
           {statsDisplay.map((stat: any, index: number) => (
@@ -809,8 +846,6 @@ function SubscribersPage() {
             </TableBody>
           </Table>
         </SubscribersGrid>
-        </>
-        )}
       </SubscribersContainer>
     </>
   );
