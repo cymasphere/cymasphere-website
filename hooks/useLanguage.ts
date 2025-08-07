@@ -23,9 +23,11 @@ export default function useLanguage() {
           lang = savedLang;
         } else {
           // Then check browser language
-          const browserLang = navigator.language.split('-')[0];
-          if (languages.includes(browserLang)) {
-            lang = browserLang;
+          if (typeof navigator !== 'undefined' && navigator.language) {
+            const browserLang = navigator.language.split('-')[0];
+            if (languages.includes(browserLang)) {
+              lang = browserLang;
+            }
           }
           // Save preference
           localStorage.setItem('i18nextLng', lang);

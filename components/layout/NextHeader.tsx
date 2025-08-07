@@ -622,6 +622,9 @@ const NextHeader = () => {
   ); // Re-compute when language changes
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
       if (window.scrollY > 50) {
         setIsScrolled(true);
@@ -649,6 +652,9 @@ const NextHeader = () => {
   }, []);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         userMenuRef.current &&
@@ -663,6 +669,9 @@ const NextHeader = () => {
   }, []);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     if (menuOpen) {
       document.body.style.overflow = "hidden";
     } else {
