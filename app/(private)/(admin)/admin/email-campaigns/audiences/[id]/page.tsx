@@ -930,64 +930,7 @@ function AudienceDetailPage() {
   const [subscriberToRemove, setSubscriberToRemove] = useState<any>(null);
   const [isRemovingSubscriber, setIsRemovingSubscriber] = useState(false);
 
-  useEffect(() => {
-    // Load audience data when component mounts or audienceId/user changes
-    if (audienceId && user) {
-      loadAudienceData();
-    }
-  }, [audienceId, user]);
-
-  // Load subscribers when audience data is available
-  useEffect(() => {
-    if (audienceData && audienceId && user) {
-      console.log('🔥 Loading subscribers because audience data is available');
-      loadSubscribers();
-    }
-  }, [audienceData, audienceId, user]); // Trigger when audience data is loaded
-
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (audienceData && audienceId && user) {
-        loadSubscribers(1); // Reset to first page on search
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
-  // Debug pagination changes
-  useEffect(() => {
-    console.log('📊 Pagination state changed:', pagination);
-  }, [pagination]);
-
-  const loadAudienceData = async () => {
-    console.log('Loading audience data for ID:', audienceId);
-    try {
-      setLoading(true);
-      setError(null); // Clear any previous errors
-      const data = await fetchAudienceData(audienceId);
-      console.log('Fetched audience data:', data);
-      
-      const transformedData = transformAudienceData(data);
-      console.log('Transformed audience data:', transformedData);
-      
-      setAudienceData(transformedData);
-      setOriginalAudienceData(JSON.parse(JSON.stringify(transformedData))); // Deep copy for cancel functionality
-      console.log('Audience data loaded successfully');
-    } catch (error) {
-      console.error('Failed to load audience:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load audience';
-      setError(errorMessage);
-      // Set loading to false even on error to prevent infinite loading
-      setAudienceData(null);
-    } finally {
-      setLoading(false);
-      console.log('Loading state set to false');
-    }
-  };
-
-  const loadSubscribers = async (page?: number) => {
+  const loadSubscribers = React.useCallback(async (page?: number) => {
     console.log('🚀 loadSubscribers called with page:', page);
     console.log('🔍 Current user:', user?.id, user?.email);
     console.log('🔍 Current audience data:', audienceData?.type, audienceData?.name);
@@ -995,15 +938,16 @@ function AudienceDetailPage() {
     try {
       setSubscribersLoading(true);
       const currentPage = page || pagination?.page || 1;
+      const currentLimit = pagination?.limit || 10;
       console.log('Fetching subscribers for audience:', audienceId, 'page:', currentPage);
-      const data = await fetchAudienceSubscribers(audienceId, currentPage, pagination?.limit || 10, searchTerm);
+      const data = await fetchAudienceSubscribers(audienceId, currentPage, currentLimit, searchTerm);
       console.log('Subscribers API response:', data);
       setSubscribers(data.subscribers || []);
       const newPagination = { 
         page: currentPage,
-        limit: data.pagination?.limit || pagination?.limit || 10,
+        limit: data.pagination?.limit || currentLimit,
         total: data.pagination?.total || 0,
-        totalPages: data.pagination?.totalPages || Math.ceil((data.pagination?.total || 0) / (data.pagination?.limit || pagination?.limit || 10))
+        totalPages: data.pagination?.totalPages || Math.ceil((data.pagination?.total || 0) / (data.pagination?.limit || currentLimit))
       };
       console.log('🔄 Setting pagination:', newPagination);
       setPagination(newPagination);
@@ -1038,6 +982,63 @@ function AudienceDetailPage() {
       });
     } finally {
       setSubscribersLoading(false);
+    }
+  }, [audienceId, searchTerm, user?.id]); // Removed pagination?.limit from dependencies
+
+  useEffect(() => {
+    // Load audience data when component mounts or audienceId/user changes
+    if (audienceId && user) {
+      loadAudienceData();
+    }
+  }, [audienceId, user]);
+
+  // Load subscribers when audience data is available
+  useEffect(() => {
+    if (audienceData && audienceId && user) {
+      console.log('🔥 Loading subscribers because audience data is available');
+      loadSubscribers(1); // Always start with page 1 when audience data loads
+    }
+  }, [audienceData?.id, audienceId, user?.id, loadSubscribers]); // Include loadSubscribers in dependencies
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (audienceData && audienceId && user) {
+        loadSubscribers(1); // Reset to first page on search
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, loadSubscribers]);
+
+  // Debug pagination changes (commented out to prevent infinite loop)
+  // useEffect(() => {
+  //   console.log('📊 Pagination state changed:', pagination);
+  // }, [pagination]);
+
+  const loadAudienceData = async () => {
+    console.log('Loading audience data for ID:', audienceId);
+    try {
+      setLoading(true);
+      setError(null); // Clear any previous errors
+      const data = await fetchAudienceData(audienceId);
+      console.log('Fetched audience data:', data);
+      
+      const transformedData = transformAudienceData(data);
+      console.log('Transformed audience data:', transformedData);
+      
+      setAudienceData(transformedData);
+      setOriginalAudienceData(JSON.parse(JSON.stringify(transformedData))); // Deep copy for cancel functionality
+      console.log('Audience data loaded successfully');
+    } catch (error) {
+      console.error('Failed to load audience:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load audience';
+      setError(errorMessage);
+      // Set loading to false even on error to prevent infinite loading
+      setAudienceData(null);
+    } finally {
+      setLoading(false);
+      console.log('Loading state set to false');
     }
   };
 
