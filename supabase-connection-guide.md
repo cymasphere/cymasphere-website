@@ -7,10 +7,10 @@ This guide contains direct instructions for connecting to the Supabase database 
 The connection credentials are stored in the `.env.local` file:
 
 ```bash
-SUPABASE_DB_PASSWORD=$2DEK@kBdYbbMs
+SUPABASE_DB_PASSWORD=YOUR_DB_PASSWORD_HERE
 NEXT_PUBLIC_SUPABASE_URL=https://jibirpbauzqhdiwjlrmf.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppYmlycGJhdXpxaGRpd2pscm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1OTY5MTMsImV4cCI6MjA1ODE3MjkxM30.cMHSRI65LtYnbRxgJbm3sg9KoSHZa0_Pex2BiSEnEOM
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppYmlycGJhdXpxaGRpd2pscm1mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjU5NjkxMywiZXhwIjoyMDU4MTcyOTEzfQ.fcSI0_12Yczr2rg64r2Kgcv42CaOiTdxcpvHQQfgMvc
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY_HERE
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY_HERE
 ```
 
 ## Method 1: Direct PSQL Connection
@@ -19,13 +19,13 @@ The most reliable way to connect to the Supabase PostgreSQL database is using th
 
 ```bash
 # Method 1: Separate parameters (recommended for special characters in password)
-PGPASSWORD='$2DEK@kBdYbbMs' psql -h db.jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
+PGPASSWORD='YOUR_DB_PASSWORD_HERE' psql -h db.jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
 
 # Method 2: URL-encoded connection string
-psql "postgresql://postgres:%24%32%44%45%4B%40%6B%42%64%59%62%62%4D%73@db.jibirpbauzqhdiwjlrmf.supabase.co:5432/postgres"
+psql "postgresql://postgres:YOUR_URL_ENCODED_PASSWORD@db.jibirpbauzqhdiwjlrmf.supabase.co:5432/postgres"
 
 # Method 3: If db.* doesn't work, try direct project host
-PGPASSWORD='$2DEK@kBdYbbMs' psql -h jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
+PGPASSWORD='YOUR_DB_PASSWORD_HERE' psql -h jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
 ```
 
 This connects you directly to the PostgreSQL database hosted on Supabase.

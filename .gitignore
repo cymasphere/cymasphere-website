@@ -45,4 +45,6 @@ next-env.d.ts
 
 # SSH keys
 lightsail_key
-lightsail_key.pub
+lightsail_key.pubdb/universe.users.csv
+db/universe.users.trimmed.csv
+db/universe.users.trimmed.modified.csv
