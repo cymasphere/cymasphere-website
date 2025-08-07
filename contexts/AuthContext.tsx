@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   SupabaseClient,
   AuthError,
@@ -12,10 +12,11 @@ import { Profile, UserProfile } from "@/utils/supabase/types";
 import {
   fetchIsAdmin,
   fetchProfile,
-  signUpWithStripe,
   updateStripe,
+  signUpWithStripe,
 } from "@/utils/supabase/actions";
 import { createClient } from "@/utils/supabase/client";
+import { logEnvironmentStatus } from "@/utils/env-check";
 // import { updateSubscriberTimezone } from "@/utils/supabase/timezone-tracker";
 
 type AuthContextType = {
@@ -52,6 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Log environment status on mount to help debug 500 errors
+  useEffect(() => {
+    logEnvironmentStatus();
+  }, []);
 
   const refreshUser = async () => {
     if (session?.user) {

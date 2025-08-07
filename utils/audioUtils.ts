@@ -55,6 +55,7 @@ export const initAudio = async (): Promise<void> => {
 
     // Resume audio context if it's suspended (needed for some browsers)
     if (audioContext?.state === "suspended") {
+      console.log("Audio context is suspended, attempting to resume...");
       await audioContext.resume();
       console.log("Audio context resumed from suspended state");
     }
@@ -79,30 +80,44 @@ export const initAudio = async (): Promise<void> => {
       // Trigger a silent sound to unlock audio on iOS/Safari
       const unlockAudio = (): void => {
         if (!audioContext) return;
-        const silentBuffer = audioContext.createBuffer(1, 1, 22050);
-        const source = audioContext.createBufferSource();
-        source.buffer = silentBuffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-        console.log("Audio unlocked via silent sound");
+        try {
+          const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+          const source = audioContext.createBufferSource();
+          source.buffer = silentBuffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+          console.log("Audio unlocked via silent sound");
+        } catch (error) {
+          console.warn("Failed to unlock audio with silent sound:", error);
+        }
       };
 
       unlockAudio();
 
       // Add event listener to unlock audio on user interaction
       const unlockOnTouch = (): void => {
-        unlockAudio();
-        document.removeEventListener("touchstart", unlockOnTouch);
-        document.removeEventListener("touchend", unlockOnTouch);
-        document.removeEventListener("mousedown", unlockOnTouch);
-        document.removeEventListener("keydown", unlockOnTouch);
-        console.log("Audio unlocked via user interaction");
+        try {
+          unlockAudio();
+          // Also try to resume the context
+          if (audioContext && audioContext.state === "suspended") {
+            audioContext.resume();
+          }
+          document.removeEventListener("touchstart", unlockOnTouch);
+          document.removeEventListener("touchend", unlockOnTouch);
+          document.removeEventListener("mousedown", unlockOnTouch);
+          document.removeEventListener("keydown", unlockOnTouch);
+          document.removeEventListener("click", unlockOnTouch);
+          console.log("Audio unlocked via user interaction");
+        } catch (error) {
+          console.warn("Failed to unlock audio on user interaction:", error);
+        }
       };
 
       document.addEventListener("touchstart", unlockOnTouch);
       document.addEventListener("touchend", unlockOnTouch);
       document.addEventListener("mousedown", unlockOnTouch);
       document.addEventListener("keydown", unlockOnTouch);
+      document.addEventListener("click", unlockOnTouch);
     }
   } catch (error) {
     console.error("Error initializing audio:", error);

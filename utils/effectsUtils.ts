@@ -34,6 +34,18 @@ export const initializeEffectsChain = async (
     throw new Error("Tone library must be passed as a parameter");
   }
 
+  // Check and start AudioContext if needed
+  if (toneLib.context.state !== "running") {
+    try {
+      console.log("Starting Tone.js AudioContext...");
+      await toneLib.start();
+      console.log("Tone.js AudioContext started successfully");
+    } catch (error) {
+      console.warn("Failed to start Tone.js AudioContext:", error);
+      // Continue anyway - the context might start later with user interaction
+    }
+  }
+
   // Create a master volume control at the end of the chain
   const masterVolume = new toneLib.Volume(-6).toDestination();
 
