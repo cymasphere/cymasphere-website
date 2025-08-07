@@ -903,7 +903,9 @@ export default function VisualEditor({
 
     try {
       // Find the currently editing element
-      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      const editingElementDOM = typeof document !== 'undefined' 
+        ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+        : null;
       if (!editingElementDOM) {
         console.warn('❌ Could not find editing element in DOM');
         return;
@@ -919,16 +921,18 @@ export default function VisualEditor({
         case 'bold':
         case 'italic':
         case 'underline':
-          document.execCommand(command, false);
+          if (typeof document !== 'undefined') {
+            document.execCommand(command, false);
+          }
           break;
         case 'createLink':
-          if (value) {
+          if (value && typeof document !== 'undefined') {
             document.execCommand(command, false, value);
           }
           break;
         case 'foreColor':
         case 'backColor':
-          if (value) {
+          if (value && typeof document !== 'undefined') {
             document.execCommand(command, false, value);
           }
           break;
@@ -940,7 +944,9 @@ export default function VisualEditor({
           updateElement(editingElement, { textAlign: align });
           return;
         default:
-          document.execCommand(command, false, value);
+          if (typeof document !== 'undefined') {
+            document.execCommand(command, false, value);
+          }
       }
       
       // No need to update state - content will be saved when editing stops
@@ -965,11 +971,13 @@ export default function VisualEditor({
     }
     
     // Get the editing element
-    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    const editingElementDOM = typeof document !== 'undefined' 
+      ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+      : null;
     if (!editingElementDOM) return;
     
     // Save the current selection with text-based positioning
-    const selection = window.getSelection();
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const selectedText = selection.toString().trim();
@@ -1046,7 +1054,9 @@ export default function VisualEditor({
     }
 
     // Get the editing element
-    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    const editingElementDOM = typeof document !== 'undefined' 
+      ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+      : null;
     console.log('📝 Found editing element:', editingElementDOM);
     
     if (editingElementDOM) {
@@ -1062,7 +1072,6 @@ export default function VisualEditor({
         const linkHtml = `<a href="${linkUrl.trim()}" target="_blank" rel="noopener noreferrer">${linkText.trim()}</a>`;
         
         // Find and replace the selected text in the HTML, being careful to preserve other HTML tags
-        // Use a more precise replacement that handles HTML content
         let newHtml = currentHtml;
         
         // Try to find the exact text match in the HTML
@@ -1072,95 +1081,21 @@ export default function VisualEditor({
           newHtml = currentHtml.substring(0, textIndex) + linkHtml + currentHtml.substring(textIndex + selectedText.length);
           console.log('✅ Found plain text match, replacing directly');
         } else {
-          // More complex case: the selected text might span across HTML tags
-          // Use a temporary element to help with the replacement
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = currentHtml;
-          
-          // Use the Selection API on the temporary element
-          const walker = document.createTreeWalker(
-            tempDiv,
-            NodeFilter.SHOW_TEXT,
-            null
-          );
-          
-          let textNodes = [];
-          let currentNode;
-          while (currentNode = walker.nextNode()) {
-            textNodes.push(currentNode);
-          }
-          
-          // Find the text nodes that contain our selected text
-          let combinedText = '';
-          let startNode = null;
-          let endNode = null;
-          let startOffset = 0;
-          let endOffset = 0;
-          
-          for (let i = 0; i < textNodes.length; i++) {
-            const nodeText = textNodes[i].textContent || '';
-            const beforeLength = combinedText.length;
-            combinedText += nodeText;
-            
-            if (combinedText.includes(selectedText) && !startNode) {
-              const selectionStart = combinedText.indexOf(selectedText);
-              const selectionEnd = selectionStart + selectedText.length;
-              
-              // Find which nodes contain the start and end of our selection
-              let currentLength = 0;
-              for (let j = 0; j <= i; j++) {
-                const nodeLength = textNodes[j].textContent?.length || 0;
-                if (currentLength <= selectionStart && currentLength + nodeLength > selectionStart) {
-                  startNode = textNodes[j];
-                  startOffset = selectionStart - currentLength;
-                }
-                if (currentLength < selectionEnd && currentLength + nodeLength >= selectionEnd) {
-                  endNode = textNodes[j];
-                  endOffset = selectionEnd - currentLength;
-                  break;
-                }
-                currentLength += nodeLength;
-              }
-              break;
-            }
-          }
-          
-          if (startNode && endNode) {
-            // Create a range and replace the content
-            const range = document.createRange();
-            range.setStart(startNode, startOffset);
-            range.setEnd(endNode, endOffset);
-            
-            // Create the link element
-            const linkElement = document.createElement('a');
-            linkElement.href = linkUrl.trim();
-            linkElement.target = '_blank';
-            linkElement.rel = 'noopener noreferrer';
-            linkElement.textContent = linkText.trim();
-            
-            // Replace the range content with the link
-            range.deleteContents();
-            range.insertNode(linkElement);
-            
-            newHtml = tempDiv.innerHTML;
-            console.log('✅ Applied link using complex HTML-aware replacement');
-          } else {
-            // Fallback: append to the end
-            newHtml = currentHtml + ' ' + linkHtml;
-            console.log('✅ Fallback: appended link to end');
-          }
+          // Fallback: append link to the end
+          newHtml = currentHtml + ' ' + linkHtml;
+          console.log('✅ Fallback: appended link to end');
         }
         
-                 console.log('🔄 New HTML content:', newHtml);
-         editingElementDOM.innerHTML = newHtml;
-         console.log('✅ Link applied while preserving HTML structure');
-       } else {
-          // No selection info, append link to the end
-          const displayText = linkText?.trim() || 'Click here';
-          const linkHtml = `<a href="${linkUrl.trim()}" target="_blank" rel="noopener noreferrer">${displayText}</a>`;
-          editingElementDOM.innerHTML += ' ' + linkHtml;
-          console.log('✅ Link appended to element (no selection)');
-        }
+        console.log('🔄 New HTML content:', newHtml);
+        editingElementDOM.innerHTML = newHtml;
+        console.log('✅ Link applied while preserving HTML structure');
+      } else {
+        // No selection info, append link to the end
+        const displayText = linkText?.trim() || 'Click here';
+        const linkHtml = `<a href="${linkUrl.trim()}" target="_blank" rel="noopener noreferrer">${displayText}</a>`;
+        editingElementDOM.innerHTML += ' ' + linkHtml;
+        console.log('✅ Link appended to element (no selection)');
+      }
       
       console.log('✅ Link applied to DOM (will save on Save button click)');
       console.log('🔍 Current DOM content after link:', editingElementDOM.innerHTML);
@@ -1176,11 +1111,13 @@ export default function VisualEditor({
     }
     
     // Get the editing element
-    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    const editingElementDOM = typeof document !== 'undefined' 
+      ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+      : null;
     if (!editingElementDOM) return;
     
     // Save the current selection with text-based positioning
-    const selection = window.getSelection();
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const selectedText = selection.toString().trim();
@@ -1234,14 +1171,16 @@ export default function VisualEditor({
     }
 
     // Get the editing element
-    const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+    const editingElementDOM = typeof document !== 'undefined' 
+      ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+      : null;
     console.log('📝 Found editing element:', editingElementDOM);
     
     if (editingElementDOM) {
       // Focus the element to ensure selection works
       editingElementDOM.focus();
       
-      const selection = window.getSelection();
+      const selection = typeof window !== 'undefined' ? window.getSelection() : null;
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         const selectedText = range.toString();
@@ -1250,28 +1189,30 @@ export default function VisualEditor({
         
         if (selectedText.length > 0) {
           // Apply color to selected text only
-          const span = document.createElement('span');
-          const styleProperty = colorPickerType === 'text' ? 'color' : 'background-color';
-          span.style.setProperty(styleProperty, selectedColor);
-          
-          try {
-            // Extract the selected content and wrap it in the styled span
-            const contents = range.extractContents();
-            span.appendChild(contents);
-            range.insertNode(span);
+          if (typeof document !== 'undefined') {
+            const span = document.createElement('span');
+            const styleProperty = colorPickerType === 'text' ? 'color' : 'background-color';
+            span.style.setProperty(styleProperty, selectedColor);
             
-            // Clear the selection
-            selection.removeAllRanges();
-            
-            console.log('✅ Color applied to selected text only');
-            console.log('🔍 DOM after color application:', editingElementDOM.innerHTML);
-          } catch (error) {
-            console.error('❌ Error applying color to selection:', error);
-            // Fallback: apply to entire element
-            const currentText = editingElementDOM.textContent || '';
-            const styledContent = `<span style="${styleProperty}: ${selectedColor};">${currentText}</span>`;
-            editingElementDOM.innerHTML = styledContent;
-            console.log('✅ Fallback: Color applied to entire element');
+            try {
+              // Extract the selected content and wrap it in the styled span
+              const contents = range.extractContents();
+              span.appendChild(contents);
+              range.insertNode(span);
+              
+              // Clear the selection
+              selection.removeAllRanges();
+              
+              console.log('✅ Color applied to selected text only');
+              console.log('🔍 DOM after color application:', editingElementDOM.innerHTML);
+            } catch (error) {
+              console.error('❌ Error applying color to selection:', error);
+              // Fallback: apply to entire element
+              const currentText = editingElementDOM.textContent || '';
+              const styledContent = `<span style="${styleProperty}: ${selectedColor};">${currentText}</span>`;
+              editingElementDOM.innerHTML = styledContent;
+              console.log('✅ Fallback: Color applied to entire element');
+            }
           }
         } else {
           // No text selected, apply to entire element
@@ -1616,12 +1557,14 @@ export default function VisualEditor({
     
     // Set the DOM content when editing starts (since we're not using dangerouslySetInnerHTML in edit mode)
     setTimeout(() => {
-      const element = emailElements.find(el => el.id === elementId);
-      const domElement = document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
-      if (domElement && element) {
-        domElement.innerHTML = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
-        domElement.focus();
-        console.log('🎯 Set DOM content for editing:', domElement.innerHTML);
+      if (typeof document !== 'undefined') {
+        const element = emailElements.find(el => el.id === elementId);
+        const domElement = document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+        if (domElement && element) {
+          domElement.innerHTML = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
+          domElement.focus();
+          console.log('🎯 Set DOM content for editing:', domElement.innerHTML);
+        }
       }
     }, 0);
   };
@@ -1631,7 +1574,9 @@ export default function VisualEditor({
     
     // Save the current content before stopping editing
     if (editingElement) {
-      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      const editingElementDOM = typeof document !== 'undefined' 
+        ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+        : null;
       if (editingElementDOM) {
         const currentContent = editingElementDOM.innerHTML;
         const previousContent = emailElements.find(el => el.id === editingElement)?.content;
@@ -1663,7 +1608,9 @@ export default function VisualEditor({
     
     // Restore original content without saving changes
     if (editingElement) {
-      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
+      const editingElementDOM = typeof document !== 'undefined' 
+        ? document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement
+        : null;
       const originalElement = emailElements.find(el => el.id === editingElement);
       
       if (editingElementDOM && originalElement) {
@@ -1685,6 +1632,8 @@ export default function VisualEditor({
 
   // ✨ FIXED: Cursor position preservation for contentEditable
   const saveCursorPosition = (element: HTMLElement) => {
+    if (typeof window === 'undefined') return null;
+    
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
     
@@ -1697,6 +1646,8 @@ export default function VisualEditor({
   };
   
   const restoreCursorPosition = (element: HTMLElement, cursorPosition: number) => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     const selection = window.getSelection();
     if (!selection) return;
     
@@ -1851,6 +1802,8 @@ export default function VisualEditor({
     };
 
     const handleDragStart = (e: React.DragEvent) => {
+      if (typeof window === 'undefined') return;
+      
       console.log('🚀 DRAG START - Element:', element.id, 'Index:', index, 'Type:', element.type);
       console.log('🚀 Event target:', e.target);
       console.log('🚀 Current target:', e.currentTarget);
@@ -1880,12 +1833,16 @@ export default function VisualEditor({
       e.dataTransfer.setData('text/element-index', index.toString());
       
       // Change cursor
-      document.body.style.cursor = 'grabbing';
+      if (typeof document !== 'undefined') {
+        document.body.style.cursor = 'grabbing';
+      }
       console.log('✅ Drag data set successfully for element:', element.id);
       console.log('✅ Dragged element ID set to:', element.id);
     };
 
     const handleDragEnd = (e: React.DragEvent) => {
+      if (typeof window === 'undefined') return;
+      
       console.log('🎯 DRAG END - Element:', element.id);
       console.log('🎯 Event target:', e.target);
       console.log('🎯 Target class name:', (e.target as HTMLElement).className);
@@ -1897,7 +1854,9 @@ export default function VisualEditor({
       setElementDragOverIndex(null);
       
       // Reset cursor
-      document.body.style.cursor = '';
+      if (typeof document !== 'undefined') {
+        document.body.style.cursor = '';
+      }
       console.log('✅ Drag ended, state cleared for element:', element.id);
       console.log('✅ All drag state reset');
     };
