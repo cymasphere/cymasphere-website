@@ -465,9 +465,6 @@ const HeroSection = () => {
     let localSynth: DisposableSynth = null;
 
     const initializeSynth = async () => {
-      // Only initialize on client side
-      if (typeof window === 'undefined') return;
-      
       if (!effectsChain) return;
 
       try {
@@ -585,9 +582,6 @@ const HeroSection = () => {
 
   // Update the playNote function to assign proper octaves
   const playNote = async (noteName: string): Promise<void> => {
-    // Only play on client side
-    if (typeof window === 'undefined') return;
-    
     try {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {
@@ -633,9 +627,6 @@ const HeroSection = () => {
 
   // Add a function to play all notes in the current chord
   const playChord = useCallback(async () => {
-    // Only play on client side
-    if (typeof window === 'undefined') return;
-    
     try {
       // Make sure audio context is started
       if (Tone.context.state !== "running") {

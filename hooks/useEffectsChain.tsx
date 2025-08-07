@@ -18,11 +18,8 @@ const useEffectsChain = (): EffectsChain | null => {
   useEffect(() => {
     let initializedChain: EffectsChain | null = null;
 
-    // Initialize effects chain only once on mount and only on client side
+    // Initialize effects chain only once on mount
     const initEffects = async () => {
-      // Only initialize on client side
-      if (typeof window === 'undefined') return;
-      
       try {
         const effects = await initializeEffectsChain(Tone);
         console.log("Effects chain initialized successfully.");

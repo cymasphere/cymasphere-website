@@ -44,9 +44,6 @@ const noteToFreq = (note: string): number => {
 
 // Initialize audio context
 export const initAudio = async (): Promise<void> => {
-  // Only initialize on client side
-  if (typeof window === 'undefined') return;
-  
   if (initialized) return;
 
   try {
@@ -303,9 +300,6 @@ const buildChordVoicing = (
 
 // Play chord with atmospheric reverb
 export const playChordPad = async (chordRoot: string): Promise<void> => {
-  // Only play on client side
-  if (typeof window === 'undefined') return;
-  
   if (!initialized) {
     await initAudio();
   }
@@ -388,9 +382,6 @@ export const playChordPad = async (chordRoot: string): Promise<void> => {
 
 // Play Lydian Maj7 chord
 export const playLydianMaj7Chord = async (): Promise<void> => {
-  // Only play on client side
-  if (typeof window === 'undefined') return;
-  
   // Prevent spam clicking by limiting the number of simultaneous chord sounds
   if (activeLydianChords >= MAX_ACTIVE_CHORDS) {
     console.log(
@@ -697,9 +688,6 @@ let drumPatternInterval: number | null = null;
 
 // Play a basic drum pattern alongside the chord progression
 export const playDrumPattern = (bpm = 120): number | null => {
-  // Only play on client side
-  if (typeof window === 'undefined') return null;
-  
   if (!initialized) {
     initAudio();
   }
