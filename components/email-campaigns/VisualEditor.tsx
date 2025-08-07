@@ -825,6 +825,17 @@ export default function VisualEditor({
   campaignData, 
   rightPanelExpanded = true 
 }: VisualEditorProps) {
+  // Client-side check to prevent SSR issues
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Don't render anything until we're on the client side
+  if (!isClient) {
+    return <div>Loading editor...</div>;
+  }
   const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
   
   // Element reordering state
@@ -885,8 +896,8 @@ export default function VisualEditor({
   const applyFormat = (command: string, value?: string) => {
     console.log(`🎨 Applying format: ${command}${value ? ` with value: ${value}` : ''}`);
     
-    if (!editingElement) {
-      console.warn('❌ No editing element found');
+    if (!editingElement || typeof window === 'undefined') {
+      console.warn('❌ No editing element found or not on client side');
       return;
     }
 
@@ -912,7 +923,7 @@ export default function VisualEditor({
           break;
         case 'createLink':
           if (value) {
-    document.execCommand(command, false, value);
+            document.execCommand(command, false, value);
           }
           break;
         case 'foreColor':
@@ -948,8 +959,8 @@ export default function VisualEditor({
 
   // Link and color picker handlers
   const openLinkModal = () => {
-    // Only work if we're editing an element
-    if (!editingElement) {
+    // Only work if we're editing an element and on client side
+    if (!editingElement || typeof window === 'undefined') {
       return;
     }
     
@@ -1368,6 +1379,8 @@ export default function VisualEditor({
 
   // Element reordering drag handlers
   const handleElementDragOver = (e: React.DragEvent, index: number) => {
+    if (typeof window === 'undefined') return;
+    
     e.preventDefault();
     
     // Check if we're dragging a new element from the palette
@@ -1386,6 +1399,8 @@ export default function VisualEditor({
   };
 
   const handleElementDrop = (e: React.DragEvent, dropIndex: number) => {
+    if (typeof window === 'undefined') return;
+    
     e.preventDefault();
     console.log('💧 Drop attempted at index:', dropIndex);
     

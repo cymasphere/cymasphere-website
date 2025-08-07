@@ -2423,27 +2423,39 @@ function CreateCampaignPage() {
             });
             
             // Parse email elements from html_content if available
-            if (campaign.html_content) {
-              // Simple parsing - in a real app you'd have a proper HTML to elements parser
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(campaign.html_content, 'text/html');
-              const elements = Array.from(doc.body.children).map((element, index) => ({
-                id: `element_${index}`,
-                type: element.tagName.toLowerCase() === 'h1' ? 'header' : 'text',
-                content: element.textContent || ''
-              }));
-              
-              if (elements.length > 0) {
-                setEmailElements(elements);
+            if (campaign.html_content && typeof window !== 'undefined') {
+              try {
+                // Simple parsing - in a real app you'd have a proper HTML to elements parser
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(campaign.html_content, 'text/html');
+                const elements = Array.from(doc.body.children).map((element, index) => ({
+                  id: `element_${index}`,
+                  type: element.tagName.toLowerCase() === 'h1' ? 'header' : 'text',
+                  content: element.textContent || ''
+                }));
+                
+                if (elements.length > 0) {
+                  setEmailElements(elements);
+                }
+              } catch (error) {
+                console.error('Error parsing HTML content:', error);
+                // Fallback: create a simple text element
+                setEmailElements([{
+                  id: 'element_0',
+                  type: 'text',
+                  content: campaign.html_content.replace(/<[^>]*>/g, '') || ''
+                }]);
               }
             }
           } else if (response.status === 404) {
             console.warn(`Campaign with ID ${editId} not found, creating new campaign instead`);
             // Campaign doesn't exist, treat as create mode
             // Clear the edit parameter from URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('edit');
-            window.history.replaceState({}, '', url.toString());
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('edit');
+              window.history.replaceState({}, '', url.toString());
+            }
           } else {
             console.error('Failed to load campaign:', response.status);
           }
