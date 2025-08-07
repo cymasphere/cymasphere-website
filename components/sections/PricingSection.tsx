@@ -175,6 +175,9 @@ const ChordWeb = React.memo(() => {
   // Function to play a chord when clicked
   const playChord = useCallback(
     (chord: ChordDefinition, chordIndex: number) => {
+      // Only play on client side
+      if (typeof window === 'undefined') return;
+      
       // Check if we've reached the maximum number of simultaneous chords (4)
       if (
         activeChords.current.size >= 4 &&

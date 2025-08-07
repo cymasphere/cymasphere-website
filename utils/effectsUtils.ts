@@ -29,6 +29,11 @@ export const initializeEffectsChain = async (
   toneLib: typeof Tone | null = null,
   synth: DisposableSynth = null
 ): Promise<EffectsChain> => {
+  // Only initialize on client side
+  if (typeof window === 'undefined') {
+    throw new Error("Effects chain can only be initialized on client side");
+  }
+  
   // Use imported Tone library instance or throw an error if not provided
   if (!toneLib) {
     throw new Error("Tone library must be passed as a parameter");
