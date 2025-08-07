@@ -404,9 +404,6 @@ const ChordWeb = React.memo(() => {
       }
 
       resizeTimeout = setTimeout(() => {
-        // Only run on client side
-        if (typeof window === 'undefined') return;
-        
         // Get the device pixel ratio for sharp rendering
         const devicePixelRatio = window.devicePixelRatio || 1;
         
@@ -431,17 +428,15 @@ const ChordWeb = React.memo(() => {
     };
 
     // Set initial canvas size with device pixel ratio
-    if (typeof window !== 'undefined') {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const displayWidth = canvas.clientWidth;
-      const displayHeight = canvas.clientHeight;
-      
-      canvas.width = displayWidth * devicePixelRatio;
-      canvas.height = displayHeight * devicePixelRatio;
-      context.scale(devicePixelRatio, devicePixelRatio);
-      canvas.style.width = displayWidth + 'px';
-      canvas.style.height = displayHeight + 'px';
-    }
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
+    context.scale(devicePixelRatio, devicePixelRatio);
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
 
     // Add event listeners
     canvas.addEventListener("mousemove", handleMouseMove, { passive: true });

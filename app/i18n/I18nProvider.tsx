@@ -13,9 +13,6 @@ export default function I18nProvider({ children }: I18nProviderProps) {
   
   // Listen for global language change events
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
-    
     // Listen for the global language change event
     const handleGlobalLanguageChange = () => {
       console.log('[I18nProvider] Detected global language change event');

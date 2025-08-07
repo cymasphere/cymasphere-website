@@ -52,7 +52,7 @@ const spinnerStyle = `
 `;
 
 // Add the style to the document
-if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.innerHTML = spinnerStyle;
   document.head.appendChild(style);
