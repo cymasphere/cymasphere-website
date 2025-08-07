@@ -114,15 +114,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Create a minimal profile object with required fields
             const defaultProfile: Profile = {
               id: logged_in_user.id,
-              avatar_url: null,
-              customer_id: null,
+              email: logged_in_user.email || '',
               first_name: null,
               last_name: null,
-              last_stripe_api_check: null,
               subscription: "none",
+              customer_id: null,
               subscription_expiration: null,
               trial_expiration: null,
-              updated_at: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             };
             setUser({
               ...logged_in_user,

@@ -33,15 +33,16 @@ import { useTranslation } from "react-i18next";
 interface ProfileWithSubscriptionDetails {
   id: string;
   email: string;
-  first_name?: string;
-  last_name?: string;
+  first_name: string | null;
+  last_name: string | null;
   subscription: SubscriptionType;
   subscription_interval?: "month" | "year" | null;
   cancel_at_period_end?: boolean;
-  trial_expiration?: string | null;
-  subscription_expiration?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  trial_expiration: string | null;
+  subscription_expiration: string | null;
+  customer_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Helper functions for safely checking subscription status
@@ -649,8 +650,17 @@ export default function BillingPage() {
         setIsLoadingPrices(true);
 
         try {
+          // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
+          let validPlanType: 'monthly' | 'annual' | 'lifetime';
+          if (selectedBillingPeriod === 'monthly' || selectedBillingPeriod === 'annual' || selectedBillingPeriod === 'lifetime') {
+            validPlanType = selectedBillingPeriod;
+          } else {
+            // Default to monthly for 'admin', 'none', or any other invalid types
+            validPlanType = 'monthly';
+          }
+          
           const { url, error } = await initiateCheckout(
-            selectedBillingPeriod,
+            validPlanType,
             user.email,
             user.profile.customer_id || undefined,
             promotionCode,

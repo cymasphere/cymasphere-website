@@ -106,7 +106,9 @@ const HeaderActions = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -170,7 +172,9 @@ const SubscriberInfo = styled.div`
   }
 `;
 
-const Avatar = styled.div<{ color: string }>`
+const Avatar = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'color'
+})<{ color: string }>`
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -216,7 +220,9 @@ const MetaItem = styled.div`
   }
 `;
 
-const StatusBadge = styled.span<{ status: string }>`
+const StatusBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'status'
+})<{ status: string }>`
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -409,7 +415,9 @@ const AudiencesList = styled.div`
   gap: 1rem;
 `;
 
-const AudienceItem = styled.div<{ isMember: boolean }>`
+const AudienceItem = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMember'
+})<{ isMember: boolean }>`
   padding: 1rem;
   border-radius: 8px;
   border: 1px solid ${props => props.isMember ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
@@ -441,7 +449,9 @@ const AudienceItemDescription = styled.p`
   line-height: 1.4;
 `;
 
-const ToggleButton = styled.button<{ isActive: boolean }>`
+const ToggleButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive'
+})<{ isActive: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -468,7 +478,9 @@ const ToggleButton = styled.button<{ isActive: boolean }>`
   `}
 `;
 
-const MembershipBadge = styled.span<{ isMember: boolean }>`
+const MembershipBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMember'
+})<{ isMember: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -494,7 +506,9 @@ const BulkActions = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const BulkButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const BulkButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant'
+})<{ variant?: 'primary' | 'secondary' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -604,18 +618,50 @@ function SubscriberDetailPage() {
       console.log('Audiences data received:', data);
       setAudiences(data.audiences || []);
       
-      // Initialize audience memberships (all false for now)
-      const memberships: {[key: string]: boolean} = {};
-      data.audiences?.forEach((audience: any) => {
-        memberships[audience.id] = false;
-      });
-      setSubscriberAudiences(memberships);
-      
-      console.log('✅ Subscriber audience memberships loaded:', memberships);
+      // Fetch the subscriber's actual audience memberships
+      await fetchSubscriberAudienceMemberships(data.audiences || []);
       
     } catch (err) {
       console.error('Error fetching audiences:', err);
       // Don't set error here as it's not critical for the main page
+    }
+  };
+
+  const fetchSubscriberAudienceMemberships = async (audiences: any[]) => {
+    try {
+      console.log('Fetching subscriber audience memberships for:', subscriberId);
+      
+      // Use the new API endpoint to get all memberships at once
+      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}/audience-memberships`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriberAudiences(data.memberships || {});
+        console.log('✅ Subscriber audience memberships loaded:', data.memberships);
+      } else {
+        console.error('Failed to fetch audience memberships:', response.status);
+        // Initialize all as false if there's an error
+        const memberships: {[key: string]: boolean} = {};
+        audiences.forEach((audience: any) => {
+          memberships[audience.id] = false;
+        });
+        setSubscriberAudiences(memberships);
+      }
+      
+    } catch (err) {
+      console.error('Error fetching subscriber audience memberships:', err);
+      // Initialize all as false if there's an error
+      const memberships: {[key: string]: boolean} = {};
+      audiences.forEach((audience: any) => {
+        memberships[audience.id] = false;
+      });
+      setSubscriberAudiences(memberships);
     }
   };
 
@@ -678,11 +724,69 @@ function SubscriberDetailPage() {
     }));
   };
 
-  const handleAudienceToggle = (audienceId: string) => {
-    setSubscriberAudiences((prev: {[key: string]: boolean}) => ({
-      ...prev,
-      [audienceId]: !prev[audienceId]
-    }));
+  const handleAudienceToggle = async (audienceId: string) => {
+    try {
+      const currentMembership = subscriberAudiences[audienceId] || false;
+      const newMembership = !currentMembership;
+      
+      // Find the audience to check if it's static
+      const audience = audiences.find(a => a.id === audienceId);
+      if (!audience) {
+        console.error('Audience not found:', audienceId);
+        return;
+      }
+      
+      const filters = audience.filters || {};
+      const isStatic = filters.audience_type === 'static';
+      
+      if (!isStatic) {
+        alert('You can only manually add/remove subscribers from static audiences. Dynamic audiences are managed automatically based on their rules.');
+        return;
+      }
+      
+      if (newMembership) {
+        // Add subscriber to audience
+        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email: subscriber.email })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to add subscriber to audience');
+        }
+      } else {
+        // Remove subscriber from audience
+        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?subscriberId=${subscriberId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to remove subscriber from audience');
+        }
+      }
+      
+      // Update local state
+      setSubscriberAudiences((prev: {[key: string]: boolean}) => ({
+        ...prev,
+        [audienceId]: newMembership
+      }));
+      
+      console.log(`✅ Successfully ${newMembership ? 'added' : 'removed'} subscriber from audience: ${audience.name}`);
+      
+    } catch (error) {
+      console.error('Error toggling audience membership:', error);
+      alert(`Failed to update audience membership: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleSave = async () => {
@@ -716,20 +820,99 @@ function SubscriberDetailPage() {
     }
   };
 
-  const handleBulkAddAll = () => {
-    const newMemberships: {[key: string]: boolean} = {};
-    audiences.forEach(audience => {
-      newMemberships[audience.id] = true;
-    });
-    setSubscriberAudiences(newMemberships);
+  const handleBulkAddAll = async () => {
+    try {
+      // Only add to static audiences
+      const staticAudiences = audiences.filter(audience => {
+        const filters = audience.filters || {};
+        return filters.audience_type === 'static';
+      });
+      
+      if (staticAudiences.length === 0) {
+        alert('No static audiences available to add subscribers to.');
+        return;
+      }
+      
+      // Add subscriber to all static audiences
+      for (const audience of staticAudiences) {
+        const currentMembership = subscriberAudiences[audience.id] || false;
+        if (!currentMembership) {
+          const response = await fetch(`/api/email-campaigns/audiences/${audience.id}/subscribers`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ email: subscriber.email })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error(`Failed to add subscriber to audience ${audience.name}:`, errorData.error);
+          }
+        }
+      }
+      
+      // Update local state
+      const newMemberships: {[key: string]: boolean} = { ...subscriberAudiences };
+      staticAudiences.forEach(audience => {
+        newMemberships[audience.id] = true;
+      });
+      setSubscriberAudiences(newMemberships);
+      
+      console.log(`✅ Successfully added subscriber to ${staticAudiences.length} static audiences`);
+      
+    } catch (error) {
+      console.error('Error in bulk add:', error);
+      alert(`Failed to add subscriber to audiences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  const handleBulkRemoveAll = () => {
-    const newMemberships: {[key: string]: boolean} = {};
-    audiences.forEach(audience => {
-      newMemberships[audience.id] = false;
-    });
-    setSubscriberAudiences(newMemberships);
+  const handleBulkRemoveAll = async () => {
+    try {
+      // Only remove from static audiences
+      const staticAudiences = audiences.filter(audience => {
+        const filters = audience.filters || {};
+        return filters.audience_type === 'static';
+      });
+      
+      if (staticAudiences.length === 0) {
+        alert('No static audiences available to remove subscribers from.');
+        return;
+      }
+      
+      // Remove subscriber from all static audiences
+      for (const audience of staticAudiences) {
+        const currentMembership = subscriberAudiences[audience.id] || false;
+        if (currentMembership) {
+          const response = await fetch(`/api/email-campaigns/audiences/${audience.id}/subscribers?subscriberId=${subscriberId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error(`Failed to remove subscriber from audience ${audience.name}:`, errorData.error);
+          }
+        }
+      }
+      
+      // Update local state
+      const newMemberships: {[key: string]: boolean} = { ...subscriberAudiences };
+      staticAudiences.forEach(audience => {
+        newMemberships[audience.id] = false;
+      });
+      setSubscriberAudiences(newMemberships);
+      
+      console.log(`✅ Successfully removed subscriber from ${staticAudiences.length} static audiences`);
+      
+    } catch (error) {
+      console.error('Error in bulk remove:', error);
+      alert(`Failed to remove subscriber from audiences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Generate avatar color based on name

@@ -157,7 +157,83 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Transform subscribers to include names and mock engagement data
+    // Get audience counts for each subscriber (both static and dynamic)
+    const subscriberIds = subscribers?.map((s) => s.id) || [];
+    const audienceCountsMap = new Map();
+
+    if (subscriberIds.length > 0) {
+      // Get all audiences
+      const { data: allAudiences } = await supabase
+        .from("email_audiences")
+        .select("id, filters");
+
+      if (allAudiences && allAudiences.length > 0) {
+        // Get static audience memberships
+        const { data: staticMemberships } = await supabase
+          .from("email_audience_subscribers")
+          .select("audience_id, subscriber_id")
+          .in("subscriber_id", subscriberIds);
+
+        // Create a map of static memberships for faster lookup
+        const staticMembershipMap = new Map();
+        if (staticMemberships) {
+          staticMemberships.forEach((membership) => {
+            const key = `${membership.subscriber_id}-${membership.audience_id}`;
+            staticMembershipMap.set(key, true);
+          });
+        }
+
+        // Get subscriber data for dynamic audience evaluation
+        const { data: subscriberData } = await supabase
+          .from("subscribers")
+          .select("id, email, status, user_id")
+          .in("id", subscriberIds);
+
+        // Get profile data for dynamic audience evaluation
+        const userIds = subscriberData?.map(s => s.user_id).filter(Boolean) || [];
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, subscription")
+          .in("id", userIds);
+
+        // Create profile map for faster lookup
+        const profileMap = new Map();
+        if (profileData) {
+          profileData.forEach(profile => {
+            profileMap.set(profile.id, profile);
+          });
+        }
+
+        // Calculate audience counts for each subscriber
+        for (const subscriber of subscriberData || []) {
+          let totalAudienceCount = 0;
+
+          for (const audience of allAudiences) {
+            const filters = audience.filters || {};
+            const isStatic = filters.audience_type === "static";
+
+            if (isStatic) {
+              // Check static audience membership
+              const key = `${subscriber.id}-${audience.id}`;
+              if (staticMembershipMap.has(key)) {
+                totalAudienceCount++;
+              }
+            } else {
+              // Check dynamic audience membership
+              const profile = profileMap.get(subscriber.user_id);
+              const isMember = evaluateDynamicAudienceMembership(subscriber, profile, filters);
+              if (isMember) {
+                totalAudienceCount++;
+              }
+            }
+          }
+
+          audienceCountsMap.set(subscriber.id, totalAudienceCount);
+        }
+      }
+    }
+
+    // Transform subscribers to include names, mock engagement data, and audience counts
     const transformedSubscribers = (subscribers || []).map((subscriber) => {
       const profile = profilesMap.get(subscriber.user_id) || {};
       const firstName = profile.first_name || "";
@@ -180,6 +256,7 @@ export async function GET(request: NextRequest) {
         totalOpens: Math.floor(Math.random() * 50),
         totalClicks: Math.floor(Math.random() * 20),
         tags: ["Email", "Newsletter"], // Mock tags
+        audienceCount: audienceCountsMap.get(subscriber.id) || 0,
       };
     });
 
@@ -271,5 +348,60 @@ export async function POST(request: NextRequest) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to evaluate dynamic audience membership
+function evaluateDynamicAudienceMembership(subscriber: any, profile: any, filters: any): boolean {
+  try {
+    const rules = filters.rules || [];
+    
+    // If no rules, default to false
+    if (rules.length === 0) {
+      return false;
+    }
+
+    // Evaluate each rule - all rules must match (AND logic)
+    for (const rule of rules) {
+      const matches = evaluateRule(subscriber, profile, rule);
+      if (!matches) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error evaluating dynamic audience membership:", error);
+    return false;
+  }
+}
+
+// Helper function to evaluate individual rules
+function evaluateRule(subscriber: any, profile: any, rule: any): boolean {
+  try {
+    const { field, operator, value } = rule;
+
+    switch (field) {
+      case "status":
+        return subscriber.status === value;
+      
+      case "subscription":
+        return profile?.subscription === value;
+      
+      case "email":
+        if (operator === "contains") {
+          return subscriber.email.includes(value);
+        } else if (operator === "equals") {
+          return subscriber.email === value;
+        }
+        return false;
+      
+      default:
+        console.warn(`Unknown rule field: ${field}`);
+        return false;
+    }
+  } catch (error) {
+    console.error("Error evaluating rule:", error);
+    return false;
   }
 }

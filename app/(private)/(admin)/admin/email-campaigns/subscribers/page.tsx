@@ -691,7 +691,7 @@ function SubscribersPage() {
                 <TableHeaderCell>Subscribe Date</TableHeaderCell>
                 <TableHeaderCell>Last Activity</TableHeaderCell>
                 <TableHeaderCell>Engagement</TableHeaderCell>
-                <TableHeaderCell>Tags</TableHeaderCell>
+                <TableHeaderCell>Audiences</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHeader>
@@ -749,11 +749,14 @@ function SubscribersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <TagsContainer>
-                        {subscriber.tags.map((tag: string, tagIndex: number) => (
-                          <Tag key={tagIndex}>{tag}</Tag>
-                        ))}
-                      </TagsContainer>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 'bold', color: 'var(--text)', fontSize: '1.1rem' }}>
+                          {subscriber.audienceCount || 0}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {subscriber.audienceCount === 1 ? 'audience' : 'audiences'}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <ActionsContainer data-dropdown>

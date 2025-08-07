@@ -17,6 +17,8 @@ export type Database = {
           last_name: string | null
           subscription: Database['public']['Enums']['subscription_type']
           customer_id: string | null
+          subscription_expiration: string | null
+          trial_expiration: string | null
           created_at: string
           updated_at: string
         }
@@ -27,6 +29,8 @@ export type Database = {
           last_name?: string | null
           subscription?: Database['public']['Enums']['subscription_type']
           customer_id?: string | null
+          subscription_expiration?: string | null
+          trial_expiration?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -37,6 +41,8 @@ export type Database = {
           last_name?: string | null
           subscription?: Database['public']['Enums']['subscription_type']
           customer_id?: string | null
+          subscription_expiration?: string | null
+          trial_expiration?: string | null
           created_at?: string
           updated_at?: string
         }
