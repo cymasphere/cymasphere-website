@@ -5,7 +5,7 @@
 
 # Configuration
 DOMAIN="https://cymasphere.com"  # Replace with your actual domain
-CRON_SECRET="cron_568299cb6a3c3b8cdf5135fb31cdca5c"
+CRON_SECRET="${CRON_SECRET:-your-secret-key}"  # Use environment variable or fallback
 ENDPOINT="/api/email-campaigns/process-scheduled"
 LOG_FILE="/tmp/scheduled-campaigns.log"
 ERROR_LOG="/tmp/scheduled-campaigns-error.log"

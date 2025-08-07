@@ -63,7 +63,7 @@ If you see errors:
 
 2. Test the endpoint manually:
    curl -X POST "$DOMAIN/api/email-campaigns/process-scheduled" \\
-        -H "Authorization: Bearer cron_568299cb6a3c3b8cdf5135fb31cdca5c"
+        -H "Authorization: Bearer YOUR_CRON_SECRET"
 
 3. Check cron service is running:
    sudo systemctl status cron
