@@ -77,7 +77,7 @@ jobs:
           SCHEDULER_CRON: ${{ secrets.SCHEDULER_CRON || '' }}
           ENABLE_SCHEDULER: ${{ secrets.ENABLE_SCHEDULER || '' }}
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || '' }}
-          NODE_ENV: production
+          NODE_ENV: development
         run: bun run build
 
       - name: Configure SSH
@@ -167,7 +167,7 @@ jobs:
           echo "SCHEDULER_CRON=${{ secrets.SCHEDULER_CRON }}" >> .env.production
           echo "ENABLE_SCHEDULER=${{ secrets.ENABLE_SCHEDULER }}" >> .env.production
           echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}" >> .env.production
-          echo "NODE_ENV=production" >> .env.production
+          echo "NODE_ENV=development" >> .env.production
 
           # Copy environment file only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
@@ -199,7 +199,7 @@ jobs:
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
           # Start application with nvm sourcing and npm global bin path
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- dev'"
 
       - name: Verify deployment
         env:
