@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build application
+      - name: Install dependencies (skip build for dev)
         env:
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -77,8 +77,8 @@ jobs:
           SCHEDULER_CRON: ${{ secrets.SCHEDULER_CRON || '' }}
           ENABLE_SCHEDULER: ${{ secrets.ENABLE_SCHEDULER || '' }}
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL || '' }}
-          NODE_ENV: production
-        run: bun run build
+          NODE_ENV: development
+        run: echo "Skipping build for development deployment"
 
       - name: Configure SSH
         env:
@@ -110,11 +110,7 @@ jobs:
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
           # Create directories if they don't exist with proper structure
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/.next ~/cymasphere/public ~/cymasphere/app ~/cymasphere/utils ~/cymasphere/contexts ~/cymasphere/components"
-
-          # Copy application files with proper directory structure using checksum-based comparison for efficiency
-          rsync -avz --delete --checksum --partial --compress-level=6 -e "ssh -o ConnectTimeout=60" \
-            .next/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/.next/
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "mkdir -p ~/cymasphere/public ~/cymasphere/app ~/cymasphere/utils ~/cymasphere/contexts ~/cymasphere/components ~/cymasphere/hooks ~/cymasphere/types ~/cymasphere/styles"
 
           # Copy public directory with all subdirectories, preserve permissions, and only transfer changed files
           rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
@@ -133,6 +129,15 @@ jobs:
           rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
             components/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/components/
 
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            hooks/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/hooks/
+
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            types/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/types/
+
+          rsync -avz --delete --checksum --partial --compress-level=6 --recursive --perms --times -e "ssh -o ConnectTimeout=60" \
+            styles/ $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/styles/
+
           # Verify public directory structure was copied correctly
           ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "ls -la ~/cymasphere/public/"
 
@@ -140,38 +145,41 @@ jobs:
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
             package.json $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
-          # Create environment file
-          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.production
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
-          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
-          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
-          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.production
-          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.production
-          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.production
-          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.production
-          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.production
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.production
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.production
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.production
-          echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.production
+          rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
+            bun.lock $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+
+          # Create environment file for development
+          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" > .env.development
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.development
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.development
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.development
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.development
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.development
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env.development
+          echo "STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}" >> .env.development
+          echo "STRIPE_PRICE_ID_ANNUAL=${{ secrets.STRIPE_PRICE_ID_ANNUAL }}" >> .env.development
+          echo "STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}" >> .env.development
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.development
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.development
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.development
+          echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.development
           # --- Additional variables below ---
-          echo "PUBLIC_URL=${{ secrets.PUBLIC_URL }}" >> .env.production
-          echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}" >> .env.production
-          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env.production
-          echo "FACEBOOK_MOCK_CONNECTION=${{ secrets.FACEBOOK_MOCK_CONNECTION }}" >> .env.production
-          echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env.production
-          echo "FACEBOOK_APP_SECRET=${{ secrets.FACEBOOK_APP_SECRET }}" >> .env.production
-          echo "FACEBOOK_AD_ACCOUNT_ID=${{ secrets.FACEBOOK_AD_ACCOUNT_ID }}" >> .env.production
-          echo "AUTOMATION_TEST_EMAIL_OVERRIDE=${{ secrets.AUTOMATION_TEST_EMAIL_OVERRIDE }}" >> .env.production
-          echo "SCHEDULER_CRON=${{ secrets.SCHEDULER_CRON }}" >> .env.production
-          echo "ENABLE_SCHEDULER=${{ secrets.ENABLE_SCHEDULER }}" >> .env.production
-          echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}" >> .env.production
-          echo "NODE_ENV=production" >> .env.production
+          echo "PUBLIC_URL=${{ secrets.PUBLIC_URL }}" >> .env.development
+          echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}" >> .env.development
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env.development
+          echo "FACEBOOK_MOCK_CONNECTION=${{ secrets.FACEBOOK_MOCK_CONNECTION }}" >> .env.development
+          echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env.development
+          echo "FACEBOOK_APP_SECRET=${{ secrets.FACEBOOK_APP_SECRET }}" >> .env.development
+          echo "FACEBOOK_AD_ACCOUNT_ID=${{ secrets.FACEBOOK_AD_ACCOUNT_ID }}" >> .env.development
+          echo "AUTOMATION_TEST_EMAIL_OVERRIDE=${{ secrets.AUTOMATION_TEST_EMAIL_OVERRIDE }}" >> .env.development
+          echo "SCHEDULER_CRON=${{ secrets.SCHEDULER_CRON }}" >> .env.development
+          echo "ENABLE_SCHEDULER=${{ secrets.ENABLE_SCHEDULER }}" >> .env.development
+          echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}" >> .env.development
+          echo "NODE_ENV=development" >> .env.development
 
           # Copy environment file only if changed
           rsync -avz --checksum -e "ssh -o ConnectTimeout=60" \
-            .env.production $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
+            .env.development $LIGHTSAIL_USER@$LIGHTSAIL_HOST:~/cymasphere/
 
           # Copy next.config.js if it exists and has changed
           if [ -f "next.config.js" ]; then
@@ -199,7 +207,7 @@ jobs:
           LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
           # Start application with nvm sourcing and npm global bin path
-          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- start'"
+          ssh $LIGHTSAIL_USER@$LIGHTSAIL_HOST "bash -l -c 'source ~/.nvm/nvm.sh && cd ~/cymasphere && export PATH=\$(npm bin -g):\$PATH && pm2 describe cymasphere > /dev/null 2>&1 && pm2 restart cymasphere || pm2 start bun --name \"cymasphere\" -- run dev'"
 
       - name: Verify deployment
         env:
