@@ -1684,7 +1684,13 @@ export default function VisualEditor({
       const element = emailElements.find(el => el.id === elementId);
       const domElement = document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
       if (domElement && element) {
-        domElement.innerHTML = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
+        let content = '';
+        if (element.type === 'footer') {
+          content = element.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+        } else {
+          content = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
+        }
+        domElement.innerHTML = content;
         domElement.focus();
         console.log('🎯 Set DOM content for editing:', domElement.innerHTML);
       }
@@ -1735,10 +1741,18 @@ export default function VisualEditor({
         console.log('💾 Has links?', currentContent.includes('<a'));
         
         // Only update if we have content
-        if (currentContent && currentContent !== element.content) {
-          setEmailElements(emailElements.map(el => 
-            el.id === editingElement ? { ...el, content: currentContent } : el
-          ));
+        const existingContent = element.type === 'footer' ? element.footerText : element.content;
+        if (currentContent && currentContent !== existingContent) {
+          // Handle different element types
+          if (element.type === 'footer') {
+            setEmailElements(emailElements.map(el => 
+              el.id === editingElement ? { ...el, footerText: currentContent } : el
+            ));
+          } else {
+            setEmailElements(emailElements.map(el => 
+              el.id === editingElement ? { ...el, content: currentContent } : el
+            ));
+          }
           console.log('✅ Content saved successfully');
         } else {
           console.log('ℹ️ No content changes to save');
@@ -1763,7 +1777,11 @@ export default function VisualEditor({
       
       if (editingElementDOM && originalElement) {
         // Restore the original content to the DOM
-        editingElementDOM.innerHTML = originalElement.content || '';
+        if (originalElement.type === 'footer') {
+          editingElementDOM.innerHTML = originalElement.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+        } else {
+          editingElementDOM.innerHTML = originalElement.content || '';
+        }
       }
     }
     
@@ -2048,6 +2066,7 @@ export default function VisualEditor({
         fullWidth={element.fullWidth}
         draggable={false}
         onClickCapture={handleClickCapture}
+        onDoubleClick={() => handleElementDoubleClick(element.id)}
         onDragOver={(e) => handleElementDragOver(e, index)}
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
@@ -2852,32 +2871,37 @@ export default function VisualEditor({
             )}
             
             {/* Footer Text */}
-            <EditableText
-              className="editable-text"
-              editing={isEditing && selectedElementId === element.id}
-              contentEditable={isEditing && selectedElementId === element.id}
-              suppressContentEditableWarning={true}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-              onInput={(e) => {
-                const newContent = e.currentTarget.textContent || '';
-                updateElement(element.id, { footerText: newContent });
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isEditing) {
-                  startEditing(element.id);
-                }
-              }}
-              style={{
-                marginBottom: '1rem',
-                cursor: isEditing ? 'text' : 'pointer',
-                outline: 'none',
-                minHeight: '1em'
-              }}
-            >
-              {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
-            </EditableText>
+            {isEditing ? (
+              <textarea
+                data-element-id={element.id}
+                value={element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                onChange={(e) => {
+                  const newVal = e.target.value;
+                  setEmailElements(emailElements.map(el => 
+                    el.id === element.id ? { ...el, footerText: newVal } : el
+                  ));
+                }}
+                style={{
+                  width: '100%',
+                  minHeight: '3em',
+                  background: 'transparent',
+                  border: '1px dashed rgba(108, 99, 255, 0.3)',
+                  borderRadius: '4px',
+                  padding: '0.5rem',
+                  fontFamily: 'monospace',
+                  fontSize: '0.9em',
+                  color: '#333',
+                  resize: 'vertical',
+                  marginBottom: '1rem'
+                }}
+              />
+            ) : (
+              <div
+                dangerouslySetInnerHTML={{ __html: element.footerText || '© 2024 Cymasphere Inc. All rights reserved.' }}
+                data-element-id={element.id}
+                style={{ marginBottom: '1rem' }}
+              />
+            )}
             
             {/* Footer Links */}
             <div>
@@ -2993,6 +3017,24 @@ export default function VisualEditor({
         )}
       </EmailElement>
     );
+  };
+
+  const handleElementHtmlChange = (elementId: string, newHtml: string, elementRef?: HTMLElement) => {
+    const cursorPosition = elementRef ? saveCursorPosition(elementRef) : null;
+
+    setEmailElements(emailElements.map(el => {
+      if (el.id !== elementId) return el;
+      if (el.type === 'footer') {
+        return { ...el, footerText: newHtml };
+      }
+      return { ...el, content: newHtml };
+    }));
+
+    if (elementRef && cursorPosition !== null) {
+      setTimeout(() => {
+        restoreCursorPosition(elementRef, cursorPosition);
+      }, 0);
+    }
   };
 
   return (

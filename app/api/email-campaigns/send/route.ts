@@ -1025,7 +1025,7 @@ function generateHtmlFromElements(
             }
             <div style="margin-bottom: 1rem;">${
               element.footerText ||
-              "© 2024 Cymasphere Inc. All rights reserved."
+              `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
             }</div>
             <div>
               <a href="${
@@ -1184,7 +1184,7 @@ function generateTextFromElements(elements: any[]): string {
                   .join(" | ")
               : "";
           return `\n${"─".repeat(50)}\n${socialText ? socialText + "\n" : ""}${
-            element.footerText || "© 2024 Cymasphere Inc. All rights reserved."
+            element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
           }\n${element.unsubscribeText || "Unsubscribe"}: ${
             element.unsubscribeUrl || "#unsubscribe"
           } | ${element.privacyText || "Privacy Policy"}: ${

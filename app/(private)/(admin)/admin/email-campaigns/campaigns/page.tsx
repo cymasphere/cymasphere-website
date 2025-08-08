@@ -1711,7 +1711,7 @@ function CampaignsPage() {
         </div>
         
         <div class="footer">
-            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Cymasphere Inc. All rights reserved.</p>
             <p>
                 <a href="#">Unsubscribe</a> | 
                 <a href="#">Privacy Policy</a> | 

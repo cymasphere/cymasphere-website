@@ -2106,6 +2106,9 @@ const LoadingSpinner = styled(motion.div)`
 `;
 
 function CreateCampaignPage() {
+  // Current year variable for use throughout the component
+  const currentYear = new Date().getFullYear();
+  
   // Add audience state
   const [audiences, setAudiences] = useState<Audience[]>([]);
   const [audiencesLoading, setAudiencesLoading] = useState(true);
@@ -2968,7 +2971,7 @@ function CreateCampaignPage() {
             { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
             { platform: 'discord', url: 'https://discord.gg/cymasphere' }
           ],
-          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          footerText: `© ${currentYear} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
           privacyText: 'Privacy Policy',
