@@ -1,47 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import { emailScheduler } from "@/utils/scheduler";
 
-// Dynamically import scheduler to avoid client-side bundling
-async function getEmailScheduler() {
-  const { emailScheduler } = await import("@/utils/scheduler");
-  return emailScheduler;
-}
-
-// GET /api/scheduler - Get scheduler status
 export async function GET() {
   try {
-    const emailScheduler = await getEmailScheduler();
     const status = emailScheduler.getStatus();
-
+    
     return NextResponse.json({
-      success: true,
-      scheduler: {
-        ...status,
-        lastCheck: new Date().toISOString(),
-      },
+      message: "Scheduler status",
+      ...status,
+      environment: process.env.NODE_ENV,
+      enableScheduler: process.env.ENABLE_SCHEDULER,
+      schedulerCron: process.env.SCHEDULER_CRON || "* * * * *",
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
     });
   } catch (error) {
-    console.error("Error getting scheduler status:", error);
     return NextResponse.json(
       {
-        success: false,
         error: "Failed to get scheduler status",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
   }
 }
 
-// POST /api/scheduler - Control scheduler actions
 export async function POST(request: NextRequest) {
   try {
-    const { action } = await request.json();
-    const emailScheduler = await getEmailScheduler();
+    const body = await request.json();
+    const action = body.action;
 
     switch (action) {
       case "start":
         emailScheduler.start();
         return NextResponse.json({
-          success: true,
           message: "Scheduler started",
           status: emailScheduler.getStatus(),
         });
@@ -49,41 +40,31 @@ export async function POST(request: NextRequest) {
       case "stop":
         emailScheduler.stop();
         return NextResponse.json({
-          success: true,
           message: "Scheduler stopped",
           status: emailScheduler.getStatus(),
         });
 
       case "trigger":
-        // Manual trigger for testing
         await emailScheduler.triggerNow();
         return NextResponse.json({
-          success: true,
           message: "Manual trigger completed",
-          timestamp: new Date().toISOString(),
-        });
-
-      case "status":
-        return NextResponse.json({
-          success: true,
           status: emailScheduler.getStatus(),
         });
 
       default:
         return NextResponse.json(
           {
-            success: false,
-            error: "Invalid action. Use: start, stop, trigger, or status",
+            error: "Invalid action",
+            validActions: ["start", "stop", "trigger"],
           },
           { status: 400 }
         );
     }
   } catch (error) {
-    console.error("Error controlling scheduler:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Failed to control scheduler",
+        error: "Failed to execute scheduler action",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

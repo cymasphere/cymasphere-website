@@ -1033,7 +1033,7 @@ function generateHtmlFromElements(
     })
     .join("");
 
-  // Base HTML template
+  // Base HTML template with Gmail-compatible structure
   let html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -1041,22 +1041,16 @@ function generateHtmlFromElements(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f7f7f7;
-        }
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        }
+</head>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7;">
+    <!-- Outer table for background color -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <!-- Inner table for content width constraint -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; min-width: 320px; margin: 0 auto;">
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 24px;"
 
         .content {
             padding: 30px;
@@ -1091,8 +1085,14 @@ function generateHtmlFromElements(
     <div class="container">
         <div class="content">
             ${elementHtml}
-        </div>
-    </div>`;
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
 
   // Add tracking pixel if we have tracking parameters
   if (campaignId && subscriberId && sendId) {

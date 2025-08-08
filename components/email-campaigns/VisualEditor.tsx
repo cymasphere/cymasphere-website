@@ -88,6 +88,7 @@ const ViewToggleContainer = styled.div`
   backdrop-filter: blur(10px);
   border-radius: 50px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
 `;
 
 const EmailCanvas = styled.div`
@@ -116,15 +117,23 @@ const EmailCanvas = styled.div`
 `;
 
 const EmailContainer = styled.div`
-  background-color: white;
+  background-color: #f7f7f7;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
   overflow: visible;
   position: relative;
   z-index: 1;
   transition: box-shadow 0.3s ease;
   width: 100%;
   max-width: none;
+  padding: 20px;
+  
+  .email-content {
+    background-color: white;
+    max-width: 600px;
+    min-width: 320px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
 `;
 
 const EmailHeader = styled.div`
@@ -144,8 +153,8 @@ const EmailHeader = styled.div`
 `;
 
 const EmailBody = styled.div`
-  padding: 3rem 2.5rem;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  padding: 2rem 0;
+  background: #ffffff;
   overflow: visible;
   position: relative;
 `;
@@ -825,7 +834,7 @@ export default function VisualEditor({
   campaignData, 
   rightPanelExpanded = true 
 }: VisualEditorProps) {
-  const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text'>('desktop');
+  const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text' | 'html'>('desktop');
   
   // Element reordering state
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
@@ -1616,28 +1625,58 @@ export default function VisualEditor({
     
     // Save the current content before stopping editing
     if (editingElement) {
-      const editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`) as HTMLElement;
-      if (editingElementDOM) {
-        const currentContent = editingElementDOM.innerHTML;
-        const previousContent = emailElements.find(el => el.id === editingElement)?.content;
-        
+      try {
+        // Try to find the element in multiple ways
+        let editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"]`);
+        if (!editingElementDOM) {
+          editingElementDOM = document.querySelector(`[data-element-id="${editingElement}"] .editable-text`);
+        }
+        if (!editingElementDOM) {
+          editingElementDOM = document.querySelector(`.editable-text[data-element-id="${editingElement}"]`);
+        }
+
+        if (!editingElementDOM) {
+          console.log('⚠️ Could not find editing element DOM, using stored content');
+          setEditingElement(null);
+          return;
+        }
+
+        // Get the current content, handling both contentEditable divs and textareas
+        let currentContent = '';
+        if (editingElementDOM instanceof HTMLTextAreaElement) {
+          currentContent = editingElementDOM.value;
+        } else {
+          currentContent = editingElementDOM.innerHTML;
+        }
+
+        const element = emailElements.find(el => el.id === editingElement);
+        if (!element) {
+          console.log('⚠️ Could not find element in emailElements');
+          setEditingElement(null);
+          return;
+        }
+
         console.log('💾 SAVING CONTENT:');
-        console.log('💾 Previous:', previousContent);
+        console.log('💾 Previous:', element.content);
         console.log('💾 Current:', currentContent);
         console.log('💾 Has colors?', currentContent.includes('color:') || currentContent.includes('style='));
         console.log('💾 Has spans?', currentContent.includes('<span'));
         console.log('💾 Has links?', currentContent.includes('<a'));
         
-        setEmailElements(emailElements.map(el => 
-          el.id === editingElement ? { ...el, content: currentContent } : el
-        ));
-        
-        console.log('✅ Content saved successfully');
-      } else {
-        console.error('❌ Could not find editing element DOM');
+        // Only update if we have content
+        if (currentContent && currentContent !== element.content) {
+          setEmailElements(emailElements.map(el => 
+            el.id === editingElement ? { ...el, content: currentContent } : el
+          ));
+          console.log('✅ Content saved successfully');
+        } else {
+          console.log('ℹ️ No content changes to save');
+        }
+      } catch (error) {
+        console.log('⚠️ Error while saving content:', error);
       }
     } else {
-      console.error('❌ No editing element to save');
+      console.log('ℹ️ No editing element to save');
     }
     
     setEditingElement(null);
@@ -1731,9 +1770,31 @@ export default function VisualEditor({
   };
 
   const updateElement = (elementId: string, updates: any) => {
-    setEmailElements(emailElements.map(el => 
-      el.id === elementId ? { ...el, ...updates } : el
-    ));
+    setEmailElements(emailElements.map(el => {
+      if (el.id === elementId) {
+        // Preserve all existing properties and block-specific settings
+        const updatedElement = {
+          ...el,
+          ...updates,
+          // Ensure block type is preserved
+          type: updates.type || el.type,
+          // Preserve header-specific properties
+          headerType: el.type === 'header' ? (updates.headerType || el.headerType) : undefined,
+          fontSize: updates.fontSize || el.fontSize,
+          fontFamily: updates.fontFamily || el.fontFamily,
+          backgroundColor: updates.backgroundColor || el.backgroundColor,
+          textColor: updates.textColor || el.textColor,
+          // Preserve button-specific properties
+          buttonStyle: el.type === 'button' ? (updates.buttonStyle || el.buttonStyle) : undefined,
+          url: el.type === 'button' ? (updates.url || el.url) : undefined,
+          // Preserve brand header properties
+          brandStyle: el.type === 'brand-header' ? (updates.brandStyle || el.brandStyle) : undefined,
+          logoStyle: el.type === 'brand-header' ? (updates.logoStyle || el.logoStyle) : undefined,
+        };
+        return updatedElement;
+      }
+      return el;
+    }));
   };
 
   // ✨ NEW: Update element padding
@@ -2015,20 +2076,23 @@ export default function VisualEditor({
             }}
                 dangerouslySetInnerHTML={!isEditing ? { __html: element.content || 'Enter header text...' } : undefined}
                 data-element-id={element.id}
-            style={{
-                  fontSize: element.fontSize || '28px',
-              fontWeight: element.fontWeight || 'bold',
-              fontStyle: element.fontStyle || 'normal',
-              textDecoration: element.textDecoration || 'none',
+                            style={{
+                  fontSize: element.fontSize || (element.headerType === 'h1' ? '32px' : 
+                           element.headerType === 'h2' ? '28px' : 
+                           element.headerType === 'h3' ? '24px' : '20px'),
+                  fontWeight: element.fontWeight || 'bold',
+                  fontStyle: element.fontStyle || 'normal',
+                  textDecoration: element.textDecoration || 'none',
                   lineHeight: '1.2',
                   color: element.textColor || '#333',
-              margin: 0,
-              position: 'relative',
+                  margin: 0,
+                  position: 'relative',
                   cursor: isEditing ? 'text' : 'default',
-              minHeight: '1em',
-              width: element.fullWidth ? '100%' : 'auto',
-              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
-              padding: element.fullWidth ? '0' : '0',
+                  minHeight: '1em',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  backgroundColor: element.backgroundColor || 'transparent',
+                  padding: '8px',
+                  fontFamily: element.fontFamily || 'Arial, sans-serif',
                   borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
                   outline: 'none'
@@ -3081,19 +3145,123 @@ export default function VisualEditor({
               <FaEnvelope style={{ marginRight: '0.5rem' }} />
               Text Only
             </ViewToggle>
+            <ViewToggle 
+              active={currentView === 'html'}
+              onClick={() => setCurrentView('html')}
+            >
+              <FaCode style={{ marginRight: '0.5rem' }} />
+              HTML Code
+            </ViewToggle>
+            {currentView === 'html' && (
+              <button
+                onClick={() => {
+                  try {
+                    const html = document.getElementById('ve-html-code')?.textContent || '';
+                    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                      navigator.clipboard.writeText(html);
+                    } else {
+                      const ta = document.createElement('textarea');
+                      ta.value = html;
+                      ta.style.position = 'fixed';
+                      ta.style.top = '-1000px';
+                      document.body.appendChild(ta);
+                      ta.focus();
+                      ta.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(ta);
+                    }
+                  } catch {}
+                }}
+                style={{
+                  marginLeft: '0.5rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: 'var(--text)',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+                title="Copy HTML"
+              >
+                Copy HTML
+              </button>
+            )}
           </ViewToggleContainer>
 
           <EmailCanvas>
             <EmailContainer style={{
               width: currentView === 'mobile' ? '375px' : '100%',
               maxWidth: currentView === 'text' ? '500px' : 'none',
-              backgroundColor: currentView === 'text' ? '#f8f9fa' : designSettings.backgroundColor,
-              fontFamily: designSettings.fontFamily,
-              fontSize: designSettings.fontSize,
-              color: designSettings.textColor,
+              backgroundColor: currentView === 'text' || currentView === 'html' ? '#f8f9fa' : designSettings.backgroundColor,
+              fontFamily: currentView === 'html' ? 'monospace' : designSettings.fontFamily,
+              fontSize: currentView === 'html' ? '13px' : designSettings.fontSize,
+              color: currentView === 'html' ? '#1a1a1a' : designSettings.textColor,
+              boxShadow: 'none',
+              borderRadius: '8px',
               transition: 'all 0.3s ease'
             }}>
-              {currentView === 'text' ? (
+              {currentView === 'html' ? (
+                // HTML code view
+                <div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', userSelect: 'text' }}>
+                  <pre id="ve-html-code" style={{ whiteSpace: 'pre-wrap', margin: 0, userSelect: 'text' }}>{`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${campaignData?.subject || 'Email Campaign'}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; min-width: 320px; margin: 0 auto;">
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 24px;">
+                            ${emailElements.map(element => {
+                              switch(element.type) {
+                                case 'header':
+                                  return `<${element.headerType || 'h1'} style="
+                                    font-family: ${element.fontFamily || 'Arial, sans-serif'};
+                                    font-size: ${element.fontSize || '24px'};
+                                    color: ${element.textColor || '#333333'};
+                                    background-color: ${element.backgroundColor || 'transparent'};
+                                    padding: 8px;
+                                    margin: 0;
+                                    ">${element.content || ''}</${element.headerType || 'h1'}>`;
+                                case 'text':
+                                  return `<div style="
+                                    font-family: ${element.fontFamily || 'Arial, sans-serif'};
+                                    font-size: ${element.fontSize || '16px'};
+                                    color: ${element.textColor || '#333333'};
+                                    line-height: 1.6;
+                                    margin: 0 0 16px 0;
+                                    ">${element.content || ''}</div>`;
+                                case 'button':
+                                  return `<a href="${element.url || '#'}" style="
+                                    display: inline-block;
+                                    padding: 12px 24px;
+                                    background-color: ${element.backgroundColor || '#6c63ff'};
+                                    color: ${element.textColor || '#ffffff'};
+                                    text-decoration: none;
+                                    border-radius: 4px;
+                                    font-family: Arial, sans-serif;
+                                    font-weight: bold;
+                                    ">${element.content || ''}</a>`;
+                                default:
+                                  return '';
+                              }
+                            }).join('\n                            ')}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`}</pre>
+                </div>
+              ) : currentView === 'text' ? (
                 // Text-only view
                 (<div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6' }}>
                   <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #ddd' }}>
@@ -3166,9 +3334,9 @@ export default function VisualEditor({
               ) : (
                 // Visual view (desktop/mobile)
                 (<>
-
-                  <EmailBody
-                    onDragOver={(e) => {
+                  <div className="email-content">
+                    <EmailBody
+                      onDragOver={(e) => {
                       e.preventDefault();
                       const elementType = e.dataTransfer.getData('text/element-type');
                       if (elementType || draggedElementId) {
@@ -3245,6 +3413,7 @@ export default function VisualEditor({
                       </div>
                     )}
                   </EmailBody>
+                  </div>
                 </>)
               )}
             </EmailContainer>
@@ -3390,6 +3559,73 @@ export default function VisualEditor({
                           : 'Expand element to full email width'}
                       </div>
                     </ControlGroup>
+
+                    {/* Header Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'header' && (
+                      <>
+                        <ControlGroup>
+                          <ControlLabel>Header Type</ControlLabel>
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.headerType || 'h1'}
+                            onChange={(e) => updateElement(selectedElementId, { headerType: e.target.value })}
+                          >
+                            <option value="h1">H1 - Main Heading</option>
+                            <option value="h2">H2 - Section Heading</option>
+                            <option value="h3">H3 - Subsection Heading</option>
+                            <option value="h4">H4 - Minor Heading</option>
+                          </ControlSelect>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#333333'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Background Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || 'transparent'}
+                            onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Font Size</ControlLabel>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                              type="range"
+                              min="12"
+                              max="72"
+                              value={parseInt(emailElements.find(el => el.id === selectedElementId)?.fontSize || '24')}
+                              onChange={(e) => updateElement(selectedElementId, { fontSize: `${e.target.value}px` })}
+                              style={{ flex: 1 }}
+                            />
+                            <span style={{ minWidth: '3em', textAlign: 'right' }}>
+                              {emailElements.find(el => el.id === selectedElementId)?.fontSize || '24px'}
+                            </span>
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Font Family</ControlLabel>
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'}
+                            onChange={(e) => updateElement(selectedElementId, { fontFamily: e.target.value })}
+                          >
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Times New Roman', serif">Times New Roman</option>
+                            <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+                            <option value="'Georgia', serif">Georgia</option>
+                            <option value="'Verdana', sans-serif">Verdana</option>
+                          </ControlSelect>
+                        </ControlGroup>
+                      </>
+                    )}
 
                     {/* Button Specific Controls */}
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (

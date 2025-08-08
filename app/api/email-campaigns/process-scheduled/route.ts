@@ -18,22 +18,16 @@ function generateProperEmailTemplate(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f7f7f7;
-        }
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        }
+</head>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7;">
+    <!-- Outer table for background color -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <!-- Inner table for content width constraint -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; min-width: 320px; margin: 0 auto;">
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 24px;">
         .header {
             background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
             padding: 20px;
@@ -104,14 +98,18 @@ function generateProperEmailTemplate(
         
         <div class="content">
             ${contentHtml}
-        </div>
-        
-        <div class="footer">
-            <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
-            <p><a href="https://cymasphere.com/unsubscribe">Unsubscribe</a> | <a href="https://cymasphere.com">Visit our website</a></p>
-            <p>© 2024 Cymasphere. All rights reserved.</p>
-        </div>
-    </div>
+                            
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #666666;">
+                                <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
+                                <p><a href="https://cymasphere.com/unsubscribe" style="color: #6c63ff; text-decoration: none;">Unsubscribe</a> | <a href="https://cymasphere.com" style="color: #6c63ff; text-decoration: none;">Visit our website</a></p>
+                                <p>© 2024 Cymasphere. All rights reserved.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>`;
 }

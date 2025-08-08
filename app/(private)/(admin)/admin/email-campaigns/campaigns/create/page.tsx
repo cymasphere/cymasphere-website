@@ -42,7 +42,8 @@ import {
   FaExclamationTriangle,
   FaSearch,
   FaGlobe,
-  FaTabletAlt
+  FaTabletAlt,
+  FaCopy
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -2134,7 +2135,31 @@ function CreateCampaignPage() {
   const [campaignResult, setCampaignResult] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop' | 'html'>('desktop');
+
+  const copyPreviewHtml = async () => {
+    try {
+      const html = generatePreviewHtml();
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(html);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = html;
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setSendingMessage('HTML copied to clipboard');
+      setTimeout(() => setSendingMessage(''), 2500);
+    } catch (e) {
+      setSendingMessage('Failed to copy HTML');
+      setTimeout(() => setSendingMessage(''), 2500);
+    }
+  };
   
   // Reach calculation state
   const [reachData, setReachData] = useState<{
@@ -2424,17 +2449,37 @@ function CreateCampaignPage() {
             
             // Parse email elements from html_content if available
             if (campaign.html_content) {
-              // Simple parsing - in a real app you'd have a proper HTML to elements parser
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(campaign.html_content, 'text/html');
-              const elements = Array.from(doc.body.children).map((element, index) => ({
-                id: `element_${index}`,
-                type: element.tagName.toLowerCase() === 'h1' ? 'header' : 'text',
-                content: element.textContent || ''
-              }));
-              
-              if (elements.length > 0) {
-                setEmailElements(elements);
+              // First try to extract embedded elements JSON comment
+              const match = campaign.html_content.match(/<!--ELEMENTS_B64:([^>]*)-->/);
+              let restoredElements: any[] | null = null;
+              if (match && match[1]) {
+                try {
+                  const decoded = typeof window !== 'undefined'
+                    ? decodeURIComponent(escape(window.atob(match[1])))
+                    : Buffer.from(match[1], 'base64').toString('utf8');
+                  const restored = JSON.parse(decoded);
+                  if (Array.isArray(restored)) {
+                    restoredElements = restored;
+                  }
+                } catch (e) {
+                  console.warn('Failed to decode embedded elements JSON, falling back to naive parse', e);
+                }
+              }
+
+              if (restoredElements && restoredElements.length > 0) {
+                setEmailElements(restoredElements);
+              } else {
+                // Fallback: naive parse to at least show content
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(campaign.html_content, 'text/html');
+                const elements = Array.from(doc.body.children).map((element, index) => ({
+                  id: `element_${index}`,
+                  type: (element as HTMLElement).getAttribute('data-type') || (element.tagName.toLowerCase() === 'h1' ? 'header' : 'text'),
+                  content: (element as HTMLElement).innerHTML || ''
+                }));
+                if (elements.length > 0) {
+                  setEmailElements(elements);
+                }
               }
             }
           } else if (response.status === 404) {
@@ -2499,6 +2544,28 @@ function CreateCampaignPage() {
     console.log("Saving campaign:", campaignData);
     
     try {
+      // Commit any in-progress contentEditable edits by reading from DOM
+      const committedElements = emailElements.map(el => {
+        try {
+          const domEl = typeof document !== 'undefined' 
+            ? (document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement | null)
+            : null;
+          if (domEl) {
+            return { ...el, content: domEl.innerHTML };
+          }
+        } catch {}
+        return el;
+      });
+
+      // Serialize full editor state so drafts restore exact blocks/types/properties
+      const elementsJson = JSON.stringify(committedElements);
+      const elementsB64 = typeof window !== 'undefined'
+        ? window.btoa(unescape(encodeURIComponent(elementsJson)))
+        : Buffer.from(elementsJson, 'utf8').toString('base64');
+      const embeddedComment = `<!--ELEMENTS_B64:${elementsB64}-->`;
+      const generatedHtml = committedElements.map(el => `<div data-type="${el.type}" data-id="${el.id}">${el.content || ''}</div>`).join('');
+      const htmlWithEmbed = `${embeddedComment}${generatedHtml}`;
+
       // Use PUT for editing existing campaigns, POST for creating new ones
       const isUpdating = isEditMode && editId;
       const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
@@ -2518,8 +2585,8 @@ function CreateCampaignPage() {
           replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
           preheader: campaignData.preheader,
           description: campaignData.description,         // ✅ ADDED
-          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
-          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          htmlContent: htmlWithEmbed, // Embed full elements in HTML comment for exact restoration
+          textContent: committedElements.map(el => el.content).join('\n'),
           audienceIds: campaignData.audienceIds,         // ✅ FIXED
           excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
           status: 'draft'
@@ -2569,6 +2636,28 @@ function CreateCampaignPage() {
       const url = isUpdating ? `/api/email-campaigns/campaigns/${editId}` : '/api/email-campaigns/campaigns';
       const method = isUpdating ? 'PUT' : 'POST';
       
+      // Commit any in-progress contentEditable edits by reading from DOM
+      const committedElements = emailElements.map((el: any) => {
+        try {
+          const domEl = typeof document !== 'undefined' 
+            ? (document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement | null)
+            : null;
+          if (domEl) {
+            return { ...el, content: domEl.innerHTML };
+          }
+        } catch {}
+        return el;
+      });
+
+      // Serialize full editor state so saved campaign retains exact blocks/types/properties
+      const elementsJson = JSON.stringify(committedElements);
+      const elementsB64 = typeof window !== 'undefined'
+        ? window.btoa(unescape(encodeURIComponent(elementsJson)))
+        : Buffer.from(elementsJson, 'utf8').toString('base64');
+      const embeddedComment = `<!--ELEMENTS_B64:${elementsB64}-->`;
+      const generatedHtml = committedElements.map((el: any) => `<div data-type="${el.type}" data-id="${el.id}">${el.content || ''}</div>`).join('');
+      const htmlWithEmbed = `${embeddedComment}${generatedHtml}`;
+      
       const saveResponse = await fetch(url, {
         method: method,
         headers: {
@@ -2583,8 +2672,8 @@ function CreateCampaignPage() {
           replyToEmail: campaignData.replyToEmail,       // ✅ FIXED
           preheader: campaignData.preheader,
           description: campaignData.description,         // ✅ ADDED
-          htmlContent: emailElements.map(el => `<div>${el.content}</div>`).join(''), // ✅ FIXED
-          textContent: emailElements.map(el => el.content).join('\n'),              // ✅ FIXED
+          htmlContent: htmlWithEmbed,
+          textContent: committedElements.map((el: any) => el.content).join('\n'),
           audienceIds: campaignData.audienceIds,         // ✅ FIXED
           excludedAudienceIds: campaignData.excludedAudienceIds, // ✅ FIXED
           status: campaignData.scheduleType === 'scheduled' ? 'scheduled' : 'sent',
@@ -2977,11 +3066,14 @@ function CreateCampaignPage() {
         case 'image':
           return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${element.fullWidth ? 'padding: 0;' : ''}"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
         
+        case 'brand-header':
+          return `<div class="full-width" style="margin:0; padding:0;"><div style="text-align:center; padding:14px 20px; ${element.backgroundColor ? `background:${element.backgroundColor};` : 'background:#111;'} color:${element.textColor || '#fff'}; font-weight:800; letter-spacing:2px;">${element.content || ''}</div></div>`;
+        
         case 'divider':
-          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem ${element.fullWidth ? '0' : '0'}; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem 0; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
         
         case 'spacer':
-          return `<div class="${wrapperClass}" style="${containerStyle} height: ${element.height || '20px'};"></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="height:${element.height || '20px'};"></div></div>`;
         
         default:
           return `<div class="${wrapperClass}" style="${containerStyle}">${element.content || ''}</div>`;
@@ -3010,23 +3102,6 @@ function CreateCampaignPage() {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
-            padding: 20px;
-            text-align: center;
-        }
-        .logo {
-            color: #ffffff;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .logo .cyma {
-            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         .content {
             padding: 30px;
@@ -3100,23 +3175,8 @@ function CreateCampaignPage() {
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">
-                ${campaignData.brandHeader || 'CYMASPHERE'}
-            </div>
-        </div>
-        
         <div class="content">
             ${elementHtml}
-        </div>
-        
-        <div class="footer">
-            <p>© 2024 Cymasphere Inc. All rights reserved.</p>
-            <p>
-                <a href="#">Unsubscribe</a> | 
-                <a href="#">Privacy Policy</a> | 
-                <a href="#">Contact Us</a>
-            </p>
         </div>
     </div>
 </body>
@@ -4178,7 +4238,35 @@ function CreateCampaignPage() {
                         <FaDesktop />
                         Desktop
                       </DeviceToggle>
+                      <DeviceToggle 
+                        $active={previewDevice === 'html'}
+                        onClick={() => setPreviewDevice('html')}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <FaCode />
+                        HTML
+                      </DeviceToggle>
                     </DeviceToggleContainer>
+                    {previewDevice === 'html' && (
+                      <button
+                        onClick={copyPreviewHtml}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          color: '#ffffff',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                        title="Copy HTML"
+                      >
+                        <FaCopy /> Copy
+                      </button>
+                    )}
                     
                     <PreviewModalClose onClick={() => setShowPreviewModal(false)}>
                       <FaTimes />
@@ -4197,30 +4285,52 @@ function CreateCampaignPage() {
                     padding: '2rem',
                     background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)'
                   }}>
-                    <PreviewContainer $device={previewDevice}>
-                      <DeviceFrame $device={previewDevice}>
-                        <div style={{
-                          background: 'white',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
-                          <iframe
-                            srcDoc={generatePreviewHtml()}
-                            style={{
-                              width: '100%',
-                              height: 'calc(100vh - 200px)',
-                              border: 'none',
-                              display: 'block',
-                              overflow: 'hidden'
-                            }}
-                            scrolling="no"
-                            title="Full Email Preview"
-                          />
-                        </div>
-                      </DeviceFrame>
-                    </PreviewContainer>
+                    {previewDevice === 'html' ? (
+                      <div style={{
+                        width: 'min(1400px, 95vw)',
+                        margin: '0 auto',
+                        background: '#0d0d0d',
+                        color: '#ddd',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        fontFamily: 'monospace',
+                        fontSize: '0.85rem',
+                        overflow: 'auto',
+                        maxHeight: 'calc(100vh - 220px)',
+                        userSelect: 'text',
+                        WebkitUserSelect: 'text',
+                        MozUserSelect: 'text',
+                        msUserSelect: 'text'
+                      }}>
+                        <pre style={{ whiteSpace: 'pre-wrap', margin: 0, userSelect: 'text', WebkitUserSelect: 'text', MozUserSelect: 'text', msUserSelect: 'text' }}>{generatePreviewHtml()}</pre>
+                      </div>
+                    ) : (
+                      <PreviewContainer $device={previewDevice}>
+                        <DeviceFrame $device={previewDevice}>
+                          <div style={{
+                            background: 'white',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                          }}>
+                            <iframe
+                              srcDoc={generatePreviewHtml()}
+                              style={{
+                                width: '100%',
+                                height: 'calc(100vh - 200px)',
+                                border: 'none',
+                                display: 'block',
+                                overflow: 'hidden'
+                              }}
+                              scrolling="no"
+                              title="Full Email Preview"
+                            />
+                          </div>
+                        </DeviceFrame>
+                      </PreviewContainer>
+                    )}
                   </div>
 
                   {/* Footer Info - Fixed at bottom */}
