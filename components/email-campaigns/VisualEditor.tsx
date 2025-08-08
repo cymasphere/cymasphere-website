@@ -3799,26 +3799,66 @@ export default function VisualEditor({
 
                     {/* Button Specific Controls */}
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
-                      <ControlGroup>
-                        <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <FaLink size={14} />
-                          Button URL
-                        </ControlLabel>
-                        <UrlInput
-                          type="url"
-                          placeholder="https://example.com or #anchor"
-                          value={emailElements.find(el => el.id === selectedElementId)?.url || '#'}
-                          onChange={(e) => updateElement(selectedElementId, { url: e.target.value })}
-                        />
-                        <div style={{ 
-                          fontSize: '0.8rem', 
-                          color: 'var(--text-secondary)', 
-                          opacity: 0.8,
-                          marginTop: '0.25rem'
-                        }}>
-                          🔗 Link destination when button is clicked
-                        </div>
-                      </ControlGroup>
+                      <>
+                        <ControlGroup>
+                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaLink size={14} />
+                            Button URL
+                          </ControlLabel>
+                          <UrlInput
+                            type="url"
+                            placeholder="https://example.com or #anchor"
+                            value={emailElements.find(el => el.id === selectedElementId)?.url || '#'}
+                            onChange={(e) => updateElement(selectedElementId, { url: e.target.value })}
+                          />
+                          <div style={{ 
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-secondary)', 
+                            opacity: 0.8,
+                            marginTop: '0.25rem'
+                          }}>
+                            🔗 Link destination when button is clicked
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Button Background</ControlLabel>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: '' })}
+                              title="Solid color"
+                            />
+                            <input
+                              type="text"
+                              placeholder="CSS gradient, e.g. linear-gradient(135deg, #6c63ff, #a88beb)"
+                              value={emailElements.find(el => el.id === selectedElementId)?.gradient || ''}
+                              onChange={(e) => updateElement(selectedElementId, { gradient: e.target.value })}
+                              style={{
+                                flex: 1,
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            Enter a CSS gradient to override the solid color.
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
+                      </>
                     )}
 
                     {/* Brand Header Specific Controls */}
@@ -3877,95 +3917,7 @@ export default function VisualEditor({
                 )}
               </SidebarPanel>
 
-              {/* Design Settings */}
-              <SidebarPanel>
-                <PanelHeader>
-                  <PanelIcon><FaPaintBrush /></PanelIcon>
-                  <PanelTitle>Design Settings</PanelTitle>
-                </PanelHeader>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <ControlGroup>
-                    <ControlLabel>Background Color</ControlLabel>
-                    <ColorInput 
-                      type="color" 
-                      value={designSettings.backgroundColor}
-                      onChange={(e) => updateDesignSetting('backgroundColor', e.target.value)}
-                    />
-                  </ControlGroup>
-                  <ControlGroup>
-                    <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      Content Width
-                      {parseInt(designSettings.contentWidth) >= 800 && (
-                        <span style={{ 
-                          fontSize: '0.7rem', 
-                          background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
-                          color: 'white', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          fontWeight: 'bold'
-                        }}>
-                          WIDE
-                        </span>
-                      )}
-                    </ControlLabel>
-                    <ControlSelect 
-                      value={designSettings.contentWidth}
-                      onChange={(e) => updateDesignSetting('contentWidth', e.target.value)}
-                    >
-                      <option value="500px">500px (Narrow)</option>
-                      <option value="600px">600px (Standard)</option>
-                      <option value="700px">700px (Wide)</option>
-                      <option value="800px">800px (Extra Wide)</option>
-                      <option value="900px">900px (Spacious)</option>
-                      <option value="1000px">1000px (Full)</option>
-                      <option value="1200px">1200px (Expanded)</option>
-                      <option value="1400px">1400px (Wide)</option>
-                      <option value="1600px">1600px (Maximum)</option>
-                    </ControlSelect>
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      color: 'var(--text-secondary)', 
-                      opacity: 0.8,
-                      marginTop: '0.25rem'
-                    }}>
-                      ✨ Now with expanded workspace for larger designs
-                    </div>
-                  </ControlGroup>
-                  <ControlGroup>
-                    <ControlLabel>Font Family</ControlLabel>
-                    <ControlSelect 
-                      value={designSettings.fontFamily}
-                      onChange={(e) => updateDesignSetting('fontFamily', e.target.value)}
-                    >
-                      <option value="Arial, sans-serif">Arial</option>
-                      <option value="Helvetica, sans-serif">Helvetica</option>
-                      <option value="Georgia, serif">Georgia</option>
-                      <option value="'Times New Roman', serif">Times New Roman</option>
-                      <option value="'Courier New', monospace">Courier New</option>
-                    </ControlSelect>
-                  </ControlGroup>
-                  <ControlGroup>
-                    <ControlLabel>Font Size</ControlLabel>
-                    <ControlSelect 
-                      value={designSettings.fontSize}
-                      onChange={(e) => updateDesignSetting('fontSize', e.target.value)}
-                    >
-                      <option value="14px">14px (Small)</option>
-                      <option value="16px">16px (Standard)</option>
-                      <option value="18px">18px (Large)</option>
-                      <option value="20px">20px (Extra Large)</option>
-                    </ControlSelect>
-                  </ControlGroup>
-                  <ControlGroup>
-                    <ControlLabel>Text Color</ControlLabel>
-                    <ColorInput 
-                      type="color" 
-                      value={designSettings.textColor}
-                      onChange={(e) => updateDesignSetting('textColor', e.target.value)}
-                    />
-                  </ControlGroup>
-                </div>
-              </SidebarPanel>
+              {/* Design Settings removed */}
 
               {/* Variables */}
               <SidebarPanel>
