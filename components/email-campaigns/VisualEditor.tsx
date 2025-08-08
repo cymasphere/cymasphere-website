@@ -3281,7 +3281,7 @@ export default function VisualEditor({
             <EmailContainer style={{
               width: currentView === 'mobile' ? '375px' : '100%',
               maxWidth: currentView === 'text' ? '500px' : 'none',
-              backgroundColor: currentView === 'text' || currentView === 'html' ? '#f8f9fa' : designSettings.backgroundColor,
+              backgroundColor: (currentView === 'text' || currentView === 'html') ? '#f8f9fa' : '#f1f3f5',
               fontFamily: currentView === 'html' ? 'monospace' : designSettings.fontFamily,
               fontSize: currentView === 'html' ? '13px' : designSettings.fontSize,
               color: currentView === 'html' ? '#1a1a1a' : designSettings.textColor,
