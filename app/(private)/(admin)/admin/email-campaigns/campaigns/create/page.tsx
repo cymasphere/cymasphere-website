@@ -2136,6 +2136,8 @@ function CreateCampaignPage() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop' | 'html'>('desktop');
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
 
   const copyPreviewHtml = async () => {
     try {
@@ -2158,6 +2160,48 @@ function CreateCampaignPage() {
     } catch (e) {
       setSendingMessage('Failed to copy HTML');
       setTimeout(() => setSendingMessage(''), 2500);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    const email = (testEmail || '').trim();
+    const isValid = /.+@.+\..+/.test(email);
+    if (!isValid) {
+      setSendingMessage('Enter a valid email address');
+      setTimeout(() => setSendingMessage(''), 2500);
+      return;
+    }
+
+    try {
+      setIsSending(true);
+      setSendingMessage(`Sending test to ${email}...`);
+      const response = await fetch('/api/email-campaigns/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: campaignData.name || 'Test Campaign',
+          subject: campaignData.subject || 'Test',
+          brandHeader: campaignData.brandHeader,
+          audienceIds: campaignData.audienceIds || [],
+          excludedAudienceIds: campaignData.excludedAudienceIds || [],
+          emailElements,
+          scheduleType: 'draft',
+          testEmail: email
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setSendingMessage(`Test email sent to ${email}`);
+        setShowTestModal(false);
+      } else {
+        setSendingMessage(`Error sending test: ${result.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      setSendingMessage(`Error sending test: ${err?.message || String(err)}`);
+    } finally {
+      setIsSending(false);
+      setTimeout(() => setSendingMessage(''), 4000);
     }
   };
   
@@ -3697,10 +3741,31 @@ function CreateCampaignPage() {
       case 3:
         return (
           <StepContent variants={stepVariants} initial="hidden" animate="visible" exit="exit" $isDesignStep={false}>
-            <StepTitle>
-              <FaEye />
-              Review & Schedule
-            </StepTitle>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <StepTitle style={{ marginBottom: 0 }}>
+                <FaEye />
+                Review & Schedule
+              </StepTitle>
+              <button
+                onClick={() => setShowTestModal(true)}
+                style={{
+                  padding: '0.6rem 0.9rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.25)'
+                }}
+                title="Send Test Email"
+              >
+                <FaPaperPlane /> Send Test
+              </button>
+            </div>
             <StepDescription>
               Review your campaign details and choose when to send.
             </StepDescription>
@@ -3760,6 +3825,7 @@ function CreateCampaignPage() {
                         <FaExpandArrowsAlt />
                         Full Screen Preview
                       </ExpandPreviewButton>
+                      {/* Removed old Send Test button here to avoid duplication */}
                     </PreviewTitle>
                     <PreviewContent>
                       <div style={{ 
@@ -3943,6 +4009,8 @@ function CreateCampaignPage() {
         return null;
     }
   };
+
+
 
   return (
     <>
@@ -4189,7 +4257,7 @@ function CreateCampaignPage() {
 
         {/* Email Preview Modal */}
         <AnimatePresence>
-          {showPreviewModal && (
+            {showPreviewModal && (
             <PreviewModal
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -4267,7 +4335,25 @@ function CreateCampaignPage() {
                         <FaCopy /> Copy
                       </button>
                     )}
-                    
+                    <button
+                      onClick={() => setShowTestModal(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#ffffff',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        boxShadow: '0 6px 18px rgba(0,0,0,0.25)'
+                      }}
+                      title="Send Test Email"
+                    >
+                      <FaPaperPlane /> Send Test
+                    </button>
                     <PreviewModalClose onClick={() => setShowPreviewModal(false)}>
                       <FaTimes />
                     </PreviewModalClose>
@@ -4348,6 +4434,106 @@ function CreateCampaignPage() {
                 </PreviewModalBody>
               </PreviewModalContent>
             </PreviewModal>
+          )}
+        </AnimatePresence>
+
+        {/* Test Email Modal */}
+        <AnimatePresence>
+          {showTestModal && (
+            <ResultModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowTestModal(false)}
+            >
+              <ModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ModalTitle>
+                  <FaPaperPlane />
+                  Send Test Email
+                </ModalTitle>
+                
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                  Enter an email address to send a test version of this campaign.
+                </p>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: 'var(--text)',
+                    fontWeight: '500'
+                  }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="Enter email address..."
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'var(--text)',
+                      fontSize: '0.9rem'
+                    }}
+                  />
+                </div>
+
+                <ModalActions>
+                  <button
+                    onClick={() => setShowTestModal(false)}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendTestEmail}
+                    disabled={!testEmail.trim() || isSending}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                      color: 'white',
+                      cursor: !testEmail.trim() || isSending ? 'not-allowed' : 'pointer',
+                      fontSize: '0.9rem',
+                      opacity: !testEmail.trim() || isSending ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    {isSending ? (
+                      <>
+                        <LoadingSpinner animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <FaPaperPlane />
+                        Send Test
+                      </>
+                    )}
+                  </button>
+                </ModalActions>
+              </ModalContent>
+            </ResultModal>
           )}
         </AnimatePresence>
       </CreateContainer>

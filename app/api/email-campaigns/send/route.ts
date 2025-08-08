@@ -25,6 +25,7 @@ interface SendCampaignRequest {
   campaignId?: string;
   name: string;
   subject: string;
+  testEmail?: string; // optional test recipient; if present, send only to this address with [TEST] prefix
   brandHeader?: string;
   audienceIds: string[]; // Updated to match new audience system
   excludedAudienceIds?: string[];
@@ -294,6 +295,7 @@ export async function POST(request: NextRequest) {
       campaignId,
       name,
       subject,
+      testEmail,
       brandHeader,
       audienceIds,
       excludedAudienceIds = [],
@@ -315,7 +317,45 @@ export async function POST(request: NextRequest) {
       testMode: TEST_MODE,
     });
 
-    // Validate required fields
+    // 🎯 TEST EMAIL MODE: If testEmail is provided, send a single email to that address (process FIRST)
+    if (testEmail && typeof testEmail === 'string') {
+      const emailTrimmed = testEmail.trim();
+      const isValid = /.+@.+\..+/.test(emailTrimmed);
+      if (!isValid) {
+        return NextResponse.json({ success: false, error: 'Invalid test email address' }, { status: 400 });
+      }
+
+      const subjectWithTest = subject.startsWith('[TEST]') ? subject : `[TEST] ${subject}`;
+      const baseHtmlContentForTest = generateHtmlFromElements(
+        emailElements,
+        subjectWithTest,
+        undefined,
+        undefined,
+        undefined
+      );
+      const textContentForTest = generateTextFromElements(emailElements);
+
+      const result = await sendEmail({
+        to: emailTrimmed,
+        subject: subjectWithTest,
+        html: baseHtmlContentForTest,
+        text: textContentForTest,
+        from: "support@cymasphere.com",
+      });
+
+      if (result.success) {
+        return NextResponse.json({
+          success: true,
+          status: 'test-sent',
+          message: `Test email sent to ${emailTrimmed}`,
+          results: [{ email: emailTrimmed, status: 'sent', messageId: result.messageId }]
+        });
+      }
+
+      return NextResponse.json({ success: false, error: result.error || 'Failed to send test email' }, { status: 500 });
+    }
+
+    // Validate required fields (skip when testEmail is used)
     if (
       !name ||
       !subject ||

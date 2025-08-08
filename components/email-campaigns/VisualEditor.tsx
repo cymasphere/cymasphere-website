@@ -3275,6 +3275,7 @@ export default function VisualEditor({
                 Copy HTML
               </button>
             )}
+            {/* Send Test removed from editor per request */}
           </ViewToggleContainer>
 
           <EmailCanvas>
