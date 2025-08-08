@@ -93,7 +93,7 @@ const ViewToggleContainer = styled.div`
 
 const EmailCanvas = styled.div`
   flex: 1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f1f3f5; /* light grey margins to match preview */
   border-radius: 16px;
   padding: 0.75rem;
   overflow: visible;
@@ -101,38 +101,24 @@ const EmailCanvas = styled.div`
   justify-content: flex-start;
   min-height: 600px;
   position: relative;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="1"/></g></svg>');
-    border-radius: 16px;
-    pointer-events: none;
-  }
 `;
 
 const EmailContainer = styled.div`
-  background-color: #f7f7f7;
+  background-color: #f1f3f5; /* canvas grey */
   border-radius: 16px;
   overflow: visible;
   position: relative;
   z-index: 1;
-  transition: box-shadow 0.3s ease;
   width: 100%;
-  max-width: none;
-  padding: 20px;
-  
+  padding: 24px 0; /* show left/right grey margins outside 600px content */
+
   .email-content {
-    background-color: white;
+    background-color: #ffffff;
     max-width: 600px;
     min-width: 320px;
     margin: 0 auto;
     padding: 0 24px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
   }
 `;
 
@@ -870,6 +856,17 @@ export default function VisualEditor({
   // Link and color picker modals
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
+  const [mediaLibraryItems, setMediaLibraryItems] = useState<Array<{ name: string; path: string; publicUrl: string; type: 'image' | 'video' | 'unknown'; size: number | null; updatedAt: string | null }>>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'image' | 'video'>('all');
+  const [mediaSort, setMediaSort] = useState<'recent' | 'name_asc' | 'name_desc' | 'size_desc'>('recent');
+  const [mediaPage, setMediaPage] = useState(1);
+  const [mediaPageSize, setMediaPageSize] = useState(24);
+  const [mediaModalLeft, setMediaModalLeft] = useState<number>(0);
+  const [mediaModalWidth, setMediaModalWidth] = useState<number>(800);
+  const leftPaneRef = useRef<HTMLDivElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
   const [selectedColor, setSelectedColor] = useState('#000000');
@@ -1222,6 +1219,83 @@ export default function VisualEditor({
     setSelectionInfo(null);
   };
 
+  const computeMediaModalPlacement = () => {
+    const container = leftPaneRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const width = Math.max(600, Math.floor(rect.width * 0.95));
+    const left = Math.floor(rect.left + (rect.width - width) / 2);
+    setMediaModalWidth(width);
+    setMediaModalLeft(left);
+  };
+
+  const openMediaLibrary = async () => {
+    try {
+      setIsLoadingMedia(true);
+      setShowMediaLibrary(true);
+      setMediaPage(1);
+      computeMediaModalPlacement();
+      const res = await fetch('/api/email-campaigns/list-media');
+      const json = await res.json();
+      if (json.success) {
+        setMediaLibraryItems(json.items || []);
+      } else {
+        console.error('Failed to load media:', json.error);
+      }
+    } catch (err) {
+      console.error('Error loading media library:', err);
+    } finally {
+      setIsLoadingMedia(false);
+    }
+  };
+
+  const closeMediaLibrary = () => {
+    setShowMediaLibrary(false);
+  };
+
+  useEffect(() => {
+    if (!showMediaLibrary) return;
+    computeMediaModalPlacement();
+    const onResize = () => computeMediaModalPlacement();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [showMediaLibrary, rightPanelState]);
+
+  const filterSortMedia = (items: typeof mediaLibraryItems) => {
+    let result = items;
+    if (mediaTypeFilter !== 'all') {
+      result = result.filter(i => i.type === mediaTypeFilter);
+    }
+    if (mediaSearch.trim()) {
+      const q = mediaSearch.trim().toLowerCase();
+      result = result.filter(i => i.name.toLowerCase().includes(q));
+    }
+    switch (mediaSort) {
+      case 'name_asc':
+        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'size_desc':
+        result = [...result].sort((a, b) => (b.size || 0) - (a.size || 0));
+        break;
+      case 'recent':
+      default:
+        result = [...result].sort((a, b) => {
+          const at = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bt = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bt - at;
+        });
+    }
+    return result;
+  };
+
+  const filteredMediaItems = filterSortMedia(mediaLibraryItems);
+  const totalMediaPages = Math.max(1, Math.ceil(filteredMediaItems.length / mediaPageSize));
+  const currentMediaPage = Math.min(mediaPage, totalMediaPages);
+  const pagedMediaItems = filteredMediaItems.slice((currentMediaPage - 1) * mediaPageSize, currentMediaPage * mediaPageSize);
+
   const applyColor = () => {
     console.log('🎨 Applying color:', { selectedColor, colorPickerType, editingElement });
     
@@ -1309,42 +1383,23 @@ export default function VisualEditor({
     '#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#E76F51', '#E63946'
   ];
 
-  // ✨ NEW: Image upload functions
+  // ✨ NEW: Image upload functions (use unified upload-media endpoint)
   const uploadImageToSupabase = async (file: File, elementId: string) => {
     try {
       setImageUploading(elementId);
       setUploadError(null);
-      
       console.log('📤 Uploading image to Supabase storage:', file.name);
-      
-      // Create form data
       const formData = new FormData();
-      formData.append('image', file);
-      
-      // Upload to API endpoint
-      const response = await fetch('/api/email-campaigns/upload-image', {
-        method: 'POST',
-        body: formData
-      });
-      
+      formData.append('file', file);
+      const response = await fetch('/api/email-campaigns/upload-media', { method: 'POST', body: formData });
       const result = await response.json();
-      
-      if (result.success) {
-        console.log('✅ Image uploaded successfully:', result.data.publicUrl);
-        
-        // Update element with public URL
-        updateElement(elementId, { 
-          src: result.data.publicUrl,
-          alt: file.name
-        });
-        
+      if (result.success && result.data?.publicUrl) {
+        updateElement(elementId, { src: result.data.publicUrl, alt: file.name });
         setUploadError(null);
       } else {
-        console.error('❌ Image upload failed:', result.error);
         setUploadError(result.error || 'Failed to upload image');
       }
     } catch (error) {
-      console.error('❌ Error uploading image:', error);
       setUploadError('Network error occurred while uploading image');
     } finally {
       setImageUploading(null);
@@ -1372,6 +1427,22 @@ export default function VisualEditor({
       if (file.type.startsWith('image/')) {
         await uploadImageToSupabase(file, elementId);
       }
+    }
+  };
+
+  // Media upload (image or video)
+  const uploadMedia = async (file: File): Promise<{ url?: string; type?: 'image' | 'video'; error?: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/email-campaigns/upload-media', { method: 'POST', body: formData });
+      const result = await response.json();
+      if (result.success) {
+        return { url: result.data.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'video' };
+      }
+      return { error: result.error || 'Upload failed' };
+    } catch (e) {
+      return { error: 'Network error' };
     }
   };
 
@@ -1950,15 +2021,21 @@ export default function VisualEditor({
 
     const handleClickCapture = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
-      
-      // If clicking on drag handle, don't interfere
-      if (target.closest('.drag-handle')) {
+      // Ignore clicks on controls/toolbar/drag handle to avoid stealing focus
+      if (
+        target.closest('.drag-handle') ||
+        target.closest('.formatting-toolbar') ||
+        target.closest('.element-controls') ||
+        target.closest('.image-overlay-actions') ||
+        target.closest('[data-toolbar-button]') ||
+        target.matches('[data-toolbar-button]') ||
+        target.matches('[data-overlay-action]')
+      ) {
         return;
       }
-      
-      // NEVER start editing directly - only Edit button should do that
-        e.stopPropagation();
-        selectElement(element.id);
+      // Select the element on any other click within its wrapper
+      e.stopPropagation();
+      selectElement(element.id);
     };
 
 
@@ -1970,7 +2047,7 @@ export default function VisualEditor({
         editing={isEditing}
         fullWidth={element.fullWidth}
         draggable={false}
-        // onClickCapture={handleClickCapture}
+        onClickCapture={handleClickCapture}
         onDragOver={(e) => handleElementDragOver(e, index)}
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
@@ -2525,7 +2602,7 @@ export default function VisualEditor({
             />
                 {/* ✨ NEW: Image upload overlay when selected */}
                 {isSelected && imageUploading !== element.id && (
-                  <div style={{
+                  <div className="image-overlay-actions" style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
@@ -2535,10 +2612,11 @@ export default function VisualEditor({
                     padding: '1rem',
                     borderRadius: '8px',
                     display: 'flex',
-                    gap: '1rem',
+                    gap: '0.75rem',
                     alignItems: 'center'
                   }}>
                     <button
+                      data-overlay-action
                       onClick={() => handleImageUpload(element.id)}
                       style={{
                         background: 'var(--primary)',
@@ -2553,7 +2631,21 @@ export default function VisualEditor({
                       }}
                     >
                       <FaUpload size={14} />
-                      Change Image
+                      Upload
+                    </button>
+                    <button
+                      data-overlay-action
+                      onClick={openMediaLibrary}
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: 'white',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Select Media
                     </button>
                   </div>
                 )}
@@ -2598,15 +2690,11 @@ export default function VisualEditor({
                 ) : (
                   <>
                 <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
-                <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Upload an Image
-                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Upload Image or Video</div>
                 <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
                   Click to browse or drag and drop
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#999' }}>
-                      Supports JPG, PNG, GIF (max 10MB)
-                </div>
+                <div style={{ fontSize: '0.8rem', color: '#999' }}>Supports JPG, PNG, GIF (max 10MB), MP4/WebM/Ogg (max 100MB)</div>
                   </>
                 )}
               </ImageUploadArea>)
@@ -3110,7 +3198,7 @@ export default function VisualEditor({
       }}>
         
         {/* Visual Email Canvas - Left */}
-        <div style={{ 
+        <div ref={leftPaneRef} style={{ 
           flex: rightPanelState ? '8' : '1 1 auto',
           display: 'flex', 
           flexDirection: 'column',
@@ -3559,6 +3647,88 @@ export default function VisualEditor({
                           : 'Expand element to full email width'}
                       </div>
                     </ControlGroup>
+
+                    {/* Image Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'image' && (
+                      <>
+                        <ControlGroup>
+                          <ControlLabel>Image URL</ControlLabel>
+                          <input
+                            type="text"
+                            value={emailElements.find(el => el.id === selectedElementId)?.src || ''}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(selectedElementId, { src: e.target.value })}
+                            placeholder="https://..."
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text)'
+                            }}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Alt Text</ControlLabel>
+                          <input
+                            type="text"
+                            value={emailElements.find(el => el.id === selectedElementId)?.alt || ''}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(selectedElementId, { alt: e.target.value })}
+                            placeholder="Describe the image"
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text)'
+                            }}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Corner Radius</ControlLabel>
+                          <PaddingSlider
+                            type="range"
+                            min="0"
+                            max="32"
+                            value={parseInt((emailElements.find(el => el.id === selectedElementId)?.borderRadius || '8px').toString())}
+                            onChange={(e) => updateElement(selectedElementId, { borderRadius: `${e.target.value}px` })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Shadow</ControlLabel>
+                          <input
+                            type="text"
+                            value={emailElements.find(el => el.id === selectedElementId)?.boxShadow || ''}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(selectedElementId, { boxShadow: e.target.value })}
+                            placeholder="e.g. 0 4px 15px rgba(0,0,0,0.1)"
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text)'
+                            }}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Actions</ControlLabel>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={() => handleImageUpload(selectedElementId)} style={{
+                              background: 'var(--primary)', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', cursor: 'pointer'
+                            }}>Upload</button>
+                            <button onClick={openMediaLibrary} style={{
+                              background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem 0.75rem', borderRadius: '8px', cursor: 'pointer'
+                            }}>Select Media</button>
+                          </div>
+                        </ControlGroup>
+                      </>
+                    )}
 
                     {/* Header Specific Controls */}
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'header' && (
@@ -4073,6 +4243,163 @@ export default function VisualEditor({
               <ModalButton $variant="primary" onClick={applyColor}>
                 Apply {colorPickerType === 'text' ? 'Text' : 'Background'} Color
               </ModalButton>
+            </ModalButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Media Library Modal */}
+      {showMediaLibrary && (
+        <ModalOverlay onClick={closeMediaLibrary}>
+          <ModalContent onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', left: mediaModalLeft, top: '8vh', width: mediaModalWidth, maxWidth: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+              <ModalTitle style={{ margin: 0 }}>Select Media</ModalTitle>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={mediaSearch}
+                  onChange={(e) => { setMediaSearch(e.target.value); setMediaPage(1); }}
+                  placeholder="Search by name..."
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text)'
+                  }}
+                />
+                <select
+                  value={mediaTypeFilter}
+                  onChange={(e) => { setMediaTypeFilter(e.target.value as any); setMediaPage(1); }}
+                  style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text)' }}
+                >
+                  <option value="all">All</option>
+                  <option value="image">Images</option>
+                  <option value="video">Videos</option>
+                </select>
+                <select
+                  value={mediaSort}
+                  onChange={(e) => { setMediaSort(e.target.value as any); setMediaPage(1); }}
+                  style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text)' }}
+                >
+                  <option value="recent">Most recent</option>
+                  <option value="name_asc">Name A→Z</option>
+                  <option value="name_desc">Name Z→A</option>
+                  <option value="size_desc">Size (desc)</option>
+                </select>
+              </div>
+            </div>
+
+            {isLoadingMedia ? (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>Loading media…</div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: '1rem',
+                    maxHeight: '60vh',
+                    overflow: 'auto',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '0.75rem',
+                    borderRadius: '8px'
+                  }}
+                >
+                  {pagedMediaItems.length === 0 && (
+                    <div style={{ opacity: 0.7 }}>No media found.</div>
+                  )}
+
+                  {pagedMediaItems.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => {
+                        if (!selectedElementId) return;
+                        const el = emailElements.find(e => e.id === selectedElementId);
+                        if (!el) return;
+                        if (item.type === 'image') {
+                          updateElement(selectedElementId, { src: item.publicUrl, alt: item.name });
+                        } else if (item.type === 'video') {
+                          updateElement(selectedElementId, { url: item.publicUrl, thumbnail: el.thumbnail || '' });
+                        }
+                        closeMediaLibrary();
+                      }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '10px',
+                        padding: '0.5rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          paddingTop: '66%',
+                          overflow: 'hidden',
+                          borderRadius: '8px',
+                          background: 'rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        {item.type === 'image' ? (
+                          <img
+                            src={item.publicUrl}
+                            alt={item.name}
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', background: 'rgba(0,0,0,0.3)' }}>
+                            <FaVideo style={{ marginRight: '0.25rem' }} /> Video
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.type}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    Page {currentMediaPage} of {totalMediaPages} • {filteredMediaItems.length} items
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => setMediaPage(p => Math.max(1, p - 1))}
+                      disabled={currentMediaPage <= 1}
+                      style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'var(--text)', cursor: currentMediaPage <= 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      Prev
+                    </button>
+                    <button
+                      onClick={() => setMediaPage(p => Math.min(totalMediaPages, p + 1))}
+                      disabled={currentMediaPage >= totalMediaPages}
+                      style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'var(--text)', cursor: currentMediaPage >= totalMediaPages ? 'not-allowed' : 'pointer' }}
+                    >
+                      Next
+                    </button>
+                    <select
+                      value={mediaPageSize}
+                      onChange={(e) => { setMediaPageSize(parseInt(e.target.value)); setMediaPage(1); }}
+                      style={{ padding: '0.4rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text)' }}
+                    >
+                      <option value={12}>12 / page</option>
+                      <option value={24}>24 / page</option>
+                      <option value={48}>48 / page</option>
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <ModalButtons>
+              <ModalButton $variant="secondary" onClick={closeMediaLibrary}>Close</ModalButton>
             </ModalButtons>
           </ModalContent>
         </ModalOverlay>
