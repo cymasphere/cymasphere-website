@@ -3096,7 +3096,7 @@ function CreateCampaignPage() {
       // Determine container styling based on fullWidth
       const containerStyle = element.fullWidth 
         ? 'margin: 0; padding: 0;' 
-        : 'margin: 0 auto; max-width: 100%;';
+        : 'margin: 0 auto; max-width: 100%; width: 100%;';
       
       const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
       
@@ -3114,7 +3114,52 @@ function CreateCampaignPage() {
           return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${element.fullWidth ? 'padding: 0;' : ''}"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
         
         case 'brand-header':
-          return `<div class="full-width" style="margin:0; padding:0;"><div style="text-align:center; padding:14px 20px; ${element.backgroundColor ? `background:${element.backgroundColor};` : 'background:#111;'} color:${element.textColor || '#fff'}; font-weight:800; letter-spacing:2px;">${element.content || ''}</div></div>`;
+          return `<div class="${wrapperClass}" style="margin:0; padding:0;">
+            <div style="
+              text-align: center;
+              background: ${element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)'};
+              padding: ${element.fullWidth ? '0' : '20px'};
+              margin: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 60px;
+              gap: 2px;
+              border-radius: 0;
+              box-shadow: none;
+            ">
+              <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="
+                width: 36px;
+                height: 36px;
+                object-fit: contain;
+                opacity: 0.9;
+                display: block;
+              " />
+              <div style="
+                font-size: 1.5rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 2.5px;
+                font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                min-height: 1em;
+                line-height: 1.2;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                align-items: center;
+              ">
+                <span style="
+                  background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                  background-clip: text;
+                ">CYMA</span>
+                <span style="
+                  color: ${element.textColor || '#ffffff'};
+                ">SPHERE</span>
+              </div>
+            </div>
+          </div>`;
         
         case 'divider':
           return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem 0; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
@@ -3134,6 +3179,9 @@ function CreateCampaignPage() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${campaignData.subject || 'Email Preview'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -3146,12 +3194,12 @@ function CreateCampaignPage() {
         }
         .container {
             background-color: white;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .content {
-            padding: 30px;
+            padding: 0;
         }
         .footer {
             padding: 20px;
@@ -3167,14 +3215,15 @@ function CreateCampaignPage() {
         }
         .full-width {
             width: 100%;
-            margin-left: calc(-30px);
-            margin-right: calc(-30px);
-            padding-left: 30px;
-            padding-right: 30px;
+            margin: 0;
+            padding: 0;
         }
         .constrained-width {
+            width: 100%;
             max-width: 100%;
             margin: 0 auto;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
         
         /* Responsive styles */

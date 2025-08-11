@@ -110,7 +110,7 @@ const EmailContainer = styled.div`
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 24px 0; /* show left/right grey margins outside 600px content */
+  padding: 0; /* show left/right grey margins outside 600px content */
 
   .email-content {
     background-color: #ffffff;
@@ -119,6 +119,12 @@ const EmailContainer = styled.div`
     margin: 0 auto;
     padding: 0 24px;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
+    
+    /* Ensure no top spacing */
+    > *:first-child {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
   }
 `;
 
@@ -139,7 +145,7 @@ const EmailHeader = styled.div`
 `;
 
 const EmailBody = styled.div`
-  padding: 2rem 0;
+  padding: 0 0 2rem 0;
   background: #ffffff;
   overflow: visible;
   position: relative;
@@ -182,6 +188,10 @@ const EmailElement = styled.div.withConfig({
   ${props => props.fullWidth && `
     box-shadow: inset 2px 0 0 rgba(108, 99, 255, 0.3), inset -2px 0 0 rgba(108, 99, 255, 0.3);
   `}
+
+  &:first-child {
+    margin-top: 0;
+  }
 
   &:hover {
     border-color: ${props => props.selected ? 'var(--primary)' : 'rgba(108, 99, 255, 0.5)'};
@@ -3355,6 +3365,9 @@ export default function VisualEditor({
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${campaignData?.subject || 'Email Campaign'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f7;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
@@ -3397,27 +3410,46 @@ export default function VisualEditor({
                                   return `<div style="
                                     text-align: center;
                                     background: ${element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)'};
-                                    padding: 20px 0;
+                                    padding: ${element.fullWidth ? '0' : '20px'};
                                     margin: 0 -24px;
                                     display: flex;
                                     align-items: center;
                                     justify-content: center;
+                                    min-height: 60px;
                                     gap: 2px;
+                                    border-radius: 0;
+                                    box-shadow: none;
                                   ">
                                     <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="
                                       width: 36px;
                                       height: 36px;
                                       object-fit: contain;
                                       opacity: 0.9;
+                                      display: block;
                                     " />
                                     <div style="
-                                      color: ${element.textColor || '#ffffff'};
                                       font-size: 1.5rem;
                                       font-weight: 700;
                                       text-transform: uppercase;
                                       letter-spacing: 2.5px;
-                                      font-family: var(--font-montserrat), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                                    ">${element.content || 'CYMASPHERE'}</div>
+                                      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                                      min-height: 1em;
+                                      line-height: 1.2;
+                                      margin: 0;
+                                      padding: 0;
+                                      display: flex;
+                                      align-items: center;
+                                    ">
+                                      <span style="
+                                        background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+                                        -webkit-background-clip: text;
+                                        -webkit-text-fill-color: transparent;
+                                        background-clip: text;
+                                      ">CYMA</span>
+                                      <span style="
+                                        color: ${element.textColor || '#ffffff'};
+                                      ">SPHERE</span>
+                                    </div>
                                   </div>`;
                                 default:
                                   return '';
@@ -3539,7 +3571,7 @@ export default function VisualEditor({
                               height: elementDragOverIndex === 0 ? '6px' : '2px',
                               background: elementDragOverIndex === 0 ? 'var(--primary)' : 'transparent',
                               transition: 'all 0.2s ease',
-                              margin: '8px 0',
+                              margin: '0 0 2px 0',
                               borderRadius: '2px'
                             }}
                           />
@@ -3555,7 +3587,7 @@ export default function VisualEditor({
                               height: elementDragOverIndex === index + 1 ? '6px' : '2px',
                               background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
                               transition: 'all 0.2s ease',
-                              margin: '8px 0',
+                              margin: '2px 0',
                               borderRadius: '2px'
                             }}
                         />

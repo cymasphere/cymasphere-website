@@ -1061,11 +1061,21 @@ function generateHtmlFromElements(
           return `<div class="${wrapperClass}" style="background: ${
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
-          }; padding: 20px; text-align: center; color: ${
+          }; padding: ${element.fullWidth ? '0' : '20px'}; text-align: center; color: ${
             element.textColor || "#ffffff"
-          }; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; font-family: var(--font-montserrat), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; gap: 2px;">
-            <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="width: 36px; height: 36px; object-fit: contain; opacity: 0.9;" />
-            <span>${brandHeaderHtml}</span>
+          }; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 60px; gap: 2px; border-radius: 0; box-shadow: none;">
+            <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="width: 36px; height: 36px; object-fit: contain; opacity: 0.9; display: block;" />
+                         <span style="min-height: 1em; line-height: 1.2; margin: 0; padding: 0; display: flex; align-items: center;">
+               <span style="
+                 background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+                 -webkit-background-clip: text;
+                 -webkit-text-fill-color: transparent;
+                 background-clip: text;
+               ">CYMA</span>
+               <span style="
+                 color: ${element.textColor || '#ffffff'};
+               ">SPHERE</span>
+             </span>
           </div>`;
 
         default:
