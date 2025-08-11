@@ -164,7 +164,7 @@ const EmailFooter = styled.div`
 const EmailElement = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
 })<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
-  margin: ${props => props.fullWidth ? '0 -2.5rem 12px -2.5rem' : '0 auto 12px auto'};
+  margin: ${props => props.fullWidth ? '0 -24px 12px -24px' : '0 auto 12px auto'};
   padding: ${props => props.fullWidth ? '0' : '8px'};
   max-width: ${props => props.fullWidth ? 'none' : 'none'};
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
