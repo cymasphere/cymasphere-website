@@ -1063,7 +1063,10 @@ function generateHtmlFromElements(
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
           }; padding: 20px; text-align: center; color: ${
             element.textColor || "#ffffff"
-          }; font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">${brandHeaderHtml}</div>`;
+          }; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; font-family: var(--font-montserrat), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; gap: 2px;">
+            <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="width: 36px; height: 36px; object-fit: contain; opacity: 0.9;" />
+            <span>${brandHeaderHtml}</span>
+          </div>`;
 
         default:
           return `<div style="color: #555; margin: 1rem 0;">${
@@ -1193,8 +1196,8 @@ function generateTextFromElements(elements: any[]): string {
             element.contactUrl || "#contact"
           }\n`;
         case "brand-header":
-          return `${element.content || "CYMASPHERE"}\n${"=".repeat(
-            (element.content || "CYMASPHERE").length
+          return `[LOGO] ${element.content || "CYMASPHERE"}\n${"=".repeat(
+            (element.content || "CYMASPHERE").length + 7
           )}\n`;
         default:
           return `${element.content || ""}\n`;

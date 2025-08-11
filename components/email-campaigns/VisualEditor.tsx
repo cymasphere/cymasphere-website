@@ -2946,8 +2946,21 @@ export default function VisualEditor({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '60px'
+            minHeight: '60px',
+            gap: '2px'
           }}>
+            {/* Logo */}
+            <img 
+              src="/images/cm-logo-icon.png" 
+              alt="Cymasphere Logo" 
+              style={{
+                width: '36px',
+                height: '36px',
+                objectFit: 'contain',
+                opacity: 0.9
+              }}
+            />
+            
             <EditableText
               className="editable-text brand-header"
               editing={isEditing && selectedElementId === element.id}
@@ -2968,9 +2981,10 @@ export default function VisualEditor({
               style={{
                 color: element.textColor || '#ffffff',
                 fontSize: '1.5rem',
-                fontWeight: 'bold',
+                fontWeight: '700',
                 textTransform: 'uppercase',
-                letterSpacing: '2px',
+                letterSpacing: '2.5px',
+                fontFamily: 'var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                 cursor: isEditing ? 'text' : 'pointer',
                 outline: 'none',
                 minHeight: '1em'
@@ -3379,6 +3393,32 @@ export default function VisualEditor({
                                     font-family: Arial, sans-serif;
                                     font-weight: bold;
                                     ">${element.content || ''}</a>`;
+                                case 'brand-header':
+                                  return `<div style="
+                                    text-align: center;
+                                    background: ${element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)'};
+                                    padding: 20px 0;
+                                    margin: 0 -24px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 2px;
+                                  ">
+                                    <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="
+                                      width: 36px;
+                                      height: 36px;
+                                      object-fit: contain;
+                                      opacity: 0.9;
+                                    " />
+                                    <div style="
+                                      color: ${element.textColor || '#ffffff'};
+                                      font-size: 1.5rem;
+                                      font-weight: 700;
+                                      text-transform: uppercase;
+                                      letter-spacing: 2.5px;
+                                      font-family: var(--font-montserrat), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                                    ">${element.content || 'CYMASPHERE'}</div>
+                                  </div>`;
                                 default:
                                   return '';
                               }
@@ -3455,7 +3495,7 @@ export default function VisualEditor({
                           fontWeight: 'bold',
                           letterSpacing: '0.2em'
                       }}>
-                          {element.content || 'CYMASPHERE'}
+                          [LOGO] {element.content || 'CYMASPHERE'}
                       </div>
                       )}
                       </div>
