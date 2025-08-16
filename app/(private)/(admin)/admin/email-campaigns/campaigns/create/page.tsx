@@ -1893,97 +1893,23 @@ interface Audience {
   type: 'static' | 'dynamic';
 }
 
-const templates = [
-  {
-    id: "newsletter",
-    title: "Newsletter Template",
-    description: "Clean layout for regular updates",
-    preview: "📰 Newsletter Layout"
-  },
-  {
-    id: "promotional",
-    title: "Promotional Template",
-    description: "Eye-catching design for sales and offers",
-    preview: "🎯 Promotional Design"
-  },
-  {
-    id: "welcome",
-    title: "Welcome Template",
-    description: "Warm welcome message for new users",
-    preview: "👋 Welcome Message"
-  },
-  {
-    id: "custom",
-    title: "Custom Template",
-    description: "Start from scratch with a blank template",
-    preview: "✨ Custom Design"
-  }
-];
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  subject: string;
+  template_type: string;
+  status: string;
+  html_content: string;
+  text_content: string;
+  variables: any;
+  created_at: string;
+  updated_at: string;
+}
 
-// Template presets that match the template structure
-const templatePresets = {
-  newsletter: {
-    name: "Monthly Newsletter",
-    subject: "🎵 This Month in Music Production",
-    senderName: "Cymasphere Newsletter",
-    preheader: "The latest tips, trends, and updates from the music production world",
-    description: "Regular newsletter template with featured content",
-    audience: "all",
-    content: `This Month in Music Production - Latest tips and updates`,
-    emailElements: [
-      { id: 'header_' + Date.now(), type: 'header', content: 'This Month in Music Production' },
-      { id: 'text_' + Date.now() + 1, type: 'text', content: 'Here are the latest tips, tricks, and updates from the world of electronic music production.' },
-      { id: 'divider_' + Date.now(), type: 'divider' },
-      { id: 'text_' + Date.now() + 2, type: 'text', content: 'Featured content and tutorials this month...' },
-      { id: 'button_' + Date.now(), type: 'button', content: 'Read More', url: '#' }
-    ]
-  },
-  promotional: {
-    name: "Product Launch",
-    subject: "🚀 New Synthesizer Features Available Now!",
-    senderName: "Cymasphere Product Team", 
-    preheader: "Revolutionary new features that will transform your music production",
-    description: "Promotional template for new product announcements",
-    audience: "active",
-    content: `Exciting New Features Just Launched!`,
-    emailElements: [
-      { id: 'header_' + Date.now(), type: 'header', content: 'Exciting New Features Just Launched! 🚀' },
-              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/4facfe/ffffff?text=New+Features' },
-      { id: 'text_' + Date.now(), type: 'text', content: 'We\'ve been working hard to bring you some amazing new synthesizer capabilities that will revolutionize your music production workflow.' },
-      { id: 'button_' + Date.now(), type: 'button', content: 'Explore New Features', url: '#' },
-      { id: 'spacer_' + Date.now(), type: 'spacer', height: '30px' }
-    ]
-  },
-  welcome: {
-    name: "Welcome Email",
-    subject: "Welcome to Cymasphere! 🎵",
-    senderName: "Cymasphere Team",
-    preheader: "Let's get you started on your music creation journey",
-    description: "A warm welcome message for new subscribers",
-    audience: "new",
-    content: `Welcome to Cymasphere! We're excited to have you join our community of music creators.`,
-    emailElements: [
-      { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
-      { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, We\'re excited to have you join our community of music creators and synthesizer enthusiasts.' },
-      { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' },
-              { id: 'image_' + Date.now(), type: 'image', src: 'https://via.placeholder.com/600x300/667eea/ffffff?text=Welcome+to+Cymasphere' }
-    ]
-  },
-  custom: {
-    name: "",
-    subject: "",
-    senderName: "",
-    preheader: "",
-    description: "",
-    audience: "",
-    content: "",
-    emailElements: [
-      { id: 'header_' + Date.now(), type: 'header', content: 'Welcome to Cymasphere! 🎵' },
-      { id: 'text_' + Date.now(), type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
-      { id: 'button_' + Date.now(), type: 'button', content: '🚀 Get Started Now', url: '#' }
-    ]
-  }
-};
+
+
+// Templates are now loaded from the database via API
 
 interface CampaignData {
   name: string;
@@ -2142,6 +2068,10 @@ function CreateCampaignPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
+  // Template state
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+
   const copyPreviewHtml = async () => {
     try {
       const html = generatePreviewHtml();
@@ -2225,25 +2155,64 @@ function CreateCampaignPage() {
     isLoading: false
   });
   
-  // Initialize email elements based on template
+  // Initialize email elements with default content
   const getInitialEmailElements = () => {
-    if (shouldPrefill && templateId && templatePresets[templateId as keyof typeof templatePresets]) {
-      // Initialize from template
-      const preset = templatePresets[templateId as keyof typeof templatePresets];
-      return preset.emailElements.map(element => ({
-        ...element,
-        id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-      }));
-    }
     return [
-      { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵' },
-      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...' },
-      { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#' },
-      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Create+Amazing+Music' }
+      { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵', fullWidth: true, fontSize: '2.5rem', fontWeight: '800', textAlign: 'center', textColor: '#333', paddingTop: 16, paddingBottom: 16 },
+      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...', fullWidth: false, fontSize: '16px', fontWeight: 'normal', textAlign: 'left', textColor: '#555', paddingTop: 16, paddingBottom: 16 },
+      { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#', fullWidth: false, textColor: '#ffffff', backgroundColor: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)', fontSize: '1rem', fontWeight: '700', textAlign: 'center', fontFamily: 'Arial, sans-serif', lineHeight: '1.2', paddingTop: 16, paddingBottom: 16 },
+      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Create+Amazing+Music', fullWidth: false, paddingTop: 16, paddingBottom: 16 }
     ];
   };
 
   const [emailElements, setEmailElements] = useState<any[]>(getInitialEmailElements());
+  
+  // Function to ensure all elements have proper default properties
+  const ensureElementProperties = (elements: any[]) => {
+    return elements.map(element => {
+      // Only set properties that are actually missing, preserve existing values
+      const baseProps = {
+        paddingTop: element.paddingTop !== undefined ? element.paddingTop : 16,
+        paddingBottom: element.paddingBottom !== undefined ? element.paddingBottom : 16,
+        fullWidth: element.fullWidth !== undefined ? element.fullWidth : false
+      };
+      
+      switch (element.type) {
+        case 'button':
+          return {
+            ...element,
+            ...baseProps,
+            textColor: element.textColor !== undefined ? element.textColor : '#ffffff',
+            backgroundColor: element.backgroundColor !== undefined ? element.backgroundColor : 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
+            fontSize: element.fontSize !== undefined ? element.fontSize : '1rem',
+            fontWeight: element.fontWeight !== undefined ? element.fontWeight : '700',
+            textAlign: element.textAlign !== undefined ? element.textAlign : 'center',
+            fontFamily: element.fontFamily !== undefined ? element.fontFamily : 'Arial, sans-serif',
+            lineHeight: element.lineHeight !== undefined ? element.lineHeight : '1.2'
+          };
+        case 'header':
+          return {
+            ...element,
+            ...baseProps,
+            fontSize: element.fontSize !== undefined ? element.fontSize : '2.5rem',
+            fontWeight: element.fontWeight !== undefined ? element.fontWeight : '800',
+            textAlign: element.textAlign !== undefined ? element.textAlign : 'center',
+            textColor: element.textColor !== undefined ? element.textColor : '#333'
+          };
+        case 'text':
+          return {
+            ...element,
+            ...baseProps,
+            fontSize: element.fontSize !== undefined ? element.fontSize : '16px',
+            fontWeight: element.fontWeight !== undefined ? element.fontWeight : 'normal',
+            textAlign: element.textAlign !== undefined ? element.textAlign : 'left',
+            textColor: element.textColor !== undefined ? element.textColor : '#555'
+          };
+        default:
+          return { ...element, ...baseProps };
+      }
+    });
+  };
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
@@ -2275,6 +2244,12 @@ function CreateCampaignPage() {
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
+  
+  // Ensure all elements have proper properties when component mounts
+  // Removed this useEffect as it was interfering with fullWidth property updates
+  // useEffect(() => {
+  //   setEmailElements(prev => ensureElementProperties(prev));
+  // }, []);
 
   // Define reach calculation function using useCallback so it can be used in useEffect
   const updateReachCalculation = useCallback(async () => {
@@ -2413,8 +2388,28 @@ function CreateCampaignPage() {
       }
     };
 
+    const loadTemplates = async () => {
+      try {
+        setTemplatesLoading(true);
+        const response = await fetch('/api/email-campaigns/templates', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setTemplates(data.templates || []);
+        } else {
+          console.error('Failed to load templates:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
     if (user) {
       loadAudiences();
+      loadTemplates();
     }
   }, [user]);
 
@@ -2938,7 +2933,18 @@ function CreateCampaignPage() {
       case 'text':
         return { ...baseElement, content: 'Add your text content here. You can edit this by double-clicking.' };
       case 'button':
-        return { ...baseElement, content: 'Click Here', url: '#' };
+        return { 
+          ...baseElement, 
+          content: 'Click Here', 
+          url: '#',
+          textColor: '#ffffff',
+          backgroundColor: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
+          fontSize: '1rem',
+          fontWeight: '700',
+          textAlign: 'center',
+          fontFamily: 'Arial, sans-serif',
+          lineHeight: '1.2'
+        };
       case 'image':
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
@@ -2998,30 +3004,196 @@ function CreateCampaignPage() {
     setEmailElements(emailElements.filter(el => el.id !== elementId));
   };
 
-  const handleTemplateSelect = (templateId: string) => {
-    const preset = templatePresets[templateId as keyof typeof templatePresets];
-    if (preset) {
-      // Copy template data to campaign
-      setCampaignData({
-        ...campaignData,
-        template: templateId,
-        name: preset.name || campaignData.name,
-        subject: preset.subject || campaignData.subject,
-        senderName: preset.senderName || campaignData.senderName,
-        preheader: preset.preheader || campaignData.preheader,
-        description: preset.description || campaignData.description,
-        audienceIds: campaignData.audienceIds,
-        content: preset.content || campaignData.content
+  // Function to parse HTML template content and convert to email elements
+  const parseTemplateHtml = (htmlContent: string) => {
+    try {
+      // Create a temporary DOM element to parse the HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      
+      const elements: any[] = [];
+      
+      // Parse different types of elements with proper structure
+      doc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((header, index) => {
+        elements.push({
+          type: 'header',
+          content: header.textContent || `Header ${index + 1}`,
+          fullWidth: true,
+          paddingTop: 16,
+          paddingBottom: 16,
+          fontSize: '32px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        });
       });
       
-      // Copy email elements with new IDs to avoid conflicts
-      const newElements = preset.emailElements.map(element => ({
-        ...element,
-        id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-      }));
-      setEmailElements(newElements);
-    } else {
-      // Just set the template without copying data
+      doc.querySelectorAll('p').forEach((paragraph, index) => {
+        elements.push({
+          type: 'text',
+          content: paragraph.textContent || `Paragraph ${index + 1}`,
+          fullWidth: false,
+          paddingTop: 16,
+          paddingBottom: 16,
+          fontSize: '16px',
+          fontWeight: 'normal',
+          textAlign: 'left'
+        });
+      });
+      
+      doc.querySelectorAll('a').forEach((link, index) => {
+        if (link.textContent && link.href) {
+          elements.push({
+            type: 'button',
+            content: link.textContent,
+            url: link.href,
+            fullWidth: false,
+            textColor: '#ffffff',
+            backgroundColor: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
+            paddingTop: 16,
+            paddingBottom: 16,
+            fontSize: '1rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            fontFamily: 'Arial, sans-serif',
+            lineHeight: '1.2'
+          });
+        }
+      });
+      
+      doc.querySelectorAll('img').forEach((image, index) => {
+        elements.push({
+          type: 'image',
+          src: image.src || image.getAttribute('src') || '',
+          alt: image.alt || `Image ${index + 1}`,
+          fullWidth: false,
+          paddingTop: 16,
+          paddingBottom: 16
+        });
+      });
+      
+      // If no elements were found, create a default text element
+      if (elements.length === 0) {
+        // Strip HTML tags and create a text element
+        const cleanText = htmlContent.replace(/<[^>]*>/g, '').trim();
+        if (cleanText) {
+          elements.push({
+            type: 'text',
+            content: cleanText,
+            fullWidth: false,
+            paddingTop: 16,
+            paddingBottom: 16,
+            fontSize: '16px',
+            fontWeight: 'normal',
+            textAlign: 'left'
+          });
+        }
+      }
+      
+      // Ensure all parsed elements have proper properties
+      return ensureElementProperties(elements);
+    } catch (error) {
+      console.error('Error parsing HTML template:', error);
+      // Return a fallback text element with proper structure
+      return ensureElementProperties([{
+        type: 'text',
+        content: 'Template content loaded',
+        fullWidth: false,
+        paddingTop: 16,
+        paddingBottom: 16,
+        fontSize: '16px',
+        fontWeight: 'normal',
+        textAlign: 'left'
+      }]);
+    }
+  };
+
+  const handleTemplateSelect = async (templateId: string) => {
+    if (!templateId) {
+      setCampaignData({...campaignData, template: ''});
+      return;
+    }
+
+    try {
+      // Fetch the selected template from the API
+      const response = await fetch(`/api/email-campaigns/templates/${templateId}`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const template = data.template;
+        
+        // Update campaign data with template information
+        setCampaignData({
+          ...campaignData,
+          template: templateId,
+          subject: template.subject || campaignData.subject,
+          preheader: template.description || campaignData.preheader,
+        });
+        
+        // Load the template's visual elements directly (same as template editor)
+        if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {
+          console.log('🎨 Loading template with visual elements:', template.variables.visual_elements.length);
+          
+          // Generate new IDs for each element to avoid conflicts
+          const newElements = template.variables.visual_elements.map((element: any) => ({
+            ...element,
+            id: element.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+          }));
+          
+          // Add a brand header at the top if it doesn't already exist
+          const hasBrandHeader = newElements.some((el: any) => el.type === 'brand-header');
+          if (!hasBrandHeader) {
+            const brandHeaderElement = {
+              id: 'brand-header_' + Date.now(),
+              type: 'brand-header',
+              content: 'CYMASPHERE',
+              fullWidth: true,
+              backgroundColor: 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+              textColor: '#ffffff',
+              paddingTop: 0,
+              paddingBottom: 0,
+              fontSize: '24px',
+              fontWeight: '700',
+              textAlign: 'center',
+              fontFamily: 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+              lineHeight: '1.2',
+              logoStyle: 'gradient'
+            };
+            newElements.unshift(brandHeaderElement);
+          }
+          
+          // Ensure all loaded elements have proper properties
+          const elementsWithProperties = ensureElementProperties(newElements);
+          setEmailElements(elementsWithProperties);
+          console.log('Template visual elements loaded with brand header:', newElements);
+        } else if (template.html_content) {
+          // Fallback: If no visual elements, create a basic text element
+          console.log('Template has no visual elements, creating fallback');
+          const fallbackElement = {
+            id: 'template_content_' + Date.now(),
+            type: 'text',
+            content: 'Template content loaded - edit to customize',
+            fullWidth: false,
+            paddingTop: 16,
+            paddingBottom: 16,
+            fontSize: '16px',
+            fontWeight: 'normal',
+            textAlign: 'left'
+          };
+          const fallbackWithProperties = ensureElementProperties([fallbackElement]);
+          setEmailElements(fallbackWithProperties);
+        } else {
+          console.log('Template has no content');
+        }
+      } else {
+        console.error('Failed to load template:', response.status);
+        // Just set the template ID without additional data
+        setCampaignData({...campaignData, template: templateId});
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
+      // Just set the template ID without additional data
       setCampaignData({...campaignData, template: templateId});
     }
   };
@@ -3096,25 +3268,96 @@ function CreateCampaignPage() {
       // Determine container styling based on fullWidth
       const containerStyle = element.fullWidth 
         ? 'margin: 0; padding: 0;' 
-        : 'margin: 0 auto; max-width: 100%; width: 100%;';
+        : 'margin: 0 auto; max-width: 600px; padding: 0 20px;';
       
       const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
       
+      // Get element properties with defaults - ALL properties from visual editor
+      const fontSize = element.fontSize || '16px';
+      const fontWeight = element.fontWeight || 'normal';
+      const fontStyle = element.fontStyle || 'normal';
+      const textDecoration = element.textDecoration || 'none';
+      const textAlign = element.textAlign || 'left';
+      const paddingTop = element.paddingTop || 16;
+      const paddingBottom = element.paddingBottom || 16;
+      const textColor = element.textColor || '#555';
+      const backgroundColor = element.backgroundColor || 'transparent';
+      const fontFamily = element.fontFamily || 'Arial, sans-serif';
+      const lineHeight = element.lineHeight || '1.6';
+      
+
+      
       switch (element.type) {
         case 'header':
-          return `<div class="${wrapperClass}" style="${containerStyle}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</h1></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <h1 style="
+              font-size: ${fontSize}; 
+              color: ${textColor}; 
+              margin: 0 0 1rem 0; 
+              text-align: ${textAlign}; 
+              font-weight: ${fontWeight};
+              font-style: ${fontStyle};
+              text-decoration: ${textDecoration};
+              line-height: ${lineHeight};
+              font-family: ${fontFamily};
+              ${element.fullWidth ? 'padding: 0 20px;' : ''}
+            ">${element.content || 'Header Text'}</h1>
+          </div>`;
         
         case 'text':
-          return `<div class="${wrapperClass}" style="${containerStyle}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin-bottom: 1rem; ${element.fullWidth ? 'padding: 0 20px;' : ''}">${element.content}</p></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <p style="
+              font-size: ${fontSize}; 
+              color: ${textColor}; 
+              line-height: ${lineHeight}; 
+              margin: 0 0 1rem 0; 
+              text-align: ${textAlign};
+              font-weight: ${fontWeight};
+              font-style: ${fontStyle};
+              text-decoration: ${textDecoration};
+              font-family: ${fontFamily};
+              ${element.fullWidth ? 'padding: 0 20px;' : ''}
+            ">${element.content || 'Text content'}</p>
+          </div>`;
         
         case 'button':
-          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0;"><a href="${element.url || '#'}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${element.content}</a></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <a href="${element.url || '#'}" style="
+              display: ${element.fullWidth ? 'block' : 'inline-block'}; 
+              padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'}; 
+              background: ${backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; 
+              color: #ffffff !important; 
+              text-decoration: ${textDecoration}; 
+              border-radius: ${element.fullWidth ? '0' : '50px'}; 
+              font-weight: ${fontWeight};
+              font-size: ${fontSize};
+              font-style: ${fontStyle};
+              text-align: ${textAlign};
+              font-family: ${fontFamily};
+              line-height: ${lineHeight};
+              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'};
+              min-height: 1em;
+              width: ${element.fullWidth ? '100%' : 'auto'};
+            ">${element.content || 'Button Text'}</a>
+          </div>`;
         
         case 'image':
-          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; margin: 2rem 0; ${element.fullWidth ? 'padding: 0;' : ''}"><img src="${element.src || 'https://via.placeholder.com/600x300'}" alt="${element.alt || 'Email Image'}" style="max-width: 100%; height: auto; border-radius: ${element.fullWidth ? '0' : '8px'}; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <img src="${element.src || 'https://via.placeholder.com/600x300'}" 
+                 alt="${element.alt || 'Email Image'}" 
+                 style="
+                   max-width: 100%; 
+                   height: auto; 
+                   border-radius: ${element.fullWidth ? '0' : '8px'}; 
+                   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                 " />
+          </div>`;
         
         case 'brand-header':
-          return `<div class="${wrapperClass}" style="margin:0; padding:0;">
+          return `<div class="${wrapperClass} brand-header" style="margin:0; padding:0;">
             <div style="
               text-align: center;
               background: ${element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)'};
@@ -3136,39 +3379,162 @@ function CreateCampaignPage() {
                 display: block;
               " />
               <div style="
-                font-size: 1.5rem;
-                font-weight: 700;
+                font-size: ${element.fontSize || '1.5rem'};
+                font-weight: ${element.fontWeight || '700'};
                 text-transform: uppercase;
-                letter-spacing: 2.5px;
-                font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                letter-spacing: ${element.letterSpacing || '2.5px'};
+                font-family: ${element.fontFamily || 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'};
                 min-height: 1em;
-                line-height: 1.2;
+                line-height: ${element.lineHeight || '1.2'};
                 margin: 0;
                 padding: 0;
                 display: flex;
                 align-items: center;
               ">
-                <span style="
-                  background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-                  -webkit-background-clip: text;
-                  -webkit-text-fill-color: transparent;
-                  background-clip: text;
-                ">CYMA</span>
-                <span style="
-                  color: ${element.textColor || '#ffffff'};
-                ">SPHERE</span>
+                <span class="cyma-text">CYMA</span>
+                <span class="sphere-text">SPHERE</span>
               </div>
             </div>
           </div>`;
         
         case 'divider':
-          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="margin: 2rem 0; text-align: center;"><div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div></div></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="margin: 1rem 0; text-align: center;">
+              <div style="height: 2px; background: linear-gradient(90deg, transparent, #ddd, transparent); width: 100%;"></div>
+            </div>
+          </div>`;
         
         case 'spacer':
-          return `<div class="${wrapperClass}" style="${containerStyle}"><div style="height:${element.height || '20px'};"></div></div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} background-color: ${backgroundColor};">
+            <div style="height: ${element.height || '20px'};"></div>
+          </div>`;
+        
+        case 'footer':
+          const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0
+            ? element.socialLinks.map((social: any) => {
+                const icons = {
+                  facebook: "📘",
+                  twitter: "🐦",
+                  instagram: "📷",
+                  youtube: "📺",
+                  discord: "🎮",
+                };
+                return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${icons[social.platform as keyof typeof icons] || "🔗"}</a>`;
+              }).join("")
+            : "";
+          
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="
+              text-align: center; 
+              padding: 2rem; 
+              font-size: ${fontSize}; 
+              color: ${textColor}; 
+              background: ${backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; 
+              border-top: 1px solid #dee2e6; 
+              margin-top: 2rem;
+              font-weight: ${fontWeight};
+              font-style: ${fontStyle};
+              text-decoration: ${textDecoration};
+              font-family: ${fontFamily};
+              line-height: ${lineHeight};
+            ">
+              ${socialLinksHtml ? `<div style="margin-bottom: 1rem;">${socialLinksHtml}</div>` : ""}
+              <div style="margin-bottom: 1rem;">
+                ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+              </div>
+              <div>
+                <a href="${element.unsubscribeUrl || '#unsubscribe'}" style="color: #6c63ff; text-decoration: none;">
+                  ${element.unsubscribeText || "Unsubscribe"}
+                </a>
+                | 
+                <a href="${element.privacyUrl || '#privacy'}" style="color: #6c63ff; text-decoration: none;">
+                  ${element.privacyText || "Privacy Policy"}
+                </a>
+                | 
+                <a href="${element.contactUrl || '#contact'}" style="color: #6c63ff; text-decoration: none;">
+                  ${element.contactText || "Contact Us"}
+                </a>
+              </div>
+            </div>
+          </div>`;
+        
+        case 'social':
+          const socialIcons = element.links && element.links.length > 0
+            ? element.links.map((link: any) => {
+                const icons = {
+                  facebook: "📘",
+                  twitter: "🐦",
+                  instagram: "📷",
+                  youtube: "📺",
+                  discord: "🎮",
+                };
+                return `<a href="${link.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${icons[link.platform as keyof typeof icons] || "🔗"}</a>`;
+              }).join("")
+            : "";
+          
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="margin: 1rem 0; text-align: ${textAlign};">
+              ${socialIcons}
+            </div>
+          </div>`;
+        
+        case 'columns':
+          const columnsHtml = element.columns && element.columns.length > 0
+            ? element.columns.map((column: any, index: number) => 
+                `<div style="flex: 1; padding: 0 10px; text-align: ${column.textAlign || textAlign};">
+                  <div style="
+                    font-size: ${fontSize}; 
+                    color: ${column.textColor || textColor}; 
+                    line-height: ${lineHeight};
+                    font-weight: ${fontWeight};
+                    font-style: ${fontStyle};
+                    text-decoration: ${textDecoration};
+                    font-family: ${fontFamily};
+                  ">${column.content || `Column ${index + 1} content`}</div>
+                </div>`
+              ).join("")
+            : "";
+          
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="display: flex; gap: 20px; margin: 1rem 0;">
+              ${columnsHtml}
+            </div>
+          </div>`;
+        
+        case 'video':
+          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="margin: 1rem 0;">
+              <img src="${element.thumbnail || 'https://via.placeholder.com/600x300'}" 
+                   alt="Video Thumbnail" 
+                   style="max-width: 100%; height: auto; border-radius: 8px; cursor: pointer;" />
+              <div style="margin-top: 0.5rem;">
+                <a href="${element.url || '#'}" style="
+                  color: ${textColor}; 
+                  text-decoration: ${textDecoration}; 
+                  font-weight: ${fontWeight};
+                  font-size: ${fontSize};
+                  font-style: ${fontStyle};
+                  font-family: ${fontFamily};
+                  line-height: ${lineHeight};
+                ">▶ Watch Video</a>
+              </div>
+            </div>
+          </div>`;
         
         default:
-          return `<div class="${wrapperClass}" style="${containerStyle}">${element.content || ''}</div>`;
+          return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
+            <div style="
+              color: ${textColor}; 
+              margin: 1rem 0;
+              font-size: ${fontSize};
+              text-align: ${textAlign};
+              font-weight: ${fontWeight};
+              font-style: ${fontStyle};
+              text-decoration: ${textDecoration};
+              font-family: ${fontFamily};
+              line-height: ${lineHeight};
+            ">${element.content || 'Content'}</div>
+          </div>`;
       }
     }).join('');
 
@@ -3191,6 +3557,92 @@ function CreateCampaignPage() {
             margin: 0 auto;
             padding: 20px;
             background-color: #f7f7f7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Ensure emojis render in color */
+        * {
+            -webkit-text-fill-color: initial;
+            color: inherit;
+        }
+        
+        /* Force emoji color rendering - multiple approaches */
+        emoji, span[role="img"], .emoji {
+            -webkit-text-fill-color: initial !important;
+            color: initial !important;
+        }
+        
+        /* Remove any filters that might be making emojis grey */
+        * {
+            filter: none !important;
+        }
+        
+        /* Ensure text rendering is optimal for emojis */
+        body {
+            text-rendering: optimizeLegibility;
+            -webkit-font-feature-settings: "liga" 1, "kern" 1;
+            font-feature-settings: "liga" 1, "kern" 1;
+        }
+        
+        /* Force emoji color rendering with higher specificity */
+        p, div, span, h1, h2, h3, h4, h5, h6 {
+            -webkit-text-fill-color: initial !important;
+            color: inherit !important;
+        }
+        
+        /* Aggressive emoji color reset - but exclude brand header */
+        *:not(.brand-header):not(.brand-header *) {
+            -webkit-text-fill-color: initial !important;
+            color: inherit !important;
+            filter: none !important;
+        }
+        
+        /* Ensure emojis are not affected by any color overrides */
+        ::-webkit-text-fill-color {
+            -webkit-text-fill-color: initial !important;
+        }
+        
+        /* Reset any inherited CSS variables that might affect colors */
+        :root {
+            --text: initial !important;
+            --text-secondary: initial !important;
+            --primary: initial !important;
+            --accent: initial !important;
+        }
+        
+        /* Force emoji rendering with system emoji font */
+        @font-face {
+            font-family: 'Apple Color Emoji';
+            src: local('Apple Color Emoji');
+        }
+        
+        @font-face {
+            font-family: 'Segoe UI Emoji';
+            src: local('Segoe UI Emoji');
+        }
+        
+        /* Apply emoji fonts to all text except brand header */
+        *:not(.brand-header):not(.brand-header *) {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif !important;
+        }
+        
+        /* Brand header specific styles - override the reset */
+        .brand-header {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        }
+        
+        .brand-header .cyma-text {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            color: transparent !important;
+        }
+        
+        .brand-header .sphere-text {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
         .container {
             background-color: white;
@@ -3219,10 +3671,8 @@ function CreateCampaignPage() {
             padding: 0;
         }
         .constrained-width {
-            width: 100%;
-            max-width: 100%;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 0 20px;
             box-sizing: border-box;
         }
         
@@ -3485,11 +3935,17 @@ function CreateCampaignPage() {
                   onChange={(e) => handleTemplateSelect(e.target.value)}
                 >
                   <option value="">Choose a template...</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.title} - {template.description}
-                    </option>
-                  ))}
+                  {templatesLoading ? (
+                    <option value="">Loading templates...</option>
+                  ) : templates.length === 0 ? (
+                    <option value="">No templates available</option>
+                  ) : (
+                    templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name} - {template.description}
+                      </option>
+                    ))
+                  )}
                 </Select>
               </FormGroup>
             </div>
@@ -3862,7 +4318,7 @@ function CreateCampaignPage() {
                         )
                       }</p>
                     )}
-                    <p><strong>Template:</strong> {templates.find(t => t.id === campaignData.template)?.title || "No template selected"}</p>
+                    <p><strong>Template:</strong> {templates.find(t => t.id === campaignData.template)?.name || "No template selected"}</p>
                   </div>
                 </div>
                 <div>
@@ -3885,27 +4341,25 @@ function CreateCampaignPage() {
                         background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
                         borderRadius: '12px',
                         padding: '1.5rem',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        overflow: 'hidden'
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
                       }}>
                         {/* Email preview with subtle shadow */}
                         <div style={{
                           background: 'white',
                           borderRadius: '8px',
                           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-                          overflow: 'hidden',
                           maxHeight: '280px',
                           position: 'relative'
                         }}>
                           <iframe
+                            key={`small-preview-${emailElements.length}-${JSON.stringify(emailElements.map(el => ({ id: el.id, fullWidth: el.fullWidth })))}`}
                             srcDoc={generatePreviewHtml()}
                             style={{
                               width: '100%',
                               height: '380px',
                               border: 'none',
                               transform: 'scale(0.7)',
-                              transformOrigin: 'top left',
-                              pointerEvents: 'none'
+                              transformOrigin: 'top left'
                             }}
                             title="Email Preview"
                           />
@@ -4449,20 +4903,18 @@ function CreateCampaignPage() {
                           <div style={{
                             background: 'white',
                             borderRadius: '8px',
-                            overflow: 'hidden',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
                             border: '1px solid rgba(255, 255, 255, 0.1)'
                           }}>
                             <iframe
+                              key={`full-preview-${emailElements.length}-${JSON.stringify(emailElements.map(el => ({ id: el.id, fullWidth: el.fullWidth })))}`}
                               srcDoc={generatePreviewHtml()}
                               style={{
                                 width: '100%',
                                 height: 'calc(100vh - 200px)',
                                 border: 'none',
-                                display: 'block',
-                                overflow: 'hidden'
+                                display: 'block'
                               }}
-                              scrolling="no"
                               title="Full Email Preview"
                             />
                           </div>

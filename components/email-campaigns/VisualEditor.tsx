@@ -3386,25 +3386,39 @@ export default function VisualEditor({
                                     background-color: ${element.backgroundColor || 'transparent'};
                                     padding: 8px;
                                     margin: 0;
+                                    text-align: ${element.textAlign || 'center'};
+                                    font-weight: ${element.fontWeight || '800'};
+                                    line-height: ${element.lineHeight || '1.2'};
                                     ">${element.content || ''}</${element.headerType || 'h1'}>`;
                                 case 'text':
                                   return `<div style="
                                     font-family: ${element.fontFamily || 'Arial, sans-serif'};
                                     font-size: ${element.fontSize || '16px'};
                                     color: ${element.textColor || '#333333'};
-                                    line-height: 1.6;
+                                    line-height: ${element.lineHeight || '1.6'};
                                     margin: 0 0 16px 0;
+                                    text-align: ${element.textAlign || 'left'};
+                                    font-weight: ${element.fontWeight || 'normal'};
                                     ">${element.content || ''}</div>`;
                                 case 'button':
                                   return `<a href="${element.url || '#'}" style="
-                                    display: inline-block;
-                                    padding: 12px 24px;
-                                    background-color: ${element.backgroundColor || '#6c63ff'};
+                                    display: ${element.fullWidth ? 'block' : 'inline-block'};
+                                    padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'};
+                                    background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'};
                                     color: ${element.textColor || '#ffffff'};
                                     text-decoration: none;
-                                    border-radius: 4px;
-                                    font-family: Arial, sans-serif;
-                                    font-weight: bold;
+                                    border-radius: ${element.fullWidth ? '0' : '50px'};
+                                    font-family: ${element.fontFamily || 'Arial, sans-serif'};
+                                    font-weight: ${element.fontWeight || '700'};
+                                    font-size: ${element.fontSize || '1rem'};
+                                    line-height: ${element.lineHeight || '1.2'};
+                                    text-align: ${element.textAlign || 'center'};
+                                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                                    text-transform: uppercase;
+                                    letter-spacing: 1px;
+                                    box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'};
+                                    min-height: 1em;
+                                    width: ${element.fullWidth ? '100%' : 'auto'};
                                     ">${element.content || ''}</a>`;
                                 case 'brand-header':
                                   return `<div style="
@@ -3450,6 +3464,38 @@ export default function VisualEditor({
                                         color: ${element.textColor || '#ffffff'};
                                       ">SPHERE</span>
                                     </div>
+                                  </div>`;
+                                case 'image':
+                                  return `<div style="text-align: ${element.textAlign || 'center'}; margin: 16px 0;">
+                                    <img src="${element.src || 'https://via.placeholder.com/600x300'}" 
+                                         alt="${element.alt || 'Email Image'}" 
+                                         style="
+                                           max-width: 100%; 
+                                           height: auto; 
+                                           border-radius: ${element.fullWidth ? '0' : '8px'}; 
+                                           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                                         " />
+                                  </div>`;
+                                case 'divider':
+                                  return `<div style="text-align: ${element.textAlign || 'center'}; margin: 16px 0;">
+                                    <hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 16px 0;" />
+                                  </div>`;
+                                case 'spacer':
+                                  return `<div style="height: ${element.height || '20px'};"></div>`;
+                                case 'footer':
+                                  return `<div style="
+                                    text-align: ${element.textAlign || 'center'}; 
+                                    padding: 2rem; 
+                                    font-size: ${element.fontSize || '0.8rem'}; 
+                                    color: ${element.textColor || '#666'}; 
+                                    background: ${element.backgroundColor || 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; 
+                                    font-weight: ${element.fontWeight || 'normal'}; 
+                                    font-family: ${element.fontFamily || 'Arial, sans-serif'}; 
+                                    line-height: ${element.lineHeight || '1.4'}; 
+                                    border-top: 1px solid #dee2e6; 
+                                    margin-top: 2rem;
+                                  ">
+                                    ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
                                   </div>`;
                                 default:
                                   return '';

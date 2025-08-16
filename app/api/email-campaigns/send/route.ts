@@ -967,27 +967,27 @@ function generateHtmlFromElements(
 
       switch (element.type) {
         case "header":
-          return `<div class="${wrapperClass}"><h1 style="font-size: 2.5rem; color: #333; margin-bottom: 1rem; text-align: center; background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
+          return `<div class="${wrapperClass}"><h1 style="font-size: ${element.fontSize || '2.5rem'}; color: ${element.textColor || '#333'}; margin-bottom: 1rem; text-align: ${element.textAlign || 'center'}; font-weight: ${element.fontWeight || '800'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
 
         case "text":
-          return `<div class="${wrapperClass}"><p style="font-size: 1rem; color: #555; line-height: 1.6; margin: 0 0 1rem 0;">${element.content}</p></div>`;
+          return `<div class="${wrapperClass}"><p style="font-size: ${element.fontSize || '1rem'}; color: ${element.textColor || '#555'}; line-height: ${element.lineHeight || '1.6'}; margin: 0 0 1rem 0; text-align: ${element.textAlign || 'left'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'};">${element.content}</p></div>`;
 
         case "button":
-          return `<div class="${wrapperClass}" style="text-align: center; margin: 2rem 0;"><a href="${
+          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 2rem 0;"><a href="${
             element.url || "#"
-          }" style="display: inline-block; padding: 12px 24px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: white; text-decoration: none; border-radius: 25px; font-weight: 600; transition: all 0.3s ease;">${
+          }" style="display: ${element.fullWidth ? 'block' : 'inline-block'}; padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; color: ${element.textColor || 'white'}; text-decoration: none; border-radius: ${element.fullWidth ? '0' : '50px'}; font-weight: ${element.fontWeight || '700'}; font-size: ${element.fontSize || '1rem'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'}; min-height: 1em; width: ${element.fullWidth ? '100%' : 'auto'};">${
             element.content
           }</a></div>`;
 
         case "image":
-          return `<div class="${wrapperClass}" style="text-align: center; margin: 1.5rem 0;"><img src="${
+          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 1.5rem 0;"><img src="${
             element.src
           }" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: ${
             element.fullWidth ? "0" : "8px"
           };" /></div>`;
 
         case "divider":
-          return `<div class="${wrapperClass}"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
+          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'};"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
 
         case "spacer":
           return `<div class="${wrapperClass}" style="height: ${
@@ -1017,7 +1017,7 @@ function generateHtmlFromElements(
               : "";
 
           return `
-          <div class="${wrapperClass}" style="text-align: center; padding: 2rem; font-size: 0.8rem; color: #666; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-top: 1px solid #dee2e6; margin-top: 2rem;">
+          <div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; padding: 2rem; font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#666'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: 1px solid #dee2e6; margin-top: 2rem;">
             ${
               socialLinksHtml
                 ? `<div style="margin-bottom: 1rem;">${socialLinksHtml}</div>`
@@ -1055,31 +1055,23 @@ function generateHtmlFromElements(
               ? `<span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${brandContent.slice(
                   0,
                   4
-                )}</span><span>${brandContent.slice(4)}</span>`
+                )}</span><span style="color: ${element.textColor || '#ffffff'};">${brandContent.slice(4)}</span>`
               : brandContent;
 
-          return `<div class="${wrapperClass}" style="background: ${
+          return `<div class="${wrapperClass} brand-header" style="background: ${
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
-          }; padding: ${element.fullWidth ? '0' : '20px'}; text-align: center; color: ${
+          }; padding: ${element.fullWidth ? '0' : '20px'}; text-align: ${element.textAlign || 'center'}; color: ${
             element.textColor || "#ffffff"
-          }; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 60px; gap: 2px; border-radius: 0; box-shadow: none;">
+          }; font-size: ${element.fontSize || '1.5rem'}; font-weight: ${element.fontWeight || '700'}; text-transform: uppercase; letter-spacing: ${element.letterSpacing || '2.5px'}; font-family: ${element.fontFamily || 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'}; display: flex; align-items: center; justify-content: center; min-height: 60px; gap: 2px; border-radius: 0; box-shadow: none;">
             <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="width: 36px; height: 36px; object-fit: contain; opacity: 0.9; display: block;" />
-                         <span style="min-height: 1em; line-height: 1.2; margin: 0; padding: 0; display: flex; align-items: center;">
-               <span style="
-                 background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-                 -webkit-background-clip: text;
-                 -webkit-text-fill-color: transparent;
-                 background-clip: text;
-               ">CYMA</span>
-               <span style="
-                 color: ${element.textColor || '#ffffff'};
-               ">SPHERE</span>
-             </span>
+            <div style="min-height: 1em; line-height: 1.2; margin: 0; padding: 0; display: flex; align-items: center; font-family: ${element.fontFamily || 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'};">
+              ${brandHeaderHtml}
+            </div>
           </div>`;
 
         default:
-          return `<div style="color: #555; margin: 1rem 0;">${
+          return `<div style="color: #555; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'};">${
             element.content || ""
           }</div>`;
       }
@@ -1094,20 +1086,95 @@ function generateHtmlFromElements(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f7f7f7;">
-    <!-- Outer table for background color -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
-        <tr>
-            <td align="center" style="padding: 20px 0;">
-                <!-- Inner table for content width constraint -->
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; min-width: 320px; margin: 0 auto;">
-                    <tr>
-                        <td style="background-color: #ffffff; padding: 0 24px;"
-
-        .content {
-            padding: 30px;
+    <style>
+        /* Body styles moved to inline for email client compatibility */
+        
+        /* Ensure emojis render in color */
+        * {
+            -webkit-text-fill-color: initial;
+            color: inherit;
         }
+        
+        /* Force emoji color rendering - multiple approaches */
+        emoji, span[role="img"], .emoji {
+            -webkit-text-fill-color: initial !important;
+            color: initial !important;
+        }
+        
+        /* Remove any filters that might be making emojis grey */
+        * {
+            filter: none !important;
+        }
+        
+        /* Ensure text rendering is optimal for emojis */
+        body {
+            text-rendering: optimizeLegibility;
+            -webkit-font-feature-settings: "liga" 1, "kern" 1;
+            font-feature-settings: "liga" 1, "kern" 1;
+        }
+        
+        /* Force emoji color rendering with higher specificity */
+        p, div, span, h1, h2, h3, h4, h5, h6 {
+            -webkit-text-fill-color: initial !important;
+            color: inherit !important;
+        }
+        
+        /* Aggressive emoji color reset - but exclude brand header */
+        *:not(.brand-header):not(.brand-header *) {
+            -webkit-text-fill-color: initial !important;
+            color: inherit !important;
+            filter: none !important;
+        }
+        
+        /* Ensure emojis are not affected by any color overrides */
+        ::-webkit-text-fill-color {
+            -webkit-text-fill-color: initial !important;
+        }
+        
+        /* Reset any inherited CSS variables that might affect colors */
+        :root {
+            --text: initial !important;
+            --text-secondary: initial !important;
+            --primary: initial !important;
+            --accent: initial !important;
+        }
+        
+        /* Force emoji rendering with system emoji font */
+        @font-face {
+            font-family: 'Apple Color Emoji';
+            src: local('Apple Color Emoji');
+        }
+        
+        @font-face {
+            font-family: 'Segoe UI Emoji';
+            src: local('Segoe UI Emoji');
+        }
+        
+        /* Apply emoji fonts to all text except brand header */
+        *:not(.brand-header):not(.brand-header *) {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif !important;
+        }
+        
+        /* Brand header specific styles - override the reset */
+        .brand-header {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        }
+        
+        .brand-header .cyma-text {
+            background: linear-gradient(90deg, #6c63ff, #4ecdc4) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            color: transparent !important;
+        }
+        
+        .brand-header .sphere-text {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+        
+        /* Container styles moved to inline for email client compatibility */
+        
         .footer {
             padding: 20px;
             text-align: center;
@@ -1116,10 +1183,12 @@ function generateHtmlFromElements(
             color: #666666;
             border-top: 1px solid #e9ecef;
         }
+        
         .footer a {
             color: #6c63ff;
             text-decoration: none;
         }
+        
         .full-width {
             margin-left: -30px;
             margin-right: -30px;
@@ -1127,23 +1196,22 @@ function generateHtmlFromElements(
             padding-right: 30px;
             border-radius: 0;
         }
+        
         .constrained-width {
-            max-width: 100%;
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="content">
+<body style="margin: 0; padding: 20px; background-color: #f7f7f7; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+    <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+        <div style="padding: 30px;">
             ${elementHtml}
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+        </div>
+    </div>
 </body>
 </html>`;
 
