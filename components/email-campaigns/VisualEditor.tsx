@@ -897,6 +897,26 @@ export default function VisualEditor({
     }));
   };
 
+  // ✨ NEW: Generate gradient CSS for button backgrounds
+  const generateGradientCSS = (element: any) => {
+    if (!element || element.backgroundType !== 'gradient') {
+      return element?.backgroundColor || '#6c63ff';
+    }
+
+    const { gradientType, gradientStartColor, gradientEndColor, gradientDirection } = element;
+    
+    switch (gradientType) {
+      case 'linear':
+        return `linear-gradient(${gradientDirection || '135deg'}, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
+      case 'radial':
+        return `radial-gradient(circle, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
+      case 'conic':
+        return `conic-gradient(from ${gradientDirection || '135deg'}, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
+      default:
+        return `linear-gradient(135deg, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
+    }
+  };
+
   // ✨ NEW: Modern rich text formatting functions
   const applyFormat = (command: string, value?: string) => {
     console.log(`🎨 Applying format: ${command}${value ? ` with value: ${value}` : ''}`);
@@ -1565,7 +1585,13 @@ export default function VisualEditor({
           url: '#',
           fontSize: '16px',
           fontWeight: 'bold',
-          textAlign: 'center'
+          textAlign: 'center',
+          backgroundType: 'solid',
+          backgroundColor: '#6c63ff',
+          gradientType: 'linear',
+          gradientStartColor: '#6c63ff',
+          gradientEndColor: '#4ecdc4',
+          gradientDirection: '135deg'
         };
       case 'image':
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
@@ -2430,7 +2456,7 @@ export default function VisualEditor({
               style={{
                 display: element.fullWidth ? 'block' : 'inline-block',
                 padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                background: element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'),
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: element.fullWidth ? '0' : '50px',
@@ -2449,19 +2475,15 @@ export default function VisualEditor({
               {element.content}
             </EditableText>
             ) : (
-              <a
-                href={element.url || '#'}
-                target={element.url && element.url.startsWith('http') ? '_blank' : '_self'}
-                rel={element.url && element.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+              <div
                 onClick={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   startEditing(element.id);
                 }}
                 style={{
                   display: element.fullWidth ? 'block' : 'inline-block',
                   padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  background: element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'),
                   color: 'white',
                   textDecoration: 'none',
                   borderRadius: element.fullWidth ? '0' : '50px',
@@ -2471,7 +2493,7 @@ export default function VisualEditor({
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108,99, 255, 0.3)',
                   width: element.fullWidth ? '100%' : 'auto',
                   textAlign: 'center'
                 }}
@@ -3404,7 +3426,7 @@ export default function VisualEditor({
                                   return `<a href="${element.url || '#'}" style="
                                     display: ${element.fullWidth ? 'block' : 'inline-block'};
                                     padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'};
-                                    background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'};
+                                    background: ${element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || '#6c63ff')};
                                     color: ${element.textColor || '#ffffff'};
                                     text-decoration: none;
                                     border-radius: ${element.fullWidth ? '0' : '50px'};
@@ -3984,41 +4006,114 @@ export default function VisualEditor({
 
                         <ControlGroup>
                           <ControlLabel>Button Background</ControlLabel>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <ColorInput
-                              type="color"
-                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
-                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: '' })}
-                              title="Solid color"
-                            />
-                            <input
-                              type="text"
-                              placeholder="CSS gradient, e.g. linear-gradient(135deg, #6c63ff, #a88beb)"
-                              value={emailElements.find(el => el.id === selectedElementId)?.gradient || ''}
-                              onChange={(e) => updateElement(selectedElementId, { gradient: e.target.value })}
-                              style={{
-                                flex: 1,
-                                padding: '0.75rem 1rem',
+                          
+                          {/* Background Type Selection */}
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundType || 'solid'}
+                            onChange={(e) => updateElement(selectedElementId, { 
+                              backgroundType: e.target.value,
+                              gradient: '',
+                              gradientType: e.target.value === 'gradient' ? 'linear' : ''
+                            })}
+                            style={{ marginBottom: '0.75rem' }}
+                          >
+                            <option value="solid">Solid Color</option>
+                            <option value="gradient">Gradient</option>
+                          </ControlSelect>
+
+                          {/* Solid Color Option */}
+                          {emailElements.find(el => el.id === selectedElementId)?.backgroundType !== 'gradient' && (
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <ColorInput
+                                type="color"
+                                value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
+                                onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                                title="Solid color"
+                              />
+                              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                {emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Gradient Options */}
+                          {emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' && (
+                            <>
+                              {/* Gradient Type Selection */}
+                              <ControlSelect
+                                value={emailElements.find(el => el.id === selectedElementId)?.gradientType || 'linear'}
+                                onChange={(e) => updateElement(selectedElementId, { gradientType: e.target.value })}
+                                style={{ marginBottom: '0.75rem' }}
+                              >
+                                <option value="linear">Linear Gradient</option>
+                                <option value="radial">Radial Gradient</option>
+                                <option value="conic">Conic Gradient</option>
+                              </ControlSelect>
+
+                              {/* Gradient Color Inputs */}
+                              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                                    Start Color
+                                  </div>
+                                  <ColorInput
+                                    type="color"
+                                    value={emailElements.find(el => el.id === selectedElementId)?.gradientStartColor || '#6c63ff'}
+                                    onChange={(e) => updateElement(selectedElementId, { gradientStartColor: e.target.value })}
+                                  />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                                    End Color
+                                  </div>
+                                  <ColorInput
+                                    type="color"
+                                    value={emailElements.find(el => el.id === selectedElementId)?.gradientEndColor || '#4ecdc4'}
+                                    onChange={(e) => updateElement(selectedElementId, { gradientEndColor: e.target.value })}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Gradient Direction/Position */}
+                              {emailElements.find(el => el.id === selectedElementId)?.gradientType === 'linear' && (
+                                <ControlSelect
+                                  value={emailElements.find(el => el.id === selectedElementId)?.gradientDirection || '135deg'}
+                                  onChange={(e) => updateElement(selectedElementId, { gradientDirection: e.target.value })}
+                                >
+                                  <option value="0deg">→ Horizontal</option>
+                                  <option value="90deg">↓ Vertical</option>
+                                  <option value="135deg">↘ Diagonal</option>
+                                  <option value="180deg">← Horizontal</option>
+                                  <option value="270deg">↑ Vertical</option>
+                                  <option value="45deg">↗ Diagonal</option>
+                                </ControlSelect>
+                              )}
+
+                              {/* Preview of generated gradient */}
+                              <div style={{ 
+                                marginTop: '0.75rem',
+                                padding: '0.75rem',
                                 borderRadius: '8px',
+                                background: emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' 
+                                  ? generateGradientCSS(emailElements.find(el => el.id === selectedElementId))
+                                  : emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff',
                                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)'
-                              }}
-                            />
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            Enter a CSS gradient to override the solid color.
-                          </div>
+                                minHeight: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                              }}>
+                                {emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' ? 'Gradient Preview' : 'Solid Color'}
+                              </div>
+                            </>
+                          )}
                         </ControlGroup>
 
-                        <ControlGroup>
-                          <ControlLabel>Text Color</ControlLabel>
-                          <ColorInput
-                            type="color"
-                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
-                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
-                          />
-                        </ControlGroup>
+
                       </>
                     )}
 
