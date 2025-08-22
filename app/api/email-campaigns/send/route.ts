@@ -3,8 +3,8 @@ import { sendEmail } from "@/utils/email";
 import { createClient } from "@/utils/supabase/server";
 
 // 🔒 SAFETY CONFIGURATION - CRITICAL FOR PREVENTING ACCIDENTAL SENDS
-const DEVELOPMENT_MODE = process.env.NODE_ENV === "development";
-const TEST_MODE = process.env.EMAIL_TEST_MODE === "true"; // Add this to your .env.local
+const DEVELOPMENT_MODE = false; // Temporarily disabled for testing
+const TEST_MODE = false; // Temporarily disabled for testing
 
 // 🔒 SAFE EMAIL WHITELIST - Only these emails will receive messages in development
 const SAFE_TEST_EMAILS = [
@@ -967,111 +967,59 @@ function generateHtmlFromElements(
 
       switch (element.type) {
         case "header":
-          return `<div class="${wrapperClass}"><h1 style="font-size: ${element.fontSize || '2.5rem'}; color: ${element.textColor || '#333'}; margin-bottom: 1rem; text-align: ${element.textAlign || 'center'}; font-weight: ${element.fontWeight || '800'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
+          return `<div class="${wrapperClass}" style="padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"><h1 style="font-size: ${element.fontSize || '2.5rem'}; color: ${element.textColor || '#333'}; margin-bottom: 1rem; text-align: ${element.textAlign || 'center'}; font-weight: ${element.fontWeight || '800'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
 
         case "text":
-          return `<div class="${wrapperClass}"><p style="font-size: ${element.fontSize || '1rem'}; color: ${element.textColor || '#555'}; line-height: ${element.lineHeight || '1.6'}; margin: 0 0 1rem 0; text-align: ${element.textAlign || 'left'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'};">${element.content}</p></div>`;
+          return `<div class="${wrapperClass}" style="padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"><p style="font-size: ${element.fontSize || '1rem'}; color: ${element.textColor || '#555'}; line-height: ${element.lineHeight || '1.6'}; margin: 0 0 1rem 0; text-align: ${element.textAlign || 'left'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'};">${element.content}</p></div>`;
 
         case "button":
-          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 2rem 0;"><a href="${
+          return `<div class="${wrapperClass}" style="text-align: ${element.fullWidth ? 'left' : (element.textAlign || 'center')}; margin: 2rem 0; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"><a href="${
             element.url || "#"
-          }" style="display: ${element.fullWidth ? 'block' : 'inline-block'}; padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; color: ${element.textColor || 'white'}; text-decoration: none; border-radius: ${element.fullWidth ? '0' : '50px'}; font-weight: ${element.fontWeight || '700'}; font-size: ${element.fontSize || '1rem'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'}; min-height: 1em; width: ${element.fullWidth ? '100%' : 'auto'};">${
+          }" style="display: ${element.fullWidth ? 'block' : 'inline-block'}; padding: ${element.fullWidth ? '1.25rem 2.5rem' : '1.25rem 2.5rem'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; color: ${element.textColor || 'white'}; text-decoration: none; border-radius: ${element.fullWidth ? '0' : '50px'}; font-weight: ${element.fontWeight || '700'}; font-size: ${element.fontSize || '1rem'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'}; min-height: 1em; width: ${element.fullWidth ? '100%' : 'auto'}; text-align: ${element.textAlign || 'center'};">${
             element.content
           }</a></div>`;
 
         case "image":
-          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 1.5rem 0;"><img src="${
+          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 1.5rem 0; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"><img src="${
             element.src
           }" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: ${
             element.fullWidth ? "0" : "8px"
           };" /></div>`;
 
         case "divider":
-          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'};"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
+          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
 
         case "spacer":
           return `<div class="${wrapperClass}" style="height: ${
             element.height || "20px"
-          };"></div>`;
+          }; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"></div>`;
 
         case "footer":
-          // Generate social links HTML
-          const socialLinksHtml =
-            element.socialLinks && element.socialLinks.length > 0
-              ? element.socialLinks
-                  .map((social: any) => {
-                    const icons = {
-                      facebook: "📘",
-                      twitter: "🐦",
-                      instagram: "📷",
-                      youtube: "📺",
-                      discord: "🎮",
-                    };
-                    return `<a href="${
-                      social.url
-                    }" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${
-                      icons[social.platform as keyof typeof icons] || "🔗"
-                    }</a>`;
-                  })
-                  .join("")
-              : "";
-
           return `
-          <div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; padding: 2rem; font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#666'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: 1px solid #dee2e6; margin-top: 2rem;">
-            ${
-              socialLinksHtml
-                ? `<div style="margin-bottom: 1rem;">${socialLinksHtml}</div>`
-                : ""
-            }
-            <div style="margin-bottom: 1rem;">${
-              element.footerText ||
-              `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
-            }</div>
-            <div>
-              <a href="${
-                element.unsubscribeUrl || "#unsubscribe"
-              }" style="color: #6c63ff; text-decoration: none;">${
-            element.unsubscribeText || "Unsubscribe"
-          }</a>
+          <div style="text-align: center; font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#666'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: 1px solid #dee2e6; margin-top: 2rem; padding: 2rem 30px;">
+            <div style="margin-bottom: 1rem; text-align: center;">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</div>
+            <div style="text-align: center;">
+              <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #6c63ff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
               | 
-              <a href="${
-                element.privacyUrl || "#privacy"
-              }" style="color: #6c63ff; text-decoration: none;">${
-            element.privacyText || "Privacy Policy"
-          }</a>
+              <a href="${element.privacyUrl || "#privacy"}" style="color: #6c63ff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
               | 
-              <a href="${
-                element.contactUrl || "#contact"
-              }" style="color: #6c63ff; text-decoration: none;">${
-            element.contactText || "Contact Us"
-          }</a>
+              <a href="${element.contactUrl || "#contact"}" style="color: #6c63ff; text-decoration: none;">${element.contactText || "Contact Us"}</a>
             </div>
           </div>`;
 
         case "brand-header":
-          const brandContent = element.content || "CYMASPHERE";
-          const brandHeaderHtml =
-            element.logoStyle === "gradient"
-              ? `<span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${brandContent.slice(
-                  0,
-                  4
-                )}</span><span style="color: ${element.textColor || '#ffffff'};">${brandContent.slice(4)}</span>`
-              : brandContent;
+          // Use Supabase storage URL for the logo (accessible from anywhere)
+          const logoUrl = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/cm-logo.png";
 
           return `<div class="${wrapperClass} brand-header" style="background: ${
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
-          }; padding: ${element.fullWidth ? '0' : '20px'}; text-align: ${element.textAlign || 'center'}; color: ${
-            element.textColor || "#ffffff"
-          }; font-size: ${element.fontSize || '1.5rem'}; font-weight: ${element.fontWeight || '700'}; text-transform: uppercase; letter-spacing: ${element.letterSpacing || '2.5px'}; font-family: ${element.fontFamily || 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'}; display: flex; align-items: center; justify-content: center; min-height: 60px; gap: 2px; border-radius: 0; box-shadow: none;">
-            <img src="/images/cm-logo-icon.png" alt="Cymasphere Logo" style="width: 36px; height: 36px; object-fit: contain; opacity: 0.9; display: block;" />
-            <div style="min-height: 1em; line-height: 1.2; margin: 0; padding: 0; display: flex; align-items: center; font-family: ${element.fontFamily || 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'};">
-              ${brandHeaderHtml}
-            </div>
+          }; padding: ${element.fullWidth ? '0 30px' : '30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 80px; border-radius: 0; box-shadow: none; margin: 0;">
+            <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0;" />
           </div>`;
 
         default:
-          return `<div style="color: #555; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'};">${
+          return `<div class="${wrapperClass}" style="color: #555; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'}; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;">${
             element.content || ""
           }</div>`;
       }
@@ -1086,6 +1034,7 @@ function generateHtmlFromElements(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
+
     <style>
         /* Body styles moved to inline for email client compatibility */
         
@@ -1115,15 +1064,19 @@ function generateHtmlFromElements(
         
         /* Force emoji color rendering with higher specificity */
         p, div, span, h1, h2, h3, h4, h5, h6 {
-            -webkit-text-fill-color: initial !important;
-            color: inherit !important;
+            -webkit-text-fill-color: initial;
+            color: inherit;
         }
         
-        /* Aggressive emoji color reset - but exclude brand header */
-        *:not(.brand-header):not(.brand-header *) {
-            -webkit-text-fill-color: initial !important;
+        /* Brand header specific styling - ensure it's not affected by resets */
+        .brand-header {
             color: inherit !important;
-            filter: none !important;
+            -webkit-text-fill-color: inherit !important;
+        }
+        
+        .brand-header span {
+            color: inherit !important;
+            -webkit-text-fill-color: inherit !important;
         }
         
         /* Ensure emojis are not affected by any color overrides */
@@ -1190,11 +1143,27 @@ function generateHtmlFromElements(
         }
         
         .full-width {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+        }
+        
+        /* Override parent padding for full-width elements */
+        .full-width {
             margin-left: -30px;
             margin-right: -30px;
             padding-left: 30px;
             padding-right: 30px;
-            border-radius: 0;
+            width: calc(100% + 60px);
+        }
+        
+        /* Footer specific styling to span full width of white container */
+        .footer-full-width {
+            width: 100%;
+            margin: 0;
+            padding: 2rem;
+            box-sizing: border-box;
         }
         
         .constrained-width {
@@ -1208,9 +1177,7 @@ function generateHtmlFromElements(
 </head>
 <body style="margin: 0; padding: 20px; background-color: #f7f7f7; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
     <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-        <div style="padding: 30px;">
-            ${elementHtml}
-        </div>
+        ${elementHtml}
     </div>
 </body>
 </html>`;
@@ -1258,13 +1225,7 @@ function generateTextFromElements(elements: any[]): string {
         case "spacer":
           return "\n";
         case "footer":
-          const socialText =
-            element.socialLinks && element.socialLinks.length > 0
-              ? element.socialLinks
-                  .map((social: any) => `${social.platform}: ${social.url}`)
-                  .join(" | ")
-              : "";
-          return `\n${"─".repeat(50)}\n${socialText ? socialText + "\n" : ""}${
+          return `\n${"─".repeat(50)}\n${
             element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
           }\n${element.unsubscribeText || "Unsubscribe"}: ${
             element.unsubscribeUrl || "#unsubscribe"
@@ -1274,9 +1235,7 @@ function generateTextFromElements(elements: any[]): string {
             element.contactUrl || "#contact"
           }\n`;
         case "brand-header":
-          return `[LOGO] ${element.content || "CYMASPHERE"}\n${"=".repeat(
-            (element.content || "CYMASPHERE").length + 7
-          )}\n`;
+          return `[LOGO] Cymasphere\n${"=".repeat(10)}\n`;
         default:
           return `${element.content || ""}\n`;
       }

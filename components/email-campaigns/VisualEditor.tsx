@@ -33,15 +33,12 @@ import {
   FaAlignCenter,
   FaAlignRight,
 
-  FaYoutube,
-  FaFacebookF,
-  FaInstagram,
-  FaDiscord,
+
   FaEye,
   FaCode,
   FaSave
 } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+
 
 // Styled components for the visual editor
 
@@ -170,7 +167,7 @@ const EmailFooter = styled.div`
 const EmailElement = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
 })<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
-  margin: ${props => props.fullWidth ? '0 -24px 12px -24px' : '0 auto 12px auto'};
+  margin: ${props => props.fullWidth ? '0 -24px 0 -24px' : '0 auto 0 auto'};
   padding: ${props => props.fullWidth ? '0' : '8px'};
   max-width: ${props => props.fullWidth ? 'none' : 'none'};
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
@@ -1597,14 +1594,7 @@ export default function VisualEditor({
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
         return { ...baseElement };
-      case 'social':
-        return { ...baseElement, links: [
-          { platform: 'facebook', url: '#' },
-          { platform: 'twitter', url: '#' },
-          { platform: 'instagram', url: '#' },
-          { platform: 'youtube', url: '#' },
-          { platform: 'discord', url: '#' }
-        ]};
+
       case 'spacer':
         return { ...baseElement, height: '30px' };
       case 'columns':
@@ -1618,14 +1608,7 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           fullWidth: true,
-          socialLinks: [
-            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
-            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
-            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
-            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
-            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
-          ],
-          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
           privacyText: 'Privacy Policy',
@@ -1722,7 +1705,7 @@ export default function VisualEditor({
       if (domElement && element) {
         let content = '';
         if (element.type === 'footer') {
-          content = element.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+          content = element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
         } else {
           content = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
         }
@@ -1814,7 +1797,7 @@ export default function VisualEditor({
       if (editingElementDOM && originalElement) {
         // Restore the original content to the DOM
         if (originalElement.type === 'footer') {
-          editingElementDOM.innerHTML = originalElement.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+          editingElementDOM.innerHTML = originalElement.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
         } else {
           editingElementDOM.innerHTML = originalElement.content || '';
         }
@@ -2107,8 +2090,8 @@ export default function VisualEditor({
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
         style={{
-          paddingTop: `${element.paddingTop ?? 16}px`,
-          paddingBottom: `${element.paddingBottom ?? 16}px`,
+          paddingTop: (element.type === 'brand-header' || element.type === 'footer') ? '0px' : `${element.paddingTop ?? 0}px`,
+          paddingBottom: (element.type === 'brand-header' || element.type === 'footer') ? '0px' : `${element.paddingBottom ?? 0}px`,
           opacity: draggedElementId === element.id ? 0.5 : 1,
           transform: draggedElementId === element.id ? 'scale(0.95)' : 'scale(1)',
           transition: 'opacity 0.2s ease, transform 0.2s ease',
@@ -2770,35 +2753,7 @@ export default function VisualEditor({
         {element.type === 'spacer' && (
           <div style={{ height: element.height || '30px' }} />
         )}
-        {element.type === 'social' && (
-          <div style={{ textAlign: 'center', margin: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              {element.links?.map((link: any, idx: number) => (
-                <a key={idx} href={link.url} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  background: '#6c63ff',
-                  color: 'white',
-                  textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  minWidth: '120px',
-                  justifyContent: 'center'
-                }}>
-                  {link.platform === 'facebook' && <FaFacebookF size={16} />}
-                  {link.platform === 'twitter' && <FaXTwitter size={16} />}
-                  {link.platform === 'instagram' && <FaInstagram size={16} />}
-                  {link.platform === 'youtube' && <FaYoutube size={16} />}
-                  {link.platform === 'discord' && <FaDiscord size={16} />}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+
         {element.type === 'columns' && (
           <div style={{ display: 'flex', gap: '2rem', margin: 0 }}>
             {element.columns?.map((column: any, idx: number) => (
@@ -2867,7 +2822,9 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '0' : '2rem',
+            padding: element.fullWidth ? '0 2rem' : '2rem',
+            paddingTop: `${element.paddingTop || 0}px`,
+            paddingBottom: `${element.paddingBottom || 0}px`,
             fontSize: '0.8rem', 
             color: '#666',
             background: element.fullWidth 
@@ -2876,37 +2833,16 @@ export default function VisualEditor({
             borderTop: element.fullWidth ? 'none' : '1px solid #dee2e6',
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
-            borderRadius: element.fullWidth ? '0' : 'inherit'
+            borderRadius: element.fullWidth ? '0' : 'inherit',
+            minHeight: `${60 + (element.paddingTop || 0) + (element.paddingBottom || 0)}px`
           }}>
-            {/* Social Links */}
-            {element.socialLinks && element.socialLinks.length > 0 && (
-              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                {element.socialLinks.map((social: any, idx: number) => (
-                  <a key={idx} href={social.url} style={{ 
-                    color: '#6c63ff', 
-                    textDecoration: 'none',
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    {social.platform === 'facebook' && <FaFacebookF size={16} />}
-                    {social.platform === 'twitter' && <FaXTwitter size={16} />}
-                    {social.platform === 'instagram' && <FaInstagram size={16} />}
-                    {social.platform === 'youtube' && <FaYoutube size={16} />}
-                    {social.platform === 'discord' && <FaDiscord size={16} />}
-                  </a>
-                ))}
-              </div>
-            )}
+
             
             {/* Footer Text */}
             {isEditing ? (
               <textarea
                 data-element-id={element.id}
-                value={element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                value={element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
                 onChange={(e) => {
                   const newVal = e.target.value;
                   setEmailElements(emailElements.map(el => 
@@ -2929,7 +2865,7 @@ export default function VisualEditor({
               />
             ) : (
               <div
-                dangerouslySetInnerHTML={{ __html: element.footerText || '© 2024 Cymasphere Inc. All rights reserved.' }}
+                dangerouslySetInnerHTML={{ __html: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.` }}
                 data-element-id={element.id}
                 style={{ marginBottom: '1rem' }}
               />
@@ -2973,12 +2909,14 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '0' : '20px',
+            padding: element.fullWidth ? '0 20px' : '20px',
+            paddingTop: `${element.paddingTop || 0}px`,
+            paddingBottom: `${element.paddingBottom || 0}px`,
             background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '60px',
+            minHeight: `${60 + (element.paddingTop || 0) + (element.paddingBottom || 0)}px`,
             gap: '2px'
           }}>
             {/* Logo */}
@@ -3556,7 +3494,7 @@ export default function VisualEditor({
                     };
                     
                     return (
-                    <div key={element.id} style={{ marginBottom: '1rem' }}>
+                    <div key={element.id} style={{ marginBottom: '0' }}>
                       {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{stripHtml(element.content)}</div>}
                       {element.type === 'text' && <div>{stripHtml(element.content)}</div>}
                       {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {stripHtml(element.content)}]</div>}
@@ -3565,17 +3503,10 @@ export default function VisualEditor({
                       {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
                       {element.type === 'footer' && (
                   <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
-                          {/* Social Links */}
-                          {element.socialLinks && element.socialLinks.length > 0 && (
-                            <div style={{ marginBottom: '1rem' }}>
-                              Social Links: {element.socialLinks.map((social: any, idx: number) => (
-                                `${social.platform}: ${social.url}`
-                              )).join(' | ')}
-                  </div>
-                          )}
+
                           {/* Footer Text */}
                           <div style={{ marginBottom: '0.5rem' }}>
-                            {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                            {element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
                           </div>
                           {/* Footer Links */}
                           <div>

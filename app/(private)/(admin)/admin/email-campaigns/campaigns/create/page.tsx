@@ -1940,7 +1940,7 @@ const SendingFeedback = styled(motion.div)<{ type?: 'success' | 'error' | 'info'
   border-radius: 8px;
   color: white;
   font-weight: 600;
-  z-index: 1000;
+  z-index: 10001;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   
   ${props => {
@@ -1965,7 +1965,7 @@ const ResultModal = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1001;
+  z-index: 10001;
 `;
 
 const ModalContent = styled(motion.div)`
@@ -2970,13 +2970,6 @@ function CreateCampaignPage() {
         return { 
           ...baseElement, 
           fullWidth: true,
-          socialLinks: [
-            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
-            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
-            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
-            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
-            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
-          ],
           footerText: `© ${currentYear} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
@@ -3410,19 +3403,6 @@ function CreateCampaignPage() {
           </div>`;
         
         case 'footer':
-          const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0
-            ? element.socialLinks.map((social: any) => {
-                const icons = {
-                  facebook: "📘",
-                  twitter: "🐦",
-                  instagram: "📷",
-                  youtube: "📺",
-                  discord: "🎮",
-                };
-                return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${icons[social.platform as keyof typeof icons] || "🔗"}</a>`;
-              }).join("")
-            : "";
-          
           return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
             <div style="
               text-align: center; 
@@ -3438,7 +3418,6 @@ function CreateCampaignPage() {
               font-family: ${fontFamily};
               line-height: ${lineHeight};
             ">
-              ${socialLinksHtml ? `<div style="margin-bottom: 1rem;">${socialLinksHtml}</div>` : ""}
               <div style="margin-bottom: 1rem;">
                 ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
               </div>
@@ -3458,25 +3437,7 @@ function CreateCampaignPage() {
             </div>
           </div>`;
         
-        case 'social':
-          const socialIcons = element.links && element.links.length > 0
-            ? element.links.map((link: any) => {
-                const icons = {
-                  facebook: "📘",
-                  twitter: "🐦",
-                  instagram: "📷",
-                  youtube: "📺",
-                  discord: "🎮",
-                };
-                return `<a href="${link.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 1.2rem;">${icons[link.platform as keyof typeof icons] || "🔗"}</a>`;
-              }).join("")
-            : "";
-          
-          return `<div class="${wrapperClass}" style="${containerStyle} text-align: center; padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
-            <div style="margin: 1rem 0; text-align: ${textAlign};">
-              ${socialIcons}
-            </div>
-          </div>`;
+
         
         case 'columns':
           const columnsHtml = element.columns && element.columns.length > 0
