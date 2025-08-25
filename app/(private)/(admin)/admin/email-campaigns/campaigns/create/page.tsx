@@ -763,7 +763,7 @@ const EmailBody = styled.div`
 `;
 
 const EmailFooter = styled.div`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
   border-top: 1px solid #dee2e6;
   position: relative;
 
@@ -2970,6 +2970,13 @@ function CreateCampaignPage() {
         return { 
           ...baseElement, 
           fullWidth: true,
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
+            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
+            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+          ],
           footerText: `© ${currentYear} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
@@ -3403,13 +3410,29 @@ function CreateCampaignPage() {
           </div>`;
         
         case 'footer':
+          // Generate social links HTML with PNG icons
+          const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0
+            ? element.socialLinks
+                .map((social: any) => {
+                  const icons = {
+                    facebook: `<img src="/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    twitter: `<img src="/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    instagram: `<img src="/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    youtube: `<img src="/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    discord: `<img src="/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
+                  };
+                  return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 0.9rem; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid #6c63ff; border-radius: 6px; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"} ${social.platform}</a>`;
+                })
+                .join("")
+            : "";
+
           return `<div class="${wrapperClass}" style="${containerStyle} padding: ${paddingTop}px 0 ${paddingBottom}px 0; background-color: ${backgroundColor};">
             <div style="
               text-align: center; 
-              padding: 2rem; 
+              padding: ${paddingTop}px 2rem ${paddingBottom}px 2rem; 
               font-size: ${fontSize}; 
               color: ${textColor}; 
-              background: ${backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; 
+              background: ${backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'}; 
               border-top: 1px solid #dee2e6; 
               margin-top: 2rem;
               font-weight: ${fontWeight};
@@ -3418,19 +3441,20 @@ function CreateCampaignPage() {
               font-family: ${fontFamily};
               line-height: ${lineHeight};
             ">
-              <div style="margin-bottom: 1rem;">
+              ${socialLinksHtml ? `<div style="margin-bottom: 0.5rem; text-align: center;">${socialLinksHtml}</div>` : ""}
+              <div style="margin-bottom: 0.5rem;">
                 ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
               </div>
               <div>
-                <a href="${element.unsubscribeUrl || '#unsubscribe'}" style="color: #6c63ff; text-decoration: none;">
+                <a href="${element.unsubscribeUrl || '#unsubscribe'}" style="color: #ffffff; text-decoration: none;">
                   ${element.unsubscribeText || "Unsubscribe"}
                 </a>
                 | 
-                <a href="${element.privacyUrl || '#privacy'}" style="color: #6c63ff; text-decoration: none;">
+                <a href="${element.privacyUrl || '#privacy'}" style="color: #ffffff; text-decoration: none;">
                   ${element.privacyText || "Privacy Policy"}
                 </a>
                 | 
-                <a href="${element.contactUrl || '#contact'}" style="color: #6c63ff; text-decoration: none;">
+                <a href="${element.contactUrl || '#contact'}" style="color: #ffffff; text-decoration: none;">
                   ${element.contactText || "Contact Us"}
                 </a>
               </div>

@@ -25,6 +25,7 @@ interface SendCampaignRequest {
   campaignId?: string;
   name: string;
   subject: string;
+  preheader?: string; // Email preheader text shown in inbox preview
   testEmail?: string; // optional test recipient; if present, send only to this address with [TEST] prefix
   brandHeader?: string;
   audienceIds: string[]; // Updated to match new audience system
@@ -295,6 +296,7 @@ export async function POST(request: NextRequest) {
       campaignId,
       name,
       subject,
+      preheader,
       testEmail,
       brandHeader,
       audienceIds,
@@ -331,7 +333,8 @@ export async function POST(request: NextRequest) {
         subjectWithTest,
         undefined,
         undefined,
-        undefined
+        undefined,
+        preheader
       );
       const textContentForTest = generateTextFromElements(emailElements);
 
@@ -586,7 +589,8 @@ export async function POST(request: NextRequest) {
             subject,
             undefined,
             undefined,
-            undefined
+            undefined,
+            preheader
           ),
           text_content: generateTextFromElements(emailElements),
           status: "sending",
@@ -616,7 +620,8 @@ export async function POST(request: NextRequest) {
       subject,
       undefined,
       undefined,
-      undefined
+      undefined,
+      preheader
     );
     const textContent = generateTextFromElements(emailElements);
 
@@ -705,7 +710,8 @@ export async function POST(request: NextRequest) {
           subject,
           realCampaignId,
           subscriber.id,
-          sendId
+          sendId,
+          preheader
         );
 
         console.log(`📧 Generated tracked HTML for ${subscriber.email}:`, {
@@ -829,7 +835,8 @@ export async function POST(request: NextRequest) {
             subject,
             realCampaignId,
             sampleSubscriber.id,
-            sampleSendId
+            sampleSendId,
+            preheader
           );
         }
 
@@ -926,7 +933,8 @@ function generateHtmlFromElements(
   subject: string,
   campaignId?: string,
   subscriberId?: string,
-  sendId?: string
+  sendId?: string,
+  preheader?: string
 ): string {
   // Helper function to rewrite links for click tracking
   const rewriteLinksForTracking = (html: string): string => {
@@ -995,15 +1003,32 @@ function generateHtmlFromElements(
           }; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"></div>`;
 
         case "footer":
+          // Generate social links HTML with PNG icons
+          const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0
+            ? element.socialLinks
+                .map((social: any) => {
+                  const icons = {
+                    facebook: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    twitter: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    instagram: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    youtube: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    discord: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
+                  };
+                  return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 0.9rem; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid #6c63ff; border-radius: 6px; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"} ${social.platform}</a>`;
+                })
+                .join("")
+            : "";
+
           return `
-          <div style="text-align: center; font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#666'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: 1px solid #dee2e6; margin-top: 2rem; padding: 2rem 30px;">
-            <div style="margin-bottom: 1rem; text-align: center;">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</div>
+          <div style="text-align: center; font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#ffffff'}; background: ${element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: 1px solid #dee2e6; margin-top: 2rem; padding: ${element.paddingTop || 32}px 30px ${element.paddingBottom || 32}px 30px;">
+            ${socialLinksHtml ? `<div style="margin-bottom: 0.5rem; text-align: center;">${socialLinksHtml}</div>` : ""}
+            <div style="margin-bottom: 0.5rem; text-align: center;">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</div>
             <div style="text-align: center;">
-              <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #6c63ff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
+              <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
               | 
-              <a href="${element.privacyUrl || "#privacy"}" style="color: #6c63ff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
+              <a href="${element.privacyUrl || "#privacy"}" style="color: #ffffff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
               | 
-              <a href="${element.contactUrl || "#contact"}" style="color: #6c63ff; text-decoration: none;">${element.contactText || "Contact Us"}</a>
+              <a href="${element.contactUrl || "#contact"}" style="color: #ffffff; text-decoration: none;">${element.contactText || "Contact Us"}</a>
             </div>
           </div>`;
 
@@ -1177,6 +1202,18 @@ function generateHtmlFromElements(
 </head>
 <body style="margin: 0; padding: 20px; background-color: #f7f7f7; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
     <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+        <!-- Preheader Section -->
+        <div style="padding: 15px 20px; background-color: #ffffff; border-bottom: 1px solid #e9ecef;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666;">
+                <div style="color: #333; font-weight: 500;">
+                    ${preheader || 'Cymasphere - Your Music Production Journey'}
+                </div>
+                <div>
+                    <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/email-preview?c=${campaignId || 'preview'}" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
+                </div>
+            </div>
+        </div>
+        
         ${elementHtml}
     </div>
 </body>
@@ -1225,7 +1262,12 @@ function generateTextFromElements(elements: any[]): string {
         case "spacer":
           return "\n";
         case "footer":
-          return `\n${"─".repeat(50)}\n${
+          const socialText = element.socialLinks && element.socialLinks.length > 0
+            ? element.socialLinks
+                .map((social: any) => `${social.platform}: ${social.url}`)
+                .join(" | ")
+            : "";
+          return `\n${"─".repeat(50)}\n${socialText ? socialText + "\n" : ""}${
             element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
           }\n${element.unsubscribeText || "Unsubscribe"}: ${
             element.unsubscribeUrl || "#unsubscribe"

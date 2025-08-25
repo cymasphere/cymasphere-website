@@ -33,12 +33,15 @@ import {
   FaAlignCenter,
   FaAlignRight,
 
-
+  FaYoutube,
+  FaFacebookF,
+  FaInstagram,
+  FaDiscord,
   FaEye,
   FaCode,
   FaSave
 } from "react-icons/fa";
-
+import { FaXTwitter } from "react-icons/fa6";
 
 // Styled components for the visual editor
 
@@ -167,7 +170,7 @@ const EmailFooter = styled.div`
 const EmailElement = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
 })<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
-  margin: ${props => props.fullWidth ? '0 -24px 0 -24px' : '0 auto 0 auto'};
+  margin: ${props => props.fullWidth ? '0 -24px 12px -24px' : '0 auto 12px auto'};
   padding: ${props => props.fullWidth ? '0' : '8px'};
   max-width: ${props => props.fullWidth ? 'none' : 'none'};
   border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
@@ -894,26 +897,6 @@ export default function VisualEditor({
     }));
   };
 
-  // ✨ NEW: Generate gradient CSS for button backgrounds
-  const generateGradientCSS = (element: any) => {
-    if (!element || element.backgroundType !== 'gradient') {
-      return element?.backgroundColor || '#6c63ff';
-    }
-
-    const { gradientType, gradientStartColor, gradientEndColor, gradientDirection } = element;
-    
-    switch (gradientType) {
-      case 'linear':
-        return `linear-gradient(${gradientDirection || '135deg'}, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
-      case 'radial':
-        return `radial-gradient(circle, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
-      case 'conic':
-        return `conic-gradient(from ${gradientDirection || '135deg'}, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
-      default:
-        return `linear-gradient(135deg, ${gradientStartColor || '#6c63ff'}, ${gradientEndColor || '#4ecdc4'})`;
-    }
-  };
-
   // ✨ NEW: Modern rich text formatting functions
   const applyFormat = (command: string, value?: string) => {
     console.log(`🎨 Applying format: ${command}${value ? ` with value: ${value}` : ''}`);
@@ -1582,19 +1565,20 @@ export default function VisualEditor({
           url: '#',
           fontSize: '16px',
           fontWeight: 'bold',
-          textAlign: 'center',
-          backgroundType: 'solid',
-          backgroundColor: '#6c63ff',
-          gradientType: 'linear',
-          gradientStartColor: '#6c63ff',
-          gradientEndColor: '#4ecdc4',
-          gradientDirection: '135deg'
+          textAlign: 'center'
         };
       case 'image':
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
         return { ...baseElement };
-
+      case 'social':
+        return { ...baseElement, links: [
+          { platform: 'facebook', url: '#' },
+          { platform: 'twitter', url: '#' },
+          { platform: 'instagram', url: '#' },
+          { platform: 'youtube', url: '#' },
+          { platform: 'discord', url: '#' }
+        ]};
       case 'spacer':
         return { ...baseElement, height: '30px' };
       case 'columns':
@@ -1608,7 +1592,14 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           fullWidth: true,
-          footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
+            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
+            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+          ],
+          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
           privacyText: 'Privacy Policy',
@@ -1705,7 +1696,7 @@ export default function VisualEditor({
       if (domElement && element) {
         let content = '';
         if (element.type === 'footer') {
-          content = element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
+          content = element.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
         } else {
           content = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
         }
@@ -1797,7 +1788,7 @@ export default function VisualEditor({
       if (editingElementDOM && originalElement) {
         // Restore the original content to the DOM
         if (originalElement.type === 'footer') {
-          editingElementDOM.innerHTML = originalElement.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
+          editingElementDOM.innerHTML = originalElement.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
         } else {
           editingElementDOM.innerHTML = originalElement.content || '';
         }
@@ -2090,13 +2081,16 @@ export default function VisualEditor({
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
         style={{
-          paddingTop: (element.type === 'brand-header' || element.type === 'footer') ? '0px' : `${element.paddingTop ?? 0}px`,
-          paddingBottom: (element.type === 'brand-header' || element.type === 'footer') ? '0px' : `${element.paddingBottom ?? 0}px`,
+          paddingTop: `${element.paddingTop ?? 16}px`,
+          paddingBottom: `${element.paddingBottom ?? 16}px`,
           opacity: draggedElementId === element.id ? 0.5 : 1,
           transform: draggedElementId === element.id ? 'scale(0.95)' : 'scale(1)',
           transition: 'opacity 0.2s ease, transform 0.2s ease',
           borderTop: elementDragOverIndex === index ? '3px solid var(--primary)' : 'none',
-          cursor: isEditing ? 'default' : (draggedElementId === element.id ? 'grabbing' : 'grab')
+          cursor: isEditing ? 'default' : (draggedElementId === element.id ? 'grabbing' : 'grab'),
+          background: element.type === 'footer' ? (element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)') : 
+                    element.type === 'brand-header' ? (element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)') : 
+                    undefined
         }}
       >
         <div className="element-controls">
@@ -2439,7 +2433,7 @@ export default function VisualEditor({
               style={{
                 display: element.fullWidth ? 'block' : 'inline-block',
                 padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                background: element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'),
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: element.fullWidth ? '0' : '50px',
@@ -2458,15 +2452,19 @@ export default function VisualEditor({
               {element.content}
             </EditableText>
             ) : (
-              <div
+              <a
+                href={element.url || '#'}
+                target={element.url && element.url.startsWith('http') ? '_blank' : '_self'}
+                rel={element.url && element.url.startsWith('http') ? 'noopener noreferrer' : undefined}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   startEditing(element.id);
                 }}
                 style={{
                   display: element.fullWidth ? 'block' : 'inline-block',
                   padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'),
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                   color: 'white',
                   textDecoration: 'none',
                   borderRadius: element.fullWidth ? '0' : '50px',
@@ -2476,7 +2474,7 @@ export default function VisualEditor({
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108,99, 255, 0.3)',
+                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
                   width: element.fullWidth ? '100%' : 'auto',
                   textAlign: 'center'
                 }}
@@ -2753,7 +2751,35 @@ export default function VisualEditor({
         {element.type === 'spacer' && (
           <div style={{ height: element.height || '30px' }} />
         )}
-
+        {element.type === 'social' && (
+          <div style={{ textAlign: 'center', margin: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {element.links?.map((link: any, idx: number) => (
+                <a key={idx} href={link.url} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  background: '#6c63ff',
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease',
+                  minWidth: '120px',
+                  justifyContent: 'center'
+                }}>
+                  {link.platform === 'facebook' && <FaFacebookF size={16} />}
+                  {link.platform === 'twitter' && <FaXTwitter size={16} />}
+                  {link.platform === 'instagram' && <FaInstagram size={16} />}
+                  {link.platform === 'youtube' && <FaYoutube size={16} />}
+                  {link.platform === 'discord' && <FaDiscord size={16} />}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         {element.type === 'columns' && (
           <div style={{ display: 'flex', gap: '2rem', margin: 0 }}>
             {element.columns?.map((column: any, idx: number) => (
@@ -2822,27 +2848,44 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '0 2rem' : '2rem',
-            paddingTop: `${element.paddingTop || 0}px`,
-            paddingBottom: `${element.paddingBottom || 0}px`,
+            padding: '0',
             fontSize: '0.8rem', 
-            color: '#666',
-            background: element.fullWidth 
-              ? 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' 
-              : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            color: '#ffffff',
+            background: 'transparent',
             borderTop: element.fullWidth ? 'none' : '1px solid #dee2e6',
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
-            borderRadius: element.fullWidth ? '0' : 'inherit',
-            minHeight: `${60 + (element.paddingTop || 0) + (element.paddingBottom || 0)}px`
+            borderRadius: element.fullWidth ? '0' : 'inherit'
           }}>
-
+            {/* Social Links */}
+            {element.socialLinks && element.socialLinks.length > 0 && (
+              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                {element.socialLinks.map((social: any, idx: number) => (
+                  <a key={idx} href={social.url} style={{ 
+                    color: '#6c63ff', 
+                    textDecoration: 'none',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    padding: '0.5rem',
+                    borderRadius: '6px',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {social.platform === 'facebook' && <FaFacebookF size={16} />}
+                    {social.platform === 'twitter' && <FaXTwitter size={16} />}
+                    {social.platform === 'instagram' && <FaInstagram size={16} />}
+                    {social.platform === 'youtube' && <FaYoutube size={16} />}
+                    {social.platform === 'discord' && <FaDiscord size={16} />}
+                  </a>
+                ))}
+              </div>
+            )}
             
             {/* Footer Text */}
             {isEditing ? (
               <textarea
                 data-element-id={element.id}
-                value={element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+                value={element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
                 onChange={(e) => {
                   const newVal = e.target.value;
                   setEmailElements(emailElements.map(el => 
@@ -2865,7 +2908,7 @@ export default function VisualEditor({
               />
             ) : (
               <div
-                dangerouslySetInnerHTML={{ __html: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.` }}
+                dangerouslySetInnerHTML={{ __html: element.footerText || '© 2024 Cymasphere Inc. All rights reserved.' }}
                 data-element-id={element.id}
                 style={{ marginBottom: '1rem' }}
               />
@@ -2909,14 +2952,12 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '0 20px' : '20px',
-            paddingTop: `${element.paddingTop || 0}px`,
-            paddingBottom: `${element.paddingBottom || 0}px`,
-            background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+            padding: element.fullWidth ? '0' : `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
+            background: 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: `${60 + (element.paddingTop || 0) + (element.paddingBottom || 0)}px`,
+            minHeight: '60px',
             gap: '2px'
           }}>
             {/* Logo */}
@@ -3364,7 +3405,7 @@ export default function VisualEditor({
                                   return `<a href="${element.url || '#'}" style="
                                     display: ${element.fullWidth ? 'block' : 'inline-block'};
                                     padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'};
-                                    background: ${element.backgroundType === 'gradient' ? generateGradientCSS(element) : (element.backgroundColor || '#6c63ff')};
+                                    background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'};
                                     color: ${element.textColor || '#ffffff'};
                                     text-decoration: none;
                                     border-radius: ${element.fullWidth ? '0' : '50px'};
@@ -3494,7 +3535,7 @@ export default function VisualEditor({
                     };
                     
                     return (
-                    <div key={element.id} style={{ marginBottom: '0' }}>
+                    <div key={element.id} style={{ marginBottom: '1rem' }}>
                       {element.type === 'header' && <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{stripHtml(element.content)}</div>}
                       {element.type === 'text' && <div>{stripHtml(element.content)}</div>}
                       {element.type === 'button' && <div style={{ padding: '0.5rem', border: '1px solid #ddd', display: 'inline-block' }}>[BUTTON: {stripHtml(element.content)}]</div>}
@@ -3503,10 +3544,17 @@ export default function VisualEditor({
                       {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
                       {element.type === 'footer' && (
                   <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
-
+                          {/* Social Links */}
+                          {element.socialLinks && element.socialLinks.length > 0 && (
+                            <div style={{ marginBottom: '1rem' }}>
+                              Social Links: {element.socialLinks.map((social: any, idx: number) => (
+                                `${social.platform}: ${social.url}`
+                              )).join(' | ')}
+                  </div>
+                          )}
                           {/* Footer Text */}
                           <div style={{ marginBottom: '0.5rem' }}>
-                            {element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+                            {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
                           </div>
                           {/* Footer Links */}
                           <div>
@@ -3696,29 +3744,75 @@ export default function VisualEditor({
                       <div style={{ marginBottom: '1rem' }}>
                         <PaddingLabel>
                           Padding Top
-                          <PaddingValue>{emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}px</PaddingValue>
                         </PaddingLabel>
-                        <PaddingSlider
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
-                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
-                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <PaddingSlider
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
+                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
+                            style={{ flex: 1 }}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="200"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              updateElementPadding(selectedElementId, 'paddingTop', value);
+                            }}
+                            style={{
+                              width: '60px',
+                              padding: '0.5rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'white',
+                              textAlign: 'center',
+                              fontSize: '0.9rem'
+                            }}
+                          />
+                          <span style={{ color: 'white', fontSize: '0.8rem' }}>px</span>
+                        </div>
                       </div>
                       
                       <div>
                         <PaddingLabel>
                           Padding Bottom
-                          <PaddingValue>{emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}px</PaddingValue>
                         </PaddingLabel>
-                        <PaddingSlider
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
-                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
-                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <PaddingSlider
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
+                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
+                            style={{ flex: 1 }}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="200"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              updateElementPadding(selectedElementId, 'paddingBottom', value);
+                            }}
+                            style={{
+                              width: '60px',
+                              padding: '0.5rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'white',
+                              textAlign: 'center',
+                              fontSize: '0.9rem'
+                            }}
+                          />
+                          <span style={{ color: 'white', fontSize: '0.8rem' }}>px</span>
+                        </div>
                       </div>
                     </PaddingControl>
                     
@@ -3937,114 +4031,41 @@ export default function VisualEditor({
 
                         <ControlGroup>
                           <ControlLabel>Button Background</ControlLabel>
-                          
-                          {/* Background Type Selection */}
-                          <ControlSelect
-                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundType || 'solid'}
-                            onChange={(e) => updateElement(selectedElementId, { 
-                              backgroundType: e.target.value,
-                              gradient: '',
-                              gradientType: e.target.value === 'gradient' ? 'linear' : ''
-                            })}
-                            style={{ marginBottom: '0.75rem' }}
-                          >
-                            <option value="solid">Solid Color</option>
-                            <option value="gradient">Gradient</option>
-                          </ControlSelect>
-
-                          {/* Solid Color Option */}
-                          {emailElements.find(el => el.id === selectedElementId)?.backgroundType !== 'gradient' && (
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                              <ColorInput
-                                type="color"
-                                value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
-                                onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
-                                title="Solid color"
-                              />
-                              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                {emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Gradient Options */}
-                          {emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' && (
-                            <>
-                              {/* Gradient Type Selection */}
-                              <ControlSelect
-                                value={emailElements.find(el => el.id === selectedElementId)?.gradientType || 'linear'}
-                                onChange={(e) => updateElement(selectedElementId, { gradientType: e.target.value })}
-                                style={{ marginBottom: '0.75rem' }}
-                              >
-                                <option value="linear">Linear Gradient</option>
-                                <option value="radial">Radial Gradient</option>
-                                <option value="conic">Conic Gradient</option>
-                              </ControlSelect>
-
-                              {/* Gradient Color Inputs */}
-                              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                                    Start Color
-                                  </div>
-                                  <ColorInput
-                                    type="color"
-                                    value={emailElements.find(el => el.id === selectedElementId)?.gradientStartColor || '#6c63ff'}
-                                    onChange={(e) => updateElement(selectedElementId, { gradientStartColor: e.target.value })}
-                                  />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                                    End Color
-                                  </div>
-                                  <ColorInput
-                                    type="color"
-                                    value={emailElements.find(el => el.id === selectedElementId)?.gradientEndColor || '#4ecdc4'}
-                                    onChange={(e) => updateElement(selectedElementId, { gradientEndColor: e.target.value })}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Gradient Direction/Position */}
-                              {emailElements.find(el => el.id === selectedElementId)?.gradientType === 'linear' && (
-                                <ControlSelect
-                                  value={emailElements.find(el => el.id === selectedElementId)?.gradientDirection || '135deg'}
-                                  onChange={(e) => updateElement(selectedElementId, { gradientDirection: e.target.value })}
-                                >
-                                  <option value="0deg">→ Horizontal</option>
-                                  <option value="90deg">↓ Vertical</option>
-                                  <option value="135deg">↘ Diagonal</option>
-                                  <option value="180deg">← Horizontal</option>
-                                  <option value="270deg">↑ Vertical</option>
-                                  <option value="45deg">↗ Diagonal</option>
-                                </ControlSelect>
-                              )}
-
-                              {/* Preview of generated gradient */}
-                              <div style={{ 
-                                marginTop: '0.75rem',
-                                padding: '0.75rem',
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: '' })}
+                              title="Solid color"
+                            />
+                            <input
+                              type="text"
+                              placeholder="CSS gradient, e.g. linear-gradient(135deg, #6c63ff, #a88beb)"
+                              value={emailElements.find(el => el.id === selectedElementId)?.gradient || ''}
+                              onChange={(e) => updateElement(selectedElementId, { gradient: e.target.value })}
+                              style={{
+                                flex: 1,
+                                padding: '0.75rem 1rem',
                                 borderRadius: '8px',
-                                background: emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' 
-                                  ? generateGradientCSS(emailElements.find(el => el.id === selectedElementId))
-                                  : emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff',
                                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                                minHeight: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: '0.8rem',
-                                fontWeight: '600',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                              }}>
-                                {emailElements.find(el => el.id === selectedElementId)?.backgroundType === 'gradient' ? 'Gradient Preview' : 'Solid Color'}
-                              </div>
-                            </>
-                          )}
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            Enter a CSS gradient to override the solid color.
+                          </div>
                         </ControlGroup>
 
-
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
                       </>
                     )}
 
