@@ -1008,13 +1008,13 @@ function generateHtmlFromElements(
             ? element.socialLinks
                 .map((social: any) => {
                   const icons = {
-                    facebook: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    twitter: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    instagram: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    youtube: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    discord: `<img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
+                    facebook: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    twitter: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    instagram: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    youtube: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    discord: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
                   };
-                  return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 0.9rem; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid #6c63ff; border-radius: 6px; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"} ${social.platform}</a>`;
+                  return `<a href="${social.url}" style="text-decoration: none; margin: 0 0.5rem; padding: 0.5rem; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"}</a>`;
                 })
                 .join("")
             : "";
@@ -1026,9 +1026,9 @@ function generateHtmlFromElements(
             <div style="text-align: center;">
               <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
               | 
-              <a href="${element.privacyUrl || "#privacy"}" style="color: #ffffff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
+              <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: #ffffff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
               | 
-              <a href="${element.contactUrl || "#contact"}" style="color: #ffffff; text-decoration: none;">${element.contactText || "Contact Us"}</a>
+              <a href="${element.termsUrl || "https://cymasphere.com/terms-of-service"}" style="color: #ffffff; text-decoration: none;">${element.termsText || "Terms of Service"}</a>
             </div>
           </div>`;
 
@@ -1203,12 +1203,12 @@ function generateHtmlFromElements(
 <body style="margin: 0; padding: 20px; background-color: #f7f7f7; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
     <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
         <!-- Preheader Section -->
-        <div style="padding: 15px 20px; background-color: #ffffff; border-bottom: 1px solid #e9ecef;">
+        <div style="padding: 15px 20px; background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666;">
                 <div style="color: #333; font-weight: 500;">
                     ${preheader || 'Cymasphere - Your Music Production Journey'}
                 </div>
-                <div>
+                <div style="text-align: right; margin-left: auto;">
                     <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/email-preview?c=${campaignId || 'preview'}" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
                 </div>
             </div>
@@ -1273,8 +1273,8 @@ function generateTextFromElements(elements: any[]): string {
             element.unsubscribeUrl || "#unsubscribe"
           } | ${element.privacyText || "Privacy Policy"}: ${
             element.privacyUrl || "#privacy"
-          } | ${element.contactText || "Contact Us"}: ${
-            element.contactUrl || "#contact"
+          } | ${element.termsText || "Terms of Service"}: ${
+            element.termsUrl || "https://cymasphere.com/terms-of-service"
           }\n`;
         case "brand-header":
           return `[LOGO] Cymasphere\n${"=".repeat(10)}\n`;

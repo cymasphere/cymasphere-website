@@ -3415,13 +3415,13 @@ function CreateCampaignPage() {
             ? element.socialLinks
                 .map((social: any) => {
                   const icons = {
-                    facebook: `<img src="/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    twitter: `<img src="/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    instagram: `<img src="/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    youtube: `<img src="/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    discord: `<img src="/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
+                    facebook: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    twitter: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    instagram: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    youtube: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
+                    discord: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
                   };
-                  return `<a href="${social.url}" style="color: #6c63ff; text-decoration: none; margin: 0 0.5rem; font-size: 0.9rem; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid #6c63ff; border-radius: 6px; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"} ${social.platform}</a>`;
+                  return `<a href="${social.url}" style="text-decoration: none; margin: 0 0.5rem; padding: 0.5rem; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"}</a>`;
                 })
                 .join("")
             : "";
@@ -3450,12 +3450,12 @@ function CreateCampaignPage() {
                   ${element.unsubscribeText || "Unsubscribe"}
                 </a>
                 | 
-                <a href="${element.privacyUrl || '#privacy'}" style="color: #ffffff; text-decoration: none;">
+                <a href="${element.privacyUrl || 'https://cymasphere.com/privacy-policy'}" style="color: #ffffff; text-decoration: none;">
                   ${element.privacyText || "Privacy Policy"}
                 </a>
                 | 
-                <a href="${element.contactUrl || '#contact'}" style="color: #ffffff; text-decoration: none;">
-                  ${element.contactText || "Contact Us"}
+                <a href="${element.termsUrl || 'https://cymasphere.com/terms-of-service'}" style="color: #ffffff; text-decoration: none;">
+                  ${element.termsText || "Terms of Service"}
                 </a>
               </div>
             </div>

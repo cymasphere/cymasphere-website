@@ -1593,19 +1593,19 @@ export default function VisualEditor({
           ...baseElement, 
           fullWidth: true,
           socialLinks: [
-            { platform: 'facebook', url: 'https://facebook.com/cymasphere' },
-            { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
-            { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
-            { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
-            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+            { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
+            { platform: 'twitter', url: 'https://x.com/cymasphere' },
+            { platform: 'instagram', url: 'https://www.instagram.com/cymasphere/' },
+            { platform: 'youtube', url: 'https://www.youtube.com/@cymasphere' },
+            { platform: 'discord', url: 'https://discord.gg/gXGqqYR47B' }
           ],
-          footerText: '© 2024 Cymasphere Inc. All rights reserved.',
+          footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
           unsubscribeUrl: '#unsubscribe',
           privacyText: 'Privacy Policy',
-          privacyUrl: '#privacy',
-          contactText: 'Contact Us',
-          contactUrl: '#contact'
+          privacyUrl: 'https://cymasphere.com/privacy-policy',
+          termsText: 'Terms of Service',
+          termsUrl: 'https://cymasphere.com/terms-of-service'
         };
       
       case 'brand-header':
@@ -1696,7 +1696,7 @@ export default function VisualEditor({
       if (domElement && element) {
         let content = '';
         if (element.type === 'footer') {
-          content = element.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+          content = element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
         } else {
           content = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
         }
@@ -1788,7 +1788,7 @@ export default function VisualEditor({
       if (editingElementDOM && originalElement) {
         // Restore the original content to the DOM
         if (originalElement.type === 'footer') {
-          editingElementDOM.innerHTML = originalElement.footerText || '© 2024 Cymasphere Inc. All rights reserved.';
+          editingElementDOM.innerHTML = originalElement.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
         } else {
           editingElementDOM.innerHTML = originalElement.content || '';
         }
@@ -2862,20 +2862,18 @@ export default function VisualEditor({
               <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                 {element.socialLinks.map((social: any, idx: number) => (
                   <a key={idx} href={social.url} style={{ 
-                    color: '#6c63ff', 
                     textDecoration: 'none',
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
                     padding: '0.5rem',
-                    borderRadius: '6px',
                     transition: 'all 0.3s ease'
                   }}>
-                    {social.platform === 'facebook' && <FaFacebookF size={16} />}
-                    {social.platform === 'twitter' && <FaXTwitter size={16} />}
-                    {social.platform === 'instagram' && <FaInstagram size={16} />}
-                    {social.platform === 'youtube' && <FaYoutube size={16} />}
-                    {social.platform === 'discord' && <FaDiscord size={16} />}
+                    {social.platform === 'facebook' && <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/fb.png" alt="Facebook" style={{ width: '20px', height: '20px' }} />}
+                    {social.platform === 'twitter' && <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/x.png" alt="Twitter" style={{ width: '20px', height: '20px' }} />}
+                    {social.platform === 'instagram' && <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/insta.png" alt="Instagram" style={{ width: '20px', height: '20px' }} />}
+                    {social.platform === 'youtube' && <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/youtube.png" alt="YouTube" style={{ width: '20px', height: '20px' }} />}
+                    {social.platform === 'discord' && <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/discord.png" alt="Discord" style={{ width: '20px', height: '20px' }} />}
                   </a>
                 ))}
               </div>
@@ -2885,7 +2883,7 @@ export default function VisualEditor({
             {isEditing ? (
               <textarea
                 data-element-id={element.id}
-                value={element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                value={element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
                 onChange={(e) => {
                   const newVal = e.target.value;
                   setEmailElements(emailElements.map(el => 
@@ -2908,7 +2906,7 @@ export default function VisualEditor({
               />
             ) : (
               <div
-                dangerouslySetInnerHTML={{ __html: element.footerText || '© 2024 Cymasphere Inc. All rights reserved.' }}
+                dangerouslySetInnerHTML={{ __html: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.` }}
                 data-element-id={element.id}
                 style={{ marginBottom: '1rem' }}
               />
@@ -2916,16 +2914,16 @@ export default function VisualEditor({
             
             {/* Footer Links */}
             <div>
-              <a href={element.unsubscribeUrl || '#unsubscribe'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
+              <a href={element.unsubscribeUrl || '#unsubscribe'} style={{ color: '#ffffff', textDecoration: 'none' }}>
                 {element.unsubscribeText || 'Unsubscribe'}
               </a>
               {' | '}
-              <a href={element.privacyUrl || '#privacy'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
+              <a href={element.privacyUrl || 'https://cymasphere.com/privacy-policy'} style={{ color: '#ffffff', textDecoration: 'none' }}>
                 {element.privacyText || 'Privacy Policy'}
               </a>
               {' | '}
-              <a href={element.contactUrl || '#contact'} style={{ color: '#6c63ff', textDecoration: 'none' }}>
-                {element.contactText || 'Contact Us'}
+              <a href={element.termsUrl || 'https://cymasphere.com/terms-of-service'} style={{ color: '#ffffff', textDecoration: 'none' }}>
+                {element.termsText || 'Terms of Service'}
               </a>
             </div>
             
@@ -3554,7 +3552,7 @@ export default function VisualEditor({
                           )}
                           {/* Footer Text */}
                           <div style={{ marginBottom: '0.5rem' }}>
-                            {element.footerText || '© 2024 Cymasphere Inc. All rights reserved.'}
+                            {element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
                           </div>
                           {/* Footer Links */}
                           <div>

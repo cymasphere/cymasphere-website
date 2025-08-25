@@ -101,7 +101,7 @@ function generateProperEmailTemplate(
                             
                             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #666666;">
                                 <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
-                                <p><a href="https://cymasphere.com/unsubscribe" style="color: #6c63ff; text-decoration: none;">Unsubscribe</a> | <a href="https://cymasphere.com" style="color: #6c63ff; text-decoration: none;">Visit our website</a></p>
+                                <p><a href="https://cymasphere.com/unsubscribe" style="color: #ffffff; text-decoration: none;">Unsubscribe</a> | <a href="https://cymasphere.com" style="color: #ffffff; text-decoration: none;">Visit our website</a></p>
                                 <p>© ${new Date().getFullYear()} Cymasphere. All rights reserved.</p>
                             </div>
                         </td>
