@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
               ${socialLinksHtml ? `<div style="margin-bottom: 0.5rem; text-align: center;">${socialLinksHtml}</div>` : ""}
               <div style="margin-bottom: 0.5rem; text-align: center;">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</div>
               <div style="text-align: center;">
-                <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
+                <a href="${element.unsubscribeUrl || "/unsubscribe?email={{email}}"}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
                 | 
                 <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: #ffffff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
                 | 

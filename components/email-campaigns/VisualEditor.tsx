@@ -1601,7 +1601,7 @@ export default function VisualEditor({
           ],
           footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
-          unsubscribeUrl: '#unsubscribe',
+          unsubscribeUrl: '/unsubscribe?email={{email}}',
           privacyText: 'Privacy Policy',
           privacyUrl: 'https://cymasphere.com/privacy-policy',
           termsText: 'Terms of Service',
@@ -2914,7 +2914,7 @@ export default function VisualEditor({
             
             {/* Footer Links */}
             <div>
-              <a href={element.unsubscribeUrl || '#unsubscribe'} style={{ color: '#ffffff', textDecoration: 'none' }}>
+              <a href={element.unsubscribeUrl || `/unsubscribe?email={{email}}`} style={{ color: '#ffffff', textDecoration: 'none' }}>
                 {element.unsubscribeText || 'Unsubscribe'}
               </a>
               {' | '}

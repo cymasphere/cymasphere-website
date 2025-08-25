@@ -3446,7 +3446,7 @@ function CreateCampaignPage() {
                 ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
               </div>
               <div>
-                <a href="${element.unsubscribeUrl || '#unsubscribe'}" style="color: #ffffff; text-decoration: none;">
+                <a href="${element.unsubscribeUrl || '/unsubscribe?email={{email}}'}" style="color: #ffffff; text-decoration: none;">
                   ${element.unsubscribeText || "Unsubscribe"}
                 </a>
                 | 

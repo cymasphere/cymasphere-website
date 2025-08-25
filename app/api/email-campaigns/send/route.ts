@@ -199,6 +199,14 @@ async function getSubscribersForAudiences(
         );
 
         subscribers.forEach((sub: any) => {
+          // 🚫 UNSUBSCRIBE FILTER: Skip INACTIVE (unsubscribed) subscribers
+          if (sub.status === 'INACTIVE' || sub.status === 'unsubscribed') {
+            console.log(
+              `🚫 UNSUBSCRIBE: Skipping unsubscribed email: ${sub.email} (status: ${sub.status})`
+            );
+            return;
+          }
+
           // 🔒 SAFETY FILTER: In development, only allow whitelisted emails
           if (DEVELOPMENT_MODE || TEST_MODE) {
             if (!SAFE_TEST_EMAILS.includes(sub.email)) {
@@ -272,6 +280,16 @@ async function getSubscribersForAudiences(
         status: s?.status,
       }))
     );
+    
+    // Log unsubscribe filtering summary
+    const activeSubscribers = finalSubscribers.filter(s => s?.status === 'active');
+    const inactiveSubscribers = finalSubscribers.filter(s => s?.status === 'INACTIVE' || s?.status === 'unsubscribed');
+    console.log(`🚫 Unsubscribe filtering summary:`, {
+      total: finalSubscribers.length,
+      active: activeSubscribers.length,
+      inactive: inactiveSubscribers.length,
+      inactiveEmails: inactiveSubscribers.map(s => s?.email)
+    });
     console.log(`🎯 All subscriber IDs:`, Array.from(allSubscribers));
     console.log(
       `🎯 Subscriber details map:`,
@@ -1024,7 +1042,7 @@ function generateHtmlFromElements(
             ${socialLinksHtml ? `<div style="margin-bottom: 0.5rem; text-align: center;">${socialLinksHtml}</div>` : ""}
             <div style="margin-bottom: 0.5rem; text-align: center;">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</div>
             <div style="text-align: center;">
-              <a href="${element.unsubscribeUrl || "#unsubscribe"}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
+              <a href="${element.unsubscribeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: #ffffff; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
               | 
               <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: #ffffff; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
               | 

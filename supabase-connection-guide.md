@@ -13,19 +13,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY_HERE
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY_HERE
 ```
 
+**⚠️ IMPORTANT:** The `SUPABASE_DB_PASSWORD` is required for running migrations and direct database access.
+
 ## Method 1: Direct PSQL Connection
 
 The most reliable way to connect to the Supabase PostgreSQL database is using the `psql` command-line tool:
 
 ```bash
 # Method 1: Separate parameters (recommended for special characters in password)
-PGPASSWORD='YOUR_DB_PASSWORD_HERE' psql -h db.jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
+PGPASSWORD='$SUPABASE_DB_PASSWORD' psql -h db.jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
 
 # Method 2: URL-encoded connection string
-psql "postgresql://postgres:YOUR_URL_ENCODED_PASSWORD@db.jibirpbauzqhdiwjlrmf.supabase.co:5432/postgres"
+psql "postgresql://postgres:$SUPABASE_DB_PASSWORD@db.jibirpbauzqhdiwjlrmf.supabase.co:5432/postgres"
 
 # Method 3: If db.* doesn't work, try direct project host
-PGPASSWORD='YOUR_DB_PASSWORD_HERE' psql -h jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
+PGPASSWORD='$SUPABASE_DB_PASSWORD' psql -h jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres
+```
+
+**Note:** Replace `$SUPABASE_DB_PASSWORD` with the actual value from your `.env.local` file, or export it first:
+```bash
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
 ```
 
 This connects you directly to the PostgreSQL database hosted on Supabase.
@@ -99,43 +106,47 @@ Get the latest schema from the remote database:
 supabase db pull
 ```
 
-#### Applying Migrations - CRITICAL STEPS
+#### Applying Migrations - COMPLETE WORKFLOW
 
-**⚠️ IMPORTANT: Follow these exact steps to successfully apply migrations:**
+**🚀 SUCCESSFUL MIGRATION WORKFLOW (Tested and Working):**
 
-1. **First, try a regular push:**
+1. **Set up environment variable:**
    ```bash
-   npx supabase db push --password '$2DEK@kBdYbbMs'
-   ```
-
-2. **If you get "Found local migration files to be inserted before the last migration" error:**
-   ```bash
-   npx supabase db push --password '$2DEK@kBdYbbMs' --include-all
-   ```
-
-3. **If migration history is out of sync, repair it first:**
-   ```bash
-   # Check current migration status
-   npx supabase migration list --password '$2DEK@kBdYbbMs'
+   # Export the database password from .env.local
+   export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
    
-   # Repair missing migrations (if needed)
-   npx supabase migration repair 20250127000000 --status applied --password '$2DEK@kBdYbbMs'
-   
-   # Then push
-   npx supabase db push --password '$2DEK@kBdYbbMs'
+   # Verify it's set
+   echo "Password set: ${SUPABASE_DB_PASSWORD:0:10}..."
    ```
 
-4. **Verify migration was applied:**
+2. **Check current migration status:**
    ```bash
-   npx supabase migration list --password '$2DEK@kBdYbbMs'
+   npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
+   ```
+
+3. **Apply migrations:**
+   ```bash
+   # Standard push (try this first)
+   npx supabase db push --password "$SUPABASE_DB_PASSWORD"
+   ```
+
+4. **If you get "Found local migration files to be inserted before the last migration" error:**
+   ```bash
+   # Use include-all flag (this is what we used successfully)
+   npx supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
+   ```
+
+5. **Verify migration was applied:**
+   ```bash
+   npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
    ```
 
 #### Migration Best Practices
 
-- **Always use the password flag**: `--password '$2DEK@kBdYbbMs'`
+- **Always use environment variables**: Never hardcode passwords in scripts
 - **Check migration status first**: Use `migration list` before pushing
 - **Use `--include-all` when needed**: If migrations are out of order
-- **Repair history when necessary**: Use `migration repair` for missing migrations
+- **Export password once per session**: Set `SUPABASE_DB_PASSWORD` at the start
 - **Never reset the database**: Use `migration repair` instead of `db reset`
 - **Test migrations locally first**: Use `supabase start` and `supabase db push` locally
 
@@ -143,26 +154,28 @@ supabase db pull
 
 **Scenario 1: New migration file created**
 ```bash
-# Standard push
-npx supabase db push --password '$2DEK@kBdYbbMs'
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db push --password "$SUPABASE_DB_PASSWORD"
 ```
 
-**Scenario 2: Migration files out of order**
+**Scenario 2: Migration files out of order (Most Common)**
 ```bash
-# Use include-all flag
-npx supabase db push --password '$2DEK@kBdYbbMs' --include-all
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
 ```
 
 **Scenario 3: Migration history mismatch**
 ```bash
-# Check what's missing
-npx supabase migration list --password '$2DEK@kBdYbbMs'
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
 
-# Repair missing migration (replace with actual timestamp)
-npx supabase migration repair 20250127000000 --status applied --password '$2DEK@kBdYbbMs'
+# Check what migrations are missing
+npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
+
+# Repair specific migration (replace timestamp)
+npx supabase migration repair 20250127000000 --status applied --password "$SUPABASE_DB_PASSWORD"
 
 # Then push normally
-npx supabase db push --password '$2DEK@kBdYbbMs'
+npx supabase db push --password "$SUPABASE_DB_PASSWORD"
 ```
 
 ## Troubleshooting
@@ -171,60 +184,92 @@ npx supabase db push --password '$2DEK@kBdYbbMs'
 
 1. If you encounter authentication issues with Supabase CLI commands, make sure your `.env.local` file has the correct credentials.
 
-2. Direct PSQL connection is more reliable than the Supabase CLI for database operations.
+2. **Direct PSQL connection is NOT recommended** for Supabase - they block direct database connections for security.
 
-3. For secure operations, avoid hardcoding the password in scripts - use environment variables instead.
+3. **Supabase CLI is the preferred method** for running migrations and database operations.
 
-4. If you get "nodename nor servname provided, or not known", the hostname might be incorrect. Use the pooler address format shown in Method 1. 
+4. **Always use environment variables** - never hardcode passwords in scripts or documentation.
 
 ### Migration-Specific Troubleshooting
 
 #### Error: "Found local migration files to be inserted before the last migration"
 **Solution:** Use the `--include-all` flag:
 ```bash
-npx supabase db push --password '$2DEK@kBdYbbMs' --include-all
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
 ```
 
 #### Error: "Migration history out of sync"
 **Solution:** Repair the migration history:
 ```bash
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+
 # Check what migrations are missing
-npx supabase migration list --password '$2DEK@kBdYbbMs'
+npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
 
 # Repair specific migration (replace timestamp)
-npx supabase migration repair 20250127000000 --status applied --password '$2DEK@kBdYbbMs'
+npx supabase migration repair 20250127000000 --status applied --password "$SUPABASE_DB_PASSWORD"
+```
+
+#### Error: "Connection timeout" or "Hostname not found"
+**Solution:** This is expected - Supabase blocks direct database connections. Use the CLI instead:
+```bash
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db push --password "$SUPABASE_DB_PASSWORD"
 ```
 
 #### Error: "Row Level Security policy violation"
 **Symptoms:** API returns 500 error with "new row violates row-level security policy"
 **Solution:** The table might be missing proper RLS policies. Check if admin policies exist:
-```sql
--- Connect via PSQL and check policies
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
-FROM pg_policies 
-WHERE tablename = 'your_table_name';
+```bash
+# Use Supabase CLI to check schema
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db pull --password "$SUPABASE_DB_PASSWORD"
 ```
 
 #### Error: "Authentication required" despite being logged in
 **Symptoms:** API-level admin check passes but database operations fail
 **Solution:** RLS policy might be using different authentication than API. Ensure `is_admin(auth.uid())` function works:
-```sql
--- Test the is_admin function
-SELECT is_admin(auth.uid());
+```bash
+# Check via Supabase CLI
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+npx supabase db pull --password "$SUPABASE_DB_PASSWORD"
 ```
 
 #### Migration Not Applied Despite Success Message
 **Solution:** Verify the migration was actually applied:
 ```bash
-# Check migration status
-npx supabase migration list --password '$2DEK@kBdYbbMs'
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
 
-# Check if tables/policies exist via PSQL
-PGPASSWORD='$2DEK@kBdYbbMs' psql -h db.jibirpbauzqhdiwjlrmf.supabase.co -p 5432 -d postgres -U postgres -c "\dt"
+# Check migration status
+npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
+
+# Check if tables exist via schema pull
+npx supabase db pull --password "$SUPABASE_DB_PASSWORD"
 ```
 
 #### Database Reset Warning
 **⚠️ NEVER USE `supabase db reset` ON PRODUCTION DATABASE**
 - This will delete all data permanently
 - Use `migration repair` instead to fix migration history issues
-- If you accidentally run reset, restore from backup immediately 
+- If you accidentally run reset, restore from backup immediately
+
+## Quick Migration Reference
+
+**For most migrations, use this simple workflow:**
+
+```bash
+# 1. Set password
+export SUPABASE_DB_PASSWORD=$(grep SUPABASE_DB_PASSWORD .env.local | cut -d '=' -f2)
+
+# 2. Check status
+npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
+
+# 3. Apply migration
+npx supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
+
+# 4. Verify
+npx supabase migration list --password "$SUPABASE_DB_PASSWORD"
+```
+
+**This workflow successfully applied the INACTIVE status migration and is the recommended approach.** 

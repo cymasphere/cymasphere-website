@@ -592,7 +592,10 @@ async function getSubscribersForAudiences(
       // Flatten and deduplicate subscribers
       const subscriberMap = new Map();
       audienceSubscribers?.forEach((rel: any) => {
-        if (rel.subscribers && rel.subscribers.status === "active") {
+        if (rel.subscribers && 
+            rel.subscribers.status === "active" && 
+            rel.subscribers.status !== "INACTIVE" && 
+            rel.subscribers.status !== "unsubscribed") {
           subscriberMap.set(rel.subscribers.id, rel.subscribers);
         }
       });
@@ -631,6 +634,16 @@ async function getSubscribersForAudiences(
       includedCount: includedSubscribers.length,
       excludedCount: excludedSubscriberIds.length,
       finalCount: finalSubscribers.length,
+    });
+    
+    // Log unsubscribe filtering summary
+    const activeSubscribers = finalSubscribers.filter(s => s?.status === 'active');
+    const inactiveSubscribers = finalSubscribers.filter(s => s?.status === 'INACTIVE' || s?.status === 'unsubscribed');
+    console.log(`🚫 Unsubscribe filtering summary:`, {
+      total: finalSubscribers.length,
+      active: activeSubscribers.length,
+      inactive: inactiveSubscribers.length,
+      inactiveEmails: inactiveSubscribers.map(s => s?.email)
     });
 
     return finalSubscribers;
