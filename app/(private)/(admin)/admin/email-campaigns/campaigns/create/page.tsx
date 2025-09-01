@@ -2040,6 +2040,7 @@ function CreateCampaignPage() {
   const [audiencesLoading, setAudiencesLoading] = useState(true);
   const [audienceSearchTerm, setAudienceSearchTerm] = useState('');
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
+  const campaignLoadedRef = useRef(false);
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2245,6 +2246,12 @@ function CreateCampaignPage() {
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   
+  // Preview state - moved here for consistent hook ordering (before any early returns)
+  const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
+
+
+  
   // Ensure all elements have proper properties when component mounts
   // Removed this useEffect as it was interfering with fullWidth property updates
   // useEffect(() => {
@@ -2352,6 +2359,51 @@ function CreateCampaignPage() {
     }
   }, [campaignData.audienceIds, campaignData.excludedAudienceIds, audiences, setReachData]);
 
+  // Fetch preview HTML from API (called when preview modal opens)
+  const fetchPreviewFromAPI = useCallback(async () => {
+    console.log('🔍 fetchPreviewFromAPI called with editId:', editId);
+    if (!editId) {
+      console.log('❌ No editId, returning early');
+      return;
+    }
+    
+    setIsLoadingPreview(true);
+    try {
+      console.log('📡 Fetching preview from API...');
+      const response = await fetch(`/api/email-campaigns/preview?c=${editId}`);
+      console.log('📡 API response status:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📡 API response data:', data);
+        if (data.success && data.html) {
+          console.log('✅ Setting preview HTML, length:', data.html.length);
+          setPreviewHtml(data.html);
+        } else {
+          console.log('❌ API response not successful or no HTML');
+        }
+      } else {
+        console.log('❌ API response not ok:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch preview from API, falling back to local:', error);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  }, [editId]);
+
+  // Fetch preview when component mounts and editId is available
+  useEffect(() => {
+    console.log('🔍 Preview useEffect triggered with editId:', editId, 'isLoadingCampaign:', isLoadingCampaign);
+    if (editId && !isLoadingCampaign) {
+      console.log('✅ editId exists and campaign loaded, calling fetchPreviewFromAPI');
+      fetchPreviewFromAPI();
+    } else if (editId && isLoadingCampaign) {
+      console.log('⏳ editId exists but campaign still loading, waiting...');
+    } else {
+      console.log('❌ No editId or campaign loading, not fetching preview');
+    }
+  }, [editId, isLoadingCampaign, fetchPreviewFromAPI]);
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
@@ -2427,6 +2479,11 @@ function CreateCampaignPage() {
 
   // Load campaign data for editing
   useEffect(() => {
+    // Reset the loaded ref when editId changes
+    if (editId) {
+      campaignLoadedRef.current = false;
+    }
+    
     console.log('🔍 Campaign loading effect triggered:', {
       isEditMode,
       editId,
@@ -2436,8 +2493,9 @@ function CreateCampaignPage() {
     });
     
     const loadCampaignData = async () => {
-      if (isEditMode && editId && user) {
+      if (isEditMode && editId && user && !campaignLoadedRef.current) {
         console.log('🔍 Starting campaign load for ID:', editId);
+        campaignLoadedRef.current = true;
         setIsLoadingCampaign(true);
         try {
           const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
@@ -2509,6 +2567,7 @@ function CreateCampaignPage() {
               }
 
               if (restoredElements && restoredElements.length > 0) {
+                console.log('✅ Setting emailElements from restored elements:', restoredElements.length);
                 setEmailElements(restoredElements);
               } else {
                 // Fallback: naive parse to at least show content
@@ -2520,6 +2579,7 @@ function CreateCampaignPage() {
                   content: (element as HTMLElement).innerHTML || ''
                 }));
                 if (elements.length > 0) {
+                  console.log('✅ Setting emailElements from fallback parse:', elements.length);
                   setEmailElements(elements);
                 }
               }
@@ -3262,13 +3322,32 @@ function CreateCampaignPage() {
     );
   };
 
-  // Generate HTML from email elements
+  // Generate HTML from email elements - NOW USES THE SAME API AS ACTUAL EMAILS
+
   const generatePreviewHtml = () => {
+    // Return cached preview HTML if available, otherwise generate locally
+    if (previewHtml) {
+      return previewHtml;
+    }
+    return generateLocalPreviewHtml();
+  };
+
+  // Fallback local HTML generation (for when API is not available)
+  const generateLocalPreviewHtml = () => {
+    console.log('🔍 generateLocalPreviewHtml called with emailElements:', emailElements);
+    console.log('🔍 generateLocalPreviewHtml called with emailElements length:', emailElements?.length || 0);
+    if (!emailElements || emailElements.length === 0) {
+      console.log('❌ No email elements, returning empty HTML');
+      return '<!DOCTYPE html><html><body><p>No email elements found</p></body></html>';
+    }
+    
+    console.log('🔍 Processing elements:', emailElements.map(el => ({ id: el.id, type: el.type, content: el.content?.substring(0, 50) })));
+    
     const elementHtml = emailElements.map(element => {
       // Determine container styling based on fullWidth
       const containerStyle = element.fullWidth 
         ? 'margin: 0; padding: 0;' 
-        : 'margin: 0 auto; max-width: 600px; padding: 0 20px;';
+        : 'margin: 0 auto; max-width: 600px;';
       
       const wrapperClass = element.fullWidth ? 'full-width' : 'constrained-width';
       
@@ -3325,7 +3404,7 @@ function CreateCampaignPage() {
             <a href="${element.url || '#'}" style="
               display: ${element.fullWidth ? 'block' : 'inline-block'}; 
               padding: ${element.fullWidth ? '0' : '1.25rem 2.5rem'}; 
-              background: ${backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; 
+              background: ${element.gradient || (backgroundColor !== 'transparent' ? backgroundColor : 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)')}; 
               color: #ffffff !important; 
               text-decoration: ${textDecoration}; 
               border-radius: ${element.fullWidth ? '0' : '50px'}; 
@@ -3532,7 +3611,7 @@ function CreateCampaignPage() {
     <title>${campaignData.subject || 'Email Preview'}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&family=Poppins:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&family=Nunito:wght@400;600;700&family=Work+Sans:wght@400;500;600&family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -3659,12 +3738,16 @@ function CreateCampaignPage() {
             max-width: 600px;
             margin: 0 auto;
             box-sizing: border-box;
+            padding: 0 20px;
         }
         
         /* Responsive styles */
         @media only screen and (max-width: 600px) {
             body {
                 padding: 10px;
+            }
+            .constrained-width {
+                padding: 0 15px;
             }
             .header {
                 padding: 15px;
@@ -3689,6 +3772,9 @@ function CreateCampaignPage() {
         }
         
         @media only screen and (max-width: 480px) {
+            .constrained-width {
+                padding: 0 10px;
+            }
             .content {
                 padding: 15px;
             }
@@ -4311,10 +4397,25 @@ function CreateCampaignPage() {
                     <PreviewTitle>
                       <FaEye />
                       Email Preview
-                      <ExpandPreviewButton 
-                        onClick={() => setShowPreviewModal(true)}
-                        style={{ marginLeft: 'auto' }}
-                      >
+                                              <ExpandPreviewButton 
+                          onClick={() => {
+                    console.log('🔍 Preview modal opening, emailElements:', emailElements);
+                    console.log('🔍 Preview modal opening, emailElements length:', emailElements?.length || 0);
+                    console.log('🔍 Preview modal opening, previewHtml length:', previewHtml?.length || 0);
+                    console.log('🔍 Preview modal opening, editId:', editId);
+                    console.log('🔍 Preview modal opening, isLoadingCampaign:', isLoadingCampaign);
+                    
+                    // Force generate preview HTML immediately
+                    const localHtml = generateLocalPreviewHtml();
+                    console.log('🔍 Generated local HTML length:', localHtml.length);
+                    console.log('🔍 Generated local HTML preview:', localHtml.substring(0, 500));
+                    
+                    // Set the preview HTML so the modal can use it
+                    setPreviewHtml(localHtml);
+                    setShowPreviewModal(true);
+                  }}
+                          style={{ marginLeft: 'auto' }}
+                        >
                         <FaExpandArrowsAlt />
                         Full Screen Preview
                       </ExpandPreviewButton>
@@ -4880,7 +4981,7 @@ function CreateCampaignPage() {
                         MozUserSelect: 'text',
                         msUserSelect: 'text'
                       }}>
-                        <pre style={{ whiteSpace: 'pre-wrap', margin: 0, userSelect: 'text', WebkitUserSelect: 'text', MozUserSelect: 'text', msUserSelect: 'text' }}>{generatePreviewHtml()}</pre>
+                        <pre style={{ whiteSpace: 'pre-wrap', margin: 0, userSelect: 'text', WebkitUserSelect: 'text', MozUserSelect: 'text', msUserSelect: 'text' }}>{previewHtml || generatePreviewHtml()}</pre>
                       </div>
                     ) : (
                       <PreviewContainer $device={previewDevice}>
@@ -4891,17 +4992,95 @@ function CreateCampaignPage() {
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
                             border: '1px solid rgba(255, 255, 255, 0.1)'
                           }}>
-                            <iframe
-                              key={`full-preview-${emailElements.length}-${JSON.stringify(emailElements.map(el => ({ id: el.id, fullWidth: el.fullWidth })))}`}
-                              srcDoc={generatePreviewHtml()}
-                              style={{
-                                width: '100%',
-                                height: 'calc(100vh - 200px)',
-                                border: 'none',
-                                display: 'block'
-                              }}
-                              title="Full Email Preview"
-                            />
+                            {(() => {
+                              console.log('🔍 Preview render - emailElements:', emailElements);
+                              console.log('🔍 Preview render - emailElements length:', emailElements?.length || 0);
+                              console.log('🔍 Preview render - previewHtml length:', previewHtml?.length || 0);
+                              
+                              // Check if we have email elements loaded
+                              if (!emailElements || emailElements.length === 0) {
+                                return (
+                                  <div style={{
+                                    width: '100%',
+                                    height: 'calc(100vh - 200px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#f5f5f5',
+                                    color: '#666',
+                                    fontSize: '16px'
+                                  }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                      <p>❌ No email elements loaded</p>
+                                      <p>Campaign still loading...</p>
+                                      <p>emailElements: {emailElements?.length || 0}</p>
+                                      <p>isLoadingCampaign: {isLoadingCampaign ? 'true' : 'false'}</p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              
+                              // Use the preview HTML that was generated when the modal opened
+                              const html = previewHtml || generateLocalPreviewHtml();
+                              console.log('🔍 Generated HTML length:', html.length);
+                              console.log('🔍 Generated HTML preview:', html.substring(0, 500));
+                              
+                              if (!html || html.length < 100) {
+                                return (
+                                  <div style={{
+                                    width: '100%',
+                                    height: 'calc(100vh - 200px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#f5f5f5',
+                                    color: '#666',
+                                    fontSize: '16px'
+                                  }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                      <p>❌ No preview content available</p>
+                                      <p>emailElements: {emailElements?.length || 0}</p>
+                                      <p>previewHtml: {previewHtml?.length || 0}</p>
+                                      <button 
+                                        onClick={() => {
+                                          console.log('🔍 Regenerate button clicked');
+                                          const newHtml = generateLocalPreviewHtml();
+                                          console.log('🔍 New HTML length:', newHtml.length);
+                                          setPreviewHtml(newHtml);
+                                        }}
+                                        style={{
+                                          padding: '10px 20px',
+                                          background: '#007bff',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '5px',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Regenerate Preview
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              
+                              return (
+                                <iframe
+                                  key={`preview-${Date.now()}-${html.length}`}
+                                  srcDoc={html}
+                                  style={{
+                                    width: '100%',
+                                    height: 'calc(100vh - 200px)',
+                                    border: 'none',
+                                    display: 'block',
+                                    background: 'white'
+                                  }}
+                                  title="Full Email Preview"
+                                  onLoad={() => console.log('🔍 Iframe loaded successfully')}
+                                  onError={(e) => console.error('🔍 Iframe error:', e)}
+                                />
+                              );
+                            })()}
                           </div>
                         </DeviceFrame>
                       </PreviewContainer>

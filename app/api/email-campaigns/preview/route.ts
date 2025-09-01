@@ -46,10 +46,28 @@ export async function GET(request: NextRequest) {
     // Generate HTML from elements (similar to send route but without tracking)
     const elementHtml = emailElements
       .map((element: any) => {
+        // Debug logging to see element properties
+        console.log('🎨 Preview: Generating HTML for element:', {
+          id: element.id,
+          type: element.type,
+          fontFamily: element.fontFamily,
+          fontSize: element.fontSize,
+          textColor: element.textColor,
+          backgroundColor: element.backgroundColor,
+          fontWeight: element.fontWeight,
+          lineHeight: element.lineHeight,
+          textAlign: element.textAlign
+        });
+        
         const wrapperClass = element.fullWidth ? 'full-width' : 'container';
         const containerStyle = element.fullWidth ? '' : 'max-width: 600px; margin: 0 auto;';
 
         switch (element.type) {
+          case 'header':
+            return `<div class="${wrapperClass}" style="color: #333; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || (element.headerType === 'h1' ? '32px' : element.headerType === 'h2' ? '28px' : element.headerType === 'h3' ? '24px' : '20px')}; font-weight: ${element.fontWeight || 'bold'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;">${
+              element.content || "Enter header text..."
+            }</div>`;
+
           case 'text':
             return `<div class="${wrapperClass}" style="color: #555; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'}; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;">${
               element.content || ""
@@ -148,6 +166,11 @@ export async function GET(request: NextRequest) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${campaign.subject || 'Email Preview'} - Cymasphere</title>
+    
+    <!-- Google Fonts for custom typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&family=Roboto:wght@100;300;400;500;700;900&family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Source+Sans+Pro:wght@200;300;400;600;700;900&family=Nunito:wght@200;300;400;500;600;700;800;900&family=Work+Sans:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Merriweather:wght@300;400;700;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=Oswald:wght@200;300;400;500;600;700&family=PT+Sans:wght@400;700&family=Ubuntu:wght@300;400;500;700&family=Noto+Sans:wght@100;200;300;400;500;600;700;800;900&family=Source+Code+Pro:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -176,6 +199,31 @@ export async function GET(request: NextRequest) {
         .brand-header span {
             color: inherit !important;
             -webkit-text-fill-color: inherit !important;
+        }
+        
+        /* Ensure element styles take precedence over body styles */
+        div[style*="font-family"] {
+            font-family: inherit !important;
+        }
+        
+        div[style*="font-size"] {
+            font-size: inherit !important;
+        }
+        
+        div[style*="font-weight"] {
+            font-weight: inherit !important;
+        }
+        
+        div[style*="color"] {
+            color: inherit !important;
+        }
+        
+        div[style*="line-height"] {
+            line-height: inherit !important;
+        }
+        
+        div[style*="text-align"] {
+            text-align: inherit !important;
         }
     </style>
 </head>

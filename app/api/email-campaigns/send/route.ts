@@ -987,6 +987,16 @@ function generateHtmlFromElements(
 
   const elementHtml = elements
     .map((element) => {
+      // Debug logging to see element properties
+      console.log('🎨 Generating HTML for element:', {
+        id: element.id,
+        type: element.type,
+        fontFamily: element.fontFamily,
+        fontSize: element.fontSize,
+        textColor: element.textColor,
+        backgroundColor: element.backgroundColor
+      });
+      
       const wrapperClass = element.fullWidth
         ? "full-width"
         : "constrained-width";
@@ -1077,6 +1087,11 @@ function generateHtmlFromElements(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
+    
+    <!-- Google Fonts for custom typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&family=Roboto:wght@100;300;400;500;700;900&family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Source+Sans+Pro:wght@200;300;400;600;700;900&family=Nunito:wght@200;300;400;500;600;700;800;900&family=Work+Sans:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Merriweather:wght@300;400;700;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=Oswald:wght@200;300;400;500;600;700&family=PT+Sans:wght@400;700&family=Ubuntu:wght@300;400;500;700&family=Noto+Sans:wght@100;200;300;400;500;600;700;800;900&family=Source+Code+Pro:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         /* Body styles moved to inline for email client compatibility */

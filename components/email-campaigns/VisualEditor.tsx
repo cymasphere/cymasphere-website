@@ -43,6 +43,13 @@ import {
 } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
+// Simple CSS to ensure basic styling works
+const fontSizeStyles = `
+  .editable-text {
+    transition: all 0.2s ease;
+  }
+`;
+
 // Styled components for the visual editor
 
 const ViewToggle = styled.button.withConfig({
@@ -830,6 +837,79 @@ export default function VisualEditor({
   campaignData, 
   rightPanelExpanded = true 
 }: VisualEditorProps) {
+  
+  // ✨ NEW: Force update mechanism
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
+  const forceReRender = () => {
+    setForceUpdate(prev => prev + 1);
+  };
+
+
+  
+  // ✨ NEW: Normalize elements to ensure they have all required properties
+  const normalizeElements = useCallback((elements: any[]) => {
+    return elements.map(element => ({
+      // Base properties that all elements should have
+      paddingTop: 16,
+      paddingBottom: 16,
+      fullWidth: false,
+      fontSize: '16px',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textAlign: 'left',
+      fontFamily: 'Arial, sans-serif',
+      textColor: '#333333',
+      backgroundColor: 'transparent',
+      lineHeight: '1.6',
+      // Spread existing element properties (these will override defaults)
+      ...element,
+      // Ensure specific element types have appropriate defaults
+      ...(element.type === 'header' && {
+        fontSize: element.fontSize || '32px',
+        fontWeight: element.fontWeight || 'bold',
+        textAlign: element.textAlign || 'center',
+        fontFamily: element.fontFamily || 'Arial, sans-serif'
+      }),
+      ...(element.type === 'text' && {
+        fontSize: element.fontSize || '16px',
+        fontFamily: element.fontFamily || 'Arial, sans-serif',
+        lineHeight: element.lineHeight || '1.6'
+      }),
+      ...(element.type === 'button' && {
+        fontSize: element.fontSize || '16px',
+        fontWeight: element.fontWeight || 'bold',
+        textAlign: element.textAlign || 'center',
+        fontFamily: element.fontFamily || 'Arial, sans-serif'
+      })
+    }));
+  }, []);
+  
+  // ✨ NEW: Normalize elements when they're loaded
+  useEffect(() => {
+    if (emailElements && emailElements.length > 0) {
+      const normalizedElements = normalizeElements(emailElements);
+      // Only update if normalization actually changed something
+      const hasChanges = JSON.stringify(normalizedElements) !== JSON.stringify(emailElements);
+      if (hasChanges) {
+        console.log('🔄 Normalizing elements with missing properties');
+        setEmailElements(normalizedElements);
+      }
+    }
+  }, [emailElements, normalizeElements, setEmailElements]);
+  
+  // ✨ NEW: Debug emailElements changes
+  useEffect(() => {
+    console.log('🔄 emailElements state changed:', emailElements);
+    console.log('🔄 emailElements length:', emailElements.length);
+    console.log('🔄 emailElements details:', emailElements.map(el => ({
+      id: el.id,
+      type: el.type,
+      fontSize: el.fontSize,
+      fontFamily: el.fontFamily
+    })));
+  }, [emailElements]);
   const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text' | 'html'>('desktop');
   
   // Element reordering state
@@ -1538,7 +1618,8 @@ export default function VisualEditor({
       fontWeight: 'normal',
       fontStyle: 'normal',
       textDecoration: 'none',
-      textAlign: 'left'
+      textAlign: 'left',
+      fontFamily: 'Arial, sans-serif'  // Default font family
     };
     
     switch (type) {
@@ -1563,6 +1644,10 @@ export default function VisualEditor({
           ...baseElement, 
           content: 'Click Here', 
           url: '#',
+          backgroundColor: '#6c63ff',
+          gradientColor2: '#4ecdc4',
+          gradient: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
+          textColor: '#ffffff',
           fontSize: '16px',
           fontWeight: 'bold',
           textAlign: 'center'
@@ -1590,9 +1675,11 @@ export default function VisualEditor({
         return { ...baseElement, thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
       case 'footer':
         return { 
-          ...baseElement, 
-          fullWidth: true,
-          socialLinks: [
+                      ...baseElement, 
+            fullWidth: true,
+            backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+            textColor: '#ffffff',
+            socialLinks: [
             { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
             { platform: 'twitter', url: 'https://x.com/cymasphere' },
             { platform: 'instagram', url: 'https://www.instagram.com/cymasphere/' },
@@ -1869,7 +1956,10 @@ export default function VisualEditor({
   };
 
   const updateElement = (elementId: string, updates: any) => {
-    setEmailElements(emailElements.map(el => {
+    console.log('🔄 updateElement called:', { elementId, updates });
+    console.log('🔄 Current emailElements before update:', emailElements);
+    
+    const newElements = emailElements.map(el => {
       if (el.id === elementId) {
         // Preserve all existing properties and block-specific settings
         const updatedElement = {
@@ -1890,10 +1980,29 @@ export default function VisualEditor({
           brandStyle: el.type === 'brand-header' ? (updates.brandStyle || el.brandStyle) : undefined,
           logoStyle: el.type === 'brand-header' ? (updates.logoStyle || el.logoStyle) : undefined,
         };
+        
+        console.log('🔄 Element updated:', { 
+          id: updatedElement.id, 
+          type: updatedElement.type, 
+          fontSize: updatedElement.fontSize,
+          fontFamily: updatedElement.fontFamily 
+        });
+        
         return updatedElement;
       }
       return el;
-    }));
+    });
+    
+    console.log('🔄 New elements array:', newElements);
+    console.log('🔄 Setting new emailElements state...');
+    
+    setEmailElements(newElements);
+    
+    // Force a re-render to ensure changes are visible
+    setTimeout(() => {
+      console.log('🔄 Forcing re-render...');
+      forceReRender();
+    }, 0);
   };
 
   // ✨ NEW: Update element padding
@@ -1936,6 +2045,20 @@ export default function VisualEditor({
   };
 
   const renderEmailElement = (element: any, index: number) => {
+    // Debug logging for element properties
+    if (element.type === 'text' || element.type === 'header') {
+      console.log('🎨 Rendering element:', {
+        id: element.id,
+        type: element.type,
+        fontFamily: element.fontFamily,
+        fontSize: element.fontSize,
+        textColor: element.textColor,
+        backgroundColor: element.backgroundColor,
+        isSelected: selectedElementId === element.id,
+        selectedElementId: selectedElementId
+      });
+    }
+    
     const isSelected = selectedElementId === element.id;
     const isEditing = isElementEditing(element.id);
 
@@ -2168,6 +2291,7 @@ export default function VisualEditor({
               />
             ) : (
           <EditableText
+            key={`${element.id}-${element.fontSize}-${forceUpdate}`}
             className="editable-text"
             editing={isEditing}
                 contentEditable={isEditing}
@@ -2259,6 +2383,16 @@ export default function VisualEditor({
         )}
         {element.type === 'text' && (
           <div style={{ position: 'relative' }}>
+            {(() => {
+              console.log('🎨 Rendering text element:', { 
+                id: element.id, 
+                fontSize: element.fontSize, 
+                fontFamily: element.fontFamily,
+                textColor: element.textColor,
+                backgroundColor: element.backgroundColor 
+              });
+              return null;
+            })()}
             {isShowingRawHtml(element.id) ? (
               <textarea
                 value={element.content}
@@ -2278,6 +2412,7 @@ export default function VisualEditor({
               />
             ) : (
           <EditableText
+            key={`${element.id}-${element.fontSize}-${forceUpdate}`}
             className="editable-text"
             editing={isEditing}
                 contentEditable={isEditing}
@@ -2300,19 +2435,22 @@ export default function VisualEditor({
               fontWeight: element.fontWeight || 'normal',
               fontStyle: element.fontStyle || 'normal',
               textDecoration: element.textDecoration || 'none',
-              lineHeight: '1.6',
-              color: '#333',
+              fontFamily: element.fontFamily || 'Arial, sans-serif',
+              lineHeight: element.lineHeight || '1.6',
+              color: element.textColor || '#333',
               margin: 0,
               position: 'relative',
                   cursor: isEditing ? 'text' : 'default',
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
-              background: element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent',
+              background: element.backgroundColor || (element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent'),
               padding: element.fullWidth ? '0' : '0',
               borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
-                  outline: 'none'
+              outline: 'none'
                 }}
+                data-font-size={element.fontSize || '16px'}
+                data-element-type={element.type}
               />
             )}
             
@@ -2419,6 +2557,7 @@ export default function VisualEditor({
             
             {isEditing ? (
             <EditableText
+              key={`${element.id}-${element.fontSize}-${forceUpdate}`}
               className="editable-text"
               editing={isEditing}
               contentEditable={true}
@@ -2433,20 +2572,21 @@ export default function VisualEditor({
               style={{
                 display: element.fullWidth ? 'block' : 'inline-block',
                 padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                color: 'white',
+                                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                color: element.textColor || 'white',
                 textDecoration: 'none',
                 borderRadius: element.fullWidth ? '0' : '50px',
-                fontWeight: '700',
-                fontSize: '1rem',
-                  cursor: 'text',
+                fontWeight: element.fontWeight || '700',
+                fontSize: element.fontSize || '1rem',
+                fontFamily: element.fontFamily || 'Arial, sans-serif',
+                cursor: 'text',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
                 minHeight: '1em',
                 width: element.fullWidth ? '100%' : 'auto',
-                textAlign: 'center'
+                textAlign: element.textAlign || 'center'
               }}
             >
               {element.content}
@@ -2464,19 +2604,20 @@ export default function VisualEditor({
                 style={{
                   display: element.fullWidth ? 'block' : 'inline-block',
                   padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                  color: 'white',
+                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  color: element.textColor || 'white',
                   textDecoration: 'none',
                   borderRadius: element.fullWidth ? '0' : '50px',
-                  fontWeight: '700',
-                  fontSize: '1rem',
+                  fontWeight: element.fontWeight || '700',
+                  fontSize: element.fontSize || '1rem',
+                  fontFamily: element.fontFamily || 'Arial, sans-serif',
                   cursor: 'pointer',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
                   boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
                   width: element.fullWidth ? '100%' : 'auto',
-                  textAlign: 'center'
+                  textAlign: element.textAlign || 'center'
                 }}
                 dangerouslySetInnerHTML={{ __html: element.content }}
               />
@@ -2504,8 +2645,8 @@ export default function VisualEditor({
               </div>
             )}
             
-            {/* ✨ Link icon next to button when editing */}
-            {isEditing && (
+                         {/* ✨ Link icon next to button when selected */}
+             {isSelected && (
               <div style={{
                 position: 'absolute',
                 top: '50%',
@@ -2893,7 +3034,7 @@ export default function VisualEditor({
                 style={{
                   width: '100%',
                   minHeight: '3em',
-                  background: 'transparent',
+                  background: element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
                   border: '1px dashed rgba(108, 99, 255, 0.3)',
                   borderRadius: '4px',
                   padding: '0.5rem',
@@ -3305,6 +3446,8 @@ export default function VisualEditor({
               <FaCode style={{ marginRight: '0.5rem' }} />
               HTML Code
             </ViewToggle>
+            
+            
             {currentView === 'html' && (
               <button
                 onClick={() => {
@@ -3344,6 +3487,7 @@ export default function VisualEditor({
           </ViewToggleContainer>
 
           <EmailCanvas>
+            <style dangerouslySetInnerHTML={{ __html: fontSizeStyles }} />
             <EmailContainer style={{
               width: currentView === 'mobile' ? '375px' : '100%',
               maxWidth: currentView === 'text' ? '500px' : 'none',
@@ -3366,7 +3510,7 @@ export default function VisualEditor({
     <title>${campaignData?.subject || 'Email Campaign'}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&family=Poppins:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&family=Nunito:wght@400;600;700&family=Work+Sans:wght@400;500;600&family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f7;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
@@ -3977,8 +4121,15 @@ export default function VisualEditor({
                               type="range"
                               min="12"
                               max="72"
-                              value={parseInt(emailElements.find(el => el.id === selectedElementId)?.fontSize || '24')}
-                              onChange={(e) => updateElement(selectedElementId, { fontSize: `${e.target.value}px` })}
+                              value={parseInt((emailElements.find(el => el.id === selectedElementId)?.fontSize || '24px').replace('px', ''))}
+                              onChange={(e) => {
+                                console.log('🎨 Header font size slider changed:', { 
+                                  elementId: selectedElementId, 
+                                  newSize: `${e.target.value}px`,
+                                  currentElements: emailElements
+                                });
+                                updateElement(selectedElementId, { fontSize: `${e.target.value}px` });
+                              }}
                               style={{ flex: 1 }}
                             />
                             <span style={{ minWidth: '3em', textAlign: 'right' }}>
@@ -3993,76 +4144,399 @@ export default function VisualEditor({
                             value={emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'}
                             onChange={(e) => updateElement(selectedElementId, { fontFamily: e.target.value })}
                           >
-                            <option value="Arial, sans-serif">Arial</option>
-                            <option value="'Times New Roman', serif">Times New Roman</option>
-                            <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
-                            <option value="'Georgia', serif">Georgia</option>
-                            <option value="'Verdana', sans-serif">Verdana</option>
+                            {/* Google Fonts - Modern & Professional */}
+                            <optgroup label="Google Fonts">
+                              <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter (Modern)</option>
+                              <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans (Clean)</option>
+                              <option value="'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Roboto (Google)</option>
+                              <option value="'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Lato (Friendly)</option>
+                              <option value="'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Poppins (Geometric)</option>
+                              <option value="'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Source Sans Pro (Adobe)</option>
+                              <option value="'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Nunito (Rounded)</option>
+                              <option value="'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Work Sans (Contemporary)</option>
+                            </optgroup>
+                            
+                            {/* Brand Fonts */}
+                            <optgroup label="Brand Fonts">
+                              <option value="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Montserrat (Brand)</option>
+                            </optgroup>
+                            
+                            {/* System Fonts - Universal Compatibility */}
+                            <optgroup label="System Fonts">
+                              <option value="Arial, sans-serif">Arial (Universal)</option>
+                              <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
+                              <option value="'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif">Segoe UI (Windows)</option>
+                              <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                            </optgroup>
+                            
+                            {/* Serif Fonts */}
+                            <optgroup label="Serif Fonts">
+                              <option value="'Times New Roman', serif">Times New Roman</option>
+                              <option value="'Georgia', serif">Georgia</option>
+                              <option value="'Merriweather', serif">Merriweather (Google)</option>
+                              <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
+                            </optgroup>
                           </ControlSelect>
+                          
+                          {/* Font Preview */}
+                          <div style={{ 
+                            marginTop: '0.5rem',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '0.85rem',
+                            fontFamily: emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'
+                          }}>
+                            <div style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Preview:</div>
+                            <div>The quick brown fox jumps over the lazy dog</div>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>1234567890</div>
+                          </div>
                         </ControlGroup>
                       </>
                     )}
 
                     {/* Button Specific Controls */}
-                    {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
-                      <>
-                        <ControlGroup>
-                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FaLink size={14} />
-                            Button URL
-                          </ControlLabel>
-                          <UrlInput
-                            type="url"
-                            placeholder="https://example.com or #anchor"
-                            value={emailElements.find(el => el.id === selectedElementId)?.url || '#'}
-                            onChange={(e) => updateElement(selectedElementId, { url: e.target.value })}
-                          />
-                          <div style={{ 
-                            fontSize: '0.8rem', 
-                            color: 'var(--text-secondary)', 
-                            opacity: 0.8,
-                            marginTop: '0.25rem'
-                          }}>
-                            🔗 Link destination when button is clicked
-                          </div>
-                        </ControlGroup>
-
-                        <ControlGroup>
-                          <ControlLabel>Button Background</ControlLabel>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <ColorInput
-                              type="color"
-                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
-                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: '' })}
-                              title="Solid color"
-                            />
-                            <input
-                              type="text"
-                              placeholder="CSS gradient, e.g. linear-gradient(135deg, #6c63ff, #a88beb)"
-                              value={emailElements.find(el => el.id === selectedElementId)?.gradient || ''}
-                              onChange={(e) => updateElement(selectedElementId, { gradient: e.target.value })}
-                              style={{
-                                flex: 1,
-                                padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)'
+                                          {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
+                        <>
+                          <ControlGroup>
+                            <ControlLabel>Button Background</ControlLabel>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <ColorInput
+                                type="color"
+                                value={(() => {
+                                  const element = emailElements.find(el => el.id === selectedElementId);
+                                  // Convert transparent to hex color or use default
+                                  const bgColor = element?.backgroundColor;
+                                  if (bgColor === 'transparent' || !bgColor || bgColor === '') {
+                                    return '#6c63ff';
+                                  }
+                                  return bgColor;
+                                })()}
+                                onChange={(e) => {
+                                  const currentGradient = emailElements.find(el => el.id === selectedElementId)?.gradient || '';
+                                  const color2 = emailElements.find(el => el.id === selectedElementId)?.gradientColor2 || '#4ecdc4';
+                                  const newGradient = `linear-gradient(135deg, ${e.target.value} 0%, ${color2} 100%)`;
+                                  updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: newGradient });
+                                }}
+                                title="Gradient color 1"
+                              />
+                              <ColorInput
+                                type="color"
+                                value={(() => {
+                                  const element = emailElements.find(el => el.id === selectedElementId);
+                                  // Use default if gradientColor2 is undefined
+                                  return element?.gradientColor2 || '#4ecdc4';
+                                })()}
+                                onChange={(e) => {
+                                  const currentGradient = emailElements.find(el => el.id === selectedElementId)?.gradient || '';
+                                  const color1 = emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff';
+                                  const newGradient = `linear-gradient(135deg, ${color1} 0%, ${e.target.value} 100%)`;
+                                  updateElement(selectedElementId, { gradientColor2: e.target.value, gradient: newGradient });
+                                }}
+                                title="Gradient color 2"
+                              />
+                            </div>
+                            
+                            <ControlSelect
+                              value={emailElements.find(el => el.id === selectedElementId)?.gradientType || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}
+                              onChange={(e) => {
+                                const color1 = emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff';
+                                const color2 = emailElements.find(el => el.id === selectedElementId)?.gradientColor2 || '#4ecdc4';
+                                let newGradient = '';
+                                
+                                switch(e.target.value) {
+                                  case 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)':
+                                    newGradient = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+                                    break;
+                                  case 'linear-gradient(45deg, #6c63ff 0%, #4ecdc4 100%)':
+                                    newGradient = `linear-gradient(45deg, ${color1} 0%, ${color2} 100%)`;
+                                    break;
+                                  case 'linear-gradient(90deg, #6c63ff 0%, #4ecdc4 100%)':
+                                    newGradient = `linear-gradient(90deg, ${color1} 0%, ${color2} 100%)`;
+                                    break;
+                                  case 'linear-gradient(180deg, #6c63ff 0%, #4ecdc4 100%)':
+                                    newGradient = `linear-gradient(180deg, ${color1} 0%, ${color2} 100%)`;
+                                    break;
+                                  case 'radial-gradient(circle, #6c63ff 0%, #4ecdc4 100%)':
+                                    newGradient = `radial-gradient(circle, ${color1} 0%, ${color2} 100%)`;
+                                    break;
+                                  case 'none':
+                                    newGradient = '';
+                                    break;
+                                }
+                                
+                                updateElement(selectedElementId, { gradientType: e.target.value, gradient: newGradient });
                               }}
-                            />
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            Enter a CSS gradient to override the solid color.
-                          </div>
-                        </ControlGroup>
+                            >
+                              <option value="linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)">Diagonal (135°)</option>
+                              <option value="linear-gradient(45deg, #6c63ff 0%, #4ecdc4 100%)">Diagonal (45°)</option>
+                              <option value="linear-gradient(90deg, #6c63ff 0%, #4ecdc4 100%)">Horizontal</option>
+                              <option value="linear-gradient(180deg, #6c63ff 0%, #4ecdc4 100%)">Vertical</option>
+                              <option value="radial-gradient(circle, #6c63ff 0%, #4ecdc4 100%)">Radial</option>
+                              <option value="none">No Gradient (Solid)</option>
+                            </ControlSelect>
+                          </ControlGroup>
 
+                          <ControlGroup>
+                            <ControlLabel>Font Size</ControlLabel>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <input
+                                type="range"
+                                min="12"
+                                max="48"
+                                value={parseInt((emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px').replace('px', ''))}
+                                onChange={(e) => updateElement(selectedElementId, { fontSize: `${e.target.value}px` })}
+                                style={{ flex: 1 }}
+                              />
+                              <span style={{ minWidth: '3em', textAlign: 'right' }}>
+                                {emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px'}
+                              </span>
+                            </div>
+                          </ControlGroup>
+
+                          <ControlGroup>
+                            <ControlLabel>Font Family</ControlLabel>
+                            <ControlSelect
+                              value={emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'}
+                              onChange={(e) => updateElement(selectedElementId, { fontFamily: e.target.value })}
+                            >
+                              {/* Google Fonts - Modern & Professional */}
+                              <optgroup label="Google Fonts">
+                                <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter (Modern)</option>
+                                <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans (Clean)</option>
+                                <option value="'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Roboto (Google)</option>
+                                <option value="'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Lato (Friendly)</option>
+                                <option value="'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Poppins (Geometric)</option>
+                                <option value="'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Source Sans Pro (Adobe)</option>
+                                <option value="'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Nunito (Rounded)</option>
+                                <option value="'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Work Sans (Contemporary)</option>
+                              </optgroup>
+                              
+                              {/* Brand Fonts */}
+                              <optgroup label="Brand Fonts">
+                                <option value="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Montserrat (Brand)</option>
+                              </optgroup>
+                              
+                              {/* System Fonts - Universal Compatibility */}
+                              <optgroup label="System Fonts">
+                                <option value="Arial, sans-serif">Arial (Universal)</option>
+                                <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
+                                <option value="'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif">Segoe UI (Windows)</option>
+                                <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                              </optgroup>
+                              
+                              {/* Serif Fonts */}
+                              <optgroup label="Serif Fonts">
+                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                <option value="'Georgia', serif">Georgia</option>
+                                <option value="'Merriweather', serif">Merriweather (Google)</option>
+                                <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
+                              </optgroup>
+                            </ControlSelect>
+                          </ControlGroup>
+                        </>
+                      )}
+
+                    {/* Text Element Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'text' && (
+                      <>
                         <ControlGroup>
                           <ControlLabel>Text Color</ControlLabel>
                           <ColorInput
                             type="color"
-                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#333333'}
                             onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
                           />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Background Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || 'transparent'}
+                            onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Font Size</ControlLabel>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                              type="range"
+                              min="12"
+                              max="48"
+                              value={parseInt((emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px').replace('px', ''))}
+                              onChange={(e) => {
+                                console.log('🎨 Font size slider changed:', { 
+                                  elementId: selectedElementId, 
+                                  newSize: `${e.target.value}px`,
+                                  currentElements: emailElements
+                                });
+                                updateElement(selectedElementId, { fontSize: `${e.target.value}px` });
+                              }}
+                              style={{ flex: 1 }}
+                            />
+                            <input
+                              type="number"
+                              min="12"
+                              max="48"
+                              value={parseInt((emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px').replace('px', ''))}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 16;
+                                updateElement(selectedElementId, { fontSize: `${value}px` });
+                              }}
+                              style={{
+                                width: '60px',
+                                padding: '0.5rem',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'white',
+                                textAlign: 'center',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                            <span style={{ color: 'white', fontSize: '0.8rem' }}>px</span>
+                          </div>
+                          
+                          {/* Debug Info */}
+                          <div style={{ 
+                            marginTop: '0.5rem',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '0.8rem',
+                            color: 'var(--text-secondary)'
+                          }}>
+                            <div>Current: {emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px'}</div>
+                            <div>Type: {emailElements.find(el => el.id === selectedElementId)?.type || 'unknown'}</div>
+                            <div>ID: {selectedElementId}</div>
+                            <div>All Elements: {JSON.stringify(emailElements.map(el => ({ id: el.id, type: el.type, fontSize: el.fontSize })))}</div>
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Font Family</ControlLabel>
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'}
+                            onChange={(e) => updateElement(selectedElementId, { fontFamily: e.target.value })}
+                          >
+                            {/* Google Fonts - Modern & Professional */}
+                            <optgroup label="Google Fonts">
+                              <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter (Modern)</option>
+                              <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans (Clean)</option>
+                              <option value="'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Roboto (Google)</option>
+                              <option value="'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Lato (Friendly)</option>
+                              <option value="'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Poppins (Geometric)</option>
+                              <option value="'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Source Sans Pro (Adobe)</option>
+                              <option value="'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Nunito (Rounded)</option>
+                              <option value="'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Work Sans (Contemporary)</option>
+                            </optgroup>
+                            
+                            {/* Brand Fonts */}
+                            <optgroup label="Brand Fonts">
+                              <option value="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Montserrat (Brand)</option>
+                            </optgroup>
+                            
+                            {/* System Fonts - Universal Compatibility */}
+                            <optgroup label="System Fonts">
+                              <option value="Arial, sans-serif">Arial (Universal)</option>
+                              <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
+                              <option value="'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif">Segoe UI (Windows)</option>
+                              <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                            </optgroup>
+                            
+                            {/* Serif Fonts */}
+                            <optgroup label="Serif Fonts">
+                              <option value="'Times New Roman', serif">Times New Roman</option>
+                              <option value="'Georgia', serif">Georgia</option>
+                              <option value="'Merriweather', serif">Merriweather (Google)</option>
+                              <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
+                            </optgroup>
+                          </ControlSelect>
+                          
+                          {/* Font Preview */}
+                          <div style={{ 
+                            marginTop: '0.5rem',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '0.85rem',
+                            fontFamily: emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'
+                          }}>
+                            <div style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Preview:</div>
+                            <div>The quick brown fox jumps over the lazy dog</div>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>1234567890</div>
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Font Weight</ControlLabel>
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.fontWeight || 'normal'}
+                            onChange={(e) => updateElement(selectedElementId, { fontWeight: e.target.value })}
+                          >
+                            <option value="100">Thin (100)</option>
+                            <option value="300">Light (300)</option>
+                            <option value="400">Normal (400)</option>
+                            <option value="500">Medium (500)</option>
+                            <option value="600">Semi Bold (600)</option>
+                            <option value="700">Bold (700)</option>
+                            <option value="800">Extra Bold (800)</option>
+                            <option value="900">Black (900)</option>
+                          </ControlSelect>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Line Height</ControlLabel>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                              type="range"
+                              min="1"
+                              max="3"
+                              step="0.1"
+                              value={parseFloat(emailElements.find(el => el.id === selectedElementId)?.lineHeight || '1.6')}
+                              onChange={(e) => updateElement(selectedElementId, { lineHeight: parseFloat(e.target.value) })}
+                              style={{ flex: 1 }}
+                            />
+                            <input
+                              type="number"
+                              min="1"
+                              max="3"
+                              step="0.1"
+                              value={parseFloat(emailElements.find(el => el.id === selectedElementId)?.lineHeight || '1.6')}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 1.6;
+                                updateElement(selectedElementId, { lineHeight: value });
+                              }}
+                              style={{
+                                width: '60px',
+                                padding: '0.5rem',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                fontSize: '0.9rem',
+                                color: 'white',
+                                textAlign: 'center'
+                              }}
+                            />
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Text Alignment</ControlLabel>
+                          <ControlSelect
+                            value={emailElements.find(el => el.id === selectedElementId)?.textAlign || 'left'}
+                            onChange={(e) => updateElement(selectedElementId, { textAlign: e.target.value })}
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                            <option value="justify">Justify</option>
+                          </ControlSelect>
                         </ControlGroup>
                       </>
                     )}
@@ -4099,9 +4573,96 @@ export default function VisualEditor({
                           </ControlSelect>
                         </ControlGroup>
                       </>
-                    )}
-                    
-                    <ControlGroup>
+                                          )}
+
+                      {/* Footer Specific Controls */}
+                      {emailElements.find(el => el.id === selectedElementId)?.type === 'footer' && (
+                        <>
+                          <ControlGroup>
+                            <ControlLabel>Footer Text</ControlLabel>
+                            <textarea
+                              value={emailElements.find(el => el.id === selectedElementId)?.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+                              onChange={(e) => updateElement(selectedElementId, { footerText: e.target.value })}
+                              placeholder="Enter footer text..."
+                              style={{
+                                width: '100%',
+                                minHeight: '3em',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)',
+                                fontFamily: 'inherit',
+                                fontSize: '0.9rem',
+                                resize: 'vertical'
+                              }}
+                            />
+                          </ControlGroup>
+
+                          <ControlGroup>
+                            <ControlLabel>Social Links</ControlLabel>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                              Social media links are automatically included
+                            </div>
+                          </ControlGroup>
+
+                          <ControlGroup>
+                            <ControlLabel>Unsubscribe Text</ControlLabel>
+                            <input
+                              type="text"
+                              value={emailElements.find(el => el.id === selectedElementId)?.unsubscribeText || 'Unsubscribe'}
+                              onChange={(e) => updateElement(selectedElementId, { unsubscribeText: e.target.value })}
+                              placeholder="Unsubscribe"
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </ControlGroup>
+
+                          <ControlGroup>
+                            <ControlLabel>Privacy Policy Text</ControlLabel>
+                            <input
+                              type="text"
+                              value={emailElements.find(el => el.id === selectedElementId)?.privacyText || 'Privacy Policy'}
+                              onChange={(e) => updateElement(selectedElementId, { privacyText: e.target.value })}
+                              placeholder="Privacy Policy"
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </ControlGroup>
+
+                          <ControlGroup>
+                            <ControlLabel>Terms of Service Text</ControlLabel>
+                            <input
+                              type="text"
+                              value={emailElements.find(el => el.id === selectedElementId)?.termsText || 'Terms of Service'}
+                              onChange={(e) => updateElement(selectedElementId, { termsText: e.target.value })}
+                              placeholder="Terms of Service"
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </ControlGroup>
+                        </>
+                      )}
+                      
+                      <ControlGroup>
                       <ControlLabel>Element ID</ControlLabel>
                       <div style={{ 
                         padding: '0.75rem', 
