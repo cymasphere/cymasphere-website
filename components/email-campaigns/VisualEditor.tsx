@@ -187,7 +187,7 @@ const EmailElement = styled.div.withConfig({
   cursor: grab;
   overflow: visible;
   background: ${props => 
-    props.editing ? 'rgba(108, 99, 255, 0.1)' :
+    props.editing ? 'rgba(108, 99, 255, 0.08)' :
     props.selected ? 'rgba(108, 99, 255, 0.05)' : 
     props.fullWidth ? 'rgba(108, 99, 255, 0.03)' : 'transparent'
   };
@@ -203,7 +203,7 @@ const EmailElement = styled.div.withConfig({
   &:hover {
     border-color: ${props => props.selected ? 'var(--primary)' : 'rgba(108, 99, 255, 0.5)'};
     background: ${props => 
-      props.editing ? 'rgba(108, 99, 255, 0.15)' :
+      props.editing ? 'rgba(108, 99, 255, 0.08)' :
       props.selected ? 'rgba(108, 99, 255, 0.08)' : 
       'rgba(108, 99, 255, 0.03)'
     };
@@ -400,21 +400,21 @@ const EditableText = styled.div.withConfig({
   outline: ${props => props.editing ? '2px solid var(--primary)' : 'none'};
   border-radius: 4px;
   padding: ${props => props.editing ? '0.5rem' : '0.25rem'};
-  background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
+  background: transparent;
   transition: all 0.3s ease;
 
   &:hover {
-    background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'rgba(108, 99, 255, 0.05)'};
+    background: transparent;
   }
 
   &:focus {
     outline: 2px solid var(--primary) !important;
-    background: rgba(108, 99, 255, 0.1) !important;
+    background: transparent !important;
   }
   
   &:focus-within {
     outline: 2px solid var(--primary) !important;
-    background: rgba(108, 99, 255, 0.1) !important;
+    background: transparent !important;
   }
 `;
 
@@ -558,7 +558,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 5000;
   backdrop-filter: blur(5px);
 `;
 
@@ -945,6 +945,13 @@ export default function VisualEditor({
   
   // Link and color picker modals
   const [showLinkModal, setShowLinkModal] = useState(false);
+  useEffect(() => {
+    console.log('🔗 showLinkModal changed:', showLinkModal, {
+      selectedElementId,
+      editingElement,
+      linkUrl,
+    });
+  }, [showLinkModal]);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [mediaLibraryItems, setMediaLibraryItems] = useState<Array<{ name: string; path: string; publicUrl: string; type: 'image' | 'video' | 'unknown'; size: number | null; updatedAt: string | null }>>([]);
@@ -1675,11 +1682,11 @@ export default function VisualEditor({
         return { ...baseElement, thumbnail: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Video+Placeholder', url: '#' };
       case 'footer':
         return { 
-                      ...baseElement, 
-            fullWidth: true,
-            backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-            textColor: '#ffffff',
-            socialLinks: [
+          ...baseElement, 
+          fullWidth: true,
+          backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+          textColor: '#ffffff',
+          socialLinks: [
             { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
             { platform: 'twitter', url: 'https://x.com/cymasphere' },
             { platform: 'instagram', url: 'https://www.instagram.com/cymasphere/' },
@@ -2447,7 +2454,7 @@ export default function VisualEditor({
               padding: element.fullWidth ? '0' : '0',
               borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
-              outline: 'none'
+                  outline: 'none'
                 }}
                 data-font-size={element.fontSize || '16px'}
                 data-element-type={element.type}
@@ -2556,8 +2563,27 @@ export default function VisualEditor({
             )}
             
             {isEditing ? (
+              <div
+                style={{
+                  display: element.fullWidth ? 'block' : 'inline-block',
+                  padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
+                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  color: element.textColor || 'white',
+                  textDecoration: 'none',
+                  borderRadius: element.fullWidth ? '0' : '50px',
+                  fontWeight: element.fontWeight || '700',
+                  fontSize: element.fontSize || '1rem',
+                  fontFamily: element.fontFamily || 'Arial, sans-serif',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                  width: element.fullWidth ? '100%' : 'auto',
+                  textAlign: element.textAlign || 'center'
+                }}
+              >
             <EditableText
-              key={`${element.id}-${element.fontSize}-${forceUpdate}`}
+                  key={`${element.id}-${element.fontSize}-${forceUpdate}`}
               className="editable-text"
               editing={isEditing}
               contentEditable={true}
@@ -2570,36 +2596,40 @@ export default function VisualEditor({
               }}
               data-element-id={element.id}
               style={{
-                display: element.fullWidth ? 'block' : 'inline-block',
-                padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                color: element.textColor || 'white',
-                textDecoration: 'none',
-                borderRadius: element.fullWidth ? '0' : '50px',
-                fontWeight: element.fontWeight || '700',
-                fontSize: element.fontSize || '1rem',
-                fontFamily: element.fontFamily || 'Arial, sans-serif',
-                cursor: 'text',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
+                    display: 'inline',
+                    padding: 0,
+                    background: 'transparent',
+                    color: 'inherit',
                 minHeight: '1em',
-                width: element.fullWidth ? '100%' : 'auto',
-                textAlign: element.textAlign || 'center'
+                    cursor: 'text'
               }}
             >
               {element.content}
             </EditableText>
+              </div>
             ) : (
-              <a
-                href={element.url || '#'}
-                target={element.url && element.url.startsWith('http') ? '_blank' : '_self'}
-                rel={element.url && element.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+              <div
+                draggable={false}
+                onClickCapture={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   startEditing(element.id);
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onAuxClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDragStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                 }}
                 style={{
                   display: element.fullWidth ? 'block' : 'inline-block',
@@ -2652,13 +2682,24 @@ export default function VisualEditor({
                 top: '50%',
                 right: '-60px',
                 transform: 'translateY(-50%)',
-                zIndex: 20
+                zIndex: 1000,
+                pointerEvents: 'auto'
               }}>
                 <button
+                  type="button"
+                  data-overlay-action
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    // Ensure we're editing the button URL (not inline text)
+                    setSelectedElementId(element.id);
+                    setEditingElement(null);
                     setLinkUrl(element.url || '');
+                    console.log('🔗 Opening link modal, URL preset:', element.url || '');
                     setShowLinkModal(true);
+                    setTimeout(() => {
+                      console.log('🔗 Post-open check showLinkModal:', true);
+                    }, 0);
                   }}
                   style={{
                     background: 'var(--primary)',
@@ -2673,7 +2714,8 @@ export default function VisualEditor({
                     boxShadow: '0 4px 12px rgba(108, 99, 255, 0.5)',
                     transition: 'all 0.3s ease',
                     width: '44px',
-                    height: '44px'
+                    height: '44px',
+                    zIndex: 1001
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--accent)';
@@ -2687,7 +2729,7 @@ export default function VisualEditor({
                   }}
                   title="Edit Button URL"
                 >
-                  <FaLink size={16} />
+                  <FaLink size={16} style={{ pointerEvents: 'none' }} />
                 </button>
               </div>
             )}
@@ -3888,12 +3930,12 @@ export default function VisualEditor({
                           Padding Top
                         </PaddingLabel>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <PaddingSlider
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
-                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
+                        <PaddingSlider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
+                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
                             style={{ flex: 1 }}
                           />
                           <input
@@ -3925,12 +3967,12 @@ export default function VisualEditor({
                           Padding Bottom
                         </PaddingLabel>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <PaddingSlider
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
-                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
+                        <PaddingSlider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
+                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
                             style={{ flex: 1 }}
                           />
                           <input
@@ -4171,8 +4213,8 @@ export default function VisualEditor({
                             
                             {/* Serif Fonts */}
                             <optgroup label="Serif Fonts">
-                              <option value="'Times New Roman', serif">Times New Roman</option>
-                              <option value="'Georgia', serif">Georgia</option>
+                            <option value="'Times New Roman', serif">Times New Roman</option>
+                            <option value="'Georgia', serif">Georgia</option>
                               <option value="'Merriweather', serif">Merriweather (Google)</option>
                               <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
                             </optgroup>
@@ -4197,9 +4239,9 @@ export default function VisualEditor({
                     )}
 
                     {/* Button Specific Controls */}
-                                          {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
-                        <>
-                          <ControlGroup>
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
+                      <>
+                        <ControlGroup>
                             <ControlLabel>Button Background</ControlLabel>
                             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <ColorInput
@@ -4236,7 +4278,7 @@ export default function VisualEditor({
                                 }}
                                 title="Gradient color 2"
                               />
-                            </div>
+                          </div>
                             
                             <ControlSelect
                               value={emailElements.find(el => el.id === selectedElementId)?.gradientType || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}
@@ -4276,9 +4318,9 @@ export default function VisualEditor({
                               <option value="radial-gradient(circle, #6c63ff 0%, #4ecdc4 100%)">Radial</option>
                               <option value="none">No Gradient (Solid)</option>
                             </ControlSelect>
-                          </ControlGroup>
+                        </ControlGroup>
 
-                          <ControlGroup>
+                        <ControlGroup>
                             <ControlLabel>Font Size</ControlLabel>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <input
@@ -4343,8 +4385,8 @@ export default function VisualEditor({
                       <>
                         <ControlGroup>
                           <ControlLabel>Text Color</ControlLabel>
-                          <ColorInput
-                            type="color"
+                            <ColorInput
+                              type="color"
                             value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#333333'}
                             onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
                           />
@@ -4658,11 +4700,11 @@ export default function VisualEditor({
                                 color: 'var(--text)'
                               }}
                             />
-                          </ControlGroup>
-                        </>
-                      )}
-                      
-                      <ControlGroup>
+                        </ControlGroup>
+                      </>
+                    )}
+                    
+                    <ControlGroup>
                       <ControlLabel>Element ID</ControlLabel>
                       <div style={{ 
                         padding: '0.75rem', 
@@ -4779,8 +4821,14 @@ export default function VisualEditor({
 
       {/* Link Modal */}
       {showLinkModal && (
-        <ModalOverlay onClick={closeLinkModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
+        <ModalOverlay onClick={(e) => {
+          console.log('🔗 Modal overlay clicked - closing');
+          closeLinkModal();
+        }}>
+          <ModalContent onClick={(e) => {
+            e.stopPropagation();
+            console.log('🔗 Modal content click - stop propagation');
+          }}>
             <ModalTitle>
               {!editingElement && selectedElementId && emailElements.find(el => el.id === selectedElementId)?.type === 'button' 
                 ? 'Edit Button URL' 

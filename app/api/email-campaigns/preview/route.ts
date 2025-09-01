@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
               <a href="${element.url || '#'}" style="
                 display: ${element.fullWidth ? 'block' : 'inline-block'};
                 padding: ${element.fullWidth ? '1.25rem 2.5rem' : '1.25rem 2.5rem'};
-                background: ${element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'};
+                background: ${element.gradient || element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'};
                 color: ${element.textColor || 'white'};
                 text-decoration: none;
                 border-radius: ${element.fullWidth ? '0' : '50px'};
