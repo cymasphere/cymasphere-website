@@ -10,7 +10,6 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
-  productionBrowserSourceMaps: true,
   transpilePackages: ['react-icons'],
 };
 

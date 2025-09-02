@@ -41,21 +41,45 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Get campaigns without the problematic join first
-    const { data: campaigns, error } = await supabase
-      .from("email_campaigns")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    // Primary query (ordered + paginated)
+    let campaigns: any[] | null = null;
+    let error: any = null;
+    {
+      const resp = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      campaigns = resp.data as any[] | null;
+      error = resp.error;
+    }
 
     if (error) {
-      console.error("Error fetching campaigns:", error);
-      return NextResponse.json(
-        {
-          error: "Failed to fetch campaigns",
-        },
-        { status: 500 }
-      );
+      console.error("Error fetching campaigns (ordered/ranged):", error);
+      // Fallback: try a simpler query to avoid transient errors with order/range
+      const fallback = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .limit(limit);
+
+      if (fallback.error) {
+        console.error("Fallback query also failed:", fallback.error);
+        return NextResponse.json(
+          {
+            error: "Failed to fetch campaigns",
+            details:
+              process.env.NODE_ENV !== "production"
+                ? {
+                    primary: String(error?.message || error),
+                    fallback: String(fallback.error.message),
+                  }
+                : undefined,
+          },
+          { status: 500 }
+        );
+      }
+
+      campaigns = fallback.data || [];
     }
 
     // Get total count

@@ -346,15 +346,49 @@ export async function POST(request: NextRequest) {
       }
 
       const subjectWithTest = subject.startsWith('[TEST]') ? subject : `[TEST] ${subject}`;
+      // Ensure we have a real campaign id for proper view-in-browser links
+      let realCampaignIdForTest = campaignId && /^[0-9a-f-]{36}$/i.test(campaignId) ? campaignId : undefined;
+
+      if (!realCampaignIdForTest) {
+        try {
+          // Create a placeholder campaign to obtain a UUID (status draft)
+          const { createClient } = require("@supabase/supabase-js");
+          const serviceSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+
+          const { data: newCampaign, error: newCampErr } = await serviceSupabase
+            .from("email_campaigns")
+            .insert({
+              name: name || "Test Campaign",
+              subject: subjectWithTest,
+              sender_name: "Cymasphere",
+              sender_email: "support@cymasphere.com",
+              status: "draft"
+            })
+            .select("id")
+            .single();
+
+          if (newCampErr) {
+            console.warn("⚠️ Could not create placeholder campaign for test:", newCampErr.message);
+          } else {
+            realCampaignIdForTest = newCampaign.id;
+          }
+        } catch (e) {
+          console.warn("⚠️ Exception creating placeholder campaign for test:", e);
+        }
+      }
+
+      const textContentForTest = generateTextFromElements(emailElements);
       const baseHtmlContentForTest = generateHtmlFromElements(
         emailElements,
         subjectWithTest,
-        undefined,
+        realCampaignIdForTest,
         undefined,
         undefined,
         preheader
       );
-      const textContentForTest = generateTextFromElements(emailElements);
 
       const result = await sendEmail({
         to: emailTrimmed,
@@ -365,11 +399,28 @@ export async function POST(request: NextRequest) {
       });
 
       if (result.success) {
+        // If we created a placeholder campaign, store the generated HTML for previewing
+        if (realCampaignIdForTest) {
+          try {
+            const { createClient } = require("@supabase/supabase-js");
+            const serviceSupabase = createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!
+            );
+            await serviceSupabase
+              .from("email_campaigns")
+              .update({ html_content: baseHtmlContentForTest })
+              .eq("id", realCampaignIdForTest);
+          } catch (e) {
+            console.warn("⚠️ Failed to update test campaign HTML:", e);
+          }
+        }
         return NextResponse.json({
           success: true,
           status: 'test-sent',
           message: `Test email sent to ${emailTrimmed}`,
-          results: [{ email: emailTrimmed, status: 'sent', messageId: result.messageId }]
+          results: [{ email: emailTrimmed, status: 'sent', messageId: result.messageId }],
+          campaignId: realCampaignIdForTest
         });
       }
 
@@ -985,6 +1036,13 @@ function generateHtmlFromElements(
     });
   };
 
+  // Resolve base URL for view-in-browser and other absolute links
+  // In production, force cymasphere.com if env mistakenly points to localhost
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const resolvedBaseUrl = process.env.NODE_ENV === "production"
+    ? (siteUrl && !siteUrl.includes("localhost") ? siteUrl : "https://cymasphere.com")
+    : (siteUrl || "http://localhost:3000");
+
   const elementHtml = elements
     .map((element) => {
       // Debug logging to see element properties
@@ -1064,11 +1122,13 @@ function generateHtmlFromElements(
         case "brand-header":
           // Use Supabase storage URL for the logo (accessible from anywhere)
           const logoUrl = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/cm-logo.png";
+          // Force brand header to align with content width
+          const headerWrapperClass = "constrained-width";
 
-          return `<div class="${wrapperClass} brand-header" style="background: ${
+          return `<div class="${headerWrapperClass} brand-header" style="background: ${
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
-          }; padding: ${element.fullWidth ? '0 30px' : '30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 80px; border-radius: 0; box-shadow: none; margin: 0;">
+          }; padding: 0 30px; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 80px; border-radius: 0; box-shadow: none; margin: 0;">
             <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0;" />
           </div>`;
 
@@ -1243,7 +1303,7 @@ function generateHtmlFromElements(
                     ${preheader || 'Cymasphere - Your Music Production Journey'}
                 </div>
                 <div style="text-align: right; margin-left: auto;">
-                    <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/email-preview?c=${campaignId || 'preview'}" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
+                    <a href="${resolvedBaseUrl}/email-preview?c=${campaignId || 'preview'}" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
                 </div>
             </div>
         </div>

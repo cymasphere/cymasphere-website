@@ -2114,6 +2114,8 @@ function CreateCampaignPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
+          // Pass current campaign id when editing so "View in browser" gets a real UUID
+          campaignId: editId || undefined,
           name: campaignData.name || 'Test Campaign',
           subject: campaignData.subject || 'Test',
           brandHeader: campaignData.brandHeader,
