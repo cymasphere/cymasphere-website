@@ -187,7 +187,7 @@ const EmailElement = styled.div.withConfig({
   cursor: grab;
   overflow: visible;
   background: ${props => 
-    props.editing ? 'rgba(108, 99, 255, 0.08)' :
+    props.editing ? 'rgba(108, 99, 255, 0.1)' :
     props.selected ? 'rgba(108, 99, 255, 0.05)' : 
     props.fullWidth ? 'rgba(108, 99, 255, 0.03)' : 'transparent'
   };
@@ -203,7 +203,7 @@ const EmailElement = styled.div.withConfig({
   &:hover {
     border-color: ${props => props.selected ? 'var(--primary)' : 'rgba(108, 99, 255, 0.5)'};
     background: ${props => 
-      props.editing ? 'rgba(108, 99, 255, 0.08)' :
+      props.editing ? 'rgba(108, 99, 255, 0.15)' :
       props.selected ? 'rgba(108, 99, 255, 0.08)' : 
       'rgba(108, 99, 255, 0.03)'
     };
@@ -400,21 +400,21 @@ const EditableText = styled.div.withConfig({
   outline: ${props => props.editing ? '2px solid var(--primary)' : 'none'};
   border-radius: 4px;
   padding: ${props => props.editing ? '0.5rem' : '0.25rem'};
-  background: transparent;
+  background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'transparent'};
   transition: all 0.3s ease;
 
   &:hover {
-    background: transparent;
+    background: ${props => props.editing ? 'rgba(108, 99, 255, 0.1)' : 'rgba(108, 99, 255, 0.05)'};
   }
 
   &:focus {
     outline: 2px solid var(--primary) !important;
-    background: transparent !important;
+    background: rgba(108, 99, 255, 0.1) !important;
   }
   
   &:focus-within {
     outline: 2px solid var(--primary) !important;
-    background: transparent !important;
+    background: rgba(108, 99, 255, 0.1) !important;
   }
 `;
 
@@ -558,7 +558,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5000;
+  z-index: 50;
   backdrop-filter: blur(5px);
 `;
 
@@ -945,13 +945,6 @@ export default function VisualEditor({
   
   // Link and color picker modals
   const [showLinkModal, setShowLinkModal] = useState(false);
-  useEffect(() => {
-    console.log('🔗 showLinkModal changed:', showLinkModal, {
-      selectedElementId,
-      editingElement,
-      linkUrl,
-    });
-  }, [showLinkModal]);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const [mediaLibraryItems, setMediaLibraryItems] = useState<Array<{ name: string; path: string; publicUrl: string; type: 'image' | 'video' | 'unknown'; size: number | null; updatedAt: string | null }>>([]);
@@ -1651,10 +1644,6 @@ export default function VisualEditor({
           ...baseElement, 
           content: 'Click Here', 
           url: '#',
-          backgroundColor: '#6c63ff',
-          gradientColor2: '#4ecdc4',
-          gradient: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
-          textColor: '#ffffff',
           fontSize: '16px',
           fontWeight: 'bold',
           textAlign: 'center'
@@ -1684,8 +1673,6 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           fullWidth: true,
-          backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-          textColor: '#ffffff',
           socialLinks: [
             { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
             { platform: 'twitter', url: 'https://x.com/cymasphere' },
@@ -2454,7 +2441,7 @@ export default function VisualEditor({
               padding: element.fullWidth ? '0' : '0',
               borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
-                  outline: 'none'
+              outline: 'none'
                 }}
                 data-font-size={element.fontSize || '16px'}
                 data-element-type={element.type}
@@ -2563,27 +2550,8 @@ export default function VisualEditor({
             )}
             
             {isEditing ? (
-              <div
-                style={{
-                  display: element.fullWidth ? 'block' : 'inline-block',
-                  padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                  color: element.textColor || 'white',
-                  textDecoration: 'none',
-                  borderRadius: element.fullWidth ? '0' : '50px',
-                  fontWeight: element.fontWeight || '700',
-                  fontSize: element.fontSize || '1rem',
-                  fontFamily: element.fontFamily || 'Arial, sans-serif',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
-                  width: element.fullWidth ? '100%' : 'auto',
-                  textAlign: element.textAlign || 'center'
-                }}
-              >
             <EditableText
-                  key={`${element.id}-${element.fontSize}-${forceUpdate}`}
+              key={`${element.id}-${element.fontSize}-${forceUpdate}`}
               className="editable-text"
               editing={isEditing}
               contentEditable={true}
@@ -2596,45 +2564,41 @@ export default function VisualEditor({
               }}
               data-element-id={element.id}
               style={{
-                    display: 'inline',
-                    padding: 0,
-                    background: 'transparent',
-                    color: 'inherit',
+                display: element.fullWidth ? 'block' : 'inline-block',
+                padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
+                background: element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                color: element.textColor || 'white',
+                textDecoration: 'none',
+                borderRadius: element.fullWidth ? '0' : '50px',
+                fontWeight: element.fontWeight || '700',
+                fontSize: element.fontSize || '1rem',
+                fontFamily: element.fontFamily || 'Arial, sans-serif',
+                cursor: 'text',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                boxShadow: element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)',
                 minHeight: '1em',
-                    cursor: 'text'
+                width: element.fullWidth ? '100%' : 'auto',
+                textAlign: element.textAlign || 'center'
               }}
             >
               {element.content}
             </EditableText>
-              </div>
             ) : (
-              <div
-                draggable={false}
-                onClickCapture={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
+              <a
+                href={element.url || '#'}
+                target={element.url && element.url.startsWith('http') ? '_blank' : '_self'}
+                rel={element.url && element.url.startsWith('http') ? 'noopener noreferrer' : undefined}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   startEditing(element.id);
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onAuxClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDragStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
                 style={{
                   display: element.fullWidth ? 'block' : 'inline-block',
                   padding: element.fullWidth ? '0' : '1.25rem 2.5rem',
-                  background: element.gradient || element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  background: element.backgroundColor || 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                   color: element.textColor || 'white',
                   textDecoration: 'none',
                   borderRadius: element.fullWidth ? '0' : '50px',
@@ -2675,31 +2639,20 @@ export default function VisualEditor({
               </div>
             )}
             
-                         {/* ✨ Link icon next to button when selected */}
-             {isSelected && (
+            {/* ✨ Link icon next to button when editing */}
+            {isEditing && (
               <div style={{
                 position: 'absolute',
                 top: '50%',
                 right: '-60px',
                 transform: 'translateY(-50%)',
-                zIndex: 1000,
-                pointerEvents: 'auto'
+                zIndex: 20
               }}>
                 <button
-                  type="button"
-                  data-overlay-action
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
-                    // Ensure we're editing the button URL (not inline text)
-                    setSelectedElementId(element.id);
-                    setEditingElement(null);
                     setLinkUrl(element.url || '');
-                    console.log('🔗 Opening link modal, URL preset:', element.url || '');
                     setShowLinkModal(true);
-                    setTimeout(() => {
-                      console.log('🔗 Post-open check showLinkModal:', true);
-                    }, 0);
                   }}
                   style={{
                     background: 'var(--primary)',
@@ -2714,8 +2667,7 @@ export default function VisualEditor({
                     boxShadow: '0 4px 12px rgba(108, 99, 255, 0.5)',
                     transition: 'all 0.3s ease',
                     width: '44px',
-                    height: '44px',
-                    zIndex: 1001
+                    height: '44px'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--accent)';
@@ -2729,7 +2681,7 @@ export default function VisualEditor({
                   }}
                   title="Edit Button URL"
                 >
-                  <FaLink size={16} style={{ pointerEvents: 'none' }} />
+                  <FaLink size={16} />
                 </button>
               </div>
             )}
@@ -2805,6 +2757,11 @@ export default function VisualEditor({
             <img 
               src={element.src} 
               alt={element.alt || 'Email image'} 
+              draggable={false}
+              onClickCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onAuxClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
               style={{ 
                 maxWidth: '100%', 
                 width: element.fullWidth ? '100%' : 'auto',
@@ -3076,7 +3033,7 @@ export default function VisualEditor({
                 style={{
                   width: '100%',
                   minHeight: '3em',
-                  background: element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+                  background: 'transparent',
                   border: '1px dashed rgba(108, 99, 255, 0.3)',
                   borderRadius: '4px',
                   padding: '0.5rem',
@@ -3930,12 +3887,12 @@ export default function VisualEditor({
                           Padding Top
                         </PaddingLabel>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <PaddingSlider
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
-                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
+                          <PaddingSlider
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingTop ?? 16}
+                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingTop', parseInt(e.target.value))}
                             style={{ flex: 1 }}
                           />
                           <input
@@ -3967,12 +3924,12 @@ export default function VisualEditor({
                           Padding Bottom
                         </PaddingLabel>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <PaddingSlider
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
-                          onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
+                          <PaddingSlider
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={emailElements.find(el => el.id === selectedElementId)?.paddingBottom ?? 16}
+                            onChange={(e) => updateElementPadding(selectedElementId, 'paddingBottom', parseInt(e.target.value))}
                             style={{ flex: 1 }}
                           />
                           <input
@@ -4213,8 +4170,8 @@ export default function VisualEditor({
                             
                             {/* Serif Fonts */}
                             <optgroup label="Serif Fonts">
-                            <option value="'Times New Roman', serif">Times New Roman</option>
-                            <option value="'Georgia', serif">Georgia</option>
+                              <option value="'Times New Roman', serif">Times New Roman</option>
+                              <option value="'Georgia', serif">Georgia</option>
                               <option value="'Merriweather', serif">Merriweather (Google)</option>
                               <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
                             </optgroup>
@@ -4242,151 +4199,73 @@ export default function VisualEditor({
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'button' && (
                       <>
                         <ControlGroup>
-                            <ControlLabel>Button Background</ControlLabel>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                              <ColorInput
-                                type="color"
-                                value={(() => {
-                                  const element = emailElements.find(el => el.id === selectedElementId);
-                                  // Convert transparent to hex color or use default
-                                  const bgColor = element?.backgroundColor;
-                                  if (bgColor === 'transparent' || !bgColor || bgColor === '') {
-                                    return '#6c63ff';
-                                  }
-                                  return bgColor;
-                                })()}
-                                onChange={(e) => {
-                                  const currentGradient = emailElements.find(el => el.id === selectedElementId)?.gradient || '';
-                                  const color2 = emailElements.find(el => el.id === selectedElementId)?.gradientColor2 || '#4ecdc4';
-                                  const newGradient = `linear-gradient(135deg, ${e.target.value} 0%, ${color2} 100%)`;
-                                  updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: newGradient });
-                                }}
-                                title="Gradient color 1"
-                              />
-                              <ColorInput
-                                type="color"
-                                value={(() => {
-                                  const element = emailElements.find(el => el.id === selectedElementId);
-                                  // Use default if gradientColor2 is undefined
-                                  return element?.gradientColor2 || '#4ecdc4';
-                                })()}
-                                onChange={(e) => {
-                                  const currentGradient = emailElements.find(el => el.id === selectedElementId)?.gradient || '';
-                                  const color1 = emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff';
-                                  const newGradient = `linear-gradient(135deg, ${color1} 0%, ${e.target.value} 100%)`;
-                                  updateElement(selectedElementId, { gradientColor2: e.target.value, gradient: newGradient });
-                                }}
-                                title="Gradient color 2"
-                              />
+                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaLink size={14} />
+                            Button URL
+                          </ControlLabel>
+                          <UrlInput
+                            type="url"
+                            placeholder="https://example.com or #anchor"
+                            value={emailElements.find(el => el.id === selectedElementId)?.url || '#'}
+                            onChange={(e) => updateElement(selectedElementId, { url: e.target.value })}
+                          />
+                          <div style={{ 
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-secondary)', 
+                            opacity: 0.8,
+                            marginTop: '0.25rem'
+                          }}>
+                            🔗 Link destination when button is clicked
                           </div>
-                            
-                            <ControlSelect
-                              value={emailElements.find(el => el.id === selectedElementId)?.gradientType || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}
-                              onChange={(e) => {
-                                const color1 = emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff';
-                                const color2 = emailElements.find(el => el.id === selectedElementId)?.gradientColor2 || '#4ecdc4';
-                                let newGradient = '';
-                                
-                                switch(e.target.value) {
-                                  case 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)':
-                                    newGradient = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
-                                    break;
-                                  case 'linear-gradient(45deg, #6c63ff 0%, #4ecdc4 100%)':
-                                    newGradient = `linear-gradient(45deg, ${color1} 0%, ${color2} 100%)`;
-                                    break;
-                                  case 'linear-gradient(90deg, #6c63ff 0%, #4ecdc4 100%)':
-                                    newGradient = `linear-gradient(90deg, ${color1} 0%, ${color2} 100%)`;
-                                    break;
-                                  case 'linear-gradient(180deg, #6c63ff 0%, #4ecdc4 100%)':
-                                    newGradient = `linear-gradient(180deg, ${color1} 0%, ${color2} 100%)`;
-                                    break;
-                                  case 'radial-gradient(circle, #6c63ff 0%, #4ecdc4 100%)':
-                                    newGradient = `radial-gradient(circle, ${color1} 0%, ${color2} 100%)`;
-                                    break;
-                                  case 'none':
-                                    newGradient = '';
-                                    break;
-                                }
-                                
-                                updateElement(selectedElementId, { gradientType: e.target.value, gradient: newGradient });
-                              }}
-                            >
-                              <option value="linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)">Diagonal (135°)</option>
-                              <option value="linear-gradient(45deg, #6c63ff 0%, #4ecdc4 100%)">Diagonal (45°)</option>
-                              <option value="linear-gradient(90deg, #6c63ff 0%, #4ecdc4 100%)">Horizontal</option>
-                              <option value="linear-gradient(180deg, #6c63ff 0%, #4ecdc4 100%)">Vertical</option>
-                              <option value="radial-gradient(circle, #6c63ff 0%, #4ecdc4 100%)">Radial</option>
-                              <option value="none">No Gradient (Solid)</option>
-                            </ControlSelect>
                         </ControlGroup>
 
                         <ControlGroup>
-                            <ControlLabel>Font Size</ControlLabel>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <input
-                                type="range"
-                                min="12"
-                                max="48"
-                                value={parseInt((emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px').replace('px', ''))}
-                                onChange={(e) => updateElement(selectedElementId, { fontSize: `${e.target.value}px` })}
-                                style={{ flex: 1 }}
-                              />
-                              <span style={{ minWidth: '3em', textAlign: 'right' }}>
-                                {emailElements.find(el => el.id === selectedElementId)?.fontSize || '16px'}
-                              </span>
-                            </div>
-                          </ControlGroup>
+                          <ControlLabel>Button Background</ControlLabel>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c63ff'}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value, gradient: '' })}
+                              title="Solid color"
+                            />
+                            <input
+                              type="text"
+                              placeholder="CSS gradient, e.g. linear-gradient(135deg, #6c63ff, #a88beb)"
+                              value={emailElements.find(el => el.id === selectedElementId)?.gradient || ''}
+                              onChange={(e) => updateElement(selectedElementId, { gradient: e.target.value })}
+                              style={{
+                                flex: 1,
+                                padding: '0.75rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                color: 'var(--text)'
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            Enter a CSS gradient to override the solid color.
+                          </div>
+                        </ControlGroup>
 
-                          <ControlGroup>
-                            <ControlLabel>Font Family</ControlLabel>
-                            <ControlSelect
-                              value={emailElements.find(el => el.id === selectedElementId)?.fontFamily || 'Arial, sans-serif'}
-                              onChange={(e) => updateElement(selectedElementId, { fontFamily: e.target.value })}
-                            >
-                              {/* Google Fonts - Modern & Professional */}
-                              <optgroup label="Google Fonts">
-                                <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter (Modern)</option>
-                                <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans (Clean)</option>
-                                <option value="'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Roboto (Google)</option>
-                                <option value="'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Lato (Friendly)</option>
-                                <option value="'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Poppins (Geometric)</option>
-                                <option value="'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Source Sans Pro (Adobe)</option>
-                                <option value="'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Nunito (Rounded)</option>
-                                <option value="'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Work Sans (Contemporary)</option>
-                              </optgroup>
-                              
-                              {/* Brand Fonts */}
-                              <optgroup label="Brand Fonts">
-                                <option value="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Montserrat (Brand)</option>
-                              </optgroup>
-                              
-                              {/* System Fonts - Universal Compatibility */}
-                              <optgroup label="System Fonts">
-                                <option value="Arial, sans-serif">Arial (Universal)</option>
-                                <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
-                                <option value="'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif">Segoe UI (Windows)</option>
-                                <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
-                              </optgroup>
-                              
-                              {/* Serif Fonts */}
-                              <optgroup label="Serif Fonts">
-                                <option value="'Times New Roman', serif">Times New Roman</option>
-                                <option value="'Georgia', serif">Georgia</option>
-                                <option value="'Merriweather', serif">Merriweather (Google)</option>
-                                <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
-                              </optgroup>
-                            </ControlSelect>
-                          </ControlGroup>
-                        </>
-                      )}
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput
+                            type="color"
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
+                      </>
+                    )}
 
                     {/* Text Element Specific Controls */}
                     {emailElements.find(el => el.id === selectedElementId)?.type === 'text' && (
                       <>
                         <ControlGroup>
                           <ControlLabel>Text Color</ControlLabel>
-                            <ColorInput
-                              type="color"
+                          <ColorInput
+                            type="color"
                             value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#333333'}
                             onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
                           />
@@ -4615,93 +4494,6 @@ export default function VisualEditor({
                           </ControlSelect>
                         </ControlGroup>
                       </>
-                                          )}
-
-                      {/* Footer Specific Controls */}
-                      {emailElements.find(el => el.id === selectedElementId)?.type === 'footer' && (
-                        <>
-                          <ControlGroup>
-                            <ControlLabel>Footer Text</ControlLabel>
-                            <textarea
-                              value={emailElements.find(el => el.id === selectedElementId)?.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
-                              onChange={(e) => updateElement(selectedElementId, { footerText: e.target.value })}
-                              placeholder="Enter footer text..."
-                              style={{
-                                width: '100%',
-                                minHeight: '3em',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)',
-                                fontFamily: 'inherit',
-                                fontSize: '0.9rem',
-                                resize: 'vertical'
-                              }}
-                            />
-                          </ControlGroup>
-
-                          <ControlGroup>
-                            <ControlLabel>Social Links</ControlLabel>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                              Social media links are automatically included
-                            </div>
-                          </ControlGroup>
-
-                          <ControlGroup>
-                            <ControlLabel>Unsubscribe Text</ControlLabel>
-                            <input
-                              type="text"
-                              value={emailElements.find(el => el.id === selectedElementId)?.unsubscribeText || 'Unsubscribe'}
-                              onChange={(e) => updateElement(selectedElementId, { unsubscribeText: e.target.value })}
-                              placeholder="Unsubscribe"
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)'
-                              }}
-                            />
-                          </ControlGroup>
-
-                          <ControlGroup>
-                            <ControlLabel>Privacy Policy Text</ControlLabel>
-                            <input
-                              type="text"
-                              value={emailElements.find(el => el.id === selectedElementId)?.privacyText || 'Privacy Policy'}
-                              onChange={(e) => updateElement(selectedElementId, { privacyText: e.target.value })}
-                              placeholder="Privacy Policy"
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)'
-                              }}
-                            />
-                          </ControlGroup>
-
-                          <ControlGroup>
-                            <ControlLabel>Terms of Service Text</ControlLabel>
-                            <input
-                              type="text"
-                              value={emailElements.find(el => el.id === selectedElementId)?.termsText || 'Terms of Service'}
-                              onChange={(e) => updateElement(selectedElementId, { termsText: e.target.value })}
-                              placeholder="Terms of Service"
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: 'var(--text)'
-                              }}
-                            />
-                        </ControlGroup>
-                      </>
                     )}
                     
                     <ControlGroup>
@@ -4821,14 +4613,8 @@ export default function VisualEditor({
 
       {/* Link Modal */}
       {showLinkModal && (
-        <ModalOverlay onClick={(e) => {
-          console.log('🔗 Modal overlay clicked - closing');
-          closeLinkModal();
-        }}>
-          <ModalContent onClick={(e) => {
-            e.stopPropagation();
-            console.log('🔗 Modal content click - stop propagation');
-          }}>
+        <ModalOverlay onClick={closeLinkModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalTitle>
               {!editingElement && selectedElementId && emailElements.find(el => el.id === selectedElementId)?.type === 'button' 
                 ? 'Edit Button URL' 

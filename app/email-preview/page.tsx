@@ -1,18 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface EmailPreviewProps {
   campaignId?: string;
 }
 
 export default function EmailPreviewPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('c');
+  const forceIframe = (searchParams.get('frame') === '1') || (searchParams.get('iframe') === '1') || (searchParams.get('f') === '1');
+  const disableIframe = searchParams.get('noframe') === '1';
   const [emailHtml, setEmailHtml] = useState<string>('');
+  const [bodyHtml, setBodyHtml] = useState<string>('');
+  const [useIframe, setUseIframe] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Debug: initial params
+  useEffect(() => {
+    console.log('[EmailPreview] mounted with campaignId:', campaignId);
+  }, [campaignId]);
+
+  // Extract <head> assets and <body> HTML so styles apply properly without an iframe
+  useEffect(() => {
+    if (!emailHtml) {
+      setBodyHtml('');
+      // If forcing iframe and no HTML yet, keep iframe true
+      setUseIframe(forceIframe);
+      return;
+    }
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(emailHtml, 'text/html');
+
+      // Clean previously injected nodes
+      document.querySelectorAll('head [data-preview-head="true"]').forEach((el) => el.parentElement?.removeChild(el));
+
+      const nodesToInject: HTMLElement[] = [];
+      doc.head.querySelectorAll('style, link[rel="stylesheet"], link[rel="preconnect"], link[rel="icon"], meta').forEach((node) => {
+        const clone = node.cloneNode(true) as HTMLElement;
+        clone.setAttribute('data-preview-head', 'true');
+        nodesToInject.push(clone);
+      });
+
+      nodesToInject.forEach((n) => document.head.appendChild(n));
+
+      const extracted = doc.body ? doc.body.innerHTML : '';
+      setBodyHtml(extracted);
+      // Default to iframe unless explicitly disabled via ?noframe=1
+      const shouldIframe = !doc.body || extracted.length < 50;
+      const finalIframe = disableIframe ? false : (forceIframe || true);
+      setUseIframe(finalIframe);
+      console.log('[EmailPreview] Extracted body length:', extracted.length, 'Injected head nodes:', nodesToInject.length, 'useIframe:', finalIframe, 'force:', forceIframe, 'disable:', disableIframe);
+    } catch (e) {
+      console.error('[EmailPreview] HTML parse error:', e);
+      setBodyHtml('');
+      setUseIframe(true);
+    }
+
+    return () => {
+      // Cleanup injected nodes on unmount or when HTML changes
+      document.querySelectorAll('head [data-preview-head="true"]').forEach((el) => el.parentElement?.removeChild(el));
+    };
+  }, [emailHtml, forceIframe, disableIframe]);
 
   useEffect(() => {
     if (!campaignId) {
@@ -22,6 +77,7 @@ export default function EmailPreviewPage() {
     }
 
     const fetchEmailPreview = async () => {
+      console.log('[EmailPreview] Fetching preview for:', campaignId);
       try {
         setLoading(true);
         const response = await fetch(`/api/email-campaigns/preview?c=${campaignId}`, {
@@ -31,20 +87,28 @@ export default function EmailPreviewPage() {
           },
         });
 
+        console.log('[EmailPreview] API status:', response.status);
         if (!response.ok) {
-          throw new Error(`Failed to fetch email preview: ${response.statusText}`);
+          const text = await response.text().catch(() => '');
+          console.error('[EmailPreview] API error body:', text);
+          throw new Error(`Failed to fetch email preview: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('[EmailPreview] API success flag:', data?.success, 'HTML length:', (data?.html || '').length);
         if (data.success && data.html) {
           setEmailHtml(data.html);
+          console.log('[EmailPreview] Set emailHtml length:', data.html.length);
         } else {
           throw new Error(data.error || 'Failed to generate email preview');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        const msg = err instanceof Error ? err.message : 'An error occurred';
+        console.error('[EmailPreview] Fetch error:', msg, err);
+        setError(msg);
       } finally {
         setLoading(false);
+        console.log('[EmailPreview] Loading complete.');
       }
     };
 
@@ -53,109 +117,62 @@ export default function EmailPreviewPage() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f7f7f7'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '24px', marginBottom: '16px' }}>📧</div>
-          <div style={{ fontSize: '18px', color: '#666' }}>Loading email preview...</div>
-        </div>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#ffffff', fontFamily: 'Arial, sans-serif' }}>
+        Loading email preview...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f7f7f7'
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: '500px', padding: '20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
-          <div style={{ fontSize: '24px', marginBottom: '16px', color: '#333' }}>Email Preview Error</div>
-          <div style={{ fontSize: '16px', color: '#666', marginBottom: '24px' }}>{error}</div>
-          <a 
-            href="/" 
-            style={{ 
-              display: 'inline-block',
-              padding: '12px 24px',
-              backgroundColor: '#6c63ff',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '6px',
-              fontSize: '16px'
-            }}
-          >
-            Return to Home
-          </a>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#ffffff', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ textAlign: 'center', maxWidth: 600 }}>
+          <div style={{ fontSize: 18, color: '#d00', marginBottom: 12 }}>Failed to load preview</div>
+          <div style={{ fontSize: 14, color: '#555', marginBottom: 20 }}>{error}</div>
+          <button onClick={() => router.push('/')} style={{ padding: '10px 16px', background: '#6c63ff', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Go to Cymasphere</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      backgroundColor: '#f7f7f7', 
-      minHeight: '100vh', 
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{ 
-        maxWidth: '800px', 
-        margin: '0 auto',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        overflow: 'hidden'
-      }}>
-        {/* Header */}
-        <div style={{ 
-          padding: '20px', 
-          backgroundColor: '#f8f9fa', 
-          borderBottom: '1px solid #e9ecef',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>Email Preview</h1>
-            <p style={{ margin: '8px 0 0 0', color: '#666', fontSize: '14px' }}>
-              Campaign ID: {campaignId}
-            </p>
-          </div>
-          <a 
-            href="/" 
-            style={{ 
-              padding: '8px 16px',
-              backgroundColor: '#6c63ff',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          >
-            ← Back
-          </a>
-        </div>
-
-        {/* Email Content */}
-        <div 
-          dangerouslySetInnerHTML={{ __html: emailHtml }}
-          style={{ 
-            padding: '0',
-            backgroundColor: 'white'
-          }}
+    <div style={{ position: 'fixed', inset: 0, background: '#ffffff', zIndex: 9999 }}>
+      {useIframe ? (
+        <iframe
+          key={`preview-${campaignId}`}
+          ref={iframeRef}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', background: '#ffffff' }}
+          srcDoc={emailHtml}
+          onLoad={() => console.log('[EmailPreview] iframe loaded')}
         />
+      ) : (
+        <div
+          dangerouslySetInnerHTML={{ __html: bodyHtml || '<div style="font-family:Arial,sans-serif;padding:20px">No preview HTML.</div>' }}
+          style={{ position: 'absolute', inset: 0, overflow: 'auto', background: '#ffffff' }}
+        />
+      )}
+      {/* Debug overlay */}
+      <div style={{
+        position: 'fixed', left: 8, bottom: 8, fontFamily: 'Arial, sans-serif',
+        fontSize: 11, color: '#666', background: 'rgba(255,255,255,0.9)',
+        border: '1px solid #e0e0e0', borderRadius: 6, padding: '6px 8px'
+      }}>
+        <span>id: {campaignId || 'none'}</span>
+        <span style={{ margin: '0 6px' }}>|</span>
+        <span>html: {emailHtml ? emailHtml.length : 0}</span>
+        <span style={{ margin: '0 6px' }}>|</span>
+        <span>body: {bodyHtml ? bodyHtml.length : 0}</span>
+        <span style={{ margin: '0 6px' }}>|</span>
+        <span>iframe: {useIframe ? 'yes' : 'no'}</span>
+        {error ? (<><span style={{ margin: '0 6px' }}>|</span><span style={{ color: '#d00' }}>err</span></>) : null}
       </div>
+      <button
+        onClick={() => router.push('/')}
+        aria-label="Close"
+        style={{ position: 'fixed', top: 16, right: 16, width: 44, height: 44, borderRadius: 22, border: 'none', cursor: 'pointer', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 18, lineHeight: '44px', textAlign: 'center', zIndex: 10000 }}
+      >
+        ×
+      </button>
     </div>
   );
 }

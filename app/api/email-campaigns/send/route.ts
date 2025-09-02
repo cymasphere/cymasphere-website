@@ -1031,18 +1031,19 @@ function generateHtmlFromElements(
           }; padding: ${element.fullWidth ? '0' : '0 30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px;"></div>`;
 
         case "footer":
-          // Generate social links HTML with PNG icons
+          // Generate social links using inline, non-image badges to reduce image-block prompts
           const socialLinksHtml = element.socialLinks && element.socialLinks.length > 0
             ? element.socialLinks
                 .map((social: any) => {
-                  const icons = {
-                    facebook: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/fb.png" alt="Facebook" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    twitter: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/x.png" alt="Twitter" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    instagram: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/insta.png" alt="Instagram" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    youtube: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/youtube.png" alt="YouTube" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`,
-                    discord: `<img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/social-icons/discord.png" alt="Discord" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;" />`
+                  const badges: Record<string, string> = {
+                    facebook: `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#1877F2;color:#fff;font-size:12px;line-height:20px;font-weight:700;vertical-align:middle;margin-right:6px;">f</span>`,
+                    twitter: `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#000;color:#fff;font-size:12px;line-height:20px;font-weight:700;vertical-align:middle;margin-right:6px;">X</span>`,
+                    instagram: `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:#E1306C;color:#fff;font-size:10px;line-height:20px;font-weight:700;vertical-align:middle;margin-right:6px;">IG</span>`,
+                    youtube: `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;border-radius:3px;background:#FF0000;color:#fff;font-size:10px;line-height:16px;font-weight:700;vertical-align:middle;margin-right:6px;">▶</span>`,
+                    discord: `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;border-radius:3px;background:#5865F2;color:#fff;font-size:10px;line-height:16px;font-weight:700;vertical-align:middle;margin-right:6px;">DC</span>`
                   };
-                  return `<a href="${social.url}" style="text-decoration: none; margin: 0 0.5rem; padding: 0.5rem; display: inline-block;">${icons[social.platform as keyof typeof icons] || "🔗"}</a>`;
+                  const badge = badges[(social.platform || '').toLowerCase()] || `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#6c63ff;color:#fff;font-size:12px;line-height:20px;font-weight:700;vertical-align:middle;margin-right:6px;">🔗</span>`;
+                  return `<a href="${social.url}" style="text-decoration:none; margin:0 0.5rem; padding:0.5rem; display:inline-flex; align-items:center; color:#ffffff;">${badge}</a>`;
                 })
                 .join("")
             : "";
