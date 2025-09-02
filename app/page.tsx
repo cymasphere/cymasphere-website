@@ -1,5 +1,6 @@
 "use client";
 
+// Test deployment - automatic deployment working! 🚀
 import { Suspense, useState, useEffect } from "react";
 import HeroSection from "@/components/sections/HeroSection";
 import FeaturesSection from "@/components/sections/FeaturesSection";
