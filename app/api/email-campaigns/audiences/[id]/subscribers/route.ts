@@ -445,11 +445,22 @@ export async function GET(
           console.log(`🔍 Applying additional filter: ${filter.field} ${filter.operator} ${filter.value}`);
           
           if (filter.field === "last_email_open") {
-            if (filter.operator === "older_than") {
-              const days = parseInt(filter.value.replace("_days", ""));
-              const cutoffDate = new Date();
-              cutoffDate.setDate(cutoffDate.getDate() - days);
-              subscribersQuery = subscribersQuery.lt("last_email_open", cutoffDate.toISOString());
+            // Use engagement from views (fallback to subscribe_date) since subscribers table has no last_email_open
+            const days = parseInt(String(filter.value).replace("_days", ""));
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - (isNaN(days) ? 60 : days));
+
+            // Filter by subscribers with no opens in the last X days by leveraging email_opens joined via subscriber_profiles view
+            // Since Supabase RPC/views may not be accessible here, approximate by excluding anyone with recent activity via email_opens
+            // Step 1: fetch subscriber IDs with an open after cutoff
+            const { data: recentOpenSubs } = await supabase
+              .from("email_opens")
+              .select("subscriber_id")
+              .gte("opened_at", cutoffDate.toISOString());
+
+            const excludeIds = (recentOpenSubs || []).map((r: any) => r.subscriber_id);
+            if (excludeIds.length > 0) {
+              subscribersQuery = subscribersQuery.not("id", "in", `(${excludeIds.join(",")})`);
             }
           } else if (filter.field === "signup_date") {
             if (filter.operator === "within") {

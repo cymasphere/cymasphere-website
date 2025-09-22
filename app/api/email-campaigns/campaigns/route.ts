@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+const EMAIL_DEBUG = process.env.EMAIL_DEBUG === "1";
+
 // GET /api/email-campaigns/campaigns - Get all campaigns
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -38,16 +40,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = parseInt(searchParams.get("limit") || "25");
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Primary query (ordered + paginated)
     let campaigns: any[] | null = null;
     let error: any = null;
     {
+      // Select only lightweight fields to avoid heavy payloads
       const resp = await supabase
         .from("email_campaigns")
-        .select("*")
+        .select(
+          `id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id`
+        )
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       campaigns = resp.data as any[] | null;
@@ -55,15 +60,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (error) {
-      console.error("Error fetching campaigns (ordered/ranged):", error);
+      if (EMAIL_DEBUG) {
+        console.error("Error fetching campaigns (ordered/ranged):", error);
+      }
       // Fallback: try a simpler query to avoid transient errors with order/range
       const fallback = await supabase
         .from("email_campaigns")
-        .select("*")
+        .select(
+          `id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id`
+        )
+        .order("created_at", { ascending: false })
         .limit(limit);
 
       if (fallback.error) {
-        console.error("Fallback query also failed:", fallback.error);
+        if (EMAIL_DEBUG) {
+          console.error("Fallback query also failed:", fallback.error);
+        }
         return NextResponse.json(
           {
             error: "Failed to fetch campaigns",
@@ -82,18 +94,58 @@ export async function GET(request: NextRequest) {
       campaigns = fallback.data || [];
     }
 
-    // Get total count
-    const { count, error: countError } = await supabase
-      .from("email_campaigns")
-      .select("*", { count: "exact", head: true });
+    // Batch load audience relations for these campaigns to avoid per-campaign fetches on the client
+    const campaignIds = (campaigns || []).map((c: any) => c.id);
+    let relationsMap: Record<string, { audienceIds: string[]; excludedAudienceIds: string[] }> = {};
+    if (campaignIds.length > 0) {
+      const { data: relations, error: relError } = await supabase
+        .from("email_campaign_audiences")
+        .select("campaign_id,audience_id,is_excluded")
+        .in("campaign_id", campaignIds);
 
-    if (countError) {
-      console.error("Error getting campaigns count:", countError);
+      if (relError) {
+        if (EMAIL_DEBUG) {
+          console.warn("Failed to fetch campaign audience relations:", relError);
+        }
+      } else {
+        relationsMap = relations?.reduce((acc: any, r: any) => {
+          const cid = r.campaign_id;
+          if (!acc[cid]) acc[cid] = { audienceIds: [], excludedAudienceIds: [] };
+          if (r.audience_id) {
+            if (r.is_excluded) acc[cid].excludedAudienceIds.push(r.audience_id);
+            else acc[cid].audienceIds.push(r.audience_id);
+          }
+          return acc;
+        }, {} as Record<string, { audienceIds: string[]; excludedAudienceIds: string[] }>) || {};
+      }
+    }
+
+    // Attach relations to campaigns payload
+    const campaignsWithRelations = (campaigns || []).map((c: any) => ({
+      ...c,
+      audienceIds: relationsMap[c.id]?.audienceIds || [],
+      excludedAudienceIds: relationsMap[c.id]?.excludedAudienceIds || [],
+    }));
+
+    // Optional: total count can be expensive; skip on timeouts
+    let total = 0;
+    try {
+      const { count, error: countError } = await supabase
+        .from("email_campaigns")
+        .select("id", { count: "exact", head: true });
+      if (countError && EMAIL_DEBUG) {
+        console.warn("Count query error (non-fatal):", countError?.message || countError);
+      }
+      total = count || 0;
+    } catch (e) {
+      if (EMAIL_DEBUG) {
+        console.warn("Count query failed (non-fatal):", e instanceof Error ? e.message : String(e));
+      }
     }
 
     return NextResponse.json({
-      campaigns: campaigns || [],
-      total: count || 0,
+      campaigns: campaignsWithRelations || [],
+      total,
       limit,
       offset,
     });

@@ -950,34 +950,19 @@ function CampaignsPage() {
   const [sortField, setSortField] = useState<string>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Fetch audience IDs for a campaign (same API call as edit modal)
-  const fetchCampaignAudienceData = async (campaignId: string) => {
-    if (campaignAudienceData[campaignId]?.isLoaded) return;
-
-    try {
-      const response = await fetch(`/api/email-campaigns/campaigns/${campaignId}`, {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const audienceIds = data.campaign?.audienceIds || [];
-        const excludedAudienceIds = data.campaign?.excludedAudienceIds || [];
-        
-        setCampaignAudienceData(prev => ({
-          ...prev,
-          [campaignId]: {
-            audienceIds,
-            excludedAudienceIds,
-            isLoaded: true
-          }
-        }));
-        
-        console.log(`✅ Loaded audience data for campaign ${campaignId}:`, { audienceIds, excludedAudienceIds });
+  // Initialize audience IDs for campaign from batched API payload
+  const ensureCampaignAudienceData = (campaign: any) => {
+    if (campaignAudienceData[campaign.id]?.isLoaded) return;
+    const audienceIds = campaign.audienceIds || [];
+    const excludedAudienceIds = campaign.excludedAudienceIds || [];
+    setCampaignAudienceData(prev => ({
+      ...prev,
+      [campaign.id]: {
+        audienceIds,
+        excludedAudienceIds,
+        isLoaded: true
       }
-    } catch (error) {
-      console.error(`Error fetching audience data for campaign ${campaignId}:`, error);
-    }
+    }));
   };
 
   // Copy exact function from edit modal that works
@@ -1025,7 +1010,7 @@ function CampaignsPage() {
     }
   }, [languageLoading]);
 
-  // Function to calculate reach for a campaign (exact same logic as edit modal)
+  // Function to calculate reach for a campaign (client-side using audiences list)
   const calculateCampaignReach = async (campaign: any) => {
     if (!campaign.id || campaignReachData[campaign.id]?.isLoading) return;
 
@@ -1034,35 +1019,14 @@ function CampaignsPage() {
       return;
     }
 
-    let audienceIds: string[] = [];
-    let excludedAudienceIds: string[] = [];
+    // Require audiences to be loaded for accurate totals
+    if (!audiences || audiences.length === 0) return;
+
+    // Use audience IDs from batched campaigns API
+    let audienceIds: string[] = campaign.audienceIds || [];
+    let excludedAudienceIds: string[] = campaign.excludedAudienceIds || [];
     
     try {
-      console.log(`🔍🔍🔍 [${campaign.name}] =====CAMPAIGNS TABLE DEBUG=====`);
-      console.log(`Campaign ID: ${campaign.id}`);
-      console.log(`Campaign Status: ${campaign.status}`);
-
-      const audienceResponse = await fetch(`/api/email-campaigns/campaigns/${campaign.id}`, {
-        credentials: 'include'
-      });
-
-      if (!audienceResponse.ok) {
-        throw new Error('Failed to fetch campaign details');
-      }
-
-      const campaignDetails = await audienceResponse.json();
-      console.log(`🔍 Full campaign details response:`, JSON.stringify(campaignDetails, null, 2));
-      
-      audienceIds = campaignDetails.campaign?.audienceIds || [];
-      excludedAudienceIds = campaignDetails.campaign?.excludedAudienceIds || [];
-      
-      console.log(`🔍 Extracted audience IDs:`, {
-        audienceIds,
-        excludedAudienceIds,
-        totalAudienceCount: audienceIds.length,
-        excludedCount: excludedAudienceIds.length
-      });
-
       if (audienceIds.length === 0) {
         setCampaignReachData(prev => ({ 
           ...prev, 
@@ -1086,77 +1050,27 @@ function CampaignsPage() {
           isLoading: true
         } as any
       }));
+      // Client-side reach estimate from audience subscriber_count
+      const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
+      const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
 
-      console.log(`🔍 Calling reach calculation API with:`, {
-        audienceIds,
-        excludedAudienceIds,
-        apiEndpoint: '/api/email-campaigns/campaigns/calculate-reach'
-      });
-
-      const reachResponse = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          audienceIds,
-          excludedAudienceIds
-        })
-      });
-
-      console.log(`🔍 Reach API response status:`, reachResponse.status);
-
-      if (reachResponse.ok) {
-        const reachData = await reachResponse.json();
-        console.log(`🔍 Reach API response data:`, JSON.stringify(reachData, null, 2));
-        
-        const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
-        const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
-        
-        console.log(`🔍 Available audiences in state:`, audiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
-        console.log(`🔍 Matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
-        console.log(`🔍 Matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
-        
-        const finalReachData = {
-          totalIncluded: reachData.details?.totalIncluded || 0,
-          totalExcluded: reachData.details?.totalExcluded || 0,
-          estimatedReach: reachData.uniqueCount || 0, // Use uniqueCount like edit modal
+      setCampaignReachData(prev => ({ 
+        ...prev, 
+        [campaign.id]: {
+          totalIncluded,
+          totalExcluded,
+          estimatedReach: Math.max(0, totalIncluded - totalExcluded),
           includedCount: includedAudiences.length,
           excludedCount: excludedAudiences.length,
           isLoading: false
-        };
-        
-        console.log(`🔍 Final reach data being set:`, finalReachData);
-        console.log(`🔍 KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
-        
-        setCampaignReachData(prev => ({ 
-          ...prev, 
-          [campaign.id]: finalReachData
-        }));
-      } else {
-        // Fallback calculation (same as edit modal)
-        const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
-        const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
-        const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-        const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-        
-        setCampaignReachData(prev => ({ 
-          ...prev, 
-          [campaign.id]: {
-            totalIncluded,
-            totalExcluded,
-            estimatedReach: Math.max(0, totalIncluded - totalExcluded),
-            includedCount: includedAudiences.length,
-            excludedCount: excludedAudiences.length,
-            isLoading: false
-          }
-        }));
-      }
+        }
+      }));
     } catch (error) {
       // Fallback calculation (same as edit modal)
-      const includedAudiences = audiences.filter(a => audienceIds.includes(a.id));
-      const excludedAudiences = audiences.filter(a => excludedAudienceIds.includes(a.id));
+      const includedAudiences = audiences.filter(a => (campaign.audienceIds || []).includes(a.id));
+      const excludedAudiences = audiences.filter(a => (campaign.excludedAudienceIds || []).includes(a.id));
       const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
       const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
       
@@ -1213,11 +1127,49 @@ function CampaignsPage() {
             scheduled_at: c.scheduled_at
           })));
           
-          // Fetch audience data for campaigns that need reach calculation (like edit modal does)
-          campaignsNeedingReach.forEach((campaign: any) => {
-            console.log(`🔍 Fetching audience data for: ${campaign.name} (${campaign.id})`);
-            fetchCampaignAudienceData(campaign.id);
-          });
+          // Initialize audience IDs
+          campaignsNeedingReach.forEach((campaign: any) => ensureCampaignAudienceData(campaign));
+
+          // Compute accurate reach via batched server-side API
+          try {
+            const payload = campaignsNeedingReach.map((c: any) => ({
+              id: c.id,
+              audienceIds: c.audienceIds || [],
+              excludedAudienceIds: c.excludedAudienceIds || []
+            }));
+
+            const reachResp = await fetch('/api/email-campaigns/campaigns/batch-reach', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ campaigns: payload })
+            });
+
+            if (reachResp.ok) {
+              const { results } = await reachResp.json();
+              campaignsNeedingReach.forEach((c: any) => {
+                const r = results?.[c.id];
+                const includedAudiences = audiences.filter(a => (c.audienceIds || []).includes(a.id));
+                const excludedAudiences = audiences.filter(a => (c.excludedAudienceIds || []).includes(a.id));
+                setCampaignReachData(prev => ({
+                  ...prev,
+                  [c.id]: {
+                    totalIncluded: r?.details?.totalIncluded ?? 0,
+                    totalExcluded: r?.details?.totalExcluded ?? 0,
+                    estimatedReach: r?.uniqueCount ?? 0,
+                    includedCount: includedAudiences.length,
+                    excludedCount: excludedAudiences.length,
+                    isLoading: false
+                  }
+                }));
+              });
+            } else {
+              // Fallback to client-side estimate if API fails
+              campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
+            }
+          } catch {
+            campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
+          }
         } else {
           console.error('Failed to fetch campaigns:', response.status);
         }
@@ -1237,13 +1189,18 @@ function CampaignsPage() {
       if (!user) return;
       
       try {
-        const response = await fetch('/api/email-campaigns/audiences', {
+        const response = await fetch('/api/email-campaigns/audiences?mode=light', {
           credentials: 'include'
         });
         if (response.ok) {
           const data = await response.json();
           console.log('📊 Loaded audiences for reach calculations:', data.audiences?.length || 0);
           setAudiences(data.audiences || []);
+          // After audiences load, compute reach for campaigns in state that need it
+          const campaignsNeedingReach = campaigns.filter((c: any) => 
+            c.status === 'scheduled' || c.status === 'draft' || (c.scheduled_at && new Date(c.scheduled_at) > new Date())
+          );
+          campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
         } else {
           console.error('Failed to load audiences:', response.status);
         }
@@ -1934,9 +1891,9 @@ function CampaignsPage() {
                                 return '...';
                               }
                               
-                              // Use EXACT same logic as edit modal
+                              // Prefer server-calculated unique reach; fallback to client estimate
                               const stats = calculateAudienceStatsForCampaign(audienceIds, excludedAudienceIds, campaign.id);
-                              const finalReach = stats.estimatedReach;
+                              const finalReach = (campaignReachData[campaign.id]?.estimatedReach ?? stats.estimatedReach);
                               
                               console.log(`🎯 FINAL REACH for ${campaign.name}:`, {
                                 audienceIds,
@@ -1986,9 +1943,9 @@ function CampaignsPage() {
                                 return '...';
                               }
                               
-                              // Use EXACT same logic as edit modal
+                              // Prefer server-calculated unique reach; fallback to client estimate
                               const stats = calculateAudienceStatsForCampaign(audienceIds, excludedAudienceIds, campaign.id);
-                              const finalReach = stats.estimatedReach;
+                              const finalReach = (campaignReachData[campaign.id]?.estimatedReach ?? stats.estimatedReach);
                               
                               console.log(`🎯 FINAL REACH for ${campaign.name}:`, {
                                 audienceIds,

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+const EMAIL_DEBUG = process.env.EMAIL_DEBUG === "1";
+
 // GET /api/email-campaigns/campaigns/[id] - Get single campaign
 export async function GET(
   request: NextRequest,
@@ -50,19 +52,17 @@ export async function GET(
       .eq("id", campaignId)
       .single();
 
-    console.log(
-      "🔍 GET /api/email-campaigns/campaigns/[id] - Campaign ID:",
-      campaignId
-    );
-    console.log(
-      "🔍 Raw campaign data from database:",
-      JSON.stringify(campaign, null, 2)
-    );
-    console.log(
-      "🔍 Available fields:",
-      campaign ? Object.keys(campaign).sort() : "none"
-    );
-    console.log("🔍 Database error:", error);
+    if (EMAIL_DEBUG) {
+      console.log(
+        "🔍 GET /api/email-campaigns/campaigns/[id] - Campaign ID:",
+        campaignId
+      );
+      console.log(
+        "🔍 Available fields:",
+        campaign ? Object.keys(campaign).sort() : "none"
+      );
+      console.log("🔍 Database error:", error);
+    }
 
     if (error) {
       console.error("Error fetching campaign:", error);
@@ -85,10 +85,12 @@ export async function GET(
       // Don't fail the request, just log the error
     }
 
-    console.log(
-      "🔍 Audience relations:",
-      JSON.stringify(audienceRelations, null, 2)
-    );
+    if (EMAIL_DEBUG) {
+      console.log(
+        "🔍 Audience relations:",
+        JSON.stringify(audienceRelations, null, 2)
+      );
+    }
 
     // Separate included and excluded audiences
     const audienceIds: string[] = [];
@@ -117,23 +119,25 @@ export async function GET(
       excludedAudienceIds,
     };
 
-    console.log("🔍 Using new schema fields:");
-    console.log("  - sender_name:", campaign.sender_name);
-    console.log("  - sender_email:", campaign.sender_email);
-    console.log("  - reply_to_email:", campaign.reply_to_email);
-    console.log("  - preheader:", campaign.preheader);
-    console.log(
-      "  - html_content:",
-      campaign.html_content ? "present" : "null"
-    );
-    console.log(
-      "  - text_content:",
-      campaign.text_content ? "present" : "null"
-    );
-    console.log(
-      "🔍 Transformed campaign data:",
-      JSON.stringify(transformedCampaign, null, 2)
-    );
+    if (EMAIL_DEBUG) {
+      console.log("🔍 Using new schema fields:");
+      console.log("  - sender_name:", campaign.sender_name);
+      console.log("  - sender_email:", campaign.sender_email);
+      console.log("  - reply_to_email:", campaign.reply_to_email);
+      console.log("  - preheader:", campaign.preheader);
+      console.log(
+        "  - html_content:",
+        campaign.html_content ? "present" : "null"
+      );
+      console.log(
+        "  - text_content:",
+        campaign.text_content ? "present" : "null"
+      );
+      console.log(
+        "🔍 Transformed campaign data:",
+        JSON.stringify(transformedCampaign, null, 2)
+      );
+    }
 
     return NextResponse.json({
       campaign: transformedCampaign,
@@ -208,19 +212,21 @@ export async function PUT(
       scheduled_at,
     } = body;
 
-    console.log(
-      "🔄 PUT /api/email-campaigns/campaigns/[id] - Campaign ID:",
-      campaignId
-    );
-    console.log("📊 Update data received:", {
-      name,
-      subject,
-      senderName,
-      senderEmail,
-      replyToEmail,
-      audienceIds,
-      excludedAudienceIds,
-    });
+    if (EMAIL_DEBUG) {
+      console.log(
+        "🔄 PUT /api/email-campaigns/campaigns/[id] - Campaign ID:",
+        campaignId
+      );
+      console.log("📊 Update data received:", {
+        name,
+        subject,
+        senderName,
+        senderEmail,
+        replyToEmail,
+        audienceIds,
+        excludedAudienceIds,
+      });
+    }
 
     // Update campaign using correct field names
     const { data: campaign, error } = await supabase
@@ -255,7 +261,9 @@ export async function PUT(
       );
     }
 
-    console.log("✅ Campaign updated:", campaignId);
+    if (EMAIL_DEBUG) {
+      console.log("✅ Campaign updated:", campaignId);
+    }
 
     // Update audience relationships by replacing existing ones
     // First, delete existing relationships
@@ -306,9 +314,11 @@ export async function PUT(
           "⚠️ Campaign updated but audience relationships may have failed"
         );
       } else {
-        console.log(
-          `✅ Updated ${audienceInserts.length} audience relationships`
-        );
+        if (EMAIL_DEBUG) {
+          console.log(
+            `✅ Updated ${audienceInserts.length} audience relationships`
+          );
+        }
       }
     }
 
@@ -371,10 +381,12 @@ export async function DELETE(
     const resolvedParams = await params;
     const campaignId = resolvedParams.id;
 
-    console.log(
-      "🗑️ DELETE /api/email-campaigns/campaigns/[id] - Campaign ID:",
-      campaignId
-    );
+    if (EMAIL_DEBUG) {
+      console.log(
+        "🗑️ DELETE /api/email-campaigns/campaigns/[id] - Campaign ID:",
+        campaignId
+      );
+    }
 
     // First, get the campaign to verify it exists and get its details
     const { data: campaign, error: fetchError } = await supabase
@@ -393,9 +405,11 @@ export async function DELETE(
       );
     }
 
-    console.log(
-      `🗑️ Deleting campaign: "${campaign.name}" (Status: ${campaign.status})`
-    );
+    if (EMAIL_DEBUG) {
+      console.log(
+        `🗑️ Deleting campaign: "${campaign.name}" (Status: ${campaign.status})`
+      );
+    }
 
     // Special logging for sent campaigns (important for audit trail)
     if (campaign.status === "sent") {
@@ -418,7 +432,9 @@ export async function DELETE(
         );
         // Continue with deletion anyway - this is not critical
       } else {
-        console.log("✅ Deleted associated send records");
+        if (EMAIL_DEBUG) {
+          console.log("✅ Deleted associated send records");
+        }
       }
     }
 
@@ -453,7 +469,9 @@ export async function DELETE(
       );
     }
 
-    console.log("✅ Campaign deleted successfully:", campaignId);
+    if (EMAIL_DEBUG) {
+      console.log("✅ Campaign deleted successfully:", campaignId);
+    }
 
     return NextResponse.json({
       message: "Campaign deleted successfully",
