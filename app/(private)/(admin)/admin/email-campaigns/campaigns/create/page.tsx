@@ -2426,7 +2426,7 @@ function CreateCampaignPage() {
   useEffect(() => {
     const loadAudiences = async () => {
       try {
-        const response = await fetch('/api/email-campaigns/audiences', {
+        const response = await fetch('/api/email-campaigns/audiences?mode=light&refreshCounts=1', {
           credentials: 'include'
         });
         if (response.ok) {

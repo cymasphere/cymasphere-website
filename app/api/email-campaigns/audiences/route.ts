@@ -337,6 +337,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
     const mode = (searchParams.get("mode") || "full").toLowerCase();
+    const refreshCounts = (searchParams.get("refreshCounts") || "0") === "1";
 
     // Get audiences (light or full)
     const { data: audiences, error } = await supabase
@@ -363,8 +364,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Calculate actual subscriber counts for each audience unless light mode
-    const audiencesWithCounts = mode === "light" ? (audiences || []) : await Promise.all(
+    // Calculate/refresh counts
+    const audiencesWithCounts = mode === "light" ? await (async () => {
+      if (!refreshCounts || !audiences || audiences.length === 0) return audiences || [];
+      // Refresh counts for static audiences cheaply via junction table
+      try {
+        const staticIds = (audiences as any[])
+          .filter((a: any) => (a.filters && typeof a.filters === 'object' && (a.filters as any).audience_type === 'static'))
+          .map((a: any) => a.id);
+        if (staticIds.length === 0) return audiences || [];
+        const { data: relations } = await supabase
+          .from("email_audience_subscribers")
+          .select("audience_id, subscriber_id")
+          .in("audience_id", staticIds);
+        const counts: Record<string, number> = {};
+        (relations || []).forEach((r: any) => {
+          if (!r.audience_id) return;
+          counts[r.audience_id] = (counts[r.audience_id] || 0) + 1;
+        });
+        return (audiences as any[]).map((a: any) => ({
+          ...a,
+          subscriber_count: staticIds.includes(a.id) ? (counts[a.id] || 0) : a.subscriber_count
+        }));
+      } catch (e) {
+        if (EMAIL_DEBUG) console.warn('Light mode refreshCounts failed:', e);
+        return audiences || [];
+      }
+    })() : await Promise.all(
       (audiences || []).map(async (audience) => {
         let actualCount = 0;
 
