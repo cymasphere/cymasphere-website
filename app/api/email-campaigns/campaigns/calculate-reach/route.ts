@@ -149,12 +149,14 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
     // Build from rules array if present
     let statusValue: string | null = null;
     let subscriptionValue: string | null = null;
+    let trialStatusValue: string | null = null; // 'active' | 'expired'
     let additionalRules: any[] = [];
 
     if (Array.isArray(filters?.rules)) {
       for (const rule of filters.rules) {
         if (rule.field === "status") statusValue = rule.value;
         else if (rule.field === "subscription") subscriptionValue = rule.value;
+        else if (rule.field === "trial_status") trialStatusValue = rule.value;
         else additionalRules.push(rule);
       }
     }
@@ -168,12 +170,22 @@ async function getSubscriberIdsFromFilters(supabase: any, filters: any) {
       .select("id,user_id,subscribe_date")
       .eq("status", effectiveStatus);
 
-    // Apply subscription by joining via profiles
-    if (subscriptionValue) {
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("subscription", subscriptionValue);
+    // Apply profile-derived filters by joining via profiles
+    if (subscriptionValue || trialStatusValue) {
+      let profilesSel = supabase.from("profiles").select("id");
+      if (subscriptionValue) {
+        profilesSel = profilesSel.eq("subscription", subscriptionValue);
+      }
+      if (trialStatusValue) {
+        const nowIso = new Date().toISOString();
+        if (trialStatusValue === "active") {
+          // active trial AND not converted
+          profilesSel = profilesSel.gt("trial_expiration", nowIso).eq("subscription", "none");
+        } else if (trialStatusValue === "expired") {
+          profilesSel = profilesSel.lte("trial_expiration", nowIso);
+        }
+      }
+      const { data: profilesData } = await profilesSel;
       const profileIds = (profilesData || []).map((p: any) => p.id);
       if (profileIds.length === 0) return [];
       subscribersQuery = subscribersQuery.in("user_id", profileIds);

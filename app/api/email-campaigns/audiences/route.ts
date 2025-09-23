@@ -38,8 +38,10 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
 
       let hasSubscriptionRule = false;
       let hasStatusRule = false;
+      let hasTrialStatusRule = false;
       let subscriptionValue = null;
       let statusValue = null;
+      let trialStatusValue = null;
 
       // Extract all rule values
       for (const rule of filters.rules) {
@@ -49,6 +51,9 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
         } else if (rule.field === "status") {
           hasStatusRule = true;
           statusValue = rule.value;
+        } else if (rule.field === "trial_status") {
+          hasTrialStatusRule = true;
+          trialStatusValue = rule.value;
         }
       }
 
@@ -115,6 +120,46 @@ async function calculateSubscriberCount(supabase: any, filters: any) {
           .eq("status", statusValue);
         if (EMAIL_DEBUG) {
           console.log(`Count for status '${statusValue}': ${count}`);
+        }
+        return count || 0;
+      }
+
+      // Handle trial_status rule
+      if (hasTrialStatusRule) {
+        const effectiveStatus = statusValue || "active";
+        const nowIso = new Date().toISOString();
+        
+        let profilesQuery = supabase.from("profiles").select("id");
+        
+        if (trialStatusValue === "active") {
+          profilesQuery = profilesQuery.gt("trial_expiration", nowIso).eq("subscription", "none");
+        } else if (trialStatusValue === "expired") {
+          profilesQuery = profilesQuery.lte("trial_expiration", nowIso);
+        }
+        
+        const { data: profilesData } = await profilesQuery;
+        
+        if (!profilesData || profilesData.length === 0) {
+          if (EMAIL_DEBUG) {
+            console.log(`No profiles found with trial_status '${trialStatusValue}'`);
+          }
+          return 0;
+        }
+        
+        const profileIds = profilesData.map((p: any) => p.id);
+        if (EMAIL_DEBUG) {
+          console.log(`Found ${profileIds.length} profiles with trial_status '${trialStatusValue}'`);
+        }
+        
+        // Count subscribers with matching profile IDs and status
+        const { count } = await supabase
+          .from("subscribers")
+          .select("*", { count: "exact", head: true })
+          .eq("status", effectiveStatus)
+          .in("user_id", profileIds);
+          
+        if (EMAIL_DEBUG) {
+          console.log(`Final count for trial_status '${trialStatusValue}': ${count}`);
         }
         return count || 0;
       }
