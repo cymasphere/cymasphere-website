@@ -1120,8 +1120,8 @@ function generateHtmlFromElements(
           </div>`;
 
         case "brand-header":
-          // Use Supabase storage URL for the logo (accessible from anywhere)
-          const logoUrl = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/cm-logo.png";
+          // Use a more reliable image source and Gmail-compatible structure
+          const logoUrl = "https://cymasphere.com/images/cm-logo.png";
           // Force brand header to align with content width
           const headerWrapperClass = "constrained-width";
 
@@ -1129,7 +1129,13 @@ function generateHtmlFromElements(
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
           }; padding: 0 30px; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 80px; border-radius: 0; box-shadow: none; margin: 0;">
-            <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0;" />
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 0;">
+                  <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0; border: 0; outline: none;" />
+                </td>
+              </tr>
+            </table>
           </div>`;
 
         default:

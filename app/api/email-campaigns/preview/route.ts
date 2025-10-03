@@ -35,10 +35,20 @@ export async function GET(request: NextRequest) {
     }
     console.log('[PreviewAPI] Campaign fetched', { id: campaign.id, subject: campaign.subject });
 
-    // Parse email elements
+    // Parse email elements from html_content (embedded base64 JSON)
     let emailElements = [];
     try {
-      emailElements = JSON.parse(campaign.email_elements || '[]');
+      // First try to get elements from email_elements field
+      if (campaign.email_elements) {
+        emailElements = JSON.parse(campaign.email_elements);
+      } else if (campaign.html_content) {
+        // Extract embedded elements from html_content
+        const match = campaign.html_content.match(/<!--ELEMENTS_B64:([^>]*)-->/);
+        if (match && match[1]) {
+          const decoded = Buffer.from(match[1], 'base64').toString('utf8');
+          emailElements = JSON.parse(decoded);
+        }
+      }
     } catch (parseError) {
       console.error('[PreviewAPI] email_elements parse error', { campaignId, parseError });
       return NextResponse.json(
@@ -146,14 +156,20 @@ export async function GET(request: NextRequest) {
             </div>`;
 
           case 'brand-header':
-            // Use Supabase storage URL for the logo (accessible from anywhere)
-            const logoUrl = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/email-assets/cm-logo.png";
+            // Use a more reliable image source and Gmail-compatible structure
+            const logoUrl = "https://cymasphere.com/images/cm-logo.png";
 
             return `<div class="${wrapperClass} brand-header" style="background: ${
               element.backgroundColor ||
               "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
             }; padding: ${element.fullWidth ? '0 30px' : '30px'}; padding-top: ${element.paddingTop || 0}px; padding-bottom: ${element.paddingBottom || 0}px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 80px; border-radius: 0; box-shadow: none; margin: 0;">
-              <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0;" />
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="padding: 0;">
+                    <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0; border: 0; outline: none;" />
+                  </td>
+                </tr>
+              </table>
             </div>`;
 
           default:
@@ -245,6 +261,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       html: html,
+      elements: emailElements,
       campaign: {
         id: campaign.id,
         name: campaign.name,
