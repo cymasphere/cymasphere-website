@@ -173,7 +173,7 @@ const EmailHeader = styled.div`
 `;
 
 const EmailBody = styled.div`
-  padding: 0 0 2rem 0;
+  padding: 0;
   background: transparent;
   overflow: visible;
   position: relative;
@@ -2371,7 +2371,11 @@ export default function VisualEditor({
           <FaGripVertical size={10} style={{ pointerEvents: 'none', userSelect: 'none' }} />
         </DragHandle>
         {element.type === 'header' && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ 
+            position: 'relative',
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
+            backgroundColor: 'rgba(255, 0, 0, 0.1)' // Temporary debug background
+          }}>
             {isShowingRawHtml(element.id) ? (
               <textarea
                 value={element.content}
@@ -2424,7 +2428,7 @@ export default function VisualEditor({
                   minHeight: '1em',
                   width: element.fullWidth ? '100%' : 'auto',
                   backgroundColor: element.backgroundColor || 'transparent',
-                  padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
+                  padding: '0',
                   fontFamily: element.fontFamily || 'Arial, sans-serif',
                   borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
@@ -2482,7 +2486,11 @@ export default function VisualEditor({
           </div>
         )}
         {element.type === 'text' && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ 
+            position: 'relative',
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
+            backgroundColor: 'rgba(0, 255, 0, 0.1)' // Temporary debug background
+          }}>
             {(() => {
               console.log('🎨 Rendering text element:', { 
                 id: element.id, 
@@ -2544,7 +2552,7 @@ export default function VisualEditor({
               minHeight: '1em',
               width: element.fullWidth ? '100%' : 'auto',
               background: element.backgroundColor || (element.fullWidth ? 'rgba(108, 99, 255, 0.05)' : 'transparent'),
-              padding: element.fullWidth ? '0' : '0',
+              padding: '0',
               borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
               outline: 'none'
@@ -2607,7 +2615,8 @@ export default function VisualEditor({
             textAlign: element.fullWidth ? 'left' : 'center', 
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
-            position: 'relative'
+            position: 'relative',
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
           }}>
             {/* ✨ NEW: Formatting toolbar for button text - ABOVE the button */}
             {isEditing && (
@@ -2799,7 +2808,8 @@ export default function VisualEditor({
             textAlign: element.fullWidth ? 'left' : 'center', 
             margin: 0, 
             position: 'relative',
-            width: element.fullWidth ? '100%' : 'auto'
+            width: element.fullWidth ? '100%' : 'auto',
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
           }}>
             {/* Upload progress indicator */}
             {imageUploading === element.id && (
@@ -3094,7 +3104,7 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: '2rem',
+            padding: `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
             fontSize: '0.8rem', 
             color: element.textColor || '#ffffff',
             background: element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
