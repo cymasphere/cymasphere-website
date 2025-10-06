@@ -43,7 +43,8 @@ import {
   FaSearch,
   FaGlobe,
   FaTabletAlt,
-  FaCopy
+  FaCopy,
+  FaTrash
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -1137,10 +1138,12 @@ const DeviceToggleContainer = styled.div`
 `;
 
 const DeviceToggle = styled.button<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1rem !important;
   border: none;
   border-radius: 8px;
   background: ${props => props.$active 
@@ -1155,6 +1158,21 @@ const DeviceToggle = styled.button<{ $active: boolean }>`
   overflow: hidden;
   backdrop-filter: blur(10px);
   border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(255, 255, 255, 0.15)'};
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  
+  svg {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    float: none !important;
+  }
+  
+  * {
+    display: inline !important;
+    vertical-align: middle !important;
+  }
 
   &:before {
     content: '';
@@ -2069,6 +2087,10 @@ function CreateCampaignPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Template state
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -2161,10 +2183,63 @@ function CreateCampaignPage() {
   // Initialize email elements with default content
   const getInitialEmailElements = () => {
     return [
-      { id: 'header', type: 'header', content: 'Welcome to Cymasphere! 🎵', fullWidth: true, fontSize: '2.5rem', fontWeight: '800', textAlign: 'center', textColor: '#333', paddingTop: 16, paddingBottom: 16 },
-      { id: 'text1', type: 'text', content: 'Hi {{firstName}}, Thank you for joining our community...', fullWidth: false, fontSize: '16px', fontWeight: 'normal', textAlign: 'left', textColor: '#555', paddingTop: 16, paddingBottom: 16 },
-      { id: 'button', type: 'button', content: '🚀 Get Started Now', url: '#', fullWidth: false, textColor: '#ffffff', backgroundColor: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)', fontSize: '1rem', fontWeight: '700', textAlign: 'center', fontFamily: 'Arial, sans-serif', lineHeight: '1.2', paddingTop: 16, paddingBottom: 16 },
-      { id: 'image', type: 'image', src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Create+Amazing+Music', fullWidth: false, paddingTop: 16, paddingBottom: 16 }
+      { 
+        id: 'brand-header', 
+        type: 'brand-header', 
+        content: 'CYMASPHERE', 
+        fullWidth: true, 
+        backgroundColor: 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
+        textColor: '#ffffff',
+        paddingTop: 16, 
+        paddingBottom: 16 
+      },
+      { 
+        id: 'header', 
+        type: 'header', 
+        content: 'Welcome to Cymasphere! 🎵', 
+        fullWidth: false, 
+        fontSize: '2.5rem', 
+        fontWeight: '800', 
+        textAlign: 'center', 
+        textColor: '#333', 
+        paddingTop: 16, 
+        paddingBottom: 8 
+      },
+      { 
+        id: 'text1', 
+        type: 'text', 
+        content: 'Hi {{firstName}}, Thank you for joining our community of music creators. We\'re excited to help you create amazing music with our powerful tools.', 
+        fullWidth: false, 
+        fontSize: '16px', 
+        fontWeight: 'normal', 
+        textAlign: 'left', 
+        textColor: '#555', 
+        paddingTop: 0, 
+        paddingBottom: 16 
+      },
+      { 
+        id: 'footer', 
+        type: 'footer', 
+        fullWidth: true,
+        paddingTop: 0,
+        paddingBottom: 0,
+        backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+        textColor: '#ffffff',
+        socialLinks: [
+          { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
+          { platform: 'twitter', url: 'https://x.com/cymasphere' },
+          { platform: 'instagram', url: 'https://www.instagram.com/cymasphere/' },
+          { platform: 'youtube', url: 'https://www.youtube.com/@cymasphere' },
+          { platform: 'discord', url: 'https://discord.gg/gXGqqYR47B' }
+        ],
+        footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
+        unsubscribeText: 'Unsubscribe',
+        unsubscribeUrl: '/unsubscribe?email={{email}}',
+        privacyText: 'Privacy Policy',
+        privacyUrl: 'https://cymasphere.com/privacy-policy',
+        termsText: 'Terms of Service',
+        termsUrl: 'https://cymasphere.com/terms-of-service'
+      }
     ];
   };
 
@@ -2877,6 +2952,52 @@ function CreateCampaignPage() {
         }
       }, 5000);
     }
+  };
+
+  const handleDelete = () => {
+    if (!isEditMode || !editId) {
+      setSendingMessage('Cannot delete: No campaign selected');
+      setTimeout(() => setSendingMessage(''), 3000);
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!isEditMode || !editId) return;
+    
+    setIsDeleting(true);
+    setSendingMessage('Deleting campaign...');
+    
+    try {
+      const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setSendingMessage('Campaign deleted successfully!');
+        setShowDeleteModal(false);
+        
+        // Redirect to campaigns list after a short delay
+        setTimeout(() => {
+          router.push('/admin/email-campaigns/campaigns');
+        }, 1500);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete campaign');
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      setSendingMessage(`Error deleting campaign: ${error.message}`);
+      setTimeout(() => setSendingMessage(''), 5000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteClose = () => {
+    setShowDeleteModal(false);
   };
 
   const stepVariants = {
@@ -4657,6 +4778,21 @@ function CreateCampaignPage() {
           </NavButton>
           
           <div style={{ display: 'flex', gap: '1rem' }}>
+            {isEditMode && (
+              <NavButton 
+                onClick={handleDelete}
+                disabled={isSending || isDeleting}
+                style={{ 
+                  backgroundColor: 'rgba(220, 53, 69, 0.1)', 
+                  color: '#dc3545', 
+                  border: '1px solid rgba(220, 53, 69, 0.3)' 
+                }}
+              >
+                <FaTrash />
+                Delete
+              </NavButton>
+            )}
+            
             <NavButton onClick={handleSave} disabled={isSending}>
               <FaSave />
               Save Draft
@@ -5201,6 +5337,57 @@ function CreateCampaignPage() {
                       </>
                     )}
                   </button>
+                </ModalActions>
+              </ModalContent>
+            </ResultModal>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Campaign Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <ResultModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleDeleteClose}
+            >
+              <ModalContent
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ModalTitle>
+                  <FaExclamationTriangle />
+                  Delete Campaign
+                </ModalTitle>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                  Are you sure you want to delete the campaign "{campaignData.name || 'Untitled'}"? 
+                  This action cannot be undone and all campaign data will be permanently lost.
+                </p>
+                <ModalActions>
+                  <NavButton onClick={handleDeleteClose} disabled={isDeleting}>
+                    Cancel
+                  </NavButton>
+                  <NavButton 
+                    onClick={handleDeleteConfirm} 
+                    disabled={isDeleting}
+                    style={{ 
+                      backgroundColor: 'rgba(220, 53, 69, 0.1)', 
+                      color: '#dc3545', 
+                      border: '1px solid rgba(220, 53, 69, 0.3)' 
+                    }}
+                  >
+                    {isDeleting && (
+                      <LoadingSpinner
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    )}
+                    <FaTrash />
+                    {isDeleting ? 'Deleting...' : 'Yes, Delete Campaign'}
+                  </NavButton>
                 </ModalActions>
               </ModalContent>
             </ResultModal>

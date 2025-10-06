@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { 
   FaFont, 
+  FaHeading,
   FaMousePointer, 
   FaImage, 
   FaDivide, 
@@ -55,6 +56,11 @@ const fontSizeStyles = `
 const ViewToggle = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'active',
 })<{ active: boolean }>`
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 25px;
@@ -71,6 +77,21 @@ const ViewToggle = styled.button.withConfig({
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(10px);
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  
+  svg {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    float: none !important;
+  }
+  
+  * {
+    display: inline !important;
+    vertical-align: middle !important;
+  }
 
   &:hover {
     background: ${props => props.active 
@@ -153,7 +174,7 @@ const EmailHeader = styled.div`
 
 const EmailBody = styled.div`
   padding: 0 0 2rem 0;
-  background: #ffffff;
+  background: transparent;
   overflow: visible;
   position: relative;
 `;
@@ -175,21 +196,36 @@ const EmailFooter = styled.div`
 `;
 
 const EmailElement = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth',
-})<{ selected: boolean; editing: boolean; fullWidth?: boolean }>`
-  margin: ${props => props.fullWidth ? '0 -24px 12px -24px' : '0 auto 12px auto'};
-  padding: ${props => props.fullWidth ? '0' : '8px'};
+  shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'editing' && prop !== 'fullWidth' && prop !== 'tightSpacing' && prop !== 'removeBottomMargin' && prop !== 'removeTopMargin' && prop !== 'isBrandHeader',
+})<{ selected: boolean; editing: boolean; fullWidth?: boolean; tightSpacing?: boolean; removeBottomMargin?: boolean; removeTopMargin?: boolean; isBrandHeader?: boolean }>`
+  margin: ${props => props.fullWidth ? '0 -24px 0 -24px' : '0'};
+  padding: 0;
   max-width: ${props => props.fullWidth ? 'none' : 'none'};
-  border: 2px solid ${props => props.selected ? 'var(--primary)' : 'transparent'};
+  border: none;
+  position: relative;
+  
+  ${props => props.selected && `
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 2px solid var(--primary);
+      border-radius: ${props.fullWidth ? '0' : '12px'};
+      pointer-events: none;
+      z-index: 1;
+    }
+  `}
   border-radius: ${props => props.fullWidth ? '0' : '12px'};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   cursor: grab;
   overflow: visible;
   background: ${props => 
     props.editing ? 'rgba(108, 99, 255, 0.1)' :
     props.selected ? 'rgba(108, 99, 255, 0.05)' : 
-    props.fullWidth ? 'rgba(108, 99, 255, 0.03)' : 'transparent'
+    'transparent'
   };
   
   ${props => props.fullWidth && `
@@ -1459,6 +1495,8 @@ export default function VisualEditor({
   };
 
   const colorPresets = [
+    // Special
+    'transparent',
     // Grayscale
     '#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF',
     // Primary colors
@@ -1564,10 +1602,20 @@ export default function VisualEditor({
     if (elementType) {
       console.log('🆕 Creating new element:', elementType, 'at index:', dropIndex);
       const newElement = createNewElement(elementType);
-      const newElements = [...emailElements];
-      newElements.splice(dropIndex, 0, newElement);
-      setEmailElements(newElements);
-      console.log('🎉 New element added successfully!');
+      
+      // Handle multiple elements (like header-text combo)
+      if (Array.isArray(newElement)) {
+        const newElements = [...emailElements];
+        newElements.splice(dropIndex, 0, ...newElement);
+        setEmailElements(newElements);
+        console.log('🎉 Multiple elements added successfully!', newElement.length);
+      } else {
+        const newElements = [...emailElements];
+        newElements.splice(dropIndex, 0, newElement);
+        setEmailElements(newElements);
+        console.log('🎉 New element added successfully!');
+      }
+      
       setElementDragOverIndex(null);
       return;
     }
@@ -1627,7 +1675,7 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           content: 'Your Header Text Here', 
-          fullWidth: true,
+          fullWidth: false,
           fontSize: '32px',
           fontWeight: 'bold',
           textAlign: 'center'
@@ -1646,8 +1694,33 @@ export default function VisualEditor({
           url: '#',
           fontSize: '16px',
           fontWeight: 'bold',
-          textAlign: 'center'
+          textAlign: 'center',
+          backgroundColor: 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)',
+          textColor: '#ffffff'
         };
+      case 'header-text':
+        return [
+          { 
+            ...baseElement, 
+            id: id + '_header',
+            type: 'header',
+            content: 'Your Header Text Here', 
+            fullWidth: false,
+            fontSize: '24px',
+            fontWeight: 'bold',
+            textAlign: 'left',
+            paddingBottom: 0
+          },
+          { 
+            ...baseElement, 
+            id: id + '_text',
+            type: 'text',
+            content: 'Add your text content here. This is a common combination of header and text elements.',
+            fontSize: '16px',
+            textAlign: 'left',
+            paddingTop: 0
+          }
+        ];
       case 'image':
         return { ...baseElement, src: 'https://via.placeholder.com/600x300/6c63ff/ffffff?text=Your+Image', alt: 'Image description' };
       case 'divider':
@@ -1673,6 +1746,10 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           fullWidth: true,
+          paddingTop: 0,
+          paddingBottom: 0,
+          backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+          textColor: '#ffffff',
           socialLinks: [
             { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
             { platform: 'twitter', url: 'https://x.com/cymasphere' },
@@ -1953,12 +2030,27 @@ export default function VisualEditor({
     console.log('🔄 updateElement called:', { elementId, updates });
     console.log('🔄 Current emailElements before update:', emailElements);
     
+    // Capture any unsaved text content from the DOM before updating
+    const currentTextContent = (() => {
+      try {
+        const domEl = typeof document !== 'undefined' 
+          ? (document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement | null)
+          : null;
+        if (domEl && domEl.isContentEditable) {
+          return domEl.innerHTML;
+        }
+      } catch {}
+      return null;
+    })();
+    
     const newElements = emailElements.map(el => {
       if (el.id === elementId) {
         // Preserve all existing properties and block-specific settings
         const updatedElement = {
           ...el,
           ...updates,
+          // Preserve unsaved text content if available
+          content: currentTextContent || el.content,
           // Ensure block type is preserved
           type: updates.type || el.type,
           // Preserve header-specific properties
@@ -1979,7 +2071,8 @@ export default function VisualEditor({
           id: updatedElement.id, 
           type: updatedElement.type, 
           fontSize: updatedElement.fontSize,
-          fontFamily: updatedElement.fontFamily 
+          fontFamily: updatedElement.fontFamily,
+          contentPreserved: !!currentTextContent
         });
         
         return updatedElement;
@@ -1991,12 +2084,6 @@ export default function VisualEditor({
     console.log('🔄 Setting new emailElements state...');
     
     setEmailElements(newElements);
-    
-    // Force a re-render to ensure changes are visible
-    setTimeout(() => {
-      console.log('🔄 Forcing re-render...');
-      forceReRender();
-    }, 0);
   };
 
   // ✨ NEW: Update element padding
@@ -2039,6 +2126,18 @@ export default function VisualEditor({
   };
 
   const renderEmailElement = (element: any, index: number) => {
+    // Check if this element should have tight spacing with adjacent elements
+    const shouldRemoveBottomMargin = element.paddingBottom === 0 && 
+                                   index < emailElements.length - 1 && 
+                                   emailElements[index + 1].paddingTop === 0;
+    
+    const shouldRemoveTopMargin = element.paddingTop === 0 && 
+                                index > 0 && 
+                                emailElements[index - 1].paddingBottom === 0;
+    
+    // For non-fullWidth elements, check if they should have tight spacing
+    const hasTightSpacing = !element.fullWidth && (shouldRemoveTopMargin || shouldRemoveBottomMargin);
+    
     // Debug logging for element properties
     if (element.type === 'text' || element.type === 'header') {
       console.log('🎨 Rendering element:', {
@@ -2049,7 +2148,8 @@ export default function VisualEditor({
         textColor: element.textColor,
         backgroundColor: element.backgroundColor,
         isSelected: selectedElementId === element.id,
-        selectedElementId: selectedElementId
+        selectedElementId: selectedElementId,
+        hasTightSpacing: hasTightSpacing
       });
     }
     
@@ -2191,6 +2291,10 @@ export default function VisualEditor({
         selected={isSelected}
         editing={isEditing}
         fullWidth={element.fullWidth}
+        tightSpacing={hasTightSpacing}
+        removeBottomMargin={shouldRemoveBottomMargin}
+        removeTopMargin={shouldRemoveTopMargin}
+        isBrandHeader={element.type === 'brand-header'}
         draggable={false}
         onClickCapture={handleClickCapture}
         onDoubleClick={() => handleElementDoubleClick(element.id)}
@@ -2198,16 +2302,18 @@ export default function VisualEditor({
         onDrop={(e) => handleElementDrop(e, index)}
         onDragLeave={() => setElementDragOverIndex(null)}
         style={{
-          paddingTop: `${element.paddingTop ?? 16}px`,
-          paddingBottom: `${element.paddingBottom ?? 16}px`,
+          paddingTop: '0',
+          paddingBottom: '0',
+          marginTop: '0',
+          marginBottom: '0',
+          marginLeft: element.fullWidth ? '-24px' : '0',
+          marginRight: element.fullWidth ? '-24px' : '0',
           opacity: draggedElementId === element.id ? 0.5 : 1,
           transform: draggedElementId === element.id ? 'scale(0.95)' : 'scale(1)',
           transition: 'opacity 0.2s ease, transform 0.2s ease',
           borderTop: elementDragOverIndex === index ? '3px solid var(--primary)' : 'none',
           cursor: isEditing ? 'default' : (draggedElementId === element.id ? 'grabbing' : 'grab'),
-          background: element.type === 'footer' ? (element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)') : 
-                    element.type === 'brand-header' ? (element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)') : 
-                    undefined
+          background: undefined
         }}
       >
         <div className="element-controls">
@@ -2285,7 +2391,7 @@ export default function VisualEditor({
               />
             ) : (
           <EditableText
-            key={`${element.id}-${element.fontSize}-${forceUpdate}`}
+            key={`${element.id}-${element.fontSize}`}
             className="editable-text"
             editing={isEditing}
                 contentEditable={isEditing}
@@ -2318,7 +2424,7 @@ export default function VisualEditor({
                   minHeight: '1em',
                   width: element.fullWidth ? '100%' : 'auto',
                   backgroundColor: element.backgroundColor || 'transparent',
-                  padding: '8px',
+                  padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
                   fontFamily: element.fontFamily || 'Arial, sans-serif',
                   borderRadius: element.fullWidth ? '0' : '0',
                   textAlign: element.textAlign || 'left',
@@ -2406,7 +2512,7 @@ export default function VisualEditor({
               />
             ) : (
           <EditableText
-            key={`${element.id}-${element.fontSize}-${forceUpdate}`}
+            key={`${element.id}-${element.fontSize}`}
             className="editable-text"
             editing={isEditing}
                 contentEditable={isEditing}
@@ -2551,7 +2657,7 @@ export default function VisualEditor({
             
             {isEditing ? (
             <EditableText
-              key={`${element.id}-${element.fontSize}-${forceUpdate}`}
+              key={`${element.id}-${element.fontSize}`}
               className="editable-text"
               editing={isEditing}
               contentEditable={true}
@@ -2988,14 +3094,15 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: '0',
+            padding: '2rem',
             fontSize: '0.8rem', 
-            color: '#ffffff',
-            background: 'transparent',
+            color: element.textColor || '#ffffff',
+            background: element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
             borderTop: element.fullWidth ? 'none' : '1px solid #dee2e6',
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
-            borderRadius: element.fullWidth ? '0' : 'inherit'
+            borderRadius: element.fullWidth ? '0' : 'inherit',
+            minHeight: '100px'
           }}>
             {/* Social Links */}
             {element.socialLinks && element.socialLinks.length > 0 && (
@@ -3090,13 +3197,14 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: element.fullWidth ? '0' : `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
-            background: 'transparent',
+            padding: `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
+            background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: '60px',
-            gap: '2px'
+            gap: '2px',
+            width: '100%'
           }}>
             {/* Logo */}
             <img 
@@ -3226,10 +3334,14 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('header');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
-          <FaFont size={14} />
+          <FaHeading size={14} />
           <span>Header</span>
         </ElementBlock>
         
@@ -3242,11 +3354,35 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('text');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaFont size={12} />
           <span>Text</span>
+        </ElementBlock>
+        
+        <ElementBlock 
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🚀 Dragging header-text element from palette');
+            e.dataTransfer.setData('text/element-type', 'header-text');
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          onClick={() => {
+            const newElement = createNewElement('header-text');
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
+          }}
+        >
+          <FaHeading size={12} />
+          <span>Header + Text</span>
         </ElementBlock>
         
         <ElementBlock 
@@ -3258,7 +3394,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('button');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaMousePointer size={12} />
@@ -3274,7 +3414,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('image');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaImage size={12} />
@@ -3290,7 +3434,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('divider');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaDivide size={12} />
@@ -3306,7 +3454,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('spacer');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaExpandArrowsAlt size={12} />
@@ -3322,7 +3474,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('social');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaShareAlt size={12} />
@@ -3338,7 +3494,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('columns');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaColumns size={12} />
@@ -3354,7 +3514,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('video');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaVideo size={12} />
@@ -3370,7 +3534,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('footer');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaCog size={12} />
@@ -3386,7 +3554,11 @@ export default function VisualEditor({
           }}
           onClick={() => {
             const newElement = createNewElement('brand-header');
-            setEmailElements([...emailElements, newElement]);
+            if (Array.isArray(newElement)) {
+              setEmailElements([...emailElements, ...newElement]);
+            } else {
+              setEmailElements([...emailElements, newElement]);
+            }
           }}
         >
           <FaBold size={12} />
@@ -3768,17 +3940,19 @@ export default function VisualEditor({
                         {renderEmailElement(element, index)}
                         
                         {/* Element reordering drop zone after each element */}
+                        {!(element.paddingBottom === 0 && index < emailElements.length - 1 && emailElements[index + 1].paddingTop === 0) && (
                           <div
                             onDragOver={(e) => handleElementDragOver(e, index + 1)}
                             onDrop={(e) => handleElementDrop(e, index + 1)}
                             style={{
-                              height: elementDragOverIndex === index + 1 ? '6px' : '2px',
+                              height: elementDragOverIndex === index + 1 ? '6px' : '0px',
                               background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
                               transition: 'all 0.2s ease',
-                              margin: '2px 0',
+                              margin: '0',
                               borderRadius: '2px'
                             }}
-                        />
+                          />
+                        )}
                       </React.Fragment>
                     ))}
                     
@@ -4106,11 +4280,29 @@ export default function VisualEditor({
 
                         <ControlGroup>
                           <ControlLabel>Background Color</ControlLabel>
-                          <ColorInput
-                            type="color"
-                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || 'transparent'}
-                            onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
-                          />
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor === 'transparent' ? '#ffffff' : (emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#ffffff')}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateElement(selectedElementId, { backgroundColor: 'transparent' })}
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                border: '2px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                                backgroundSize: '8px 8px',
+                                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+                                backgroundColor: 'transparent'
+                              }}
+                              title="Transparent"
+                            />
+                          </div>
                         </ControlGroup>
 
                         <ControlGroup>
@@ -4273,11 +4465,29 @@ export default function VisualEditor({
 
                         <ControlGroup>
                           <ControlLabel>Background Color</ControlLabel>
-                          <ColorInput
-                            type="color"
-                            value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor || 'transparent'}
-                            onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
-                          />
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor === 'transparent' ? '#ffffff' : (emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#ffffff')}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateElement(selectedElementId, { backgroundColor: 'transparent' })}
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                border: '2px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                                backgroundSize: '8px 8px',
+                                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+                                backgroundColor: 'transparent'
+                              }}
+                              title="Transparent"
+                            />
+                          </div>
                         </ControlGroup>
 
                         <ControlGroup>
@@ -4458,6 +4668,47 @@ export default function VisualEditor({
                             <option value="right">Right</option>
                             <option value="justify">Justify</option>
                           </ControlSelect>
+                        </ControlGroup>
+                      </>
+                    )}
+
+                    {/* Footer Specific Controls */}
+                    {emailElements.find(el => el.id === selectedElementId)?.type === 'footer' && (
+                      <>
+                        <ControlGroup>
+                          <ControlLabel>Background Color</ControlLabel>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <ColorInput
+                              type="color"
+                              value={emailElements.find(el => el.id === selectedElementId)?.backgroundColor === 'transparent' ? '#ffffff' : (emailElements.find(el => el.id === selectedElementId)?.backgroundColor || '#6c757d')}
+                              onChange={(e) => updateElement(selectedElementId, { backgroundColor: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateElement(selectedElementId, { backgroundColor: 'transparent' })}
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                border: '2px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                                backgroundSize: '8px 8px',
+                                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+                                backgroundColor: 'transparent'
+                              }}
+                              title="Transparent"
+                            />
+                          </div>
+                        </ControlGroup>
+                        
+                        <ControlGroup>
+                          <ControlLabel>Text Color</ControlLabel>
+                          <ColorInput 
+                            type="color" 
+                            value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
                         </ControlGroup>
                       </>
                     )}
@@ -4779,11 +5030,14 @@ export default function VisualEditor({
                     <ColorPreset
                       key={color}
                       style={{ 
-                        backgroundColor: color,
+                        backgroundColor: color === 'transparent' ? 'transparent' : color,
+                        backgroundImage: color === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none',
+                        backgroundSize: color === 'transparent' ? '8px 8px' : 'auto',
+                        backgroundPosition: color === 'transparent' ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'auto',
                         border: selectedColor === color ? '3px solid var(--primary)' : '2px solid rgba(255, 255, 255, 0.2)'
                       }}
                       onClick={() => setSelectedColor(color)}
-                      title={color}
+                      title={color === 'transparent' ? 'Transparent' : color}
                     />
                   ))}
                 </ColorPresets>
