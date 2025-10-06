@@ -313,9 +313,9 @@ const DragHandle = styled.div.withConfig({
   position: absolute;
   left: 4px;
   top: 4px;
-  width: 20px;
-  height: 20px;
-  background: rgba(108, 99, 255, 0.9);
+  width: 24px;
+  height: 24px;
+  background: rgba(108, 99, 255, 1);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -326,8 +326,9 @@ const DragHandle = styled.div.withConfig({
   z-index: 1000;
   color: white;
   user-select: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   pointer-events: auto;
+  opacity: 1 !important;
   
   &:hover {
     opacity: 1 !important;
@@ -1577,20 +1578,13 @@ export default function VisualEditor({
   // Element reordering drag handlers
   const handleElementDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔄 Element drag over at index:', index, 'draggedElementId:', draggedElementId);
     
-    // Check if we're dragging a new element from the palette
-    const elementType = e.dataTransfer.getData('text/element-type');
-    if (elementType) {
-      e.dataTransfer.dropEffect = 'copy';
-      setElementDragOverIndex(index);
-      return;
-    }
-    
-    // Handle reordering existing elements
-    e.dataTransfer.dropEffect = 'move';
-    if (draggedElementId) {
-      setElementDragOverIndex(index);
-    }
+    // Always allow drop and set visual feedback
+    e.dataTransfer.dropEffect = draggedElementId ? 'move' : 'copy';
+    console.log('📍 Setting drag over index to:', index);
+    setElementDragOverIndex(index);
   };
 
   const handleElementDrop = (e: React.DragEvent, dropIndex: number) => {
@@ -1598,7 +1592,8 @@ export default function VisualEditor({
     console.log('💧 Drop attempted at index:', dropIndex);
     
     // Check if we're dropping a new element from the palette
-    const elementType = e.dataTransfer.getData('text/element-type');
+    const elementType = e.dataTransfer.getData('text/element-type') || e.dataTransfer.getData('text/plain');
+    console.log('📦 Received drag data:', elementType);
     if (elementType) {
       console.log('🆕 Creating new element:', elementType, 'at index:', dropIndex);
       const newElement = createNewElement(elementType);
@@ -1621,20 +1616,18 @@ export default function VisualEditor({
     }
     
     // Otherwise, handle reordering existing elements
-    const elementId = e.dataTransfer.getData('text/element-id');
-    const dragIndex = parseInt(e.dataTransfer.getData('text/element-index'));
-    console.log('📦 Dropped element ID:', elementId, 'from index:', dragIndex);
+    console.log('📦 Checking for reordering - draggedElementId:', draggedElementId, 'draggedElementIndex:', draggedElementIndex);
     
-    if (elementId && !isNaN(dragIndex) && dragIndex !== dropIndex) {
-      console.log('✅ Valid drop: moving from', dragIndex, 'to', dropIndex);
+    if (draggedElementId && draggedElementIndex !== null && draggedElementIndex !== dropIndex) {
+      console.log('✅ Valid drop: moving from', draggedElementIndex, 'to', dropIndex);
       const newElements = [...emailElements];
-      const draggedElement = newElements[dragIndex];
+      const draggedElement = newElements[draggedElementIndex];
       
       // Remove from old position
-      newElements.splice(dragIndex, 1);
+      newElements.splice(draggedElementIndex, 1);
       
       // Calculate new position (adjust if dropping after original position)
-      const adjustedDropIndex = dropIndex > dragIndex ? dropIndex - 1 : dropIndex;
+      const adjustedDropIndex = dropIndex > draggedElementIndex ? dropIndex - 1 : dropIndex;
       console.log('🎯 Adjusted drop index:', adjustedDropIndex);
       
       // Insert at new position
@@ -1642,10 +1635,18 @@ export default function VisualEditor({
       
       setEmailElements(newElements);
       console.log('🎉 Elements reordered successfully!');
+      
+      // Reset drag state
+      setDraggedElementId(null);
+      setDraggedElementIndex(null);
+      setElementDragOverIndex(null);
+      e.stopPropagation(); // Prevent event from bubbling to main container
+      return;
     } else {
-      console.log('❌ Invalid drop:', { elementId, dragIndex, dropIndex });
+      console.log('❌ Invalid drop:', { draggedElementId, draggedElementIndex, dropIndex });
     }
     
+    // Reset drag state
     setDraggedElementId(null);
     setDraggedElementIndex(null);
     setElementDragOverIndex(null);
@@ -1746,9 +1747,9 @@ export default function VisualEditor({
         return { 
           ...baseElement, 
           fullWidth: true,
-          paddingTop: 0,
-          paddingBottom: 0,
-          backgroundColor: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+          paddingTop: 16,
+          paddingBottom: 16,
+          backgroundColor: '#363636',
           textColor: '#ffffff',
           socialLinks: [
             { platform: 'facebook', url: 'https://www.facebook.com/cymasphere' },
@@ -2226,13 +2227,8 @@ export default function VisualEditor({
         return;
       }
       
-      // Only allow drag from the drag handle
-      const target = e.target as HTMLElement;
-      if (!target.closest('.drag-handle')) {
-        console.log('❌ Preventing drag - not initiated from drag handle');
-        e.preventDefault();
-        return;
-      }
+      // Drag handle is the only draggable element, so this check is not needed
+      console.log('✅ Drag initiated from drag handle for element:', element.id);
       
       // Set drag data
       setDraggedElementId(element.id);
@@ -2299,7 +2295,12 @@ export default function VisualEditor({
         onClickCapture={handleClickCapture}
         onDoubleClick={() => handleElementDoubleClick(element.id)}
         onDragOver={(e) => handleElementDragOver(e, index)}
-        onDrop={(e) => handleElementDrop(e, index)}
+        onDrop={(e) => {
+          console.log('🎯 Element drop at index:', index);
+          e.preventDefault();
+          e.stopPropagation();
+          handleElementDrop(e, index);
+        }}
         onDragLeave={() => setElementDragOverIndex(null)}
         style={{
           paddingTop: '0',
@@ -2357,14 +2358,21 @@ export default function VisualEditor({
           className="drag-handle" 
           title="Drag to reorder this element"
           draggable={true}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onDragStart={(e) => {
+            console.log('🚀 DRAG START on drag handle for element:', element.id);
+            handleDragStart(e);
+          }}
+          onDragEnd={(e) => {
+            console.log('🎯 DRAG END on drag handle for element:', element.id);
+            handleDragEnd(e);
+          }}
           onMouseDown={(e) => {
             e.stopPropagation();
             console.log('🖱️ Drag handle mousedown for element:', element.id);
           }}
           onClick={(e) => {
             e.stopPropagation();
+            console.log('🖱️ Drag handle click for element:', element.id);
           }}
           style={{ userSelect: 'none' }}
         >
@@ -2373,8 +2381,7 @@ export default function VisualEditor({
         {element.type === 'header' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
-            backgroundColor: 'rgba(255, 0, 0, 0.1)' // Temporary debug background
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
           }}>
             {isShowingRawHtml(element.id) ? (
               <textarea
@@ -2488,8 +2495,7 @@ export default function VisualEditor({
         {element.type === 'text' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`,
-            backgroundColor: 'rgba(0, 255, 0, 0.1)' // Temporary debug background
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
           }}>
             {(() => {
               console.log('🎨 Rendering text element:', { 
@@ -3107,7 +3113,7 @@ export default function VisualEditor({
             padding: `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
             fontSize: '0.8rem', 
             color: element.textColor || '#ffffff',
-            background: element.backgroundColor || 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+            background: element.backgroundColor || '#363636',
             borderTop: element.fullWidth ? 'none' : '1px solid #dee2e6',
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
@@ -3156,7 +3162,7 @@ export default function VisualEditor({
                   padding: '0.5rem',
                   fontFamily: 'monospace',
                   fontSize: '0.9em',
-                  color: '#333',
+                  color: '#ffffff',
                   resize: 'vertical',
                   marginBottom: '1rem'
                 }}
@@ -3171,15 +3177,27 @@ export default function VisualEditor({
             
             {/* Footer Links */}
             <div>
-              <a href={element.unsubscribeUrl || `/unsubscribe?email={{email}}`} style={{ color: '#ffffff', textDecoration: 'none' }}>
+              <a 
+                href={element.unsubscribeUrl || `/unsubscribe?email={{email}}`} 
+                onClick={(e) => e.preventDefault()}
+                style={{ color: '#ffffff', textDecoration: 'none' }}
+              >
                 {element.unsubscribeText || 'Unsubscribe'}
               </a>
               {' | '}
-              <a href={element.privacyUrl || 'https://cymasphere.com/privacy-policy'} style={{ color: '#ffffff', textDecoration: 'none' }}>
+              <a 
+                href={element.privacyUrl || 'https://cymasphere.com/privacy-policy'} 
+                onClick={(e) => e.preventDefault()}
+                style={{ color: '#ffffff', textDecoration: 'none' }}
+              >
                 {element.privacyText || 'Privacy Policy'}
               </a>
               {' | '}
-              <a href={element.termsUrl || 'https://cymasphere.com/terms-of-service'} style={{ color: '#ffffff', textDecoration: 'none' }}>
+              <a 
+                href={element.termsUrl || 'https://cymasphere.com/terms-of-service'} 
+                onClick={(e) => e.preventDefault()}
+                style={{ color: '#ffffff', textDecoration: 'none' }}
+              >
                 {element.termsText || 'Terms of Service'}
               </a>
             </div>
@@ -3341,6 +3359,7 @@ export default function VisualEditor({
             console.log('🚀 Dragging header element from palette');
             e.dataTransfer.setData('text/element-type', 'header');
             e.dataTransfer.effectAllowed = 'copy';
+            console.log('📦 Drag data set:', e.dataTransfer.getData('text/element-type'));
           }}
           onClick={() => {
             const newElement = createNewElement('header');
@@ -3399,8 +3418,10 @@ export default function VisualEditor({
           draggable={true}
           onDragStart={(e) => {
             console.log('🚀 Dragging button element from palette');
+            e.dataTransfer.setData('text/plain', 'button');
             e.dataTransfer.setData('text/element-type', 'button');
             e.dataTransfer.effectAllowed = 'copy';
+            console.log('📦 Drag data set:', e.dataTransfer.getData('text/element-type'));
           }}
           onClick={() => {
             const newElement = createNewElement('button');
@@ -3911,17 +3932,22 @@ export default function VisualEditor({
                     <EmailBody
                       onDragOver={(e) => {
                       e.preventDefault();
-                      const elementType = e.dataTransfer.getData('text/element-type');
-                      if (elementType || draggedElementId) {
-                        e.dataTransfer.dropEffect = elementType ? 'copy' : 'move';
-                        if (emailElements.length === 0) {
-                          setElementDragOverIndex(0);
-                        }
+                      console.log('🔄 Drag over main container');
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (emailElements.length === 0) {
+                        setElementDragOverIndex(0);
                       }
+                      // Don't stop propagation here - let drop zones handle it
                     }}
                     onDrop={(e) => {
-                      if (emailElements.length === 0) {
-                        handleElementDrop(e, 0);
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🎯 Main container drop triggered');
+                      const elementType = e.dataTransfer.getData('text/element-type') || e.dataTransfer.getData('text/plain');
+                      console.log('📦 Main container received drag data:', elementType);
+                      if (elementType) {
+                        // Add to end if dropping on main container
+                        handleElementDrop(e, emailElements.length);
                       }
                     }}
                     onDragLeave={() => {
@@ -3936,12 +3962,17 @@ export default function VisualEditor({
                         {index === 0 && (
                           <div
                             onDragOver={(e) => handleElementDragOver(e, 0)}
-                            onDrop={(e) => handleElementDrop(e, 0)}
+                            onDrop={(e) => {
+                              console.log('🎯 First drop zone drop at index: 0');
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleElementDrop(e, 0);
+                            }}
                             style={{
-                              height: elementDragOverIndex === 0 ? '6px' : '2px',
+                              height: elementDragOverIndex === 0 ? '6px' : '0px',
                               background: elementDragOverIndex === 0 ? 'var(--primary)' : 'transparent',
                               transition: 'all 0.2s ease',
-                              margin: '0 0 2px 0',
+                              margin: '0',
                               borderRadius: '2px'
                             }}
                           />
@@ -3953,7 +3984,12 @@ export default function VisualEditor({
                         {!(element.paddingBottom === 0 && index < emailElements.length - 1 && emailElements[index + 1].paddingTop === 0) && (
                           <div
                             onDragOver={(e) => handleElementDragOver(e, index + 1)}
-                            onDrop={(e) => handleElementDrop(e, index + 1)}
+                            onDrop={(e) => {
+                              console.log('🎯 Drop zone drop at index:', index + 1);
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleElementDrop(e, index + 1);
+                            }}
                             style={{
                               height: elementDragOverIndex === index + 1 ? '6px' : '0px',
                               background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',

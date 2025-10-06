@@ -1993,7 +1993,13 @@ function CampaignsPage() {
                             minute: '2-digit'
                           })
                         : campaign.created_at 
-                          ? new Date(campaign.created_at).toLocaleDateString() 
+                          ? new Date(campaign.created_at).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
                           : 'N/A'
                       }
                     </TableCell>
