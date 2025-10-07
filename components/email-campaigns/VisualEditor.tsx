@@ -209,11 +209,11 @@ const EmailElement = styled.div.withConfig({
       content: '';
       position: absolute;
       top: 0;
-      left: 0;
-      right: 0;
+      left: ${props.fullWidth ? '0' : '-24px'};
+      right: ${props.fullWidth ? '0' : '-24px'};
       bottom: 0;
       border: 2px solid var(--primary);
-      border-radius: ${props.fullWidth ? '0' : '12px'};
+      border-radius: 0;
       pointer-events: none;
       z-index: 1;
     }
@@ -269,7 +269,7 @@ const EmailElement = styled.div.withConfig({
   .element-controls {
     position: absolute;
     top: 0.5rem;
-    right: 0.5rem;
+    right: ${props => props.fullWidth ? '0.5rem' : '-20px'};
     display: flex;
     gap: 0.5rem;
     opacity: 1;
@@ -309,9 +309,9 @@ const ElementControl = styled.button`
 // Drag handle for element reordering
 const DragHandle = styled.div.withConfig({
   shouldForwardProp: (prop) => true,
-})`
+})<{ fullWidth?: boolean }>`
   position: absolute;
-  left: 4px;
+  left: ${props => props.fullWidth ? '4px' : '-20px'};
   top: 4px;
   width: 24px;
   height: 24px;
@@ -2358,6 +2358,7 @@ export default function VisualEditor({
           className="drag-handle" 
           title="Drag to reorder this element"
           draggable={true}
+          fullWidth={element.fullWidth}
           onDragStart={(e) => {
             console.log('🚀 DRAG START on drag handle for element:', element.id);
             handleDragStart(e);
