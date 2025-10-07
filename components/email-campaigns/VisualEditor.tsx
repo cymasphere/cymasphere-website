@@ -2382,7 +2382,7 @@ export default function VisualEditor({
         {element.type === 'header' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || (element.fullWidth ? 24 : 32)}px ${element.paddingBottom || 16}px ${element.paddingLeft || (element.fullWidth ? 24 : 32)}px`
           }}>
             {isShowingRawHtml(element.id) ? (
               <textarea
@@ -2496,7 +2496,7 @@ export default function VisualEditor({
         {element.type === 'text' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
+            padding: `${element.paddingTop || 16}px ${element.paddingRight || (element.fullWidth ? 24 : 32)}px ${element.paddingBottom || 16}px ${element.paddingLeft || (element.fullWidth ? 24 : 32)}px`
           }}>
             {(() => {
               console.log('🎨 Rendering text element:', { 
