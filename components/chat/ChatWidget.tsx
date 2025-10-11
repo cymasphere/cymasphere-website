@@ -4,6 +4,30 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
+import { usePathname } from 'next/navigation';
+
+// Import audio utilities dynamically to avoid SSR issues
+const playSound = async () => {
+  if (typeof window !== "undefined") {
+    try {
+      console.log("Chat widget: Attempting to play sound...");
+      const { playLydianMaj7Chord, initAudio } = await import("../../utils/audioUtils");
+      console.log("Chat widget: Audio utils imported successfully");
+      
+      // Initialize audio context first (this will unlock audio on user interaction)
+      await initAudio();
+      console.log("Chat widget: Audio context initialized");
+      
+      // Play the sound
+      await playLydianMaj7Chord();
+      console.log("Chat widget: Sound played successfully");
+    } catch (error) {
+      console.error("Chat widget: Error playing sound:", error);
+    }
+  } else {
+    console.log("Chat widget: Window not available, skipping sound");
+  }
+};
 
 interface Message {
   id: string;
@@ -246,7 +270,10 @@ interface ChatWidgetProps {
 }
 
 export default function ChatWidget({ className }: ChatWidgetProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [audioInitialized, setAudioInitialized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -283,6 +310,56 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       }, 100);
     }
   }, [messages, isOpen, isTyping]);
+
+  // Initialize audio on first user interaction
+  useEffect(() => {
+    const initializeAudioOnInteraction = async () => {
+      if (!audioInitialized) {
+        try {
+          const { initAudio } = await import("../../utils/audioUtils");
+          await initAudio();
+          setAudioInitialized(true);
+          console.log("Chat widget: Audio initialized on user interaction");
+        } catch (error) {
+          console.error("Chat widget: Failed to initialize audio:", error);
+        }
+      }
+    };
+
+    // Listen for any user interaction to initialize audio
+    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    events.forEach(event => {
+      document.addEventListener(event, initializeAudioOnInteraction, { once: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, initializeAudioOnInteraction);
+      });
+    };
+  }, [audioInitialized]);
+
+  // Auto-open chat widget after 15 seconds if not on dashboard pages
+  useEffect(() => {
+    const isDashboardPage = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    
+    if (!isDashboardPage && !hasAutoOpened && !isOpen) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        setHasAutoOpened(true);
+        // Play pleasant sound when auto-opening (only if audio was initialized)
+        if (audioInitialized) {
+          playSound().catch(() => {
+            console.log("Audio not available for chat widget auto-open");
+          });
+        } else {
+          console.log("Audio not initialized yet, skipping auto-open sound");
+        }
+      }, 15000); // 15 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, hasAutoOpened, isOpen, audioInitialized]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -402,7 +479,15 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       
       <ChatButton 
         $isOpen={isOpen}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          // Play sound when manually opening chat
+          if (!isOpen) {
+            playSound().catch(() => {
+              console.log("Audio not available for manual chat open");
+            });
+          }
+        }}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
         {isOpen ? <FaTimes /> : <FaComment />}
