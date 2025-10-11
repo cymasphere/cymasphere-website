@@ -8,6 +8,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
+import ChatWidget from "@/components/chat/ChatWidget";
 import { usePathname } from "next/navigation";
 
 // Theme configuration
@@ -131,6 +132,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               {children}
             </Main>
             {!shouldHideHeaderFooter && <Footer />}
+            <ChatWidget />
           </LayoutWrapper>
         </AuthProvider>
       </ToastProvider>
