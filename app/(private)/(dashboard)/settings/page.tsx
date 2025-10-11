@@ -135,6 +135,8 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 1rem;
+  display: flex;
+  align-items: center;
 
   &:hover {
     transform: translateY(-2px);

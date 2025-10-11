@@ -96,7 +96,23 @@ export async function fetchIsAdmin(
     .eq("user", id)
     .single();
 
-  return { is_admin: !!data, error };
+  console.log(`[fetchIsAdmin] Checking admin status for user ${id}:`, { data, error });
+
+  // Handle case where no admin record exists (PGRST116 = no rows returned)
+  if (error && error.code === 'PGRST116') {
+    console.log(`[fetchIsAdmin] No admin record found for user ${id}`);
+    return { is_admin: false, error: null };
+  }
+
+  // Handle other errors
+  if (error) {
+    console.log(`[fetchIsAdmin] Error checking admin status:`, error);
+    return { is_admin: false, error };
+  }
+
+  const isAdmin = !!data;
+  console.log(`[fetchIsAdmin] User ${id} is_admin:`, isAdmin);
+  return { is_admin: isAdmin, error: null };
 }
 
 /**

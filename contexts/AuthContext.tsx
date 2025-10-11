@@ -148,6 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 ? adminError.message
                 : String(adminError)
             );
+          } else {
+            console.log(`[AuthContext] Admin status for ${logged_in_user.email}:`, is_admin);
           }
 
           if (profile) {

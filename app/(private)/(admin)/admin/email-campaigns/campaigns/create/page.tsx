@@ -2128,6 +2128,18 @@ function CreateCampaignPage() {
       return;
     }
 
+    // 🔍 DEBUG: Check padding values before sending test email
+    console.log("🎯 TEST EMAIL PADDING DEBUG - First element before test send:", {
+      id: emailElements[0]?.id,
+      type: emailElements[0]?.type,
+      paddingTop: emailElements[0]?.paddingTop,
+      paddingBottom: emailElements[0]?.paddingBottom,
+      paddingLeft: emailElements[0]?.paddingLeft,
+      paddingRight: emailElements[0]?.paddingRight,
+      fullWidth: emailElements[0]?.fullWidth,
+      allKeys: Object.keys(emailElements[0] || {})
+    });
+
     try {
       setIsSending(true);
       setSendingMessage(`Sending test to ${email}...`);
@@ -2742,7 +2754,7 @@ function CreateCampaignPage() {
         ? window.btoa(unescape(encodeURIComponent(elementsJson)))
         : Buffer.from(elementsJson, 'utf8').toString('base64');
       const embeddedComment = `<!--ELEMENTS_B64:${elementsB64}-->`;
-      const generatedHtml = committedElements.map(el => `<div data-type="${el.type}" data-id="${el.id}">${el.content || ''}</div>`).join('');
+      const generatedHtml = committedElements.map(el => `<div data-type="${el.type}" data-id="${el.id}">${el.content || ''}</div>`).join('\n');
       const htmlWithEmbed = `${embeddedComment}${generatedHtml}`;
 
       // Use PUT for editing existing campaigns, POST for creating new ones
@@ -2826,6 +2838,18 @@ function CreateCampaignPage() {
           }
         } catch {}
         return el;
+      });
+
+      // 🔍 DEBUG: Check padding values before sending
+      console.log("🎯 FRONTEND PADDING DEBUG - First element before send:", {
+        id: committedElements[0]?.id,
+        type: committedElements[0]?.type,
+        paddingTop: committedElements[0]?.paddingTop,
+        paddingBottom: committedElements[0]?.paddingBottom,
+        paddingLeft: committedElements[0]?.paddingLeft,
+        paddingRight: committedElements[0]?.paddingRight,
+        fullWidth: committedElements[0]?.fullWidth,
+        allKeys: Object.keys(committedElements[0] || {})
       });
 
       // Serialize full editor state so saved campaign retains exact blocks/types/properties
@@ -2989,7 +3013,7 @@ function CreateCampaignPage() {
       }
     } catch (error) {
       console.error('Error deleting campaign:', error);
-      setSendingMessage(`Error deleting campaign: ${error.message}`);
+      setSendingMessage(`Error deleting campaign: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setTimeout(() => setSendingMessage(''), 5000);
     } finally {
       setIsDeleting(false);
@@ -3480,8 +3504,8 @@ function CreateCampaignPage() {
       const fontStyle = element.fontStyle || 'normal';
       const textDecoration = element.textDecoration || 'none';
       const textAlign = element.textAlign || 'left';
-      const paddingTop = element.paddingTop || 16;
-      const paddingBottom = element.paddingBottom || 16;
+      const paddingTop = element.paddingTop ?? 16;
+      const paddingBottom = element.paddingBottom ?? 16;
       const textColor = element.textColor || '#555';
       const backgroundColor = element.backgroundColor || 'transparent';
       const fontFamily = element.fontFamily || 'Arial, sans-serif';

@@ -27,18 +27,21 @@ export async function GET() {
     .single();
 
   // Check if user is admin
-  const { data: adminCheck } = await supabase
+  const { data: adminCheck, error: adminError } = await supabase
     .from("admins")
     .select("*")
     .eq("user", user.id)
     .single();
+
+  // Handle case where no admin record exists (PGRST116 = no rows returned)
+  const isAdmin = adminError && adminError.code === 'PGRST116' ? false : !!adminCheck;
 
   return NextResponse.json({
     user: {
       id: user.id,
       email: user.email,
       profile,
-      isAdmin: !!adminCheck,
+      isAdmin,
       adminRecord: adminCheck,
     },
   });

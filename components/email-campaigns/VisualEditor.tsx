@@ -308,7 +308,7 @@ const ElementControl = styled.button`
 
 // Drag handle for element reordering
 const DragHandle = styled.div.withConfig({
-  shouldForwardProp: (prop) => true,
+  shouldForwardProp: (prop) => prop !== 'fullWidth',
 })<{ fullWidth?: boolean }>`
   position: absolute;
   left: ${props => props.fullWidth ? '4px' : '-20px'};
@@ -2031,6 +2031,17 @@ export default function VisualEditor({
     console.log('🔄 updateElement called:', { elementId, updates });
     console.log('🔄 Current emailElements before update:', emailElements);
     
+    // Debug: Log padding-related updates
+    if (updates.paddingTop !== undefined || updates.paddingBottom !== undefined || updates.paddingLeft !== undefined || updates.paddingRight !== undefined) {
+      console.log('🎯 PADDING UPDATE:', {
+        elementId,
+        paddingTop: updates.paddingTop,
+        paddingBottom: updates.paddingBottom,
+        paddingLeft: updates.paddingLeft,
+        paddingRight: updates.paddingRight
+      });
+    }
+    
     // Capture any unsaved text content from the DOM before updating
     const currentTextContent = (() => {
       try {
@@ -2088,7 +2099,8 @@ export default function VisualEditor({
   };
 
   // ✨ NEW: Update element padding
-  const updateElementPadding = (elementId: string, paddingType: 'paddingTop' | 'paddingBottom', value: number) => {
+  const updateElementPadding = (elementId: string, paddingType: 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight', value: number) => {
+    console.log('🎯 PADDING UPDATE:', { elementId, paddingType, value });
     setEmailElements(emailElements.map(el => 
       el.id === elementId ? { ...el, [paddingType]: value } : el
     ));
@@ -2148,6 +2160,11 @@ export default function VisualEditor({
         fontSize: element.fontSize,
         textColor: element.textColor,
         backgroundColor: element.backgroundColor,
+        paddingTop: element.paddingTop,
+        paddingBottom: element.paddingBottom,
+        paddingLeft: element.paddingLeft,
+        paddingRight: element.paddingRight,
+        fullWidth: element.fullWidth,
         isSelected: selectedElementId === element.id,
         selectedElementId: selectedElementId,
         hasTightSpacing: hasTightSpacing
@@ -2382,7 +2399,7 @@ export default function VisualEditor({
         {element.type === 'header' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || (element.fullWidth ? 24 : 32)}px ${element.paddingBottom || 16}px ${element.paddingLeft || (element.fullWidth ? 24 : 32)}px`
+            padding: `${element.paddingTop ?? 16}px ${element.paddingRight ?? (element.fullWidth ? 24 : 32)}px ${element.paddingBottom ?? 16}px ${element.paddingLeft ?? (element.fullWidth ? 24 : 32)}px`
           }}>
             {isShowingRawHtml(element.id) ? (
               <textarea
@@ -2496,7 +2513,7 @@ export default function VisualEditor({
         {element.type === 'text' && (
           <div style={{ 
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || (element.fullWidth ? 24 : 32)}px ${element.paddingBottom || 16}px ${element.paddingLeft || (element.fullWidth ? 24 : 32)}px`
+            padding: `${element.paddingTop ?? 16}px ${element.paddingRight ?? (element.fullWidth ? 24 : 32)}px ${element.paddingBottom ?? 16}px ${element.paddingLeft ?? (element.fullWidth ? 24 : 32)}px`
           }}>
             {(() => {
               console.log('🎨 Rendering text element:', { 
@@ -2623,7 +2640,7 @@ export default function VisualEditor({
             margin: 0,
             width: element.fullWidth ? '100%' : 'auto',
             position: 'relative',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
+            padding: `${element.paddingTop ?? 16}px ${element.paddingRight ?? 0}px ${element.paddingBottom ?? 16}px ${element.paddingLeft ?? 0}px`
           }}>
             {/* ✨ NEW: Formatting toolbar for button text - ABOVE the button */}
             {isEditing && (
@@ -2816,7 +2833,7 @@ export default function VisualEditor({
             margin: 0, 
             position: 'relative',
             width: element.fullWidth ? '100%' : 'auto',
-            padding: `${element.paddingTop || 16}px ${element.paddingRight || 0}px ${element.paddingBottom || 16}px ${element.paddingLeft || 0}px`
+            padding: `${element.paddingTop ?? 16}px ${element.paddingRight ?? 0}px ${element.paddingBottom ?? 16}px ${element.paddingLeft ?? 0}px`
           }}>
             {/* Upload progress indicator */}
             {imageUploading === element.id && (
@@ -3111,7 +3128,7 @@ export default function VisualEditor({
         {element.type === 'footer' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
+            padding: `${element.paddingTop ?? 0}px ${element.paddingRight ?? 0}px ${element.paddingBottom ?? 0}px ${element.paddingLeft ?? 0}px`,
             fontSize: '0.8rem', 
             color: element.textColor || '#ffffff',
             background: element.backgroundColor || '#363636',
@@ -3226,7 +3243,7 @@ export default function VisualEditor({
         {element.type === 'brand-header' && (
           <div style={{ 
             textAlign: 'center', 
-            padding: `${element.paddingTop || 0}px ${element.paddingRight || 0}px ${element.paddingBottom || 0}px ${element.paddingLeft || 0}px`,
+            padding: `${element.paddingTop ?? 0}px ${element.paddingRight ?? 0}px ${element.paddingBottom ?? 0}px ${element.paddingLeft ?? 0}px`,
             background: element.backgroundColor || 'linear-gradient(135deg, #1a1a1a 0%, #121212 100%)',
             display: 'flex',
             alignItems: 'center',
