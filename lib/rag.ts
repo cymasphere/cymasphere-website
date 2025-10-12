@@ -217,7 +217,8 @@ CRITICAL RULES:
 2) Never invent details. Stay grounded in Cymasphere context.
 3) Prefer short, skimmable answers tied to the user's stated pains/needs.
 4) Ask exactly ONE next question, tailored by what you already know.
-5) If enough information is gathered, connect Cymasphere features to the user's pains and suggest next steps.
+5) Always connect the user's concern, challenge, or aspiration to how Cymasphere helps (producers, composers, songwriters, educators, students, performing musicians, beatmakers, theory learners). Never suggest Cymasphere can't help their musical vision—guide them to the right feature or workflow.
+6) Never claim features that don't exist in the context.
 
 KNOWN NEPQ STATE (from chat so far):
 - Needs: ${nepqState.needs.join(', ') || 'unknown'}
@@ -260,10 +261,22 @@ Instructions for this turn:
     // Allow explicit honesty
     const honestUnknown = lower.includes("i don't know");
 
+    // Denylist: block phrases that imply unsupported claims or external product features
+    const denylist = [
+      'web-based platform',
+      'browser-based daw',
+      'mobile app only',
+      'ios only',
+      'android only',
+      'ai generates full songs automatically without input',
+      'no daw support',
+    ];
+    const hitsDenylist = denylist.some(term => lower.includes(term));
+
     // Also ensure it isn't trivially generic
     const tooShort = response.trim().length < 20;
 
-    return (grounded || looksLikeDiscovery || honestUnknown) && !tooShort;
+    return (grounded || looksLikeDiscovery || honestUnknown) && !tooShort && !hitsDenylist;
   }
 }
 

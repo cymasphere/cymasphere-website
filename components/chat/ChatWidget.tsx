@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -29,11 +30,17 @@ const playSound = async () => {
   }
 };
 
+interface MessageCTA {
+  label: string;
+  href: string;
+}
+
 interface Message {
   id: string;
   text: string;
   isUser: boolean;
   timestamp: Date;
+  cta?: MessageCTA | null;
 }
 
 const ChatContainer = styled.div<{ $isOpen: boolean }>`
@@ -188,6 +195,25 @@ const MessageTime = styled.div<{ $isUser: boolean }>`
   opacity: 0.7;
   margin-top: 4px;
   text-align: ${props => props.$isUser ? 'right' : 'left'};
+`;
+
+const CTAButton = styled.span`
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(108, 99, 255, 0.45);
+  }
 `;
 
 const InputContainer = styled.div`
@@ -393,8 +419,18 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         id: (Date.now() + 1).toString(),
         text: data.response || "I'm sorry, I couldn't process your message right now. Please try again.",
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        cta: null
       };
+
+      // If message mentions pricing/plans/trial, append CTA to view pricing section
+      const pricingRegex = /(price|pricing|plan|plans|monthly|yearly|lifetime|trial|subscribe|upgrade)/i;
+      if (pricingRegex.test(botMessage.text)) {
+        botMessage.cta = {
+          label: 'View pricing',
+          href: '/#pricing',
+        };
+      }
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -437,7 +473,14 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
               {message.isUser ? (
                 message.text
               ) : (
-                <ReactMarkdown>{message.text}</ReactMarkdown>
+                <>
+                  <ReactMarkdown>{message.text}</ReactMarkdown>
+                  {message.cta && (
+                    <Link href={message.cta.href} passHref>
+                      <CTAButton>{message.cta.label}</CTAButton>
+                    </Link>
+                  )}
+                </>
               )}
               <MessageTime $isUser={message.isUser}>
                 {message.timestamp.toLocaleTimeString([], { 

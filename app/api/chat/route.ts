@@ -21,29 +21,42 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
 
 // Sales-focused responses and FAQ data
 const FAQ_RESPONSES = {
+  smalltalk: {
+    keywords: [
+      'how are you',
+      "how's it going",
+      'hows it going',
+      "what's up",
+      'whats up',
+      'sup',
+      'yo',
+      'hey there'
+    ],
+    response: "I'm doing great and ready to help with your music. Are you focusing on chord progressions, melodies, or arranging a full song?"
+  },
   pricing: {
     keywords: ['price', 'cost', 'pricing', 'subscription', 'plan', 'free', 'trial', 'money'],
-    response: "For current pricing and plans, please check the pricing section on the Cymasphere website. What specific pricing questions do you have?"
+    response: "Cymasphere keeps pricing simple—Monthly $6, Yearly $59 (save 25%), Lifetime $149. Which option best fits how you plan to use Cymasphere?"
   },
   features: {
     keywords: ['feature', 'tool', 'synthesizer', 'drum', 'instrument', 'effect', 'what can', 'capabilities'],
-    response: "To see all available features and tools, please visit the features section on the Cymasphere website. What are you hoping to create?"
+    response: "Cymasphere helps with chords, melody patterns, voice-led progressions, and DAW integration (AU/VST3/Standalone). What are you creating—progressions, melodies, or arranging a full song?"
   },
   getting_started: {
     keywords: ['start', 'begin', 'how to', 'tutorial', 'learn', 'new user', 'first time'],
-    response: "Check out the getting started guide and tutorials on the Cymasphere website. What would you like to learn first?"
+    response: "Quick start: build a chord progression with the Harmony Palette, enable Voicing Generator for smooth transitions, then add a melody in the Dynamic Pattern Editor. Would you like a 3-step guide for your DAW?"
   },
   support: {
     keywords: ['help', 'support', 'problem', 'issue', 'bug', 'contact', 'customer service'],
-    response: "For support, please visit the help center on the Cymasphere website or contact support directly. What specific issue are you having?"
+    response: "I can help troubleshoot. Cymasphere includes built-in help and premium support. What’s blocking you right now in your workflow?"
   },
   comparison: {
     keywords: ['vs', 'compare', 'better than', 'alternative', 'competitor', 'fl studio', 'ableton', 'logic'],
-    response: "To see how Cymasphere compares to other tools, check the comparison information on the website. What are you currently using?"
+    response: "Cymasphere complements your DAW by generating harmonically sound progressions, voice-led voicings, and adaptive melody patterns. What DAW are you using so I can tailor guidance?"
   },
   technical: {
     keywords: ['system requirements', 'specs', 'compatible', 'browser', 'device', 'performance'],
-    response: "For technical requirements and compatibility, please check the system requirements section on the Cymasphere website. What device are you planning to use?"
+    response: "Cymasphere runs as Standalone, AU (macOS), and VST3—works with major DAWs on Mac/Windows. What OS and DAW are you on?"
   }
 };
 
@@ -123,9 +136,15 @@ function generateFallbackResponse(message: string): string {
     return FAQ_RESPONSES[intent as keyof typeof FAQ_RESPONSES].response;
   }
   
-  // Default responses for common questions (NEPQ-optimized)
+  // Default responses for common questions (NEPQ-optimized, value-weaving)
   if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-    return "Hello! I'm here to help you explore Cymasphere. What's the main result you're hoping to create right now?";
+    return "Hello! I'm here to help you explore Cymasphere—tools for harmony, melody, and arrangement that integrate with your DAW. What's the main result you're hoping to create right now?";
+  }
+
+  // Handle ultra-short smalltalk like just "what" or "what?"
+  const trimmed = message.trim().toLowerCase();
+  if (trimmed === 'what' || trimmed === 'what?') {
+    return "I'm here to help with your music. What are you working on—chord progressions, melodies, or arranging your track?";
   }
   
   if (message.toLowerCase().includes('thank')) {
@@ -136,8 +155,8 @@ function generateFallbackResponse(message: string): string {
     return "Thanks for chatting! Feel free to come back anytime if you have more questions.";
   }
   
-  // General helpful response using NEPQ methodology (ask ONE high-impact question)
-  return "I don't know that information. I can help with Cymasphere. What feels most challenging right now—chord progressions, melodies, or arranging your song?";
+  // General helpful response using NEPQ methodology (ask ONE high-impact question) and always tie back to Cymasphere
+  return "I don't know that information. Cymasphere helps producers, composers, songwriters, students, and educators with chords, melody patterns, and voice-led progressions. What feels most challenging right now—chord progressions, melodies, or arranging your song?";
 }
 
 export async function POST(request: NextRequest) {
