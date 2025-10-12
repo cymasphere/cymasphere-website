@@ -51,6 +51,20 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    align-items: center;
+  }
+  
+  @media (max-width: 360px) {
+    bottom: 5px;
+    right: 5px;
+    left: 5px;
+  }
 `;
 
 const ChatButton = styled.button<{ $isOpen: boolean }>`
@@ -86,6 +100,19 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   overflow: hidden;
   margin-bottom: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    width: calc(100vw - 40px);
+    max-width: 420px;
+    height: calc(100vh - 120px);
+    max-height: 500px;
+  }
+  
+  @media (max-width: 360px) {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 100px);
+  }
 `;
 
 const ChatHeader = styled.div`
@@ -127,6 +154,12 @@ const MessagesContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 10px;
+  }
 `;
 
 const MessageBubble = styled.div<{ $isUser: boolean }>`
@@ -140,6 +173,20 @@ const MessageBubble = styled.div<{ $isUser: boolean }>`
   align-self: ${props => props.$isUser ? 'flex-end' : 'flex-start'};
   word-wrap: break-word;
   position: relative;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    max-width: 90%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 360px) {
+    max-width: 95%;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 
   /* Markdown styling */
   p {
@@ -221,6 +268,12 @@ const InputContainer = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   gap: 8px;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 6px;
+  }
 `;
 
 const MessageInput = styled.input`
@@ -233,6 +286,18 @@ const MessageInput = styled.input`
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 18px;
+  }
+  
+  @media (max-width: 360px) {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 
   &:focus {
     border-color: var(--primary);
@@ -255,6 +320,17 @@ const SendButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+  }
+  
+  @media (max-width: 360px) {
+    width: 32px;
+    height: 32px;
+  }
 
   &:hover {
     transform: scale(1.1);
