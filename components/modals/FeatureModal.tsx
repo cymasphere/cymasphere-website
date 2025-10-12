@@ -574,6 +574,7 @@ const FeatureDescription = styled.div`
   color: rgba(255, 255, 255, 0.95);
   flex: 1;
   min-height: 0;
+  font-weight: 400; /* ensure default regular weight */
 
   h3 {
     font-size: clamp(1.4rem, 2vw, 1.7rem);
@@ -589,10 +590,13 @@ const FeatureDescription = styled.div`
 
   p {
     margin-bottom: 10px;
+    font-weight: 400;
   }
 
   ul {
-    padding-left: 20px;
+    list-style: disc;
+    list-style-position: outside;
+    padding-left: 22px;
     margin-top: 8px;
     margin-bottom: 10px;
   }
@@ -601,39 +605,28 @@ const FeatureDescription = styled.div`
     margin-bottom: 8px;
     position: relative;
 
+    /* Ensure default bullet markers are visible even if globals reset them */
+    list-style: inherit;
+
     @media (max-width: 480px) {
       margin-bottom: 12px;
     }
   }
 
-  /* Attribution styling */
-  p.attribution {
-    font-style: italic;
-    opacity: 0.7;
-    font-size: 0.9em;
-    margin-top: 12px;
-    margin-bottom: 10px;
+  /* Only bold the keyword wrappers; everything else stays regular */
+  b,
+  strong {
+    font-weight: 700;
   }
 
-  @media (max-width: 768px) {
-    width: 100%;
-    margin-top: 0;
-    padding-bottom: 0;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
-    margin-top: 0;
-    padding-bottom: 0;
-
-    h3 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    ul {
-      padding-left: 15px;
-    }
+  /* Gradient-highlight the keyword inside list items */
+  li strong {
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
   }
 `;
 

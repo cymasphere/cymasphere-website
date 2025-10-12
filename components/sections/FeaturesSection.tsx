@@ -262,12 +262,78 @@ const FeaturesSection = () => {
   const formatDetailedDescription = (feature: string) => {
     // Get the features array and ensure it's properly typed
     const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
-    
+
+    const stopWords = [
+      'to','for','with','in','on','from','into','across','over','under','and','or','of','that','which','when','where','while','as'
+    ];
+
     // Create list items for each feature
     const featuresList = featureItems.map((item: string) => {
-      const hasDash = item.includes(' - ');
-      const [title, description] = hasDash ? item.split(' - ', 2) : [item, ''];
-      return `<li><strong>${title}</strong>${hasDash ? ` - ${description}` : ''}</li>`;
+      // Define specific keywords that should be bold for each feature type
+      const keywordPatterns = [
+        // Song Builder features
+        { pattern: /^(Professional Transport Controls)/i, bold: '$1' },
+        { pattern: /^(Interactive Timeline)/i, bold: '$1' },
+        { pattern: /^(Multi-Track Management)/i, bold: '$1' },
+        { pattern: /^(Comprehensive Arrangement View)/i, bold: '$1' },
+        { pattern: /^(Chord Progression Framework)/i, bold: '$1' },
+        { pattern: /^(Informative Keyboard Display)/i, bold: '$1' },
+        
+        // Harmony Palettes features
+        { pattern: /^(Customizable Bank Arrangement)/i, bold: '$1' },
+        { pattern: /^(Drag and Drop Voicings)/i, bold: '$1' },
+        { pattern: /^(Curated Collection Library)/i, bold: '$1' },
+        { pattern: /^(One-Click Transposition)/i, bold: '$1' },
+        { pattern: /^(Voicing Parameter Dashboard)/i, bold: '$1' },
+        { pattern: /^(Custom Bank Creation)/i, bold: '$1' },
+        
+        // Pattern Editor features
+        { pattern: /^(Intelligent Adaptation)/i, bold: '$1' },
+        { pattern: /^(Advanced Piano Roll Interface)/i, bold: '$1' },
+        { pattern: /^(Context-Aware Note Entry)/i, bold: '$1' },
+        { pattern: /^(Dual Mode Operation)/i, bold: '$1' },
+        { pattern: /^(Melodic Essence Extraction)/i, bold: '$1' },
+        
+        // Voicing Generator features
+        { pattern: /^(Advanced Chord Editor)/i, bold: '$1' },
+        { pattern: /^(Intelligent Voice Leading)/i, bold: '$1' },
+        { pattern: /^(Texture Controls)/i, bold: '$1' },
+        { pattern: /^(Harmonic Extensions)/i, bold: '$1' },
+        { pattern: /^(Multi-Level Settings)/i, bold: '$1' },
+        
+        // Progression Timeline features
+        { pattern: /^(Intuitive Timeline Interface)/i, bold: '$1' },
+        { pattern: /^(Ghost Track Learning System)/i, bold: '$1' },
+        { pattern: /^(Real-time Reharmonization)/i, bold: '$1' },
+        { pattern: /^(Section-based Organization)/i, bold: '$1' },
+        { pattern: /^(Drag and Drop Chord Arrangement)/i, bold: '$1' },
+        { pattern: /^(Display Toggling)/i, bold: '$1' },
+        { pattern: /^(Dynamic Pattern Updates)/i, bold: '$1' },
+        
+        // Voice Handling features
+        { pattern: /^(Dynamic Voice Count)/i, bold: '$1' },
+        { pattern: /^(Smooth Voice Leading)/i, bold: '$1' },
+        { pattern: /^(Per-Voice MIDI Channel Routing)/i, bold: '$1' },
+        { pattern: /^(Voice Range Constraints)/i, bold: '$1' },
+        { pattern: /^(Designated Bass Channel)/i, bold: '$1' },
+        { pattern: /^(Voice \/ Channel Matrix)/i, bold: '$1' }
+      ];
+      
+      // Find matching pattern and apply bold formatting
+      for (const { pattern, bold } of keywordPatterns) {
+        if (pattern.test(item)) {
+          const highlighted = item.replace(pattern, `<strong>${bold}</strong>`);
+          return `<li>${highlighted}</li>`;
+        }
+      }
+      
+      // Fallback: bold first 2-3 words if no specific pattern matches
+      const words = item.split(' ').filter(Boolean);
+      const keywordLength = Math.min(3, Math.max(2, words.length));
+      const keyword = words.slice(0, keywordLength).join(' ');
+      const rest = words.slice(keywordLength).join(' ');
+      
+      return `<li><strong>${keyword}</strong>${rest ? ` ${rest}` : ''}</li>`;
     }).join('');
 
     return `
