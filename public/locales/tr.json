@@ -171,6 +171,51 @@
         "Temel kontrol için belirlenmiş bas kanalı - Pedal tonları ve ses yönlendirme için ayrık kontroller",
         "Zahmetsiz MIDI yönlendirme için ses/kanal matrisi - Sesleri MIDI kanalları ve enstrümanlara görsel olarak eşleyin"
       ]
+    },
+    "dawIntegration": {
+      "title": "DAW Entegrasyonu",
+      "description": "Profesyonel iş akışları için favori DAW'nizle VST3 veya AU eklentisi olarak sorunsuz bağlantı kurun.",
+      "modalTitle": "Profesyonel DAW Entegrasyonu",
+      "modalDescription": "Cymasphere, mevcut üretim iş akışınıza sorunsuz bir şekilde entegre olur. Bağımsız uygulama olarak veya DAW'niz içinde güçlü bir eklenti olarak kullanın, tercih ettiğiniz şekilde çalışma esnekliği sağlayın.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "VST3 Eklenti Desteği - Windows ve macOS uyumluluğu, tüm büyük DAW'lar ile",
+        "AU Eklenti Desteği - Logic Pro, GarageBand ve diğer AU uyumlu ana bilgisayarlarda çalışan macOS kullanıcıları için",
+        "Bağımsız Uygulama Modu - Bağımsız müzik yaratımı ve deneyim için",
+        "MIDI Çıkış Yönlendirmesi - Oluşturulan desenleri ve ilerlemeleri DAW'nizdeki herhangi bir enstrümana gönderin",
+        "Gerçek Zamanlı Senkronizasyon - DAW'nizin taşıma kontrolleri ve temposu ile",
+        "Sorunsuz İş Akışı Entegrasyonu - Mevcut üretim sürecinize uyum sağlar"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Özelleşmiş Parça Türleri",
+      "description": "Düzenli müzik yaratımı için özel seslendirme, desen, sıralayıcı ve groove parçaları ile çalışın.",
+      "modalTitle": "Düzenli Parça Mimarisi",
+      "modalDescription": "Cymasphere, müzik öğelerinizi mantıklı bir şekilde düzenleyen özelleşmiş parça türlerini sunar. Her parça türü, karmaşık kompozisyonlar için akıcı bir iş akışı oluşturan kendi özel işlevi için optimize edilmiştir.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Seslendirme Parçaları - Akıllı akor seslendirme ve ses yönlendirme ilkelerini kullanan zengin armonik bağlam",
+        "Desen Parçaları - Akor değişikliklerine gerçek zamanlı olarak dinamik olarak uyum sağlayan melodik ve ritmik diziler",
+        "Sıralayıcı Parçalar - Gelişmiş desen seçimi ve zaman varyasyonları ile seslendirmelerin ritmik arpejlemesi",
+        "Groove Parçaları - Adım sıralayıcı arayüzü ile davul vuruşları ve perküsif desenler oluşturmak için",
+        "Bağımsız Parça Kontrolleri - Parça başına sessiz, solo, ses ve yönlendirme seçenekleri",
+        "Parça Bölgeleri - Parçalarınızın müzik verilerini kolayca manipüle etmenize, yeniden konumlandırmanıza ve kırpmanıza olanak tanır"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Akıllı Üretim",
+      "description": "Müzik bağlamınıza uyum sağlayan dinamik desenler, ilerlemeler ve davul groove'larının AI destekli üretimi.",
+      "modalTitle": "AI Destekli Müzik Üretimi",
+      "modalDescription": "Cymasphere'nin akıllı üretim sistemi, yaratıcı girdilerinize yanıt veren müzikal olarak tutarlı desenler, ilerlemeler ve groove'lar oluşturur. AI, müzik bağlamını anlar ve kompozisyonunuza uygun içerik üretir.",
+      "keyFeatures": "Ana özellikler:",
+      "features": [
+        "Dinamik Desen Üretimi - Akor ilerlemelerinize dayalı melodi ve diziler oluşturur",
+        "Akıllı İlerleme Yaratımı - Müzikal olarak tatmin edici akor dizileri ve ses yönlendirme",
+        "Uyarlanabilir Davul Groove Üretimi - Parçanızın temposu, ölçüsü ve stilistik bağlamına uyum sağlar",
+        "Bağlam Farkındalıklı Üretim - Yeni içerik oluştururken mevcut müzik öğelerini dikkate alır",
+        "Stil Tabanlı Üretim - Farklı müzik türleri ve ruh halleri için seçenekler",
+        "Gerçek Zamanlı Uyarlama - Kompozisyonunuzu değiştirdiğinizde üretilen içerik otomatik olarak güncellenir"
+      ]
     }
   },
   "howItWorks": {

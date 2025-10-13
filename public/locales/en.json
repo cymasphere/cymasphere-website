@@ -175,6 +175,51 @@
         "Designated Bass Channel for foundation control - Discrete controls for pedal tones and voice leading",
         "Voice / Channel Matrix for effortless MIDI routing - Visually map voices to MIDI channels and instruments"
       ]
+    },
+    "dawIntegration": {
+      "title": "DAW Integration",
+      "description": "Seamlessly connect with your favorite DAW as a VST3 or AU plugin for professional workflows.",
+      "modalTitle": "Professional DAW Integration",
+      "modalDescription": "Cymasphere integrates seamlessly with your existing production workflow. Use it as a standalone application or as a powerful plugin within your DAW, giving you the flexibility to work however you prefer.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "VST3 Plugin Support for Windows and macOS compatibility with all major DAWs",
+        "AU Plugin Support for macOS users working in Logic Pro, GarageBand, and other AU-compatible hosts",
+        "Standalone Application Mode for independent music creation and experimentation",
+        "MIDI Output Routing to send generated patterns and progressions to any instrument in your DAW",
+        "Real-time Synchronization with your DAW's transport controls and tempo",
+        "Seamless Workflow Integration that adapts to your existing production process"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Specialized Track Types",
+      "description": "Work with dedicated voicing, pattern, sequencer, and groove tracks for organized music creation.",
+      "modalTitle": "Organized Track Architecture",
+      "modalDescription": "Cymasphere features specialized track types that organize your musical elements logically. Each track type is optimized for its specific function, creating a streamlined workflow for complex compositions.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Voicing Tracks with rich harmonic context that use intelligent chord voicing and voice leading principles",
+        "Pattern Tracks for melodic and rhythmic sequences that dynamically adapt to chord changes in real-time",
+        "Sequencer Tracks for rhythmic arpeggiation of voicings with advanced pattern selection and time variations",
+        "Groove Tracks for making drum beats and percussive patterns with a step-sequencer interface",
+        "Independent Track Controls with per-track mute, solo, volume, and routing options",
+        "Track Regions that allow you to easily manipulate, reposition, and trim your track's musical data"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Intelligent Generation",
+      "description": "AI-powered generation of dynamic patterns, progressions, and drum grooves that adapt to your musical context.",
+      "modalTitle": "AI-Powered Music Generation",
+      "modalDescription": "Cymasphere's intelligent generation system creates musically coherent patterns, progressions, and grooves that respond to your creative input. The AI understands musical context and generates content that fits your composition.",
+      "keyFeatures": "Key Features:",
+      "features": [
+        "Dynamic Pattern Generation that creates melodies and sequences based on your chord progressions",
+        "Intelligent Progression Creation with musically satisfying chord sequences and voice leading",
+        "Adaptive Drum Groove Generation that matches your track's tempo, meter, and stylistic context",
+        "Context-Aware Generation that considers existing musical elements when creating new content",
+        "Style-Based Generation with options for different musical genres and moods",
+        "Real-Time Adaptation where generated content updates automatically as you modify your composition"
+      ]
     }
   },
   "howItWorks": {

@@ -171,6 +171,51 @@
         "Notenfilterung - Beschränken Sie Stimmen auf bestimmte Register oder Noten",
         "Ensemble-Konfiguration - Vordefinierte Arrangements für verschiedene Formationen"
       ]
+    },
+    "dawIntegration": {
+      "title": "DAW-Integration",
+      "description": "Verbinden Sie sich nahtlos mit Ihrer bevorzugten DAW als VST3- oder AU-Plugin für professionelle Workflows.",
+      "modalTitle": "Professionelle DAW-Integration",
+      "modalDescription": "Cymasphere integriert sich nahtlos in Ihren bestehenden Produktions-Workflow. Verwenden Sie es als eigenständige Anwendung oder als leistungsstarkes Plugin in Ihrer DAW und erhalten Sie die Flexibilität, so zu arbeiten, wie Sie es bevorzugen.",
+      "keyFeatures": "Hauptfunktionen:",
+      "features": [
+        "VST3-Plugin-Unterstützung für Windows- und macOS-Kompatibilität mit allen großen DAWs",
+        "AU-Plugin-Unterstützung für macOS-Benutzer, die in Logic Pro, GarageBand und anderen AU-kompatiblen Hosts arbeiten",
+        "Eigenständiger Anwendungsmodus für unabhängige Musikerstellung und Experimentierung",
+        "MIDI-Ausgabe-Routing zum Senden generierter Muster und Progressionen an jedes Instrument in Ihrer DAW",
+        "Echtzeit-Synchronisation mit den Transport- und Tempo-Steuerungen Ihrer DAW",
+        "Nahtlose Workflow-Integration, die sich an Ihren bestehenden Produktionsprozess anpasst"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Spezialisierte Spurtypen",
+      "description": "Arbeiten Sie mit dedizierten Voicing-, Pattern-, Sequencer- und Groove-Spuren für organisierte Musikerstellung.",
+      "modalTitle": "Organisierte Spur-Architektur",
+      "modalDescription": "Cymasphere bietet spezialisierte Spurtypen, die Ihre musikalischen Elemente logisch organisieren. Jeder Spurtyp ist für seine spezifische Funktion optimiert und schafft einen rationalisierten Workflow für komplexe Kompositionen.",
+      "keyFeatures": "Hauptfunktionen:",
+      "features": [
+        "Voicing-Spuren mit reichem harmonischen Kontext, die intelligente Akkord-Voicing- und Stimmführungsprinzipien verwenden",
+        "Pattern-Spuren für melodische und rhythmische Sequenzen, die sich dynamisch an Akkordwechsel in Echtzeit anpassen",
+        "Sequencer-Spuren für rhythmische Arpeggiation von Voicings mit erweiterten Musterauswahl- und Zeitvariationen",
+        "Groove-Spuren zum Erstellen von Drum-Beats und perkussiven Mustern mit einer Step-Sequencer-Oberfläche",
+        "Unabhängige Spur-Steuerungen mit pro-Spur Mute-, Solo-, Lautstärke- und Routing-Optionen",
+        "Spur-Regionen, die es Ihnen ermöglichen, die musikalischen Daten Ihrer Spuren einfach zu manipulieren, neu zu positionieren und zu trimmen"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Intelligente Generierung",
+      "description": "KI-gestützte Generierung dynamischer Muster, Progressionen und Drum-Grooves, die sich an Ihren musikalischen Kontext anpassen.",
+      "modalTitle": "KI-gestützte Musikgenerierung",
+      "modalDescription": "Cymaspheres intelligentes Generierungssystem erstellt musikalisch kohärente Muster, Progressionen und Grooves, die auf Ihre kreative Eingabe reagieren. Die KI versteht den musikalischen Kontext und generiert Inhalte, die zu Ihrer Komposition passen.",
+      "keyFeatures": "Hauptfunktionen:",
+      "features": [
+        "Dynamische Muster-Generierung, die Melodien und Sequenzen basierend auf Ihren Akkordprogressionen erstellt",
+        "Intelligente Progression-Erstellung mit musikalisch befriedigenden Akkordsequenzen und Stimmführung",
+        "Adaptive Drum-Groove-Generierung, die dem Tempo, Takt und stilistischen Kontext Ihrer Spur entspricht",
+        "Kontextbewusste Generierung, die bestehende musikalische Elemente bei der Erstellung neuer Inhalte berücksichtigt",
+        "Stilbasierte Generierung mit Optionen für verschiedene Musikgenres und Stimmungen",
+        "Echtzeit-Anpassung, bei der sich generierte Inhalte automatisch aktualisieren, wenn Sie Ihre Komposition ändern"
+      ]
     }
   },
   "synth": {

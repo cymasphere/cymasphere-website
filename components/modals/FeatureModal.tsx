@@ -9,7 +9,6 @@ import {
   FaChevronRight,
   FaInfoCircle,
   FaSearchPlus,
-  FaSpinner,
 } from "react-icons/fa";
 import DOMPurify from "dompurify";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -833,6 +832,10 @@ const getImagePath = (title: string): { webp: string; png: string } | null => {
       webp: `${publicUrl}/images/voicing_view.webp`,
       png: `${publicUrl}/images/voicing_view.png`
     },
+    "DAW Integration": {
+      webp: `${publicUrl}/images/DAW.webp`,
+      png: `${publicUrl}/images/DAW.png`
+    },
   };
 
   // Fallback images for any feature without a specific image
@@ -873,35 +876,6 @@ const getImagePath = (title: string): { webp: string; png: string } | null => {
   return imagePaths;
 };
 
-// Loading spinner component
-const LoadingSpinner = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  
-  svg {
-    font-size: 24px;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-`;
-
-const LoadingText = styled.span`
-  font-size: 14px;
-  font-weight: 500;
-  opacity: 0.8;
-`;
 
 // Add a visual feedback indicator for swipe actions on mobile
 const SwipeIndicator = styled.div<SwipeIndicatorProps>`
@@ -971,7 +945,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
   const [direction, setDirection] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [isLoading, setIsLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -986,7 +959,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
   // Update currentIndex when initialIndex changes or modal opens
   useEffect(() => {
     if (isOpen) {
-      setIsLoading(true); // Show loading when modal opens
       setCurrentIndex(initialIndex);
       // Focus the modal container to enable keyboard navigation
       setTimeout(() => {
@@ -994,8 +966,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
           modalRef.current.focus();
         }
       }, 100);
-    } else {
-      setIsLoading(false); // Hide loading when modal closes
     }
   }, [initialIndex, isOpen]);
 
@@ -1057,7 +1027,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
     // Prevent rapid multiple clicks
     if (direction !== 0) return;
 
-    setIsLoading(true); // Show loading when navigating
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % features.length);
   }, [features.length, direction]);
@@ -1066,7 +1035,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
     // Prevent rapid multiple clicks
     if (direction !== 0) return;
 
-    setIsLoading(true); // Show loading when navigating
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + features.length) % features.length);
   }, [features.length, direction]);
@@ -1094,7 +1062,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
     
     const imagePaths = featureImage ? { webp: featureImage, png: featureImage } : getImagePath(title);
     if (!imagePaths) {
-      setIsLoading(false); // Hide loading if no image to load
       return;
     }
 
@@ -1102,18 +1069,15 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
     const img = new Image();
     img.onload = () => {
       setImagesLoaded((prev) => ({ ...prev, [title]: true }));
-      setIsLoading(false); // Hide loading when image loads
     };
     img.onerror = () => {
       // Try PNG fallback
       const pngImg = new Image();
       pngImg.onload = () => {
         setImagesLoaded((prev) => ({ ...prev, [title]: true }));
-        setIsLoading(false); // Hide loading when PNG loads
       };
       pngImg.onerror = () => {
         setImageErrors((prev) => ({ ...prev, [title]: true }));
-        setIsLoading(false); // Hide loading on error
       };
       pngImg.src = imagePaths.png;
     };
@@ -1248,13 +1212,6 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleSwipe}
             >
-              {/* Loading spinner */}
-              {isLoading && (
-                <LoadingSpinner>
-                  <FaSpinner />
-                  <LoadingText>Loading feature...</LoadingText>
-                </LoadingSpinner>
-              )}
               {/* Add these swipe indicators */}
               <SwipeIndicator
                 className="left"

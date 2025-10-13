@@ -172,6 +172,51 @@
         "Filtrage de notes - Limitez les voix à des registres ou notes spécifiques",
         "Configuration d'ensemble - Prédéfinissez des arrangements pour différentes formations"
       ]
+    },
+    "dawIntegration": {
+      "title": "Intégration DAW",
+      "description": "Connectez-vous de manière transparente avec votre DAW préféré en tant que plugin VST3 ou AU pour des flux de travail professionnels.",
+      "modalTitle": "Intégration DAW Professionnelle",
+      "modalDescription": "Cymasphere s'intègre de manière transparente dans votre flux de travail de production existant. Utilisez-le comme application autonome ou comme plugin puissant dans votre DAW, vous donnant la flexibilité de travailler comme vous préférez.",
+      "keyFeatures": "Caractéristiques Clés:",
+      "features": [
+        "Support Plugin VST3 pour compatibilité Windows et macOS avec tous les DAW majeurs",
+        "Support Plugin AU pour utilisateurs macOS travaillant dans Logic Pro, GarageBand et autres hôtes compatibles AU",
+        "Mode Application Autonome pour création musicale indépendante et expérimentation",
+        "Routage de Sortie MIDI pour envoyer des motifs et progressions générés à tout instrument dans votre DAW",
+        "Synchronisation Temps Réel avec les contrôles de transport et tempo de votre DAW",
+        "Intégration de Flux de Travail Transparente qui s'adapte à votre processus de production existant"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Types de Pistes Spécialisés",
+      "description": "Travaillez avec des pistes dédiées de voicing, pattern, séquenceur et groove pour une création musicale organisée.",
+      "modalTitle": "Architecture de Pistes Organisée",
+      "modalDescription": "Cymasphere propose des types de pistes spécialisés qui organisent vos éléments musicaux de manière logique. Chaque type de piste est optimisé pour sa fonction spécifique, créant un flux de travail rationalisé pour des compositions complexes.",
+      "keyFeatures": "Caractéristiques Clés:",
+      "features": [
+        "Pistes de Voicing avec contexte harmonique riche utilisant des principes intelligents de voicing d'accords et de conduite de voix",
+        "Pistes de Pattern pour séquences mélodiques et rythmiques qui s'adaptent dynamiquement aux changements d'accords en temps réel",
+        "Pistes de Séquenceur pour arpégiation rythmique de voicings avec sélection de motifs avancée et variations temporelles",
+        "Pistes de Groove pour créer des beats de batterie et motifs percussifs avec une interface step-séquenceur",
+        "Contrôles de Pistes Indépendants avec options de mute, solo, volume et routage par piste",
+        "Régions de Pistes qui vous permettent de manipuler, repositionner et couper facilement les données musicales de vos pistes"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Génération Intelligente",
+      "description": "Génération alimentée par IA de motifs dynamiques, progressions et grooves de batterie qui s'adaptent à votre contexte musical.",
+      "modalTitle": "Génération Musicale Alimentée par IA",
+      "modalDescription": "Le système de génération intelligente de Cymasphere crée des motifs, progressions et grooves musicalement cohérents qui répondent à votre input créatif. L'IA comprend le contexte musical et génère du contenu qui s'adapte à votre composition.",
+      "keyFeatures": "Caractéristiques Clés:",
+      "features": [
+        "Génération de Motifs Dynamiques qui crée des mélodies et séquences basées sur vos progressions d'accords",
+        "Création de Progression Intelligente avec séquences d'accords musicalement satisfaisantes et conduite de voix",
+        "Génération de Groove de Batterie Adaptative qui correspond au tempo, mètre et contexte stylistique de votre piste",
+        "Génération Consciente du Contexte qui considère les éléments musicaux existants lors de la création de nouveau contenu",
+        "Génération Basée sur le Style avec options pour différents genres musicaux et ambiances",
+        "Adaptation Temps Réel où le contenu généré se met à jour automatiquement lorsque vous modifiez votre composition"
+      ]
     }
   },
   "synth": {

@@ -171,6 +171,51 @@
         "Canal de baixo designado para controle de fundação - Controles discretos para notas pedal e condução de vozes",
         "Matriz voz/canal para roteamento MIDI sem esforço - Mapeie visualmente vozes para canais MIDI e instrumentos"
       ]
+    },
+    "dawIntegration": {
+      "title": "Integração DAW",
+      "description": "Conecte-se perfeitamente com seu DAW favorito como plugin VST3 ou AU para fluxos de trabalho profissionais.",
+      "modalTitle": "Integração DAW Profissional",
+      "modalDescription": "Cymasphere se integra perfeitamente ao seu fluxo de trabalho de produção existente. Use-o como aplicação standalone ou como plugin poderoso dentro do seu DAW, dando-lhe a flexibilidade de trabalhar como preferir.",
+      "keyFeatures": "Recursos principais:",
+      "features": [
+        "Suporte Plugin VST3 para compatibilidade Windows e macOS com todos os DAWs principais",
+        "Suporte Plugin AU para usuários macOS trabalhando no Logic Pro, GarageBand e outros hosts compatíveis com AU",
+        "Modo Aplicação Standalone para criação musical independente e experimentação",
+        "Roteamento de Saída MIDI para enviar padrões e progressões gerados para qualquer instrumento no seu DAW",
+        "Sincronização Tempo Real com os controles de transporte e tempo do seu DAW",
+        "Integração de Fluxo de Trabalho Perfeita que se adapta ao seu processo de produção existente"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Tipos de Faixa Especializados",
+      "description": "Trabalhe com faixas dedicadas de voicing, pattern, sequencer e groove para criação musical organizada.",
+      "modalTitle": "Arquitetura de Faixa Organizada",
+      "modalDescription": "Cymasphere apresenta tipos de faixa especializados que organizam seus elementos musicais logicamente. Cada tipo de faixa é otimizado para sua função específica, criando um fluxo de trabalho simplificado para composições complexas.",
+      "keyFeatures": "Recursos principais:",
+      "features": [
+        "Faixas Voicing com contexto harmônico rico que usam princípios inteligentes de voicing de acordes e condução de vozes",
+        "Faixas Pattern para sequências melódicas e rítmicas que se adaptam dinamicamente a mudanças de acordes em tempo real",
+        "Faixas Sequencer para arpejação rítmica de voicings com seleção avançada de padrões e variações temporais",
+        "Faixas Groove para criar batidas de bateria e padrões percussivos com uma interface step-sequencer",
+        "Controles de Faixa Independentes com opções de mute, solo, volume e roteamento por faixa",
+        "Regiões de Faixa que permitem manipular, reposicionar e cortar facilmente os dados musicais das suas faixas"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Geração Inteligente",
+      "description": "Geração alimentada por IA de padrões dinâmicos, progressões e grooves de bateria que se adaptam ao seu contexto musical.",
+      "modalTitle": "Geração Musical Alimentada por IA",
+      "modalDescription": "O sistema de geração inteligente do Cymasphere cria padrões, progressões e grooves musicalmente coerentes que respondem à sua entrada criativa. A IA entende o contexto musical e gera conteúdo que se adapta à sua composição.",
+      "keyFeatures": "Recursos principais:",
+      "features": [
+        "Geração de Padrões Dinâmicos que cria melodias e sequências baseadas nas suas progressões de acordes",
+        "Criação de Progressão Inteligente com sequências de acordes musicalmente satisfatórias e condução de vozes",
+        "Geração de Groove de Bateria Adaptativa que corresponde ao tempo, métrica e contexto estilístico da sua faixa",
+        "Geração Consciente do Contexto que considera elementos musicais existentes ao criar novo conteúdo",
+        "Geração Baseada em Estilo com opções para diferentes gêneros musicais e humores",
+        "Adaptação Tempo Real onde o conteúdo gerado se atualiza automaticamente quando você modifica sua composição"
+      ]
     }
   },
   "howItWorks": {

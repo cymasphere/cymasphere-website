@@ -10,7 +10,10 @@ import {
   FaLayerGroup,
   FaVolumeUp,
   FaClock,
+  FaPlug,
+  FaList,
 } from "react-icons/fa";
+import { GiBrain } from "react-icons/gi";
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
@@ -262,6 +265,12 @@ const FeaturesSection = () => {
   const formatDetailedDescription = (feature: string) => {
     // Get the features array and ensure it's properly typed
     const featureItems = t(`features.${feature}.features`, { returnObjects: true }) as string[];
+    
+    // Safety check: if featureItems is not an array, return empty string
+    if (!Array.isArray(featureItems)) {
+      console.warn(`Features array not found for: ${feature}`, featureItems);
+      return '';
+    }
 
     const stopWords = [
       'to','for','with','in','on','from','into','across','over','under','and','or','of','that','which','when','where','while','as'
@@ -316,7 +325,31 @@ const FeaturesSection = () => {
         { pattern: /^(Per-Voice MIDI Channel Routing)/i, bold: '$1' },
         { pattern: /^(Voice Range Constraints)/i, bold: '$1' },
         { pattern: /^(Designated Bass Channel)/i, bold: '$1' },
-        { pattern: /^(Voice \/ Channel Matrix)/i, bold: '$1' }
+        { pattern: /^(Voice \/ Channel Matrix)/i, bold: '$1' },
+        
+        // DAW Integration features
+        { pattern: /^(VST3 Plugin Support)/i, bold: '$1' },
+        { pattern: /^(AU Plugin Support)/i, bold: '$1' },
+        { pattern: /^(Standalone Application Mode)/i, bold: '$1' },
+        { pattern: /^(MIDI Output Routing)/i, bold: '$1' },
+        { pattern: /^(Real-time Synchronization)/i, bold: '$1' },
+        { pattern: /^(Seamless Workflow Integration)/i, bold: '$1' },
+        
+        // Specialized Track Types features
+        { pattern: /^(Voicing Tracks)/i, bold: '$1' },
+        { pattern: /^(Pattern Tracks)/i, bold: '$1' },
+        { pattern: /^(Sequencer Tracks)/i, bold: '$1' },
+        { pattern: /^(Groove Tracks)/i, bold: '$1' },
+        { pattern: /^(Independent Track Controls)/i, bold: '$1' },
+        { pattern: /^(Track Regions)/i, bold: '$1' },
+        
+        // Intelligent Generation features
+        { pattern: /^(Dynamic Pattern Generation)/i, bold: '$1' },
+        { pattern: /^(Intelligent Progression Creation)/i, bold: '$1' },
+        { pattern: /^(Adaptive Drum Groove Generation)/i, bold: '$1' },
+        { pattern: /^(Context-Aware Generation)/i, bold: '$1' },
+        { pattern: /^(Style-Based Generation)/i, bold: '$1' },
+        { pattern: /^(Real-Time Adaptation)/i, bold: '$1' }
       ];
       
       // Find matching pattern and apply bold formatting
@@ -357,11 +390,21 @@ const FeaturesSection = () => {
       315,  // Bottom-left to top-right
       90,   // Top to bottom
       270,  // Bottom to top
+      60,   // Additional rotation for 7th card
+      150,  // Additional rotation for 8th card
+      240,  // Additional rotation for 9th card
     ];
   }, []);
 
-  const featuresData = React.useMemo(
-    () => [
+  const featuresData = React.useMemo(() => {
+    // Check if translations are ready
+    const isReady = t("features.songBuilder.title") !== "features.songBuilder.title";
+    
+    if (!isReady) {
+      return [];
+    }
+
+    return [
       {
         icon: <FaLayerGroup />,
         title: t("features.songBuilder.title"),
@@ -395,11 +438,11 @@ const FeaturesSection = () => {
         rotation: cardRotations[3],
       },
       {
-        icon: <FaClock />,
-        title: t("features.progressionTimeline.title"),
-        description: t("features.progressionTimeline.description"),
-        detailedDescription: formatDetailedDescription("progressionTimeline"),
-        color: "#9013FE",
+        icon: <GiBrain />,
+        title: t("features.intelligentGeneration.title"),
+        description: t("features.intelligentGeneration.description"),
+        detailedDescription: formatDetailedDescription("intelligentGeneration"),
+        color: "#00BCD4",
         rotation: cardRotations[4],
       },
       {
@@ -410,9 +453,32 @@ const FeaturesSection = () => {
         color: "#4CAF50",
         rotation: cardRotations[5],
       },
-    ],
-    [t, currentLocale, i18n.language, cardRotations]
-  );
+      {
+        icon: <FaPlug />,
+        title: t("features.dawIntegration.title"),
+        description: t("features.dawIntegration.description"),
+        detailedDescription: formatDetailedDescription("dawIntegration"),
+        color: "#FF6B35",
+        rotation: cardRotations[6],
+      },
+      {
+        icon: <FaList />,
+        title: t("features.specializedTrackTypes.title"),
+        description: t("features.specializedTrackTypes.description"),
+        detailedDescription: formatDetailedDescription("specializedTrackTypes"),
+        color: "#9C27B0",
+        rotation: cardRotations[7],
+      },
+      {
+        icon: <FaClock />,
+        title: t("features.progressionTimeline.title"),
+        description: t("features.progressionTimeline.description"),
+        detailedDescription: formatDetailedDescription("progressionTimeline"),
+        color: "#9013FE",
+        rotation: cardRotations[8],
+      },
+    ];
+  }, [t, currentLocale, i18n.language, cardRotations]);
 
   return (
     <FeaturesContainer id="features">

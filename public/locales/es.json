@@ -171,6 +171,51 @@
         "Canal de Bajo Designado para control de fundamentos - Controles discretos para tonos de pedal y conducción de voces",
         "Matriz de Voz / Canal para enrutamiento MIDI sin esfuerzo - Mapea visualmente voces a canales MIDI e instrumentos"
       ]
+    },
+    "dawIntegration": {
+      "title": "Integración DAW",
+      "description": "Conéctate sin problemas con tu DAW favorito como plugin VST3 o AU para flujos de trabajo profesionales.",
+      "modalTitle": "Integración DAW Profesional",
+      "modalDescription": "Cymasphere se integra sin problemas en tu flujo de trabajo de producción existente. Úsalo como aplicación independiente o como plugin poderoso dentro de tu DAW, dándote la flexibilidad de trabajar como prefieras.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Soporte Plugin VST3 para compatibilidad Windows y macOS con todos los DAW principales",
+        "Soporte Plugin AU para usuarios macOS trabajando en Logic Pro, GarageBand y otros hosts compatibles con AU",
+        "Modo Aplicación Independiente para creación musical independiente y experimentación",
+        "Enrutamiento de Salida MIDI para enviar patrones y progresiones generados a cualquier instrumento en tu DAW",
+        "Sincronización Tiempo Real con los controles de transporte y tempo de tu DAW",
+        "Integración de Flujo de Trabajo Sin Problemas que se adapta a tu proceso de producción existente"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Tipos de Pistas Especializadas",
+      "description": "Trabaja con pistas dedicadas de voicing, pattern, secuenciador y groove para creación musical organizada.",
+      "modalTitle": "Arquitectura de Pistas Organizada",
+      "modalDescription": "Cymasphere presenta tipos de pistas especializadas que organizan tus elementos musicales lógicamente. Cada tipo de pista está optimizado para su función específica, creando un flujo de trabajo simplificado para composiciones complejas.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Pistas de Voicing con contexto armónico rico que usan principios inteligentes de voicing de acordes y conducción de voces",
+        "Pistas de Pattern para secuencias melódicas y rítmicas que se adaptan dinámicamente a cambios de acordes en tiempo real",
+        "Pistas de Secuenciador para arpegización rítmica de voicings con selección avanzada de patrones y variaciones de tiempo",
+        "Pistas de Groove para crear beats de batería y patrones percusivos con una interfaz step-secuenciador",
+        "Controles de Pistas Independientes con opciones de mute, solo, volumen y enrutamiento por pista",
+        "Regiones de Pistas que te permiten manipular, reposicionar y recortar fácilmente los datos musicales de tus pistas"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Generación Inteligente",
+      "description": "Generación impulsada por IA de patrones dinámicos, progresiones y grooves de batería que se adaptan a tu contexto musical.",
+      "modalTitle": "Generación Musical Impulsada por IA",
+      "modalDescription": "El sistema de generación inteligente de Cymasphere crea patrones, progresiones y grooves musicalmente coherentes que responden a tu input creativo. La IA entiende el contexto musical y genera contenido que se adapta a tu composición.",
+      "keyFeatures": "Características Principales:",
+      "features": [
+        "Generación de Patrones Dinámicos que crea melodías y secuencias basadas en tus progresiones de acordes",
+        "Creación de Progresión Inteligente con secuencias de acordes musicalmente satisfactorias y conducción de voces",
+        "Generación de Groove de Batería Adaptativa que coincide con el tempo, metro y contexto estilístico de tu pista",
+        "Generación Consciente del Contexto que considera elementos musicales existentes al crear nuevo contenido",
+        "Generación Basada en Estilo con opciones para diferentes géneros musicales y estados de ánimo",
+        "Adaptación Tiempo Real donde el contenido generado se actualiza automáticamente cuando modificas tu composición"
+      ]
     }
   },
   "synth": {

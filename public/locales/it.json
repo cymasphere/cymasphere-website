@@ -171,6 +171,51 @@
         "Canale basso designato per controllo fondazione - Controlli discreti per note pedale e condotta delle voci",
         "Matrice voce/canale per routing MIDI senza sforzo - Mappa visualmente voci a canali MIDI e strumenti"
       ]
+    },
+    "dawIntegration": {
+      "title": "Integrazione DAW",
+      "description": "Connettiti senza problemi con il tuo DAW preferito come plugin VST3 o AU per flussi di lavoro professionali.",
+      "modalTitle": "Integrazione DAW Professionale",
+      "modalDescription": "Cymasphere si integra senza problemi nel tuo flusso di lavoro di produzione esistente. Usalo come applicazione standalone o come plugin potente all'interno del tuo DAW, dandoti la flessibilità di lavorare come preferisci.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Supporto Plugin VST3 per compatibilità Windows e macOS con tutti i DAW principali",
+        "Supporto Plugin AU per utenti macOS che lavorano in Logic Pro, GarageBand e altri host compatibili AU",
+        "Modalità Applicazione Standalone per creazione musicale indipendente e sperimentazione",
+        "Routing Output MIDI per inviare pattern e progressioni generate a qualsiasi strumento nel tuo DAW",
+        "Sincronizzazione Tempo Reale con i controlli di trasporto e tempo del tuo DAW",
+        "Integrazione Flusso di Lavoro Senza Problemi che si adatta al tuo processo di produzione esistente"
+      ]
+    },
+    "specializedTrackTypes": {
+      "title": "Tipi di Traccia Specializzati",
+      "description": "Lavora con tracce dedicate di voicing, pattern, sequencer e groove per creazione musicale organizzata.",
+      "modalTitle": "Architettura Traccia Organizzata",
+      "modalDescription": "Cymasphere presenta tipi di traccia specializzati che organizzano i tuoi elementi musicali logicamente. Ogni tipo di traccia è ottimizzato per la sua funzione specifica, creando un flusso di lavoro semplificato per composizioni complesse.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Tracce Voicing con contesto armonico ricco che usano principi intelligenti di voicing accordi e condotta delle voci",
+        "Tracce Pattern per sequenze melodiche e ritmiche che si adattano dinamicamente ai cambi di accordi in tempo reale",
+        "Tracce Sequencer per arpeggiazione ritmica di voicings con selezione pattern avanzata e variazioni temporali",
+        "Tracce Groove per creare beat di batteria e pattern percussivi con un'interfaccia step-sequencer",
+        "Controlli Traccia Indipendenti con opzioni mute, solo, volume e routing per traccia",
+        "Regioni Traccia che ti permettono di manipolare, riposizionare e tagliare facilmente i dati musicali delle tue tracce"
+      ]
+    },
+    "intelligentGeneration": {
+      "title": "Generazione Intelligente",
+      "description": "Generazione alimentata da IA di pattern dinamici, progressioni e groove di batteria che si adattano al tuo contesto musicale.",
+      "modalTitle": "Generazione Musicale Alimentata da IA",
+      "modalDescription": "Il sistema di generazione intelligente di Cymasphere crea pattern, progressioni e groove musicalmente coerenti che rispondono al tuo input creativo. L'IA comprende il contesto musicale e genera contenuti che si adattano alla tua composizione.",
+      "keyFeatures": "Caratteristiche principali:",
+      "features": [
+        "Generazione Pattern Dinamici che crea melodie e sequenze basate sulle tue progressioni di accordi",
+        "Creazione Progressione Intelligente con sequenze di accordi musicalmente soddisfacenti e condotta delle voci",
+        "Generazione Groove Batteria Adattiva che corrisponde al tempo, metro e contesto stilistico della tua traccia",
+        "Generazione Consapevole del Contesto che considera elementi musicali esistenti quando crea nuovo contenuto",
+        "Generazione Basata sullo Stile con opzioni per diversi generi musicali e stati d'animo",
+        "Adattamento Tempo Reale dove il contenuto generato si aggiorna automaticamente quando modifichi la tua composizione"
+      ]
     }
   },
   "synth": {
