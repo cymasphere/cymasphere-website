@@ -155,6 +155,29 @@ function generateFallbackResponse(message: string): string {
     return "Thanks for chatting! Feel free to come back anytime if you have more questions.";
   }
   
+  // Handle musical struggles and emotional questions with empathy
+  if (message.toLowerCase().includes('sucks') || 
+      message.toLowerCase().includes('terrible') || 
+      message.toLowerCase().includes('bad at music') ||
+      message.toLowerCase().includes('not good') ||
+      message.toLowerCase().includes('awful')) {
+    return "I totally get that feeling - every musician has been there! The good news is that Cymasphere is designed to help you create musically satisfying results even when you're feeling stuck. It guides you toward chord progressions and melodies that work together harmonically. What's the main thing that's frustrating you right now - getting started, or feeling like your ideas don't sound right?";
+  }
+
+  if (message.toLowerCase().includes('stuck') || 
+      message.toLowerCase().includes('rut') ||
+      message.toLowerCase().includes('blocked') ||
+      message.toLowerCase().includes('can\'t create')) {
+    return "Creative blocks are so common! Cymasphere can help break you out of that rut by suggesting new harmonic possibilities and chord progressions you might not have considered. The Harmony Palette lets you explore different musical directions visually. What type of music are you trying to create - are you working on chord progressions, melodies, or full arrangements?";
+  }
+
+  if (message.toLowerCase().includes('theory') && 
+      (message.toLowerCase().includes('don\'t know') || 
+       message.toLowerCase().includes('confused') ||
+       message.toLowerCase().includes('hard'))) {
+    return "You don't need to know music theory to use Cymasphere! That's actually one of its biggest strengths - it handles all the complex theory behind the scenes while you focus on creating. The visual interfaces help you understand musical relationships intuitively as you work. What would you like to create - chord progressions, melodies, or full songs?";
+  }
+
   // General helpful response using NEPQ methodology (ask ONE high-impact question) and always tie back to Cymasphere
   return "I don't know that information. Cymasphere helps producers, composers, songwriters, students, and educators with chords, melody patterns, and voice-led progressions. What feels most challenging right now—chord progressions, melodies, or arranging your song?";
 }

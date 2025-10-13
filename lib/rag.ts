@@ -155,6 +155,49 @@ Founded in 2022 by a team of dedicated musicians, software engineers, and music 
 - Music teachers and educators
 - Composers and arrangers
 - Anyone interested in intelligent music creation
+
+## Musical Support and Encouragement
+Cymasphere understands that music creation can be challenging and frustrating at times. Many musicians struggle with:
+- Feeling like their music isn't good enough
+- Getting stuck in creative ruts
+- Not knowing where to start with composition
+- Struggling with music theory concepts
+- Comparing themselves to other musicians
+- Feeling overwhelmed by technical aspects
+
+Cymasphere is designed to help overcome these challenges by:
+- Making music theory accessible and visual
+- Providing intelligent guidance without judgment
+- Offering tools that grow with your skill level
+- Removing technical barriers to creativity
+- Helping you understand why certain musical choices work
+- Building confidence through understanding
+
+## Common Musical Struggles and Solutions
+**"My music sucks" / "I'm not good at music"**
+- Every musician has felt this way - it's part of the creative process
+- Cymasphere helps by making music theory visual and accessible
+- Start with simple chord progressions and build from there
+- The app guides you toward musically satisfying choices
+- Focus on progress, not perfection
+
+**"I don't know music theory"**
+- Cymasphere requires no prior music theory knowledge
+- Learn theory through practice, not memorization
+- Visual interfaces help you understand relationships intuitively
+- The app handles the complex theory behind the scenes
+
+**"I'm stuck in a creative rut"**
+- Try exploring different chord progressions with the Harmony Palette
+- Use the Voicing Generator to discover new harmonic possibilities
+- Experiment with different scales and modes
+- Let the app suggest musically coherent alternatives
+
+**"I can't finish songs"**
+- Start with chord progressions as your foundation
+- Use the Song Builder to organize your ideas
+- Break composition into smaller, manageable steps
+- Focus on one element at a time (harmony, then melody, then arrangement)
 `;
 
 class CymasphereRAG {
@@ -204,7 +247,7 @@ class CymasphereRAG {
     const nepqState = this.extractNEPQState(conversationHistory, query);
 
     // Layer 2: Generate response with retrieved context
-    const systemPrompt = `You are a sales assistant for Cymasphere who strictly follows NEPQ. Use ONLY the provided context to answer questions about Cymasphere.
+    const systemPrompt = `You are a sales assistant for Cymasphere who strictly follows NEPQ. You are also empathetic and supportive of musicians' creative struggles.
 
 NEPQ SALES STRATEGY (optimize for a single next step):
 - Need: Identify the user's specific creative goals and desired outcomes.
@@ -213,12 +256,13 @@ NEPQ SALES STRATEGY (optimize for a single next step):
 - Question: Ask ONE precise, high-impact question at a time to advance discovery.
 
 CRITICAL RULES:
-1) Only use information from the context below. If the context doesn’t have it, say "I don't know" and guide to site.
-2) Never invent details. Stay grounded in Cymasphere context.
-3) Prefer short, skimmable answers tied to the user's stated pains/needs.
-4) Ask exactly ONE next question, tailored by what you already know.
-5) Always connect the user's concern, challenge, or aspiration to how Cymasphere helps (producers, composers, songwriters, educators, students, performing musicians, beatmakers, theory learners). Never suggest Cymasphere can't help their musical vision—guide them to the right feature or workflow.
-6) Never claim features that don't exist in the context.
+1) For questions about Cymasphere features/pricing/technical details: Use ONLY information from the context below. If the context doesn't have it, say "I don't know" and guide to site.
+2) For emotional/musical struggles (like "my music sucks", "I'm stuck", "I don't know theory"): Be empathetic and encouraging. Use the musical support context to provide helpful, understanding responses.
+3) Never invent technical details about Cymasphere features. Stay grounded in Cymasphere context for product information.
+4) Prefer short, skimmable answers tied to the user's stated pains/needs.
+5) Ask exactly ONE next question, tailored by what you already know.
+6) Always connect the user's concern, challenge, or aspiration to how Cymasphere helps (producers, composers, songwriters, educators, students, performing musicians, beatmakers, theory learners). Never suggest Cymasphere can't help their musical vision—guide them to the right feature or workflow.
+7) Never claim features that don't exist in the context.
 
 KNOWN NEPQ STATE (from chat so far):
 - Needs: ${nepqState.needs.join(', ') || 'unknown'}
@@ -250,7 +294,7 @@ Instructions for this turn:
   }
 
   async verifyResponse(response: string, context: string): Promise<boolean> {
-    // Accept if response is clearly grounded OR is a valid NEPQ discovery step
+    // Accept if response is clearly grounded OR is a valid NEPQ discovery step OR is empathetic
     const keyTerms = ['cymasphere', 'song creation', 'standalone', 'plugin', 'daw', 'chord', 'melody', 'harmony', 'pricing', 'trial', 'monthly', 'yearly', 'lifetime'];
     const lower = response.toLowerCase();
     const grounded = keyTerms.some(term => lower.includes(term));
@@ -260,6 +304,18 @@ Instructions for this turn:
 
     // Allow explicit honesty
     const honestUnknown = lower.includes("i don't know");
+
+    // Allow empathetic responses for musical struggles
+    const isEmpathetic = (
+      lower.includes('totally get') ||
+      lower.includes('every musician') ||
+      lower.includes('so common') ||
+      lower.includes('creative blocks') ||
+      lower.includes('feeling stuck') ||
+      lower.includes('don\'t need to know') ||
+      lower.includes('behind the scenes') ||
+      lower.includes('intuitively')
+    );
 
     // Denylist: block phrases that imply unsupported claims or external product features
     const denylist = [
@@ -276,7 +332,7 @@ Instructions for this turn:
     // Also ensure it isn't trivially generic
     const tooShort = response.trim().length < 20;
 
-    return (grounded || looksLikeDiscovery || honestUnknown) && !tooShort && !hitsDenylist;
+    return (grounded || looksLikeDiscovery || honestUnknown || isEmpathetic) && !tooShort && !hitsDenylist;
   }
 }
 
