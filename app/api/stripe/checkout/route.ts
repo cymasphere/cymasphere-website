@@ -11,13 +11,11 @@ export async function POST(request: NextRequest) {
       planType,
       email,
       customerId,
-      promotionCode,
       collectPaymentMethod = false,
     }: {
       planType: PlanType;
       email?: string;
       customerId?: string;
-      promotionCode?: string;
       collectPaymentMethod?: boolean;
     } = body;
 
@@ -34,7 +32,6 @@ export async function POST(request: NextRequest) {
     const result = await createCheckoutSession(
       resolved_customer_id,
       planType,
-      promotionCode,
       collectPaymentMethod
     );
 
@@ -87,7 +84,6 @@ async function findOrCreateCustomer(email: string): Promise<string> {
 async function createCheckoutSession(
   customerId: string | undefined,
   planType: PlanType,
-  promotionCode?: string,
   collectPaymentMethod: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
@@ -108,28 +104,20 @@ async function createCheckoutSession(
       return { url: null, error: `Invalid plan type: ${planType}` };
     }
 
-    // Determine mode and setup based on plan type and collectPaymentMethod
-    let mode: "subscription" | "payment" | "setup";
-    let setupIntentData: any = undefined;
-    let subscriptionData: any = undefined;
+    // Determine mode based on plan type
+    let mode: "subscription" | "payment";
+    let subscriptionData:
+      | Stripe.Checkout.SessionCreateParams.SubscriptionData
+      | undefined = undefined;
 
     if (planType === "lifetime") {
       // Lifetime is a one-time payment
       mode = "payment";
-    } else if (collectPaymentMethod) {
-      // For trial with payment method collection, use setup mode
-      mode = "setup";
-      setupIntentData = {
-        metadata: {
-          plan_type: planType,
-          customer_id: customerId,
-        },
-      };
     } else {
-      // Regular subscription mode
+      // All other plans are subscriptions
       mode = "subscription";
       subscriptionData = {
-        trial_period_days: 7, // Default 7-day trial
+        trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
       };
     }
 
@@ -168,15 +156,8 @@ async function createCheckoutSession(
       sessionParams.subscription_data = subscriptionData;
     }
 
-    // Add setup intent data if applicable
-    if (setupIntentData) {
-      sessionParams.setup_intent_data = setupIntentData;
-    }
-
     // Enable entering promotion codes on the Checkout page
-    if (mode !== "setup") {
-      sessionParams.allow_promotion_codes = true;
-    }
+    sessionParams.allow_promotion_codes = true;
 
     // Create the checkout session
     const session = await stripe.checkout.sessions.create(sessionParams);

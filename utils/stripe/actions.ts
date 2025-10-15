@@ -10,14 +10,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  * Server action to initiate checkout process
  * @param planType The selected plan type
  * @param email Optional user email
- * @param promotionCode Optional promotion code to apply
  * @param collectPaymentMethod Whether to collect payment method during checkout (extends trial)
  */
 export async function initiateCheckout(
   planType: PlanType,
   email?: string,
   customerId?: string,
-  promotionCode?: string,
   collectPaymentMethod: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
@@ -33,7 +31,6 @@ export async function initiateCheckout(
     return await createCheckoutSession(
       resolved_customer_id,
       planType,
-      promotionCode,
       collectPaymentMethod
     );
   } catch (error) {
@@ -184,14 +181,12 @@ export async function getPrices(): Promise<{
  * Creates a Stripe checkout session for the selected plan
  * @param customerId Optional Stripe customer ID
  * @param planType The selected plan type (monthly, annual or lifetime)
- * @param promotionCode Optional promotion code to apply
  * @param collectPaymentMethod Whether to collect payment method during checkout (extends trial)
  * @returns Checkout session URL
  */
 export async function createCheckoutSession(
   customerId: string | undefined,
   planType: PlanType,
-  promotionCode?: string,
   collectPaymentMethod: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
@@ -248,27 +243,16 @@ export async function createCheckoutSession(
     // Enable entering promotion codes on the Checkout page
     sessionConfig.allow_promotion_codes = true;
 
-    // Set up trial configuration with different durations
-    const basicTrialDays = 7; // 7-day trial when not collecting payment info
-    const extendedTrialDays = 14; // 14-day trial when collecting payment info
-
     // Add trial period for subscription plans (not applicable to lifetime purchases)
     if (mode === "subscription") {
-      if (collectPaymentMethod) {
-        // If collecting payment method, provide extended trial
-        sessionConfig.subscription_data = {
-          trial_period_days: extendedTrialDays,
-        };
-        // Always collect payment method
-        sessionConfig.payment_method_collection = "always";
-      } else {
-        // Basic trial without requiring payment method
-        sessionConfig.subscription_data = {
-          trial_period_days: basicTrialDays,
-        };
-        // Make payment method optional
-        sessionConfig.payment_method_collection = "if_required";
-      }
+      sessionConfig.subscription_data = {
+        trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
+      };
+
+      // Set payment method collection based on collectPaymentMethod flag
+      sessionConfig.payment_method_collection = collectPaymentMethod
+        ? "always"
+        : "if_required";
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);

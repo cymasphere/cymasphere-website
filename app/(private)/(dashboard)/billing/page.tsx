@@ -621,49 +621,29 @@ export default function BillingPage() {
       confirmationTitle === "Starting Your Plan"
     ) {
       if (user && selectedBillingPeriod !== "none") {
-        // Get the appropriate promotion code based on the selected billing period
-        // Only apply promo codes for new customers, not for plan upgrades
-        let promotionCode: string | undefined;
-
-        // Only apply automatic promo codes for NEW customers (ones without an existing plan)
-        if (userSubscription.subscription === "none") {
-          if (
-            selectedBillingPeriod === "monthly" &&
-            monthlyDiscount?.promotion_code
-          ) {
-            promotionCode = monthlyDiscount.promotion_code;
-          } else if (
-            selectedBillingPeriod === "annual" &&
-            yearlyDiscount?.promotion_code
-          ) {
-            promotionCode = yearlyDiscount.promotion_code;
-          } else if (
-            selectedBillingPeriod === "lifetime" &&
-            lifetimeDiscount?.promotion_code
-          ) {
-            promotionCode = lifetimeDiscount.promotion_code;
-          }
-        }
-        // Else: For existing customers, don't pass a promo code - they can enter it manually at checkout
+        // Promotion codes are now handled manually by customers at checkout
 
         // Show loading state
         setIsLoadingPrices(true);
 
         try {
           // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
-          let validPlanType: 'monthly' | 'annual' | 'lifetime';
-          if (selectedBillingPeriod === 'monthly' || selectedBillingPeriod === 'annual' || selectedBillingPeriod === 'lifetime') {
+          let validPlanType: "monthly" | "annual" | "lifetime";
+          if (
+            selectedBillingPeriod === "monthly" ||
+            selectedBillingPeriod === "annual" ||
+            selectedBillingPeriod === "lifetime"
+          ) {
             validPlanType = selectedBillingPeriod;
           } else {
             // Default to monthly for 'admin', 'none', or any other invalid types
-            validPlanType = 'monthly';
+            validPlanType = "monthly";
           }
-          
+
           const { url, error } = await initiateCheckout(
             validPlanType,
             user.email,
             user.profile.customer_id || undefined,
-            promotionCode,
             // Card is always required for existing users
             userSubscription.subscription !== "none" ? true : willProvideCard
           );
