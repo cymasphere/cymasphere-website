@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaReceipt,
   FaHistory,
   FaTimes,
   FaCheck,
@@ -13,7 +12,7 @@ import {
   FaExternalLinkAlt,
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
-import { Profile, SubscriptionType } from "@/utils/supabase/types";
+import { SubscriptionType } from "@/utils/supabase/types";
 import {
   getUpcomingInvoice,
   updateSubscription,
@@ -279,23 +278,6 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
-const BillingInfo = styled.div`
-  display: flex;
-  align-items: center;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: rgba(108, 99, 255, 0.1);
-  border-radius: 6px;
-  font-size: 0.9rem;
-
-  svg {
-    color: var(--primary);
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-  }
-`;
-
 const AlertBanner = styled.div`
   background-color: rgba(255, 72, 66, 0.1);
   border: 1px solid rgba(255, 72, 66, 0.3);
@@ -318,25 +300,6 @@ const AlertBanner = styled.div`
     line-height: 1.5;
   }
 `;
-
-interface PlanOption {
-  name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice?: number;
-  description: string;
-  features: string[];
-}
-
-interface ProPlanOption extends PlanOption {
-  lifetimePrice: number;
-}
-
-interface PlanOptions {
-  basic: PlanOption;
-  pro: ProPlanOption;
-  team: PlanOption;
-}
 
 // Add these styled components for the loading overlay
 const LoadingOverlay = styled.div`
@@ -394,6 +357,9 @@ export default function BillingPage() {
     return diffDays > 0 ? diffDays : 0;
   }, [userSubscription.trial_expiration]);
 
+  // State for trial status checking
+  const [hasHadTrial, setHasHadTrial] = useState<boolean | null>(null);
+
   // State for plan prices and discounts
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -443,14 +409,6 @@ export default function BillingPage() {
   // Add state for portal redirect loading
   const [isPortalLoading, setIsPortalLoading] = useState(false);
 
-  // Helper function to format currency
-  const formatCurrency = (amount: number, currency: string = "usd") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
-  };
-
   // Check if user has completed a trial
   const hasCompletedTrial = useMemo(() => {
     // Consider a trial completed if:
@@ -477,6 +435,32 @@ export default function BillingPage() {
     // We'll just update lastUserUpdate to trigger data refetching
     setLastUserUpdate(new Date());
   };
+
+  // Function to check if customer has had a trial before
+  const checkTrialStatus = useCallback(async () => {
+    if (!user?.email) return;
+
+    try {
+      const response = await fetch("/api/stripe/check-trial-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        setHasHadTrial(false); // Default to false on error
+      } else {
+        setHasHadTrial(result.hasHadTrial);
+      }
+    } catch (error) {
+      console.error("Error checking trial status:", error);
+      setHasHadTrial(false); // Default to false on error
+    }
+  }, [user?.email]);
 
   // Fetch all data: prices, upcoming invoice, invoices
   // This useEffect depends on lastUserUpdate to trigger refetching when user data changes
@@ -591,11 +575,18 @@ export default function BillingPage() {
 
     // Fetch all data when component mounts or lastUserUpdate changes
     fetchAllData();
+
+    // Check trial status for logged-in users
+    if (user?.email) {
+      checkTrialStatus();
+    }
   }, [
     user?.profile?.customer_id,
     isInTrialPeriod,
     lastUserUpdate,
     userSubscription.subscription,
+    user?.email,
+    checkTrialStatus,
   ]);
 
   // Function to refresh all data
@@ -644,8 +635,9 @@ export default function BillingPage() {
             validPlanType,
             user.email,
             user.profile.customer_id || undefined,
-            // Card is always required for existing users
-            userSubscription.subscription !== "none" ? true : willProvideCard
+            // For customers who have had trials, always require payment method
+            // For new customers, use the willProvideCard setting
+            hasHadTrial === true ? true : willProvideCard
           );
 
           if (url) {
@@ -712,25 +704,38 @@ export default function BillingPage() {
       setConfirmationTitle(
         t("dashboard.billing.startingPlan", "Starting Your Plan")
       );
-      setConfirmationMessage(
-        t(
-          "dashboard.billing.startingPlanMessage",
-          "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}",
-          {
-            trialDays: willProvideCard ? "14" : "7",
-            plan: selectedBillingPeriod,
-            paymentMessage: willProvideCard
-              ? t(
-                  "dashboard.billing.withCardMessage",
-                  "You'll be asked to provide your payment details, but won't be charged until your trial ends."
-                )
-              : t(
-                  "dashboard.billing.withoutCardMessage",
-                  "You can use basic features without providing payment information."
-                ),
-          }
-        )
-      );
+      // Show different messages based on trial history
+      if (hasHadTrial === true) {
+        setConfirmationMessage(
+          t(
+            "dashboard.billing.startingPlanNoTrialMessage",
+            "You're subscribing to the {{plan}} plan. You'll be charged immediately since you've used a trial before.",
+            {
+              plan: selectedBillingPeriod,
+            }
+          )
+        );
+      } else {
+        setConfirmationMessage(
+          t(
+            "dashboard.billing.startingPlanMessage",
+            "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}",
+            {
+              trialDays: willProvideCard ? "14" : "7",
+              plan: selectedBillingPeriod,
+              paymentMessage: willProvideCard
+                ? t(
+                    "dashboard.billing.withCardMessage",
+                    "You'll be asked to provide your payment details, but won't be charged until your trial ends."
+                  )
+                : t(
+                    "dashboard.billing.withoutCardMessage",
+                    "You can use basic features without providing payment information."
+                  ),
+            }
+          )
+        );
+      }
       setShowConfirmationModal(true);
       setShowPlanModal(false);
       setIsPlanChangeLoading(false);
@@ -1311,6 +1316,7 @@ export default function BillingPage() {
             lifetimeDiscount={lifetimeDiscount || undefined}
             onCardToggleChange={handleCardToggleChange}
             isPlanChangeLoading={isPlanChangeLoading}
+            hasHadTrial={hasHadTrial}
           />
         )}
       </AnimatePresence>

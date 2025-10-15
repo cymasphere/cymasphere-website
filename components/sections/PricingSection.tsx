@@ -403,21 +403,21 @@ const ChordWeb = React.memo(() => {
       resizeTimeout = setTimeout(() => {
         // Get the device pixel ratio for sharp rendering
         const devicePixelRatio = window.devicePixelRatio || 1;
-        
+
         // Get the display size
         const displayWidth = canvas.clientWidth;
         const displayHeight = canvas.clientHeight;
-        
+
         // Set the actual canvas size to match display size * device pixel ratio
         canvas.width = displayWidth * devicePixelRatio;
         canvas.height = displayHeight * devicePixelRatio;
-        
+
         // Scale the context back down to display size
         context.scale(devicePixelRatio, devicePixelRatio);
-        
+
         // Set CSS size to display size
-        canvas.style.width = displayWidth + 'px';
-        canvas.style.height = displayHeight + 'px';
+        canvas.style.width = displayWidth + "px";
+        canvas.style.height = displayHeight + "px";
 
         // Re-initialize positions after resize
         positionsInitialized.current = false;
@@ -428,12 +428,12 @@ const ChordWeb = React.memo(() => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
-    
+
     canvas.width = displayWidth * devicePixelRatio;
     canvas.height = displayHeight * devicePixelRatio;
     context.scale(devicePixelRatio, devicePixelRatio);
-    canvas.style.width = displayWidth + 'px';
-    canvas.style.height = displayHeight + 'px';
+    canvas.style.width = displayWidth + "px";
+    canvas.style.height = displayHeight + "px";
 
     // Add event listeners
     canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -472,8 +472,10 @@ const ChordWeb = React.memo(() => {
         const angle = index * angleStep + (Math.random() * 0.2 - 0.1); // Reduced randomness
 
         // More pronounced elliptical distribution with less randomness and pushed further out
-        const radiusX = displayWidth * 0.45 + (Math.random() * 0.04 - 0.02) * displayWidth; // Increased from 0.38 to 0.45
-        const radiusY = displayHeight * 0.45 + (Math.random() * 0.04 - 0.02) * displayHeight; // Increased from 0.38 to 0.45
+        const radiusX =
+          displayWidth * 0.45 + (Math.random() * 0.04 - 0.02) * displayWidth; // Increased from 0.38 to 0.45
+        const radiusY =
+          displayHeight * 0.45 + (Math.random() * 0.04 - 0.02) * displayHeight; // Increased from 0.38 to 0.45
 
         const x = centerX + Math.cos(angle) * radiusX;
         const y = centerY + Math.sin(angle) * radiusY;
@@ -1874,7 +1876,6 @@ const PricingSection = () => {
     setCheckoutLoading(collectPaymentMethod ? "long" : "short");
 
     try {
-      const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
       // Ensure customerId is a string or undefined, not null
       const customerId = user?.profile?.customer_id || undefined;
       // Make sure email is a string or undefined, not null
@@ -1890,7 +1891,6 @@ const PricingSection = () => {
           planType: billingPeriod,
           email: userEmail,
           customerId: customerId,
-          promotionCode: promotionCode,
           collectPaymentMethod: collectPaymentMethod,
         }),
       });
@@ -1955,7 +1955,6 @@ const PricingSection = () => {
       setShowEmailModal(false);
       setCheckoutLoading(trialType === "14day" ? "long" : "short");
 
-      const promotionCode = prices[billingPeriod]?.discount?.promotion_code;
       const collectPaymentMethod = trialType === "14day";
 
       // Use API route instead of server action
@@ -1968,26 +1967,31 @@ const PricingSection = () => {
           planType: billingPeriod,
           email: email,
           customerId: undefined,
-          promotionCode: promotionCode,
           collectPaymentMethod: collectPaymentMethod,
         }),
       });
 
       const result = await checkoutResponse.json();
-      console.log('🔧 Checkout response:', { url: result.url, error: result.error });
+      console.log("🔧 Checkout response:", {
+        url: result.url,
+        error: result.error,
+      });
 
       if (result.url) {
         // Validate URL before redirecting
         try {
           new URL(result.url);
-          console.log('✅ Valid checkout URL, redirecting to:', result.url);
+          console.log("✅ Valid checkout URL, redirecting to:", result.url);
           // Redirect to Stripe Checkout
           window.location.href = result.url;
           return { success: true };
         } catch (urlError) {
           console.error("❌ Invalid checkout URL:", result.url, urlError);
           setCheckoutLoading(null);
-          return { success: false, error: "Invalid checkout URL received from server" };
+          return {
+            success: false,
+            error: "Invalid checkout URL received from server",
+          };
         }
       } else if (result.error) {
         console.error("Checkout error:", result.error);
@@ -2001,13 +2005,6 @@ const PricingSection = () => {
     } catch (error) {
       console.error("Checkout error:", error);
       setCheckoutLoading(null);
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
-      };
     }
   };
 
@@ -2412,8 +2409,12 @@ const PricingSection = () => {
           isOpen={showEmailModal}
           onClose={() => setShowEmailModal(false)}
           onSubmit={handleEmailSubmit}
-          collectPaymentMethod={trialType === "14day"}
-          trialDays={trialType === "14day" ? 14 : 7}
+          collectPaymentMethod={
+            billingPeriod === "lifetime" ? true : trialType === "14day"
+          }
+          trialDays={
+            billingPeriod === "lifetime" ? 0 : trialType === "14day" ? 14 : 7
+          }
         />
       )}
     </PricingContainer>

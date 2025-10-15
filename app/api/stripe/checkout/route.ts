@@ -28,6 +28,22 @@ export async function POST(request: NextRequest) {
       resolved_customer_id = customerId;
     }
 
+    // Check if customer has had a trial before
+    if (resolved_customer_id) {
+      const hasHadTrial = await hasCustomerHadTrial(resolved_customer_id);
+
+      // If customer has had a trial and we're trying to give them another trial, return error
+      if (hasHadTrial && !collectPaymentMethod && planType !== "lifetime") {
+        return NextResponse.json({
+          url: null,
+          error: "TRIAL_USED_BEFORE",
+          message:
+            "You've already used a trial before. Please provide payment information to proceed.",
+          hasHadTrial: true,
+        });
+      }
+    }
+
     // Create checkout session with or without customer ID
     const result = await createCheckoutSession(
       resolved_customer_id,
@@ -79,6 +95,31 @@ async function findOrCreateCustomer(email: string): Promise<string> {
 }
 
 /**
+ * Checks if a customer has previously had a trial subscription
+ */
+async function hasCustomerHadTrial(customerId: string): Promise<boolean> {
+  try {
+    // Get all subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    // Check if any subscription had a trial period
+    return subscriptions.data.some(
+      (sub) =>
+        sub.trial_start !== null ||
+        sub.trial_end !== null ||
+        sub.status === "trialing"
+    );
+  } catch (error) {
+    console.error("Error checking customer trial history:", error);
+    // If we can't check, assume they haven't had a trial to be safe
+    return false;
+  }
+}
+
+/**
  * Creates a Stripe checkout session for the selected plan
  */
 async function createCheckoutSession(
@@ -104,6 +145,9 @@ async function createCheckoutSession(
       return { url: null, error: `Invalid plan type: ${planType}` };
     }
 
+    // Check if customer has previously had a trial
+    const hasHadTrial = await hasCustomerHadTrial(customerId);
+
     // Determine mode based on plan type
     let mode: "subscription" | "payment";
     let subscriptionData:
@@ -116,9 +160,14 @@ async function createCheckoutSession(
     } else {
       // All other plans are subscriptions
       mode = "subscription";
-      subscriptionData = {
-        trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
-      };
+
+      // Only add trial if customer hasn't had one before
+      if (!hasHadTrial) {
+        subscriptionData = {
+          trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
+        };
+      }
+      // If customer has had a trial before, no trial_period_days - they'll be charged immediately
     }
 
     // Build session parameters with proper URL fallbacks
@@ -156,9 +205,12 @@ async function createCheckoutSession(
       sessionParams.subscription_data = subscriptionData;
     }
 
-    // Set payment method collection based on collectPaymentMethod flag
+    // Set payment method collection based on collectPaymentMethod flag and trial history
     if (mode === "subscription") {
-      sessionParams.payment_method_collection = collectPaymentMethod
+      // If customer has had a trial before, always require payment method
+      // Otherwise, use the collectPaymentMethod flag
+      const requiresPaymentMethod = hasHadTrial || collectPaymentMethod;
+      sessionParams.payment_method_collection = requiresPaymentMethod
         ? "always"
         : "if_required";
     }

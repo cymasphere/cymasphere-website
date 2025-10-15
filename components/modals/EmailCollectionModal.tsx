@@ -181,7 +181,7 @@ const LoginButton = styled(Button)`
   width: 100%;
   background: rgba(108, 99, 255, 0.15);
   border: 1px solid rgba(108, 99, 255, 0.3);
-  
+
   &:hover {
     background: rgba(108, 99, 255, 0.25);
   }
@@ -200,7 +200,7 @@ export default function EmailCollectionModal({
   onClose,
   onSubmit,
   collectPaymentMethod,
-  trialDays
+  trialDays,
 }: EmailCollectionModalProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -218,21 +218,25 @@ export default function EmailCollectionModal({
 
     // Validate email
     if (!email.trim()) {
-      setError(t("common.errors.emailRequired", "Please enter your email address"));
+      setError(
+        t("common.errors.emailRequired", "Please enter your email address")
+      );
       return;
     }
 
     if (!validateEmail(email)) {
-      setError(t("common.errors.invalidEmail", "Please enter a valid email address"));
+      setError(
+        t("common.errors.invalidEmail", "Please enter a valid email address")
+      );
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Submit email and get response
       const result = await onSubmit(email);
-      
+
       // If there's an error, display it
       if (!result.success && result.error) {
         setError(result.error);
@@ -240,7 +244,12 @@ export default function EmailCollectionModal({
       }
       // Otherwise the modal will be closed by the parent component
     } catch (err) {
-      setError(t("common.errors.unexpectedError", "An unexpected error occurred. Please try again."));
+      setError(
+        t(
+          "common.errors.unexpectedError",
+          "An unexpected error occurred. Please try again."
+        )
+      );
       setIsSubmitting(false);
     }
   };
@@ -251,7 +260,8 @@ export default function EmailCollectionModal({
   };
 
   // Check if the error is about an existing account
-  const isExistingAccountError = error && error.includes("already associated with an account");
+  const isExistingAccountError =
+    error && error.includes("already associated with an account");
 
   const handleModalClose = () => {
     setEmail("");
@@ -275,7 +285,11 @@ export default function EmailCollectionModal({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>{t("freeTrial.startTrial", "Start Your Free Trial")}</ModalTitle>
+              <ModalTitle>
+                {trialDays === 0
+                  ? t("lifetimePurchase.title", "Complete Your Purchase")
+                  : t("freeTrial.startTrial", "Start Your Free Trial")}
+              </ModalTitle>
               <CloseButton onClick={handleModalClose}>
                 <FaTimes />
               </CloseButton>
@@ -285,15 +299,32 @@ export default function EmailCollectionModal({
                 <FaEnvelope />
               </IconContainer>
               <Message>
-                {t("freeTrial.enterEmail", "Enter your email address to start your {{days}}-day free trial {{requirement}}.", { 
-                  days: trialDays,
-                  requirement: collectPaymentMethod 
-                    ? t("freeTrial.cardRequired", "(credit card required)")
-                    : t("freeTrial.noCardRequired", "(no credit card required)")
-                })}
+                {trialDays === 0
+                  ? t(
+                      "lifetimePurchase.enterEmail",
+                      "Enter your email address to complete your lifetime purchase."
+                    )
+                  : t(
+                      "freeTrial.enterEmail",
+                      "Enter your email address to start your {{days}}-day free trial {{requirement}}.",
+                      {
+                        days: trialDays,
+                        requirement: collectPaymentMethod
+                          ? t(
+                              "freeTrial.cardRequired",
+                              "(credit card required)"
+                            )
+                          : t(
+                              "freeTrial.noCardRequired",
+                              "(no credit card required)"
+                            ),
+                      }
+                    )}
               </Message>
               <FormGroup>
-                <FormLabel htmlFor="email">{t("common.emailAddress", "Email Address")}</FormLabel>
+                <FormLabel htmlFor="email">
+                  {t("common.emailAddress", "Email Address")}
+                </FormLabel>
                 <FormInput
                   type="email"
                   id="email"
@@ -304,23 +335,27 @@ export default function EmailCollectionModal({
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
                 {error && <ErrorMessage>{error}</ErrorMessage>}
-                
+
                 {/* Add login button when we detect an existing account */}
                 {isExistingAccountError && (
                   <LoginButton onClick={handleGoToLogin}>
-                    <FaSignInAlt style={{ marginRight: "8px" }} /> {t("common.goToLogin", "Go to Login")}
+                    <FaSignInAlt style={{ marginRight: "8px" }} />{" "}
+                    {t("common.goToLogin", "Go to Login")}
                   </LoginButton>
                 )}
               </FormGroup>
             </ModalBody>
             <ModalFooter>
-              <Button onClick={handleModalClose}>{t("common.cancel", "Cancel")}</Button>
-              <Button 
-                $primary 
-                onClick={handleSubmit} 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? t("common.processing", "Processing...") : t("common.continue", "Continue")} {!isSubmitting && <FaArrowRight />}
+              <Button onClick={handleModalClose}>
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button $primary onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting
+                  ? t("common.processing", "Processing...")
+                  : trialDays === 0
+                  ? t("lifetimePurchase.continue", "Complete Purchase")
+                  : t("common.continue", "Continue")}{" "}
+                {!isSubmitting && <FaArrowRight />}
               </Button>
             </ModalFooter>
           </ModalContent>
@@ -328,4 +363,4 @@ export default function EmailCollectionModal({
       )}
     </AnimatePresence>
   );
-} 
+}
