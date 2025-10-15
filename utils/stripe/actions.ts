@@ -245,12 +245,8 @@ export async function createCheckoutSession(
       };
     }
 
-    // Apply promotion code if provided
-    if (promotionCode) {
-      sessionConfig.discounts = [{ promotion_code: promotionCode }];
-    } else {
-      sessionConfig.allow_promotion_codes = true;
-    }
+    // Enable entering promotion codes on the Checkout page
+    sessionConfig.allow_promotion_codes = true;
 
     // Set up trial configuration with different durations
     const basicTrialDays = 7; // 7-day trial when not collecting payment info

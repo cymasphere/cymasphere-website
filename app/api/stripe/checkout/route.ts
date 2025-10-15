@@ -134,9 +134,12 @@ async function createCheckoutSession(
     }
 
     // Build session parameters with proper URL fallbacks
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    console.log('🔧 Creating checkout session with base URL:', baseUrl);
-    
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      "http://localhost:3000";
+    console.log("🔧 Creating checkout session with base URL:", baseUrl);
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ["card"],
@@ -170,13 +173,9 @@ async function createCheckoutSession(
       sessionParams.setup_intent_data = setupIntentData;
     }
 
-    // Add promotion code if provided
-    if (promotionCode) {
-      sessionParams.discounts = [
-        {
-          promotion_code: promotionCode,
-        },
-      ];
+    // Enable entering promotion codes on the Checkout page
+    if (mode !== "setup") {
+      sessionParams.allow_promotion_codes = true;
     }
 
     // Create the checkout session
