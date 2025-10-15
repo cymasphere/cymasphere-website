@@ -35,31 +35,34 @@ export async function signUpWithStripe(
     if (authResponse.data.user && !authResponse.error) {
       try {
         const { error: subscriberError } = await supabase
-          .from('subscribers')
+          .from("subscribers")
           .insert({
             id: authResponse.data.user.id, // Use user ID as subscriber ID
             user_id: authResponse.data.user.id,
             email: authResponse.data.user.email || email, // Use fallback email
-            source: 'signup',
-            status: 'active',
-            tags: ['free-user'],
+            source: "signup",
+            status: "active",
+            tags: ["free-user"],
             metadata: {
-              first_name: first_name || '',
-              last_name: last_name || '',
-              subscription: 'none',
+              first_name: first_name || "",
+              last_name: last_name || "",
+              subscription: "none",
               auth_created_at: authResponse.data.user.created_at,
-              profile_updated_at: new Date().toISOString()
-            }
+              profile_updated_at: new Date().toISOString(),
+            },
           });
 
         if (subscriberError) {
-          console.error('Failed to create subscriber:', subscriberError);
+          console.error("Failed to create subscriber:", subscriberError);
           // Don't fail the signup if subscriber creation fails
         } else {
-          console.log('Subscriber created successfully for user:', authResponse.data.user.id);
+          console.log(
+            "Subscriber created successfully for user:",
+            authResponse.data.user.id
+          );
         }
       } catch (subscriberError) {
-        console.error('Error creating subscriber:', subscriberError);
+        console.error("Error creating subscriber:", subscriberError);
         // Don't fail the signup if subscriber creation fails
       }
     }
@@ -96,10 +99,13 @@ export async function fetchIsAdmin(
     .eq("user", id)
     .single();
 
-  console.log(`[fetchIsAdmin] Checking admin status for user ${id}:`, { data, error });
+  console.log(`[fetchIsAdmin] Checking admin status for user ${id}:`, {
+    data,
+    error,
+  });
 
   // Handle case where no admin record exists (PGRST116 = no rows returned)
-  if (error && error.code === 'PGRST116') {
+  if (error && error.code === "PGRST116") {
     console.log(`[fetchIsAdmin] No admin record found for user ${id}`);
     return { is_admin: false, error: null };
   }

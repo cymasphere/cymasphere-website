@@ -156,6 +156,13 @@ async function createCheckoutSession(
       sessionParams.subscription_data = subscriptionData;
     }
 
+    // Set payment method collection based on collectPaymentMethod flag
+    if (mode === "subscription") {
+      sessionParams.payment_method_collection = collectPaymentMethod
+        ? "always"
+        : "if_required";
+    }
+
     // Enable entering promotion codes on the Checkout page
     sessionParams.allow_promotion_codes = true;
 
