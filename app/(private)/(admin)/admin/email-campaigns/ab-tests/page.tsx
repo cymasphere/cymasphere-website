@@ -943,7 +943,7 @@ function ABTestsPage() {
                           )}
                         </VariantTitle>
                       </VariantHeader>
-                      <VariantSubject>"{variant.subject}"</VariantSubject>
+                      <VariantSubject>&quot;{variant.subject}&quot;</VariantSubject>
                       {test.status !== 'draft' && (
                         <VariantStats>
                           <VariantStat>

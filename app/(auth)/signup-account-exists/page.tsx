@@ -199,7 +199,7 @@ export default function AccountExists() {
           </p>
           <br />
           <p>
-            You can either sign in with your existing account or reset your password if you've forgotten it.
+            You can either sign in with your existing account or reset your password if you&apos;ve forgotten it.
           </p>
         </Message>
 
