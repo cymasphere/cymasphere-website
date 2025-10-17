@@ -648,10 +648,16 @@ export default function TutorialCenter() {
               </ProfileStatus>
             )}
           </div>
-          <ViewAllButton as={Link} href="/admin/tutorial-center/videos">
-            <FaVideo />
-            View All Videos
-          </ViewAllButton>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <ViewAllButton as={Link} href="/admin/tutorial-center/playlists">
+              <FaList />
+              View All Playlists
+            </ViewAllButton>
+            <ViewAllButton as={Link} href="/admin/tutorial-center/videos">
+              <FaVideo />
+              View All Videos
+            </ViewAllButton>
+          </div>
         </Header>
 
         {showProfilingForm && (
