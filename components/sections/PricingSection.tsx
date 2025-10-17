@@ -1243,6 +1243,7 @@ const BillingToggleContainer = styled.div`
 // Make the buttons larger to fill the width
 type BillingToggleButtonProps = {
   $active: boolean;
+  $disabled?: boolean;
 };
 
 const BillingToggleButton = styled.button<BillingToggleButtonProps>`
@@ -1250,27 +1251,40 @@ const BillingToggleButton = styled.button<BillingToggleButtonProps>`
     props.$active
       ? "linear-gradient(135deg, var(--primary), var(--accent))"
       : "transparent"};
-  color: ${(props) => (props.$active ? "white" : "var(--text-secondary)")};
+  color: ${(props) =>
+    props.$disabled
+      ? "rgba(255, 255, 255, 0.3)"
+      : props.$active
+      ? "white"
+      : "var(--text-secondary)"};
   border: ${(props) =>
     props.$active ? "none" : "1px solid rgba(255, 255, 255, 0.2)"};
   border-radius: 30px;
   padding: 12px 10px;
   font-weight: ${(props) => (props.$active ? "600" : "400")};
   font-size: 1.05rem;
-  cursor: pointer;
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "pointer")};
   transition: all 0.3s ease;
   margin: 0 6px;
   position: relative;
   flex: 1;
   z-index: 5;
   pointer-events: auto !important; /* Force pointer events */
+  opacity: ${(props) => (props.$disabled ? 0.5 : 1)};
 
   &:hover {
     background: ${(props) =>
-      props.$active
+      props.$disabled
+        ? "transparent"
+        : props.$active
         ? "linear-gradient(135deg, var(--primary), var(--accent))"
         : "rgba(255, 255, 255, 0.1)"};
-    color: ${(props) => (props.$active ? "white" : "var(--text)")};
+    color: ${(props) =>
+      props.$disabled
+        ? "rgba(255, 255, 255, 0.3)"
+        : props.$active
+        ? "white"
+        : "var(--text)"};
   }
 `;
 
@@ -1406,7 +1420,10 @@ const TrialIcon = styled.span`
 `;
 
 // Single pricing card
-const PricingCard = styled(motion.div)`
+const PricingCard = styled(motion.div)<{
+  $isCurrentPlan?: boolean;
+  $isLifetimeOwner?: boolean;
+}>`
   position: relative;
   background-color: rgba(25, 23, 36, 0.6);
   border-radius: 12px;
@@ -1415,7 +1432,13 @@ const PricingCard = styled(motion.div)`
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   max-width: 400px;
   margin: 0 auto 100px; /* Increased bottom margin from 40px to 100px for more spacing */
-  border: 2px solid var(--primary);
+  border: 2px solid
+    ${(props) =>
+      props.$isLifetimeOwner
+        ? "linear-gradient(135deg, #f59e0b, #d97706)"
+        : props.$isCurrentPlan
+        ? "linear-gradient(135deg, #10b981, #059669)"
+        : "var(--primary)"};
   z-index: 5;
   pointer-events: auto !important; /* Force pointer events */
 
@@ -1708,6 +1731,34 @@ const CardTrialBadge = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
+const CurrentPlanBadge = styled.div`
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+`;
+
+const LifetimeOwnerBadge = styled.div`
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+`;
+
 const InfoButton = ({
   onClick,
 }: {
@@ -1816,6 +1867,8 @@ const PricingSection = () => {
   const [trialType, setTrialType] = useState<"7day" | "14day">("14day");
   // State for email collection modal
   const [showEmailModal, setShowEmailModal] = useState(false);
+  // State for checking if user has had trial via Stripe
+  const [hasHadStripeTrial, setHasHadStripeTrial] = useState<boolean>(false);
 
   // Reference objects for the buttons
   const monthlyBtnRef = React.useRef<HTMLButtonElement | null>(null);
@@ -1844,6 +1897,46 @@ const PricingSection = () => {
 
     fetchPrices();
   }, []);
+
+  // Fetch trial status when user is logged in
+  useEffect(() => {
+    const checkTrialStatus = async () => {
+      if (!user?.email) {
+        setHasHadStripeTrial(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/stripe/check-trial-status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: user.email }),
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+          setHasHadStripeTrial(false); // Default to false on error
+        } else {
+          setHasHadStripeTrial(result.hasHadTrial);
+        }
+      } catch (error) {
+        console.error("Error checking trial status:", error);
+        setHasHadStripeTrial(false); // Default to false on error
+      }
+    };
+
+    checkTrialStatus();
+  }, [user?.email]);
+
+  // Set billing period to match user's current subscription when logged in
+  useEffect(() => {
+    if (user?.profile?.subscription && user.profile.subscription !== "none") {
+      setBillingPeriod(user.profile.subscription);
+    }
+  }, [user?.profile?.subscription]);
 
   // Simplify the resize effect to avoid unused variables
   useEffect(() => {
@@ -2100,15 +2193,75 @@ const PricingSection = () => {
       // User previously had a subscription that ended
       (user.profile.subscription === "none" &&
         user.profile.subscription_expiration &&
-        new Date(user.profile.subscription_expiration) < new Date())
+        new Date(user.profile.subscription_expiration) < new Date()) ||
+      // User has ever started a trial via Stripe (regardless of current status)
+      hasHadStripeTrial
     );
-  }, [user]);
+  }, [user, hasHadStripeTrial]);
 
   // Determine if we should show trial options
   const showTrialOptions = React.useMemo(() => {
     // Don't show trial options for lifetime plan or if user shouldn't see trial content
     return billingPeriod !== "lifetime" && !shouldHideTrialContent;
   }, [billingPeriod, shouldHideTrialContent]);
+
+  // Helper function to determine if current billing period matches user's subscription
+  const isCurrentPlan = React.useMemo(() => {
+    if (!user?.profile) return false;
+    return user.profile.subscription === billingPeriod;
+  }, [user?.profile, billingPeriod]);
+
+  // Helper function to get button text and action based on user status
+  const getButtonConfig = React.useMemo(() => {
+    if (!user?.profile) {
+      // Not logged in - show trial or buy options
+      return {
+        text: showTrialOptions
+          ? t("pricing.freeTrial.startTrial", "Start Trial")
+          : t("pricing.buyNow", "Buy Now"),
+        action: () =>
+          handleCheckout(showTrialOptions ? trialType === "14day" : false),
+        variant: "primary" as const,
+      };
+    }
+
+    // User is logged in
+    if (user.profile.subscription === "lifetime") {
+      return {
+        text: t("pricing.goToDashboard", "Go to Dashboard"),
+        action: () => router.push("/dashboard"),
+        variant: "primary" as const,
+      };
+    }
+
+    if (
+      user.profile.subscription === "monthly" ||
+      user.profile.subscription === "annual"
+    ) {
+      return {
+        text: t("pricing.manageSubscription", "Manage Subscription"),
+        action: () => router.push("/billing"),
+        variant: "primary" as const,
+      };
+    }
+
+    // User has no subscription but may have had trial
+    return {
+      text: shouldHideTrialContent
+        ? t("pricing.upgradeNow", "Upgrade Now")
+        : t("pricing.freeTrial.startTrial", "Start Trial"),
+      action: () =>
+        handleCheckout(shouldHideTrialContent ? false : trialType === "14day"),
+      variant: "primary" as const,
+    };
+  }, [
+    user?.profile,
+    showTrialOptions,
+    trialType,
+    shouldHideTrialContent,
+    t,
+    router,
+  ]);
 
   return (
     <PricingContainer id="pricing">
@@ -2166,7 +2319,20 @@ const PricingSection = () => {
             <BillingToggleButton
               ref={monthlyBtnRef}
               $active={billingPeriod === "monthly"}
-              onClick={() => setBillingPeriod("monthly")}
+              $disabled={
+                user?.profile?.subscription &&
+                user.profile.subscription !== "monthly" &&
+                user.profile.subscription !== "none"
+              }
+              onClick={() => {
+                if (
+                  !user?.profile?.subscription ||
+                  user.profile.subscription === "monthly" ||
+                  user.profile.subscription === "none"
+                ) {
+                  setBillingPeriod("monthly");
+                }
+              }}
             >
               {t("pricing.monthly", "Monthly")}
             </BillingToggleButton>
@@ -2174,7 +2340,20 @@ const PricingSection = () => {
             <BillingToggleButton
               ref={yearlyBtnRef}
               $active={billingPeriod === "annual"}
-              onClick={() => setBillingPeriod("annual")}
+              $disabled={
+                user?.profile?.subscription &&
+                user.profile.subscription !== "annual" &&
+                user.profile.subscription !== "none"
+              }
+              onClick={() => {
+                if (
+                  !user?.profile?.subscription ||
+                  user.profile.subscription === "annual" ||
+                  user.profile.subscription === "none"
+                ) {
+                  setBillingPeriod("annual");
+                }
+              }}
             >
               {t("pricing.yearly", "Yearly")}
             </BillingToggleButton>
@@ -2182,7 +2361,20 @@ const PricingSection = () => {
             <BillingToggleButton
               ref={lifetimeBtnRef}
               $active={billingPeriod === "lifetime"}
-              onClick={() => setBillingPeriod("lifetime")}
+              $disabled={
+                user?.profile?.subscription &&
+                user.profile.subscription !== "lifetime" &&
+                user.profile.subscription !== "none"
+              }
+              onClick={() => {
+                if (
+                  !user?.profile?.subscription ||
+                  user.profile.subscription === "lifetime" ||
+                  user.profile.subscription === "none"
+                ) {
+                  setBillingPeriod("lifetime");
+                }
+              }}
             >
               {t("pricing.lifetime", "Lifetime")}
             </BillingToggleButton>
@@ -2221,12 +2413,28 @@ const PricingSection = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.2 }}
         >
-          <PricingCard>
-            {showTrialOptions && (
-              <CardTrialBadge>
-                {t("pricing.freeTrial.title", "14-Day Free Trial")}
-              </CardTrialBadge>
+          <PricingCard
+            $isCurrentPlan={isCurrentPlan}
+            $isLifetimeOwner={user?.profile?.subscription === "lifetime"}
+          >
+            {/* Show appropriate badge based on user status */}
+            {user?.profile?.subscription === "lifetime" && (
+              <LifetimeOwnerBadge>
+                {t("pricing.lifetimeOwner", "Lifetime Owner")}
+              </LifetimeOwnerBadge>
             )}
+            {isCurrentPlan && user?.profile?.subscription !== "lifetime" && (
+              <CurrentPlanBadge>
+                {t("pricing.currentPlan", "Current Plan")}
+              </CurrentPlanBadge>
+            )}
+            {showTrialOptions &&
+              !isCurrentPlan &&
+              user?.profile?.subscription !== "lifetime" && (
+                <CardTrialBadge>
+                  {t("pricing.freeTrial.title", "14-Day Free Trial")}
+                </CardTrialBadge>
+              )}
             <CardHeader>
               <PlanName>
                 <div className="logo-container">
@@ -2380,21 +2588,19 @@ const PricingSection = () => {
                 </TrialOptionContainer>
               ) : null}
 
-              {/* Only show Buy Now button for Lifetime plan or when trial options are hidden */}
-              {(billingPeriod === "lifetime" || !showTrialOptions) && (
+              {/* Show button based on user status */}
+              {!showTrialOptions && (
                 <CheckoutButton
-                  onClick={() => handleCheckout(false)}
+                  onClick={getButtonConfig.action}
                   disabled={pricesLoading || checkoutLoading !== null}
+                  $variant={getButtonConfig.variant}
                 >
-                  {checkoutLoading === "short" ? (
+                  {checkoutLoading !== null ? (
                     <>
                       {t("pricing.processing", "Processing")} <Loader />
                     </>
-                  ) : shouldHideTrialContent &&
-                    user?.profile?.subscription === "none" ? (
-                    t("pricing.upgradeNow", "Upgrade Now")
                   ) : (
-                    t("pricing.buyNow", "Buy Now")
+                    getButtonConfig.text
                   )}
                 </CheckoutButton>
               )}
