@@ -1,6 +1,5 @@
 import React from "react";
 import styled from "styled-components";
-import EnergyBall from "./EnergyBall";
 import CymasphereLogo from "./CymasphereLogo";
 
 // Define interfaces for styled-components props
@@ -18,8 +17,14 @@ const Container = styled.div<ContainerProps>`
   align-items: center;
   justify-content: center;
   min-height: ${(props) => (props.$fullScreen ? "100vh" : "200px")};
-  width: 100%;
-  background-color: var(--background);
+  width: ${(props) => (props.$fullScreen ? "100vw" : "100%")};
+  background-color: ${(props) => (props.$fullScreen ? "var(--bg)" : "transparent")};
+  position: ${(props) => (props.$fullScreen ? "fixed" : "relative")};
+  top: ${(props) => (props.$fullScreen ? 0 : "auto")};
+  left: ${(props) => (props.$fullScreen ? 0 : "auto")};
+  right: ${(props) => (props.$fullScreen ? 0 : "auto")};
+  bottom: ${(props) => (props.$fullScreen ? 0 : "auto")};
+  z-index: ${(props) => (props.$fullScreen ? 4000 : "auto")};
 `;
 
 const LoadingWrapper = styled.div`
@@ -29,9 +34,7 @@ const LoadingWrapper = styled.div`
   position: relative;
 `;
 
-const EnergyBallContainer = styled.div`
-  margin-bottom: 30px;
-`;
+// Removed separate EnergyBall to avoid double or stacked animated orbs
 
 const LoadingText = styled.div<LoadingTextProps>`
   margin-top: 20px;
@@ -59,16 +62,12 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   fullScreen = false,
   text = "Loading...",
 }) => {
-  const energyBallSize =
-    size === "large" ? "140px" : size === "small" ? "80px" : "120px";
+  const energyBallSize = size === "large" ? "140px" : size === "small" ? "80px" : "120px";
 
   return (
     <Container $fullScreen={fullScreen}>
       <LoadingWrapper>
-        <EnergyBallContainer>
-          <EnergyBall size={energyBallSize} />
-        </EnergyBallContainer>
-        <CymasphereLogo size="60px" showText={false} />
+        <CymasphereLogo size={energyBallSize} showText={false} />
         {text && <LoadingText $size={size}>{text}</LoadingText>}
       </LoadingWrapper>
     </Container>
