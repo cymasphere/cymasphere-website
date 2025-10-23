@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useRouter } from "next/navigation";
 import VideoPlayer from './VideoPlayer';
@@ -65,6 +65,7 @@ const VideoThumbnail = styled.div.withConfig({
   color: ${props => props.isActive ? 'white' : 'var(--text)'};
   border: 1px solid ${props => props.isActive ? 'var(--primary)' : 'var(--border)'};
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     background-color: ${props => props.isActive ? 'var(--primary)' : 'var(--hover)'};
@@ -120,6 +121,24 @@ const ThumbnailImage = styled.div.withConfig({
 
 const VideoInfo = styled.div`
   flex: 1;
+`;
+
+const ProgressTrack = styled.div`
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div<{ $percent: number; $completed?: boolean }>`
+  height: 100%;
+  width: ${props => Math.min(Math.max(props.$percent, 0), 100)}%;
+  background: ${props => props.$completed ? 'var(--success)' : 'var(--accent)'};
+  transition: width 0.2s ease;
 `;
 
 const VideoTitle = styled.h4`
@@ -202,6 +221,15 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const [loading, setLoading] = useState(true);
   const [scriptLoading, setScriptLoading] = useState(false);
   const router = useRouter();
+  const [progressMap, setProgressMap] = useState<Record<string, { progress: number; completed: boolean }>>({});
+
+  const handleProgressUpdate = useCallback((percent: number, completed: boolean) => {
+    if (!selectedVideo) return;
+    setProgressMap((prev) => ({
+      ...prev,
+      [selectedVideo.id]: { progress: percent, completed },
+    }));
+  }, [selectedVideo]);
 
   useEffect(() => {
     if (playlistId) {
@@ -228,6 +256,29 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       fetchScript(videos[0].id);
     }
   }, [videos, initialVideoId]);
+
+  // Fetch user progress once on mount and when playlist changes
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const userId =
+          (typeof window !== 'undefined' && localStorage.getItem('userId')) ||
+          '900f11b8-c901-49fd-bfab-5fafe984ce72';
+        const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const map: Record<string, { progress: number; completed: boolean }> = {};
+        const prog = data.progress || {};
+        Object.keys(prog).forEach((vid) => {
+          map[vid] = { progress: prog[vid].progress || 0, completed: !!prog[vid].completed };
+        });
+        setProgressMap(map);
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadProgress();
+  }, [playlistId]);
 
   const fetchPlaylistData = async () => {
     try {
@@ -381,6 +432,8 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
         <PlaylistTitle>{playlist?.title || "Playlist Videos"}</PlaylistTitle>
         {Array.isArray(videos) && videos.map((video) => {
           const thumbnailUrl = getYouTubeThumbnail(video.youtube_video_id);
+          const p = progressMap[video.id]?.progress ?? 0;
+          const isCompleted = !!progressMap[video.id]?.completed;
           
           return (
             <VideoThumbnail
@@ -395,6 +448,9 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
                 <VideoTitle>{video.title}</VideoTitle>
                 <VideoDuration>{formatDuration(video.duration)}</VideoDuration>
               </VideoInfo>
+              <ProgressTrack>
+                <ProgressFill $percent={p} $completed={isCompleted} />
+              </ProgressTrack>
             </VideoThumbnail>
           );
         })}
@@ -414,9 +470,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
                 // Auto-play next video or show completion message
                 console.log('Video ended:', selectedVideo.title);
               }}
-              onProgressUpdate={(progress, isCompleted) => {
-                console.log(`Video progress: ${progress}%, completed: ${isCompleted}`);
-              }}
+              onProgressUpdate={handleProgressUpdate}
             />
           </>
         ) : (
