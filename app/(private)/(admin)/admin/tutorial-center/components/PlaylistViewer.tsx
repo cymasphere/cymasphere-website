@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useRouter } from "next/navigation";
 import VideoPlayer from './VideoPlayer';
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const Container = styled.div`
   display: flex;
@@ -169,13 +170,7 @@ const ScriptContent = styled.div`
   white-space: pre-wrap;
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-secondary);
-`;
+// No additional local spinner styles needed; use shared LoadingSpinner
 
 interface Video {
   id: string;
@@ -183,6 +178,7 @@ interface Video {
   description: string;
   duration: number;
   video_order: number;
+  youtube_video_id?: string;
 }
 
 interface Playlist {
@@ -239,14 +235,65 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       
       // Check if this is a personalized playlist (passed as videos prop)
       if (playlistId === "personalized" && propVideos && propVideos.length > 0) {
-        // For personalized playlists, use the passed videos and playlist data
-        setVideos(propVideos);
+        // Normalize personalized videos: ensure youtube_video_id, duration, and order
+        const normalizedVideos: Video[] = await Promise.all(
+          propVideos.map(async (v, idx) => {
+            const candidateYoutubeId: string | undefined = (v as any).youtube_video_id || (v as any).youtubeId || (v as any).youtube;
+            const candidateDuration: number | undefined = (v as any).duration;
+            const candidateOrder: number | undefined = (v as any).video_order || (v as any).order || (v as any).sequence_order;
+
+            if (candidateYoutubeId && candidateDuration) {
+              return {
+                id: v.id,
+                title: v.title,
+                description: v.description,
+                duration: candidateDuration,
+                video_order: candidateOrder ?? idx + 1,
+                youtube_video_id: candidateYoutubeId,
+              };
+            }
+
+            // Fetch missing fields from API
+            try {
+              const res = await fetch(`/api/tutorials/videos/${v.id}`);
+              if (res.ok) {
+                const full = await res.json();
+                return {
+                  id: v.id,
+                  title: v.title ?? full.title,
+                  description: v.description ?? full.description,
+                  duration: candidateDuration ?? full.duration ?? 300,
+                  video_order: candidateOrder ?? idx + 1,
+                  youtube_video_id: candidateYoutubeId ?? full.youtube_video_id,
+                };
+              }
+            } catch (e) {
+              console.error("Failed to hydrate personalized video", v.id, e);
+            }
+
+            // Fallback if API fails
+            return {
+              id: v.id,
+              title: v.title,
+              description: v.description,
+              duration: candidateDuration ?? 300,
+              video_order: candidateOrder ?? idx + 1,
+              youtube_video_id: candidateYoutubeId,
+            };
+          })
+        );
+
+        // Sort by order just in case
+        normalizedVideos.sort((a, b) => (a.video_order ?? 0) - (b.video_order ?? 0));
+        setVideos(normalizedVideos);
         if (playlistTitle) {
           setPlaylist({
             id: "personalized",
-            name: playlistTitle,
+            title: playlistTitle,
             description: "Your personalized learning path based on your profile"
-          });
+          } as any);
+        } else {
+          setPlaylist({ id: "personalized", title: "Your Personalized Learning Path", description: "" } as any);
         }
         setLoading(false);
         return;
@@ -325,11 +372,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   };
 
   if (loading) {
-    return (
-      <Container>
-        <LoadingSpinner>Loading playlist...</LoadingSpinner>
-      </Container>
-    );
+    return <LoadingSpinner fullScreen size="small" text="Loading playlist..." />;
   }
 
   return (
@@ -388,7 +431,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
         <ScriptPanel>
           <ScriptTitle>Script</ScriptTitle>
           {scriptLoading ? (
-            <LoadingSpinner>Loading script...</LoadingSpinner>
+            <ScriptContent>Loading script...</ScriptContent>
           ) : (
             <ScriptContent>{script}</ScriptContent>
           )}

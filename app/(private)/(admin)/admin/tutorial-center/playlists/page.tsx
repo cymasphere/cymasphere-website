@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { FaArrowLeft, FaPlay } from "react-icons/fa";
 import PlaylistViewer from "../components/PlaylistViewer";
 import VideoPlayer from "../components/VideoPlayer";
+// Removed loading spinner per request
 
 const Container = styled.div`
   display: flex;
@@ -136,6 +138,12 @@ const PlaylistDescription = styled.p`
   line-height: 1.4;
 `;
 
+const DropdownLabel = styled.div`
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+`;
+
 const ViewerContainer = styled.div`
   flex: 1;
   overflow: hidden;
@@ -149,13 +157,7 @@ const ViewerHeader = styled.div`
   border-bottom: 1px solid var(--border);
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-secondary);
-`;
+// Use shared LoadingSpinner component
 
 interface Playlist {
   id: string;
@@ -175,11 +177,56 @@ export default function PlaylistsPage() {
   const [loading, setLoading] = useState(true);
   const [personalizedPlaylist, setPersonalizedPlaylist] = useState<any>(null);
   const [showPersonalized, setShowPersonalized] = useState(false);
+  const [stateRestored, setStateRestored] = useState(false);
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     fetchPlaylists();
     fetchPersonalizedPlaylist();
   }, []);
+
+  // Separate useEffect to handle state restoration after playlists are loaded
+  useEffect(() => {
+    if (playlists.length === 0 || stateRestored) return; // Wait for playlists to load and only restore once
+    
+    // Check for playlist ID in URL parameters
+    const playlistIdFromUrl = searchParams.get('playlist');
+    
+    if (playlistIdFromUrl) {
+      if (playlistIdFromUrl === 'personalized') {
+        setShowPersonalized(true);
+        setSelectedPlaylistId(null);
+      } else {
+        const playlist = playlists.find(p => p.id === playlistIdFromUrl);
+        if (playlist) {
+          setSelectedPlaylistId(playlistIdFromUrl);
+          setSelectedPlaylist(playlist);
+          setShowPersonalized(false);
+        }
+      }
+    } else {
+      // Check localStorage for last selected playlist
+      const lastSelectedPlaylist = localStorage.getItem('lastSelectedPlaylist');
+      
+      if (lastSelectedPlaylist) {
+        if (lastSelectedPlaylist === 'personalized') {
+          setShowPersonalized(true);
+          setSelectedPlaylistId(null);
+        } else {
+          const playlist = playlists.find(p => p.id === lastSelectedPlaylist);
+          if (playlist) {
+            setSelectedPlaylistId(lastSelectedPlaylist);
+            setSelectedPlaylist(playlist);
+            setShowPersonalized(false);
+          }
+        }
+      }
+    }
+    
+    setStateRestored(true);
+  }, [playlists, searchParams, stateRestored]);
 
   const fetchPersonalizedPlaylist = async () => {
     try {
@@ -211,7 +258,7 @@ export default function PlaylistsPage() {
       if (playlistResponse.ok) {
         const playlistData = await playlistResponse.json();
         setPersonalizedPlaylist(playlistData.playlist);
-        setShowPersonalized(true);
+        // Do not auto-activate personalized view; selection is driven by URL/localStorage/user action
       } else {
         console.error('Failed to generate personalized playlist');
       }
@@ -229,10 +276,16 @@ export default function PlaylistsPage() {
         // Ensure we have an array
         const playlistsArray = Array.isArray(data) ? data : (data.playlists || []);
         setPlaylists(playlistsArray);
-        // Auto-select first playlist if available
-        if (playlistsArray.length > 0) {
-          setSelectedPlaylistId(playlistsArray[0].id);
-          setSelectedPlaylist(playlistsArray[0]);
+        
+        // Only auto-select first playlist if no state restoration will happen
+        if (playlistsArray.length > 0 && !stateRestored) {
+          const playlistIdFromUrl = searchParams.get('playlist');
+          const lastSelectedPlaylist = localStorage.getItem('lastSelectedPlaylist');
+          
+          if (!playlistIdFromUrl && !lastSelectedPlaylist) {
+            setSelectedPlaylistId(playlistsArray[0].id);
+            setSelectedPlaylist(playlistsArray[0]);
+          }
         }
       }
     } catch (error) {
@@ -245,7 +298,16 @@ export default function PlaylistsPage() {
   const handlePlaylistSelect = (playlist: Playlist) => {
     setSelectedPlaylistId(playlist.id);
     setSelectedPlaylist(playlist);
+    setShowPersonalized(false); // Switch from personalized to regular playlist
     setIsDropdownOpen(false);
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('lastSelectedPlaylist', playlist.id);
+    
+    // Update URL without causing a page refresh
+    const url = new URL(window.location.href);
+    url.searchParams.set('playlist', playlist.id);
+    router.replace(url.pathname + url.search, { scroll: false });
   };
 
   const toggleDropdown = () => {
@@ -266,63 +328,68 @@ export default function PlaylistsPage() {
   }, []);
 
   if (loading) {
-    return (
-      <Container>
-        <Header>
-          <PageTitle>All Playlists</PageTitle>
-          <LoadingSpinner>Loading playlists...</LoadingSpinner>
-        </Header>
-      </Container>
-    );
+    return <></>;
   }
 
   return (
     <Container>
       <Header>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <BackButton href="/admin/tutorial-center">
-            <FaArrowLeft />
-            Back to Tutorial Center
-          </BackButton>
-          <PageTitle>All Playlists</PageTitle>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <DropdownContainer data-dropdown>
+            <DropdownLabel>Playlist</DropdownLabel>
+            <DropdownButton isOpen={isDropdownOpen} onClick={toggleDropdown}>
+              <span>
+                {showPersonalized && personalizedPlaylist 
+                  ? "Your Personalized Learning Path" 
+                  : selectedPlaylist?.title || "Select a playlist"}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </DropdownButton>
+            <DropdownMenu isOpen={isDropdownOpen}>
+              {personalizedPlaylist && (
+                <PlaylistItem
+                  key="personalized"
+                  isActive={showPersonalized}
+                  onClick={() => {
+                    setShowPersonalized(true);
+                    setSelectedPlaylistId(null); // Clear regular playlist selection
+                    setIsDropdownOpen(false);
+                    
+                    // Save to localStorage for persistence
+                    localStorage.setItem('lastSelectedPlaylist', 'personalized');
+                    
+                    // Update URL without causing a page refresh
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('playlist', 'personalized');
+                    router.replace(url.pathname + url.search, { scroll: false });
+                  }}
+                >
+                  <PlaylistName>🎯 Your Personalized Learning Path</PlaylistName>
+                  <PlaylistDescription>{personalizedPlaylist.description}</PlaylistDescription>
+                </PlaylistItem>
+              )}
+              {Array.isArray(playlists) && playlists.map((playlist) => (
+                <PlaylistItem
+                  key={playlist.id}
+                  isActive={selectedPlaylistId === playlist.id && !showPersonalized}
+                  onClick={() => handlePlaylistSelect(playlist)}
+                >
+                  <PlaylistName>{playlist.title}</PlaylistName>
+                  <PlaylistDescription>{playlist.description}</PlaylistDescription>
+                </PlaylistItem>
+              ))}
+            </DropdownMenu>
+          </DropdownContainer>
         </div>
-        <DropdownContainer data-dropdown>
-          <DropdownButton isOpen={isDropdownOpen} onClick={toggleDropdown}>
-            <span>
-              {showPersonalized && personalizedPlaylist 
-                ? "Your Personalized Learning Path" 
-                : selectedPlaylist?.title || "Select a playlist"}
-            </span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </DropdownButton>
-          <DropdownMenu isOpen={isDropdownOpen}>
-            {showPersonalized && personalizedPlaylist && (
-              <PlaylistItem
-                key="personalized"
-                isActive={showPersonalized}
-                onClick={() => {
-                  setShowPersonalized(true);
-                  setIsDropdownOpen(false);
-                }}
-              >
-                <PlaylistName>🎯 Your Personalized Learning Path</PlaylistName>
-                <PlaylistDescription>{personalizedPlaylist.description}</PlaylistDescription>
-              </PlaylistItem>
-            )}
-            {Array.isArray(playlists) && playlists.map((playlist) => (
-              <PlaylistItem
-                key={playlist.id}
-                isActive={selectedPlaylistId === playlist.id && !showPersonalized}
-                onClick={() => handlePlaylistSelect(playlist)}
-              >
-                <PlaylistName>{playlist.title}</PlaylistName>
-                <PlaylistDescription>{playlist.description}</PlaylistDescription>
-              </PlaylistItem>
-            ))}
-          </DropdownMenu>
-        </DropdownContainer>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <PageTitle>Cymasphere Tutorials</PageTitle>
+        </div>
+        <BackButton href="/admin/tutorial-center">
+          <FaArrowLeft />
+          Back to Tutorial Manager
+        </BackButton>
       </Header>
 
       <ViewerContainer>
