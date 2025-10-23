@@ -122,11 +122,15 @@ const LogoContainer = styled.div`
   margin-bottom: 2rem;
 `;
 
-const Content = styled.main`
+interface ContentProps {
+  $sidebarVisible: boolean;
+}
+
+const Content = styled.main<ContentProps>`
   flex: 1;
   padding: 1.5rem;
-  margin-left: 280px;
-  width: calc(100% - 280px);
+  margin-left: ${props => props.$sidebarVisible ? '280px' : '0'};
+  width: ${props => props.$sidebarVisible ? 'calc(100% - 280px)' : '100%'};
 
   @media (max-width: 768px) {
     margin-left: 0;
@@ -612,6 +616,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return pathname.startsWith("/admin/ad-manager");
   };
 
+  // Helper function to check if user is on tutorial center pages
+  const isTutorialCenter = () => {
+    return pathname.startsWith("/admin/tutorial-center");
+  };
+
   // Auto-expand email campaigns section if any sub-route is active
   useEffect(() => {
     if (isEmailCampaignsActive()) {
@@ -674,7 +683,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <LayoutContainer>
-      <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
+      {!isTutorialCenter() && (
+        <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/admin" passHref legacyBehavior>
             <CymasphereLogo
@@ -996,10 +1006,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </LogoutButton>
         </UserInfo>
       </Sidebar>
+      )}
 
-      <MobileOverlay $isOpen={sidebarOpen} />
+      {!isTutorialCenter() && (
+        <>
+          <MobileOverlay $isOpen={sidebarOpen} />
 
-      <MobileHeader>
+          <MobileHeader>
         <MenuButton onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <FaTimes /> : <FaBars />}
         </MenuButton>
@@ -1021,8 +1034,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         <div style={{ width: "24px" }} />
       </MobileHeader>
+        </>
+      )}
 
-      {sidebarOpen && (
+      {sidebarOpen && !isTutorialCenter() && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
           <MobileNavTitle>Admin Console</MobileNavTitle>
 
@@ -1369,14 +1384,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </MobileMenu>
       )}
 
-      <Content>
-        <BackButtonContainer>
+      <Content $sidebarVisible={!isTutorialCenter()}>
+        {!isTutorialCenter() && (
+          <BackButtonContainer>
           <Link href="/dashboard" passHref legacyBehavior>
             <BackButton>
               Back to Dashboard <FaArrowLeft />
             </BackButton>
           </Link>
         </BackButtonContainer>
+        )}
 
         <PageTransition
           initial="hidden"

@@ -8,10 +8,10 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { videoId: string } }
+  { params }: { params: Promise<{ videoId: string }> }
 ) {
   try {
-    const videoId = params.videoId;
+    const { videoId } = await params;
 
     // Get video data
     const { data: video, error: videoError } = await supabase
@@ -41,3 +41,34 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ videoId: string }> }
+) {
+  try {
+    const { videoId } = await params;
+    const body = await request.json();
+
+    // Update video data
+    const { data: video, error: videoError } = await supabase
+      .from('tutorial_videos')
+      .update(body)
+      .eq('id', videoId)
+      .select()
+      .single();
+
+    if (videoError) {
+      console.error('Error updating video:', videoError);
+      return NextResponse.json({ error: 'Failed to update video' }, { status: 400 });
+    }
+
+    return NextResponse.json(video);
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+
+

@@ -1,6 +1,5 @@
-import * as Tone from "tone";
-// Remove unused import
-// import { createPadSynth } from './synthUtils';
+// Lazy import Tone.js to avoid automatic AudioContext initialization
+let Tone: any = null;
 
 // Add interface for window with webkitAudioContext
 interface WindowWithWebAudio extends Window {
@@ -12,6 +11,15 @@ interface WindowWithWebAudio extends Window {
 let audioContext: AudioContext | null = null;
 let convolver: ConvolverNode | null = null;
 let initialized = false;
+let toneInitialized = false;
+
+// Lazy load Tone.js only when needed
+const loadTone = async () => {
+  if (!Tone) {
+    Tone = await import("tone");
+  }
+  return Tone;
+};
 
 // Add a click counter to prevent spam clicking
 let activeLydianChords = 0;

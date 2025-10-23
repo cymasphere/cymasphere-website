@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useRouter } from "next/navigation";
+import VideoPlayer from './VideoPlayer';
 
 const Container = styled.div`
   display: flex;
@@ -24,7 +25,7 @@ const MainContent = styled.div`
   background-color: var(--bg);
 `;
 
-const VideoPlayer = styled.div`
+const VideoPlayerContainer = styled.div`
   flex: 1;
   background-color: var(--card-bg);
   margin: 1rem;
@@ -50,7 +51,9 @@ const PlaylistTitle = styled.h2`
   text-align: center;
 `;
 
-const VideoThumbnail = styled.div<{ isActive: boolean }>`
+const VideoThumbnail = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>`
   display: flex;
   align-items: center;
   padding: 0.75rem;
@@ -68,7 +71,9 @@ const VideoThumbnail = styled.div<{ isActive: boolean }>`
   }
 `;
 
-const ThumbnailImage = styled.div`
+const ThumbnailImage = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'thumbnailUrl',
+})<{ thumbnailUrl?: string }>`
   width: 60px;
   height: 40px;
   background-color: var(--border);
@@ -79,6 +84,37 @@ const ThumbnailImage = styled.div`
   justify-content: center;
   font-size: 0.75rem;
   color: var(--text-secondary);
+  background-image: ${props => props.thumbnailUrl ? `url(${props.thumbnailUrl})` : 'none'};
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  
+  ${props => props.thumbnailUrl && `
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    font-weight: bold;
+    background-color: #000;
+  `}
+  
+  /* Ensure text is visible over thumbnail */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${props => props.thumbnailUrl ? 'rgba(0, 0, 0, 0.3)' : 'transparent'};
+    border-radius: 4px;
+    z-index: 1;
+  }
+  
+  /* Text should be above the overlay */
+  & > * {
+    position: relative;
+    z-index: 2;
+  }
 `;
 
 const VideoInfo = styled.div`
@@ -158,9 +194,11 @@ interface Playlist {
 interface PlaylistViewerProps {
   playlistId?: string;
   initialVideoId?: string;
+  videos?: Video[];
+  playlistTitle?: string;
 }
 
-export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistViewerProps) {
+export default function PlaylistViewer({ playlistId, initialVideoId, videos: propVideos, playlistTitle }: PlaylistViewerProps) {
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -173,6 +211,12 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
     if (playlistId) {
       fetchPlaylistData();
     }
+  }, [playlistId, propVideos, playlistTitle]);
+
+  // Reset selected video when playlist changes
+  useEffect(() => {
+    setSelectedVideo(null);
+    setScript("");
   }, [playlistId]);
 
   useEffect(() => {
@@ -182,7 +226,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
         setSelectedVideo(video);
         fetchScript(video.id);
       }
-    } else if (videos.length > 0 && !selectedVideo) {
+    } else if (videos.length > 0) {
       // Auto-select first video if no initial video specified
       setSelectedVideo(videos[0]);
       fetchScript(videos[0].id);
@@ -193,6 +237,22 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
     try {
       setLoading(true);
       
+      // Check if this is a personalized playlist (passed as videos prop)
+      if (playlistId === "personalized" && propVideos && propVideos.length > 0) {
+        // For personalized playlists, use the passed videos and playlist data
+        setVideos(propVideos);
+        if (playlistTitle) {
+          setPlaylist({
+            id: "personalized",
+            name: playlistTitle,
+            description: "Your personalized learning path based on your profile"
+          });
+        }
+        setLoading(false);
+        return;
+      }
+      
+      // For regular playlists, fetch from API
       // Fetch playlist details
       const playlistResponse = await fetch(`/api/tutorials/playlists/${playlistId}`);
       if (playlistResponse.ok) {
@@ -204,8 +264,11 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
       const videosResponse = await fetch(`/api/tutorials/playlists/${playlistId}/videos`);
       if (videosResponse.ok) {
         const videosData = await videosResponse.json();
+        console.log('Raw videos response:', videosData);
         // Handle both array and object response formats
         const videosArray = Array.isArray(videosData) ? videosData : (videosData.videos || []);
+        console.log('Processed videos array:', videosArray);
+        console.log('First video in processed array:', videosArray[0]);
         setVideos(videosArray);
       }
     } catch (error) {
@@ -256,6 +319,11 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const getYouTubeThumbnail = (videoId: string) => {
+    if (!videoId) return undefined;
+    return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  };
+
   if (loading) {
     return (
       <Container>
@@ -268,39 +336,54 @@ export default function PlaylistViewer({ playlistId, initialVideoId }: PlaylistV
     <Container>
       <Sidebar>
         <PlaylistTitle>{playlist?.title || "Playlist Videos"}</PlaylistTitle>
-        {Array.isArray(videos) && videos.map((video) => (
-          <VideoThumbnail
-            key={video.id}
-            isActive={selectedVideo?.id === video.id}
-            onClick={() => handleVideoSelect(video)}
-          >
-            <ThumbnailImage>
-              {video.video_order}
-            </ThumbnailImage>
-            <VideoInfo>
-              <VideoTitle>{video.title}</VideoTitle>
-              <VideoDuration>{formatDuration(video.duration)}</VideoDuration>
-            </VideoInfo>
-          </VideoThumbnail>
-        ))}
+        {Array.isArray(videos) && videos.map((video) => {
+          const thumbnailUrl = getYouTubeThumbnail(video.youtube_video_id);
+          
+          return (
+            <VideoThumbnail
+              key={video.id}
+              isActive={selectedVideo?.id === video.id}
+              onClick={() => handleVideoSelect(video)}
+            >
+              <ThumbnailImage thumbnailUrl={thumbnailUrl}>
+                {video.video_order}
+              </ThumbnailImage>
+              <VideoInfo>
+                <VideoTitle>{video.title}</VideoTitle>
+                <VideoDuration>{formatDuration(video.duration)}</VideoDuration>
+              </VideoInfo>
+            </VideoThumbnail>
+          );
+        })}
       </Sidebar>
 
       <MainContent>
-        <VideoPlayer>
-          {selectedVideo ? (
-            <>
-              <VideoTitleMain>{selectedVideo.title}</VideoTitleMain>
-              <VideoDescription>{selectedVideo.description}</VideoDescription>
-              <VideoPlaceholder>
-                Video Player - {selectedVideo.title}
-              </VideoPlaceholder>
-            </>
-          ) : (
-            <VideoPlaceholder>
-              Select a video to view content
-            </VideoPlaceholder>
-          )}
-        </VideoPlayer>
+        {selectedVideo ? (
+          <>
+            {console.log('Selected video data:', selectedVideo)}
+            {console.log('YouTube video ID:', selectedVideo.youtube_video_id)}
+            <VideoPlayer
+              videoId={selectedVideo.youtube_video_id || ''}
+              title={selectedVideo.title}
+              description={selectedVideo.description}
+              playlistId={playlistId}
+              onVideoEnd={() => {
+                // Auto-play next video or show completion message
+                console.log('Video ended:', selectedVideo.title);
+              }}
+              onProgressUpdate={(progress, isCompleted) => {
+                console.log(`Video progress: ${progress}%, completed: ${isCompleted}`);
+              }}
+            />
+          </>
+        ) : (
+          <VideoPlaceholder>
+            <VideoTitleMain>Select a video to start learning</VideoTitleMain>
+            <VideoDescription>
+              Choose a video from the playlist on the left to begin your learning journey.
+            </VideoDescription>
+          </VideoPlaceholder>
+        )}
 
         <ScriptPanel>
           <ScriptTitle>Script</ScriptTitle>

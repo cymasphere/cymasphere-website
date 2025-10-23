@@ -8,10 +8,10 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { videoId: string } }
+  { params }: { params: Promise<{ videoId: string }> }
 ) {
   try {
-    const { videoId } = params;
+    const { videoId } = await params;
 
     if (!videoId) {
       return NextResponse.json({ error: 'Video ID is required' }, { status: 400 });
@@ -35,7 +35,7 @@ export async function GET(
         )
       `)
       .eq('video_id', videoId)
-      .single();
+      .maybeSingle();
 
     if (scriptError) {
       console.error('Error fetching video script:', scriptError);
@@ -52,3 +52,4 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "supabase-jmfpresents": {
+      "url": "https://mcp.supabase.com/mcp",
+      "env": {
+        "SUPABASE_PROJECT_ID": "kazrqcaddjgdhpegohgt"
+      }
+    },
+    "supabase-cymasphere": {
+      "url": "https://mcp.supabase.com/mcp",
+      "env": {
+        "SUPABASE_PROJECT_ID": "jibirpbauzqhdiwjlrmf"
+      }
+    },
+    "browser-tools": {
+      "command": "npx",
+      "args": ["@agentdeskai/browser-tools-mcp@latest"]
+    }
+  }
+}
+
+

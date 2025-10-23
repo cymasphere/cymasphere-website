@@ -8,10 +8,10 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const playlistId = params.id;
+    const { id: playlistId } = await params;
 
     // Get all videos in the playlist with their order
     const { data: playlistVideos, error: playlistError } = await supabase
@@ -32,6 +32,7 @@ export async function GET(
           musical_context,
           component_source_file,
           video_order,
+          youtube_video_id,
           created_at,
           updated_at
         )
@@ -61,3 +62,4 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

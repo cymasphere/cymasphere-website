@@ -1,14 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import Link from "next/link";
+import { FaArrowLeft, FaPlay } from "react-icons/fa";
 import PlaylistViewer from "../components/PlaylistViewer";
+import VideoPlayer from "../components/VideoPlayer";
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   background-color: var(--bg);
-  padding-top: 60px; /* Add padding to avoid overlap with back button */
 `;
 
 const Header = styled.div`
@@ -18,6 +20,24 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+`;
+
+const BackButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--primary);
+  }
+
+  svg {
+    font-size: 0.8rem;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -31,7 +51,9 @@ const DropdownContainer = styled.div`
   min-width: 300px;
 `;
 
-const DropdownButton = styled.button<{ isOpen: boolean }>`
+const DropdownButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isOpen',
+})<{ isOpen: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,7 +78,9 @@ const DropdownButton = styled.button<{ isOpen: boolean }>`
   }
 `;
 
-const DropdownMenu = styled.div<{ isOpen: boolean }>`
+const DropdownMenu = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isOpen',
+})<{ isOpen: boolean }>`
   position: absolute;
   top: 100%;
   left: 0;
@@ -71,7 +95,9 @@ const DropdownMenu = styled.div<{ isOpen: boolean }>`
   display: ${props => props.isOpen ? 'block' : 'none'};
 `;
 
-const PlaylistItem = styled.div<{ isActive: boolean }>`
+const PlaylistItem = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>`
   display: flex;
   flex-direction: column;
   padding: 1rem;
@@ -113,6 +139,14 @@ const PlaylistDescription = styled.p`
 const ViewerContainer = styled.div`
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ViewerHeader = styled.div`
+  padding: 1rem 1.5rem;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border);
 `;
 
 const LoadingSpinner = styled.div`
@@ -139,10 +173,52 @@ export default function PlaylistsPage() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [personalizedPlaylist, setPersonalizedPlaylist] = useState<any>(null);
+  const [showPersonalized, setShowPersonalized] = useState(false);
 
   useEffect(() => {
     fetchPlaylists();
+    fetchPersonalizedPlaylist();
   }, []);
+
+  const fetchPersonalizedPlaylist = async () => {
+    try {
+      // Get user ID from localStorage or context
+      const userId = localStorage.getItem('userId') || '900f11b8-c901-49fd-bfab-5fafe984ce72'; // fallback for testing
+      
+      // First, fetch the user's profile
+      const profileResponse = await fetch(`/api/tutorials/user-profile?userId=${userId}`);
+      if (!profileResponse.ok) {
+        console.error('Failed to fetch user profile');
+        return;
+      }
+      
+      const profileData = await profileResponse.json();
+      if (!profileData.profile) {
+        console.log('No user profile found - skipping personalized playlist');
+        return;
+      }
+      
+      // Now generate the personalized playlist with the profile data
+      const playlistResponse = await fetch('/api/tutorials/generate-playlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData.profile),
+      });
+
+      if (playlistResponse.ok) {
+        const playlistData = await playlistResponse.json();
+        setPersonalizedPlaylist(playlistData.playlist);
+        setShowPersonalized(true);
+      } else {
+        console.error('Failed to generate personalized playlist');
+      }
+    } catch (error) {
+      console.error('Error fetching personalized playlist:', error);
+    }
+  };
 
   const fetchPlaylists = async () => {
     try {
@@ -203,19 +279,42 @@ export default function PlaylistsPage() {
   return (
     <Container>
       <Header>
-        <PageTitle>All Playlists</PageTitle>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <BackButton href="/admin/tutorial-center">
+            <FaArrowLeft />
+            Back to Tutorial Center
+          </BackButton>
+          <PageTitle>All Playlists</PageTitle>
+        </div>
         <DropdownContainer data-dropdown>
           <DropdownButton isOpen={isDropdownOpen} onClick={toggleDropdown}>
-            <span>{selectedPlaylist?.title || "Select a playlist"}</span>
+            <span>
+              {showPersonalized && personalizedPlaylist 
+                ? "Your Personalized Learning Path" 
+                : selectedPlaylist?.title || "Select a playlist"}
+            </span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </DropdownButton>
           <DropdownMenu isOpen={isDropdownOpen}>
+            {showPersonalized && personalizedPlaylist && (
+              <PlaylistItem
+                key="personalized"
+                isActive={showPersonalized}
+                onClick={() => {
+                  setShowPersonalized(true);
+                  setIsDropdownOpen(false);
+                }}
+              >
+                <PlaylistName>🎯 Your Personalized Learning Path</PlaylistName>
+                <PlaylistDescription>{personalizedPlaylist.description}</PlaylistDescription>
+              </PlaylistItem>
+            )}
             {Array.isArray(playlists) && playlists.map((playlist) => (
               <PlaylistItem
                 key={playlist.id}
-                isActive={selectedPlaylistId === playlist.id}
+                isActive={selectedPlaylistId === playlist.id && !showPersonalized}
                 onClick={() => handlePlaylistSelect(playlist)}
               >
                 <PlaylistName>{playlist.title}</PlaylistName>
@@ -227,7 +326,13 @@ export default function PlaylistsPage() {
       </Header>
 
       <ViewerContainer>
-        {selectedPlaylistId && (
+        {showPersonalized && personalizedPlaylist ? (
+          <PlaylistViewer 
+            playlistId="personalized" 
+            videos={personalizedPlaylist.videos}
+            playlistTitle="Your Personalized Learning Path"
+          />
+        ) : selectedPlaylistId && (
           <PlaylistViewer playlistId={selectedPlaylistId} />
         )}
       </ViewerContainer>

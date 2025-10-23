@@ -136,3 +136,6 @@ function calculateTotalProgress(progressData: any): number {
   const completedVideos = videos.filter(videoId => progressData[videoId].completed);
   return Math.round((completedVideos.length / videos.length) * 100);
 }
+
+
+

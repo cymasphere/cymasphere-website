@@ -18,6 +18,8 @@ import {
   FaPlug,
   FaCheck,
   FaArrowRight,
+  FaArrowDown,
+  FaListOl,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -430,6 +432,7 @@ export default function TutorialCenter() {
   const [generatedPlaylist, setGeneratedPlaylist] = useState<any>(null);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [showPlaylistDetails, setShowPlaylistDetails] = useState(false);
 
   // Check for existing user profile on load
   useEffect(() => {
@@ -633,30 +636,6 @@ export default function TutorialCenter() {
             <Subtitle>
               Comprehensive learning platform for Cymasphere with personalized learning paths
             </Subtitle>
-            {hasExistingProfile && !showProfilingForm && (
-              <ProfileStatus>
-                <ProfileInfo>
-                  <ProfileLabel>Your Profile:</ProfileLabel>
-                  <ProfileDetails>
-                    {userProfile.theoryLevel} • {userProfile.techLevel.replace('_', ' ')} • {userProfile.appMode} • {userProfile.musicalGoals.join(', ')}
-                  </ProfileDetails>
-                </ProfileInfo>
-                <EditProfileButton onClick={() => setShowProfilingForm(true)}>
-                  <FaCog />
-                  Edit Profile
-                </EditProfileButton>
-              </ProfileStatus>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <ViewAllButton as={Link} href="/admin/tutorial-center/playlists">
-              <FaList />
-              View All Playlists
-            </ViewAllButton>
-            <ViewAllButton as={Link} href="/admin/tutorial-center/videos">
-              <FaVideo />
-              View All Videos
-            </ViewAllButton>
           </div>
         </Header>
 
@@ -914,28 +893,558 @@ export default function TutorialCenter() {
         )}
 
         {generatedPlaylist && (
-          <div style={{ 
-            background: 'var(--card-bg)', 
-            padding: '2rem', 
-            borderRadius: '12px',
-            border: '2px solid var(--primary)',
-            marginBottom: '2rem'
-          }}>
-            <h3>{generatedPlaylist.title}</h3>
-            <p>{generatedPlaylist.description}</p>
-            <div style={{ marginTop: '1rem' }}>
-              <span>📹 {generatedPlaylist.videoCount} videos</span>
-              <span style={{ marginLeft: '1rem' }}>⏱️ {generatedPlaylist.totalDuration}</span>
+          <motion.div variants={fadeIn} style={{ marginBottom: '2rem' }}>
+            <div style={{ 
+              background: 'var(--card-bg)', 
+              padding: '2rem', 
+              borderRadius: '12px',
+              border: '2px solid var(--primary)',
+              marginBottom: '2rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--primary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '1.2rem',
+                    flexShrink: 0
+                  }}>
+                    <FaPlay />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0', color: 'var(--text)' }}>
+                      Your Personalized Learning Path
+                    </h3>
+                    <p style={{ fontSize: '1rem', margin: '0', color: 'var(--text-secondary)' }}>
+                      {generatedPlaylist.description}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowProfilingForm(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: 'var(--text)',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.color = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.color = 'var(--text)';
+                  }}
+                >
+                  <FaCog />
+                  Edit Profile
+                </button>
+              </div>
+
+              {/* Profile Details with Icons */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                gap: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(108, 99, 255, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(108, 99, 255, 0.1)'
+                }}>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--primary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '1rem'
+                  }}>
+                    <FaMusic />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      Music Theory Level
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text)' }}>
+                      {userProfile.theoryLevel.charAt(0).toUpperCase() + userProfile.theoryLevel.slice(1)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(108, 99, 255, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(108, 99, 255, 0.1)'
+                }}>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--primary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '1rem'
+                  }}>
+                    <FaCog />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      Technical Experience
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text)' }}>
+                      {userProfile.techLevel.replace('_', ' ').split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ')}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(108, 99, 255, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(108, 99, 255, 0.1)'
+                }}>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--primary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '1rem'
+                  }}>
+                    <FaDesktop />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      App Usage Mode
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text)' }}>
+                      {userProfile.appMode === 'standalone' ? 'Standalone' : 
+                       userProfile.appMode === 'plugin' ? 'Plugin' : 
+                       'Both standalone & plugin'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(108, 99, 255, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(108, 99, 255, 0.1)'
+                }}>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--primary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '1rem'
+                  }}>
+                    <FaArrowRight />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      Musical Goals
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text)' }}>
+                      {userProfile.musicalGoals.map(goal => 
+                        goal.replace('_', ' ').charAt(0).toUpperCase() + goal.replace('_', ' ').slice(1)
+                      ).join(', ')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Learning Path Stats */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                gap: '1rem',
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(108, 99, 255, 0.05)',
+                borderRadius: '8px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                    📹 {generatedPlaylist.videoCount}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Videos</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                    ⏱️ {generatedPlaylist.totalDuration}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Duration</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Learning Progress
+                  </span>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+                    Ready to Start
+                  </span>
+                </div>
+                <div style={{ 
+                  width: '100%', 
+                  height: '8px', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    background: 'linear-gradient(90deg, var(--primary) 0%, rgba(108, 99, 255, 0.3) 100%)', 
+                    borderRadius: '4px',
+                    transition: 'width 0.3s ease',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '4px',
+                      height: '4px',
+                      backgroundColor: 'white',
+                      borderRadius: '50%',
+                      animation: 'pulse 2s infinite'
+                    }} />
+                  </div>
+                </div>
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  color: 'var(--text-secondary)', 
+                  marginTop: '0.5rem',
+                  textAlign: 'center'
+                }}>
+                  Your personalized playlist is ready! Click below to view your learning path.
+                </div>
+              </div>
+
+              {/* Continue Learning Button */}
+              <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                <Link 
+                  href="/admin/tutorial-center/playlists"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    background: 'var(--primary)',
+                    color: 'white',
+                    padding: '1rem 2rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)',
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--accent)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(108, 99, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--primary)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.3)';
+                  }}
+                >
+                  <FaPlay />
+                  Continue Learning
+                </Link>
+              </div>
             </div>
-          </div>
+          </motion.div>
+        )}
+
+        {/* Playlist Details */}
+        {generatedPlaylist && showPlaylistDetails && (
+          <motion.div 
+            variants={fadeIn} 
+            style={{ marginBottom: '2rem' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div style={{ 
+              background: 'var(--card-bg)', 
+              padding: '2rem', 
+              borderRadius: '12px',
+              border: '1px solid rgba(108, 99, 255, 0.2)'
+            }}>
+              <h3 style={{ 
+                fontSize: '1.3rem', 
+                margin: '0 0 1.5rem 0', 
+                color: 'var(--text)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <FaListOl />
+                Your Learning Path Videos
+              </h3>
+              
+              <div style={{ 
+                display: 'grid', 
+                gap: '1rem'
+              }}>
+                {generatedPlaylist.videos?.map((video: any, index: number) => (
+                  <div key={video.id} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(108, 99, 255, 0.05)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(108, 99, 255, 0.1)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(108, 99, 255, 0.1)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(108, 99, 255, 0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(108, 99, 255, 0.1)';
+                  }}
+                  >
+                    <div style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '8px', 
+                      backgroundColor: 'var(--primary)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      color: 'white', 
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold',
+                      flexShrink: 0
+                    }}>
+                      {index + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600', 
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {video.title}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.4'
+                      }}>
+                        {video.description}
+                      </div>
+                    </div>
+                    <div style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      flexShrink: 0
+                    }}>
+                      <div style={{ 
+                        fontSize: '0.8rem', 
+                        color: 'var(--primary)', 
+                        fontWeight: '500'
+                      }}>
+                        {video.duration}
+                      </div>
+                      <button
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--primary)',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          fontSize: '0.8rem'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--accent)';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--primary)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                        onClick={() => {
+                          // TODO: Navigate to video player
+                          console.log('Play video:', video.id);
+                        }}
+                      >
+                        <FaPlay style={{ marginLeft: '2px' }} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {!showProfilingForm && (
           <>
-            <AnalyticsDashboard />
-            <ProgressTracker />
-            <SystemValidator />
-            <SystemTester />
+            {/* Main Navigation Cards */}
+            <motion.div variants={fadeIn} style={{ marginBottom: '2rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                gap: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                <Link href="/admin/tutorial-center/videos" style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}>
+                    <div style={{ 
+                      width: '64px', 
+                      height: '64px', 
+                      borderRadius: '12px', 
+                      backgroundColor: 'var(--primary)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      color: 'white', 
+                      fontSize: '1.5rem',
+                      margin: '0 auto 1rem auto'
+                    }}>
+                      <FaVideo />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0', color: 'var(--text)' }}>All Videos</h3>
+                    <p style={{ fontSize: '1rem', margin: '0', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                      Browse and watch all tutorial videos
+                    </p>
+                  </div>
+                </Link>
+
+                <Link href="/admin/tutorial-center/playlists" style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}>
+                    <div style={{ 
+                      width: '64px', 
+                      height: '64px', 
+                      borderRadius: '12px', 
+                      backgroundColor: 'var(--primary)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      color: 'white', 
+                      fontSize: '1.5rem',
+                      margin: '0 auto 1rem auto'
+                    }}>
+                      <FaList />
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0', color: 'var(--text)' }}>All Playlists</h3>
+                    <p style={{ fontSize: '1rem', margin: '0', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                      View organized learning playlists
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </motion.div>
           </>
         )}
       </motion.div>
