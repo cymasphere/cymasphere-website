@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FaArrowLeft, FaPlay } from "react-icons/fa";
 import PlaylistViewer from "../components/PlaylistViewer";
 import VideoPlayer from "../components/VideoPlayer";
+import CymasphereLogo from "@/components/common/CymasphereLogo";
 // Removed loading spinner per request
 
 const Container = styled.div`
@@ -50,7 +51,9 @@ const PageTitle = styled.h1`
 
 const DropdownContainer = styled.div`
   position: relative;
-  min-width: 300px;
+  width: 350px;
+  padding-left: 1rem;
+  margin: 0 auto;
 `;
 
 const DropdownButton = styled.button.withConfig({
@@ -59,7 +62,7 @@ const DropdownButton = styled.button.withConfig({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
+  width: 350px;
   padding: 0.75rem 1rem;
   background-color: var(--bg);
   border: 1px solid var(--border);
@@ -68,6 +71,11 @@ const DropdownButton = styled.button.withConfig({
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s ease;
+
+  span {
+    flex: 1;
+    text-align: center;
+  }
 
   &:hover {
     border-color: var(--primary);
@@ -142,6 +150,7 @@ const DropdownLabel = styled.div`
   font-size: 0.75rem;
   color: var(--text-secondary);
   margin-bottom: 0.375rem;
+  padding-left: 1rem;
 `;
 
 const ViewerContainer = styled.div`
@@ -335,6 +344,13 @@ export default function PlaylistsPage() {
     <Container>
       <Header>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <CymasphereLogo
+            size="32px"
+            fontSize="1.4rem"
+            href="/admin"
+          />
+        </div>
+        <div style={{ flex: 1, textAlign: 'center' }}>
           <DropdownContainer data-dropdown>
             <DropdownLabel>Playlist</DropdownLabel>
             <DropdownButton isOpen={isDropdownOpen} onClick={toggleDropdown}>
@@ -382,9 +398,6 @@ export default function PlaylistsPage() {
               ))}
             </DropdownMenu>
           </DropdownContainer>
-        </div>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <PageTitle>Cymasphere Tutorials</PageTitle>
         </div>
         <BackButton href="/admin/tutorial-center">
           <FaArrowLeft />

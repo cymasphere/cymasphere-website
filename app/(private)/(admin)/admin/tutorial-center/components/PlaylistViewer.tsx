@@ -45,11 +45,10 @@ const ScriptPanel = styled.div`
   overflow-y: auto;
 `;
 
-const PlaylistTitle = styled.h2`
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: var(--primary);
-  text-align: center;
+const PlaylistTitle = styled.div`
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
 `;
 
 const VideoThumbnail = styled.div.withConfig({
@@ -117,6 +116,24 @@ const ThumbnailImage = styled.div.withConfig({
     position: relative;
     z-index: 2;
   }
+`;
+
+const CheckboxIcon = styled.div`
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: var(--success);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 3;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 `;
 
 const VideoInfo = styled.div`
@@ -189,6 +206,32 @@ const ScriptContent = styled.div`
   white-space: pre-wrap;
 `;
 
+const ContextMenu = styled.div`
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0;
+  min-width: 150px;
+`;
+
+const ContextMenuItem = styled.div`
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--hover);
+  }
+
+  &:active {
+    background-color: var(--primary);
+    color: white;
+  }
+`;
+
 // No additional local spinner styles needed; use shared LoadingSpinner
 
 interface Video {
@@ -224,6 +267,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const [progressMap, setProgressMap] = useState<Record<string, { progress: number; completed: boolean }>>({});
   const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
   const [progressPollingInterval, setProgressPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; videoId: string } | null>(null);
 
   // Poll database for progress updates - DATABASE IS SOURCE OF TRUTH
   const pollDatabaseProgress = useCallback(async () => {
@@ -286,6 +330,65 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       };
     });
   }, [selectedVideo]);
+
+  // Manually mark video as complete
+  const markVideoComplete = useCallback(async (videoId: string) => {
+    try {
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      const video = videos.find(v => v.id === videoId);
+      
+      if (!video || !video.youtube_video_id) {
+        console.error('Video not found or has no YouTube ID:', video);
+        return;
+      }
+      
+      console.log('Marking video as complete:', { userId, videoId, youtubeVideoId: video.youtube_video_id, progress: 100, completed: true });
+      
+      const response = await fetch('/api/tutorials/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          videoId: video.youtube_video_id, // Use YouTube video ID, not UUID
+          progress: 100,
+          completed: true,
+        }),
+      });
+
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
+      if (response.ok) {
+        console.log('Video marked as complete successfully:', videoId);
+        // Update local progress map
+        setProgressMap(prev => ({
+          ...prev,
+          [videoId]: { progress: 100, completed: true }
+        }));
+        // Close context menu
+        setContextMenu(null);
+      } else {
+        console.error('Failed to mark video as complete:', responseData);
+      }
+    } catch (error) {
+      console.error('Error marking video as complete:', error);
+    }
+  }, []);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setContextMenu(null);
+    };
+
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu]);
 
   // Get the current progress for a video, prioritizing real-time updates over saved progress
   const getVideoProgress = useCallback((video: Video) => {
@@ -713,9 +816,22 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
               key={video.id}
               isActive={selectedVideo?.id === video.id}
               onClick={() => handleVideoSelect(video)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  videoId: video.id
+                });
+              }}
             >
               <ThumbnailImage thumbnailUrl={thumbnailUrl}>
                 {video.video_order}
+                {isCompleted && (
+                  <CheckboxIcon>
+                    ✓
+                  </CheckboxIcon>
+                )}
               </ThumbnailImage>
               <VideoInfo>
                 <VideoTitle>{video.title}</VideoTitle>
@@ -780,6 +896,22 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           )}
         </ScriptPanel>
       </MainContent>
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          style={{
+            position: 'fixed',
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 1000,
+          }}
+        >
+          <ContextMenuItem onClick={() => markVideoComplete(contextMenu.videoId)}>
+            ✓ Mark as Complete
+          </ContextMenuItem>
+        </ContextMenu>
+      )}
     </Container>
   );
 }
