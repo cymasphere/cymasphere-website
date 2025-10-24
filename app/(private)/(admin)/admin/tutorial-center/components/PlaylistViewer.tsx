@@ -223,18 +223,61 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const router = useRouter();
   const [progressMap, setProgressMap] = useState<Record<string, { progress: number; completed: boolean }>>({});
   const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
+  const [progressPollingInterval, setProgressPollingInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Poll database for progress updates - DATABASE IS SOURCE OF TRUTH
+  const pollDatabaseProgress = useCallback(async () => {
+    try {
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const prog = data.progress || {};
+        
+        // Update progress map with fresh database data
+        setProgressMap((prev) => {
+          const newMap = { ...prev };
+          let hasChanges = false;
+          
+          videos.forEach((video) => {
+            const youtubeId = video.youtube_video_id;
+            if (youtubeId && prog[youtubeId]) {
+              const dbProgress = prog[youtubeId].progress || 0;
+              const dbCompleted = !!prog[youtubeId].completed;
+              const currentProgress = prev[video.id]?.progress || 0;
+              const currentCompleted = prev[video.id]?.completed || false;
+              
+              // Only update if there are actual changes
+              if (dbProgress !== currentProgress || dbCompleted !== currentCompleted) {
+                newMap[video.id] = { 
+                  progress: dbProgress, 
+                  completed: dbCompleted 
+                };
+                hasChanges = true;
+                console.log(`Progress bar updated from DATABASE: ${video.title} - ${dbProgress}% (${dbCompleted ? 'completed' : 'in progress'})`);
+              }
+            }
+          });
+          
+          return hasChanges ? newMap : prev;
+        });
+      }
+    } catch (error) {
+      console.error('Error polling database progress:', error);
+    }
+  }, [videos]);
 
   const handleProgressUpdate = useCallback((percent: number, completed: boolean) => {
     if (!selectedVideo) return;
     
-    // Ensure forward-only progress - never go backwards
+    // Ensure forward-only progress - never go backwards (DATABASE IS SOURCE OF TRUTH)
     setProgressMap((prev) => {
       const currentProgress = prev[selectedVideo.id]?.progress || 0;
       const newProgress = Math.max(currentProgress, percent); // Only update if progress increased or stayed same
       
       // Only log significant progress changes to reduce noise
       if (newProgress % 10 === 0 || completed) {
-        console.log('Progress update received:', { videoId: selectedVideo.id, percent: newProgress, completed, wasIncreased: newProgress > currentProgress });
+        console.log('Progress update received (validated against DATABASE):', { videoId: selectedVideo.id, percent: newProgress, completed, wasIncreased: newProgress > currentProgress });
       }
       
       return {
@@ -284,7 +327,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     }
   }, [videos, initialVideoId]);
 
-  // Fetch user progress once on mount and when playlist changes
+  // Fetch user progress from DATABASE (source of truth) once on mount and when playlist changes
   useEffect(() => {
     const loadProgress = async () => {
       try {
@@ -297,32 +340,38 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           return;
         }
         const data = await res.json();
-        console.log('Progress data received:', data);
+        console.log('Progress data received from DATABASE (source of truth):', data);
         
-        // Create a mapping from database video IDs to progress data
+        // Create a mapping from database video IDs to progress data - DATABASE IS SOURCE OF TRUTH
         const map: Record<string, { progress: number; completed: boolean }> = {};
         const prog = data.progress || {};
+        console.log('Raw progress data from DATABASE:', prog);
         
         // Get the current videos to create the mapping
         const currentVideos = videos.length > 0 ? videos : await fetchCurrentVideos();
+        console.log('Current videos for mapping:', currentVideos);
         
         if (currentVideos && currentVideos.length > 0) {
           currentVideos.forEach((video) => {
             const youtubeId = video.youtube_video_id;
+            console.log(`Mapping video ${video.id} (${video.title}) with YouTube ID ${youtubeId}`);
             if (youtubeId && prog[youtubeId]) {
-              // Map database video ID to progress data using YouTube ID
+              // Map database video ID to progress data using YouTube ID - DATABASE IS SOURCE OF TRUTH
               map[video.id] = { 
                 progress: prog[youtubeId].progress || 0, 
                 completed: !!prog[youtubeId].completed 
               };
+              console.log(`Mapped ${video.id} -> progress: ${prog[youtubeId].progress}, completed: ${prog[youtubeId].completed} (from DATABASE)`);
+            } else {
+              console.log(`No progress found for video ${video.id} with YouTube ID ${youtubeId}`);
             }
           });
         }
         
-        console.log('Progress map created:', map);
+        console.log('Final progress map created from DATABASE:', map);
         setProgressMap(map);
       } catch (e) {
-        console.error('Error loading progress:', e);
+        console.error('Error loading progress from DATABASE:', e);
       }
     };
 
@@ -345,6 +394,33 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     };
     loadProgress();
   }, [playlistId, videos]);
+
+  // Start/stop database polling for progress bars - DATABASE IS SOURCE OF TRUTH
+  useEffect(() => {
+    if (videos.length > 0) {
+      // Start polling every 5 seconds to keep progress bars synchronized with database
+      const interval = setInterval(pollDatabaseProgress, 5000);
+      setProgressPollingInterval(interval);
+      
+      console.log('Started database polling for progress bars (every 5 seconds)');
+      
+      return () => {
+        clearInterval(interval);
+        setProgressPollingInterval(null);
+        console.log('Stopped database polling for progress bars');
+      };
+    }
+  }, [videos, pollDatabaseProgress]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (progressPollingInterval) {
+        clearInterval(progressPollingInterval);
+        console.log('Cleaned up progress polling on unmount');
+      }
+    };
+  }, [progressPollingInterval]);
 
   const fetchPlaylistData = async () => {
     try {
@@ -472,9 +548,37 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     }
   };
 
-  const handleVideoSelect = (video: Video) => {
+  const handleVideoSelect = async (video: Video) => {
+    console.log('Video selected:', video.title, video.youtube_video_id);
     setSelectedVideo(video);
     fetchScript(video.id);
+    
+    // DATABASE IS SOURCE OF TRUTH - fetch fresh progress when video is selected
+    try {
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const prog = data.progress || {};
+        
+        // Update progress map with fresh database data
+        setProgressMap((prev) => {
+          const newMap = { ...prev };
+          videos.forEach((v) => {
+            const youtubeId = v.youtube_video_id;
+            if (youtubeId && prog[youtubeId]) {
+              newMap[v.id] = { 
+                progress: prog[youtubeId].progress || 0, 
+                completed: !!prog[youtubeId].completed 
+              };
+            }
+          });
+          return newMap;
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching fresh progress on video select:', error);
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -513,31 +617,80 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     return video.duration;
   }, [youtubeDurations]);
 
-  // Preload YouTube durations for all videos in the playlist
+  // Load cached durations and fetch missing ones efficiently
   useEffect(() => {
-    const preloadDurations = async () => {
-      if (!videos || videos.length === 0) return;
+    const loadDurationsEfficiently = async () => {
+      console.log('loadDurationsEfficiently called with videos:', videos?.length || 0);
+      if (!videos || videos.length === 0) {
+        console.log('No videos to load durations for');
+        return;
+      }
       
-      // Load durations for all videos with YouTube IDs
-      const youtubeVideos = videos.filter(v => v.youtube_video_id && !youtubeDurations[v.youtube_video_id]);
+      // Get video IDs for this playlist
+      const videoIds = videos.map(v => v.id);
+      console.log('Video IDs for duration loading:', videoIds);
       
-      for (const video of youtubeVideos) {
-        try {
-          const response = await fetch(`/api/youtube/duration?id=${video.youtube_video_id}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.duration && data.duration > 0) {
-              updateYoutubeDuration(video.youtube_video_id!, data.duration);
+      try {
+        // Fetch videos with cached durations from database
+        const response = await fetch(`/api/tutorials/videos-with-durations?videoIds=${videoIds.join(',')}`);
+        console.log('Duration API response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Loaded ${data.cached_count} cached durations, ${data.needs_fetch_count} need fetching`);
+          console.log('Duration data:', data);
+          
+          // Update durations from cache
+          data.videos.forEach((video: any) => {
+            if (video.youtube_video_id && video.duration_cached) {
+              console.log(`Updating cached duration for ${video.youtube_video_id}: ${video.duration}s`);
+              updateYoutubeDuration(video.youtube_video_id, video.duration);
+            }
+          });
+          
+          // Only fetch durations for videos that don't have cached durations
+          const videosNeedingDuration = data.videos.filter((v: any) => v.needs_duration_fetch);
+          
+          if (videosNeedingDuration.length > 0) {
+            console.log(`Fetching durations for ${videosNeedingDuration.length} videos`);
+            
+            // Fetch durations in parallel (but limit to 5 at a time to avoid rate limiting)
+            const batches = [];
+            for (let i = 0; i < videosNeedingDuration.length; i += 5) {
+              batches.push(videosNeedingDuration.slice(i, i + 5));
+            }
+            
+            for (const batch of batches) {
+              await Promise.all(batch.map(async (video: any) => {
+                try {
+                  const durationResponse = await fetch(`/api/youtube/duration?id=${video.youtube_video_id}`);
+                  if (durationResponse.ok) {
+                    const durationData = await durationResponse.json();
+                    if (durationData.duration && durationData.duration > 0) {
+                      updateYoutubeDuration(video.youtube_video_id, durationData.duration);
+                      console.log(`Fetched and cached duration for ${video.title}: ${durationData.duration}s`);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Failed to load duration for', video.youtube_video_id, error);
+                }
+              }));
+              
+              // Small delay between batches to be respectful to YouTube
+              if (batches.indexOf(batch) < batches.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
             }
           }
-        } catch (error) {
-          console.error('Failed to load duration for', video.youtube_video_id, error);
+        } else {
+          console.error('Failed to fetch durations:', response.status, response.statusText);
         }
+      } catch (error) {
+        console.error('Error loading durations efficiently:', error);
       }
     };
 
-    preloadDurations();
-  }, [videos, youtubeDurations, updateYoutubeDuration]);
+    loadDurationsEfficiently();
+  }, [videos, updateYoutubeDuration]);
 
   if (loading) {
     return <LoadingSpinner fullScreen size="small" text="Loading playlist..." />;
@@ -582,29 +735,13 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
             {/* Reduced logging to prevent console spam */}
             {selectedVideo.youtube_video_id ? (
               <VideoPlayer
+                key={selectedVideo.youtube_video_id}
                 videoId={selectedVideo.youtube_video_id}
                 title={selectedVideo.title}
                 description={selectedVideo.description}
                 playlistId={playlistId}
-                autoplay={true}
-              onVideoEnd={() => {
-                if (!autoplayNext) return;
-                // Advance to next video by sequence
-                if (!videos || videos.length === 0 || !selectedVideo) return;
-                const currentIndex = videos.findIndex(v => v.id === selectedVideo.id);
-                if (currentIndex >= 0 && currentIndex < videos.length - 1) {
-                  const next = videos[currentIndex + 1];
-                  setSelectedVideo(next);
-                  fetchScript(next.id);
-                }
-              }}
-              onProgressUpdate={handleProgressUpdate}
-              onDurationUpdate={(duration) => {
-                if (selectedVideo?.youtube_video_id) {
-                  updateYoutubeDuration(selectedVideo.youtube_video_id, duration);
-                }
-              }}
-            />
+                onProgressUpdate={handleProgressUpdate}
+              />
             ) : (
               <VideoPlaceholder>
                 <VideoTitleMain>No YouTube Video Available</VideoTitleMain>

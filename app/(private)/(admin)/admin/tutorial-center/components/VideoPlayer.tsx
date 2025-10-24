@@ -1,32 +1,34 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress } from "react-icons/fa";
-
-interface VideoPlayerProps {
-  videoId: string;
-  title: string;
-  description?: string;
-  onVideoEnd?: () => void;
-  autoplay?: boolean;
-  playlistId?: string;
-  onProgressUpdate?: (progress: number, isCompleted: boolean) => void;
-  onDurationUpdate?: (duration: number) => void;
-}
 
 const VideoContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+const VideoWrapper = styled.div`
   position: relative;
   width: 100%;
   height: 0;
   padding-bottom: 56.25%; /* 16:9 aspect ratio */
-  background: #000;
-  border-radius: 12px;
+  background-color: #000;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  margin: 1rem;
+  
+  iframe {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+  }
 `;
 
-const VideoIframe = styled.div`
+const VideoIframe = styled.iframe`
   position: absolute;
   top: 0;
   left: 0;
@@ -36,151 +38,107 @@ const VideoIframe = styled.div`
 `;
 
 const VideoInfo = styled.div`
-  margin: 1rem;
-  margin-top: 1.5rem;
+  padding: 1rem 0;
 `;
 
 const VideoTitle = styled.h2`
   font-size: 1.5rem;
   margin: 0 0 0.5rem 0;
   color: var(--text);
-  font-weight: 600;
 `;
 
 const VideoDescription = styled.p`
-  font-size: 1rem;
-  margin: 0;
   color: var(--text-secondary);
   line-height: 1.6;
-`;
-
-const LoadingContainer = styled.div<{ $visible: boolean }>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.1rem;
-  pointer-events: none;
-  opacity: ${p => (p.$visible ? 1 : 0)};
-  transition: opacity 150ms ease;
-`;
-
-const ErrorContainer = styled.div<{ $visible: boolean }>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  padding: 2rem;
-  opacity: ${p => (p.$visible ? 1 : 0)};
-  pointer-events: ${p => (p.$visible ? 'auto' : 'none')};
-  transition: opacity 150ms ease;
-`;
-
-const ErrorTitle = styled.h3`
-  font-size: 1.2rem;
-  margin: 0 0 1rem 0;
-  color: #ff6b6b;
-`;
-
-const ErrorMessage = styled.p`
-  font-size: 0.9rem;
   margin: 0;
-  opacity: 0.8;
 `;
 
-const RetryButton = styled.button`
+const ProgressContainer = styled.div`
   margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--accent);
-  }
+  padding: 1rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
-  height: 4px;
+  height: 8px;
   background-color: var(--border);
-  border-radius: 2px;
-  margin: 1rem 0;
+  border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 0.5rem;
 `;
 
-const ProgressFill = styled.div<{ percentage: number }>`
+const ProgressFill = styled.div<{ $progress: number }>`
   height: 100%;
-  background-color: var(--primary);
-  width: ${props => props.percentage}%;
+  width: ${props => props.$progress}%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
   transition: width 0.3s ease;
 `;
 
 const ProgressText = styled.div`
+  display: flex;
+  justify-content: space-between;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  text-align: center;
-  margin-top: 0.5rem;
 `;
+
+interface VideoPlayerProps {
+  videoId: string;
+  title: string;
+  description: string;
+  playlistId: string;
+  onProgressUpdate?: (percent: number, completed: boolean) => void;
+}
 
 export default function VideoPlayer({ 
   videoId, 
   title, 
   description, 
-  onVideoEnd, 
-  autoplay = false,
   playlistId,
-  onProgressUpdate,
-  onDurationUpdate
+  onProgressUpdate 
 }: VideoPlayerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  console.log('VideoPlayer component rendered with:', { videoId, title, description, playlistId });
+  
+  const [isLoaded, setIsLoaded] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [totalWatchTime, setTotalWatchTime] = useState(0);
-
-  // YouTube player refs and tracking state
   const playerRef = useRef<any>(null);
-  const pollRef = useRef<any>(null);
-  const durationRef = useRef<number>(0);
-  const maxPositionRef = useRef<number>(0);
-  const lastSavedPercentRef = useRef<number>(0);
-  const lastSaveAtRef = useRef<number>(0);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const currentProgressRef = useRef(0);
+  const lastSavedPercentRef = useRef(0);
+  const lastSaveAtRef = useRef(0);
+  const maxPositionRef = useRef(0);
+  const durationRef = useRef(0);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load previously saved forward progress and resume
+  // Load previously saved forward progress and resume - DATABASE IS SOURCE OF TRUTH
   const loadVideoProgress = async () => {
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      console.log('Loading progress for videoId:', videoId, 'userId:', userId);
       const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.log('Progress fetch failed:', res.status, res.statusText);
+        return;
+      }
       const data = await res.json();
+      console.log('Progress data loaded:', data);
+      console.log('Looking for progress entry for videoId:', videoId);
       const entry = data?.progress?.[videoId];
+      console.log('Found progress entry:', entry);
       if (entry) {
         const percent = Math.min(100, Math.max(0, Math.round(entry.progress || 0)));
+        console.log('Setting progress from DATABASE (source of truth):', percent);
+        
+        // DATABASE IS SOURCE OF TRUTH - always use database values
+        currentProgressRef.current = percent;
         setCurrentProgress(percent);
         setIsCompleted(!!entry.completed);
         lastSavedPercentRef.current = percent;
         
-        // Set the max position to ensure forward-only progress
+        // Set the max position to ensure forward-only progress based on DATABASE values
         const trySeek = () => {
           if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
             const dur = playerRef.current.getDuration();
@@ -188,7 +146,7 @@ export default function VideoPlayer({
               durationRef.current = dur;
               const targetTime = Math.max(0, Math.min(dur - 1, (percent / 100) * dur - 3));
               
-              // Set maxPositionRef to the saved progress time to ensure forward-only progress
+              // Set maxPositionRef to the DATABASE progress time to ensure forward-only progress
               maxPositionRef.current = Math.max(maxPositionRef.current, targetTime);
               
               try { playerRef.current.seekTo(targetTime, true); } catch {}
@@ -205,30 +163,52 @@ export default function VideoPlayer({
         }, 300);
       }
     } catch (error) {
-      // ignore
+      console.error('Error loading video progress:', error);
     }
   };
 
-  const postProgress = async (progress: number, completed: boolean) => {
+  // Check database progress before updating local state - DATABASE IS SOURCE OF TRUTH
+  const validateProgressAgainstDatabase = async (newPercent: number): Promise<number> => {
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
-      const body = { userId, videoId, progress, completed };
-      const now = Date.now();
-      lastSaveAtRef.current = now;
-      console.log('Saving progress:', { videoId, progress, completed, userId });
+      const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const entry = data?.progress?.[videoId];
+        if (entry) {
+          const dbPercent = Math.min(100, Math.max(0, Math.round(entry.progress || 0)));
+          console.log('Database validation:', { newPercent, dbPercent, willUse: Math.max(newPercent, dbPercent) });
+          // Always use the higher of local progress or database progress
+          return Math.max(newPercent, dbPercent);
+        }
+      }
+    } catch (error) {
+      console.error('Error validating progress against database:', error);
+    }
+    return newPercent;
+  };
+
+  // Save progress to database
+  const postProgress = async (percent: number, completed: boolean) => {
+    try {
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
       const res = await fetch('/api/tutorials/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        keepalive: true,
+        body: JSON.stringify({ userId, videoId, progress: percent, completed }),
       });
-      console.log('Progress save response:', res.status, res.ok);
-      if (res.ok && onProgressUpdate) onProgressUpdate(progress, completed);
-    } catch (e) {
-      console.error('Progress save error:', e);
+      if (res.ok) {
+        console.log('Progress saved to DATABASE (source of truth):', { videoId, percent, completed });
+        lastSaveAtRef.current = Date.now();
+      } else {
+        console.error('Failed to save progress:', res.status, res.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
     }
   };
 
+  // Throttled progress saving
   const maybeSaveProgress = (percent: number, completed: boolean) => {
     const now = Date.now();
     const improved = percent >= lastSavedPercentRef.current + 1;
@@ -249,337 +229,219 @@ export default function VideoPlayer({
     }
   };
 
-  const startPolling = () => {
-    if (pollRef.current) {
-      console.log('Polling already active, skipping');
-      return;
-    }
-    console.log('Starting progress polling for video:', videoId);
+  // Start polling for progress updates
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) return;
     
-    // Wait for player to be ready and have valid duration
-    const waitForPlayer = () => {
-      if (!playerRef.current) return false;
+    pollingIntervalRef.current = setInterval(async () => {
+      if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function') return;
       
       try {
-        const dur = playerRef.current.getDuration ? playerRef.current.getDuration() : 0;
-        const ct = playerRef.current.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
-        const state = playerRef.current.getPlayerState ? playerRef.current.getPlayerState() : -1;
+        const currentTime = playerRef.current.getCurrentTime();
+        const duration = playerRef.current.getDuration();
         
-        console.log('Player readiness check:', { duration: dur, currentTime: ct, state });
-        
-        // Player is ready if it has a valid duration (regardless of state)
-        // State -1 (unstarted) is fine, we just need duration
-        return dur > 0;
-      } catch (e) {
-        console.log('Player readiness check failed:', e);
-        return false;
-      }
-    };
-    
-    const startPollingWhenReady = () => {
-      console.log('Checking if player is ready...');
-      if (waitForPlayer()) {
-        console.log('Player is ready, starting polling');
-        pollRef.current = setInterval(() => {
-          if (!playerRef.current) {
-            console.log('Player ref is null, stopping polling');
-            return;
+        if (duration && duration > 0) {
+          durationRef.current = duration;
+          const percent = Math.min(100, Math.max(0, Math.round((currentTime / duration) * 100)));
+          
+          // Validate against database before updating local state
+          const validatedPercent = await validateProgressAgainstDatabase(percent);
+          
+          // Update progress (but ensure it never goes backwards) - DATABASE IS SOURCE OF TRUTH
+          if (validatedPercent >= currentProgressRef.current) {
+            console.log('Updating progress to:', validatedPercent);
+            currentProgressRef.current = validatedPercent;
+            setCurrentProgress(validatedPercent);
+            if (validatedPercent >= 90 && !isCompleted) setIsCompleted(true);
+            
+            // Call the progress update callback to update the sidebar progress bars
+            if (onProgressUpdate) {
+              onProgressUpdate(validatedPercent, validatedPercent >= 90);
+            }
+          } else {
+            console.log('Progress not updating because:', validatedPercent, '<', currentProgressRef.current);
           }
-          try {
-            const ct = playerRef.current.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
-            const dur = durationRef.current || (playerRef.current.getDuration ? playerRef.current.getDuration() : 0);
-            
-            console.log('Polling tick:', { currentTime: ct, duration: dur, maxPosition: maxPositionRef.current });
-            
-            if (!dur || dur <= 0) {
-              console.log('Duration not available yet');
-              return;
-            }
-            durationRef.current = dur;
-            
-            // ALWAYS ensure forward-only progress - never go backwards
-            if (ct > maxPositionRef.current) {
-              maxPositionRef.current = ct;
-              console.log('Updated max position to:', maxPositionRef.current);
-            }
-            
-            const percent = Math.min(100, Math.round((maxPositionRef.current / dur) * 100));
-            
-            console.log('Progress calculation:', { 
-              currentTime: ct, 
-              maxPosition: maxPositionRef.current, 
-              duration: dur, 
-              percent, 
-              currentProgress,
-              willUpdate: percent >= currentProgress 
-            });
-            
-            // Update progress (but ensure it never goes backwards)
-            if (percent >= currentProgress) {
-              console.log('Updating progress to:', percent);
-              setCurrentProgress(percent);
-              if (percent >= 90 && !isCompleted) setIsCompleted(true);
-              
-              // Call the progress update callback to update the sidebar progress bars
-              if (onProgressUpdate) {
-                onProgressUpdate(percent, percent >= 90);
-              }
-            } else {
-              console.log('Progress not updating because:', percent, '<', currentProgress);
-            }
-            
-            maybeSaveProgress(percent, percent >= 90);
-          } catch (e) {
-            console.error('Error in polling:', e);
-          }
-        }, 1000); // Increased interval to 1 second for easier debugging
-      } else {
-        console.log('Player not ready yet, retrying in 500ms');
-        setTimeout(startPollingWhenReady, 500);
+          
+          // Save progress to database (source of truth)
+          maybeSaveProgress(validatedPercent, validatedPercent >= 90);
+        }
+      } catch (error) {
+        console.error('Error polling progress:', error);
       }
-    };
-    
-    // Start checking after a short delay
-    setTimeout(startPollingWhenReady, 500);
-  };
+    }, 1000);
+  }, [videoId, onProgressUpdate, isCompleted]);
 
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
+  // Stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
-  };
+  }, []);
 
-  // Initialize YouTube Iframe API and player
+  // Initialize YouTube player
   useEffect(() => {
-    console.log('VideoPlayer useEffect triggered with videoId:', videoId);
-    setIsLoading(true);
-    setHasError(false);
-    maxPositionRef.current = 0;
-    lastSavedPercentRef.current = 0;
-    stopPolling();
+    console.log('VideoPlayer useEffect triggered:', { videoId, hasYT: !!window.YT, hasPlayer: !!window.YT?.Player });
+    
+    if (!videoId) {
+      console.log('No videoId provided');
+      return;
+    }
+    
+    if (!window.YT) {
+      console.log('YouTube API not loaded yet, waiting...');
+      return;
+    }
 
-    const createPlayer = () => {
-      console.log('Creating YouTube player with videoId:', videoId);
-      if (!window || !(window as any).YT || !(window as any).YT.Player) {
-        console.log('YouTube API not available');
-        return false;
+    const initializePlayer = () => {
+      console.log('Initializing YouTube player for videoId:', videoId);
+      
+      // Clean up existing player
+      if (playerRef.current) {
+        console.log('Cleaning up existing YouTube player');
+        playerRef.current.destroy();
       }
-      if (!containerRef.current) {
-        console.log('Container ref not available');
-        return false;
+
+      // Ensure the container exists
+      const container = containerRef.current;
+      if (!container) {
+        console.error('YouTube player container not found!');
+        return;
       }
+      
+      console.log('Container found:', container);
+      console.log('Container dimensions:', {
+        width: container.offsetWidth,
+        height: container.offsetHeight,
+        clientWidth: container.clientWidth,
+        clientHeight: container.clientHeight
+      });
+
       try {
-        console.log('Creating player instance...');
-        playerRef.current = new (window as any).YT.Player(containerRef.current, {
-          height: '100%',
-          width: '100%',
-          videoId: videoId,
-          playerVars: {
-            autoplay: autoplay ? 1 : 0,
-            controls: 1,
-            modestbranding: 1,
-            rel: 0,
-            playsinline: 1,
-            origin: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000',
-            enablejsapi: 1,
-            fs: 1,
-            cc_load_policy: 0,
-            iv_load_policy: 3,
-            autohide: 0,
-          },
+        // Create iframe manually first
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}`;
+        iframe.width = '100%';
+        iframe.height = '100%';
+        iframe.frameBorder = '0';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.allowFullscreen = true;
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        
+        // Add iframe to container (don't clear innerHTML to avoid React conflicts)
+        container.appendChild(iframe);
+        
+        console.log('Manual iframe created:', iframe);
+        console.log('Iframe src:', iframe.src);
+        
+        // Now create the YouTube Player
+        playerRef.current = new window.YT.Player(iframe, {
           events: {
-            onReady: () => {
-              console.log('YouTube player is ready!');
-              try { 
-                // Try to get duration immediately
-                durationRef.current = playerRef.current.getDuration() || 0;
-                console.log('Initial duration:', durationRef.current);
-                if (onDurationUpdate && durationRef.current > 0) {
-                  onDurationUpdate(durationRef.current);
-                }
-                
-                // If duration is 0, retry multiple times with increasing delays
-                if (durationRef.current === 0) {
-                  console.log('Duration is 0, retrying...');
-                  const retryDuration = (attempt: number) => {
-                    setTimeout(() => {
-                      try {
-                        const retryDur = playerRef.current?.getDuration() || 0;
-                        if (retryDur > 0) {
-                          durationRef.current = retryDur;
-                          if (onDurationUpdate) {
-                            onDurationUpdate(retryDur);
-                          }
-                          console.log('Duration loaded on retry attempt', attempt, ':', retryDur);
-                        } else if (attempt < 5) {
-                          console.log('Duration still 0, retrying attempt', attempt + 1);
-                          retryDuration(attempt + 1);
-                        } else {
-                          console.log('Failed to get duration after 5 attempts');
-                        }
-                      } catch (e) {
-                        console.log('Retry duration failed on attempt', attempt, ':', e);
-                        if (attempt < 5) {
-                          retryDuration(attempt + 1);
-                        }
-                      }
-                    }, attempt * 1000); // Increasing delay: 1s, 2s, 3s, 4s, 5s
-                  };
-                  retryDuration(1);
-                }
-              } catch (e) {
-                console.log('Initial duration load failed:', e);
-              }
-              setIsLoading(false);
-              loadVideoProgress();
+            onReady: (event: any) => {
+              console.log('YouTube player ready for:', videoId);
+              console.log('Player element:', event.target);
+              console.log('Player iframe:', iframe);
               
-              // Start polling immediately when player is ready
-              console.log('Starting polling immediately on ready');
-              startPolling();
+              setIsLoaded(true);
+              loadVideoProgress();
             },
-            onStateChange: (e: any) => {
-              const YTState = (window as any).YT?.PlayerState;
-              if (!YTState) return;
-              console.log('YouTube state change:', e.data, 'PLAYING:', YTState.PLAYING, 'PAUSED:', YTState.PAUSED, 'ENDED:', YTState.ENDED);
-              if (e.data === YTState.PLAYING) {
-                console.log('Video started playing, starting polling');
+            onStateChange: (event: any) => {
+              console.log('YouTube player state changed:', event.data);
+              if (event.data === window.YT.PlayerState.PLAYING) {
                 startPolling();
-              } else if (e.data === YTState.PAUSED) {
-                console.log('Video paused, stopping polling');
+              } else {
                 stopPolling();
-                maybeSaveProgress(currentProgress, false);
-              } else if (e.data === YTState.ENDED) {
-                console.log('Video ended, stopping polling');
-                stopPolling();
-                setIsCompleted(true);
-                maybeSaveProgress(100, true);
-                if (onVideoEnd) onVideoEnd();
               }
             },
-            onError: () => {
-              setIsLoading(false);
-              setHasError(true);
+            onError: (event: any) => {
+              console.error('YouTube player error:', event.data);
+              setIsLoaded(false);
             },
           },
         });
-        return true;
-      } catch {
-        setHasError(true);
-        setIsLoading(false);
-        return false;
+        
+        console.log('Player created:', playerRef.current);
+      } catch (error) {
+        console.error('Error creating YouTube player:', error);
+        setIsLoaded(false);
       }
     };
 
-    const ensureApi = () => {
-      if ((window as any).YT && (window as any).YT.Player) {
-        return createPlayer();
-      }
-      // Only assign a single global ready callback
-      const w = window as any;
-      const prevCb = w.onYouTubeIframeAPIReady;
-      w.onYouTubeIframeAPIReady = () => {
-        if (typeof prevCb === 'function') {
-          try { prevCb(); } catch {}
-        }
-        createPlayer();
-      };
-      const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-      if (!existing) {
-        const tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.body.appendChild(tag);
-      }
-      return false;
-    };
-
-    ensureApi();
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        const percent = currentProgress;
-        const completed = isCompleted || percent >= 90;
-        try {
-          const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
-          const body = JSON.stringify({ userId, videoId, progress: percent, completed });
-          const blob = new Blob([body], { type: 'application/json' });
-          navigator.sendBeacon('/api/tutorials/progress', blob);
-        } catch {}
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
+    if (window.YT.Player) {
+      initializePlayer();
+    } else {
+      console.log('YT.Player not ready, waiting for YT.ready');
+      window.YT.ready(initializePlayer);
+    }
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
+      console.log('Cleaning up YouTube player');
       stopPolling();
-      try { playerRef.current && playerRef.current.destroy && playerRef.current.destroy(); } catch {}
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        playerRef.current.destroy();
+      }
+      // Clean up manually created iframe
+      if (containerRef.current) {
+        const iframe = containerRef.current.querySelector('iframe');
+        if (iframe && iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
+      }
     };
-  }, [videoId]); // Recreate player when videoId changes
-
-  // Reset progress tracking when video changes
-  useEffect(() => {
-    setCurrentProgress(0);
-    setIsCompleted(false);
-    setTotalWatchTime(0);
-
-    // Load existing progress when video changes
-    if (videoId) {
-      loadVideoProgress();
-    }
-  }, [videoId]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-
-  const handleRetry = () => {
-    setHasError(false);
-    setIsLoading(true);
-    // Reload the iframe by changing the key
-    window.location.reload();
-  };
-
-  // Player is injected by YT API, so no src builder here
+  }, [videoId, startPolling, stopPolling]);
 
   return (
     <VideoContainer>
-      <LoadingContainer $visible={isLoading}>Loading video...</LoadingContainer>
+      <VideoWrapper>
+        <div ref={containerRef} style={{ width: '100%', height: '100%', backgroundColor: '#000' }}>
+          {!isLoaded && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%', 
+              color: 'white',
+              fontSize: '1.2rem',
+              textAlign: 'center',
+              padding: '2rem',
+              backgroundColor: '#000'
+            }}>
+              <div>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎬</div>
+                <div>Loading YouTube Player...</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.5rem' }}>
+                  Video ID: {videoId}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '0.5rem' }}>
+                  YouTube API: {window.YT ? '✅ Loaded' : '❌ Not loaded'}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '0.5rem' }}>
+                  Player Ready: {isLoaded ? '✅ Yes' : '❌ No'}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </VideoWrapper>
       
-      <VideoIframe ref={containerRef} />
-
-      <ErrorContainer $visible={hasError}>
-          <ErrorTitle>Video Unavailable</ErrorTitle>
-          <ErrorMessage>
-            {!videoId 
-              ? "No video ID provided. Please check the video configuration."
-              : "This video could not be loaded. It may be private, deleted, or unavailable in your region."
-            }
-          </ErrorMessage>
-          <RetryButton onClick={handleRetry}>
-            Try Again
-          </RetryButton>
-        </ErrorContainer>
-
       <VideoInfo>
         <VideoTitle>{title}</VideoTitle>
-        {description && (
-          <VideoDescription>{description}</VideoDescription>
-        )}
+        <VideoDescription>{description}</VideoDescription>
         
-        {currentProgress > 0 && (
-          <>
-            <ProgressBar>
-              <ProgressFill percentage={currentProgress} />
-            </ProgressBar>
-            <ProgressText>
-              {isCompleted ? '✅ Completed' : `${Math.round(currentProgress)}% watched`} 
-              {totalWatchTime > 0 && ` • ${formatTime(totalWatchTime)} total watch time`}
-            </ProgressText>
-          </>
-        )}
+        <ProgressContainer>
+          <ProgressBar>
+            <ProgressFill $progress={currentProgress} />
+          </ProgressBar>
+          <ProgressText>
+            <span>{currentProgress}% Complete</span>
+            <span>{isCompleted ? '✅ Completed' : '⏳ In Progress'}</span>
+          </ProgressText>
+        </ProgressContainer>
       </VideoInfo>
     </VideoContainer>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
@@ -90,6 +90,29 @@ interface ClientLayoutProps {
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
+
+  // Load YouTube Iframe API
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.YT) {
+      console.log('Loading YouTube Iframe API...');
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.onload = () => {
+        console.log('YouTube Iframe API script loaded');
+      };
+      script.onerror = () => {
+        console.error('Failed to load YouTube Iframe API script');
+      };
+      document.head.appendChild(script);
+      
+      window.onYouTubeIframeAPIReady = () => {
+        console.log('YouTube Iframe API ready callback triggered');
+      };
+    } else if (window.YT) {
+      console.log('YouTube API already loaded');
+    }
+  }, []);
 
   // Timezone tracking is now handled directly in AuthContext
 

@@ -23,3 +23,4 @@ echo "5. Open DevTools (F12) and look for 'BrowserToolsMCP' tab"
 
 
 
+
