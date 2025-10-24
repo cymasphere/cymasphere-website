@@ -12,7 +12,7 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 
 ### 1.1 App Overview & Interface Navigation
 
-#### **Video 1.1.1: "Welcome to Cymasphere - Your Music Creation Journey Begins"**
+#### **Video 1.1.1: "Welcome to Cymasphere"**
 **Duration**: 5-8 minutes (varies by user profile)
 **Description**: Introduction to Cymasphere as a MIDI chord generation and voicing tool
 **Learning Objectives**:
@@ -26,7 +26,7 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 - **Experienced**: Quick overview focusing on Cymasphere's unique capabilities
 - **Advanced**: Technical overview of Cymasphere's architecture and capabilities
 
-#### **Video 1.1.2: "Understanding the Workspace - Songs, Tracks, and Palettes"**
+#### **Video 1.1.2: "Workspace: Songs, Tracks, Palettes"**
 **Duration**: 4-6 minutes
 **Description**: Deep dive into Cymasphere's organizational structure
 **Learning Objectives**:
@@ -42,7 +42,7 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 
 ### 1.2 Basic Project Management
 
-#### **Video 1.2.1: "Creating Your First Project - From Idea to Reality"**
+#### **Video 1.2.1: "Create Your First Project"**
 **Duration**: 3-5 minutes
 **Description**: Step-by-step guide to creating and managing song projects
 **Learning Objectives**:
@@ -56,7 +56,7 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 - **Experienced**: Quick walkthrough with best practices
 - **Advanced**: Project organization strategies and workflow optimization
 
-#### **Video 1.2.2: "Audio Setup - Getting Sound from Cymasphere"**
+#### **Video 1.2.2: "Audio Setup Basics"**
 **Duration**: 4-6 minutes
 **Description**: Configure audio devices and MIDI output for Cymasphere
 **Learning Objectives**:
@@ -69,6 +69,50 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 - **Beginner**: Detailed audio setup with troubleshooting, explain MIDI concepts
 - **Experienced**: Quick setup with focus on MIDI routing
 - **Advanced**: Advanced MIDI routing and professional audio setup
+
+---
+
+### 1.3 Getting Connected
+
+#### **Video 1.3.1: "Standalone to DAW: MIDI Routing"**
+**Duration**: 3-5 minutes
+**Description**: Send MIDI from Cymasphere Standalone to your DAW via virtual MIDI.
+**Learning Objectives**:
+- Enable/choose virtual MIDI (IAC/LoopMIDI)
+- Set Cymasphere MIDI Out and DAW MIDI In
+- Verify meter activity and sound
+
+#### **Video 1.3.2: "Plugin Setup in DAW"**
+**Duration**: 3-5 minutes
+**Description**: Insert VST3/AU and route its MIDI to an instrument track.
+**Learning Objectives**:
+- Insert Cymasphere on a MIDI/utility track
+- Create/route to an instrument track
+- Arm/monitor and play
+
+#### **Video 1.3.3: "DAW Track Routing: MIDI to Instruments"**
+**Duration**: 3-5 minutes
+**Description**: Wire MIDI tracks and instruments for reliable playback/record.
+**Learning Objectives**:
+- Choose correct track inputs/outputs
+- Record-enable/monitor settings
+- Basic channel selection and latency tips
+
+#### **Video 1.3.4: "Cymasphere Tracks: MIDI Out"**
+**Duration**: 3-5 minutes
+**Description**: Set MIDI out per Cymasphere track (Voicing/Pattern/Sequencer/Groove).
+**Learning Objectives**:
+- Per-track channel selection
+- Designated bass channel
+- Voice/Channel Matrix overview
+
+#### **Video 1.3.5: "Verify & Troubleshoot"**
+**Duration**: 2-3 minutes
+**Description**: Quick checks to confirm routing and fix common issues.
+**Learning Objectives**:
+- Meter/signal path sanity check
+- No sound? Common fixes (ports, monitor, instrument)
+- Save a routing preset
 
 ---
 
@@ -875,6 +919,7 @@ This comprehensive video content plan provides the foundation for creating a com
 
 *Generated from comprehensive Cymasphere pedagogical analysis*  
 *Last updated: [Current Date]*
+
 
 
 

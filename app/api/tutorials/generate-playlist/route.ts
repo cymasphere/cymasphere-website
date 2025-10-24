@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     const personalizedPlaylist = {
       id: `generated-${Date.now()}`,
       title: `Personalized Learning Path - ${theoryLevel} ${appMode}`,
-      description: `Custom playlist generated for ${theoryLevel} theory level, ${techLevel} technical proficiency, using ${appMode} mode, focused on ${musicalGoals.join(', ')}.`,
+      description: `Custom learning path tailored to your skill level and goals`,
       videoCount: filteredVideos.length,
       totalDuration: calculateTotalDuration(filteredVideos),
       views: 0,

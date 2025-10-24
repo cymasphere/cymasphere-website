@@ -21,3 +21,5 @@ echo "3. Enable it (toggle the switch)"
 echo "4. Navigate to http://localhost:3000/admin/tutorial-center"
 echo "5. Open DevTools (F12) and look for 'BrowserToolsMCP' tab"
 
+
+

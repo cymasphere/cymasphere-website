@@ -222,14 +222,41 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const [scriptLoading, setScriptLoading] = useState(false);
   const router = useRouter();
   const [progressMap, setProgressMap] = useState<Record<string, { progress: number; completed: boolean }>>({});
+  const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
 
   const handleProgressUpdate = useCallback((percent: number, completed: boolean) => {
     if (!selectedVideo) return;
-    setProgressMap((prev) => ({
-      ...prev,
-      [selectedVideo.id]: { progress: percent, completed },
-    }));
+    
+    // Ensure forward-only progress - never go backwards
+    setProgressMap((prev) => {
+      const currentProgress = prev[selectedVideo.id]?.progress || 0;
+      const newProgress = Math.max(currentProgress, percent); // Only update if progress increased or stayed same
+      
+      // Only log significant progress changes to reduce noise
+      if (newProgress % 10 === 0 || completed) {
+        console.log('Progress update received:', { videoId: selectedVideo.id, percent: newProgress, completed, wasIncreased: newProgress > currentProgress });
+      }
+      
+      return {
+        ...prev,
+        [selectedVideo.id]: { progress: newProgress, completed },
+      };
+    });
   }, [selectedVideo]);
+
+  // Get the current progress for a video, prioritizing real-time updates over saved progress
+  const getVideoProgress = useCallback((video: Video) => {
+    const savedProgress = progressMap[video.id];
+    if (!savedProgress) return { progress: 0, completed: false };
+    
+    // If this is the currently selected video, use real-time progress
+    if (selectedVideo && selectedVideo.id === video.id) {
+      return savedProgress; // This will be updated by handleProgressUpdate
+    }
+    
+    // For other videos, use saved progress (always forward-only)
+    return savedProgress;
+  }, [progressMap, selectedVideo]);
 
   useEffect(() => {
     if (playlistId) {
@@ -265,20 +292,59 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           (typeof window !== 'undefined' && localStorage.getItem('userId')) ||
           '900f11b8-c901-49fd-bfab-5fafe984ce72';
         const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.log('Progress API response not ok:', res.status, res.statusText);
+          return;
+        }
         const data = await res.json();
+        console.log('Progress data received:', data);
+        
+        // Create a mapping from database video IDs to progress data
         const map: Record<string, { progress: number; completed: boolean }> = {};
         const prog = data.progress || {};
-        Object.keys(prog).forEach((vid) => {
-          map[vid] = { progress: prog[vid].progress || 0, completed: !!prog[vid].completed };
-        });
+        
+        // Get the current videos to create the mapping
+        const currentVideos = videos.length > 0 ? videos : await fetchCurrentVideos();
+        
+        if (currentVideos && currentVideos.length > 0) {
+          currentVideos.forEach((video) => {
+            const youtubeId = video.youtube_video_id;
+            if (youtubeId && prog[youtubeId]) {
+              // Map database video ID to progress data using YouTube ID
+              map[video.id] = { 
+                progress: prog[youtubeId].progress || 0, 
+                completed: !!prog[youtubeId].completed 
+              };
+            }
+          });
+        }
+        
+        console.log('Progress map created:', map);
         setProgressMap(map);
       } catch (e) {
-        // ignore
+        console.error('Error loading progress:', e);
+      }
+    };
+
+    const fetchCurrentVideos = async () => {
+      try {
+        if (playlistId === "personalized" && propVideos && propVideos.length > 0) {
+          return propVideos;
+        }
+        
+        const videosResponse = await fetch(`/api/tutorials/playlists/${playlistId}/videos`);
+        if (videosResponse.ok) {
+          const videosData = await videosResponse.json();
+          return videosData.videos || [];
+        }
+        return [];
+      } catch (e) {
+        console.error('Error fetching current videos:', e);
+        return [];
       }
     };
     loadProgress();
-  }, [playlistId]);
+  }, [playlistId, videos]);
 
   const fetchPlaylistData = async () => {
     try {
@@ -412,6 +478,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   };
 
   const formatDuration = (seconds: number) => {
+    if (seconds === -1) return "Loading...";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -421,6 +488,56 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     if (!videoId) return undefined;
     return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
   };
+
+  // Store YouTube durations as we discover them from the player
+  const [youtubeDurations, setYoutubeDurations] = useState<Record<string, number>>({});
+
+  const updateYoutubeDuration = useCallback((videoId: string, duration: number) => {
+    setYoutubeDurations(prev => ({
+      ...prev,
+      [videoId]: duration
+    }));
+  }, []);
+
+  const getDisplayDuration = useCallback((video: Video) => {
+    // Always prefer YouTube duration if available, otherwise show "Loading..." for videos with YouTube IDs
+    if (video.youtube_video_id) {
+      const youtubeDuration = youtubeDurations[video.youtube_video_id];
+      if (youtubeDuration) {
+        return youtubeDuration;
+      }
+      // Show "Loading..." for videos that have YouTube IDs but haven't loaded yet
+      return -1; // Special value to show "Loading..."
+    }
+    // Fall back to stored duration for videos without YouTube IDs
+    return video.duration;
+  }, [youtubeDurations]);
+
+  // Preload YouTube durations for all videos in the playlist
+  useEffect(() => {
+    const preloadDurations = async () => {
+      if (!videos || videos.length === 0) return;
+      
+      // Load durations for all videos with YouTube IDs
+      const youtubeVideos = videos.filter(v => v.youtube_video_id && !youtubeDurations[v.youtube_video_id]);
+      
+      for (const video of youtubeVideos) {
+        try {
+          const response = await fetch(`/api/youtube/duration?id=${video.youtube_video_id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.duration && data.duration > 0) {
+              updateYoutubeDuration(video.youtube_video_id!, data.duration);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load duration for', video.youtube_video_id, error);
+        }
+      }
+    };
+
+    preloadDurations();
+  }, [videos, youtubeDurations, updateYoutubeDuration]);
 
   if (loading) {
     return <LoadingSpinner fullScreen size="small" text="Loading playlist..." />;
@@ -432,8 +549,11 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
         <PlaylistTitle>{playlist?.title || "Playlist Videos"}</PlaylistTitle>
         {Array.isArray(videos) && videos.map((video) => {
           const thumbnailUrl = getYouTubeThumbnail(video.youtube_video_id);
-          const p = progressMap[video.id]?.progress ?? 0;
-          const isCompleted = !!progressMap[video.id]?.completed;
+          const videoProgress = getVideoProgress(video);
+          const p = videoProgress.progress;
+          const isCompleted = videoProgress.completed;
+          // Only log for debugging when needed
+          // console.log('Rendering video progress:', { videoId: video.id, title: video.title, progress: p, completed: isCompleted, isSelected: selectedVideo?.id === video.id });
           
           return (
             <VideoThumbnail
@@ -446,7 +566,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
               </ThumbnailImage>
               <VideoInfo>
                 <VideoTitle>{video.title}</VideoTitle>
-                <VideoDuration>{formatDuration(video.duration)}</VideoDuration>
+                <VideoDuration>{formatDuration(getDisplayDuration(video))}</VideoDuration>
               </VideoInfo>
               <ProgressTrack>
                 <ProgressFill $percent={p} $completed={isCompleted} />
@@ -459,19 +579,51 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       <MainContent>
         {selectedVideo ? (
           <>
-            {console.log('Selected video data:', selectedVideo)}
-            {console.log('YouTube video ID:', selectedVideo.youtube_video_id)}
-            <VideoPlayer
-              videoId={selectedVideo.youtube_video_id || ''}
-              title={selectedVideo.title}
-              description={selectedVideo.description}
-              playlistId={playlistId}
+            {/* Reduced logging to prevent console spam */}
+            {selectedVideo.youtube_video_id ? (
+              <VideoPlayer
+                videoId={selectedVideo.youtube_video_id}
+                title={selectedVideo.title}
+                description={selectedVideo.description}
+                playlistId={playlistId}
+                autoplay={true}
               onVideoEnd={() => {
-                // Auto-play next video or show completion message
-                console.log('Video ended:', selectedVideo.title);
+                if (!autoplayNext) return;
+                // Advance to next video by sequence
+                if (!videos || videos.length === 0 || !selectedVideo) return;
+                const currentIndex = videos.findIndex(v => v.id === selectedVideo.id);
+                if (currentIndex >= 0 && currentIndex < videos.length - 1) {
+                  const next = videos[currentIndex + 1];
+                  setSelectedVideo(next);
+                  fetchScript(next.id);
+                }
               }}
               onProgressUpdate={handleProgressUpdate}
+              onDurationUpdate={(duration) => {
+                if (selectedVideo?.youtube_video_id) {
+                  updateYoutubeDuration(selectedVideo.youtube_video_id, duration);
+                }
+              }}
             />
+            ) : (
+              <VideoPlaceholder>
+                <VideoTitleMain>No YouTube Video Available</VideoTitleMain>
+                <VideoDescription>
+                  This video doesn't have a YouTube video ID configured.
+                </VideoDescription>
+              </VideoPlaceholder>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 1rem 1rem 1rem' }}>
+              <input
+                id="autoplay-next-toggle"
+                type="checkbox"
+                checked={autoplayNext}
+                onChange={(e) => setAutoplayNext(e.target.checked)}
+              />
+              <label htmlFor="autoplay-next-toggle" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Autoplay next video
+              </label>
+            </div>
           </>
         ) : (
           <VideoPlaceholder>

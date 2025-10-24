@@ -29,52 +29,75 @@ The Cymasphere Tutorial System is a comprehensive, AI-powered learning managemen
 
 ## 📊 Content Structure
 
-### Video Categories (43 Total Videos)
-1. **Setup & Getting Started** (6 videos)
-   - Installation guides for standalone and plugin modes
-   - Authentication and configuration
-   - Interface overview and first song creation
+### Themed Playlists (11 Total Playlists)
+1. **Getting Started** (4 videos)
+   - Welcome to Cymasphere
+   - Workspace: Songs, Tracks, Palettes
+   - Create Your First Project
+   - Audio Setup Basics
 
-2. **Music Theory Foundation** (6 videos)
-   - Solfege system (16 syllables)
-   - Musical intervals and scale construction
-   - Chord building and voice leading principles
+2. **Getting Connected** (5 videos)
+   - Standalone to DAW: MIDI Routing
+   - Plugin Setup in DAW
+   - DAW Track Routing
+   - Cymasphere Tracks: MIDI Out
+   - Verify & Troubleshoot
 
-3. **Core Composition Tools** (9 videos)
-   - Progression blocks and timeline management
-   - Pattern tracks for rhythm and melody
-   - Voicing tracks for chord management
-   - Sequencer fundamentals and track types
+3. **Music Theory Basics** (5 videos)
+   - Musical Notes
+   - Notation Systems
+   - Accidentals
+   - Key Selection
+   - Understanding Chords and Scales
 
-4. **Advanced Composition** (6 videos)
-   - Voice leading algorithms and AI generation
-   - Strum anticipation and advanced voicing
-   - Generate window and notation features
+4. **Composition Basics** (4 videos)
+   - Create Your First Chord Progression
+   - Progression Timeline
+   - Create Your First Track
+   - Track Types
 
-5. **Sound Design** (6 videos)
-   - Cymatics and visual sound representation
-   - Palette system and bank management
-   - Synth engine and expression controls
+5. **Voicing Settings** (15 videos)
+   - Chord/Scale Display, Chord Prefix, Spelling, Inversion
+   - Voice Count, Octave Control, Bass Control
+   - Voice Leading, Spacing, Sustain, Common Tone Sustain
+   - Strum, Dynamics, Smart Chord, Voice Leading: Range & LIL
 
-6. **MIDI & Audio Integration** (5 videos)
-   - MIDI drag & drop workflow
-   - DAW integration and routing
-   - Velocity and dynamics control
+6. **Sequencer Settings** (9 videos)
+   - Sequencer Basics, Pattern Types, Note Values
+   - Swing Presets, Swing and Groove, Tuplets
+   - Include Bass, Reset & Loop, Humanization
 
-7. **Workflow & Productivity** (5 videos)
-   - Keyboard shortcuts and window management
-   - Settings, help system, and optimization
+7. **Transport & Timeline** (4 videos)
+   - Transport Controls, Timeline Navigation
+   - Tempo and Time Signature, DAW Sync
 
-### Playlist Templates (9 Total)
-1. **Getting Started - Standalone App** (25 videos)
-2. **Getting Started - Plugin in DAW** (25 videos)
-3. **Music Theory Foundations** (6 videos)
-4. **Quick Start for Experienced Users** (12 videos)
-5. **Composition Mastery** (30 videos)
-6. **Advanced Techniques** (20 videos)
-7. **Sound Design Mastery** (18 videos)
-8. **Live Performance Setup** (15 videos)
-9. **MIDI & Audio Integration** (15 videos)
+8. **AI & Generation** (3 videos)
+   - AI Pattern Generation, Generation Parameters
+   - AI Drum Groove Generation
+
+9. **MIDI & Routing** (3 videos)
+   - MIDI Routing, Voice Channel Matrix
+   - MIDI Controller Mapping
+
+10. **Notation & Export** (2 videos)
+    - Professional Notation, Export Options
+
+11. **Workflow & Productivity** (3 videos)
+    - Professional Workflows, Backup and Recovery
+    - Live Performance Setup
+
+### Dynamic Playlist Generation
+The system uses sophisticated algorithms to:
+- Match videos to user skill level
+- Filter content by app usage mode
+- Align with musical goals and interests
+- Include conditional videos based on profile
+- Generate personalized learning sequences
+
+### Gating Rules
+- **theory_level=intermediate**: Professional Notation, Voice Leading: Range & LIL
+- **tech_level=familiar**: MIDI Controller Mapping, Voice Channel Matrix
+- **app_mode filtering**: Standalone vs Plugin specific content
 
 ## 🎨 User Profiling System
 
@@ -112,9 +135,10 @@ All scripts include:
 ## 🔄 Video Relationships
 
 ### Prerequisite Chain
-- Solfege → Intervals → Scales → Chords
-- Installation → Authentication → Configuration → Interface → First Song
-- Interface → Pattern Tracks → Generate Window
+- **Getting Started** → **Getting Connected** → **Music Theory Basics** → **Composition Basics**
+- **Composition Basics** → **Voicing Settings** → **Sequencer Settings**
+- **Transport & Timeline** → **AI & Generation** → **MIDI & Routing**
+- **Notation & Export** and **Workflow & Productivity** can be accessed after core concepts
 
 ### Related Content
 - Videos that complement each other
@@ -280,6 +304,7 @@ The Cymasphere Tutorial System represents a comprehensive, production-ready lear
 ---
 
 *This documentation is maintained alongside the codebase and should be updated as the system evolves.*
+
 
 
 
