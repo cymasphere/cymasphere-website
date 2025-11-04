@@ -51,7 +51,19 @@ export const loadTranslations = async (locale: string) => {
     
     // Use fetch to get translations from our API
     const response = await fetch(`/api/translations?locale=${locale}&_=${timestamp}`);
+    
+    // Check if response is ok (200-299)
+    if (!response.ok) {
+      console.error(`[loadTranslations] API returned status ${response.status} for locale ${locale}`);
+      throw new Error(`HTTP ${response.status}: Failed to fetch translations`);
+    }
+    
     const data = await response.json();
+    
+    // Check if data is empty
+    if (!data || Object.keys(data).length === 0) {
+      console.warn(`[loadTranslations] Received empty translations for locale ${locale}`);
+    }
     
     // Always store language preference in localStorage
     if (typeof window !== 'undefined') {
@@ -84,7 +96,9 @@ export const loadTranslations = async (locale: string) => {
 
     return data;
   } catch (error) {
-    console.error(`Error loading translations for ${locale}:`, error);
+    console.error(`[loadTranslations] Error loading translations for ${locale}:`, error);
+    
+    // Return an object with the locale key so at least we don't have completely empty data
     return {};
   }
 };

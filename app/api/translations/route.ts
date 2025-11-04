@@ -67,6 +67,12 @@ const getFallbackTranslations = (locale: string) => {
 
 export async function GET(request: NextRequest) {
   try {
+    // Add CORS headers for cross-origin requests
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Cache for 1 hour
+    };
+    
     // Get the locale from the query parameter
     const { searchParams } = new URL(request.url);
     let locale = searchParams.get("locale") || defaultLanguage;
@@ -81,14 +87,22 @@ export async function GET(request: NextRequest) {
       locale = defaultLanguage;
     }
 
+    // Build the path to the locales directory using process.cwd() as fallback
+    // For Vercel/production, use process.cwd() which points to the project root
+    // For local dev, this also works correctly
+    const localesDir = path.join(
+      process.cwd(),
+      "public",
+      "locales"
+    );
+    
+    console.log(`[translations-api] Locales directory: ${localesDir}`);
+
     // Try to load English translations as the base (fallback)
     let engData: any = {};
     try {
-      const engFilePath = path.join(
-        process.cwd(),
-        "public/locales",
-        `${defaultLanguage}.json`
-      );
+      const engFilePath = path.join(localesDir, `${defaultLanguage}.json`);
+      console.log(`[translations-api] Looking for English translations at: ${engFilePath}`);
       const engFileContents = await fs.readFile(engFilePath, "utf8");
       engData = JSON.parse(engFileContents);
 
@@ -106,16 +120,12 @@ export async function GET(request: NextRequest) {
 
     // If locale is English, just return English translations
     if (locale === defaultLanguage) {
-      return NextResponse.json(engData);
+      return NextResponse.json(engData, { headers, status: 200 });
     }
 
     // Otherwise, try to load requested locale and merge with English for fallback
     try {
-      const filePath = path.join(
-        process.cwd(),
-        "public/locales",
-        `${locale}.json`
-      );
+      const filePath = path.join(localesDir, `${locale}.json`);
       console.log(`[translations-api] Looking for locale file at: ${filePath}`);
 
       const fileContents = await fs.readFile(filePath, "utf8");
@@ -134,7 +144,7 @@ export async function GET(request: NextRequest) {
         `[translations-api] Merged translations for ${locale} (using English fallbacks)`
       );
 
-      return NextResponse.json(mergedData);
+      return NextResponse.json(mergedData, { headers, status: 200 });
     } catch (localeError) {
       console.error(
         `[translations-api] Error loading locale ${locale}, falling back to English:`,
@@ -146,13 +156,16 @@ export async function GET(request: NextRequest) {
       const mergedData = deepMerge(engData, fallbackData);
       
       console.log(`[translations-api] Using fallback translations for ${locale}`);
-      return NextResponse.json(mergedData);
+      return NextResponse.json(mergedData, { headers, status: 200 });
     }
   } catch (error) {
     console.error("[translations-api] Error loading translations:", error);
     
     // Return basic fallback translations to prevent complete failure
     const fallbackData = getFallbackTranslations(defaultLanguage);
-    return NextResponse.json(fallbackData);
+    return NextResponse.json(fallbackData, { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
