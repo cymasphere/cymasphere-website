@@ -248,7 +248,7 @@ const NextFooter = () => {
               <FaYoutube />
             </SocialIcon>
             <SocialIcon
-              href="https://discord.gg/cymasphere"
+              href="https://discord.gg/gXGqqYR47B"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Discord"

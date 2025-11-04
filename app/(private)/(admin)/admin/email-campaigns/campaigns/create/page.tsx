@@ -3182,7 +3182,7 @@ function CreateCampaignPage() {
             { platform: 'twitter', url: 'https://twitter.com/cymasphere' },
             { platform: 'instagram', url: 'https://instagram.com/cymasphere' },
             { platform: 'youtube', url: 'https://youtube.com/cymasphere' },
-            { platform: 'discord', url: 'https://discord.gg/cymasphere' }
+            { platform: 'discord', url: 'https://discord.gg/gXGqqYR47B' }
           ],
           footerText: `© ${currentYear} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
