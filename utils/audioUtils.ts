@@ -413,6 +413,26 @@ export const playLydianMaj7Chord = async (): Promise<void> => {
     return;
   }
 
+  // Ensure Tone.js is loaded before using it
+  if (!Tone) {
+    try {
+      Tone = await loadTone();
+    } catch (error) {
+      console.error("Failed to load Tone.js:", error);
+      return;
+    }
+  }
+  
+  // Initialize Tone.js context if needed
+  if (Tone && Tone.context && Tone.context.state !== 'running') {
+    try {
+      await Tone.start();
+    } catch (error) {
+      console.error("Failed to start Tone.js context:", error);
+      return;
+    }
+  }
+
   // Increment the counter
   activeLydianChords++;
 
