@@ -449,7 +449,8 @@
     "de": "Deutsch",
     "pt": "Português",
     "tr": "Türkçe",
-    "ja": "日本語"
+    "ja": "日本語",
+    "zh": "中文"
   },
   "contact": {
     "title": "İletişime geçin",
@@ -601,9 +602,9 @@
       "membership": "Üyelik",
       "free": "Ücretsiz",
       "upgradeToPro": "Tam erişim için Pro'ya yükseltin",
-      "fullAccess": "Tam erişiminiz var",
+      "fullAccess": "Şu anda tüm premium özelliklere tam erişiminiz var:",
       "upgradeToLifetime": "Yaşam boyu erişime yükseltin",
-      "upgradeNow": "Yükselt",
+      "upgradeNow": "Şimdi Yükselt",
       "lifetimeAccess": "Yaşam boyu ücretsiz güncellemeleri içerir",
       "nextPayment": "Sonraki Ödeme",
       "futurePayments": "Gelecek Ödemeler",
@@ -622,7 +623,6 @@
       "lifetimeMessage": "Yaşam boyu ücretsiz güncellemelerle yaşam boyu üyeliğiniz var. Tüm premium özelliklerin ve avantajların kalıcı olarak tadını çıkarın.",
       "activeSubscriptionMessage": "{{plan}} aboneliğiniz aktif. Tüm premium özelliklerin ve avantajların tadını çıkarın.",
       "upgradeMessage": "Premium özellikleri ve gelişmiş ses işleme yeteneklerini açmak için yükseltin.",
-      "fullAccess": "Şu anda tüm premium özelliklere tam erişiminiz var:",
       "featureAdvancedChords": "Gelişmiş Akor İlerlemeleri",
       "featureUnlimitedSaves": "Sınırsız Kayıtlı İlerlemeler",
       "featureMIDI": "MIDI Dışa & İçe Aktarım",
@@ -636,7 +636,6 @@
       "purchasedOn": "Satın Alma Tarihi",
       "freeAccountBasicFeatures": "Ücretsiz hesabınız temel özellikleri içerir. Tam erişim için yükseltin:",
       "premiumFeatures": "Hesabınız bu premium özellikleri içerir:",
-      "upgradeNow": "Şimdi Yükselt",
       "getStarted": "Başlayın",
       "manageBilling": "Aboneliği Yönet",
       "support": "Destek",
@@ -841,21 +840,6 @@
     "title": "Ayarlar",
     "account": "Hesap",
     "preferences": "Tercihler",
-    "audio": "Ses",
-    "midi": "MIDI",
-    "appearance": "Görünüm",
-    "language": "Dil",
-    "theme": "Tema",
-    "notifications": "Bildirimler",
-    "privacy": "Gizlilik",
-    "billing": "Faturalama",
-    "profile": {
-      "title": "Profil",
-      "name": "İsim",
-      "email": "E-posta",
-      "avatar": "Avatar",
-      "updateProfile": "Profili güncelle"
-    },
     "audio": {
       "title": "Ses ayarları",
       "device": "Ses cihazı",
@@ -876,12 +860,23 @@
       "dark": "Koyu",
       "system": "Sistem"
     },
+    "language": "Dil",
+    "theme": "Tema",
     "notifications": {
       "title": "Bildirimler",
       "email": "E-posta bildirimleri",
       "push": "Push bildirimleri",
       "updates": "Ürün güncellemeleri",
       "marketing": "Pazarlama e-postaları"
+    },
+    "privacy": "Gizlilik",
+    "billing": "Faturalama",
+    "profile": {
+      "title": "Profil",
+      "name": "İsim",
+      "email": "E-posta",
+      "avatar": "Avatar",
+      "updateProfile": "Profili güncelle"
     }
   },
   "subscription": {
@@ -962,67 +957,6 @@
         "answer": "Hayır, tüm yardım doğrudan uygulama içi yardım yöneticisine yerleştirilmiştir, yeni özellikleri keşfetmeyi ve öğrenmeyi zahmetsiz hale getirir. Sorular, hata raporları ve diğer sorular <a href=\"https://discord.gg/gXGqqYR47B\" target=\"_blank\" rel=\"noopener noreferrer\">Discord sunucumuz</a> aracılığıyla veya support@cymasphere.com adresine e-posta göndererek iletilebilir."
       }
     ]
-  },
-  "synth": {
-    "title": "Akıllı akor seslendirme oluşturucu",
-    "description": "Bir düğmeye basarak zengin ve güzel akorlar oluşturun.",
-    "chordSequence": "Akor dizisi",
-    "generateMelody": "Melodi oluştur",
-    "playChordSequence": "Akor dizisini çal",
-    "stopAll": "Hepsini durdur",
-    "playBoth": "İkisini de çal",
-    "generateRandomProgression": "Rastgele ilerleme",
-    "generateRandomSongName": "Rastgele isim",
-    "synthesizerTitle": "Sentezleyici",
-    "synthesizerDesc": "Müzikal desenler oluşturun ve çalın",
-    "songName": "Şarkı adı",
-    "trackName": "Parça adı",
-    "trackNamePlaceholder": "örn. Piyano, Melodi, Bas hattı",
-    "trackNameHint": "Her parça müziğinizdeki farklı bir enstrümanı veya sesi temsil eder",
-    "trackIllustration": "Parçaları müzikal düzenlemenizde katmanlar olarak düşünün - tam müziğinizi oluşturmak için birlikte çalacaklar.",
-    "chords": {
-      "cMajor": "Domaj7",
-      "dMinor": "Rem7",
-      "eMinor": "Mim7",
-      "fMajor": "Famaj7",
-      "g7sus4": "Sol7",
-      "aMinor": "Lam7",
-      "bm7b5": "Sim7b5"
-    },
-    "melodyGeneration": {
-      "title": "Melodi oluşturma",
-      "description": "Akor ilerlemenizie mükemmel uyum sağlayan melodiler oluşturun",
-      "generateButton": "Melodi oluştur",
-      "regenerateButton": "Yeniden oluştur",
-      "playButton": "Melodi çal",
-      "stopButton": "Melodiyi durdur"
-    },
-    "voicingControls": {
-      "title": "Seslendirme kontrolleri",
-      "density": "Yoğunluk",
-      "spread": "Yayılım",
-      "inversion": "Çevirme",
-      "extensions": "Uzantılar"
-    }
-  },
-  "testimonials": {
-    "title": "Kullanıcılarımız ne diyor",
-    "subtitle": "Cymasphere'in müzik yaratımını nasıl dönüştürdüğünü keşfedin",
-    "testimonial1": {
-      "quote": "Cymasphere kompozisyon sürecimi devrim niteliğinde değiştirdi. Akıllı ses yönlendirme, manuel olarak asla yapamayacağım karmaşık armoniler oluşturmama olanak tanıyor.",
-      "author": "Sarah Chen",
-      "role": "Besteci"
-    },
-    "testimonial2": {
-      "quote": "Müzik öğretmeni olarak, karmaşık teorik kavramları göstermek için Cymasphere kullanıyorum. Öğrencilerim sonunda akor ilerlemelerinin nasıl çalıştığını anlıyor!",
-      "author": "Dr. Michael Rodriguez",
-      "role": "Müzik öğretmeni"
-    },
-    "testimonial3": {
-      "quote": "Armoni paletleri için jestsel arayüz dahice. Akor ilişkilerini tamamen yeni ve sezgisel bir şekilde keşfedebiliyorum.",
-      "author": "Alex Thompson",
-      "role": "Müzik prodüktörü"
-    }
   },
   "login": {
     "subtitle": "Hesabınıza erişmek için giriş yapın",
@@ -1289,5 +1223,17 @@
       "content1": "Cymasphere'i geliştirmeye devam ederken, müzik yaratımının geleceği konusunda heyecanlıyız. Yol haritamız büyük DAW'larla gelişmiş entegrasyon, genişletilmiş armonik paletler, daha derin AI destekli kompozisyon özellikleri ve çok daha fazlasını içeriyor.",
       "content2": "Bu yolculukta bize katılmanızı ve akıllı müzik yaratım araçlarının geleceğini şekillendirmeye yardım etmenizi davet ediyoruz."
     }
+  },
+  "chat": {
+    "language": "tr",
+    "greeting": "Merhaba! Cymasphere asistanınıyım. Müzik prodüksiyonu araçları, fiyatlandırma, özellikleri ve daha fazlası hakkında sorularınızda size yardımcı olabilirim. Ne bilmek istersiniz?",
+    "error_process": "Üzgünüm, şu anda mesajınızı işleyemedim. Lütfen tekrar deneyin.",
+    "error_connecting": "Şu anda bağlanmakta zorluk yaşıyorum. Lütfen bir anlık içinde tekrar deneyin.",
+    "view_pricing": "Fiyatlandırmayı Görüntüle",
+    "title": "Cymasphere Asistanı",
+    "placeholder": "Cymasphere hakkında bana her şeyi sorun...",
+    "typing": "Asistan yazıyor",
+    "open_label": "Sohbeti Aç",
+    "close_label": "Sohbeti Kapat"
   }
-} 
+}

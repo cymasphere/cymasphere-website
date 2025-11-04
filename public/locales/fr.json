@@ -383,7 +383,9 @@
     "it": "Italiano",
     "de": "Deutsch",
     "pt": "Português",
-    "ja": "日本語"
+    "tr": "Türkçe",
+    "ja": "日本語",
+    "zh": "中文"
   },
   "pricing": {
     "title": "Prix et Forfaits",
@@ -623,9 +625,9 @@
       "membership": "Adhésion",
       "free": "Gratuit",
       "upgradeToPro": "Passez à Pro pour un accès complet",
-      "fullAccess": "Vous avez un accès complet",
+      "fullAccess": "Vous avez actuellement un accès complet à toutes les fonctionnalités premium :",
       "upgradeToLifetime": "Passer à l'accès à vie",
-      "upgradeNow": "Mettre à niveau",
+      "upgradeNow": "Mettre à Niveau Maintenant",
       "lifetimeAccess": "Inclut des mises à jour gratuites à vie",
       "nextPayment": "Prochain Paiement",
       "futurePayments": "Paiements Futurs",
@@ -644,7 +646,6 @@
       "lifetimeMessage": "Vous avez une adhésion à vie avec des mises à jour gratuites à vie. Profitez de toutes les fonctionnalités et avantages premium en permanence.",
       "activeSubscriptionMessage": "Votre abonnement {{plan}} est actif. Profitez de toutes les fonctionnalités et avantages premium.",
       "upgradeMessage": "Passez à la version premium pour débloquer des fonctionnalités avancées et des capacités de traitement audio avancées.",
-      "fullAccess": "Vous avez actuellement un accès complet à toutes les fonctionnalités premium :",
       "featureAdvancedChords": "Progressions d'Accords Avancées",
       "featureUnlimitedSaves": "Sauvegardes Illimitées de Progressions",
       "featureMIDI": "Exportation et Importation MIDI",
@@ -658,7 +659,6 @@
       "purchasedOn": "Date d'Achat",
       "freeAccountBasicFeatures": "Votre compte gratuit inclut des fonctionnalités de base. Passez à la version premium pour un accès complet :",
       "premiumFeatures": "Votre compte inclut ces fonctionnalités premium :",
-      "upgradeNow": "Mettre à Niveau Maintenant",
       "getStarted": "Commencer",
       "manageBilling": "Gérer l'Abonnement",
       "support": "Support",
@@ -1004,5 +1004,17 @@
         "content": "Si vous avez des questions concernant cette Politique de confidentialité, veuillez nous contacter à support@cymasphere.com."
       }
     }
+  },
+  "chat": {
+    "language": "fr",
+    "greeting": "Bonjour ! Je suis votre assistant Cymasphere. Je peux vous aider avec des questions sur nos outils de production musicale, les prix, les fonctionnalités et bien d'autres. Que voulez-vous savoir ?",
+    "error_process": "Je suis désolé, je n'ai pas pu traiter votre message pour le moment. Veuillez réessayer.",
+    "error_connecting": "J'ai du mal à me connecter en ce moment. Veuillez réessayer dans un instant.",
+    "view_pricing": "Voir la tarification",
+    "title": "Assistant Cymasphere",
+    "placeholder": "Demandez-moi n'importe quoi sur Cymasphere...",
+    "typing": "L'assistant est en train d'écrire",
+    "open_label": "Ouvrir le chat",
+    "close_label": "Fermer le chat"
   }
-} 
+}

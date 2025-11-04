@@ -382,7 +382,9 @@
     "it": "Italiano",
     "de": "Deutsch",
     "pt": "Português",
-    "ja": "日本語"
+    "tr": "Türkçe",
+    "ja": "日本語",
+    "zh": "中文"
   },
   "pricing": {
     "title": "Precios y Planes",
@@ -622,9 +624,9 @@
       "membership": "Membresía",
       "free": "Gratis",
       "upgradeToPro": "Actualiza a Pro para acceso completo",
-      "fullAccess": "Tienes acceso completo",
+      "fullAccess": "Actualmente tienes acceso completo a todas las funciones premium:",
       "upgradeToLifetime": "Actualiza a acceso de por vida",
-      "upgradeNow": "Actualizar",
+      "upgradeNow": "Actualizar Ahora",
       "lifetimeAccess": "Incluye actualizaciones gratuitas de por vida",
       "nextPayment": "Próximo Pago",
       "futurePayments": "Pagos Futuros",
@@ -643,7 +645,6 @@
       "lifetimeMessage": "Tienes una membresía de por vida con actualizaciones gratuitas de por vida. Disfruta de todas las funciones y beneficios premium.",
       "activeSubscriptionMessage": "Tu suscripción {{plan}} está activa. Disfruta de todas las funciones y beneficios premium.",
       "upgradeMessage": "Actualiza para desbloquear funciones premium y capacidades avanzadas de procesamiento de audio.",
-      "fullAccess": "Actualmente tienes acceso completo a todas las funciones premium:",
       "featureAdvancedChords": "Progresiones de Acordes Avanzadas",
       "featureUnlimitedSaves": "Guardado Ilimitado de Progresiones",
       "featureMIDI": "Exportación e Importación MIDI",
@@ -657,7 +658,6 @@
       "purchasedOn": "Fecha de Compra",
       "freeAccountBasicFeatures": "Tu cuenta gratuita incluye funciones básicas. Actualiza para obtener acceso completo:",
       "premiumFeatures": "Tu cuenta incluye estas funciones premium:",
-      "upgradeNow": "Actualizar Ahora",
       "getStarted": "Comenzar",
       "manageBilling": "Gestionar Suscripción",
       "support": "Soporte",
@@ -711,7 +711,7 @@
       "percentDiscount": "¡{{percent}}% de descuento aplicado!",
       "amountDiscount": "¡${{amount}} de descuento!",
       "firstPayment": "Primer pago: {{date}}",
-      "nextBilling": "Próxima facturación: {{date}}",
+      "nextBilling": "Próxima fecha de facturación",
       "oneTimePurchase": "pago único",
       "purchased": "Comprado",
       "allPlansInclude": "Todos los Planes Incluyen:",
@@ -720,7 +720,6 @@
       "cardTooltip": "Agregar tu método de pago ahora extiende tu prueba a 14 días en lugar de 7. No se te cobrará hasta que termine tu prueba.",
       "chooseTrial": "Elige tu opción de prueba gratuita:",
       "noCharge": "(no se cobrará hasta que termine la prueba)",
-
       "paymentHistory": "Historial de Pagos",
       "upgradeDowngrade": "Mejorar/Reducir Plan",
       "cancelSubscription": "Cancelar Suscripción",
@@ -742,19 +741,6 @@
       "startingPlan": "Iniciando Tu Plan",
       "startingPlanMessage": "Estás iniciando una prueba gratuita de {{trialDays}} días del plan {{plan}}. {{paymentMessage}}",
       "withCardMessage": "Se te pedirá que proporciones tus datos de pago, pero no se te cobrará hasta que termine tu prueba.",
-      "withoutCardMessage": "Puedes usar las funciones básicas sin proporcionar información de pago.",
-      "planChangeScheduled": "Cambio de Plan Programado",
-      "planChangeScheduledMessage": "Tu plan cambiará a mensual al final de tu período de facturación actual el {{date}}.",
-      "planUpdated": "Plan Actualizado",
-      "planUpdatedMessage": "Tu suscripción ha sido cambiada al plan {{plan}}. Los cambios tendrán efecto inmediatamente.",
-      "subscriptionUpdateFailed": "Actualización de Suscripción Fallida",
-      "unexpectedError": "Ocurrió un error inesperado al actualizar tu suscripción.",
-      "noActiveSubscription": "No pudimos encontrar una suscripción activa para tu cuenta. Por favor, contacta al soporte para obtener asistencia.",
-      "billingCycleError": "No pudimos cambiar tu ciclo de facturación. Por favor, contacta al soporte para obtener asistencia con el cambio entre planes mensuales y anuales.",
-      "paymentMethodError": "Hubo un problema con tu método de pago. Por favor, actualiza tu información de pago e inténtalo nuevamente.",
-      "permissionError": "No tienes permiso para realizar este cambio. Por favor, contacta al soporte para obtener asistencia.",
-      "prorationError": "Hubo un problema calculando tu factura para el nuevo plan. Por favor, inténtalo más tarde o contacta al soporte.",
-      "specificError": "Error al actualizar tu suscripción: {{error}}",
       "withoutCardMessage": "Puedes usar funciones básicas sin proporcionar información de pago.",
       "planChangeScheduled": "Cambio de Plan Programado",
       "planChangeScheduledMessage": "Tu plan se cambiará a mensual al final de tu período de facturación actual el {{date}}.",
@@ -764,6 +750,10 @@
       "unexpectedError": "Ocurrió un error inesperado al actualizar tu suscripción.",
       "noActiveSubscription": "No se encontró una suscripción activa en tu cuenta. Por favor contacta al soporte para asistencia.",
       "billingCycleError": "No se pudo cambiar el ciclo de facturación. Por favor contacta al soporte para asistencia con cambios de planes mensuales y anuales.",
+      "paymentMethodError": "Hubo un problema con tu método de pago. Por favor, actualiza tu información de pago e inténtalo nuevamente.",
+      "permissionError": "No tienes permiso para realizar este cambio. Por favor, contacta al soporte para obtener asistencia.",
+      "prorationError": "Hubo un problema calculando tu factura para el nuevo plan. Por favor, inténtalo más tarde o contacta al soporte.",
+      "specificError": "Error al actualizar tu suscripción: {{error}}",
       "cancelNotice": "Tu suscripción será cancelada el {{date}}. Tendrás acceso hasta entonces.",
       "continueToCheckout": "Continuar al Pago",
       "gotIt": "Entendido",
@@ -784,7 +774,6 @@
       "error": "Error",
       "portalAccessError": "Error al acceder al portal de facturación: {{error}}",
       "errorOccurred": "Ocurrió un error: {{error}}",
-      "nextBilling": "Próxima fecha de facturación",
       "planDescription": "Solución completa para productores musicales",
       "trialBanner": "Actualmente estás en una prueba gratuita de {{trialDays}} días con acceso completo a todas las funciones premium. {{daysLeft}} días restantes. Tu primer pago de ${{amount}} será el {{date}}."
     },
@@ -871,7 +860,7 @@
   "freeTrial": {
     "startTrial": "Comienza tu Prueba Gratuita",
     "enterEmail": "Ingresa tu dirección de correo electrónico para comenzar tu prueba gratuita de {{days}} días {{requirement}}.",
-    "cardRequired": "(tarjeta de crédito requerida)",
+    "cardRequired": "(se requiere tarjeta de crédito)",
     "noCardRequired": "(no se requiere tarjeta de crédito)"
   },
   "billing": {
@@ -1049,10 +1038,16 @@
       "content2": "Le invitamos a unirse a nosotros en este viaje y ayudar a dar forma al futuro de las herramientas inteligentes de creación musical."
     }
   },
-  "freeTrial": {
-    "startTrial": "Comienza tu Prueba Gratuita",
-    "enterEmail": "Ingresa tu dirección de correo electrónico para comenzar tu prueba gratuita de {{days}} días {{requirement}}.",
-    "cardRequired": "(se requiere tarjeta de crédito)",
-    "noCardRequired": "(no se requiere tarjeta de crédito)"
+  "chat": {
+    "language": "es",
+    "greeting": "¡Hola! Soy tu asistente de Cymasphere. Puedo ayudarte con preguntas sobre nuestras herramientas de producción musical, precios, características y más. ¿Qué te gustaría saber?",
+    "error_process": "Lo siento, no pude procesar tu mensaje en este momento. Por favor, inténtalo de nuevo.",
+    "error_connecting": "Tengo problemas para conectarme en este momento. Por favor, intenta de nuevo en un momento.",
+    "view_pricing": "Ver precios",
+    "title": "Asistente de Cymasphere",
+    "placeholder": "Pregúntame cualquier cosa sobre Cymasphere...",
+    "typing": "El asistente está escribiendo",
+    "open_label": "Abrir chat",
+    "close_label": "Cerrar chat"
   }
-} 
+}

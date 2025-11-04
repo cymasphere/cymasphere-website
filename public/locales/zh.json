@@ -425,8 +425,8 @@
     "de": "Deutsch",
     "pt": "Português",
     "tr": "Türkçe",
-    "zh": "中文",
-    "ja": "日本語"
+    "ja": "日本語",
+    "zh": "中文"
   },
   "login": {
     "subtitle": "登录访问您的账户",
@@ -542,9 +542,9 @@
       "membership": "会员",
       "free": "免费",
       "upgradeToPro": "升级到专业版获得完整访问权限",
-      "fullAccess": "您拥有完整访问权限",
+      "fullAccess": "您目前可以完全访问所有高级功能：",
       "upgradeToLifetime": "升级到终身访问权限",
-      "upgradeNow": "升级",
+      "upgradeNow": "立即升级",
       "lifetimeAccess": "包含终身免费更新",
       "nextPayment": "下次付款",
       "futurePayments": "未来付款",
@@ -563,7 +563,6 @@
       "lifetimeMessage": "您拥有终身会员资格，享有终身免费更新。永久享受所有高级功能和福利。",
       "activeSubscriptionMessage": "您的{{plan}}订阅处于活跃状态。享受所有高级功能和福利。",
       "upgradeMessage": "升级以解锁高级功能和先进的音频处理能力。",
-      "fullAccess": "您目前可以完全访问所有高级功能：",
       "featureAdvancedChords": "高级和弦进行",
       "featureUnlimitedSaves": "无限保存进行",
       "featureMIDI": "MIDI导出和导入",
@@ -577,7 +576,6 @@
       "purchasedOn": "购买日期",
       "freeAccountBasicFeatures": "您的免费账户包含基本功能。升级以获得完整访问权限：",
       "premiumFeatures": "您的账户包含这些高级功能：",
-      "upgradeNow": "立即升级",
       "getStarted": "开始使用",
       "manageBilling": "管理订阅",
       "support": "支持",
@@ -946,5 +944,17 @@
       "content1": "随着我们继续开发Cymasphere，我们对音乐创作的未来感到兴奋。我们的路线图包括与主要DAW的高级集成、扩展的和声调色板、更深入的AI辅助作曲功能等等。",
       "content2": "我们邀请您加入我们的旅程，帮助塑造智能音乐创作工具的未来。"
     }
+  },
+  "chat": {
+    "language": "zh",
+    "greeting": "你好!我是Cymasphere助手。我可以帮助您解答关于我们的音乐制作工具、价格、功能等问题。您想了解什么?",
+    "error_process": "抱歉，我现在无法处理您的消息。请重试。",
+    "error_connecting": "我现在遇到连接问题。请稍后重试。",
+    "view_pricing": "查看价格",
+    "title": "Cymasphere助手",
+    "placeholder": "问我关于Cymasphere的任何事情...",
+    "typing": "助手正在输入",
+    "open_label": "打开聊天",
+    "close_label": "关闭聊天"
   }
-} 
+}

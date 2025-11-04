@@ -382,7 +382,9 @@
     "it": "Italiano",
     "de": "Deutsch",
     "pt": "Português",
-    "ja": "日本語"
+    "tr": "Türkçe",
+    "ja": "日本語",
+    "zh": "中文"
   },
   "pricing": {
     "title": "Preise & Pläne",
@@ -620,9 +622,9 @@
       "membership": "Mitgliedschaft",
       "free": "Kostenlos",
       "upgradeToPro": "Auf Pro upgraden für vollen Zugang",
-      "fullAccess": "Sie haben vollen Zugang",
+      "fullAccess": "Sie haben derzeit vollen Zugang zu allen Premium-Funktionen:",
       "upgradeToLifetime": "Auf lebenslangen Zugang upgraden",
-      "upgradeNow": "Upgraden",
+      "upgradeNow": "Jetzt upgraden",
       "lifetimeAccess": "Beinhaltet kostenlose Updates fürs Leben",
       "nextPayment": "Nächste Zahlung",
       "futurePayments": "Zukünftige Zahlungen",
@@ -641,7 +643,6 @@
       "lifetimeMessage": "Sie haben eine lebenslange Mitgliedschaft mit kostenlosen Updates fürs Leben. Genießen Sie alle Premium-Funktionen und Vorteile dauerhaft.",
       "activeSubscriptionMessage": "Ihr {{plan}}-Abonnement ist aktiv. Genießen Sie alle Premium-Funktionen und Vorteile.",
       "upgradeMessage": "Upgraden Sie, um Premium-Funktionen und erweiterte Audio-Verarbeitungsfähigkeiten freizuschalten.",
-      "fullAccess": "Sie haben derzeit vollen Zugang zu allen Premium-Funktionen:",
       "featureAdvancedChords": "Erweiterte Akkordprogressionen",
       "featureUnlimitedSaves": "Unbegrenzte gespeicherte Progressionen",
       "featureMIDI": "MIDI Export & Import",
@@ -655,7 +656,6 @@
       "purchasedOn": "Kaufdatum",
       "freeAccountBasicFeatures": "Ihr kostenloses Konto beinhaltet grundlegende Funktionen. Upgraden Sie für vollen Zugang:",
       "premiumFeatures": "Ihr Konto beinhaltet diese Premium-Funktionen:",
-      "upgradeNow": "Jetzt upgraden",
       "getStarted": "Loslegen",
       "manageBilling": "Abonnement verwalten",
       "support": "Support",
@@ -1010,5 +1010,17 @@
         "content": "Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte unter support@cymasphere.com."
       }
     }
+  },
+  "chat": {
+    "language": "de",
+    "greeting": "Hallo! Ich bin dein Cymasphere-Assistent. Ich kann dir bei Fragen zu unseren Musikproduktionswerkzeugen, Preisen, Funktionen und mehr helfen. Was möchtest du wissen?",
+    "error_process": "Es tut mir leid, ich konnte deine Nachricht gerade nicht verarbeiten. Bitte versuche es erneut.",
+    "error_connecting": "Ich habe gerade Schwierigkeiten, mich zu verbinden. Bitte versuche es in einem Moment erneut.",
+    "view_pricing": "Preise anzeigen",
+    "title": "Cymasphere-Assistent",
+    "placeholder": "Frag mich alles über Cymasphere...",
+    "typing": "Der Assistent schreibt",
+    "open_label": "Chat öffnen",
+    "close_label": "Chat schließen"
   }
-} 
+}

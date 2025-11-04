@@ -6,6 +6,7 @@ import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -376,18 +377,23 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [audioInitialized, setAudioInitialized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  const { t, i18n } = useTranslation();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize greeting message based on language
+  useEffect(() => {
+    const initialGreeting: Message = {
+      id: '1',
+      text: t('chat.greeting') || "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
+      isUser: false,
+      timestamp: new Date()
+    };
+    setMessages([initialGreeting]);
+  }, [i18n.language, t]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -485,7 +491,8 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         },
         body: JSON.stringify({
           message: userMessage.text,
-          conversationHistory: messages.slice(-5) // Send last 5 messages for context
+          conversationHistory: messages.slice(-5), // Send last 5 messages for context
+          language: i18n.language // Pass current language code (e.g., 'en', 'es', 'fr')
         }),
       });
 
@@ -493,7 +500,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || "I'm sorry, I couldn't process your message right now. Please try again.",
+        text: data.response || t('chat.error_process') || "I'm sorry, I couldn't process your message right now. Please try again.",
         isUser: false,
         timestamp: new Date(),
         cta: null
@@ -503,7 +510,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       const pricingRegex = /(price|pricing|plan|plans|monthly|yearly|lifetime|trial|subscribe|upgrade)/i;
       if (pricingRegex.test(botMessage.text)) {
         botMessage.cta = {
-          label: 'View pricing',
+          label: t('chat.view_pricing') || 'View pricing',
           href: '/#pricing',
         };
       }
@@ -513,7 +520,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm having trouble connecting right now. Please try again in a moment.",
+        text: t('chat.error_connecting') || "I'm having trouble connecting right now. Please try again in a moment.",
         isUser: false,
         timestamp: new Date()
       };
@@ -536,7 +543,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         <ChatHeader>
           <ChatTitle>
             <FaRobot />
-            Cymasphere Assistant
+            {t('chat.title') || 'Cymasphere Assistant'}
           </ChatTitle>
           <CloseButton onClick={() => setIsOpen(false)}>
             <FaTimes />
@@ -570,7 +577,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
           {isTyping && (
             <TypingIndicator>
               <FaRobot />
-              Assistant is typing
+              {t('chat.typing') || 'Assistant is typing'}
               <TypingDots />
             </TypingIndicator>
           )}
@@ -584,7 +591,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about Cymasphere..."
+            placeholder={t('chat.placeholder') || 'Ask me anything about Cymasphere...'}
             disabled={isTyping}
           />
           <SendButton 
@@ -607,7 +614,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
             });
           }
         }}
-        aria-label={isOpen ? 'Close chat' : 'Open chat'}
+        aria-label={isOpen ? t('chat.close_label') || 'Close chat' : t('chat.open_label') || 'Open chat'}
       >
         {isOpen ? <FaTimes /> : <FaComment />}
       </ChatButton>

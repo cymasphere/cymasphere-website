@@ -509,7 +509,9 @@
     "it": "Italiano",
     "de": "Deutsch",
     "pt": "Português",
-    "ja": "日本語"
+    "tr": "Türkçe",
+    "ja": "日本語",
+    "zh": "中文"
   },
   "login": {
     "subtitle": "Accedi per accedere al tuo account",
@@ -625,9 +627,9 @@
       "membership": "Iscrizione",
       "free": "Gratuito",
       "upgradeToPro": "Aggiorna a Pro per accesso completo",
-      "fullAccess": "Hai accesso completo",
+      "fullAccess": "Attualmente hai accesso completo a tutte le funzionalità premium:",
       "upgradeToLifetime": "Aggiorna all'accesso a vita",
-      "upgradeNow": "Aggiorna",
+      "upgradeNow": "Aggiorna ora",
       "lifetimeAccess": "Include aggiornamenti gratuiti a vita",
       "nextPayment": "Prossimo pagamento",
       "futurePayments": "Pagamenti futuri",
@@ -646,7 +648,6 @@
       "lifetimeMessage": "Hai un'iscrizione a vita con aggiornamenti gratuiti a vita. Goditi tutte le funzionalità e benefici premium permanentemente.",
       "activeSubscriptionMessage": "Il tuo abbonamento {{plan}} è attivo. Goditi tutte le funzionalità e benefici premium.",
       "upgradeMessage": "Aggiorna per sbloccare funzionalità premium e capacità di elaborazione audio avanzate.",
-      "fullAccess": "Attualmente hai accesso completo a tutte le funzionalità premium:",
       "featureAdvancedChords": "Progressioni accordi avanzate",
       "featureUnlimitedSaves": "Progressioni salvate illimitate",
       "featureMIDI": "Esportazione e importazione MIDI",
@@ -660,7 +661,6 @@
       "purchasedOn": "Data acquisto",
       "freeAccountBasicFeatures": "Il tuo account gratuito include funzionalità base. Aggiorna per accesso completo:",
       "premiumFeatures": "Il tuo account include queste funzionalità premium:",
-      "upgradeNow": "Aggiorna ora",
       "getStarted": "Inizia",
       "manageBilling": "Gestisci abbonamento",
       "support": "Supporto",
@@ -1040,5 +1040,17 @@
   "product": "Prodotto",
   "downloads": "Download",
   "standaloneAndPlugins": "App Standalone e Plugin",
-  "subscribeForAccess": "Abbonati per accedere"
-} 
+  "subscribeForAccess": "Abbonati per accedere",
+  "chat": {
+    "language": "it",
+    "greeting": "Ciao! Sono il tuo assistente Cymasphere. Posso aiutarti con domande sui nostri strumenti di produzione musicale, prezzi, funzionalità e altro. Cosa vorresti sapere?",
+    "error_process": "Mi scusa, non ho potuto elaborare il tuo messaggio in questo momento. Per favore riprova.",
+    "error_connecting": "Ho problemi di connessione in questo momento. Per favore riprova tra un istante.",
+    "view_pricing": "Visualizza prezzi",
+    "title": "Assistente Cymasphere",
+    "placeholder": "Chiedimi qualsiasi cosa su Cymasphere...",
+    "typing": "L'assistente sta digitando",
+    "open_label": "Apri chat",
+    "close_label": "Chiudi chat"
+  }
+}
