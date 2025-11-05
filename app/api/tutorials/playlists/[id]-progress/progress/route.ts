@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { createClient } from '@/utils/supabase/server';
 
 // GET - Retrieve all video progress for a playlist
 export async function GET(
@@ -11,13 +7,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: playlistId } = await params;
-    
-    // Get user from request headers (set by middleware)
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    const { id: playlistId } = await params;
+    const userId = user.id;
 
     // Get all videos in the playlist with their progress
     const { data: playlistVideos, error: playlistError } = await supabase

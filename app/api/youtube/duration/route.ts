@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const videoId = searchParams.get('id');
     const forceRefresh = searchParams.get('force') === 'true';
@@ -61,7 +70,7 @@ export async function GET(request: NextRequest) {
       const duration = parseInt(durationMatch[1], 10);
       
       // Cache the duration in the database
-      await cacheDuration(videoId, duration);
+      await cacheDuration(supabase, videoId, duration);
       
       return NextResponse.json({ 
         duration,
@@ -77,7 +86,7 @@ export async function GET(request: NextRequest) {
       const duration = Math.floor(durationMs / 1000);
       
       // Cache the duration in the database
-      await cacheDuration(videoId, duration);
+      await cacheDuration(supabase, videoId, duration);
       
       return NextResponse.json({ 
         duration,
@@ -94,7 +103,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper function to cache duration in database
-async function cacheDuration(videoId: string, duration: number) {
+async function cacheDuration(supabase: any, videoId: string, duration: number) {
   try {
     const { error } = await supabase
       .from('tutorial_videos')

@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
@@ -48,7 +57,30 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { userId, profile } = await request.json();
+
+    // Ensure user can only update their own profile
+    if (userId !== user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden - can only update own profile' },
+        { status: 403 }
+      );
+    }
 
     if (!userId || !profile) {
       return NextResponse.json({ error: 'User ID and profile are required' }, { status: 400 });

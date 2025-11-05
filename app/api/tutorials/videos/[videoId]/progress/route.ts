@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { createClient } from '@/utils/supabase/server';
 
 // GET - Retrieve video progress for a user
 export async function GET(
@@ -11,13 +7,20 @@ export async function GET(
   { params }: { params: Promise<{ videoId: string }> }
 ) {
   try {
-    const { videoId } = await params;
-    
-    // Get user from request headers (set by middleware)
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    const { videoId } = await params;
+    const userId = user.id;
 
     const { data: progress, error } = await supabase
       .from('video_progress')
@@ -44,15 +47,22 @@ export async function POST(
   { params }: { params: Promise<{ videoId: string }> }
 ) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { videoId } = await params;
     const body = await request.json();
     const { watchPercentage, isCompleted, totalWatchTime, playlistId } = body;
-
-    // Get user from request headers
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
-    }
+    const userId = user.id;
 
     // Validate input
     if (watchPercentage < 0 || watchPercentage > 100) {

@@ -1,25 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const supabase = await createClient();
 
-    if (!userId) {
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedUserId = searchParams.get('userId');
+
+    if (!requestedUserId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
+
+    // Ensure user can only access their own analytics
+    if (requestedUserId !== user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden - can only access own analytics' },
+        { status: 403 }
+      );
+    }
+
+    const userId = user.id;
 
     // Get user's profile and progress data
     const { data: userPath, error: pathError } = await supabase
       .from('user_tutorial_paths')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single();
 
     if (pathError && pathError.code !== 'PGRST116') {
@@ -31,7 +51,7 @@ export async function GET(request: NextRequest) {
     const { data: progressData, error: progressError } = await supabase
       .from('user_tutorial_paths')
       .select('progress_data')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single();
 
     if (progressError && progressError.code !== 'PGRST116') {
@@ -58,7 +78,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single();
 
     if (completedError && completedError.code !== 'PGRST116') {

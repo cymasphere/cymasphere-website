@@ -1,13 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin (admin-only operation)
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
     // This endpoint refreshes YouTube durations for videos that need updating
     // Can be called by a cron job or manually
     
@@ -142,6 +165,34 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin (admin-only operation)
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
     // Get status of duration caching
     const { data: stats, error } = await supabase
       .from('tutorial_videos')
