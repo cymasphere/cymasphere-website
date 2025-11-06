@@ -29,7 +29,7 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAudiences, type EmailAudience } from "@/app/actions/email-campaigns";
+import { getAudiences, deleteAudience, type EmailAudience } from "@/app/actions/email-campaigns";
 
 const Container = styled.div`
   width: 100%;
@@ -709,17 +709,7 @@ export default function AudiencesPage() {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
 
     try {
-      const response = await fetch(`/api/email-campaigns/audiences/${deleteModal.audience.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete audience');
-      }
+      await deleteAudience(deleteModal.audience.id);
       
       setAudiences(prev => prev.filter(audience => audience.id !== deleteModal.audience?.id));
       

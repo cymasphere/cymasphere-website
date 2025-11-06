@@ -39,7 +39,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
-import { getAudiences, createAudience } from "@/app/actions/email-campaigns";
+import { getAudiences, createAudience, deleteAudience, getAudienceSubscribers } from "@/app/actions/email-campaigns";
 
 // Global styles for animations
 const GlobalStyles = createGlobalStyle`
@@ -649,17 +649,11 @@ function AudiencesPage() {
         const displayAudiences = await Promise.all(
           dbAudiences.map(async (dbAudience) => {
             try {
-              // Call the API to get real-time count
-              const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
-              if (response.ok) {
-                const data = await response.json();
-                const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
-                console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
-                return convertToDisplayAudience(dbAudience, realTimeCount);
-              } else {
-                console.warn(`Failed to get real-time count for ${dbAudience.name}, using cached count`);
-                return convertToDisplayAudience(dbAudience);
-              }
+              // Get real-time count using server function
+              const data = await getAudienceSubscribers(dbAudience.id, { page: 1, limit: 1 });
+              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+              console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
+              return convertToDisplayAudience(dbAudience, realTimeCount);
             } catch (error) {
               console.warn(`Error getting real-time count for ${dbAudience.name}:`, error);
               return convertToDisplayAudience(dbAudience);
@@ -781,21 +775,12 @@ function AudiencesPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        // Remove from local state
-        setAudiences(prev => prev.filter(a => a.id !== audienceToDelete.id));
-        console.log('Audience deleted successfully');
-        setShowDeleteModal(false);
-        setAudienceToDelete(null);
-      } else {
-        const error = await response.json();
-        console.error('Error deleting audience:', error);
-        // Keep modal open to show error state
-      }
+      await deleteAudience(audienceToDelete.id);
+      // Remove from local state
+      setAudiences(prev => prev.filter(a => a.id !== audienceToDelete.id));
+      console.log('Audience deleted successfully');
+      setShowDeleteModal(false);
+      setAudienceToDelete(null);
     } catch (error) {
       console.error('Error deleting audience:', error);
       // Keep modal open to show error state
@@ -827,13 +812,9 @@ function AudiencesPage() {
       const displayAudiences = await Promise.all(
         dbAudiences.map(async (dbAudience) => {
           try {
-            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
-            if (response.ok) {
-              const data = await response.json();
-              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
-              return convertToDisplayAudience(dbAudience, realTimeCount);
-            }
-            return convertToDisplayAudience(dbAudience);
+            const data = await getAudienceSubscribers(dbAudience.id, { page: 1, limit: 1 });
+            const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+            return convertToDisplayAudience(dbAudience, realTimeCount);
           } catch {
             return convertToDisplayAudience(dbAudience);
           }
@@ -875,13 +856,9 @@ function AudiencesPage() {
       const displayAudiences = await Promise.all(
         dbAudiences.map(async (dbAudience) => {
           try {
-            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
-            if (response.ok) {
-              const data = await response.json();
-              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
-              return convertToDisplayAudience(dbAudience, realTimeCount);
-            }
-            return convertToDisplayAudience(dbAudience);
+            const data = await getAudienceSubscribers(dbAudience.id, { page: 1, limit: 1 });
+            const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+            return convertToDisplayAudience(dbAudience, realTimeCount);
           } catch {
             return convertToDisplayAudience(dbAudience);
           }

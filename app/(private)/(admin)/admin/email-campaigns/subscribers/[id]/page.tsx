@@ -30,7 +30,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getSubscriber, getAudiences } from "@/app/actions/email-campaigns";
+import { getSubscriber, getAudiences, getSubscriberAudienceMemberships, addAudienceSubscriber, removeAudienceSubscriber } from "@/app/actions/email-campaigns";
 
 const SubscriberContainer = styled.div`
   width: 100%;
@@ -622,28 +622,10 @@ function SubscriberDetailPage() {
     try {
       console.log('Fetching subscriber audience memberships for:', subscriberId);
       
-      // Use the new API endpoint to get all memberships at once
-      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}/audience-memberships`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSubscriberAudiences(data.memberships || {});
-        console.log('✅ Subscriber audience memberships loaded:', data.memberships);
-      } else {
-        console.error('Failed to fetch audience memberships:', response.status);
-        // Initialize all as false if there's an error
-        const memberships: {[key: string]: boolean} = {};
-        audiences.forEach((audience: any) => {
-          memberships[audience.id] = false;
-        });
-        setSubscriberAudiences(memberships);
-      }
+      // Use server function to get all memberships at once
+      const data = await getSubscriberAudienceMemberships(subscriberId);
+      setSubscriberAudiences(data.memberships || {});
+      console.log('✅ Subscriber audience memberships loaded:', data.memberships);
       
     } catch (err) {
       console.error('Error fetching subscriber audience memberships:', err);
@@ -737,33 +719,10 @@ function SubscriberDetailPage() {
       
       if (newMembership) {
         // Add subscriber to audience
-        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ email: subscriber.email })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || 'Failed to add subscriber to audience');
-        }
+        await addAudienceSubscriber(audienceId, { email: subscriber.email });
       } else {
         // Remove subscriber from audience
-        const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?subscriberId=${subscriberId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || 'Failed to remove subscriber from audience');
-        }
+        await removeAudienceSubscriber(audienceId, subscriberId);
       }
       
       // Update local state
@@ -843,19 +802,7 @@ function SubscriberDetailPage() {
       for (const audience of staticAudiences) {
         const currentMembership = subscriberAudiences[audience.id] || false;
         if (!currentMembership) {
-          const response = await fetch(`/api/email-campaigns/audiences/${audience.id}/subscribers`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ email: subscriber.email })
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            console.error(`Failed to add subscriber to audience ${audience.name}:`, errorData.error);
-          }
+          await addAudienceSubscriber(audience.id, { email: subscriber.email });
         }
       }
       
@@ -891,18 +838,7 @@ function SubscriberDetailPage() {
       for (const audience of staticAudiences) {
         const currentMembership = subscriberAudiences[audience.id] || false;
         if (currentMembership) {
-          const response = await fetch(`/api/email-campaigns/audiences/${audience.id}/subscribers?subscriberId=${subscriberId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            console.error(`Failed to remove subscriber from audience ${audience.name}:`, errorData.error);
-          }
+          await removeAudienceSubscriber(audience.id, subscriberId);
         }
       }
       

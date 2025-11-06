@@ -350,3 +350,183 @@ export async function createAudience(
   }
 }
 
+export interface GetAudienceResponse {
+  audience: EmailAudience;
+}
+
+/**
+ * Get a single email audience by ID (admin only)
+ * Matches logic from app/api/email-campaigns/audiences/[id]/route.ts (GET) exactly
+ */
+export async function getAudience(
+  audienceId: string
+): Promise<GetAudienceResponse> {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error('Authentication required');
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      throw new Error('Admin access required');
+    }
+
+    const { data: audience, error } = await supabase
+      .from('email_audiences')
+      .select('*')
+      .eq('id', audienceId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Audience not found');
+      }
+      console.error('Error fetching audience:', error);
+      throw new Error('Failed to fetch audience');
+    }
+
+    return { audience };
+  } catch (error) {
+    console.error('Error in getAudience:', error);
+    throw error;
+  }
+}
+
+export interface UpdateAudienceParams {
+  name?: string;
+  description?: string | null;
+  filters?: any;
+  subscriber_count?: number;
+}
+
+export interface UpdateAudienceResponse {
+  audience: EmailAudience;
+}
+
+/**
+ * Update an email audience (admin only)
+ * Matches logic from app/api/email-campaigns/audiences/[id]/route.ts (PUT) exactly
+ */
+export async function updateAudience(
+  audienceId: string,
+  params: UpdateAudienceParams
+): Promise<UpdateAudienceResponse> {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error('Authentication required');
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      throw new Error('Admin access required');
+    }
+
+    const { name, description, filters, subscriber_count } = params;
+
+    const updateData: { [key: string]: unknown } = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (filters !== undefined) updateData.filters = filters;
+    if (subscriber_count !== undefined) updateData.subscriber_count = subscriber_count;
+
+    const { data: audience, error } = await supabase
+      .from('email_audiences')
+      .update(updateData)
+      .eq('id', audienceId)
+      .select('*')
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Audience not found');
+      }
+      console.error('Error updating audience:', error);
+      throw new Error('Failed to update audience');
+    }
+
+    return { audience };
+  } catch (error) {
+    console.error('Error in updateAudience:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete an email audience (admin only)
+ * Matches logic from app/api/email-campaigns/audiences/[id]/route.ts (DELETE) exactly
+ */
+export async function deleteAudience(
+  audienceId: string
+): Promise<{ message: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error('Authentication required');
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      throw new Error('Admin access required');
+    }
+
+    const { error } = await supabase
+      .from('email_audiences')
+      .delete()
+      .eq('id', audienceId);
+
+    if (error) {
+      console.error('Error deleting audience:', error);
+      throw new Error('Failed to delete audience');
+    }
+
+    return { message: 'Audience deleted successfully' };
+  } catch (error) {
+    console.error('Error in deleteAudience:', error);
+    throw error;
+  }
+}
+

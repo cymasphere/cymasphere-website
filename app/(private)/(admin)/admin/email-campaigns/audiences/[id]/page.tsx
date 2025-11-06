@@ -32,7 +32,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled, { keyframes, css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import { createAudience } from "@/app/actions/email-campaigns";
+import { getAudience, updateAudience, deleteAudience, getAudienceSubscribers, addAudienceSubscriber, removeAudienceSubscriber } from "@/app/actions/email-campaigns";
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
@@ -690,76 +690,23 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
   }
 `;
 
-// Fetch audience data from API
+// Fetch audience data using server function
 const fetchAudienceData = async (id: string) => {
   try {
     console.log('Fetching audience data for ID:', id);
-    
-    // Add timeout to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    const response = await fetch(`/api/email-campaigns/audiences/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch audience: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await getAudience(id);
     console.log('Successfully fetched audience data:', data);
     return data.audience;
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Request timed out after 10 seconds');
-      throw new Error('Request timed out. Please try again.');
-    }
     console.error('Error fetching audience:', error);
     throw error;
   }
 };
 
-// Fetch audience subscribers from API
+// Fetch audience subscribers using server function
 const fetchAudienceSubscribers = async (id: string, page: number = 1, limit: number = 10, search: string = '') => {
   try {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...(search && { search })
-    });
-
-    const response = await fetch(`/api/email-campaigns/audiences/${id}/subscribers?${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('API Error Response:', errorData);
-      
-      if (response.status === 401) {
-        throw new Error('Authentication required. Please log in.');
-      } else if (response.status === 403) {
-        throw new Error('Admin access required.');
-      } else if (response.status === 404) {
-        throw new Error('Audience not found.');
-      } else {
-        throw new Error(errorData.error || `Failed to fetch subscribers: ${response.status}`);
-      }
-    }
-
-    const data = await response.json();
+    const data = await getAudienceSubscribers(id, { page, limit });
     return data;
   } catch (error) {
     console.error('Error fetching audience subscribers:', error);
@@ -1126,28 +1073,13 @@ function AudienceDetailPage() {
   const updateSubscriberCount = async (filters: any) => {
     try {
       // First save the filters to the audience, then get the count
-      const updateResponse = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ filters })
-      });
-      
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update filters for count calculation');
-      }
+      await updateAudience(audienceId, { filters });
       
       // Now get subscriber count based on the updated filters
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?page=1&limit=1`, {
-        method: 'GET',
-        credentials: 'include'
-      });
+      const response = await getAudienceSubscribers(audienceId, { page: 1, limit: 1 });
       
-      if (response.ok) {
-        const subscribersData = await response.json();
-        return subscribersData.pagination?.total || 0;
+      if (response) {
+        return response.pagination?.total || 0;
       }
     } catch (error) {
       console.error('Failed to get subscriber count:', error);
@@ -1216,18 +1148,7 @@ function AudienceDetailPage() {
         subscriber_count: subscriberCount
       };
 
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updateData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to save audience: ${response.status}`);
-      }
+      await updateAudience(audienceId, updateData);
 
       // Reload audience data to reflect changes and update original data
       await loadAudienceData();
@@ -1249,17 +1170,7 @@ function AudienceDetailPage() {
   const confirmDeleteAudience = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete audience: ${response.status}`);
-      }
+      await deleteAudience(audienceId);
 
       console.log('Audience deleted successfully');
       router.push('/admin/email-campaigns/audiences');
@@ -1380,72 +1291,8 @@ function AudienceDetailPage() {
       console.log('Adding subscriber with email:', addSubscriberEmail.trim());
       console.log('Audience ID:', audienceId);
       
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email: addSubscriberEmail.trim() })
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
-      if (!response.ok) {
-        let errorData = {};
-        let rawResponse = '';
-        
-        try {
-          const responseText = await response.text();
-          rawResponse = responseText;
-          
-          if (responseText.trim()) {
-            errorData = JSON.parse(responseText);
-          }
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
-          console.error('Raw response:', rawResponse);
-        }
-        
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-          rawResponse
-        });
-        
-        // Provide more helpful error messages
-        let errorMessage = 'Failed to add subscriber';
-        
-        if (errorData && typeof errorData === 'object' && 'error' in errorData) {
-          errorMessage = errorData.error as string;
-          
-          // Transform specific error messages
-          if (errorMessage === 'Email not found in system. User must sign up first.') {
-            errorMessage = 'This email address is not registered in the system. The user must create an account first.';
-          } else if (errorMessage === 'Subscriber already in audience') {
-            errorMessage = 'This subscriber is already in the audience.';
-          } else if (errorMessage === 'Can only add subscribers to static audiences') {
-            errorMessage = 'You can only add subscribers to static audiences. This audience appears to be dynamic.';
-          }
-        } else if (response.status === 401) {
-          errorMessage = 'Authentication required. Please log in again.';
-        } else if (response.status === 403) {
-          errorMessage = 'Access denied. Admin privileges required.';
-        } else if (response.status === 404) {
-          errorMessage = 'Audience not found.';
-        } else if (rawResponse) {
-          errorMessage = `Server error: ${rawResponse}`;
-        } else {
-          errorMessage = `Server error (${response.status}): ${response.statusText}`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-      console.log('Subscriber added successfully:', result);
+      await addAudienceSubscriber(audienceId, { email: addSubscriberEmail.trim() });
+      console.log('Subscriber added successfully');
       
       setAddSubscriberEmail('');
       setShowAddSubscriberModal(false);
@@ -1525,18 +1372,7 @@ function AudienceDetailPage() {
     try {
       console.log('Removing subscriber:', subscriberToRemove.id, 'from audience:', audienceId);
       
-      const response = await fetch(`/api/email-campaigns/audiences/${audienceId}/subscribers?subscriberId=${subscriberToRemove.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Failed to remove subscriber');
-      }
+      await removeAudienceSubscriber(audienceId, subscriberToRemove.id);
 
       console.log('✅ Subscriber removed successfully');
       
