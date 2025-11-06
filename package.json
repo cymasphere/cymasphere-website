@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "gen-supabase-types": "npx supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts"
+    "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
+    "supabase-migrate": "bun x supabase db push"
   },
   "packageManager": "bun@1.2.2",
   "overrides": {
