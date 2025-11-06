@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from '@/utils/supabase/server';
+import { calculateSubscriberCount } from '@/utils/email-campaigns/calculate-subscriber-count';
+
+const EMAIL_DEBUG = process.env.EMAIL_DEBUG === "1";
 
 export interface GetAudiencesParams {
   limit?: number;
@@ -26,6 +29,7 @@ export interface GetAudiencesResponse {
 
 /**
  * Get all email audiences (admin only)
+ * Matches logic from app/api/email-campaigns/audiences/route.ts exactly
  */
 export async function getAudiences(
   params?: GetAudiencesParams
@@ -71,51 +75,189 @@ export async function getAudiences(
       throw new Error('Failed to fetch audiences');
     }
 
-    // Calculate/refresh counts if requested
-    let audiencesWithCounts = audiences || [];
-    
-    if (mode === 'light' && refreshCounts && audiences && audiences.length > 0) {
-      // Refresh counts for static audiences
-      const staticIds = audiences
-        .filter((a: any) => (a.filters && typeof a.filters === 'object' && (a.filters as any).audience_type === 'static'))
-        .map((a: any) => a.id);
-      
-      if (staticIds.length > 0) {
+    if (EMAIL_DEBUG) {
+      console.log(
+        `🚀 Processing ${
+          audiences?.length || 0
+        } audiences for subscriber counts...`
+      );
+    }
+
+    // Calculate/refresh counts - matching API route logic exactly
+    const audiencesWithCounts = mode === "light" ? await (async () => {
+      if (!refreshCounts || !audiences || audiences.length === 0) return audiences || [];
+      // Refresh counts for static audiences cheaply via junction table
+      try {
+        const staticIds = (audiences as any[])
+          .filter((a: any) => (a.filters && typeof a.filters === 'object' && (a.filters as any).audience_type === 'static'))
+          .map((a: any) => a.id);
+        if (staticIds.length === 0) return audiences || [];
         const { data: relations } = await supabase
-          .from('email_audience_subscribers')
-          .select('audience_id, subscriber_id')
-          .in('audience_id', staticIds);
-        
+          .from("email_audience_subscribers")
+          .select("audience_id, subscriber_id")
+          .in("audience_id", staticIds);
         const counts: Record<string, number> = {};
         (relations || []).forEach((r: any) => {
           if (!r.audience_id) return;
           counts[r.audience_id] = (counts[r.audience_id] || 0) + 1;
         });
-        
-        audiencesWithCounts = audiences.map((a: any) => ({
+        return (audiences as any[]).map((a: any) => ({
           ...a,
           subscriber_count: staticIds.includes(a.id) ? (counts[a.id] || 0) : a.subscriber_count
         }));
+      } catch (e) {
+        if (EMAIL_DEBUG) console.warn('Light mode refreshCounts failed:', e);
+        return audiences || [];
       }
-    } else if (mode === 'full') {
-      // Calculate counts for all audiences (dynamic calculation)
-      audiencesWithCounts = await Promise.all(
-        (audiences || []).map(async (audience) => {
-          // Import the helper function (would need to be extracted to a shared utility)
-          // For now, use a simplified version
-          const count = audience.subscriber_count || 0;
-          return {
-            ...audience,
-            subscriber_count: count
-          };
-        })
+    })() : await Promise.all(
+      (audiences || []).map(async (audience) => {
+        let actualCount = 0;
+
+        if (EMAIL_DEBUG) {
+          console.log(`\n--- Processing audience: "${audience.name}" ---`);
+          console.log(`Stored subscriber_count: ${audience.subscriber_count}`);
+          console.log(`Filters:`, JSON.stringify(audience.filters));
+        }
+
+        // Check if this is a static audience
+        if (
+          audience.filters &&
+          typeof audience.filters === "object" &&
+          audience.filters !== null
+        ) {
+          const filters = audience.filters as any;
+          if (EMAIL_DEBUG) {
+            console.log(
+              `Audience type from filters: ${filters.audience_type || "not set"}`
+            );
+          }
+
+          if (filters.audience_type === "static") {
+            // For static audiences, call the subscribers API to get the exact same count as the edit modal
+            // Note: This matches the API route behavior exactly - it makes an internal API call
+            if (EMAIL_DEBUG) {
+              console.log(
+                `🔍 STATIC AUDIENCE - Getting count from subscribers API for "${audience.name}" (ID: ${audience.id})`
+              );
+            }
+
+            try {
+              // Make internal API call to get subscriber count (same as edit modal)
+              // This matches the API route behavior exactly
+              const subscribersResponse = await fetch(
+                `${
+                  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+                }/api/email-campaigns/audiences/${
+                  audience.id
+                }/subscribers?page=1&limit=1`,
+                {
+                  method: "GET",
+                  headers: {
+                    // Note: In server functions, we can't easily pass cookies/headers
+                    // This is a limitation we'll need to work around
+                    // For now, we'll try without auth headers (RLS will handle it)
+                  },
+                }
+              );
+
+              if (subscribersResponse.ok) {
+                const subscribersData = await subscribersResponse.json();
+                actualCount = subscribersData.pagination?.total || 0;
+                console.log(
+                  `📊 STATIC AUDIENCE "${audience.name}": ${actualCount} subscribers (from subscribers API)`
+                );
+              } else {
+                if (EMAIL_DEBUG) {
+                  console.error(
+                    `❌ Subscribers API call failed for "${audience.name}":`,
+                    subscribersResponse.status
+                  );
+                }
+                actualCount = 0;
+              }
+            } catch (error) {
+              if (EMAIL_DEBUG) {
+                console.error(
+                  `❌ Error calling subscribers API for "${audience.name}":`,
+                  error
+                );
+              }
+              actualCount = 0;
+            }
+          } else {
+            // For dynamic audiences, calculate from filters
+            if (EMAIL_DEBUG) {
+              console.log(
+                `🔄 DYNAMIC AUDIENCE - Calculating for "${audience.name}"`
+              );
+            }
+            actualCount = await calculateSubscriberCount(
+              supabase,
+              audience.filters || {}
+            );
+            if (EMAIL_DEBUG) {
+              console.log(
+                `📊 DYNAMIC AUDIENCE "${audience.name}": ${actualCount} subscribers (calculated)`
+              );
+            }
+          }
+        } else {
+          // For dynamic audiences, calculate from filters
+          if (EMAIL_DEBUG) {
+            console.log(
+              `🔄 NO FILTERS OBJECT - Treating as dynamic audience "${audience.name}"`
+            );
+          }
+          actualCount = await calculateSubscriberCount(
+            supabase,
+            audience.filters || {}
+          );
+          if (EMAIL_DEBUG) {
+            console.log(
+              `📊 NO FILTERS AUDIENCE "${audience.name}": ${actualCount} subscribers (calculated)`
+            );
+          }
+        }
+
+        const result = {
+          ...audience,
+          subscriber_count: actualCount,
+        };
+
+        if (EMAIL_DEBUG) {
+          console.log(
+            `✅ Final result for "${audience.name}": subscriber_count=${result.subscriber_count}`
+          );
+        }
+        return result;
+      })
+    );
+
+    if (EMAIL_DEBUG) {
+      console.log(
+        `🏁 Finished processing all audiences. Returning ${audiencesWithCounts.length} audiences.`
       );
     }
 
+    // Get total count
+    const { count, error: countError } = await supabase
+      .from("email_audiences")
+      .select("*", { count: "exact", head: true });
+
+    if (countError) {
+      if (EMAIL_DEBUG) {
+        console.error("Error getting audiences count:", countError);
+      }
+    }
+
     return {
-      audiences: audiencesWithCounts
+      audiences: audiencesWithCounts || [],
+      total: count || 0,
     };
   } catch (error) {
+    if (EMAIL_DEBUG) {
+      console.error("Audiences server function error:", error);
+    }
     console.error('Error in getAudiences:', error);
     throw error;
   }
@@ -167,39 +309,20 @@ export async function createAudience(
       throw new Error('Name is required');
     }
 
-    // Helper function to calculate subscriber count (inline for now)
-    const calculateSubscriberCount = async (filters: any): Promise<number> => {
-      try {
-        if (!filters || typeof filters !== 'object' || filters === null) {
-          return 0;
-        }
-
-        const filtersObj = filters as any;
-        if (filtersObj.audience_type === 'static') {
-          return 0; // Static audiences start with 0
-        }
-
-        // For dynamic audiences, we need to calculate from filters
-        // This is a simplified version - the full logic is in the API route
-        // For now, return 0 and let it be calculated on-demand
-        return 0;
-      } catch (error) {
-        console.error('Error calculating subscriber count:', error);
-        return 0;
-      }
-    };
-
-    // Calculate initial subscriber count
+    // Calculate initial subscriber count - matching API route logic exactly
     let initialCount = 0;
-    if (filters && typeof filters === 'object' && filters !== null) {
+    if (filters && typeof filters === "object" && filters !== null) {
       const filtersObj = filters as any;
-      if (filtersObj.audience_type === 'static') {
+      if (filtersObj.audience_type === "static") {
+        // For static audiences, start with 0 subscribers
         initialCount = 0;
       } else {
-        initialCount = await calculateSubscriberCount(filters);
+        // For dynamic audiences, calculate from filters
+        initialCount = await calculateSubscriberCount(supabase, filters || {});
       }
     } else {
-      initialCount = await calculateSubscriberCount(filters || {});
+      // Default to dynamic audience behavior
+      initialCount = await calculateSubscriberCount(supabase, filters || {});
     }
 
     // Create new audience
