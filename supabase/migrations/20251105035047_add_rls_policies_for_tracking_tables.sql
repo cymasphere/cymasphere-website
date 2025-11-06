@@ -17,19 +17,19 @@ CREATE POLICY IF NOT EXISTS "Allow anonymous inserts for email clicks" ON email_
   FOR INSERT 
   WITH CHECK (true);
 
--- Allow admins to read all tracking data
+-- Allow admins to manage all tracking data
 -- Note: These policies may already exist from previous migrations
 DROP POLICY IF EXISTS "Admins can manage email opens" ON email_opens;
 DROP POLICY IF EXISTS "Admins can read email opens" ON email_opens;
 DROP POLICY IF EXISTS "Admins can manage email clicks" ON email_clicks;
 DROP POLICY IF EXISTS "Admins can read email clicks" ON email_clicks;
 
-CREATE POLICY "Admins can read email opens" ON email_opens
-  FOR SELECT 
+CREATE POLICY "Admins can manage email opens" ON email_opens
+  FOR ALL 
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can read email clicks" ON email_clicks
-  FOR SELECT 
+CREATE POLICY "Admins can manage email clicks" ON email_clicks
+  FOR ALL 
   USING (is_admin(auth.uid()));
 
 -- Note: Tracking routes use the service role key to bypass RLS entirely
