@@ -37,27 +37,7 @@ export async function getAudiences(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const limit = params?.limit || 50;
     const offset = params?.offset || 0;
     const mode = params?.mode || 'full';
@@ -282,27 +262,7 @@ export async function createAudience(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { name, description, filters } = params;
 
     if (!name) {
@@ -364,27 +324,7 @@ export async function getAudience(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { data: audience, error } = await supabase
       .from('email_audiences')
       .select('*')
@@ -428,27 +368,7 @@ export async function updateAudience(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { name, description, filters, subscriber_count } = params;
 
     const updateData: { [key: string]: unknown } = {
@@ -492,27 +412,7 @@ export async function deleteAudience(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { error } = await supabase
       .from('email_audiences')
       .delete()

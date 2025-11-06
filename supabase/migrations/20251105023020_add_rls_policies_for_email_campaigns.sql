@@ -6,10 +6,13 @@
 ALTER TABLE email_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_audiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_audience_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_campaign_audiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_sends ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_opens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_clicks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_automations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_ab_tests ENABLE ROW LEVEL SECURITY;
 
 -- Email campaigns policies (admins can manage all)
 DROP POLICY IF EXISTS "Admins can manage campaigns" ON email_campaigns;
@@ -31,6 +34,12 @@ CREATE POLICY "Admins can manage audiences" ON email_audiences
 
 -- Email audience subscribers policies (admins can manage all)
 CREATE POLICY "Admins can manage audience subscribers" ON email_audience_subscribers
+  FOR ALL 
+  USING (is_admin(auth.uid()));
+
+-- Email campaign audiences policies (admins can manage all)
+DROP POLICY IF EXISTS "Admins can manage campaign audiences" ON email_campaign_audiences;
+CREATE POLICY "Admins can manage campaign audiences" ON email_campaign_audiences
   FOR ALL 
   USING (is_admin(auth.uid()));
 
@@ -65,6 +74,20 @@ CREATE POLICY "Admins can manage templates" ON email_templates
 DROP POLICY IF EXISTS "Admins can manage all subscribers" ON subscribers;
 DROP POLICY IF EXISTS "Admin can manage subscribers" ON subscribers;
 CREATE POLICY "Admins can manage all subscribers" ON subscribers
+  FOR ALL 
+  USING (is_admin(auth.uid()));
+
+-- Email automations policies (admins can manage all)
+-- Note: May already exist from previous migrations
+DROP POLICY IF EXISTS "Admins can manage automations" ON email_automations;
+CREATE POLICY "Admins can manage automations" ON email_automations
+  FOR ALL 
+  USING (is_admin(auth.uid()));
+
+-- A/B tests policies (admins can manage all)
+-- Note: May already exist from previous migrations
+DROP POLICY IF EXISTS "Admins can manage ab tests" ON email_ab_tests;
+CREATE POLICY "Admins can manage ab tests" ON email_ab_tests
   FOR ALL 
   USING (is_admin(auth.uid()));
 

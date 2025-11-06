@@ -1,17 +1,19 @@
 -- Add RLS policies for email tracking tables
--- These tables need to allow anonymous inserts (for email tracking pixels)
--- but restrict reads to admins only
+-- Note: Tracking pixels use the service role key to bypass RLS entirely
+-- This allows them to insert tracking records and update campaign statistics
+-- without authentication. The RLS policies below protect against direct access.
 
 -- Ensure RLS is enabled on tracking tables
 ALTER TABLE email_opens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_clicks ENABLE ROW LEVEL SECURITY;
 
--- Allow anonymous inserts for email tracking (for tracking pixels in emails)
-CREATE POLICY "Allow anonymous inserts for email opens" ON email_opens
+-- Allow anonymous inserts for email tracking (fallback - tracking routes use service role key)
+-- This is a safety net in case we need anonymous inserts, but the service role key is preferred
+CREATE POLICY IF NOT EXISTS "Allow anonymous inserts for email opens" ON email_opens
   FOR INSERT 
   WITH CHECK (true);
 
-CREATE POLICY "Allow anonymous inserts for email clicks" ON email_clicks
+CREATE POLICY IF NOT EXISTS "Allow anonymous inserts for email clicks" ON email_clicks
   FOR INSERT 
   WITH CHECK (true);
 
@@ -30,6 +32,11 @@ CREATE POLICY "Admins can read email clicks" ON email_clicks
   FOR SELECT 
   USING (is_admin(auth.uid()));
 
--- Note: Anonymous inserts are allowed for tracking, but reads are restricted to admins only
--- This allows email tracking pixels to work without authentication while protecting data
+-- Note: Tracking routes use the service role key to bypass RLS entirely
+-- This is necessary because:
+-- 1. Tracking pixels need to work without authentication
+-- 2. They need to update email_campaigns statistics (requires admin access)
+-- 3. They need to check for existing records (SELECT)
+-- The anonymous insert policies are a fallback, but the service role key is the primary method
+-- All reads are restricted to admins only to protect tracking data
 

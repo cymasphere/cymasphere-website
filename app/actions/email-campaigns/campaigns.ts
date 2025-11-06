@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@/utils/supabase/server";
 
 export interface GetCampaignsParams {
   limit?: number;
@@ -49,53 +49,37 @@ export async function getCampaigns(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const limit = params?.limit || 25;
     const offset = params?.offset || 0;
 
     // Primary query (ordered + paginated)
     let campaigns: any[] | null = null;
     let error: any = null;
-    
+
     const resp = await supabase
-      .from('email_campaigns')
-      .select('id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id')
-      .order('created_at', { ascending: false })
+      .from("email_campaigns")
+      .select(
+        "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id"
+      )
+      .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
-    
+
     campaigns = resp.data as any[] | null;
     error = resp.error;
 
     if (error) {
       // Fallback: try a simpler query
       const fallback = await supabase
-        .from('email_campaigns')
-        .select('id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id')
-        .order('created_at', { ascending: false })
+        .from("email_campaigns")
+        .select(
+          "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id"
+        )
+        .order("created_at", { ascending: false })
         .limit(limit);
 
       if (fallback.error) {
-        throw new Error('Failed to fetch campaigns');
+        throw new Error("Failed to fetch campaigns");
       }
 
       campaigns = fallback.data || [];
@@ -103,23 +87,29 @@ export async function getCampaigns(
 
     // Batch load audience relations
     const campaignIds = (campaigns || []).map((c: any) => c.id);
-    let relationsMap: Record<string, { audienceIds: string[]; excludedAudienceIds: string[] }> = {};
-    
+    let relationsMap: Record<
+      string,
+      { audienceIds: string[]; excludedAudienceIds: string[] }
+    > = {};
+
     if (campaignIds.length > 0) {
       const { data: relations } = await supabase
-        .from('email_campaign_audiences')
-        .select('campaign_id,audience_id,is_excluded')
-        .in('campaign_id', campaignIds);
+        .from("email_campaign_audiences")
+        .select("campaign_id,audience_id,is_excluded")
+        .in("campaign_id", campaignIds);
 
-      relationsMap = relations?.reduce((acc: any, r: any) => {
-        const cid = r.campaign_id;
-        if (!acc[cid]) acc[cid] = { audienceIds: [], excludedAudienceIds: [] };
-        if (r.audience_id) {
-          if (r.is_excluded) acc[cid].excludedAudienceIds.push(r.audience_id);
-          else acc[cid].audienceIds.push(r.audience_id);
-        }
-        return acc;
-      }, {} as Record<string, { audienceIds: string[]; excludedAudienceIds: string[] }>) || {};
+      relationsMap =
+        relations?.reduce((acc: any, r: any) => {
+          const cid = r.campaign_id;
+          if (!acc[cid])
+            acc[cid] = { audienceIds: [], excludedAudienceIds: [] };
+          if (r.audience_id) {
+            if (r.is_excluded) acc[cid].excludedAudienceIds.push(r.audience_id);
+            else acc[cid].audienceIds.push(r.audience_id);
+          }
+          return acc;
+        }, {} as Record<string, { audienceIds: string[]; excludedAudienceIds: string[] }>) ||
+        {};
     }
 
     // Attach relations to campaigns
@@ -133,8 +123,8 @@ export async function getCampaigns(
     let total = 0;
     try {
       const { count } = await supabase
-        .from('email_campaigns')
-        .select('id', { count: 'exact', head: true });
+        .from("email_campaigns")
+        .select("id", { count: "exact", head: true });
       total = count || 0;
     } catch (e) {
       // Non-fatal error
@@ -144,10 +134,10 @@ export async function getCampaigns(
       campaigns: campaignsWithRelations,
       total,
       limit,
-      offset
+      offset,
     };
   } catch (error) {
-    console.error('Error in getCampaigns:', error);
+    console.error("Error in getCampaigns:", error);
     throw error;
   }
 }
@@ -155,48 +145,30 @@ export async function getCampaigns(
 /**
  * Get a single campaign by ID (admin only)
  */
-export async function getCampaign(campaignId: string): Promise<GetCampaignResponse> {
+export async function getCampaign(
+  campaignId: string
+): Promise<GetCampaignResponse> {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     // Get campaign
     const { data: campaign, error } = await supabase
-      .from('email_campaigns')
-      .select('*')
-      .eq('id', campaignId)
+      .from("email_campaigns")
+      .select("*")
+      .eq("id", campaignId)
       .single();
 
     if (error) {
-      console.error('Error fetching campaign:', error);
-      throw new Error('Campaign not found');
+      console.error("Error fetching campaign:", error);
+      throw new Error("Campaign not found");
     }
 
     // Get audience relationships
     const { data: audienceRelations } = await supabase
-      .from('email_campaign_audiences')
-      .select('audience_id, is_excluded')
-      .eq('campaign_id', campaignId);
+      .from("email_campaign_audiences")
+      .select("audience_id, is_excluded")
+      .eq("campaign_id", campaignId);
 
     // Separate included and excluded audiences
     const audienceIds: string[] = [];
@@ -232,7 +204,7 @@ export async function getCampaign(campaignId: string): Promise<GetCampaignRespon
       campaign: transformedCampaign,
     };
   } catch (error) {
-    console.error('Error in getCampaign:', error);
+    console.error("Error in getCampaign:", error);
     throw error;
   }
 }

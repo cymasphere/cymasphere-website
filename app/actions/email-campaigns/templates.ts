@@ -40,26 +40,7 @@ export async function getTemplates(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
 
     // Build query
     let query = supabase
@@ -163,26 +144,7 @@ export async function getTemplate(templateId: string): Promise<GetTemplateRespon
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
 
     // Fetch the template
     const { data: template, error } = await supabase

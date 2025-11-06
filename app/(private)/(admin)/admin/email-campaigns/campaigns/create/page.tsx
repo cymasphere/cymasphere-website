@@ -48,7 +48,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getCampaign, getAudiences, getTemplates, getTemplate, calculateReach, sendCampaign } from "@/app/actions/email-campaigns";
+import { getCampaign, getAudiences, getTemplates, getTemplate, calculateReach, sendCampaign, previewEmail } from "@/app/actions/email-campaigns";
 import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -2416,7 +2416,7 @@ function CreateCampaignPage() {
     }
   }, [campaignData.audienceIds, campaignData.excludedAudienceIds, audiences, setReachData]);
 
-  // Fetch preview HTML from API (called when preview modal opens)
+  // Fetch preview HTML from server function (called when preview modal opens)
   const fetchPreviewFromAPI = useCallback(async () => {
     console.log('🔍 fetchPreviewFromAPI called with editId:', editId);
     if (!editId) {
@@ -2426,23 +2426,17 @@ function CreateCampaignPage() {
     
     setIsLoadingPreview(true);
     try {
-      console.log('📡 Fetching preview from API...');
-      const response = await fetch(`/api/email-campaigns/preview?c=${editId}`);
-      console.log('📡 API response status:', response.status);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📡 API response data:', data);
-        if (data.success && data.html) {
-          console.log('✅ Setting preview HTML, length:', data.html.length);
-          setPreviewHtml(data.html);
-        } else {
-          console.log('❌ API response not successful or no HTML');
-        }
+      console.log('📡 Fetching preview from server function...');
+      const data = await previewEmail(editId);
+      console.log('📡 Server function response:', data);
+      if (data.success && data.html) {
+        console.log('✅ Setting preview HTML, length:', data.html.length);
+        setPreviewHtml(data.html);
       } else {
-        console.log('❌ API response not ok:', response.status);
+        console.log('❌ Server function response not successful or no HTML:', data.error);
       }
     } catch (error) {
-      console.error('❌ Failed to fetch preview from API, falling back to local:', error);
+      console.error('❌ Failed to fetch preview from server function, falling back to local:', error);
     } finally {
       setIsLoadingPreview(false);
     }

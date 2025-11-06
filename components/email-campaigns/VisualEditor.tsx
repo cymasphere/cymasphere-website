@@ -1362,8 +1362,8 @@ export default function VisualEditor({
       setShowMediaLibrary(true);
       setMediaPage(1);
       computeMediaModalPlacement();
-      const res = await fetch('/api/email-campaigns/list-media');
-      const json = await res.json();
+      const { listMedia } = await import('@/app/actions/email-campaigns');
+      const json = await listMedia();
       if (json.success) {
         setMediaLibraryItems(json.items || []);
       } else {
@@ -1518,10 +1518,8 @@ export default function VisualEditor({
       setImageUploading(elementId);
       setUploadError(null);
       console.log('📤 Uploading image to Supabase storage:', file.name);
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch('/api/email-campaigns/upload-media', { method: 'POST', body: formData });
-      const result = await response.json();
+      const { uploadMedia } = await import('@/app/actions/email-campaigns');
+      const result = await uploadMedia({ file });
       if (result.success && result.data?.publicUrl) {
         updateElement(elementId, { src: result.data.publicUrl, alt: file.name });
         setUploadError(null);
@@ -1560,13 +1558,11 @@ export default function VisualEditor({
   };
 
   // Media upload (image or video)
-  const uploadMedia = async (file: File): Promise<{ url?: string; type?: 'image' | 'video'; error?: string }> => {
+  const uploadMediaFile = async (file: File): Promise<{ url?: string; type?: 'image' | 'video'; error?: string }> => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch('/api/email-campaigns/upload-media', { method: 'POST', body: formData });
-      const result = await response.json();
-      if (result.success) {
+      const { uploadMedia } = await import('@/app/actions/email-campaigns');
+      const result = await uploadMedia({ file });
+      if (result.success && result.data?.publicUrl) {
         return { url: result.data.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'video' };
       }
       return { error: result.error || 'Upload failed' };

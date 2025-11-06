@@ -1,45 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
+"use server";
+
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request: NextRequest) {
+const BUCKET = 'email-assets';
+const IMAGE_FOLDER = 'email-images';
+const VIDEO_FOLDER = 'email-videos';
+
+export interface PreviewResponse {
+  success: boolean;
+  html?: string;
+  elements?: any[];
+  campaign?: {
+    id: string;
+    name: string;
+    subject: string;
+  };
+  error?: string;
+}
+
+/**
+ * Generate email preview HTML (admin only)
+ * Matches logic from app/api/email-campaigns/preview/route.ts (GET) exactly
+ */
+export async function previewEmail(campaignId: string): Promise<PreviewResponse> {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-    const { searchParams } = new URL(request.url);
-    const campaignId = searchParams.get('c');
-    console.log('[PreviewAPI] Request received', { url: request.url, campaignId });
-
     if (!campaignId) {
-      return NextResponse.json(
-        { success: false, error: 'Campaign ID is required' },
-        { status: 400 }
-      );
+      throw new Error('Campaign ID is required');
     }
 
     // Fetch campaign data
@@ -50,13 +38,8 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (campaignError || !campaign) {
-      console.error('[PreviewAPI] Campaign fetch failed', { campaignId, campaignError });
-      return NextResponse.json(
-        { success: false, error: 'Campaign not found' },
-        { status: 404 }
-      );
+      throw new Error('Campaign not found');
     }
-    console.log('[PreviewAPI] Campaign fetched', { id: campaign.id, subject: campaign.subject });
 
     // Parse email elements from html_content (embedded base64 JSON)
     let emailElements = [];
@@ -73,43 +56,12 @@ export async function GET(request: NextRequest) {
         }
       }
     } catch (parseError) {
-      console.error('[PreviewAPI] email_elements parse error', { campaignId, parseError });
-      return NextResponse.json(
-        { success: false, error: 'Invalid email elements format' },
-        { status: 400 }
-      );
-    }
-    console.log('[PreviewAPI] Parsed elements', { count: Array.isArray(emailElements) ? emailElements.length : 0 });
-    
-    // Debug: Log first element's padding values
-    if (Array.isArray(emailElements) && emailElements.length > 0) {
-      console.log('[PreviewAPI] First element padding values:', {
-        id: emailElements[0].id,
-        type: emailElements[0].type,
-        paddingTop: emailElements[0].paddingTop,
-        paddingBottom: emailElements[0].paddingBottom,
-        paddingLeft: emailElements[0].paddingLeft,
-        paddingRight: emailElements[0].paddingRight,
-        fullWidth: emailElements[0].fullWidth
-      });
+      throw new Error('Invalid email elements format');
     }
 
     // Generate HTML from elements (similar to send route but without tracking)
     const elementHtml = emailElements
       .map((element: any) => {
-        // Debug logging to see element properties
-        console.log('🎨 Preview: Generating HTML for element:', {
-          id: element.id,
-          type: element.type,
-          fontFamily: element.fontFamily,
-          fontSize: element.fontSize,
-          textColor: element.textColor,
-          backgroundColor: element.backgroundColor,
-          fontWeight: element.fontWeight,
-          lineHeight: element.lineHeight,
-          textAlign: element.textAlign
-        });
-        
         const wrapperClass = element.fullWidth ? 'full-width' : 'container';
         const containerStyle = element.fullWidth ? '' : 'max-width: 600px; margin: 0 auto;';
 
@@ -342,24 +294,367 @@ export async function GET(request: NextRequest) {
 </body>
 </html>`;
 
-    console.log('[PreviewAPI] HTML generated', { campaignId, htmlLength: html.length });
-
-    return NextResponse.json({
+    return {
       success: true,
-      html: html,
+      html,
       elements: emailElements,
       campaign: {
         id: campaign.id,
         name: campaign.name,
         subject: campaign.subject
       }
-    });
-
+    };
   } catch (error) {
-    console.error('[PreviewAPI] Email preview error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to generate email preview' },
-      { status: 500 }
-    );
+    console.error('Error in previewEmail:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate email preview'
+    };
   }
 }
+
+function inferTypeFromName(name: string): 'image' | 'video' | 'unknown' {
+  const lower = name.toLowerCase();
+  if (/(\.jpg|\.jpeg|\.png|\.gif|\.webp|\.svg)$/.test(lower)) return 'image';
+  if (/(\.mp4|\.webm|\.ogg)$/.test(lower)) return 'video';
+  return 'unknown';
+}
+
+export interface MediaItem {
+  name: string;
+  path: string;
+  publicUrl: string;
+  type: 'image' | 'video' | 'unknown';
+  size: number | null;
+  updatedAt: string | null;
+}
+
+export interface ListMediaResponse {
+  success: boolean;
+  items?: MediaItem[];
+  error?: string;
+}
+
+/**
+ * List all media files (admin only)
+ * Matches logic from app/api/email-campaigns/list-media/route.ts (GET) exactly
+ */
+export async function listMedia(): Promise<ListMediaResponse> {
+  try {
+    const supabase = await createClient();
+
+    // Ensure bucket exists
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
+    const { data: buckets, error: listBucketsError } = await supabase.storage.listBuckets();
+    if (listBucketsError) {
+      throw new Error(listBucketsError.message);
+    }
+    const exists = buckets?.some(b => b.name === BUCKET);
+    if (!exists) {
+      // Create it if missing (public)
+      const { error: bucketError } = await supabase.storage.createBucket(BUCKET, {
+        public: true,
+      });
+      if (bucketError) {
+        throw new Error(bucketError.message);
+      }
+    }
+
+    // List images and videos
+    const [{ data: images, error: imgErr }, { data: videos, error: vidErr }] = await Promise.all([
+      supabase.storage.from(BUCKET).list(IMAGE_FOLDER, { limit: 100, offset: 0 }),
+      supabase.storage.from(BUCKET).list(VIDEO_FOLDER, { limit: 100, offset: 0 })
+    ]);
+
+    if (imgErr || vidErr) {
+      throw new Error((imgErr || vidErr)!.message);
+    }
+
+    const makeItem = (folder: string) => (obj: any) => {
+      const path = `${folder}/${obj.name}`;
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const publicUrl = data?.publicUrl || '';
+      const type = inferTypeFromName(obj.name);
+      return {
+        name: obj.name,
+        path,
+        publicUrl,
+        type,
+        size: obj.metadata?.size ?? null,
+        updatedAt: obj.updated_at || null
+      };
+    };
+
+    const imageItems = (images || []).filter(Boolean).map(makeItem(IMAGE_FOLDER));
+    const videoItems = (videos || []).filter(Boolean).map(makeItem(VIDEO_FOLDER));
+
+    const items = [...imageItems, ...videoItems].sort((a, b) => {
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return { success: true, items };
+  } catch (error) {
+    console.error('Error in listMedia:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Server error'
+    };
+  }
+}
+
+export interface UploadImageParams {
+  file: File;
+}
+
+export interface UploadImageResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    fileName: string;
+    filePath: string;
+    publicUrl: string;
+    fileSize: number;
+    fileType: string;
+  };
+  error?: string;
+}
+
+/**
+ * Upload an image (admin only)
+ * Matches logic from app/api/email-campaigns/upload-image/route.ts (POST) exactly
+ */
+export async function uploadImage(
+  params: UploadImageParams
+): Promise<UploadImageResponse> {
+  try {
+    const supabase = await createClient();
+
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
+    const { file } = params;
+
+    if (!file) {
+      throw new Error('No image file provided');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('File must be an image');
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new Error('File too large. Maximum size is 10MB');
+    }
+
+    // Generate unique filename with timestamp and random string
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `email-${timestamp}-${randomString}.${fileExtension}`;
+    const filePath = `email-images/${fileName}`;
+
+    // Convert file to buffer
+    const fileBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(fileBuffer);
+
+    // Upload to Supabase storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('email-assets')
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      // If bucket doesn't exist, try to create it
+      if (uploadError.message.includes('Bucket not found')) {
+        const { error: bucketError } = await supabase.storage
+          .createBucket('email-assets', {
+            public: true,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+            fileSizeLimit: maxSize
+          });
+
+        if (bucketError) {
+          throw new Error('Failed to create storage bucket');
+        }
+
+        // Retry upload
+        const { data: retryUploadData, error: retryUploadError } = await supabase.storage
+          .from('email-assets')
+          .upload(filePath, buffer, {
+            contentType: file.type,
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (retryUploadError) {
+          throw new Error('Failed to upload image after bucket creation');
+        }
+
+        // Get public URL after successful retry
+        const { data: publicUrlData } = supabase.storage
+          .from('email-assets')
+          .getPublicUrl(filePath);
+
+        if (!publicUrlData?.publicUrl) {
+          throw new Error('Failed to get public URL for uploaded image');
+        }
+
+        return {
+          success: true,
+          message: 'Image uploaded successfully',
+          data: {
+            fileName,
+            filePath,
+            publicUrl: publicUrlData.publicUrl,
+            fileSize: file.size,
+            fileType: file.type
+          }
+        };
+      } else {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('email-assets')
+      .getPublicUrl(filePath);
+
+    if (!publicUrlData?.publicUrl) {
+      throw new Error('Failed to get public URL for uploaded image');
+    }
+
+    return {
+      success: true,
+      message: 'Image uploaded successfully',
+      data: {
+        fileName,
+        filePath,
+        publicUrl: publicUrlData.publicUrl,
+        fileSize: file.size,
+        fileType: file.type
+      }
+    };
+  } catch (error) {
+    console.error('Error in uploadImage:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
+
+export interface UploadMediaParams {
+  file: File;
+  type?: 'image' | 'video';
+}
+
+export interface UploadMediaResponse {
+  success: boolean;
+  data?: {
+    path: string;
+    bucket: string;
+    publicUrl: string;
+    fileType: string;
+    size: number;
+  };
+  error?: string;
+}
+
+/**
+ * Upload media (image or video) (admin only)
+ * Matches logic from app/api/email-campaigns/upload-media/route.ts (POST) exactly
+ */
+export async function uploadMedia(
+  params: UploadMediaParams
+): Promise<UploadMediaResponse> {
+  try {
+    const supabase = await createClient();
+
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
+    const { file, type: desiredType } = params;
+
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      throw new Error('Unsupported file type');
+    }
+
+    if (desiredType && desiredType !== 'image' && desiredType !== 'video') {
+      throw new Error('Invalid type value');
+    }
+
+    const maxImage = 10 * 1024 * 1024; // 10MB
+    const maxVideo = 100 * 1024 * 1024; // 100MB
+    if ((isImage && file.size > maxImage) || (isVideo && file.size > maxVideo)) {
+      throw new Error(`File too large. Max ${(isImage ? '10MB' : '100MB')}`);
+    }
+
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 10);
+    const ext = file.name.split('.').pop() || (isImage ? 'jpg' : 'mp4');
+    const folder = isImage ? 'email-images' : 'email-videos';
+    const fileName = `${folder}/email-${timestamp}-${randomString}.${ext}`;
+
+    const buffer = new Uint8Array(await file.arrayBuffer());
+
+    // Ensure bucket exists and is public with proper mime types
+    const bucket = 'email-assets';
+    const { data: listBuckets } = await supabase.storage.listBuckets();
+    const exists = listBuckets?.some(b => b.name === bucket);
+    if (!exists) {
+      const { error: bucketError } = await supabase.storage.createBucket(bucket, {
+        public: true,
+        allowedMimeTypes: [
+          'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+          'video/mp4', 'video/webm', 'video/ogg'
+        ],
+        fileSizeLimit: `${maxVideo}`
+      });
+      if (bucketError) {
+        throw new Error('Failed creating bucket');
+      }
+    }
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, buffer, { contentType: file.type, upsert: true, cacheControl: '3600' });
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(fileName);
+    const publicUrl = pub?.publicUrl;
+    if (!publicUrl) {
+      throw new Error('Failed to fetch public URL');
+    }
+
+    return {
+      success: true,
+      data: {
+        path: fileName,
+        bucket,
+        publicUrl,
+        fileType: file.type,
+        size: file.size
+      }
+    };
+  } catch (error) {
+    console.error('Error in uploadMedia:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Server error'
+    };
+  }
+}
+

@@ -80,22 +80,10 @@ export default function EmailPreviewPage() {
       console.log('[EmailPreview] Fetching preview for:', campaignId);
       try {
         setLoading(true);
-        const response = await fetch(`/api/email-campaigns/preview?c=${campaignId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const { previewEmail } = await import('@/app/actions/email-campaigns');
+        const data = await previewEmail(campaignId);
 
-        console.log('[EmailPreview] API status:', response.status);
-        if (!response.ok) {
-          const text = await response.text().catch(() => '');
-          console.error('[EmailPreview] API error body:', text);
-          throw new Error(`Failed to fetch email preview: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('[EmailPreview] API success flag:', data?.success, 'HTML length:', (data?.html || '').length);
+        console.log('[EmailPreview] Server function success flag:', data?.success, 'HTML length:', (data?.html || '').length);
         if (data.success && data.html) {
           setEmailHtml(data.html);
           console.log('[EmailPreview] Set emailHtml length:', data.html.length);
