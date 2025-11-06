@@ -76,7 +76,6 @@ These routes remain as API routes because they are:
 - `/api/automation-engine/process-jobs` - Cron job (POST)
 - `/api/email-campaigns/track/open` - Public tracking pixel (GET)
 - `/api/email-campaigns/track/click` - Public tracking pixel (GET)
-- `/api/debug-email-tracking` - Debug endpoint (GET)
 
 ## 📊 Conversion Statistics
 

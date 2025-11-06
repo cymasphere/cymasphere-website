@@ -81,8 +81,6 @@ All these routes require admin authentication:
 - 🔄 `/api/email-campaigns/upload-image` - POST upload image (admin only)
 - 🔄 `/api/email-campaigns/analytics` - GET analytics (admin only)
 - 🔄 `/api/email-campaigns/deliverability` - GET deliverability (admin only)
-- 🔄 `/api/debug-subscribers` - GET debug (admin only)
-- 🔄 `/api/debug-email-tracking` - GET debug (admin only)
 
 ### Stripe Routes (Internal, authenticated)
 
@@ -110,7 +108,7 @@ All these routes require admin authentication:
 - 🔄 `/api/translations` - GET translations (can be server component)
 - 🔄 `/api/chat` - POST chat (authenticated, but might need streaming - keep as API route)
 - 🔄 `/api/quickstart-guide` - GET guide (can be server component)
-- 🔄 `/api/check-aws-env` - GET check (debug, can be server function)
+- 🔄 `/api/check-aws-env` - GET check (can be server function)
 
 ## Routes That MUST Remain as API Routes (Desktop App Compatibility)
 
