@@ -16,29 +16,8 @@ CREATE POLICY "Admins can manage campaign audiences" ON email_campaign_audiences
 -- Storage Bucket Policies for email-assets
 -- =============================================
 -- Note: Supabase storage uses bucket-level policies, not RLS
--- We need to create the bucket and set up policies via SQL
-
--- Create the email-assets bucket if it doesn't exist
--- Note: file_size_limit is in bytes (104857600 = 100MB for videos)
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'email-assets',
-  'email-assets',
-  true, -- Public bucket for email client access
-  104857600, -- 100MB limit for videos (larger than 10MB for images)
-  ARRAY[
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    'video/mp4', 'video/webm', 'video/ogg'
-  ]
-)
-ON CONFLICT (id) DO UPDATE
-SET 
-  public = true,
-  file_size_limit = 104857600,
-  allowed_mime_types = ARRAY[
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    'video/mp4', 'video/webm', 'video/ogg'
-  ];
+-- This migration assumes the email-assets bucket already exists
+-- Bucket creation should be done manually via Supabase dashboard or CLI
 
 -- Create storage policies for email-assets bucket
 -- Admins can upload, update, and delete files
