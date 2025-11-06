@@ -5,6 +5,7 @@ import StyledComponentsRegistry from "./registry";
 import ClientLayout from "./ClientLayout";
 import I18nProvider from "@/app/i18n/I18nProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import Analytics from "@/components/analytics/Analytics";
 import "./globals.css";
 
 // Metadata configuration
@@ -95,6 +96,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
       <body>
+        <Analytics />
         <StyledComponentsRegistry>
           <LanguageProvider>
           <I18nProvider>
