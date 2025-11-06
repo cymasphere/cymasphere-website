@@ -51,10 +51,11 @@ NEXT_PUBLIC_META_PIXEL_ID=123456789012345
 
 3. **Invite Team Members** (as per requirements):
    - Go to GTM → Admin → User Management
-   - Add users with "User" permissions:
+   - Add users with **"Edit"** container permissions (or "Publish" if they need to publish):
      - matterandrew@gmail.com
      - willradio08@gmail.com
      - maciej.raszke@gmail.com
+   - **Note**: "User" at account level is fine, but they need "Edit" or "Publish" at container level to configure tags
 
 ### Step 3: Google Analytics Setup
 
