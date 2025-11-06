@@ -61,6 +61,8 @@ const BackgroundVideo = styled.video<{ $loaded?: boolean }>`
   pointer-events: none;
   object-fit: contain;
   transition: opacity 1.5s ease-in-out;
+  will-change: opacity;
+  contain: layout style paint;
 `;
 
 const HeroContent = styled.div`

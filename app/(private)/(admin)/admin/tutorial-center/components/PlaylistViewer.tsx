@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useRouter } from "next/navigation";
 import VideoPlayer from './VideoPlayer';
+import ScriptModal from "@/components/modals/ScriptModal";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { getVideoProgress, getPlaylistVideos, getVideo, getPlaylist, getVideoScript, getVideosWithDurations, updateVideoProgress } from "@/app/actions/tutorials";
 
@@ -37,14 +38,7 @@ const VideoPlayerContainer = styled.div`
   flex-direction: column;
 `;
 
-const ScriptPanel = styled.div`
-  height: 300px;
-  background-color: var(--card-bg);
-  margin: 0 1rem 1rem 1rem;
-  border-radius: 12px;
-  padding: 1.5rem;
-  overflow-y: auto;
-`;
+// Removed inline ScriptPanel in favor of modal
 
 const PlaylistTitle = styled.div`
   font-size: 0.75rem;
@@ -194,18 +188,7 @@ const VideoPlaceholder = styled.div`
   font-size: 1.1rem;
 `;
 
-const ScriptTitle = styled.h3`
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: var(--text);
-`;
-
-const ScriptContent = styled.div`
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-`;
+// Removed inline script typography; Markdown is rendered in the modal
 
 const ContextMenu = styled.div`
   background-color: var(--card-bg);
@@ -264,6 +247,8 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const [script, setScript] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [scriptLoading, setScriptLoading] = useState(false);
+  const [isScriptOpen, setIsScriptOpen] = useState(false);
+  const [fullScript, setFullScript] = useState<string>("");
   const router = useRouter();
   const [progressMap, setProgressMap] = useState<Record<string, { progress: number; completed: boolean }>>({});
   const [autoplayNext, setAutoplayNext] = useState<boolean>(true);
@@ -873,6 +858,12 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
               <label htmlFor="autoplay-next-toggle" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 Autoplay next video
               </label>
+              <button
+                onClick={() => setIsScriptOpen(true)}
+                style={{ marginLeft: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', borderRadius: 6, padding: '6px 10px', cursor: 'pointer' }}
+              >
+                View Summary
+              </button>
             </div>
           </>
         ) : (
@@ -884,15 +875,16 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           </VideoPlaceholder>
         )}
 
-        <ScriptPanel>
-          <ScriptTitle>Script</ScriptTitle>
-          {scriptLoading ? (
-            <ScriptContent>Loading script...</ScriptContent>
-          ) : (
-            <ScriptContent>{script}</ScriptContent>
-          )}
-        </ScriptPanel>
+        {/* Script shown via modal */}
       </MainContent>
+
+      <ScriptModal
+        isOpen={isScriptOpen}
+        title={selectedVideo?.title || "Script"}
+        summaryMarkdown={scriptLoading ? "Loading script..." : (script || "Script content will be available here.")}
+        fullMarkdown={fullScript}
+        onClose={() => setIsScriptOpen(false)}
+      />
       
       {/* Context Menu */}
       {contextMenu && (
