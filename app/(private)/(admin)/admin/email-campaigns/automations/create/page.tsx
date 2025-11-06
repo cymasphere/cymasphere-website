@@ -13,6 +13,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import Link from "next/link";
+import { getTemplates } from "@/app/actions/email-campaigns";
 
 const Container = styled.div`
   width: 100%;
@@ -570,17 +571,11 @@ export default function CreateAutomationPage() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Load templates
+      setTemplatesLoading(true);
       try {
-        // Load templates
-        setTemplatesLoading(true);
-        const response = await fetch("/api/email-campaigns/templates");
-        if (response.ok) {
-          const data = await response.json();
-          setTemplates(data.templates || []);
-        } else {
-          console.error("Error loading templates:", response.statusText);
-          setTemplates([]);
-        }
+        const data = await getTemplates();
+        setTemplates(data.templates || []);
       } catch (error) {
         console.error("Error loading templates:", error);
         setTemplates([]);

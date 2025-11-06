@@ -40,13 +40,17 @@ CREATE POLICY "Admins can manage email sends" ON email_sends
   USING (is_admin(auth.uid()));
 
 -- Email opens policies (admins can read all, needed for analytics)
-CREATE POLICY "Admins can manage email opens" ON email_opens
-  FOR ALL 
+-- Note: Anonymous inserts are handled by tracking tables migration
+DROP POLICY IF EXISTS "Admins can manage email opens" ON email_opens;
+CREATE POLICY "Admins can read email opens" ON email_opens
+  FOR SELECT 
   USING (is_admin(auth.uid()));
 
 -- Email clicks policies (admins can read all, needed for analytics)
-CREATE POLICY "Admins can manage email clicks" ON email_clicks
-  FOR ALL 
+-- Note: Anonymous inserts are handled by tracking tables migration
+DROP POLICY IF EXISTS "Admins can manage email clicks" ON email_clicks;
+CREATE POLICY "Admins can read email clicks" ON email_clicks
+  FOR SELECT 
   USING (is_admin(auth.uid()));
 
 -- Email templates policies (admins can manage all)

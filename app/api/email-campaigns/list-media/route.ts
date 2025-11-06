@@ -14,10 +14,35 @@ function inferTypeFromName(name: string): 'image' | 'video' | 'unknown' {
 
 export async function GET(_request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
 
     // Ensure bucket exists
     const { data: buckets, error: listBucketsError } = await supabase.storage.listBuckets();

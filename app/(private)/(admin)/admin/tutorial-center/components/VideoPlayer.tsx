@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
+import { getVideoProgress, updateVideoProgress } from "@/app/actions/tutorials";
 
 // YouTube API types
 declare global {
@@ -55,12 +56,13 @@ export default function VideoPlayer({
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
       
-      const response = await fetch(`/api/tutorials/progress?userId=${userId}&videoId=${videoId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.progress && data.progress > 0) {
-          maxPositionRef.current = data.progress;
-          console.log('Loaded progress from database:', data.progress);
+      const progressData = await getVideoProgress(userId, videoId);
+      
+      if (progressData && !Array.isArray(progressData)) {
+        const progress = progressData.progress_percentage || 0;
+        if (progress > 0) {
+          maxPositionRef.current = progress;
+          console.log('Loaded progress from database:', progress);
         }
       }
     } catch (error) {
@@ -73,13 +75,14 @@ export default function VideoPlayer({
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
       
-      const response = await fetch(`/api/tutorials/progress?userId=${userId}&videoId=${videoId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.progress && data.progress > localProgress) {
-          console.log('Database has higher progress, updating local:', data.progress);
-          maxPositionRef.current = data.progress;
-          return data.progress;
+      const progressData = await getVideoProgress(userId, videoId);
+      
+      if (progressData && !Array.isArray(progressData)) {
+        const progress = progressData.progress_percentage || 0;
+        if (progress > localProgress) {
+          console.log('Database has higher progress, updating local:', progress);
+          maxPositionRef.current = progress;
+          return progress;
         }
       }
     } catch (error) {
@@ -91,28 +94,14 @@ export default function VideoPlayer({
   // Save progress to database
   const saveProgress = useCallback(async (progress: number, completed: boolean) => {
     try {
-      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
-      
-      const response = await fetch('/api/tutorials/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          videoId,
-          progress,
-          completed,
-        }),
+      await updateVideoProgress(videoId, {
+        progress_percentage: progress,
+        completed,
       });
 
-      if (response.ok) {
-        console.log('Progress saved successfully:', progress);
-        if (onProgressUpdate) {
-          onProgressUpdate(progress, completed);
-        }
-      } else {
-        console.error('Failed to save progress');
+      console.log('Progress saved successfully:', progress);
+      if (onProgressUpdate) {
+        onProgressUpdate(progress, completed);
       }
     } catch (error) {
       console.error('Error saving progress:', error);

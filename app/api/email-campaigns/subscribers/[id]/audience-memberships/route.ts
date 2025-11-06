@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(
   request: NextRequest,
@@ -36,16 +35,12 @@ export async function GET(
       );
     }
 
-    // Create service role client for admin operations
-    const adminSupabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use authenticated client (admin check already passed, RLS will allow access)
 
     const { id: subscriberId } = await params;
 
     // Get all audiences
-    const { data: audiences, error: audiencesError } = await adminSupabase
+    const { data: audiences, error: audiencesError } = await supabase
       .from("email_audiences")
       .select("id, name, filters")
       .order("name");
@@ -59,7 +54,7 @@ export async function GET(
     }
 
     // Get subscriber data
-    const { data: subscriber, error: subscriberError } = await adminSupabase
+    const { data: subscriber, error: subscriberError } = await supabase
       .from("subscribers")
       .select("id, email, status, user_id")
       .eq("id", subscriberId)
@@ -75,7 +70,7 @@ export async function GET(
     // Get subscriber's profile data if user_id exists
     let profile = null;
     if (subscriber.user_id) {
-      const { data: profileData } = await adminSupabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("subscription, subscription_expiration, trial_expiration")
         .eq("id", subscriber.user_id)
@@ -92,7 +87,7 @@ export async function GET(
 
       if (isStatic) {
         // For static audiences, check the junction table
-        const { data: relation } = await adminSupabase
+        const { data: relation } = await supabase
           .from("email_audience_subscribers")
           .select("id")
           .eq("audience_id", audience.id)

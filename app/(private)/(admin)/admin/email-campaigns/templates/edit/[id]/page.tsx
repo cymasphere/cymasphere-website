@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
 import VisualEditor from "@/components/email-campaigns/VisualEditor";
+import { getAudiences, getTemplate } from "@/app/actions/email-campaigns";
 
 const CreateContainer = styled.div<{ $isDesignStep: boolean }>`
   width: 100%;
@@ -871,14 +872,8 @@ function EditTemplatePage() {
     const loadAudiences = async () => {
       try {
         setAudiencesLoading(true);
-        const response = await fetch('/api/email-campaigns/audiences');
-        if (response.ok) {
-          const data = await response.json();
-          setAudiences(data.audiences || []);
-        } else {
-          console.error('Failed to load audiences');
-          setAudiences([]);
-        }
+        const data = await getAudiences({ mode: 'light' });
+        setAudiences(data.audiences || []);
       } catch (error) {
         console.error('Error loading audiences:', error);
         setAudiences([]);
@@ -902,15 +897,11 @@ function EditTemplatePage() {
         setIsLoading(true);
         console.log('Loading template data for ID:', params.id);
         console.log('Making fetch request to:', `/api/email-campaigns/templates/${params.id}`);
-        const response = await fetch(`/api/email-campaigns/templates/${params.id}`);
+        const data = await getTemplate(params.id);
+        console.log('Raw API response:', data);
+        const template = data.template;
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Raw API response:', data);
-          const template = data.template;
+        if (template) {
           
           console.log('Loaded template data:', template);
           console.log('Template audiences:', template.audiences);
@@ -957,10 +948,7 @@ function EditTemplatePage() {
           }
           
         } else {
-          console.error('Failed to load template:', response.status, response.statusText);
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Error details:', errorData);
-          console.error('Full response:', response);
+          console.error('Failed to load template');
         }
       } catch (error) {
         console.error('Error loading template data:', error);

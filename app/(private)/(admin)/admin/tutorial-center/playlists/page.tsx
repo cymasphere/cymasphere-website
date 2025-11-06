@@ -192,8 +192,54 @@ export default function PlaylistsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetchPlaylists();
-    fetchPersonalizedPlaylist();
+    const loadPlaylists = async () => {
+      try {
+        setLoading(true);
+        const data = await getPlaylists();
+        // Ensure we have an array
+        const playlistsArray = Array.isArray(data.playlists) ? data.playlists : (data.playlists || []);
+        setPlaylists(playlistsArray);
+        
+        // Only auto-select first playlist if no state restoration will happen
+        if (playlistsArray.length > 0 && !stateRestored) {
+          const playlistIdFromUrl = searchParams.get('playlist');
+          const lastSelectedPlaylist = localStorage.getItem('lastSelectedPlaylist');
+          
+          if (!playlistIdFromUrl && !lastSelectedPlaylist) {
+            setSelectedPlaylistId(playlistsArray[0].id);
+            setSelectedPlaylist(playlistsArray[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching playlists:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadPersonalizedPlaylist = async () => {
+      try {
+        // Get user ID from localStorage or context
+        const userId = localStorage.getItem('userId') || '900f11b8-c901-49fd-bfab-5fafe984ce72'; // fallback for testing
+        
+        // First, fetch the user's profile
+        const profileData = await getUserProfile(userId);
+        if (!profileData.profile) {
+          console.log('No user profile found - skipping personalized playlist');
+          return;
+        }
+        
+        // Now generate the personalized playlist with the profile data
+        const playlistData = await generatePlaylist(profileData.profile);
+        setPersonalizedPlaylist(playlistData.playlist);
+        // Do not auto-activate personalized view; selection is driven by URL/localStorage/user action
+      } catch (error) {
+        console.error('Error fetching personalized playlist:', error);
+      }
+    };
+
+    loadPlaylists();
+    loadPersonalizedPlaylist();
   }, []);
 
   // Separate useEffect to handle state restoration after playlists are loaded
@@ -236,73 +282,6 @@ export default function PlaylistsPage() {
     
     setStateRestored(true);
   }, [playlists, searchParams, stateRestored]);
-
-  const fetchPersonalizedPlaylist = async () => {
-    try {
-      // Get user ID from localStorage or context
-      const userId = localStorage.getItem('userId') || '900f11b8-c901-49fd-bfab-5fafe984ce72'; // fallback for testing
-      
-      // First, fetch the user's profile
-      const profileResponse = await fetch(`/api/tutorials/user-profile?userId=${userId}`);
-      if (!profileResponse.ok) {
-        console.error('Failed to fetch user profile');
-        return;
-      }
-      
-      const profileData = await profileResponse.json();
-      if (!profileData.profile) {
-        console.log('No user profile found - skipping personalized playlist');
-        return;
-      }
-      
-      // Now generate the personalized playlist with the profile data
-      const playlistResponse = await fetch('/api/tutorials/generate-playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData.profile),
-      });
-
-      if (playlistResponse.ok) {
-        const playlistData = await playlistResponse.json();
-        setPersonalizedPlaylist(playlistData.playlist);
-        // Do not auto-activate personalized view; selection is driven by URL/localStorage/user action
-      } else {
-        console.error('Failed to generate personalized playlist');
-      }
-    } catch (error) {
-      console.error('Error fetching personalized playlist:', error);
-    }
-  };
-
-  const fetchPlaylists = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/tutorials/playlists");
-      if (response.ok) {
-        const data = await response.json();
-        // Ensure we have an array
-        const playlistsArray = Array.isArray(data) ? data : (data.playlists || []);
-        setPlaylists(playlistsArray);
-        
-        // Only auto-select first playlist if no state restoration will happen
-        if (playlistsArray.length > 0 && !stateRestored) {
-          const playlistIdFromUrl = searchParams.get('playlist');
-          const lastSelectedPlaylist = localStorage.getItem('lastSelectedPlaylist');
-          
-          if (!playlistIdFromUrl && !lastSelectedPlaylist) {
-            setSelectedPlaylistId(playlistsArray[0].id);
-            setSelectedPlaylist(playlistsArray[0]);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching playlists:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePlaylistSelect = (playlist: Playlist) => {
     setSelectedPlaylistId(playlist.id);

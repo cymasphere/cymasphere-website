@@ -15,6 +15,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { updateVideoProgress } from "@/app/actions/tutorials";
 
 const VideoPlayerContainer = styled.div`
   background-color: var(--card-bg);
@@ -438,17 +439,9 @@ export default function VideoPlayer({ video, script }: VideoPlayerProps) {
     if (!user) return;
 
     try {
-      await fetch('/api/tutorials/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          videoId: video.id,
-          progress: progressValue,
-          completed
-        }),
+      await updateVideoProgress(video.id, {
+        progress_percentage: progressValue,
+        completed,
       });
     } catch (error) {
       console.error('Failed to save progress:', error);

@@ -48,6 +48,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getCampaign, getAudiences, getTemplates, getTemplate, calculateReach, sendCampaign } from "@/app/actions/email-campaigns";
 import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -2143,25 +2144,19 @@ function CreateCampaignPage() {
     try {
       setIsSending(true);
       setSendingMessage(`Sending test to ${email}...`);
-      const response = await fetch('/api/email-campaigns/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          // Pass current campaign id when editing so "View in browser" gets a real UUID
-          campaignId: editId || undefined,
-          name: campaignData.name || 'Test Campaign',
-          subject: campaignData.subject || 'Test',
-          brandHeader: campaignData.brandHeader,
-          audienceIds: campaignData.audienceIds || [],
-          excludedAudienceIds: campaignData.excludedAudienceIds || [],
-          emailElements,
-          scheduleType: 'draft',
-          testEmail: email
-        })
+      const result = await sendCampaign({
+        // Pass current campaign id when editing so "View in browser" gets a real UUID
+        campaignId: editId || undefined,
+        name: campaignData.name || 'Test Campaign',
+        subject: campaignData.subject || 'Test',
+        brandHeader: campaignData.brandHeader,
+        audienceIds: campaignData.audienceIds || [],
+        excludedAudienceIds: campaignData.excludedAudienceIds || [],
+        emailElements,
+        scheduleType: 'draft',
+        testEmail: email
       });
-      const result = await response.json();
-      if (response.ok && result.success) {
+      if (result.success) {
         setSendingMessage(`Test email sent to ${email}`);
         setShowTestModal(false);
       } else {
@@ -2375,22 +2370,12 @@ function CreateCampaignPage() {
         excludedAudienceIds: campaignData.excludedAudienceIds
       });
 
-      const response = await fetch('/api/email-campaigns/campaigns/calculate-reach', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          audienceIds: campaignData.audienceIds,
-          excludedAudienceIds: campaignData.excludedAudienceIds
-        })
+      const data = await calculateReach({
+        audienceIds: campaignData.audienceIds,
+        excludedAudienceIds: campaignData.excludedAudienceIds
       });
 
-      console.log(`🎯 Edit modal reach API response status:`, response.status);
-
-      if (response.ok) {
-        const data = await response.json();
+      console.log(`🎯 Edit modal reach calculation result:`, data);
         console.log(`🎯 Edit modal reach API response data:`, JSON.stringify(data, null, 2));
         
         const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
@@ -2513,15 +2498,11 @@ function CreateCampaignPage() {
   useEffect(() => {
     const loadAudiences = async () => {
       try {
-        const response = await fetch('/api/email-campaigns/audiences?mode=light&refreshCounts=1', {
-          credentials: 'include'
+        const data = await getAudiences({
+          mode: 'light',
+          refreshCounts: true,
         });
-        if (response.ok) {
-          const data = await response.json();
-          setAudiences(data.audiences || []);
-        } else {
-          console.error('Failed to load audiences:', response.status);
-        }
+        setAudiences(data.audiences || []);
       } catch (error) {
         console.error('Error loading audiences:', error);
       } finally {
@@ -2532,15 +2513,8 @@ function CreateCampaignPage() {
     const loadTemplates = async () => {
       try {
         setTemplatesLoading(true);
-        const response = await fetch('/api/email-campaigns/templates', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setTemplates(data.templates || []);
-        } else {
-          console.error('Failed to load templates:', response.status);
-        }
+        const data = await getTemplates();
+        setTemplates(data.templates || []);
       } catch (error) {
         console.error('Error loading templates:', error);
       } finally {
@@ -2587,12 +2561,9 @@ function CreateCampaignPage() {
         campaignLoadedRef.current = true;
         setIsLoadingCampaign(true);
         try {
-          const response = await fetch(`/api/email-campaigns/campaigns/${editId}`, {
-            credentials: 'include'
-          });
+          const data = await getCampaign(editId);
           
-          if (response.ok) {
-            const data = await response.json();
+          if (data) {
             const campaign = data.campaign;
             
             console.log('🔍 Frontend received campaign data:', JSON.stringify(data, null, 2));
@@ -2918,29 +2889,20 @@ function CreateCampaignPage() {
           'Saving as draft...'
         );
         
-        const sendResponse = await fetch('/api/email-campaigns/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            campaignId: result.campaign?.id,
-            name: campaignData.name,
-            subject: campaignData.subject,
-            brandHeader: campaignData.brandHeader,
-            audienceIds: campaignData.audienceIds,
-            excludedAudienceIds: campaignData.excludedAudienceIds,
-            emailElements: emailElements,
-            scheduleType: campaignData.scheduleType,
-            scheduleDate: campaignData.scheduleDate,
-            scheduleTime: campaignData.scheduleTime
-          }),
+        const sendResult = await sendCampaign({
+          campaignId: result.campaign?.id,
+          name: campaignData.name,
+          subject: campaignData.subject,
+          brandHeader: campaignData.brandHeader,
+          audienceIds: campaignData.audienceIds,
+          excludedAudienceIds: campaignData.excludedAudienceIds,
+          emailElements: emailElements,
+          scheduleType: campaignData.scheduleType,
+          scheduleDate: campaignData.scheduleDate,
+          scheduleTime: campaignData.scheduleTime
         });
-
-        const sendResult = await sendResponse.json();
         
-        if (sendResponse.ok) {
+        if (sendResult.success) {
           console.log('📧 Send result:', sendResult);
           setCampaignResult(sendResult);
           setShowResultModal(true);
@@ -3322,13 +3284,10 @@ function CreateCampaignPage() {
 
     try {
       // Fetch the selected template from the API
-      const response = await fetch(`/api/email-campaigns/templates/${templateId}`, {
-        credentials: 'include'
-      });
+      const data = await getTemplate(templateId);
+      const template = data.template;
       
-      if (response.ok) {
-        const data = await response.json();
-        const template = data.template;
+      if (template) {
         
         // Update campaign data with template information
         setCampaignData({
@@ -3394,7 +3353,7 @@ function CreateCampaignPage() {
           console.log('Template has no content');
         }
       } else {
-        console.error('Failed to load template:', response.status);
+        console.error('Failed to load template');
         // Just set the template ID without additional data
         setCampaignData({...campaignData, template: templateId});
       }

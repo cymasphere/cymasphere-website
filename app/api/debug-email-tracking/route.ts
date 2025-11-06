@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
-  // Check for admin auth
+  // Check for admin auth (cron secret or authenticated admin)
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   
-  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== cronSecret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // Allow cron access OR authenticated admin access
+  const isCronAccess = authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7) === cronSecret;
+  
+  const supabase = await createClient();
+  
+  if (!isCronAccess) {
+    // Check if user is authenticated admin
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-  // Use admin client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-  });
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+  }
 
   try {
     // Get recent email sends

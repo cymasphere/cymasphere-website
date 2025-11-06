@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
   console.log('🚀 Automation job processor started');
   
   try {
+    // Verify request authorization (for cron jobs)
+    const authHeader = request.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET || 'automation-engine-secret';
+    
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      console.log('❌ Unauthorized automation job processor request');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     // Process pending jobs in batches
     const batchSize = 10;
     let processedJobs = 0;

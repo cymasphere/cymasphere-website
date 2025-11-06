@@ -11,6 +11,7 @@ import {
   FaTrophy,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { getVideoProgress } from "@/app/actions/tutorials";
 
 const ProgressContainer = styled.div`
   background-color: var(--card-bg);
@@ -218,10 +219,21 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
       if (!user) return;
 
       try {
-        const response = await fetch(`/api/tutorials/progress?userId=${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProgressData(data);
+        const progressData = await getVideoProgress(user.id);
+        // Handle both array and object responses
+        if (Array.isArray(progressData)) {
+          // Convert array to object format
+          const progressObj: Record<string, any> = {};
+          progressData.forEach((p: any) => {
+            progressObj[p.video_id] = {
+              progress: p.progress_percentage || 0,
+              completed: p.completed || false,
+              lastWatched: p.last_watched || new Date().toISOString(),
+            };
+          });
+          setProgressData({ progress: progressObj });
+        } else {
+          setProgressData({ progress: { [progressData.video_id]: progressData } });
         }
       } catch (error) {
         console.error('Failed to fetch progress:', error);

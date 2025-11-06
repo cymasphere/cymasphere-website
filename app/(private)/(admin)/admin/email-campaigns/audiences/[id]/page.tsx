@@ -32,6 +32,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import styled, { keyframes, css, createGlobalStyle } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+import { createAudience } from "@/app/actions/email-campaigns";
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
@@ -1277,27 +1278,15 @@ function AudienceDetailPage() {
 
   const handleDuplicate = async () => {
     try {
-      const response = await fetch('/api/email-campaigns/audiences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `${audienceData.name} (Copy)`,
-          description: audienceData.description,
-          filters: audienceData.originalFilters || audienceData.filters
-        }),
+      const { audience: newAudience } = await createAudience({
+        name: `${audienceData.name} (Copy)`,
+        description: audienceData.description,
+        filters: audienceData.originalFilters || audienceData.filters
       });
 
-      if (response.ok) {
-        const { audience: newAudience } = await response.json();
-        console.log('Audience duplicated successfully');
-        // Navigate to the new audience
-        router.push(`/admin/email-campaigns/audiences/${newAudience.id}`);
-      } else {
-        const error = await response.json();
-        console.error('Error duplicating audience:', error);
-      }
+      console.log('Audience duplicated successfully');
+      // Navigate to the new audience
+      router.push(`/admin/email-campaigns/audiences/${newAudience.id}`);
     } catch (error) {
       console.error('Error duplicating audience:', error);
     }

@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { getAnalytics } from "@/app/actions/email-campaigns";
 
 const PerformanceContainer = styled.div`
   width: 100%;
@@ -537,13 +538,10 @@ function PerformancePage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/email-campaigns/analytics?timeRange=${timeRange}&campaignType=${campaignFilter}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch performance data');
-      }
-      
-      const result = await response.json();
+      const result = await getAnalytics({
+        timeRange,
+        campaignType: campaignFilter !== 'all' ? campaignFilter : undefined,
+      });
       
       if (result.success) {
         // Transform analytics data to performance format

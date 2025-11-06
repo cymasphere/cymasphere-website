@@ -41,6 +41,7 @@ import TableLoadingRow from "@/components/common/TableLoadingRow";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
+import { getCampaigns, getCampaign, getAudiences, calculateBatchReach } from "@/app/actions/email-campaigns";
 
 const CampaignsContainer = styled.div`
   width: 100%;
@@ -1094,15 +1095,10 @@ function CampaignsPage() {
       if (!user) return;
       
       try {
-        const response = await fetch('/api/email-campaigns/campaigns', {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('📧 Fetched campaigns:', data);
-          const fetchedCampaigns = data.campaigns || [];
-          setCampaigns(fetchedCampaigns);
+        const data = await getCampaigns();
+        console.log('📧 Fetched campaigns:', data);
+        const fetchedCampaigns = data.campaigns || [];
+        setCampaigns(fetchedCampaigns);
           
           console.log('🔍🔍🔍 =====CAMPAIGNS TABLE FILTER DEBUG=====');
           console.log('All fetched campaigns:', fetchedCampaigns.map((c: any) => ({
@@ -1138,41 +1134,26 @@ function CampaignsPage() {
               excludedAudienceIds: c.excludedAudienceIds || []
             }));
 
-            const reachResp = await fetch('/api/email-campaigns/campaigns/batch-reach', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ campaigns: payload })
+            const { results } = await calculateBatchReach({ campaigns: payload });
+            campaignsNeedingReach.forEach((c: any) => {
+              const r = results?.[c.id];
+              const includedAudiences = audiences.filter(a => (c.audienceIds || []).includes(a.id));
+              const excludedAudiences = audiences.filter(a => (c.excludedAudienceIds || []).includes(a.id));
+              setCampaignReachData(prev => ({
+                ...prev,
+                [c.id]: {
+                  totalIncluded: r?.details?.totalIncluded ?? 0,
+                  totalExcluded: r?.details?.totalExcluded ?? 0,
+                  estimatedReach: r?.uniqueCount ?? 0,
+                  includedCount: includedAudiences.length,
+                  excludedCount: excludedAudiences.length,
+                  isLoading: false
+                }
+              }));
             });
-
-            if (reachResp.ok) {
-              const { results } = await reachResp.json();
-              campaignsNeedingReach.forEach((c: any) => {
-                const r = results?.[c.id];
-                const includedAudiences = audiences.filter(a => (c.audienceIds || []).includes(a.id));
-                const excludedAudiences = audiences.filter(a => (c.excludedAudienceIds || []).includes(a.id));
-                setCampaignReachData(prev => ({
-                  ...prev,
-                  [c.id]: {
-                    totalIncluded: r?.details?.totalIncluded ?? 0,
-                    totalExcluded: r?.details?.totalExcluded ?? 0,
-                    estimatedReach: r?.uniqueCount ?? 0,
-                    includedCount: includedAudiences.length,
-                    excludedCount: excludedAudiences.length,
-                    isLoading: false
-                  }
-                }));
-              });
-            } else {
-              // Fallback to client-side estimate if API fails
-              campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
-            }
           } catch {
             campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
           }
-        } else {
-          console.error('Failed to fetch campaigns:', response.status);
-        }
       } catch (error) {
         console.error('Error fetching campaigns:', error);
       } finally {
@@ -1189,21 +1170,15 @@ function CampaignsPage() {
       if (!user) return;
       
       try {
-        const response = await fetch('/api/email-campaigns/audiences?mode=light', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
+          const data = await getAudiences({ mode: 'light' });
           console.log('📊 Loaded audiences for reach calculations:', data.audiences?.length || 0);
           setAudiences(data.audiences || []);
+          
           // After audiences load, compute reach for campaigns in state that need it
           const campaignsNeedingReach = campaigns.filter((c: any) => 
             c.status === 'scheduled' || c.status === 'draft' || (c.scheduled_at && new Date(c.scheduled_at) > new Date())
           );
           campaignsNeedingReach.forEach((c: any) => calculateCampaignReach(c));
-        } else {
-          console.error('Failed to load audiences:', response.status);
-        }
       } catch (error) {
         console.error('Error loading audiences:', error);
       }
@@ -1460,6 +1435,8 @@ function CampaignsPage() {
         console.log("Cancelling scheduled campaign:", cancelCampaignId);
         
         // Call API to update campaign status from "scheduled" to "draft"
+        // Note: Update campaign would require a server action, keeping as API route for now
+        // This is a write operation that should remain as API route
         const response = await fetch(`/api/email-campaigns/campaigns/${cancelCampaignId}`, {
           method: "PUT",
           headers: {
@@ -1558,16 +1535,8 @@ function CampaignsPage() {
   const fetchDeliverabilityData = async (campaignId: string) => {
     setLoadingDeliverability(true);
     try {
-      const response = await fetch(`/api/email-campaigns/campaigns/${campaignId}`, {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDeliverabilityData(data.campaign);
-      } else {
-        console.error('Failed to fetch deliverability data:', response.status);
-      }
+      const data = await getCampaign(campaignId);
+      setDeliverabilityData(data.campaign);
     } catch (error) {
       console.error('Error fetching deliverability data:', error);
     } finally {

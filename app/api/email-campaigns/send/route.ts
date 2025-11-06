@@ -38,6 +38,7 @@ interface SendCampaignRequest {
 
 // Get real subscribers from database based on audience selection
 async function getSubscribersForAudiences(
+  supabase: any,
   audienceIds: string[],
   excludedAudienceIds: string[] = []
 ) {
@@ -52,12 +53,7 @@ async function getSubscribersForAudiences(
     }
 
     // Get audience details to check if they're test audiences
-    // Use admin client to ensure we can access junction table data
-    const { createClient } = require("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use authenticated client (admin check already passed, RLS will allow access)
     const { data: audiences, error: audienceError } = await supabase
       .from("email_audiences")
       .select("id, name, description")
@@ -309,6 +305,34 @@ async function getSubscribersForAudiences(
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const body: SendCampaignRequest = await request.json();
     const {
       campaignId,
@@ -366,13 +390,7 @@ export async function POST(request: NextRequest) {
       if (!realCampaignIdForTest) {
         try {
           // Create a placeholder campaign to obtain a UUID (status draft)
-          const { createClient } = require("@supabase/supabase-js");
-          const serviceSupabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-          );
-
-          const { data: newCampaign, error: newCampErr } = await serviceSupabase
+          const { data: newCampaign, error: newCampErr } = await supabase
             .from("email_campaigns")
             .insert({
               name: name || "Test Campaign",
@@ -609,6 +627,7 @@ export async function POST(request: NextRequest) {
     // Get real subscribers from database
     console.log("🔍 Fetching subscribers from database...");
     const targetSubscribers = await getSubscribersForAudiences(
+      supabase,
       audienceIds,
       excludedAudienceIds
     );
@@ -639,14 +658,8 @@ export async function POST(request: NextRequest) {
     ) {
       console.log("📝 Creating campaign record for immediate send...");
 
-      // Use service role client for campaign creation to bypass RLS
-      const { createClient } = require("@supabase/supabase-js");
-      const serviceSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
-      const { data: newCampaign, error: campaignError } = await serviceSupabase
+      // Use authenticated client (admin check already passed, RLS will allow access)
+      const { data: newCampaign, error: campaignError } = await supabase
         .from("email_campaigns")
         .insert({
           name,
@@ -728,14 +741,8 @@ export async function POST(request: NextRequest) {
     for (const subscriber of targetSubscribers) {
       try {
         // Create email_sends record first to get tracking ID
-        // Use service role client for send record creation to bypass RLS
-        const { createClient } = require("@supabase/supabase-js");
-        const serviceSupabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        const { data: sendRecord, error: sendError } = await serviceSupabase
+        // Use authenticated client (admin check already passed, RLS will allow access)
+        const { data: sendRecord, error: sendError } = await supabase
           .from("email_sends")
           .insert({
             campaign_id: realCampaignId,
@@ -826,7 +833,7 @@ export async function POST(request: NextRequest) {
 
         if (result.success) {
           // Update send record to sent status with message_id
-          await serviceSupabase
+          await supabase
             .from("email_sends")
             .update({
               status: "sent",
@@ -847,7 +854,7 @@ export async function POST(request: NextRequest) {
           console.log(`   - Send ID: ${sendId}`);
         } else {
           // Update send record to failed status
-          await serviceSupabase
+          await supabase
             .from("email_sends")
             .update({
               status: "failed",
@@ -910,14 +917,8 @@ export async function POST(request: NextRequest) {
         }
 
         if (trackedHtmlTemplate) {
-          // Use service role client for campaign stats update
-          const { createClient } = require("@supabase/supabase-js");
-          const serviceSupabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-          );
-
-          await serviceSupabase
+          // Use authenticated client (admin check already passed, RLS will allow access)
+          await supabase
             .from("email_campaigns")
             .update({
               emails_sent: successCount,
@@ -936,14 +937,8 @@ export async function POST(request: NextRequest) {
           );
         } else {
           // Fallback: update without HTML if we can't generate template
-          // Use service role client for campaign stats update
-          const { createClient } = require("@supabase/supabase-js");
-          const serviceSupabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-          );
-
-          await serviceSupabase
+          // Use authenticated client (admin check already passed, RLS will allow access)
+          await supabase
             .from("email_campaigns")
             .update({
               emails_sent: successCount,

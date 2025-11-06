@@ -28,17 +28,7 @@ export async function GET() {
     );
   }
 
-  // Only use service role for admin users
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  // Use authenticated client (admin check already passed, RLS will allow access)
 
   try {
     // Count users in auth.users

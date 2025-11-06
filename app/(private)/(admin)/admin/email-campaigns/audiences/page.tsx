@@ -39,6 +39,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
+import { getAudiences, createAudience } from "@/app/actions/email-campaigns";
 
 // Global styles for animations
 const GlobalStyles = createGlobalStyle`
@@ -579,33 +580,6 @@ interface DatabaseAudience {
   updated_at: string | null;
 }
 
-// Fetch audiences from API
-const fetchAudiences = async (): Promise<DatabaseAudience[]> => {
-  try {
-    console.log('Fetching audiences from API...');
-    const response = await fetch('/api/email-campaigns/audiences', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(`Failed to fetch audiences: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Fetched audiences data:', data);
-    return data.audiences || [];
-  } catch (error) {
-    console.error('Error fetching audiences:', error);
-    return [];
-  }
-};
 
 // Convert database audience to display format
 const convertToDisplayAudience = (dbAudience: DatabaseAudience, realTimeCount?: number) => {
@@ -656,40 +630,44 @@ function AudiencesPage() {
   const { isLoading: languageLoading } = useLanguage();
   const router = useRouter();
 
-  // Load audiences from API
+  useEffect(() => {
+    if (!user || languageLoading) return;
+
     const loadAudiences = async () => {
-      if (!user) return;
-      
       setLoading(true);
       try {
-      console.log('🔄 Loading audiences...');
-        const dbAudiences = await fetchAudiences();
-      console.log('📊 Received audiences from API:', dbAudiences);
-      
-      // Get real-time subscriber counts for all audiences
-      console.log('🔄 Fetching real-time subscriber counts...');
-      const displayAudiences = await Promise.all(
-        dbAudiences.map(async (dbAudience) => {
-          try {
-            // Call the API to get real-time count
-            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
-            if (response.ok) {
-              const data = await response.json();
-              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
-              console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
-              return convertToDisplayAudience(dbAudience, realTimeCount);
-            } else {
-              console.warn(`Failed to get real-time count for ${dbAudience.name}, using cached count`);
+        console.log('🔄 Loading audiences...');
+        const data = await getAudiences({
+          mode: 'light',
+          refreshCounts: true,
+        });
+        const dbAudiences = data.audiences || [];
+        console.log('📊 Received audiences from API:', dbAudiences);
+        
+        // Get real-time subscriber counts for all audiences
+        console.log('🔄 Fetching real-time subscriber counts...');
+        const displayAudiences = await Promise.all(
+          dbAudiences.map(async (dbAudience) => {
+            try {
+              // Call the API to get real-time count
+              const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+              if (response.ok) {
+                const data = await response.json();
+                const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+                console.log(`📊 ${dbAudience.name}: ${realTimeCount} subscribers (was ${dbAudience.subscriber_count})`);
+                return convertToDisplayAudience(dbAudience, realTimeCount);
+              } else {
+                console.warn(`Failed to get real-time count for ${dbAudience.name}, using cached count`);
+                return convertToDisplayAudience(dbAudience);
+              }
+            } catch (error) {
+              console.warn(`Error getting real-time count for ${dbAudience.name}:`, error);
               return convertToDisplayAudience(dbAudience);
             }
-          } catch (error) {
-            console.warn(`Error getting real-time count for ${dbAudience.name}:`, error);
-            return convertToDisplayAudience(dbAudience);
-          }
-        })
-      );
-      
-      console.log('🎯 Converted to display format with real-time counts:', displayAudiences);
+          })
+        );
+        
+        console.log('🎯 Converted to display format with real-time counts:', displayAudiences);
         setAudiences(displayAudiences);
       } catch (error) {
         console.error('Failed to load audiences:', error);
@@ -699,10 +677,7 @@ function AudiencesPage() {
       }
     };
 
-  useEffect(() => {
-    if (user && !languageLoading) {
-      loadAudiences();
-    }
+    loadAudiences();
   }, [user, languageLoading]);
 
   // Close dropdown when clicking outside
@@ -840,30 +815,32 @@ function AudiencesPage() {
       const audience = audiences.find(a => a.id === audienceId);
       if (!audience) return;
 
-      const response = await fetch('/api/email-campaigns/audiences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `${audience.name} (Copy)`,
-          description: audience.description,
-          filters: audience.originalFilters // Use original filters for cloning
-        }),
+      const { audience: newAudience } = await createAudience({
+        name: `${audience.name} (Copy)`,
+        description: audience.description,
+        filters: audience.originalFilters // Use original filters for cloning
       });
 
-      if (response.ok) {
-        const { audience: newAudience } = await response.json();
-        // Reload audiences to include the new one
-        const dbAudiences = await fetchAudiences();
-        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
-        setAudiences(displayAudiences);
-        console.log('Audience cloned successfully');
-      } else {
-        const error = await response.json();
-        console.error('Error cloning audience:', error);
-        // Could show error notification instead of alert
-      }
+      // Reload audiences to include the new one
+      const data = await getAudiences({ mode: 'light', refreshCounts: true });
+      const dbAudiences = data.audiences || [];
+      const displayAudiences = await Promise.all(
+        dbAudiences.map(async (dbAudience) => {
+          try {
+            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+            if (response.ok) {
+              const data = await response.json();
+              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+              return convertToDisplayAudience(dbAudience, realTimeCount);
+            }
+            return convertToDisplayAudience(dbAudience);
+          } catch {
+            return convertToDisplayAudience(dbAudience);
+          }
+        })
+      );
+      setAudiences(displayAudiences);
+      console.log('Audience cloned successfully');
     } catch (error) {
       console.error('Error cloning audience:', error);
       // Could show error notification instead of alert
@@ -886,39 +863,40 @@ function AudiencesPage() {
     }
 
     try {
-      const response = await fetch('/api/email-campaigns/audiences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newAudience.name,
-          description: newAudience.description,
-          filters: {} // Start with empty filters - user can edit later
-        }),
+      const { audience: createdAudience } = await createAudience({
+        name: newAudience.name,
+        description: newAudience.description,
+        filters: {} // Start with empty filters - user can edit later
       });
-
-      if (response.ok) {
-        const { audience: createdAudience } = await response.json();
-        
-        // Reload audiences to include the new one
-        const dbAudiences = await fetchAudiences();
-        const displayAudiences = dbAudiences.map(convertToDisplayAudience);
-        setAudiences(displayAudiences);
-        
-        // Close modal and reset form
-    setShowCreateModal(false);
-    setNewAudience({ name: "", description: "", type: "dynamic" });
-        
-        console.log('Audience created successfully');
-        
-        // Navigate to edit the new audience
-        router.push(`/admin/email-campaigns/audiences/${createdAudience.id}`);
-      } else {
-        const error = await response.json();
-        console.error('Error creating audience:', error);
-        // Could show error state in modal instead of alert
-      }
+      
+      // Reload audiences to include the new one
+      const data = await getAudiences({ mode: 'light', refreshCounts: true });
+      const dbAudiences = data.audiences || [];
+      const displayAudiences = await Promise.all(
+        dbAudiences.map(async (dbAudience) => {
+          try {
+            const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+            if (response.ok) {
+              const data = await response.json();
+              const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+              return convertToDisplayAudience(dbAudience, realTimeCount);
+            }
+            return convertToDisplayAudience(dbAudience);
+          } catch {
+            return convertToDisplayAudience(dbAudience);
+          }
+        })
+      );
+      setAudiences(displayAudiences);
+      
+      // Close modal and reset form
+      setShowCreateModal(false);
+      setNewAudience({ name: "", description: "", type: "dynamic" });
+      
+      console.log('Audience created successfully');
+      
+      // Navigate to edit the new audience
+      router.push(`/admin/email-campaigns/audiences/${createdAudience.id}`);
     } catch (error) {
       console.error('Error creating audience:', error);
       // Could show error state in modal instead of alert
@@ -967,7 +945,37 @@ function AudiencesPage() {
           </LeftActions>
           
           <RightActions>
-            <ActionButton onClick={loadAudiences} disabled={loading}>
+            <ActionButton onClick={() => {
+              if (!user) return;
+              const reload = async () => {
+                setLoading(true);
+                try {
+                  const data = await getAudiences({ mode: 'light', refreshCounts: true });
+                  const dbAudiences = data.audiences || [];
+                  const displayAudiences = await Promise.all(
+                    dbAudiences.map(async (dbAudience) => {
+                      try {
+                        const response = await fetch(`/api/email-campaigns/audiences/${dbAudience.id}/subscribers`);
+                        if (response.ok) {
+                          const data = await response.json();
+                          const realTimeCount = data.pagination?.total || data.subscribers?.length || 0;
+                          return convertToDisplayAudience(dbAudience, realTimeCount);
+                        }
+                        return convertToDisplayAudience(dbAudience);
+                      } catch {
+                        return convertToDisplayAudience(dbAudience);
+                      }
+                    })
+                  );
+                  setAudiences(displayAudiences);
+                } catch (error) {
+                  console.error('Failed to reload audiences:', error);
+                } finally {
+                  setLoading(false);
+                }
+              };
+              reload();
+            }} disabled={loading}>
               <FaSync />
               {loading ? 'Refreshing...' : 'Refresh'}
             </ActionButton>

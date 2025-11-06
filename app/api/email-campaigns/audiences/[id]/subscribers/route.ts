@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 // GET /api/email-campaigns/audiences/[id]/subscribers - Get subscribers for an audience
 export async function GET(
@@ -87,18 +86,10 @@ export async function GET(
 
     console.log("✅ Auth and admin check passed");
 
-    // Create service role client for admin operations (bypasses RLS)
-    const adminSupabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    console.log("🔑 Using service role key for admin operations");
-
     console.log("Getting subscribers for audience:", id);
 
-    // Get audience to check if it's static
-    const { data: audience } = await adminSupabase
+    // Get audience to check if it's static (using authenticated client with RLS)
+    const { data: audience } = await supabase
       .from("email_audiences")
       .select("id, name, filters")
       .eq("id", id)
@@ -129,7 +120,7 @@ export async function GET(
       );
 
       // Get subscriber IDs from junction table
-      const { data: relations, error: relationsError } = await adminSupabase
+      const { data: relations, error: relationsError } = await supabase
         .from("email_audience_subscribers")
         .select("subscriber_id")
         .eq("audience_id", id);
@@ -152,7 +143,7 @@ export async function GET(
         .filter((id: any): id is string => Boolean(id));
       console.log("Subscriber IDs to fetch:", subscriberIds);
 
-      const { data: subscribers, error: subscribersError } = await adminSupabase
+      const { data: subscribers, error: subscribersError } = await supabase
         .from("subscribers")
         .select("id, email, status, created_at, metadata")
         .in("id", subscriberIds);
@@ -671,13 +662,7 @@ export async function POST(
       );
     }
 
-    // Create service role client for admin operations (bypasses RLS)
-    const adminSupabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    console.log("🔑 POST: Using service role key for admin operations");
+    console.log("✅ Auth and admin check passed for POST");
 
     const { id } = await params;
     const body = await request.json();
@@ -695,7 +680,7 @@ export async function POST(
     console.log("Adding subscriber:", email, "to audience:", id);
 
     // Check if audience is static
-    const { data: audience } = await adminSupabase
+    const { data: audience } = await supabase
       .from("email_audiences")
       .select("id, filters")
       .eq("id", id)
@@ -726,7 +711,7 @@ export async function POST(
     }
 
     // Find or create subscriber
-    let { data: subscriber } = await adminSupabase
+    let { data: subscriber } = await supabase
       .from("subscribers")
       .select("id")
       .eq("email", email)
@@ -734,7 +719,7 @@ export async function POST(
 
     if (!subscriber) {
       console.log("Creating new subscriber for:", email);
-      const { data: newSubscriber, error: createError } = await adminSupabase
+      const { data: newSubscriber, error: createError } = await supabase
         .from("subscribers")
         .insert({
           id: crypto.randomUUID(),
@@ -763,7 +748,7 @@ export async function POST(
     console.log("Using subscriber ID:", subscriber.id);
 
     // Check if already in audience
-    const { data: existing } = await adminSupabase
+    const { data: existing } = await supabase
       .from("email_audience_subscribers")
       .select("id")
       .eq("audience_id", id)
@@ -780,7 +765,7 @@ export async function POST(
     }
 
     // Add to audience
-    const { error: addError } = await adminSupabase
+    const { error: addError } = await supabase
       .from("email_audience_subscribers")
       .insert({
         audience_id: id,
@@ -858,13 +843,7 @@ export async function DELETE(
       );
     }
 
-    // Create service role client for admin operations (bypasses RLS)
-    const adminSupabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    console.log("🔑 DELETE: Using service role key for admin operations");
+    console.log("✅ Auth and admin check passed for DELETE");
 
     const { id } = await params;
     const { searchParams } = new URL(request.url);
@@ -882,7 +861,7 @@ export async function DELETE(
     console.log("Removing subscriber:", subscriberId, "from audience:", id);
 
     // Remove from audience
-    const { error: removeError } = await adminSupabase
+    const { error: removeError } = await supabase
       .from("email_audience_subscribers")
       .delete()
       .eq("audience_id", id)

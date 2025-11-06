@@ -29,6 +29,7 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAudiences, type EmailAudience } from "@/app/actions/email-campaigns";
 
 const Container = styled.div`
   width: 100%;
@@ -638,33 +639,6 @@ const DeleteConfirmationModal: React.FC<DeleteModalProps> = ({
   );
 };
 
-// Fetch audiences from API
-const fetchAudiences = async (): Promise<Audience[]> => {
-  try {
-    console.log('Fetching audiences from API...');
-    const response = await fetch('/api/email-campaigns/audiences', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(`Failed to fetch audiences: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Fetched audiences data:', data);
-    return data.audiences || [];
-  } catch (error) {
-    console.error('Error fetching audiences:', error);
-    return [];
-  }
-};
 
 export default function AudiencesPage() {
   const { user } = useAuth();
@@ -685,20 +659,28 @@ export default function AudiencesPage() {
 
   // Load audiences on component mount
   useEffect(() => {
+    if (!user) {
+      console.log('No user found, not loading audiences');
+      return;
+    }
+
     const loadAudiences = async () => {
-      console.log('Loading audiences... User:', user?.email);
+      console.log('Loading audiences... User:', user.email);
       setLoading(true);
-      const fetchedAudiences = await fetchAudiences();
-      console.log('Fetched audiences count:', fetchedAudiences.length);
-      setAudiences(fetchedAudiences);
-      setLoading(false);
+      try {
+        const data = await getAudiences({ mode: 'light', refreshCounts: true });
+        const fetchedAudiences = data.audiences || [];
+        console.log('Fetched audiences count:', fetchedAudiences.length);
+        setAudiences(fetchedAudiences as Audience[]);
+      } catch (error) {
+        console.error('Error loading audiences:', error);
+        setAudiences([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (user) {
-      loadAudiences();
-    } else {
-      console.log('No user found, not loading audiences');
-    }
+    loadAudiences();
   }, [user]);
 
   useEffect(() => {

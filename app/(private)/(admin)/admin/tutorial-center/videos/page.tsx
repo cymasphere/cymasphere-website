@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { getVideos } from "@/app/actions/tutorials";
 
 // Animation variants
 const fadeIn = {
@@ -274,19 +275,28 @@ const VideoThumbnail = styled.div`
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
     animation: shimmer 2s infinite;
   }
 
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 `;
 
@@ -393,8 +403,12 @@ const LoadingContainer = styled.div`
   gap: 1rem;
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -432,65 +446,72 @@ export default function VideosPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    category: 'all',
-    theoryLevel: 'all',
-    techLevel: 'all',
-    appMode: 'all',
-    search: ''
+    category: "all",
+    theoryLevel: "all",
+    techLevel: "all",
+    appMode: "all",
+    search: "",
   });
 
   useEffect(() => {
-    fetchVideos();
-  }, [filters]);
+    const loadVideos = async () => {
+      setLoading(true);
+      try {
+        const data = await getVideos({
+          category: filters.category !== "all" ? filters.category : undefined,
+          theoryLevel:
+            filters.theoryLevel !== "all" ? filters.theoryLevel : undefined,
+          techLevel:
+            filters.techLevel !== "all" ? filters.techLevel : undefined,
+          appMode: filters.appMode !== "all" ? filters.appMode : undefined,
+          search: filters.search || undefined,
+        });
 
-  const fetchVideos = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.category !== 'all') params.append('category', filters.category);
-      if (filters.theoryLevel !== 'all') params.append('theoryLevel', filters.theoryLevel);
-      if (filters.techLevel !== 'all') params.append('techLevel', filters.techLevel);
-      if (filters.appMode !== 'all') params.append('appMode', filters.appMode);
-      if (filters.search) params.append('search', filters.search);
-
-      const response = await fetch(`/api/tutorials/videos?${params}`);
-      if (response.ok) {
-        const data = await response.json();
         setVideos(data.videos);
         setCategories(data.categories);
+      } catch (error) {
+        console.error("Failed to fetch videos:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch videos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadVideos();
+  }, [filters]);
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'setup': return '🛠️';
-      case 'music_theory': return '🎵';
-      case 'core_composition': return '🎼';
-      case 'advanced_composition': return '🎹';
-      case 'sound_design': return '🔊';
-      case 'midi_audio': return '🎚️';
-      case 'workflow': return '⚡';
-      default: return '📹';
+      case "setup":
+        return "🛠️";
+      case "music_theory":
+        return "🎵";
+      case "core_composition":
+        return "🎼";
+      case "advanced_composition":
+        return "🎹";
+      case "sound_design":
+        return "🔊";
+      case "midi_audio":
+        return "🎚️";
+      case "workflow":
+        return "⚡";
+      default:
+        return "📹";
     }
   };
 
   const getCategoryName = (category: string) => {
-    return category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return category.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   if (!user) {
@@ -507,7 +528,8 @@ export default function VideosPage() {
               All Videos
             </Title>
             <Subtitle>
-              Complete library of Cymasphere tutorials with advanced filtering and search
+              Complete library of Cymasphere tutorials with advanced filtering
+              and search
             </Subtitle>
           </div>
           <BackButton href="/admin/tutorial-center">
@@ -524,10 +546,10 @@ export default function VideosPage() {
             </FilterLabel>
             <FilterSelect
               value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
+              onChange={(e) => handleFilterChange("category", e.target.value)}
             >
               <option value="all">All Categories</option>
-              {categories.map(category => (
+              {categories.map((category) => (
                 <option key={category} value={category}>
                   {getCategoryIcon(category)} {getCategoryName(category)}
                 </option>
@@ -542,7 +564,9 @@ export default function VideosPage() {
             </FilterLabel>
             <FilterSelect
               value={filters.theoryLevel}
-              onChange={(e) => handleFilterChange('theoryLevel', e.target.value)}
+              onChange={(e) =>
+                handleFilterChange("theoryLevel", e.target.value)
+              }
             >
               <option value="all">All Levels</option>
               <option value="beginner">🎵 Beginner</option>
@@ -558,7 +582,7 @@ export default function VideosPage() {
             </FilterLabel>
             <FilterSelect
               value={filters.techLevel}
-              onChange={(e) => handleFilterChange('techLevel', e.target.value)}
+              onChange={(e) => handleFilterChange("techLevel", e.target.value)}
             >
               <option value="all">All Levels</option>
               <option value="new_to_daws">🆕 New to DAWs</option>
@@ -574,7 +598,7 @@ export default function VideosPage() {
             </FilterLabel>
             <FilterSelect
               value={filters.appMode}
-              onChange={(e) => handleFilterChange('appMode', e.target.value)}
+              onChange={(e) => handleFilterChange("appMode", e.target.value)}
             >
               <option value="all">All Modes</option>
               <option value="standalone">🖥️ Standalone</option>
@@ -592,14 +616,14 @@ export default function VideosPage() {
               type="text"
               placeholder="Search videos..."
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
             />
           </FilterGroup>
         </FiltersContainer>
 
         <ResultsInfo>
           <ResultsCount>
-            {loading ? 'Loading...' : `${videos.length} videos found`}
+            {loading ? "Loading..." : `${videos.length} videos found`}
           </ResultsCount>
           <SortOptions>
             <FaSort />
@@ -609,7 +633,16 @@ export default function VideosPage() {
 
         {loading ? (
           <LoadingContainer>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--primary)', borderTop: '3px solid transparent', animation: 'spin 1s linear infinite' }} />
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                border: "3px solid var(--primary)",
+                borderTop: "3px solid transparent",
+                animation: "spin 1s linear infinite",
+              }}
+            />
             Loading videos...
           </LoadingContainer>
         ) : videos.length === 0 ? (
@@ -617,7 +650,8 @@ export default function VideosPage() {
             <FaVideo />
             <EmptyTitle>No videos found</EmptyTitle>
             <EmptyDescription>
-              Try adjusting your filters or search terms to find what you're looking for.
+              Try adjusting your filters or search terms to find what you're
+              looking for.
             </EmptyDescription>
           </EmptyState>
         ) : (
@@ -641,7 +675,9 @@ export default function VideosPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
+                    whileHover={{
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                    }}
                   >
                     <ThumbnailCell>
                       <VideoThumbnail>
@@ -656,7 +692,8 @@ export default function VideosPage() {
                     </TableCell>
                     <TableCell>
                       <CategoryBadge>
-                        {getCategoryIcon(video.feature_category)} {getCategoryName(video.feature_category)}
+                        {getCategoryIcon(video.feature_category)}{" "}
+                        {getCategoryName(video.feature_category)}
                       </CategoryBadge>
                     </TableCell>
                     <TableCell>
@@ -673,7 +710,7 @@ export default function VideosPage() {
                         </MetaItem>
                         <MetaItem>
                           <FaCog />
-                          {video.tech_level_required.replace('_', ' ')}
+                          {video.tech_level_required.replace("_", " ")}
                         </MetaItem>
                       </MetaInfo>
                     </TableCell>
@@ -701,9 +738,3 @@ export default function VideosPage() {
     </Container>
   );
 }
-
-
-
-
-
-

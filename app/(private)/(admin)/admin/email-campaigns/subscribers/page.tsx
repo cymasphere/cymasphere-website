@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
+import { getSubscribers } from "@/app/actions/email-campaigns";
 
 const SubscribersContainer = styled.div`
   width: 100%;
@@ -511,22 +512,21 @@ function SubscribersPage() {
     }
   }, [languageLoading]);
 
-  // Fetch subscribers data
-  const fetchSubscribers = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        search: searchTerm,
-        status: statusFilter,
-        page: (pagination?.page || 1).toString(),
-        limit: (pagination?.limit || 50).toString()
-      });
+  // Fetch data when component mounts or filters change
+  useEffect(() => {
+    if (!translationsLoaded || !isClient || !user) return;
 
-      const response = await fetch(`/api/email-campaigns/subscribers?${params}`);
-      
-      if (response.ok) {
-        const data = await response.json();
+    const loadSubscribers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getSubscribers({
+          search: searchTerm || undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          page: pagination?.page || 1,
+          limit: pagination?.limit || 50,
+        });
+        
         setSubscribers(data.subscribers);
         setSubscriberStats(data.stats || {});
         setPagination(data.pagination || {
@@ -535,22 +535,15 @@ function SubscribersPage() {
           total: 0,
           totalPages: 0
         });
-      } else {
-        throw new Error(`Failed to fetch subscribers: ${response.status}`);
+      } catch (error) {
+        console.error('Error fetching subscribers:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch subscribers');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching subscribers:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch subscribers');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  // Fetch data when component mounts or filters change
-  useEffect(() => {
-    if (translationsLoaded && isClient && user) {
-      fetchSubscribers();
-    }
+    loadSubscribers();
   }, [translationsLoaded, isClient, user, searchTerm, statusFilter, pagination?.page]);
 
   // Close dropdown when clicking outside

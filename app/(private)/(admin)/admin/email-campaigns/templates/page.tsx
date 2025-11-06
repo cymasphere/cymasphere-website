@@ -19,6 +19,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
+import { getTemplates } from "@/app/actions/email-campaigns";
 
 const TemplatesContainer = styled.div`
   width: 100%;
@@ -483,14 +484,8 @@ function TemplatesPage() {
     const loadTemplates = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/email-campaigns/templates');
-        if (response.ok) {
-          const data = await response.json();
-          setTemplates(data.templates || []);
-        } else {
-          console.error('Failed to load templates');
-          setTemplates([]);
-        }
+        const data = await getTemplates();
+        setTemplates(data.templates || []);
       } catch (error) {
         console.error('Error loading templates:', error);
         setTemplates([]);

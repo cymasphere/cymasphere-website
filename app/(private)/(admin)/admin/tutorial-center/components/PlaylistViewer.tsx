@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { useRouter } from "next/navigation";
 import VideoPlayer from './VideoPlayer';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { getVideoProgress, getPlaylistVideos, getVideo, getPlaylist, getVideoScript, getVideosWithDurations, updateVideoProgress } from "@/app/actions/tutorials";
 
 const Container = styled.div`
   display: flex;
@@ -273,10 +274,23 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const pollDatabaseProgress = useCallback(async () => {
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
-      const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        const prog = data.progress || {};
+      const progressData = await getVideoProgress(userId);
+      
+      // Convert array to object format
+      const prog: Record<string, any> = {};
+      if (Array.isArray(progressData)) {
+        progressData.forEach((p: any) => {
+          prog[p.video_id] = {
+            progress: p.progress_percentage || 0,
+            completed: p.completed || false,
+          };
+        });
+      } else if (progressData) {
+        prog[progressData.video_id] = {
+          progress: progressData.progress_percentage || 0,
+          completed: progressData.completed || false,
+        };
+      }
         
         // Update progress map with fresh database data
         setProgressMap((prev) => {
@@ -344,26 +358,13 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       
       console.log('Marking video as complete:', { userId, videoId, youtubeVideoId: video.youtube_video_id, progress: 100, completed: true });
       
-      const response = await fetch('/api/tutorials/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          videoId: video.youtube_video_id, // Use YouTube video ID, not UUID
-          progress: 100,
-          completed: true,
-        }),
+      await updateVideoProgress(videoId, {
+        progress_percentage: 100,
+        completed: true,
       });
 
-      console.log('Response status:', response.status);
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
-
-      if (response.ok) {
-        console.log('Video marked as complete successfully:', videoId);
-        // Update local progress map
+      console.log('Video marked as complete successfully:', videoId);
+      // Update local progress map
         setProgressMap(prev => ({
           ...prev,
           [videoId]: { progress: 100, completed: true }
@@ -437,17 +438,29 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
         const userId =
           (typeof window !== 'undefined' && localStorage.getItem('userId')) ||
           '900f11b8-c901-49fd-bfab-5fafe984ce72';
-        const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
-        if (!res.ok) {
-          console.log('Progress API response not ok:', res.status, res.statusText);
-          return;
-        }
-        const data = await res.json();
-        console.log('Progress data received from DATABASE (source of truth):', data);
+        const progressData = await getVideoProgress(userId);
+        
+        console.log('Progress data received from DATABASE (source of truth):', progressData);
         
         // Create a mapping from database video IDs to progress data - DATABASE IS SOURCE OF TRUTH
         const map: Record<string, { progress: number; completed: boolean }> = {};
-        const prog = data.progress || {};
+        const prog: Record<string, any> = {};
+        
+        // Convert array to object format
+        if (Array.isArray(progressData)) {
+          progressData.forEach((p: any) => {
+            prog[p.video_id] = {
+              progress: p.progress_percentage || 0,
+              completed: p.completed || false,
+            };
+          });
+        } else if (progressData) {
+          prog[progressData.video_id] = {
+            progress: progressData.progress_percentage || 0,
+            completed: progressData.completed || false,
+          };
+        }
+        
         console.log('Raw progress data from DATABASE:', prog);
         
         // Get the current videos to create the mapping
@@ -484,12 +497,8 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           return propVideos;
         }
         
-        const videosResponse = await fetch(`/api/tutorials/playlists/${playlistId}/videos`);
-        if (videosResponse.ok) {
-          const videosData = await videosResponse.json();
-          return videosData.videos || [];
-        }
-        return [];
+        const videosData = await getPlaylistVideos(playlistId);
+        return videosData.videos || [];
       } catch (e) {
         console.error('Error fetching current videos:', e);
         return [];
@@ -551,18 +560,15 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
 
             // Fetch missing fields from API
             try {
-              const res = await fetch(`/api/tutorials/videos/${v.id}`);
-              if (res.ok) {
-                const full = await res.json();
-                return {
-                  id: v.id,
-                  title: v.title ?? full.title,
-                  description: v.description ?? full.description,
-                  duration: candidateDuration ?? full.duration ?? 300,
-                  video_order: candidateOrder ?? idx + 1,
-                  youtube_video_id: candidateYoutubeId ?? full.youtube_video_id,
-                };
-              }
+              const full = await getVideo(v.id);
+              return {
+                id: v.id,
+                title: v.title ?? full.title,
+                description: v.description ?? full.description,
+                duration: candidateDuration ?? full.duration ?? 300,
+                video_order: candidateOrder ?? idx + 1,
+                youtube_video_id: candidateYoutubeId ?? full.youtube_video_id,
+              };
             } catch (e) {
               console.error("Failed to hydrate personalized video", v.id, e);
             }
@@ -597,23 +603,16 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       
       // For regular playlists, fetch from API
       // Fetch playlist details
-      const playlistResponse = await fetch(`/api/tutorials/playlists/${playlistId}`);
-      if (playlistResponse.ok) {
-        const playlistData = await playlistResponse.json();
-        setPlaylist(playlistData);
-      }
+      const playlistData = await getPlaylist(playlistId);
+      setPlaylist(playlistData);
 
       // Fetch playlist videos
-      const videosResponse = await fetch(`/api/tutorials/playlists/${playlistId}/videos`);
-      if (videosResponse.ok) {
-        const videosData = await videosResponse.json();
-        console.log('Raw videos response:', videosData);
-        // Handle both array and object response formats
-        const videosArray = Array.isArray(videosData) ? videosData : (videosData.videos || []);
-        console.log('Processed videos array:', videosArray);
-        console.log('First video in processed array:', videosArray[0]);
-        setVideos(videosArray);
-      }
+      const videosData = await getPlaylistVideos(playlistId);
+      console.log('Raw videos response:', videosData);
+      const videosArray = videosData.videos || [];
+      console.log('Processed videos array:', videosArray);
+      console.log('First video in processed array:', videosArray[0]);
+      setVideos(videosArray);
     } catch (error) {
       console.error("Error fetching playlist data:", error);
     } finally {
@@ -624,25 +623,21 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
   const fetchScript = async (videoId: string) => {
     try {
       setScriptLoading(true);
-      const response = await fetch(`/api/tutorials/videos/${videoId}/script`);
-      if (response.ok) {
-        const scriptData = await response.json();
-        // Handle the API response format: { script: scriptObject }
-        let scriptContent = "Script content will be available here.";
-        
-        if (scriptData && scriptData.script) {
-          const scriptObj = scriptData.script;
-          // Extract the main script content from the database record
-          scriptContent = scriptObj.script_content || 
-                         scriptObj.content || 
-                         scriptObj.explanation ||
-                         "Script content will be available here.";
-        }
-        
-        setScript(scriptContent);
-      } else {
-        setScript("Script content will be available here.");
+      const scriptData = await getVideoScript(videoId);
+      
+      // Handle the API response format: { script: scriptObject }
+      let scriptContent = "Script content will be available here.";
+      
+      if (scriptData && scriptData.script) {
+        const scriptObj = scriptData.script;
+        // Extract the main script content from the database record
+        scriptContent = scriptObj.script_content || 
+                       scriptObj.content || 
+                       scriptObj.explanation ||
+                       "Script content will be available here.";
       }
+      
+      setScript(scriptContent);
     } catch (error) {
       console.error("Error fetching script:", error);
       setScript("Script content will be available here.");
@@ -659,10 +654,23 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
     // DATABASE IS SOURCE OF TRUTH - fetch fresh progress when video is selected
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
-      const res = await fetch(`/api/tutorials/progress?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        const prog = data.progress || {};
+      const progressData = await getVideoProgress(userId);
+      
+      // Convert array to object format
+      const prog: Record<string, any> = {};
+      if (Array.isArray(progressData)) {
+        progressData.forEach((p: any) => {
+          prog[p.video_id] = {
+            progress: p.progress_percentage || 0,
+            completed: p.completed || false,
+          };
+        });
+      } else if (progressData) {
+        prog[progressData.video_id] = {
+          progress: progressData.progress_percentage || 0,
+          completed: progressData.completed || false,
+        };
+      }
         
         // Update progress map with fresh database data
         setProgressMap((prev) => {
@@ -735,10 +743,7 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
       
       try {
         // Fetch videos with cached durations from database
-        const response = await fetch(`/api/tutorials/videos-with-durations?videoIds=${videoIds.join(',')}`);
-        console.log('Duration API response status:', response.status);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await getVideosWithDurations(videoIds);
           console.log(`Loaded ${data.cached_count} cached durations, ${data.needs_fetch_count} need fetching`);
           console.log('Duration data:', data);
           

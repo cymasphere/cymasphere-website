@@ -38,6 +38,7 @@ import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
+import { getDeliverability } from "@/app/actions/email-campaigns";
 
 const DeliverabilityContainer = styled.div`
   width: 100%;
@@ -657,29 +658,18 @@ function DeliverabilityPage() {
   }, [languageLoading]);
 
   useEffect(() => {
-    const fetchDeliverabilityData = async () => {
+    if (!translationsLoaded || !user) return;
+
+    const loadDeliverabilityData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/email-campaigns/deliverability', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Real deliverability data loaded:', data);
-          console.log('📊 Domains in response:', data.domains?.length || 0);
-          console.log('📊 Bounces in response:', data.bounces?.length || 0);
-          console.log('📊 Sample domain:', data.domains?.[0]);
-          console.log('📊 Sample bounce:', data.bounces?.[0]);
-          setDeliverabilityData(data);
-        } else {
-          console.error('Failed to fetch deliverability data:', response.status, response.statusText);
-          console.log('🔄 Falling back to mock data');
-          // Fall back to mock data if API fails
-          setDeliverabilityData(mockDeliverabilityData);
-        }
+        const data = await getDeliverability();
+        console.log('✅ Real deliverability data loaded:', data);
+        console.log('📊 Domains in response:', data.domains?.length || 0);
+        console.log('📊 Bounces in response:', data.bounces?.length || 0);
+        console.log('📊 Sample domain:', data.domains?.[0]);
+        console.log('📊 Sample bounce:', data.bounces?.[0]);
+        setDeliverabilityData(data);
       } catch (error) {
         console.error('Error fetching deliverability data:', error);
         // Fall back to mock data if API fails
@@ -689,9 +679,7 @@ function DeliverabilityPage() {
       }
     };
 
-    if (translationsLoaded && user) {
-      fetchDeliverabilityData();
-    }
+    loadDeliverabilityData();
   }, [translationsLoaded, user]);
 
   // Close dropdown when clicking outside
@@ -751,19 +739,11 @@ function DeliverabilityPage() {
   const handleRefresh = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/email-campaigns/deliverability', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Real deliverability data refreshed:', data);
-        console.log('📊 Refreshed - Domains:', data.domains?.length || 0);
-        console.log('📊 Refreshed - Bounces:', data.bounces?.length || 0);
-        setDeliverabilityData(data);
-      }
+      const data = await getDeliverability();
+      console.log('✅ Real deliverability data refreshed:', data);
+      console.log('📊 Refreshed - Domains:', data.domains?.length || 0);
+      console.log('📊 Refreshed - Bounces:', data.bounces?.length || 0);
+      setDeliverabilityData(data);
     } catch (error) {
       console.error('Error refreshing deliverability data:', error);
     } finally {

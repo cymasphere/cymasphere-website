@@ -30,6 +30,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { getSubscriber, getAudiences } from "@/app/actions/email-campaigns";
 
 const SubscriberContainer = styled.div`
   width: 100%;
@@ -566,66 +567,56 @@ function SubscriberDetailPage() {
   }, [languageLoading]);
 
   useEffect(() => {
-    if (translationsLoaded && subscriberId && isClient && user) {
-      fetchSubscriberData();
-      fetchAudiences();
-    }
+    if (!translationsLoaded || !subscriberId || !isClient || !user) return;
+
+    const loadSubscriberData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching subscriber data for ID:', subscriberId);
+        
+        const data = await getSubscriber(subscriberId);
+        console.log('Subscriber data received:', data);
+        setSubscriber(data.subscriber);
+        
+        // Initialize form data
+        setFormData({
+          name: data.subscriber.name,
+          email: data.subscriber.email,
+          status: data.subscriber.status,
+          location: data.subscriber.location || "Unknown",
+          engagement: data.subscriber.engagement || "Medium"
+        });
+        
+      } catch (err) {
+        console.error('Error fetching subscriber:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch subscriber');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadAudiences = async () => {
+      try {
+        console.log('Fetching audiences...');
+        
+        const data = await getAudiences({ mode: 'light' });
+        console.log('Audiences data received:', data);
+        setAudiences(data.audiences || []);
+        
+        // Fetch the subscriber's actual audience memberships
+        await fetchSubscriberAudienceMemberships(data.audiences || []);
+        
+      } catch (err) {
+        console.error('Error fetching audiences:', err);
+        // Don't set error here as it's not critical for the main page
+      }
+    };
+
+    loadSubscriberData();
+    loadAudiences();
   }, [translationsLoaded, subscriberId, isClient, user]);
-
-  const fetchSubscriberData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Fetching subscriber data for ID:', subscriberId);
-      
-      const response = await fetch(`/api/email-campaigns/subscribers/${subscriberId}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch subscriber: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Subscriber data received:', data);
-      setSubscriber(data.subscriber);
-      
-      // Initialize form data
-      setFormData({
-        name: data.subscriber.name,
-        email: data.subscriber.email,
-        status: data.subscriber.status,
-        location: data.subscriber.location || "Unknown",
-        engagement: data.subscriber.engagement || "Medium"
-      });
-      
-    } catch (err) {
-      console.error('Error fetching subscriber:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch subscriber');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAudiences = async () => {
-    try {
-      console.log('Fetching audiences...');
-      
-      const response = await fetch('/api/email-campaigns/audiences');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch audiences: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Audiences data received:', data);
-      setAudiences(data.audiences || []);
-      
-      // Fetch the subscriber's actual audience memberships
-      await fetchSubscriberAudienceMemberships(data.audiences || []);
-      
-    } catch (err) {
-      console.error('Error fetching audiences:', err);
-      // Don't set error here as it's not critical for the main page
-    }
-  };
 
   const fetchSubscriberAudienceMemberships = async (audiences: any[]) => {
     try {
@@ -804,7 +795,22 @@ function SubscriberDetailPage() {
       }
 
       // Refresh subscriber data
-      await fetchSubscriberData();
+      try {
+        setLoading(true);
+        const data = await getSubscriber(subscriberId);
+        setSubscriber(data.subscriber);
+        setFormData({
+          name: data.subscriber.name,
+          email: data.subscriber.email,
+          status: data.subscriber.status,
+          location: data.subscriber.location || "Unknown",
+          engagement: data.subscriber.engagement || "Medium"
+        });
+      } catch (err) {
+        console.error('Error refreshing subscriber:', err);
+      } finally {
+        setLoading(false);
+      }
       setEditMode(false);
     } catch (err) {
       console.error('Error saving subscriber:', err);

@@ -27,6 +27,7 @@ import ProgressTracker from "./components/ProgressTracker";
 import SystemTester from "./components/SystemTester";
 import SystemValidator from "./components/SystemValidator";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import { getUserProfile, updateUserProfile, generatePlaylist } from "@/app/actions/tutorials";
 
 // Animation variants
 const fadeIn = {
@@ -436,16 +437,11 @@ export default function TutorialCenter() {
 
   // Check for existing user profile on load
   useEffect(() => {
-    if (user) {
-      fetchUserProfile();
-    }
-  }, [user]);
+    if (!user) return;
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch(`/api/tutorials/user-profile?userId=${user?.id}`);
-      if (response.ok) {
-        const profileData = await response.json();
+    const loadUserProfile = async () => {
+      try {
+        const profileData = await getUserProfile(user.id);
         if (profileData.profile) {
           setUserProfile(profileData.profile);
           setHasExistingProfile(true);
@@ -454,32 +450,22 @@ export default function TutorialCenter() {
         } else {
           setShowProfilingForm(true);
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
         setShowProfilingForm(true);
+      } finally {
+        setProfileLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      setShowProfilingForm(true);
-    } finally {
-      setProfileLoading(false);
-    }
-  };
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const generatePlaylistFromProfile = async (profile: any) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/tutorials/generate-playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profile),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGeneratedPlaylist(data.playlist);
-      }
+      const data = await generatePlaylist(profile);
+      setGeneratedPlaylist(data.playlist);
     } catch (error) {
       console.error('Failed to generate playlist:', error);
     } finally {
@@ -540,36 +526,12 @@ export default function TutorialCenter() {
       };
 
       // Save user profile to database
-      const profileResponse = await fetch('/api/tutorials/user-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user?.id,
-          profile: profileData
-        }),
-      });
-
-      if (!profileResponse.ok) {
-        console.error('Failed to save user profile');
+      if (user?.id) {
+        await updateUserProfile(user.id, profileData);
       }
 
       // Generate playlist
-      const response = await fetch('/api/tutorials/generate-playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}: Failed to generate playlist`);
-      }
-
-      const data = await response.json();
+      const data = await generatePlaylist(profileData);
       setGeneratedPlaylist(data.playlist);
       setShowProfilingForm(false);
       setHasExistingProfile(true);
