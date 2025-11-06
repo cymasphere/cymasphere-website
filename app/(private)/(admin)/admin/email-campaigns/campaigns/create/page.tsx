@@ -2376,46 +2376,29 @@ function CreateCampaignPage() {
       });
 
       console.log(`🎯 Edit modal reach calculation result:`, data);
-        console.log(`🎯 Edit modal reach API response data:`, JSON.stringify(data, null, 2));
-        
-        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
-        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
-        
-        console.log(`🎯 Edit modal matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
-        console.log(`🎯 Edit modal matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
-        
-        const finalReachData = {
-          totalIncluded: data.details?.totalIncluded || 0,
-          totalExcluded: data.details?.totalExcluded || 0,
-          estimatedReach: data.uniqueCount || 0,
-          includedCount: includedAudiences.length,
-          excludedCount: excludedAudiences.length,
-          isLoading: false
-        };
-        
-        console.log(`🎯 Edit modal final reach data:`, finalReachData);
-        console.log(`🎯 EDIT MODAL KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
-        
-        setReachData(finalReachData);
-      } else {
-        console.error('Failed to calculate reach:', response.status);
-        // Fallback to simple calculation
-        const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
-        const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
-        const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-        const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-        
-        setReachData({
-          totalIncluded,
-          totalExcluded,
-          estimatedReach: Math.max(0, totalIncluded - totalExcluded),
-          includedCount: includedAudiences.length,
-          excludedCount: excludedAudiences.length,
-          isLoading: false
-        });
-      }
+      console.log(`🎯 Edit modal reach API response data:`, JSON.stringify(data, null, 2));
+      
+      const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
+      const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
+      
+      console.log(`🎯 Edit modal matched included audiences:`, includedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+      console.log(`🎯 Edit modal matched excluded audiences:`, excludedAudiences.map(a => ({ id: a.id, name: a.name, count: a.subscriber_count })));
+      
+      const finalReachData = {
+        totalIncluded: data.details?.totalIncluded || 0,
+        totalExcluded: data.details?.totalExcluded || 0,
+        estimatedReach: data.uniqueCount || 0,
+        includedCount: includedAudiences.length,
+        excludedCount: excludedAudiences.length,
+        isLoading: false
+      };
+      
+      console.log(`🎯 Edit modal final reach data:`, finalReachData);
+      console.log(`🎯 EDIT MODAL KEY VALUE - estimatedReach: ${finalReachData.estimatedReach}`);
+      
+      setReachData(finalReachData);
     } catch (error) {
-      console.error('Error calculating reach:', error);
+      console.error('Failed to calculate reach:', error);
       // Fallback to simple calculation
       const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
       const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));

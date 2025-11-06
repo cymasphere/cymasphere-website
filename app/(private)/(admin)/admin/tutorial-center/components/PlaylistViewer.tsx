@@ -319,7 +319,6 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           
           return hasChanges ? newMap : prev;
         });
-      }
     } catch (error) {
       console.error('Error polling database progress:', error);
     }
@@ -365,15 +364,12 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
 
       console.log('Video marked as complete successfully:', videoId);
       // Update local progress map
-        setProgressMap(prev => ({
-          ...prev,
-          [videoId]: { progress: 100, completed: true }
-        }));
-        // Close context menu
-        setContextMenu(null);
-      } else {
-        console.error('Failed to mark video as complete:', responseData);
-      }
+      setProgressMap(prev => ({
+        ...prev,
+        [videoId]: { progress: 100, completed: true }
+      }));
+      // Close context menu
+      setContextMenu(null);
     } catch (error) {
       console.error('Error marking video as complete:', error);
     }
@@ -671,22 +667,21 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
           completed: progressData.completed || false,
         };
       }
-        
-        // Update progress map with fresh database data
-        setProgressMap((prev) => {
-          const newMap = { ...prev };
-          videos.forEach((v) => {
-            const youtubeId = v.youtube_video_id;
-            if (youtubeId && prog[youtubeId]) {
-              newMap[v.id] = { 
-                progress: prog[youtubeId].progress || 0, 
-                completed: !!prog[youtubeId].completed 
-              };
-            }
-          });
-          return newMap;
+      
+      // Update progress map with fresh database data
+      setProgressMap((prev) => {
+        const newMap = { ...prev };
+        videos.forEach((v) => {
+          const youtubeId = v.youtube_video_id;
+          if (youtubeId && prog[youtubeId]) {
+            newMap[v.id] = { 
+              progress: prog[youtubeId].progress || 0, 
+              completed: !!prog[youtubeId].completed 
+            };
+          }
         });
-      }
+        return newMap;
+      });
     } catch (error) {
       console.error('Error fetching fresh progress on video select:', error);
     }
@@ -789,9 +784,6 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
               }
             }
           }
-        } else {
-          console.error('Failed to fetch durations:', response.status, response.statusText);
-        }
       } catch (error) {
         console.error('Error loading durations efficiently:', error);
       }
