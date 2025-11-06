@@ -6,6 +6,7 @@ import ClientLayout from "./ClientLayout";
 import I18nProvider from "@/app/i18n/I18nProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import Analytics from "@/components/analytics/Analytics";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 // Metadata configuration
@@ -94,6 +95,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${montserrat.variable}`}>
       <body>
         <Analytics />
+        <SpeedInsights />
         <StyledComponentsRegistry>
           <LanguageProvider>
           <I18nProvider>
