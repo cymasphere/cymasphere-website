@@ -113,7 +113,14 @@ ALTER TABLE email_opens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_clicks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_automations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE email_ab_tests ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on email_ab_tests if it exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'email_ab_tests') THEN
+    ALTER TABLE email_ab_tests ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- Email campaigns policies (admins can manage all)
 DROP POLICY IF EXISTS "Admins can manage campaigns" ON email_campaigns;
@@ -133,6 +140,7 @@ CREATE POLICY "Admins can manage audiences" ON email_audiences
   USING (is_admin(auth.uid()));
 
 -- Email audience subscribers policies (admins can manage all)
+DROP POLICY IF EXISTS "Admins can manage audience subscribers" ON email_audience_subscribers;
 CREATE POLICY "Admins can manage audience subscribers" ON email_audience_subscribers
   FOR ALL 
   USING (is_admin(auth.uid()));
@@ -145,6 +153,7 @@ CREATE POLICY "Admins can manage campaign audiences" ON email_campaign_audiences
   USING (is_admin(auth.uid()));
 
 -- Email sends policies (admins can manage all, needed for tracking)
+DROP POLICY IF EXISTS "Admins can manage email sends" ON email_sends;
 CREATE POLICY "Admins can manage email sends" ON email_sends
   FOR ALL 
   USING (is_admin(auth.uid()));
@@ -169,10 +178,16 @@ CREATE POLICY "Admins can manage automations" ON email_automations
   USING (is_admin(auth.uid()));
 
 -- A/B tests policies (admins can manage all)
-DROP POLICY IF EXISTS "Admins can manage ab tests" ON email_ab_tests;
-CREATE POLICY "Admins can manage ab tests" ON email_ab_tests
-  FOR ALL 
-  USING (is_admin(auth.uid()));
+-- Only create policies if the table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'email_ab_tests') THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Admins can manage ab tests" ON email_ab_tests';
+    EXECUTE 'CREATE POLICY "Admins can manage ab tests" ON email_ab_tests
+      FOR ALL 
+      USING (is_admin(auth.uid()))';
+  END IF;
+END $$;
 
 -- =============================================
 -- Email Tracking Tables RLS Policies
