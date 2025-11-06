@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import { Metadata } from "next";
 import StyledComponentsRegistry from "./registry";
@@ -72,17 +72,14 @@ const theme = {
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap", // Prevents text reflow - shows fallback font while loading
 });
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600", "700"], // Only essential weights - reduces font file size by ~60%
+  display: "swap", // Prevents text reflow
 });
 
 // Define the interface for the RootLayout props
@@ -94,7 +91,7 @@ export default function RootLayout({
   children
 }: RootLayoutProps) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${montserrat.variable}`}>
       <body>
         <Analytics />
         <StyledComponentsRegistry>

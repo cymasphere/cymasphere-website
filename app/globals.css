@@ -2,15 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Disable text selection across the site */
-html, body, div, span, p, h1, h2, h3, h4, h5, h6, a, button {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Allow text selection for specific elements where it's needed (like input fields) */
+/* Allow normal text selection (better UX) */
+/* Text selection is enabled by default - users can select text naturally */
 input, textarea, [contenteditable="true"] {
   -webkit-user-select: text;
   -moz-user-select: text;

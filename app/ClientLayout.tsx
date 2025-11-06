@@ -60,26 +60,18 @@ const Main = styled(motion.main)`
   }
 `;
 
-// Animation variants
+// Animation variants - only for initial page load
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 20,
+    y: 0,
   },
   in: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.4,
-      ease: [0.43, 0.13, 0.23, 0.96],
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-    transition: {
-      duration: 0.3,
-      ease: [0.43, 0.13, 0.23, 0.96],
+      duration: 0.2,
+      ease: "easeInOut",
     },
   },
 };
@@ -149,7 +141,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             <Main
               initial="initial"
               animate="in"
-              exit="exit"
               variants={pageVariants}
             >
               {children}
