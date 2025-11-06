@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import VideoPlayer from './VideoPlayer';
 import ScriptModal from "@/components/modals/ScriptModal";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { getVideoProgress, getPlaylistVideos, getVideo, getPlaylist, getVideoScript, getVideosWithDurations, updateVideoProgress } from "@/app/actions/tutorials";
+import { getVideoProgress, getPlaylistVideos, getVideo, getPlaylist, getVideoScript, getVideosWithDurations, updateVideoProgress, getYouTubeDuration } from "@/app/actions/tutorials";
 
 const Container = styled.div`
   display: flex;
@@ -750,13 +750,10 @@ export default function PlaylistViewer({ playlistId, initialVideoId, videos: pro
             for (const batch of batches) {
               await Promise.all(batch.map(async (video: any) => {
                 try {
-                  const durationResponse = await fetch(`/api/youtube/duration?id=${video.youtube_video_id}`);
-                  if (durationResponse.ok) {
-                    const durationData = await durationResponse.json();
-                    if (durationData.duration && durationData.duration > 0) {
-                      updateYoutubeDuration(video.youtube_video_id, durationData.duration);
-                      console.log(`Fetched and cached duration for ${video.title}: ${durationData.duration}s`);
-                    }
+                  const durationData = await getYouTubeDuration(video.youtube_video_id);
+                  if (durationData.duration && durationData.duration > 0) {
+                    updateYoutubeDuration(video.youtube_video_id, durationData.duration);
+                    console.log(`Fetched and cached duration for ${video.title}: ${durationData.duration}s`);
                   }
                 } catch (error) {
                   console.error('Failed to load duration for', video.youtube_video_id, error);

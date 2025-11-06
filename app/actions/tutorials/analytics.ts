@@ -1,7 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
+"use server";
+
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request: NextRequest) {
+export interface UserAnalytics {
+  // Personal Stats
+  totalVideosWatched: number;
+  totalTimeSpent: string;
+  completionRate: number;
+  learningStreak: number;
+  recentActivity: number;
+  
+  // Learning Profile
+  currentTheoryLevel: string;
+  currentTechLevel: string;
+  favoriteCategory: string;
+  musicalGoals: string[];
+  
+  // Progress Metrics
+  totalAvailableVideos: number;
+  videosRemaining: number;
+  averageVideoLength: string;
+  
+  // Skill Progression
+  theoryLevelProgress: number;
+  techLevelProgress: number;
+  
+  // Recent Achievements
+  achievements: Array<{
+    title: string;
+    description: string;
+    icon: string;
+  }>;
+  
+  // Learning Insights
+  insights: string[];
+}
+
+/**
+ * Get user analytics (user can only access their own analytics)
+ */
+export async function getUserAnalytics(
+  userId: string
+): Promise<{ analytics: UserAnalytics }> {
   try {
     const supabase = await createClient();
 
@@ -12,28 +52,17 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      throw new Error('Authentication required');
     }
 
-    const { searchParams } = new URL(request.url);
-    const requestedUserId = searchParams.get('userId');
-
-    if (!requestedUserId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    if (!userId) {
+      throw new Error('User ID is required');
     }
 
     // Ensure user can only access their own analytics
-    if (requestedUserId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden - can only access own analytics' },
-        { status: 403 }
-      );
+    if (userId !== user.id) {
+      throw new Error('Forbidden - can only access own analytics');
     }
-
-    const userId = user.id;
 
     // Get user's profile and progress data
     const { data: userPath, error: pathError } = await supabase
@@ -44,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     if (pathError && pathError.code !== 'PGRST116') {
       console.error('Error fetching user path:', pathError);
-      return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
+      throw new Error('Failed to fetch user data');
     }
 
     // Get user's progress data
@@ -95,7 +124,7 @@ export async function GET(request: NextRequest) {
 
     // Get user's current playlist videos for completion rate calculation
     let totalAvailableVideos = 0;
-    let userPlaylistVideos = [];
+    let userPlaylistVideos: any[] = [];
 
     if (userPath) {
       // Get videos from user's current playlist
@@ -131,7 +160,7 @@ export async function GET(request: NextRequest) {
       const activityDates = Object.values(progress)
         .map((p: any) => p.lastWatched ? new Date(p.lastWatched) : null)
         .filter(Boolean)
-        .sort((a, b) => b.getTime() - a.getTime());
+        .sort((a, b) => b!.getTime() - a!.getTime());
 
       // Calculate streak
       let currentStreak = 0;
@@ -140,7 +169,7 @@ export async function GET(request: NextRequest) {
 
       for (let i = 0; i < 30; i++) { // Check up to 30 days back
         const hasActivity = activityDates.some(date => {
-          const activityDate = new Date(date);
+          const activityDate = new Date(date!);
           activityDate.setHours(0, 0, 0, 0);
           return activityDate.getTime() === checkDate.getTime();
         });
@@ -158,7 +187,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's favorite categories
-    const categoryStats = {};
+    const categoryStats: Record<string, number> = {};
     completedVideoIds.forEach(videoId => {
       const videoProgress = progress[videoId];
       if (videoProgress?.category) {
@@ -180,7 +209,7 @@ export async function GET(request: NextRequest) {
       .length;
 
     // Format time spent
-    const formatTimeSpent = (seconds) => {
+    const formatTimeSpent = (seconds: number) => {
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       if (hours > 0) {
@@ -197,7 +226,7 @@ export async function GET(request: NextRequest) {
     const theoryLevelIndex = skillLevels.indexOf(currentTheoryLevel);
     const techLevelIndex = skillLevels.indexOf(currentTechLevel.replace('_', ''));
 
-    const userAnalytics = {
+    const userAnalytics: UserAnalytics = {
       // Personal Stats
       totalVideosWatched,
       totalTimeSpent: formatTimeSpent(totalTimeSpent),
@@ -241,15 +270,10 @@ export async function GET(request: NextRequest) {
       ]
     };
 
-    return NextResponse.json({ analytics: userAnalytics });
+    return { analytics: userAnalytics };
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Unexpected error in getUserAnalytics:', error);
+    throw error;
   }
 }
-
-
-
-
-
 

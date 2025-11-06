@@ -6,10 +6,14 @@ export { getVideoProgress, updateVideoProgress } from './progress';
 export { getUserProfile, updateUserProfile } from './user-profile';
 export { generatePlaylist } from './generate';
 export { refreshDurations, getDurationCacheStats } from './admin';
+export { getUserAnalytics } from './analytics';
+export { getYouTubeDuration } from './youtube';
 
 // Export types
 export type { GetVideosParams, Video, GetVideosResponse } from './videos';
 export type { Playlist, GetPlaylistsResponse } from './playlists';
 export type { UserProfile } from './user-profile';
 export type { DurationCacheStats } from './admin';
+export type { UserAnalytics } from './analytics';
+export type { GetYouTubeDurationResponse } from './youtube';
 

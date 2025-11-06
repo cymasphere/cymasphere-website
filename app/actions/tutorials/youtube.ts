@@ -1,7 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+"use server";
+
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request: NextRequest) {
+export interface GetYouTubeDurationResponse {
+  duration: number;
+  cached: boolean;
+  lastUpdated: string;
+}
+
+export interface GetYouTubeDurationError {
+  error: string;
+}
+
+/**
+ * Get YouTube video duration (with caching)
+ * Matches logic from app/api/youtube/duration/route.ts exactly
+ */
+export async function getYouTubeDuration(
+  videoId: string,
+  forceRefresh?: boolean
+): Promise<GetYouTubeDurationResponse> {
   try {
     const supabase = await createClient();
 
@@ -12,17 +30,11 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      throw new Error('Authentication required');
     }
-    const { searchParams } = new URL(request.url);
-    const videoId = searchParams.get('id');
-    const forceRefresh = searchParams.get('force') === 'true';
-    
+
     if (!videoId) {
-      return NextResponse.json({ error: 'Missing video ID' }, { status: 400 });
+      throw new Error('Missing video ID');
     }
 
     // Check cache first (unless force refresh is requested)
@@ -40,11 +52,11 @@ export async function GET(request: NextRequest) {
         // Use cached duration if it's less than 24 hours old
         if (hoursSinceUpdate < 24) {
           console.log(`Using cached duration for ${videoId}: ${cachedVideo.youtube_duration_cached}s`);
-          return NextResponse.json({ 
+          return { 
             duration: cachedVideo.youtube_duration_cached,
             cached: true,
             lastUpdated: cachedVideo.youtube_duration_last_updated
-          });
+          };
         }
       }
     }
@@ -59,7 +71,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+      throw new Error('Video not found');
     }
 
     const html = await response.text();
@@ -72,11 +84,11 @@ export async function GET(request: NextRequest) {
       // Cache the duration in the database
       await cacheDuration(supabase, videoId, duration);
       
-      return NextResponse.json({ 
+      return { 
         duration,
         cached: false,
         lastUpdated: new Date().toISOString()
-      });
+      };
     }
 
     // Try alternative pattern
@@ -88,17 +100,17 @@ export async function GET(request: NextRequest) {
       // Cache the duration in the database
       await cacheDuration(supabase, videoId, duration);
       
-      return NextResponse.json({ 
+      return { 
         duration,
         cached: false,
         lastUpdated: new Date().toISOString()
-      });
+      };
     }
 
-    return NextResponse.json({ error: 'Duration not found' }, { status: 404 });
+    throw new Error('Duration not found');
   } catch (error) {
     console.error('Error fetching YouTube duration:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    throw error;
   }
 }
 
