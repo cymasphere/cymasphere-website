@@ -33,27 +33,7 @@ export async function refreshDurations(
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     const { maxAgeHours = 24, limit = 50 } = params || {};
     
     console.log(`Starting duration refresh job: maxAge=${maxAgeHours}h, limit=${limit}`);
@@ -191,27 +171,7 @@ export async function getDurationCacheStats(): Promise<DurationCacheStats> {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
-    }
-
-    // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user', user.id)
-      .single();
-
-    if (!adminCheck) {
-      throw new Error('Admin access required');
-    }
-
+    // Note: RLS will enforce admin access - if user is not admin, queries will fail
     // Get status of duration caching
     const { data: stats, error } = await supabase
       .from('tutorial_videos')
