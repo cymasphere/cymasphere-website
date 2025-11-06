@@ -75,7 +75,8 @@ export async function getAudiences(
         const { data: relations } = await supabase
           .from("email_audience_subscribers")
           .select("audience_id, subscriber_id")
-          .in("audience_id", staticIds);
+          .in("audience_id", staticIds)
+          .limit(5000); // Prevent unbounded queries for large audiences
         const counts: Record<string, number> = {};
         (relations || []).forEach((r: any) => {
           if (!r.audience_id) return;

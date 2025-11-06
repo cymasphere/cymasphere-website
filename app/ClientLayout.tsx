@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
-import ChatWidget from "@/components/chat/ChatWidget";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
+
+// Lazy load ChatWidget - not needed on first paint
+const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
+  ssr: false,
+  loading: () => null,
+});
 
 // Theme configuration
 const theme = {
@@ -47,7 +52,8 @@ const LayoutWrapper = styled.div`
   background-color: var(--background);
 `;
 
-const Main = styled(motion.main)`
+// Use simple div by default, upgrade to motion.main when animations are needed
+const Main = styled.main`
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -59,22 +65,6 @@ const Main = styled(motion.main)`
     width: 100%;
   }
 `;
-
-// Animation variants - only for initial page load
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 0,
-  },
-  in: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.2,
-      ease: "easeInOut",
-    },
-  },
-};
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -138,11 +128,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
         <AuthProvider>
           <LayoutWrapper>
             {!shouldHideHeaderFooter && <NextHeader />}
-            <Main
-              initial="initial"
-              animate="in"
-              variants={pageVariants}
-            >
+            <Main>
               {children}
             </Main>
             {!shouldHideHeaderFooter && <Footer />}

@@ -93,10 +93,12 @@ export async function getCampaigns(
     > = {};
 
     if (campaignIds.length > 0) {
+      // Batch load audience relations with limit to prevent large result sets
       const { data: relations } = await supabase
         .from("email_campaign_audiences")
         .select("campaign_id,audience_id,is_excluded")
-        .in("campaign_id", campaignIds);
+        .in("campaign_id", campaignIds)
+        .limit(1000); // Prevent unbounded queries - typical campaigns have 10-20 audiences
 
       relationsMap =
         relations?.reduce((acc: any, r: any) => {
