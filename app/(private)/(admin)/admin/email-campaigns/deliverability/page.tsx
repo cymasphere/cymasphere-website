@@ -707,9 +707,16 @@ function DeliverabilityPage() {
   }) || [];
 
   const filteredBounces = deliverabilityData?.bounces?.filter((bounce: any) => {
-    const matchesSearch = bounce.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bounce.domain.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = bounceFilter === "all" || bounce.type === bounceFilter;
+    const matchesSearch = (bounce.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         (bounce.domain?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    
+    // Infer bounce type from reason
+    const isHardBounce = bounce.reason?.toLowerCase().includes('does not exist') ||
+                         bounce.reason?.toLowerCase().includes('invalid') ||
+                         bounce.reason?.toLowerCase().includes('permanent');
+    const bounceType = isHardBounce ? 'hard' : 'soft';
+    const matchesFilter = bounceFilter === "all" || bounceType === bounceFilter;
+    
     return matchesSearch && matchesFilter;
   }) || [];
 
@@ -770,19 +777,21 @@ function DeliverabilityPage() {
         </DeliverabilityTitle>
         <DeliverabilitySubtitle>
           Monitor your email reputation, delivery rates, and manage bounces
-          {deliverabilityData?.metadata && (
+          {deliverabilityData?.overall && (
             <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              <span style={{ color: 'var(--primary)', fontWeight: '600' }}>
-                • Live data from {deliverabilityData.metadata.totalCampaigns} campaigns
-              </span>
-              {deliverabilityData.metadata.totalSent > 0 && (
-                <span style={{ marginLeft: '1rem' }}>
-                  • {deliverabilityData.metadata.totalSent.toLocaleString()} emails sent
+              {deliverabilityData.overall.totalSent > 0 && (
+                <span style={{ color: 'var(--primary)', fontWeight: '600' }}>
+                  • {(deliverabilityData.overall.totalSent || 0).toLocaleString()} emails sent
                 </span>
               )}
-              {deliverabilityData.metadata.totalSubscribers > 0 && (
+              {deliverabilityData.overall.totalDelivered > 0 && (
                 <span style={{ marginLeft: '1rem' }}>
-                  • {deliverabilityData.metadata.totalSubscribers.toLocaleString()} active subscribers
+                  • {(deliverabilityData.overall.totalDelivered || 0).toLocaleString()} delivered
+                </span>
+              )}
+              {deliverabilityData.overall.totalBounced > 0 && (
+                <span style={{ marginLeft: '1rem' }}>
+                  • {(deliverabilityData.overall.totalBounced || 0).toLocaleString()} bounced
                 </span>
               )}
             </span>
@@ -803,10 +812,10 @@ function DeliverabilityPage() {
                 <FaCheckCircle />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="success">{deliverabilityData?.overview?.deliveryRate || 0}%</CardValue>
+            <CardValue variant="success">{deliverabilityData?.overall?.deliveryRate?.toFixed(2) || 0}%</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
-              +2.3% from last month
+              {deliverabilityData?.overall?.totalSent > 0 ? 'Active' : 'No data'}
             </CardChange>
           </OverviewCard>
 
@@ -823,10 +832,10 @@ function DeliverabilityPage() {
                 <FaBan />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="danger">{deliverabilityData?.overview?.bounceRate || 0}%</CardValue>
+            <CardValue variant="danger">{deliverabilityData?.overall?.bounceRate?.toFixed(2) || 0}%</CardValue>
             <CardChange positive={false}>
               <FaArrowDown />
-              -0.5% from last month
+              {deliverabilityData?.overall?.totalBounced > 0 ? `${deliverabilityData.overall.totalBounced} bounces` : 'No bounces'}
             </CardChange>
           </OverviewCard>
 
@@ -843,10 +852,10 @@ function DeliverabilityPage() {
                 <FaSpam />
               </CardIcon>
             </CardHeader>
-            <CardValue variant="warning">{deliverabilityData?.overview?.spamRate || 0}%</CardValue>
+            <CardValue variant="warning">0%</CardValue>
             <CardChange positive={false}>
               <FaArrowUp />
-              +0.2% from last month
+              Not tracked
             </CardChange>
           </OverviewCard>
 
@@ -862,7 +871,7 @@ function DeliverabilityPage() {
                 <FaShieldAlt />
               </CardIcon>
             </CardHeader>
-            <CardValue>{deliverabilityData?.overview?.reputation || 0}</CardValue>
+            <CardValue>{Math.round(deliverabilityData?.overall?.deliveryRate || 0)}</CardValue>
             <CardChange positive={true}>
               <FaArrowUp />
               +3 points this month
@@ -947,88 +956,93 @@ function DeliverabilityPage() {
                     </TableCell>
                   </tr>
                 ) : (
-                  filteredDomains.map((domain: any, index: number) => (
-                    <TableRow
-                      key={domain.id}
-                      variants={cardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      custom={index}
-                      onClick={() => handleDomainAction('view', domain.id)}
-                    >
-                      <TableCell>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <FaGlobe style={{ color: 'var(--primary)' }} />
-                          {domain.domain}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <ReputationScore score={domain.reputation}>
-                          {domain.reputation}
-                          <ScoreBar>
-                            <ScoreFill score={domain.reputation} />
-                          </ScoreBar>
-                        </ReputationScore>
-                      </TableCell>
-                      <TableCell>{domain.delivered.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <span style={{ color: '#dc3545' }}>{domain.bounced.toLocaleString()}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span style={{ color: '#ffc107' }}>{domain.spam.toLocaleString()}</span>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(domain.lastChecked).toLocaleString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <ActionsContainer data-dropdown>
-                          <MoreButton 
-                            onClick={(e) => handleDropdownToggle(domain.id, e)}
-                            className={openDropdown === domain.id ? 'active' : ''}
-                          >
-                            <FaEllipsisV />
-                          </MoreButton>
-                          <AnimatePresence>
-                            {openDropdown === domain.id && (
-                              <DropdownMenu
-                                initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                                transition={{ duration: 0.15 }}
-                              >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('view', domain.id); }}>
-                            <FaEye />
-                                View Details
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('analyze', domain.id); }}>
-                            <FaChartLine />
-                                Analyze Performance
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('settings', domain.id); }}>
-                            <FaCog />
-                                Domain Settings
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('test', domain.id); }}>
-                                <FaFlag />
-                                Test Deliverability
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('export', domain.id); }}>
-                                <FaExternalLinkAlt />
-                                                                 Export Report
-                               </DropdownItem>
-                              </DropdownMenu>
-                            )}
-                          </AnimatePresence>
-                        </ActionsContainer>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredDomains.map((domain: any, index: number) => {
+                    const domainId = domain.domain || `domain-${index}`;
+                    // Calculate reputation score from delivery rate (0-100 scale)
+                    const reputation = Math.round(domain.deliveredRate || 0);
+                    const delivered = domain.delivered || 0;
+                    const bounced = domain.bounced || 0;
+                    const spam = 0; // Not tracked in current data
+                    
+                    return (
+                      <TableRow
+                        key={domainId}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={index}
+                        onClick={() => handleDomainAction('view', domainId)}
+                      >
+                        <TableCell>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaGlobe style={{ color: 'var(--primary)' }} />
+                            {domain.domain}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ReputationScore score={reputation}>
+                            {reputation}
+                            <ScoreBar>
+                              <ScoreFill score={reputation} />
+                            </ScoreBar>
+                          </ReputationScore>
+                        </TableCell>
+                        <TableCell>{(delivered || 0).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <span style={{ color: '#dc3545' }}>{(bounced || 0).toLocaleString()}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ color: '#ffc107' }}>{(spam || 0).toLocaleString()}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                            N/A
+                          </span>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <ActionsContainer data-dropdown>
+                            <MoreButton 
+                              onClick={(e) => handleDropdownToggle(domainId, e)}
+                              className={openDropdown === domainId ? 'active' : ''}
+                            >
+                              <FaEllipsisV />
+                            </MoreButton>
+                            <AnimatePresence>
+                              {openDropdown === domainId && (
+                                <DropdownMenu
+                                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('view', domainId); }}>
+                              <FaEye />
+                                  View Details
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('analyze', domainId); }}>
+                              <FaChartLine />
+                                  Analyze Performance
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('settings', domainId); }}>
+                              <FaCog />
+                                  Domain Settings
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('test', domainId); }}>
+                                  <FaFlag />
+                                  Test Deliverability
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleDomainAction('export', domainId); }}>
+                                  <FaExternalLinkAlt />
+                                                                   Export Report
+                                 </DropdownItem>
+                                </DropdownMenu>
+                              )}
+                            </AnimatePresence>
+                          </ActionsContainer>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -1058,76 +1072,86 @@ function DeliverabilityPage() {
                     </TableCell>
                   </tr>
                 ) : (
-                  filteredBounces.map((bounce: any, index: number) => (
-                    <TableRow
-                      key={bounce.id}
-                      variants={cardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      custom={index}
-                      onClick={() => handleBounceAction('view', bounce.id)}
-                    >
-                      <TableCell>
-                        <div>
-                          <div style={{ fontWeight: '500' }}>{bounce.email}</div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            {bounce.domain}
+                  filteredBounces.map((bounce: any, index: number) => {
+                    const bounceId = bounce.email || `bounce-${index}`;
+                    // Infer bounce type from reason (hard bounce indicators)
+                    const isHardBounce = bounce.reason?.toLowerCase().includes('does not exist') ||
+                                       bounce.reason?.toLowerCase().includes('invalid') ||
+                                       bounce.reason?.toLowerCase().includes('permanent');
+                    const bounceType = isHardBounce ? 'hard' : 'soft';
+                    const timestamp = bounce.bouncedAt || bounce.timestamp;
+                    
+                    return (
+                      <TableRow
+                        key={bounceId}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={index}
+                        onClick={() => handleBounceAction('view', bounceId)}
+                      >
+                        <TableCell>
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{bounce.email}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              {bounce.domain}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={bounce.type === 'hard' ? 'bounced' : 'spam'}>
-                          {bounce.type} bounce
-                        </StatusBadge>
-                      </TableCell>
-                      <TableCell>{bounce.reason}</TableCell>
-                      <TableCell>{bounce.campaign}</TableCell>
-                      <TableCell>
-                        {new Date(bounce.timestamp).toLocaleString()}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <ActionsContainer data-dropdown>
-                          <MoreButton 
-                            onClick={(e) => handleDropdownToggle(bounce.id, e)}
-                            className={openDropdown === bounce.id ? 'active' : ''}
-                          >
-                            <FaEllipsisV />
-                          </MoreButton>
-                          <AnimatePresence>
-                            {openDropdown === bounce.id && (
-                              <DropdownMenu
-                                initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                                transition={{ duration: 0.15 }}
-                              >
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('view', bounce.id); }}>
-                            <FaEye />
-                                View Details
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('retry', bounce.id); }}>
-                                <FaSync />
-                                Retry Send
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('suppress', bounce.id); }}>
-                            <FaBan />
-                                Suppress Email
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('export', bounce.id); }}>
-                                <FaDownload />
-                                Export Data
-                              </DropdownItem>
-                              <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('delete', bounce.id); }}>
-                            <FaTrash />
-                                                                 Delete Record
-                               </DropdownItem>
-                              </DropdownMenu>
-                            )}
-                          </AnimatePresence>
-                        </ActionsContainer>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={bounceType === 'hard' ? 'bounced' : 'spam'}>
+                            {bounceType} bounce
+                          </StatusBadge>
+                        </TableCell>
+                        <TableCell>{bounce.reason || 'Unknown reason'}</TableCell>
+                        <TableCell>{bounce.campaignName || bounce.campaign || 'N/A'}</TableCell>
+                        <TableCell>
+                          {timestamp ? new Date(timestamp).toLocaleString() : 'N/A'}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <ActionsContainer data-dropdown>
+                            <MoreButton 
+                              onClick={(e) => handleDropdownToggle(bounceId, e)}
+                              className={openDropdown === bounceId ? 'active' : ''}
+                            >
+                              <FaEllipsisV />
+                            </MoreButton>
+                            <AnimatePresence>
+                              {openDropdown === bounceId && (
+                                <DropdownMenu
+                                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('view', bounceId); }}>
+                              <FaEye />
+                                  View Details
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('retry', bounceId); }}>
+                                  <FaSync />
+                                  Retry Send
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('suppress', bounceId); }}>
+                              <FaBan />
+                                  Suppress Email
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('export', bounceId); }}>
+                                  <FaDownload />
+                                  Export Data
+                                </DropdownItem>
+                                <DropdownItem onClick={(e) => { e.stopPropagation(); handleBounceAction('delete', bounceId); }}>
+                              <FaTrash />
+                                                                   Delete Record
+                                 </DropdownItem>
+                                </DropdownMenu>
+                              )}
+                            </AnimatePresence>
+                          </ActionsContainer>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
