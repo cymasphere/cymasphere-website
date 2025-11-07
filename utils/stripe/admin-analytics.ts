@@ -305,40 +305,56 @@ export async function getLifetimeCustomers(): Promise<number> {
 }
 
 /**
- * Fetches monthly revenue (last 30 days)
+ * Fetches monthly revenue (last 30 days) using Balance Transactions API
+ * This is much more efficient than querying invoices and charges separately
  */
 export async function getMonthlyRevenue(): Promise<number> {
   try {
-    // TODO: Integrate with Stripe tables when available
-    // Using mock data for revenue calculations for now
-    const paymentIntents: unknown[] = [];
-
-    console.log("Using mock revenue data - Stripe tables not available");
-
-    const succeededPayments =
-      paymentIntents?.filter((pi) => {
-        const attrs = (
-          pi as { attrs?: { status?: string; refunded?: boolean } }
-        ).attrs;
-        return attrs?.status === "succeeded" && !attrs?.refunded;
-      }) || [];
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn(
+        "STRIPE_SECRET_KEY not set, returning 0 for monthly revenue"
+      );
+      return 0;
+    }
 
     // Calculate monthly revenue (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgo = Math.floor(
+      (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000
+    );
 
-    const recentPayments = succeededPayments.filter((pi) => {
-      const payment = pi as { created?: string; amount?: number };
-      return payment.created && new Date(payment.created) >= thirtyDaysAgo;
-    });
+    let totalRevenue = 0;
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
 
-    const monthlyPaymentRevenue =
-      recentPayments.reduce((sum: number, pi: unknown) => {
-        const payment = pi as { amount?: number };
-        return sum + (payment.amount || 0);
-      }, 0) / 100;
+    // Use Balance Transactions API - aggregates all financial transactions
+    while (hasMore) {
+      const balanceTransactions: Stripe.Response<
+        Stripe.ApiList<Stripe.BalanceTransaction>
+      > = await stripe.balanceTransactions.list({
+        created: { gte: thirtyDaysAgo },
+        limit: 100,
+        starting_after: startingAfter,
+      });
 
-    return monthlyPaymentRevenue;
+      for (const transaction of balanceTransactions.data) {
+        // Only count charge transactions (not refunds, fees, etc.)
+        // Type 'charge' represents successful payments
+        if (transaction.type === "charge" && transaction.amount > 0) {
+          totalRevenue += transaction.amount;
+        }
+      }
+
+      hasMore = balanceTransactions.has_more;
+      if (balanceTransactions.data.length > 0) {
+        startingAfter =
+          balanceTransactions.data[balanceTransactions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Convert from cents to dollars
+    return totalRevenue / 100;
   } catch (error) {
     console.error("Error fetching monthly revenue:", error);
     throw error;
@@ -346,43 +362,50 @@ export async function getMonthlyRevenue(): Promise<number> {
 }
 
 /**
- * Fetches lifetime revenue
+ * Fetches lifetime revenue using Balance Transactions API
+ * This is much more efficient than querying invoices and charges separately
  */
 export async function getLifetimeRevenue(): Promise<number> {
   try {
-    // TODO: Integrate with Stripe tables when available
-    // Using mock data for revenue calculations for now
-    const invoices: unknown[] = [];
-    const paymentIntents: unknown[] = [];
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn(
+        "STRIPE_SECRET_KEY not set, returning 0 for lifetime revenue"
+      );
+      return 0;
+    }
 
-    console.log("Using mock revenue data - Stripe tables not available");
+    let totalRevenue = 0;
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
 
-    const paidInvoices =
-      invoices?.filter((inv) => {
-        const invoice = inv as { status?: string };
-        return invoice.status === "paid";
-      }) || [];
-    const succeededPayments =
-      paymentIntents?.filter((pi) => {
-        const attrs = (
-          pi as { attrs?: { status?: string; refunded?: boolean } }
-        ).attrs;
-        return attrs?.status === "succeeded" && !attrs?.refunded;
-      }) || [];
+    // Use Balance Transactions API - aggregates all financial transactions
+    while (hasMore) {
+      const balanceTransactions: Stripe.Response<
+        Stripe.ApiList<Stripe.BalanceTransaction>
+      > = await stripe.balanceTransactions.list({
+        limit: 100,
+        starting_after: startingAfter,
+      });
 
-    const totalInvoiceRevenue =
-      paidInvoices.reduce((sum: number, inv: unknown) => {
-        const invoice = inv as { total?: number };
-        return sum + (invoice.total || 0);
-      }, 0) / 100;
-    const totalPaymentRevenue =
-      succeededPayments.reduce((sum: number, pi: unknown) => {
-        const payment = pi as { amount?: number };
-        return sum + (payment.amount || 0);
-      }, 0) / 100;
-    const lifetimeRevenue = totalInvoiceRevenue + totalPaymentRevenue;
+      for (const transaction of balanceTransactions.data) {
+        // Only count charge transactions (not refunds, fees, etc.)
+        // Type 'charge' represents successful payments
+        if (transaction.type === "charge" && transaction.amount > 0) {
+          totalRevenue += transaction.amount;
+        }
+      }
 
-    return lifetimeRevenue;
+      hasMore = balanceTransactions.has_more;
+      if (balanceTransactions.data.length > 0) {
+        startingAfter =
+          balanceTransactions.data[balanceTransactions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Convert from cents to dollars
+    return totalRevenue / 100;
   } catch (error) {
     console.error("Error fetching lifetime revenue:", error);
     throw error;
@@ -485,100 +508,152 @@ export async function getAdminUsers(): Promise<number> {
 }
 
 /**
- * Fetches recent activity for the admin dashboard
+ * Fetches recent activity for the admin dashboard using Stripe Events API
+ * This is much more efficient than querying Supabase tables
  */
 export async function getRecentActivity(
   limit: number = 10
 ): Promise<AdminActivity[]> {
   try {
-    const supabase = await createSupabaseServiceRole();
-
     const activities: AdminActivity[] = [];
 
-    // Get recent payment intents
-    const { data: paymentIntents, error: piError } = await supabase
-      .schema("stripe_tables" as any)
-      .from("stripe_payment_intents")
-      .select("*")
-      .order("created", { ascending: false })
-      .limit(limit);
+    // Use Stripe Events API for recent payment activity
+    if (process.env.STRIPE_SECRET_KEY) {
+      const events: Stripe.Response<Stripe.ApiList<Stripe.Event>> =
+        await stripe.events.list({
+          types: [
+            "charge.succeeded",
+            "invoice.payment_succeeded",
+            "customer.subscription.created",
+            "customer.subscription.deleted",
+          ],
+          limit: limit * 2, // Get more to filter and sort
+        });
 
-    if (!piError && paymentIntents) {
-      for (const pi of paymentIntents) {
-        const attrs = pi.attrs as any;
-        if (attrs?.status === "succeeded") {
-          // Get customer email
+      for (const event of events.data) {
+        const eventData = event.data.object as
+          | Stripe.Charge
+          | Stripe.Invoice
+          | Stripe.Subscription;
+
+        if (event.type === "charge.succeeded") {
+          const charge = eventData as Stripe.Charge;
+          if (charge.paid && !charge.refunded) {
+            let customerEmail = "";
+            if (charge.customer && typeof charge.customer === "string") {
+              // Fetch customer if needed
+              try {
+                const customer = await stripe.customers.retrieve(
+                  charge.customer
+                );
+                if (!customer.deleted && "email" in customer) {
+                  customerEmail = customer.email || "";
+                }
+              } catch {
+                // Customer might not exist, skip email
+              }
+            } else if (
+              charge.customer &&
+              typeof charge.customer === "object" &&
+              !charge.customer.deleted &&
+              "email" in charge.customer
+            ) {
+              customerEmail = charge.customer.email || "";
+            }
+            const amount = charge.amount || 0;
+
+            activities.push({
+              id: charge.id,
+              type: "payment",
+              description: `Payment of $${(amount / 100).toFixed(2)}${
+                customerEmail ? ` by ${customerEmail}` : ""
+              }`,
+              amount: amount / 100,
+              currency: charge.currency || "usd",
+              timestamp: new Date(charge.created * 1000).toISOString(),
+              userEmail: customerEmail,
+            });
+          }
+        } else if (event.type === "invoice.payment_succeeded") {
+          const invoice = eventData as Stripe.Invoice;
+          if (invoice.status === "paid") {
+            let customerEmail = "";
+            if (invoice.customer && typeof invoice.customer === "string") {
+              // Fetch customer if needed
+              try {
+                const customer = await stripe.customers.retrieve(
+                  invoice.customer
+                );
+                if (!customer.deleted && "email" in customer) {
+                  customerEmail = customer.email || "";
+                }
+              } catch {
+                // Customer might not exist, skip email
+              }
+            } else if (
+              invoice.customer &&
+              typeof invoice.customer === "object" &&
+              !invoice.customer.deleted &&
+              "email" in invoice.customer
+            ) {
+              customerEmail = invoice.customer.email || "";
+            }
+            const amount = invoice.amount_paid || 0;
+
+            activities.push({
+              id: invoice.id,
+              type: "subscription",
+              description: `Subscription payment of $${(amount / 100).toFixed(
+                2
+              )}${customerEmail ? ` by ${customerEmail}` : ""}`,
+              amount: amount / 100,
+              currency: invoice.currency || "usd",
+              timestamp: new Date(invoice.created * 1000).toISOString(),
+              userEmail: customerEmail,
+            });
+          }
+        } else if (event.type === "customer.subscription.deleted") {
+          const subscription = eventData as Stripe.Subscription;
           let customerEmail = "";
-          if (pi.customer) {
-            const { data: customer } = await supabase
-              .schema("stripe_tables" as any)
-              .from("stripe_customers")
-              .select("email")
-              .eq("id", pi.customer)
-              .single();
-            customerEmail = (customer as any)?.email || "";
+          if (
+            subscription.customer &&
+            typeof subscription.customer === "string"
+          ) {
+            // Fetch customer if needed
+            try {
+              const customer = await stripe.customers.retrieve(
+                subscription.customer
+              );
+              if (!customer.deleted && "email" in customer) {
+                customerEmail = customer.email || "";
+              }
+            } catch {
+              // Customer might not exist, skip email
+            }
+          } else if (
+            subscription.customer &&
+            typeof subscription.customer === "object" &&
+            !subscription.customer.deleted &&
+            "email" in subscription.customer
+          ) {
+            customerEmail = subscription.customer.email || "";
           }
 
           activities.push({
-            id: pi.id || "",
-            type:
-              attrs?.metadata?.purchase_type === "lifetime"
-                ? "payment"
-                : "payment",
-            description:
-              attrs?.metadata?.purchase_type === "lifetime"
-                ? `Lifetime purchase by ${customerEmail}`
-                : `Payment of $${((pi.amount || 0) / 100).toFixed(
-                    2
-                  )} by ${customerEmail}`,
-            amount: (pi.amount || 0) / 100,
-            currency: pi.currency || "usd",
-            timestamp: pi.created || new Date().toISOString(),
+            id: subscription.id,
+            type: "cancellation",
+            description: `Subscription cancelled${
+              customerEmail ? ` by ${customerEmail}` : ""
+            }`,
+            timestamp: new Date(subscription.canceled_at! * 1000).toISOString(),
             userEmail: customerEmail,
           });
         }
       }
     }
 
-    // Get recent invoices
-    const { data: invoices, error: invoicesError } = await supabase
-      .schema("stripe_tables" as any)
-      .from("stripe_invoices")
-      .select("*")
-      .order("period_end", { ascending: false })
-      .limit(limit);
-
-    if (!invoicesError && invoices) {
-      for (const invoice of invoices) {
-        if ((invoice as any).status === "paid") {
-          // Get customer email
-          let customerEmail = "";
-          if ((invoice as any).customer) {
-            const { data: customer } = await supabase
-              .schema("stripe_tables" as any)
-              .from("stripe_customers")
-              .select("email")
-              .eq("id", (invoice as any).customer)
-              .single();
-            customerEmail = (customer as any)?.email || "";
-          }
-
-          activities.push({
-            id: (invoice as any).id || "",
-            type: "subscription",
-            description: `Subscription payment of $${(
-              ((invoice as any).total || 0) / 100
-            ).toFixed(2)} by ${customerEmail}`,
-            amount: ((invoice as any).total || 0) / 100,
-            currency: (invoice as any).currency || "usd",
-            timestamp: (invoice as any).period_end || new Date().toISOString(),
-            userEmail: customerEmail,
-          });
-        }
-      }
-    }
-
-    // Get recent user signups
+    // Get recent user signups from Supabase (this is fast)
+    const supabase = await createSupabaseServiceRole();
     const { data: recentUsers, error: usersError } = await supabase
       .from("profiles")
       .select("*")
