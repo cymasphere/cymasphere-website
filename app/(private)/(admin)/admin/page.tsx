@@ -13,7 +13,18 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { getAdminDashboardStats, AdminDashboardStats, AdminActivity } from "@/utils/stripe/admin-analytics";
+import {
+  getTotalUsers,
+  getActiveSubscriptions,
+  getLifetimeCustomers,
+  getMonthlyRevenue,
+  getLifetimeRevenue,
+  getTrialUsers,
+  getChurnRate,
+  getAdminUsers,
+  getRecentActivity,
+  AdminActivity,
+} from "@/utils/stripe/admin-analytics";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 const Container = styled.div`
@@ -133,7 +144,7 @@ const StatLabel = styled.p`
   margin: 0 0 0.25rem 0;
 `;
 
-const StatDetail = styled.p`
+const StatDetail = styled.div`
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin: 0;
@@ -268,7 +279,7 @@ const ActivityAmount = styled.span`
   font-weight: 600;
 `;
 
-const EmptyState = styled.p`
+const EmptyState = styled.div`
   text-align: center;
   color: var(--text-secondary);
   font-size: 0.9rem;
@@ -383,29 +394,154 @@ const ActivityFilterButton = styled.button<{ $active: boolean }>`
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<AdminDashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Individual stat states
+  const [totalUsersData, setTotalUsersData] = useState<{ totalUsers: number; freeUsers: number; activeSubscriptions: number } | null>(null);
+  const [activeSubscriptionsData, setActiveSubscriptionsData] = useState<{ activeSubscriptions: number; monthlySubscribers: number; annualSubscribers: number } | null>(null);
+  const [lifetimeCustomers, setLifetimeCustomers] = useState<number | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number | null>(null);
+  const [lifetimeRevenue, setLifetimeRevenue] = useState<number | null>(null);
+  const [trialUsers, setTrialUsers] = useState<number | null>(null);
+  const [churnRate, setChurnRate] = useState<number | null>(null);
+  const [adminUsers, setAdminUsers] = useState<number | null>(null);
+  const [recentActivity, setRecentActivity] = useState<AdminActivity[]>([]);
+  
+  // Individual loading states
+  const [loadingTotalUsers, setLoadingTotalUsers] = useState(true);
+  const [loadingActiveSubscriptions, setLoadingActiveSubscriptions] = useState(true);
+  const [loadingLifetimeCustomers, setLoadingLifetimeCustomers] = useState(true);
+  const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
+  const [loadingLifetimeRevenue, setLoadingLifetimeRevenue] = useState(true);
+  const [loadingTrialUsers, setLoadingTrialUsers] = useState(true);
+  const [loadingChurnRate, setLoadingChurnRate] = useState(true);
+  const [loadingAdminUsers, setLoadingAdminUsers] = useState(true);
+  const [loadingRecentActivity, setLoadingRecentActivity] = useState(true);
+  
   const [activityFilter, setActivityFilter] = useState<AdminActivity['type'] | 'all'>('all');
 
+  // Fetch individual stats
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchTotalUsers = async () => {
       try {
-        setLoading(true);
-        const dashboardStats = await getAdminDashboardStats();
-        setStats(dashboardStats);
+        setLoadingTotalUsers(true);
+        const data = await getTotalUsers();
+        setTotalUsersData(data);
       } catch (err) {
-        console.error("Error fetching admin stats:", err);
-        setError("Failed to load dashboard statistics");
+        console.error("Error fetching total users:", err);
       } finally {
-        setLoading(false);
+        setLoadingTotalUsers(false);
       }
     };
 
-    fetchStats();
+    const fetchActiveSubscriptions = async () => {
+      try {
+        setLoadingActiveSubscriptions(true);
+        const data = await getActiveSubscriptions();
+        setActiveSubscriptionsData(data);
+      } catch (err) {
+        console.error("Error fetching active subscriptions:", err);
+      } finally {
+        setLoadingActiveSubscriptions(false);
+      }
+    };
+
+    const fetchLifetimeCustomers = async () => {
+      try {
+        setLoadingLifetimeCustomers(true);
+        const data = await getLifetimeCustomers();
+        setLifetimeCustomers(data);
+      } catch (err) {
+        console.error("Error fetching lifetime customers:", err);
+      } finally {
+        setLoadingLifetimeCustomers(false);
+      }
+    };
+
+    const fetchMonthlyRevenue = async () => {
+      try {
+        setLoadingMonthlyRevenue(true);
+        const data = await getMonthlyRevenue();
+        setMonthlyRevenue(data);
+      } catch (err) {
+        console.error("Error fetching monthly revenue:", err);
+      } finally {
+        setLoadingMonthlyRevenue(false);
+      }
+    };
+
+    const fetchLifetimeRevenue = async () => {
+      try {
+        setLoadingLifetimeRevenue(true);
+        const data = await getLifetimeRevenue();
+        setLifetimeRevenue(data);
+      } catch (err) {
+        console.error("Error fetching lifetime revenue:", err);
+      } finally {
+        setLoadingLifetimeRevenue(false);
+      }
+    };
+
+    const fetchTrialUsers = async () => {
+      try {
+        setLoadingTrialUsers(true);
+        const data = await getTrialUsers();
+        setTrialUsers(data);
+      } catch (err) {
+        console.error("Error fetching trial users:", err);
+      } finally {
+        setLoadingTrialUsers(false);
+      }
+    };
+
+    const fetchChurnRate = async () => {
+      try {
+        setLoadingChurnRate(true);
+        const data = await getChurnRate();
+        setChurnRate(data);
+      } catch (err) {
+        console.error("Error fetching churn rate:", err);
+      } finally {
+        setLoadingChurnRate(false);
+      }
+    };
+
+    const fetchAdminUsers = async () => {
+      try {
+        setLoadingAdminUsers(true);
+        const data = await getAdminUsers();
+        setAdminUsers(data);
+      } catch (err) {
+        console.error("Error fetching admin users:", err);
+      } finally {
+        setLoadingAdminUsers(false);
+      }
+    };
+
+    const fetchRecentActivity = async () => {
+      try {
+        setLoadingRecentActivity(true);
+        const data = await getRecentActivity();
+        setRecentActivity(data);
+      } catch (err) {
+        console.error("Error fetching recent activity:", err);
+      } finally {
+        setLoadingRecentActivity(false);
+      }
+    };
+
+    // Fetch all stats independently
+    fetchTotalUsers();
+    fetchActiveSubscriptions();
+    fetchLifetimeCustomers();
+    fetchMonthlyRevenue();
+    fetchLifetimeRevenue();
+    fetchTrialUsers();
+    fetchChurnRate();
+    fetchAdminUsers();
+    fetchRecentActivity();
   }, []);
 
-  if (!user || loading) {
+  if (!user) {
     return null;
   }
 
@@ -413,22 +549,6 @@ export default function AdminDashboard() {
   // if (user.profile?.subscription !== "admin") {
   //   return null;
   // }
-
-  if (error) {
-    return (
-      <Container>
-        <ErrorMessage>{error}</ErrorMessage>
-      </Container>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <Container>
-        <ErrorMessage>No data available</ErrorMessage>
-      </Container>
-    );
-  }
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -477,13 +597,13 @@ export default function AdminDashboard() {
   };
 
   const getFilteredActivities = () => {
-    if (!stats?.recentActivity) return [];
+    if (!recentActivity || recentActivity.length === 0) return [];
     
     if (activityFilter === 'all') {
-      return stats.recentActivity;
+      return recentActivity;
     }
     
-    return stats.recentActivity.filter(activity => activity.type === activityFilter);
+    return recentActivity.filter(activity => activity.type === activityFilter);
   };
 
   const getActivityTypeLabel = (type: AdminActivity['type'] | 'all') => {
@@ -502,13 +622,13 @@ export default function AdminDashboard() {
   };
 
   const getActivityTypeCount = (type: AdminActivity['type'] | 'all') => {
-    if (!stats?.recentActivity) return 0;
+    if (!recentActivity || recentActivity.length === 0) return 0;
     
     if (type === 'all') {
-      return stats.recentActivity.length;
+      return recentActivity.length;
     }
     
-    return stats.recentActivity.filter(activity => activity.type === type).length;
+    return recentActivity.filter(activity => activity.type === type).length;
   };
 
   return (
@@ -531,10 +651,20 @@ export default function AdminDashboard() {
                 <FaUsers />
               </StatIcon>
               <StatContent>
-                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.totalUsers.toLocaleString()}</StatValue>
+                <StatValue>
+                  {loadingTotalUsers ? (
+                    <StatLoadingSpinner size={20} />
+                  ) : (
+                    totalUsersData?.totalUsers.toLocaleString() ?? "0"
+                  )}
+                </StatValue>
                 <StatLabel>Total Users</StatLabel>
                 <StatDetail>
-                  {loading ? <StatLoadingSpinner size={12} /> : `${stats.freeUsers} free, ${stats.activeSubscriptions} paid`}
+                  {loadingTotalUsers ? (
+                    <StatLoadingSpinner size={12} />
+                  ) : (
+                    `${totalUsersData?.freeUsers ?? 0} free, ${totalUsersData?.activeSubscriptions ?? 0} paid`
+                  )}
                 </StatDetail>
               </StatContent>
             </StatCard>
@@ -544,10 +674,20 @@ export default function AdminDashboard() {
                 <FaMoneyBillWave />
               </StatIcon>
               <StatContent>
-                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.activeSubscriptions}</StatValue>
+                <StatValue>
+                  {loadingActiveSubscriptions ? (
+                    <StatLoadingSpinner size={20} />
+                  ) : (
+                    activeSubscriptionsData?.activeSubscriptions ?? 0
+                  )}
+                </StatValue>
                 <StatLabel>Active Subscriptions</StatLabel>
                 <StatDetail>
-                  {loading ? <StatLoadingSpinner size={12} /> : `${stats.monthlySubscribers} monthly, ${stats.annualSubscribers} annual`}
+                  {loadingActiveSubscriptions ? (
+                    <StatLoadingSpinner size={12} />
+                  ) : (
+                    `${activeSubscriptionsData?.monthlySubscribers ?? 0} monthly, ${activeSubscriptionsData?.annualSubscribers ?? 0} annual`
+                  )}
                 </StatDetail>
               </StatContent>
             </StatCard>
@@ -557,7 +697,13 @@ export default function AdminDashboard() {
                 <FaTicketAlt />
               </StatIcon>
               <StatContent>
-                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : stats.lifetimeCustomers}</StatValue>
+                <StatValue>
+                  {loadingLifetimeCustomers ? (
+                    <StatLoadingSpinner size={20} />
+                  ) : (
+                    lifetimeCustomers ?? 0
+                  )}
+                </StatValue>
                 <StatLabel>Lifetime Customers</StatLabel>
                 <StatDetail>
                   One-time purchases
@@ -570,7 +716,13 @@ export default function AdminDashboard() {
                 <FaChartLine />
               </StatIcon>
               <StatContent>
-                <StatValue>{loading ? <StatLoadingSpinner size={20} /> : formatCurrency(stats.monthlyRevenue)}</StatValue>
+                <StatValue>
+                  {loadingMonthlyRevenue ? (
+                    <StatLoadingSpinner size={20} />
+                  ) : (
+                    formatCurrency(monthlyRevenue ?? 0)
+                  )}
+                </StatValue>
                 <StatLabel>Monthly Revenue</StatLabel>
                 <StatDetail>
                   Last 30 days
@@ -658,26 +810,34 @@ export default function AdminDashboard() {
               </ActivityFilters>
             </ActivityHeader>
             <ActivityList>
-              {getFilteredActivities().map((activity, index) => (
-                <ActivityItem key={activity.id} variants={fadeIn} custom={index}>
-                  <ActivityIcon>
-                    {getActivityIcon(activity.type)}
-                  </ActivityIcon>
-                  <ActivityContent>
-                    <ActivityDescription>{activity.description}</ActivityDescription>
-                    <ActivityTime>{formatDate(activity.timestamp)}</ActivityTime>
-                  </ActivityContent>
-                  {activity.amount && (
-                    <ActivityAmount>
-                      {formatCurrency(activity.amount)}
-                    </ActivityAmount>
-                  )}
-                </ActivityItem>
-              ))}
-              {getFilteredActivities().length === 0 && (
+              {loadingRecentActivity ? (
                 <EmptyState>
-                  No {getActivityTypeLabel(activityFilter).toLowerCase()} to display
+                  <StatLoadingSpinner size={20} />
                 </EmptyState>
+              ) : (
+                <>
+                  {getFilteredActivities().map((activity, index) => (
+                    <ActivityItem key={activity.id} variants={fadeIn} custom={index}>
+                      <ActivityIcon>
+                        {getActivityIcon(activity.type)}
+                      </ActivityIcon>
+                      <ActivityContent>
+                        <ActivityDescription>{activity.description}</ActivityDescription>
+                        <ActivityTime>{formatDate(activity.timestamp)}</ActivityTime>
+                      </ActivityContent>
+                      {activity.amount && (
+                        <ActivityAmount>
+                          {formatCurrency(activity.amount)}
+                        </ActivityAmount>
+                      )}
+                    </ActivityItem>
+                  ))}
+                  {getFilteredActivities().length === 0 && (
+                    <EmptyState>
+                      No {getActivityTypeLabel(activityFilter).toLowerCase()} to display
+                    </EmptyState>
+                  )}
+                </>
               )}
             </ActivityList>
           </RecentActivitySection>
@@ -685,22 +845,46 @@ export default function AdminDashboard() {
           <AdditionalStatsGrid>
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Total Revenue</StatLabel>
-              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : formatCurrency(stats.lifetimeRevenue)}</StatValue>
+              <StatValue>
+                {loadingLifetimeRevenue ? (
+                  <StatLoadingSpinner size={16} />
+                ) : (
+                  formatCurrency(lifetimeRevenue ?? 0)
+                )}
+              </StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Trial Users</StatLabel>
-              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : stats.trialUsers}</StatValue>
+              <StatValue>
+                {loadingTrialUsers ? (
+                  <StatLoadingSpinner size={16} />
+                ) : (
+                  trialUsers ?? 0
+                )}
+              </StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Churn Rate</StatLabel>
-              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : `${stats.churnRate.toFixed(1)}%`}</StatValue>
+              <StatValue>
+                {loadingChurnRate ? (
+                  <StatLoadingSpinner size={16} />
+                ) : (
+                  `${(churnRate ?? 0).toFixed(1)}%`
+                )}
+              </StatValue>
             </AdditionalStatCard>
 
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Admin Users</StatLabel>
-              <StatValue>{loading ? <StatLoadingSpinner size={16} /> : stats.adminUsers}</StatValue>
+              <StatValue>
+                {loadingAdminUsers ? (
+                  <StatLoadingSpinner size={16} />
+                ) : (
+                  adminUsers ?? 0
+                )}
+              </StatValue>
             </AdditionalStatCard>
           </AdditionalStatsGrid>
         </motion.div>

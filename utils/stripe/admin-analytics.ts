@@ -78,6 +78,7 @@ export interface DetailedUserData extends UserData {
 
 /**
  * Fetches comprehensive admin dashboard statistics
+ * @deprecated Use individual stat functions instead for better performance
  */
 export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
   try {
@@ -129,10 +130,11 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
 
     // Calculate revenue (using mock data for now)
     const paidInvoices = invoices?.filter((inv) => inv.status === "paid") || [];
-    const succeededPayments = paymentIntents?.filter((pi) => {
-      const attrs = pi.attrs as any;
-      return attrs?.status === "succeeded" && !attrs?.refunded;
-    }) || [];
+    const succeededPayments =
+      paymentIntents?.filter((pi) => {
+        const attrs = pi.attrs as any;
+        return attrs?.status === "succeeded" && !attrs?.refunded;
+      }) || [];
 
     const totalInvoiceRevenue =
       paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) / 100;
@@ -187,6 +189,297 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     };
   } catch (error) {
     console.error("Error fetching admin dashboard stats:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches total users count and breakdown
+ */
+export async function getTotalUsers(): Promise<{
+  totalUsers: number;
+  freeUsers: number;
+  activeSubscriptions: number;
+}> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("subscription");
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      throw profilesError;
+    }
+
+    const totalUsers = profiles?.length || 0;
+
+    const subscriptionCounts =
+      profiles?.reduce((acc, profile) => {
+        const sub = profile.subscription || "none";
+        acc[sub] = (acc[sub] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+    const freeUsers = subscriptionCounts.none || 0;
+    const monthlySubscribers = subscriptionCounts.monthly || 0;
+    const annualSubscribers = subscriptionCounts.annual || 0;
+    const activeSubscriptions = monthlySubscribers + annualSubscribers;
+
+    return {
+      totalUsers,
+      freeUsers,
+      activeSubscriptions,
+    };
+  } catch (error) {
+    console.error("Error fetching total users:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches active subscriptions breakdown
+ */
+export async function getActiveSubscriptions(): Promise<{
+  activeSubscriptions: number;
+  monthlySubscribers: number;
+  annualSubscribers: number;
+}> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("subscription");
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      throw profilesError;
+    }
+
+    const subscriptionCounts =
+      profiles?.reduce((acc, profile) => {
+        const sub = profile.subscription || "none";
+        acc[sub] = (acc[sub] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+    const monthlySubscribers = subscriptionCounts.monthly || 0;
+    const annualSubscribers = subscriptionCounts.annual || 0;
+    const activeSubscriptions = monthlySubscribers + annualSubscribers;
+
+    return {
+      activeSubscriptions,
+      monthlySubscribers,
+      annualSubscribers,
+    };
+  } catch (error) {
+    console.error("Error fetching active subscriptions:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches lifetime customers count
+ */
+export async function getLifetimeCustomers(): Promise<number> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("subscription")
+      .eq("subscription", "lifetime");
+
+    if (profilesError) {
+      console.error("Error fetching lifetime customers:", profilesError);
+      throw profilesError;
+    }
+
+    return profiles?.length || 0;
+  } catch (error) {
+    console.error("Error fetching lifetime customers:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches monthly revenue (last 30 days)
+ */
+export async function getMonthlyRevenue(): Promise<number> {
+  try {
+    // TODO: Integrate with Stripe tables when available
+    // Using mock data for revenue calculations for now
+    const paymentIntents: unknown[] = [];
+
+    console.log("Using mock revenue data - Stripe tables not available");
+
+    const succeededPayments =
+      paymentIntents?.filter((pi) => {
+        const attrs = (
+          pi as { attrs?: { status?: string; refunded?: boolean } }
+        ).attrs;
+        return attrs?.status === "succeeded" && !attrs?.refunded;
+      }) || [];
+
+    // Calculate monthly revenue (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentPayments = succeededPayments.filter((pi) => {
+      const payment = pi as { created?: string; amount?: number };
+      return payment.created && new Date(payment.created) >= thirtyDaysAgo;
+    });
+
+    const monthlyPaymentRevenue =
+      recentPayments.reduce((sum: number, pi: unknown) => {
+        const payment = pi as { amount?: number };
+        return sum + (payment.amount || 0);
+      }, 0) / 100;
+
+    return monthlyPaymentRevenue;
+  } catch (error) {
+    console.error("Error fetching monthly revenue:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches lifetime revenue
+ */
+export async function getLifetimeRevenue(): Promise<number> {
+  try {
+    // TODO: Integrate with Stripe tables when available
+    // Using mock data for revenue calculations for now
+    const invoices: unknown[] = [];
+    const paymentIntents: unknown[] = [];
+
+    console.log("Using mock revenue data - Stripe tables not available");
+
+    const paidInvoices =
+      invoices?.filter((inv) => {
+        const invoice = inv as { status?: string };
+        return invoice.status === "paid";
+      }) || [];
+    const succeededPayments =
+      paymentIntents?.filter((pi) => {
+        const attrs = (
+          pi as { attrs?: { status?: string; refunded?: boolean } }
+        ).attrs;
+        return attrs?.status === "succeeded" && !attrs?.refunded;
+      }) || [];
+
+    const totalInvoiceRevenue =
+      paidInvoices.reduce((sum: number, inv: unknown) => {
+        const invoice = inv as { total?: number };
+        return sum + (invoice.total || 0);
+      }, 0) / 100;
+    const totalPaymentRevenue =
+      succeededPayments.reduce((sum: number, pi: unknown) => {
+        const payment = pi as { amount?: number };
+        return sum + (payment.amount || 0);
+      }, 0) / 100;
+    const lifetimeRevenue = totalInvoiceRevenue + totalPaymentRevenue;
+
+    return lifetimeRevenue;
+  } catch (error) {
+    console.error("Error fetching lifetime revenue:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches trial users count
+ */
+export async function getTrialUsers(): Promise<number> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("trial_expiration, subscription");
+
+    if (profilesError) {
+      console.error("Error fetching trial users:", profilesError);
+      throw profilesError;
+    }
+
+    const trialUsers =
+      profiles?.filter(
+        (p) =>
+          p.trial_expiration &&
+          new Date(p.trial_expiration) > new Date() &&
+          p.subscription === "none"
+      ).length || 0;
+
+    return trialUsers;
+  } catch (error) {
+    console.error("Error fetching trial users:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches churn rate
+ */
+export async function getChurnRate(): Promise<number> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("subscription");
+
+    if (profilesError) {
+      console.error("Error fetching profiles for churn rate:", profilesError);
+      throw profilesError;
+    }
+
+    const subscriptionCounts =
+      profiles?.reduce((acc, profile) => {
+        const sub = profile.subscription || "none";
+        acc[sub] = (acc[sub] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+    const monthlySubscribers = subscriptionCounts.monthly || 0;
+    const annualSubscribers = subscriptionCounts.annual || 0;
+    const activeSubscriptions = monthlySubscribers + annualSubscribers;
+
+    // Calculate churn rate (using mock data)
+    const canceledSubs = 0; // Mock: no canceled subscriptions
+    const churnRate =
+      activeSubscriptions > 0
+        ? (canceledSubs / (activeSubscriptions + canceledSubs)) * 100
+        : 0;
+
+    return churnRate;
+  } catch (error) {
+    console.error("Error fetching churn rate:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches admin users count
+ */
+export async function getAdminUsers(): Promise<number> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    const { count, error: adminsError } = await supabase
+      .from("admins")
+      .select("user", { count: "exact", head: true });
+
+    if (adminsError) {
+      console.error("Error fetching admin users:", adminsError);
+      throw adminsError;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
     throw error;
   }
 }
@@ -522,7 +815,10 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
         .lte("created", monthEnd.toISOString());
 
       const invoiceRevenue =
-        invoices?.reduce((sum: number, inv: any) => sum + (inv.total || 0), 0) || 0;
+        invoices?.reduce(
+          (sum: number, inv: any) => sum + (inv.total || 0),
+          0
+        ) || 0;
       const paymentRevenue =
         payments
           ?.filter((pi: any) => {
