@@ -29,7 +29,7 @@
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/stripe": "^8.0.417",
     "@vercel/speed-insights": "^1.2.0",
-    "caniuse-lite": "^1.0.30001751",
+    "caniuse-lite": "^1.0.30001754",
     "canvas": "^3.1.0",
     "csv-parser": "^3.2.0",
     "dompurify": "^3.2.5",
