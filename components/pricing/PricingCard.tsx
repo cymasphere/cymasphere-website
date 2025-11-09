@@ -519,15 +519,24 @@ export default function PricingCard({
     showTrialOptions && !hasHadStripeTrial && billingPeriod !== "lifetime";
 
   // Determine if we should show the "no trial available" message
-  // Show when: user has had a trial before, doesn't have active subscription, and would have shown trial options
+  // Show when: user has had a trial before, and billing period is not lifetime
+  // In change_plan variant or when hideButton is true, show message even if subscription is not "none"
   const shouldShowTrialMessage = useMemo(() => {
+    if (!hasHadStripeTrial || billingPeriod === "lifetime") {
+      return false;
+    }
+    
+    // If hideButton is true (modal context) or variant is change_plan, show message regardless of subscription status
+    if (hideButton || variant === "change_plan") {
+      return true;
+    }
+    
+    // Otherwise, only show if subscription is "none" and showTrialOptions is true
     return (
-      hasHadStripeTrial &&
       showTrialOptions &&
-      billingPeriod !== "lifetime" &&
       user?.profile?.subscription === "none"
     );
-  }, [hasHadStripeTrial, showTrialOptions, billingPeriod, user?.profile?.subscription]);
+  }, [hasHadStripeTrial, showTrialOptions, billingPeriod, user?.profile?.subscription, hideButton, variant]);
 
   // Handle checkout
   const handleCheckout = async (collectPaymentMethod: boolean) => {
@@ -769,6 +778,16 @@ export default function PricingCard({
               </Feature>
             ))}
           </FeaturesList>
+
+          {/* Show trial message even when hideButton is true (for modal context) */}
+          {shouldShowTrialMessage && hideButton && (
+            <TrialMessage>
+              {t(
+                "pricing.noTrialAvailable",
+                "You've already used a free trial. Start a subscription to continue enjoying all premium features."
+              )}
+            </TrialMessage>
+          )}
 
           {!hideButton && (
             <>
