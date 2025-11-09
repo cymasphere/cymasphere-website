@@ -337,6 +337,19 @@ const CheckoutButton = styled.button<{ $variant?: "primary" | "secondary" }>`
   }
 `;
 
+const TrialMessage = styled.div`
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.5;
+`;
+
 const Loader = styled.div`
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
@@ -507,6 +520,17 @@ export default function PricingCard({
   // Determine if we should show trial options
   const shouldShowTrialOptions =
     showTrialOptions && !hasHadStripeTrial && billingPeriod !== "lifetime";
+
+  // Determine if we should show the "no trial available" message
+  // Show when: user has had a trial before, doesn't have active subscription, and would have shown trial options
+  const shouldShowTrialMessage = useMemo(() => {
+    return (
+      hasHadStripeTrial &&
+      showTrialOptions &&
+      billingPeriod !== "lifetime" &&
+      user?.profile?.subscription === "none"
+    );
+  }, [hasHadStripeTrial, showTrialOptions, billingPeriod, user?.profile?.subscription]);
 
   // Handle checkout
   const handleCheckout = async (collectPaymentMethod: boolean) => {
@@ -813,10 +837,30 @@ export default function PricingCard({
                 )}
               </CheckoutButton>
             </TrialOptionContainer>
-          ) : null}
-
-          {/* Show button based on user status */}
-          {!shouldShowTrialOptions && (
+          ) : shouldShowTrialMessage ? (
+            <>
+              <TrialMessage>
+                {t(
+                  "pricing.noTrialAvailable",
+                  "You've already used a free trial. Start a subscription to continue enjoying all premium features."
+                )}
+              </TrialMessage>
+              <CheckoutButton
+                onClick={getButtonConfig.action}
+                disabled={pricesLoading || checkoutLoading !== null}
+                $variant={getButtonConfig.variant}
+              >
+                {checkoutLoading !== null ? (
+                  <>
+                    {t("pricing.processing", "Processing")} <Loader />
+                  </>
+                ) : (
+                  getButtonConfig.text
+                )}
+              </CheckoutButton>
+            </>
+          ) : (
+            /* Show button based on user status */
             <CheckoutButton
               onClick={getButtonConfig.action}
               disabled={pricesLoading || checkoutLoading !== null}

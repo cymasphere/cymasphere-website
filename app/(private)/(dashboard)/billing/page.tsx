@@ -338,7 +338,7 @@ export default function BillingPage() {
   const [isPlanChangeLoading, setIsPlanChangeLoading] = useState(false);
 
   const router = useRouter();
-  const { user: userAuth } = useAuth();
+  const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
   
   // Use centralized checkout hook
@@ -444,11 +444,11 @@ export default function BillingPage() {
     return isInTrialPeriod && !hasCompletedTrial;
   }, [isInTrialPeriod, hasCompletedTrial]);
 
-  // Function to refresh user data - mocked since we don't have access to it
+  // Function to refresh user data from AuthContext
   const refreshUser = async () => {
-    // In a real implementation, this would refresh the user data from the server
-    console.log("Refreshing user data");
-    // We'll just update lastUserUpdate to trigger data refetching
+    // Refresh user data from AuthContext which will fetch the latest profile
+    await refreshUserFromAuth();
+    // Also update lastUserUpdate to trigger data refetching in useEffect
     setLastUserUpdate(new Date());
   };
 
@@ -692,6 +692,9 @@ export default function BillingPage() {
           throw new Error(error || "Failed to update subscription");
         }
 
+        // Wait a moment for Stripe webhook to update the database
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
         // Refresh all data after subscription update
         await refreshAllData();
 
