@@ -17,8 +17,11 @@ import {
   getUpcomingInvoice,
   updateSubscription,
   createCustomerPortalSession,
-  initiateCheckout,
 } from "@/utils/stripe/actions";
+import { useCheckout } from "@/hooks/useCheckout";
+import PricingCard from "@/components/pricing/PricingCard";
+import BillingToggle from "@/components/pricing/BillingToggle";
+import { PlanType } from "@/types/stripe";
 import {
   getCustomerInvoices,
   InvoiceData,
@@ -337,6 +340,15 @@ export default function BillingPage() {
   const router = useRouter();
   const { user: userAuth } = useAuth();
   const user = userAuth!;
+  
+  // Use centralized checkout hook
+  const { initiateCheckout: initiateCheckoutHook } = useCheckout({
+    onError: (error) => {
+      setConfirmationTitle("Error");
+      setConfirmationMessage(`Failed to create checkout session: ${error}`);
+      setShowConfirmationModal(true);
+    },
+  });
 
   // Get subscription data from user object and cast to extended profile type
   const userSubscription = user.profile as ProfileWithSubscriptionDetails;
@@ -359,6 +371,10 @@ export default function BillingPage() {
 
   // State for trial status checking
   const [hasHadTrial, setHasHadTrial] = useState<boolean | null>(null);
+  
+  // State for billing period selection (for pricing card)
+  const [selectedBillingPeriodForPricing, setSelectedBillingPeriodForPricing] =
+    useState<PlanType>("monthly");
 
   // State for plan prices and discounts
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
@@ -623,97 +639,36 @@ export default function BillingPage() {
     // Handle lifetime plan separately - always goes to checkout
     if (selectedBillingPeriod === "lifetime") {
       setShowPlanModal(false);
+      setIsPlanChangeLoading(false);
       
-      try {
-        // Convert SubscriptionType to PlanType
-        const validPlanType: "monthly" | "annual" | "lifetime" = "lifetime";
-
-        const { url, error } = await initiateCheckout(
-          validPlanType,
-          user.email,
-          user.profile.customer_id || undefined,
-          // Lifetime always requires payment method
-          true
-        );
-
-        if (url) {
-          router.push(url);
-        } else {
-          console.error("Error initiating checkout:", error);
-          // Show error modal
-          setConfirmationTitle("Error");
-          setConfirmationMessage(
-            `Failed to create checkout session: ${error || "Unknown error"}`
-          );
-          setShowConfirmationModal(true);
-        }
-      } catch (e) {
-        console.error("Checkout error:", e);
-        // Show error modal
-        setConfirmationTitle("Error");
-        setConfirmationMessage(
-          `An error occurred during checkout: ${
-            e instanceof Error ? e.message : "Unknown error"
-          }`
-        );
-        setShowConfirmationModal(true);
-      } finally {
-        setIsPlanChangeLoading(false);
-      }
+      await initiateCheckoutHook("lifetime", {
+        hasHadTrial: hasHadTrial === true,
+      });
       return;
     }
 
     // For users without a plan, direct to checkout
     if (userSubscription.subscription === "none") {
       setShowPlanModal(false);
+      setIsPlanChangeLoading(false);
       
-      try {
-        // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
-        let validPlanType: "monthly" | "annual" | "lifetime";
-        if (
-          selectedBillingPeriod === "monthly" ||
-          selectedBillingPeriod === "annual" ||
-          selectedBillingPeriod === "lifetime"
-        ) {
-          validPlanType = selectedBillingPeriod;
-        } else {
-          // Default to monthly for 'admin', 'none', or any other invalid types
-          validPlanType = "monthly";
-        }
-
-        const { url, error } = await initiateCheckout(
-          validPlanType,
-          user.email,
-          user.profile.customer_id || undefined,
-          // For customers who have had trials, always require payment method
-          // For new customers, use the willProvideCard setting
-          hasHadTrial === true ? true : willProvideCard
-        );
-
-        if (url) {
-          router.push(url);
-        } else {
-          console.error("Error initiating checkout:", error);
-          // Show error modal
-          setConfirmationTitle("Error");
-          setConfirmationMessage(
-            `Failed to create checkout session: ${error || "Unknown error"}`
-          );
-          setShowConfirmationModal(true);
-        }
-      } catch (e) {
-        console.error("Checkout error:", e);
-        // Show error modal
-        setConfirmationTitle("Error");
-        setConfirmationMessage(
-          `An error occurred during checkout: ${
-            e instanceof Error ? e.message : "Unknown error"
-          }`
-        );
-        setShowConfirmationModal(true);
-      } finally {
-        setIsPlanChangeLoading(false);
+      // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
+      let validPlanType: "monthly" | "annual" | "lifetime";
+      if (
+        selectedBillingPeriod === "monthly" ||
+        selectedBillingPeriod === "annual" ||
+        selectedBillingPeriod === "lifetime"
+      ) {
+        validPlanType = selectedBillingPeriod;
+      } else {
+        // Default to monthly for 'admin', 'none', or any other invalid types
+        validPlanType = "monthly";
       }
+
+      await initiateCheckoutHook(validPlanType, {
+        willProvideCard,
+        hasHadTrial: hasHadTrial === true,
+      });
       return;
     }
 
@@ -1014,33 +969,37 @@ export default function BillingPage() {
         </AlertBanner>
       )}
 
-      <BillingCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <CardTitle>
-          <FaCrown /> {t("dashboard.billing.currentPlan", "Current Plan")}
-        </CardTitle>
-        <CardContent>
-          <PlanDetails>
-            {isSubscriptionNone(userSubscription.subscription) ? (
-              <>
-                <PlanName>{t("dashboard.billing.noPlan", "None")}</PlanName>
-                <PlanDescription>
-                  {t("dashboard.billing.noPlanDesc", "No active subscription")}
-                </PlanDescription>
-                <Button onClick={handlePlanChange} disabled={isLoadingPrices}>
-                  {isLoadingPrices ? (
-                    <span>
-                      <LoadingComponent size="20px" text="" />
-                    </span>
-                  ) : (
-                    t("dashboard.billing.subscribePlan", "Subscribe to a Plan")
-                  )}
-                </Button>
-              </>
-            ) : (
+      {isSubscriptionNone(userSubscription.subscription) ? (
+        // Show pricing card when user has no subscription
+        <div style={{ marginTop: "2rem" }}>
+          <BillingToggle
+            billingPeriod={selectedBillingPeriodForPricing}
+            onBillingPeriodChange={(period) =>
+              setSelectedBillingPeriodForPricing(period)
+            }
+            userSubscription={userSubscription.subscription}
+            showSavingsInfo={true}
+          />
+          <PricingCard
+            billingPeriod={selectedBillingPeriodForPricing}
+            onBillingPeriodChange={(period) =>
+              setSelectedBillingPeriodForPricing(period)
+            }
+            showTrialOptions={!hasHadTrial}
+          />
+        </div>
+      ) : (
+        // Show current plan card when user has a subscription
+        <BillingCard
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <CardTitle>
+            <FaCrown /> {t("dashboard.billing.currentPlan", "Current Plan")}
+          </CardTitle>
+          <CardContent>
+            <PlanDetails>
               <>
                 <PlanName>
                   {isSubscriptionLifetime(userSubscription.subscription)
@@ -1129,12 +1088,8 @@ export default function BillingPage() {
                   </div>
                 )}
               </>
-            )}
-          </PlanDetails>
+            </PlanDetails>
 
-          {isSubscriptionNone(userSubscription.subscription) ? (
-            <></>
-          ) : (
             <div
               style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
             >
@@ -1153,9 +1108,9 @@ export default function BillingPage() {
                 </Button>
               )}
             </div>
-          )}
-        </CardContent>
-      </BillingCard>
+          </CardContent>
+        </BillingCard>
+      )}
 
       {/* Only show billing history for paid subscribers */}
       {!isSubscriptionNone(userSubscription.subscription) && (
