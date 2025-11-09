@@ -541,7 +541,7 @@ function SignUp() {
         />
       </Suspense>
 
-      <Link href={`/`} passHref legacyBehavior={false}>
+      <Link href={`/`} legacyBehavior>
         <BackButton>
           <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
         </BackButton>

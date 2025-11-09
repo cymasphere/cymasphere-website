@@ -234,6 +234,7 @@ const BackButton = styled.a`
   text-decoration: none;
   font-size: 1rem;
   transition: all 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     color: var(--text);
