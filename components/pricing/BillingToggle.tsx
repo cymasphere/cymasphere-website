@@ -81,6 +81,7 @@ interface BillingToggleProps {
   onBillingPeriodChange: (period: PlanType) => void;
   userSubscription?: string;
   showSavingsInfo?: boolean;
+  variant?: "default" | "change_plan";
 }
 
 export default function BillingToggle({
@@ -88,10 +89,14 @@ export default function BillingToggle({
   onBillingPeriodChange,
   userSubscription,
   showSavingsInfo = true,
+  variant = "default",
 }: BillingToggleProps) {
   const { t } = useTranslation();
 
   const isDisabled = (period: PlanType) => {
+    // In change_plan variant, allow selecting all plans including current
+    if (variant === "change_plan") return false;
+    // In default variant, disable if user has a subscription and it's not this period
     if (!userSubscription || userSubscription === "none") return false;
     return userSubscription !== period;
   };

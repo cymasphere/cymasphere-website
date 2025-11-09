@@ -373,6 +373,8 @@ interface PricingCardProps {
   onBillingPeriodChange?: (period: PlanType) => void;
   showTrialOptions?: boolean;
   compact?: boolean;
+  hideButton?: boolean;
+  variant?: "default" | "change_plan";
 }
 
 export default function PricingCard({
@@ -380,6 +382,8 @@ export default function PricingCard({
   onBillingPeriodChange,
   showTrialOptions = false,
   compact = false,
+  hideButton = false,
+  variant = "default",
 }: PricingCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -619,6 +623,7 @@ export default function PricingCard({
         action: () =>
           handleCheckout(shouldShowTrialOptions ? trialType === "14day" : false),
         variant: "primary" as const,
+        requiresPrices: true,
       };
     }
 
@@ -627,6 +632,7 @@ export default function PricingCard({
         text: t("pricing.goToDashboard", "Go to Dashboard"),
         action: () => router.push("/dashboard"),
         variant: "primary" as const,
+        requiresPrices: false,
       };
     }
 
@@ -638,6 +644,7 @@ export default function PricingCard({
         text: t("pricing.manageSubscription", "Manage Subscription"),
         action: () => router.push("/billing"),
         variant: "primary" as const,
+        requiresPrices: false,
       };
     }
 
@@ -648,6 +655,7 @@ export default function PricingCard({
       action: () =>
         handleCheckout(shouldShowTrialOptions ? trialType === "14day" : false),
       variant: "primary" as const,
+      requiresPrices: true,
     };
   }, [
     user?.profile,
@@ -656,6 +664,7 @@ export default function PricingCard({
     t,
     billingPeriod,
     hasHadStripeTrial,
+    router,
   ]);
 
   return (
@@ -768,112 +777,119 @@ export default function PricingCard({
             ))}
           </FeaturesList>
 
-          {shouldShowTrialOptions ? (
-            <TrialOptionContainer>
-              <RadioOptionsContainer>
-                <RadioOptionTitle>
-                  <FaGift />{" "}
-                  {t(
-                    "pricing.freeTrial.chooseFree",
-                    "Choose your free trial option:"
-                  )}
-                </RadioOptionTitle>
-                <RadioButtonGroup>
-                  <RadioOption>
-                    <RadioInput
-                      type="radio"
-                      name="trialOption"
-                      value="14day"
-                      checked={trialType === "14day"}
-                      onChange={() => setTrialType("14day")}
-                    />
-                    <TrialIcon>
-                      <FaUnlock />
-                    </TrialIcon>
-                    <TrialDescription>
-                      {t(
-                        "pricing.freeTrial.withCard",
-                        "14-day trial - Add card on file"
-                      )}
-                      <br />
-                      {t(
-                        "pricing.freeTrial.noCharge",
-                        "(won't be charged until trial ends)"
-                      )}
-                    </TrialDescription>
-                  </RadioOption>
-
-                  <RadioOption>
-                    <RadioInput
-                      type="radio"
-                      name="trialOption"
-                      value="7day"
-                      checked={trialType === "7day"}
-                      onChange={() => setTrialType("7day")}
-                    />
-                    <TrialIcon>
-                      <FaUnlock />
-                    </TrialIcon>
-                    <TrialDescription>
-                      {t(
-                        "pricing.freeTrial.noCard",
-                        "7-day trial - No credit card required"
-                      )}
-                    </TrialDescription>
-                  </RadioOption>
-                </RadioButtonGroup>
-              </RadioOptionsContainer>
-
-              <CheckoutButton
-                onClick={() => handleCheckout(trialType === "14day")}
-                disabled={pricesLoading || checkoutLoading !== null}
-              >
-                {checkoutLoading !== null ? (
-                  <>
-                    {t("pricing.processing", "Processing")} <Loader />
-                  </>
-                ) : (
-                  t("pricing.freeTrial.startTrial", "Start Trial")
-                )}
-              </CheckoutButton>
-            </TrialOptionContainer>
-          ) : shouldShowTrialMessage ? (
+          {!hideButton && (
             <>
-              <TrialMessage>
-                {t(
-                  "pricing.noTrialAvailable",
-                  "You've already used a free trial. Start a subscription to continue enjoying all premium features."
-                )}
-              </TrialMessage>
-              <CheckoutButton
-                onClick={getButtonConfig.action}
-                disabled={pricesLoading || checkoutLoading !== null}
-                $variant={getButtonConfig.variant}
-              >
-                {checkoutLoading !== null ? (
-                  <>
-                    {t("pricing.processing", "Processing")} <Loader />
-                  </>
-                ) : (
-                  getButtonConfig.text
-                )}
-              </CheckoutButton>
-            </>
-          ) : (
-            /* Show button based on user status */
-            <CheckoutButton
-              onClick={getButtonConfig.action}
-              disabled={pricesLoading || checkoutLoading !== null}
-              $variant={getButtonConfig.variant}
-            >
-              {checkoutLoading !== null ? (
+              {shouldShowTrialOptions ? (
+                <TrialOptionContainer>
+                  <RadioOptionsContainer>
+                    <RadioOptionTitle>
+                      <FaGift />{" "}
+                      {t(
+                        "pricing.freeTrial.chooseFree",
+                        "Choose your free trial option:"
+                      )}
+                    </RadioOptionTitle>
+                    <RadioButtonGroup>
+                      <RadioOption>
+                        <RadioInput
+                          type="radio"
+                          name="trialOption"
+                          value="14day"
+                          checked={trialType === "14day"}
+                          onChange={() => setTrialType("14day")}
+                        />
+                        <TrialIcon>
+                          <FaUnlock />
+                        </TrialIcon>
+                        <TrialDescription>
+                          {t(
+                            "pricing.freeTrial.withCard",
+                            "14-day trial - Add card on file"
+                          )}
+                          <br />
+                          {t(
+                            "pricing.freeTrial.noCharge",
+                            "(won't be charged until trial ends)"
+                          )}
+                        </TrialDescription>
+                      </RadioOption>
+
+                      <RadioOption>
+                        <RadioInput
+                          type="radio"
+                          name="trialOption"
+                          value="7day"
+                          checked={trialType === "7day"}
+                          onChange={() => setTrialType("7day")}
+                        />
+                        <TrialIcon>
+                          <FaUnlock />
+                        </TrialIcon>
+                        <TrialDescription>
+                          {t(
+                            "pricing.freeTrial.noCard",
+                            "7-day trial - No credit card required"
+                          )}
+                        </TrialDescription>
+                      </RadioOption>
+                    </RadioButtonGroup>
+                  </RadioOptionsContainer>
+
+                  <CheckoutButton
+                    onClick={() => handleCheckout(trialType === "14day")}
+                    disabled={pricesLoading || checkoutLoading !== null}
+                  >
+                    {checkoutLoading !== null ? (
+                      <>
+                        {t("pricing.processing", "Processing")} <Loader />
+                      </>
+                    ) : (
+                      t("pricing.freeTrial.startTrial", "Start Trial")
+                    )}
+                  </CheckoutButton>
+                </TrialOptionContainer>
+              ) : shouldShowTrialMessage ? (
                 <>
-                  {t("pricing.processing", "Processing")} <Loader />
+                  <TrialMessage>
+                    {t(
+                      "pricing.noTrialAvailable",
+                      "You've already used a free trial. Start a subscription to continue enjoying all premium features."
+                    )}
+                  </TrialMessage>
+                  <CheckoutButton
+                    onClick={getButtonConfig.action}
+                    disabled={pricesLoading || checkoutLoading !== null}
+                    $variant={getButtonConfig.variant}
+                  >
+                    {checkoutLoading !== null ? (
+                      <>
+                        {t("pricing.processing", "Processing")} <Loader />
+                      </>
+                    ) : (
+                      getButtonConfig.text
+                    )}
+                  </CheckoutButton>
                 </>
               ) : (
-                getButtonConfig.text
+                /* Show button based on user status */
+                <CheckoutButton
+                  onClick={getButtonConfig.action}
+                  disabled={
+                    (getButtonConfig.requiresPrices && pricesLoading) ||
+                    checkoutLoading !== null
+                  }
+                  $variant={getButtonConfig.variant}
+                >
+                  {checkoutLoading !== null ? (
+                    <>
+                      {t("pricing.processing", "Processing")} <Loader />
+                    </>
+                  ) : (
+                    getButtonConfig.text
+                  )}
+                </CheckoutButton>
               )}
-            </CheckoutButton>
+            </>
           )}
         </CardBody>
       </PricingCardContainer>

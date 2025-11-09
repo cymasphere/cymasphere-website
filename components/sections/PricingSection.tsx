@@ -1180,7 +1180,7 @@ const ContentContainer = styled.div`
   border-radius: 12px;
   padding: 60px 40px 50px; /* Increased horizontal padding from 10px to 40px */
   box-shadow: 0 0 40px 20px rgba(0, 0, 0, 0.2);
-  pointer-events: none; /* Allow clicks to pass through to molecules */
+  pointer-events: auto; /* Enable clicks on content */
 
   /* Mobile responsive styling */
   @media (max-width: 768px) {
