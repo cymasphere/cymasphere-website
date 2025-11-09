@@ -97,22 +97,11 @@ export async function fetchIsAdmin(
     .from("admins")
     .select()
     .eq("user", id)
-    .single();
+    .maybeSingle();
 
-  console.log(`[fetchIsAdmin] Checking admin status for user ${id}:`, {
-    data,
-    error,
-  });
-
-  // Handle case where no admin record exists (PGRST116 = no rows returned)
-  if (error && error.code === "PGRST116") {
-    console.log(`[fetchIsAdmin] No admin record found for user ${id}`);
-    return { is_admin: false, error: null };
-  }
-
-  // Handle other errors
+  // Handle errors (other than "no rows found" which maybeSingle handles gracefully)
   if (error) {
-    console.log(`[fetchIsAdmin] Error checking admin status:`, error);
+    console.log(`[fetchIsAdmin] Error checking admin status for user ${id}:`, error);
     return { is_admin: false, error };
   }
 
