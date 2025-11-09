@@ -413,6 +413,7 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
   mode?: string;
   hasTrialPeriod?: boolean;
   subscription?: Stripe.Subscription | string;
+  metadata?: Record<string, string>;
   error?: string;
 }> {
   try {
@@ -470,6 +471,7 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       mode: session.mode || undefined,
       hasTrialPeriod,
       subscription,
+      metadata: session.metadata || undefined,
     };
   } catch (error) {
     console.error("Error fetching checkout session:", error);

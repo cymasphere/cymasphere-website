@@ -3,7 +3,6 @@
 import { type NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
-import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -47,29 +46,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if a user exists with this customer ID
-    let isSignedUp = false;
-    if (sessionResult.customerId) {
-      try {
-        // Use direct Supabase client initialization with environment variables
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select()
-          .eq("customer_id", sessionResult.customerId)
-          .maybeSingle();
-
-        // If a profile was found, the user is signed up
-        isSignedUp = !!profile;
-      } catch (error) {
-        console.error("Error checking user profile:", error);
-        // Continue with isSignedUp = false on error
-      }
-    }
+    // Check if user is signed up from metadata (set when checkout is initiated)
+    // If user was logged in when starting checkout, is_signed_up will be "true"
+    const isSignedUp = sessionResult.metadata?.is_signed_up === "true";
 
     // Determine if this is a free trial
     const isTrial = sessionResult.mode === "subscription" && (
