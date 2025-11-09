@@ -602,73 +602,11 @@ export default function BillingPage() {
     setShowConfirmationModal(false);
   };
 
-  // Update handleConfirmationClose to use the new refreshAllData function
+  // Handle confirmation close - now only used for errors and subscription changes
   const handleConfirmationClose = async () => {
     setShowConfirmationModal(false);
-
-    // If it was an upgrade or new plan that required checkout (lifetime plan or new subscription)
-    if (
-      confirmationTitle === "Upgrading Your Plan" ||
-      confirmationTitle === "Starting Your Plan"
-    ) {
-      if (user && selectedBillingPeriod !== "none") {
-        // Promotion codes are now handled manually by customers at checkout
-
-        // Show loading state
-        setIsLoadingPrices(true);
-
-        try {
-          // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
-          let validPlanType: "monthly" | "annual" | "lifetime";
-          if (
-            selectedBillingPeriod === "monthly" ||
-            selectedBillingPeriod === "annual" ||
-            selectedBillingPeriod === "lifetime"
-          ) {
-            validPlanType = selectedBillingPeriod;
-          } else {
-            // Default to monthly for 'admin', 'none', or any other invalid types
-            validPlanType = "monthly";
-          }
-
-          const { url, error } = await initiateCheckout(
-            validPlanType,
-            user.email,
-            user.profile.customer_id || undefined,
-            // For customers who have had trials, always require payment method
-            // For new customers, use the willProvideCard setting
-            hasHadTrial === true ? true : willProvideCard
-          );
-
-          if (url) {
-            router.push(url);
-          } else {
-            console.error("Error initiating checkout:", error);
-            // Show error modal
-            setConfirmationTitle("Error");
-            setConfirmationMessage(
-              `Failed to create checkout session: ${error || "Unknown error"}`
-            );
-            setShowConfirmationModal(true);
-          }
-        } catch (e) {
-          console.error("Checkout error:", e);
-          // Show error modal
-          setConfirmationTitle("Error");
-          setConfirmationMessage(
-            `An error occurred during checkout: ${
-              e instanceof Error ? e.message : "Unknown error"
-            }`
-          );
-          setShowConfirmationModal(true);
-        } finally {
-          setIsLoadingPrices(false);
-        }
-      }
-    } else {
-      // Always refresh all data after any confirmation dialog is closed
-      await refreshAllData();
-    }
+    // Refresh all data after confirmation dialog is closed
+    await refreshAllData();
   };
 
   // Update handleConfirmPlanChange to use refreshAllData
@@ -684,61 +622,98 @@ export default function BillingPage() {
 
     // Handle lifetime plan separately - always goes to checkout
     if (selectedBillingPeriod === "lifetime") {
-      setConfirmationTitle(
-        t("dashboard.billing.upgradingPlan", "Upgrading Your Plan")
-      );
-      setConfirmationMessage(
-        t(
-          "dashboard.billing.lifetimeUpgradeMessage",
-          "You're upgrading to the lifetime plan. You'll be redirected to checkout to complete your purchase."
-        )
-      );
-      setShowConfirmationModal(true);
       setShowPlanModal(false);
-      setIsPlanChangeLoading(false);
+      
+      try {
+        // Convert SubscriptionType to PlanType
+        const validPlanType: "monthly" | "annual" | "lifetime" = "lifetime";
+
+        const { url, error } = await initiateCheckout(
+          validPlanType,
+          user.email,
+          user.profile.customer_id || undefined,
+          // Lifetime always requires payment method
+          true
+        );
+
+        if (url) {
+          router.push(url);
+        } else {
+          console.error("Error initiating checkout:", error);
+          // Show error modal
+          setConfirmationTitle("Error");
+          setConfirmationMessage(
+            `Failed to create checkout session: ${error || "Unknown error"}`
+          );
+          setShowConfirmationModal(true);
+        }
+      } catch (e) {
+        console.error("Checkout error:", e);
+        // Show error modal
+        setConfirmationTitle("Error");
+        setConfirmationMessage(
+          `An error occurred during checkout: ${
+            e instanceof Error ? e.message : "Unknown error"
+          }`
+        );
+        setShowConfirmationModal(true);
+      } finally {
+        setIsPlanChangeLoading(false);
+      }
       return;
     }
 
     // For users without a plan, direct to checkout
     if (userSubscription.subscription === "none") {
-      setConfirmationTitle(
-        t("dashboard.billing.startingPlan", "Starting Your Plan")
-      );
-      // Show different messages based on trial history
-      if (hasHadTrial === true) {
-        setConfirmationMessage(
-          t(
-            "dashboard.billing.startingPlanNoTrialMessage",
-            "You're subscribing to the {{plan}} plan. You'll be charged immediately since you've used a trial before.",
-            {
-              plan: selectedBillingPeriod,
-            }
-          )
-        );
-      } else {
-        setConfirmationMessage(
-          t(
-            "dashboard.billing.startingPlanMessage",
-            "You're starting a {{trialDays}}-day free trial of the {{plan}} plan. {{paymentMessage}}",
-            {
-              trialDays: willProvideCard ? "14" : "7",
-              plan: selectedBillingPeriod,
-              paymentMessage: willProvideCard
-                ? t(
-                    "dashboard.billing.withCardMessage",
-                    "You'll be asked to provide your payment details, but won't be charged until your trial ends."
-                  )
-                : t(
-                    "dashboard.billing.withoutCardMessage",
-                    "You can use basic features without providing payment information."
-                  ),
-            }
-          )
-        );
-      }
-      setShowConfirmationModal(true);
       setShowPlanModal(false);
-      setIsPlanChangeLoading(false);
+      
+      try {
+        // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
+        let validPlanType: "monthly" | "annual" | "lifetime";
+        if (
+          selectedBillingPeriod === "monthly" ||
+          selectedBillingPeriod === "annual" ||
+          selectedBillingPeriod === "lifetime"
+        ) {
+          validPlanType = selectedBillingPeriod;
+        } else {
+          // Default to monthly for 'admin', 'none', or any other invalid types
+          validPlanType = "monthly";
+        }
+
+        const { url, error } = await initiateCheckout(
+          validPlanType,
+          user.email,
+          user.profile.customer_id || undefined,
+          // For customers who have had trials, always require payment method
+          // For new customers, use the willProvideCard setting
+          hasHadTrial === true ? true : willProvideCard
+        );
+
+        if (url) {
+          router.push(url);
+        } else {
+          console.error("Error initiating checkout:", error);
+          // Show error modal
+          setConfirmationTitle("Error");
+          setConfirmationMessage(
+            `Failed to create checkout session: ${error || "Unknown error"}`
+          );
+          setShowConfirmationModal(true);
+        }
+      } catch (e) {
+        console.error("Checkout error:", e);
+        // Show error modal
+        setConfirmationTitle("Error");
+        setConfirmationMessage(
+          `An error occurred during checkout: ${
+            e instanceof Error ? e.message : "Unknown error"
+          }`
+        );
+        setShowConfirmationModal(true);
+      } finally {
+        setIsPlanChangeLoading(false);
+      }
       return;
     }
 
