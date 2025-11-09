@@ -322,19 +322,6 @@ export async function hasCustomerHadTrial(
       limit: 100,
     });
 
-    console.log("[hasCustomerHadTrial] Found", subscriptions.data.length, "subscriptions for customer:", customerId);
-    
-    // Log subscription details
-    subscriptions.data.forEach((sub, index) => {
-      console.log(`[hasCustomerHadTrial] Subscription ${index + 1}:`, {
-        id: sub.id,
-        status: sub.status,
-        trial_start: sub.trial_start,
-        trial_end: sub.trial_end,
-        created: sub.created,
-      });
-    });
-
     // Check if any subscription had a trial period
     const hasHadTrial = subscriptions.data.some(
       (sub) =>
@@ -342,8 +329,6 @@ export async function hasCustomerHadTrial(
         sub.trial_end !== null ||
         sub.status === "trialing"
     );
-
-    console.log("[hasCustomerHadTrial] Result:", hasHadTrial, "for customer:", customerId);
 
     return hasHadTrial;
   } catch (error) {
@@ -366,17 +351,14 @@ export async function checkCustomerTrialStatus(email: string): Promise<{
   try {
     // Find or create customer
     const customerId = await findOrCreateCustomer(email);
-    console.log("[checkCustomerTrialStatus] Customer ID for email:", email, "->", customerId);
 
     // Check trial history
     const hasHadTrial = await hasCustomerHadTrial(customerId);
-    console.log("[checkCustomerTrialStatus] Has had trial:", hasHadTrial, "for customer:", customerId);
 
     const result = {
       hasHadTrial,
       customerId,
     };
-    console.log("[checkCustomerTrialStatus] Returning result:", result);
 
     return result;
   } catch (error) {
