@@ -432,15 +432,8 @@ export default function PricingCard({
       }
 
       try {
-        const response = await fetch("/api/stripe/check-trial-status", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: user.email }),
-        });
-
-        const result = await response.json();
+        const { checkCustomerTrialStatus } = await import("@/utils/stripe/actions");
+        const result = await checkCustomerTrialStatus(user.email);
 
         if (result.error) {
           setHasHadStripeTrial(false);

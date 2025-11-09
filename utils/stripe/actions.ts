@@ -322,13 +322,30 @@ export async function hasCustomerHadTrial(
       limit: 100,
     });
 
+    console.log("[hasCustomerHadTrial] Found", subscriptions.data.length, "subscriptions for customer:", customerId);
+    
+    // Log subscription details
+    subscriptions.data.forEach((sub, index) => {
+      console.log(`[hasCustomerHadTrial] Subscription ${index + 1}:`, {
+        id: sub.id,
+        status: sub.status,
+        trial_start: sub.trial_start,
+        trial_end: sub.trial_end,
+        created: sub.created,
+      });
+    });
+
     // Check if any subscription had a trial period
-    return subscriptions.data.some(
+    const hasHadTrial = subscriptions.data.some(
       (sub) =>
         sub.trial_start !== null ||
         sub.trial_end !== null ||
         sub.status === "trialing"
     );
+
+    console.log("[hasCustomerHadTrial] Result:", hasHadTrial, "for customer:", customerId);
+
+    return hasHadTrial;
   } catch (error) {
     console.error("Error checking customer trial history:", error);
     // If we can't check, assume they haven't had a trial to be safe
@@ -337,7 +354,7 @@ export async function hasCustomerHadTrial(
 }
 
 /**
- * Checks if a customer has previously had a trial subscription by email
+ * Server action: Checks if a customer has previously had a trial subscription by email
  * @param email Customer email to check
  * @returns Object with hasHadTrial boolean and customerId
  */
@@ -349,14 +366,19 @@ export async function checkCustomerTrialStatus(email: string): Promise<{
   try {
     // Find or create customer
     const customerId = await findOrCreateCustomer(email);
+    console.log("[checkCustomerTrialStatus] Customer ID for email:", email, "->", customerId);
 
     // Check trial history
     const hasHadTrial = await hasCustomerHadTrial(customerId);
+    console.log("[checkCustomerTrialStatus] Has had trial:", hasHadTrial, "for customer:", customerId);
 
-    return {
+    const result = {
       hasHadTrial,
       customerId,
     };
+    console.log("[checkCustomerTrialStatus] Returning result:", result);
+
+    return result;
   } catch (error) {
     console.error("Error checking customer trial status:", error);
     return {
