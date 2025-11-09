@@ -482,6 +482,8 @@ function SignUp() {
             message: result.error.message,
           })
         );
+        // Only stop loading when there's an error
+        setLoadingState(false);
       } else if (result.data && result.data.user) {
         // Check for empty identities array which indicates an existing confirmed user
         if (
@@ -498,6 +500,7 @@ function SignUp() {
         }
 
         // New user successfully created
+        // Keep loading state active until redirect happens
         router.push(
           `/signup-success?name=${encodeURIComponent(
             formData.firstName.trim()
@@ -510,7 +513,7 @@ function SignUp() {
       setError(
         t("signup.errors.unknown", "{{message}}", { message: errorMessage })
       );
-    } finally {
+      // Stop loading when an error occurs
       setLoadingState(false);
     }
   };
@@ -725,7 +728,7 @@ function SignUp() {
 
           <Button
             type="submit"
-            disabled={loadingState}
+            disabled={loadingState || !!user}
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
