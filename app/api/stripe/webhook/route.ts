@@ -6,6 +6,59 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+/**
+ * Track Meta conversion event from server-side (webhook)
+ * This is a server-side helper that calls the Meta API endpoint directly
+ */
+async function trackMetaConversionFromWebhook(
+  eventName: string,
+  userData: {
+    email?: string;
+    userId?: string;
+  },
+  customData?: Record<string, any>,
+  eventId?: string
+): Promise<void> {
+  try {
+    // Only track if Meta is configured
+    if (!process.env.NEXT_PUBLIC_META_PIXEL_ID || !process.env.META_CONVERSIONS_API_TOKEN) {
+      console.log('⚠️ Meta not configured, skipping conversion tracking');
+      return;
+    }
+
+    // Call the Meta API endpoint
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.cymasphere.com';
+    const response = await fetch(`${baseUrl}/api/meta/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        eventName,
+        userData: {
+          email: userData.email,
+          userId: userData.userId,
+          clientIp: '0.0.0.0', // Webhook doesn't have real IP
+          clientUserAgent: 'Stripe-Webhook/1.0',
+        },
+        customData,
+        eventId,
+        url: baseUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error(`❌ Failed to track ${eventName} to Meta:`, error);
+    } else {
+      console.log(`✅ Tracked ${eventName} to Meta successfully`);
+    }
+  } catch (error) {
+    console.error(`❌ Error tracking ${eventName} to Meta:`, error);
+    // Don't throw - tracking failure shouldn't break webhook processing
+  }
+}
+
 export async function POST(request: NextRequest) {
   const sig = request.headers.get("stripe-signature") as string;
   let event: Stripe.Event;
@@ -75,14 +128,23 @@ export async function POST(request: NextRequest) {
 
         // Find subscriber by customer ID
         let subscriber_id = null;
+        let profile = null;
+        let customerEmail: string | undefined;
+        
         if (charge.customer) {
           const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer.id;
           
-          const { data: profile } = await supabase
+          // Get customer email from Stripe
+          const customer = await stripe.customers.retrieve(customerId);
+          customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email || undefined : undefined;
+          
+          const { data: profileData } = await supabase
             .from("profiles")
-            .select("id")
+            .select("id, email")
             .eq("customer_id", customerId)
             .single();
+
+          profile = profileData;
 
           if (profile) {
             const { data: subscriber } = await supabase
@@ -93,6 +155,49 @@ export async function POST(request: NextRequest) {
             
             if (subscriber) {
               subscriber_id = subscriber.id;
+            }
+          }
+        }
+
+        // Check if this charge is for a subscription by looking at the invoice
+        let subscriptionId: string | undefined;
+        let subscriptionType: string | undefined;
+        
+        if (charge.invoice) {
+          const invoice = await stripe.invoices.retrieve(charge.invoice as string);
+          if (invoice.subscription) {
+            subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+            
+            // Get subscription details to determine type
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const subscriptionItem = subscription.items.data[0];
+            
+            if (subscriptionItem) {
+              const priceId = subscriptionItem.price.id;
+              subscriptionType = 
+                priceId === process.env.STRIPE_PRICE_ID_MONTHLY 
+                  ? "monthly" 
+                  : priceId === process.env.STRIPE_PRICE_ID_ANNUAL
+                  ? "annual" 
+                  : "unknown";
+              
+              // Track paid subscription to Meta (differentiate monthly vs annual)
+              await trackMetaConversionFromWebhook(
+                'Purchase', // Meta event for paid subscription
+                {
+                  email: customerEmail || profile?.email,
+                  userId: profile?.id,
+                },
+                {
+                  subscription_type: subscriptionType,
+                  subscription_id: subscriptionId,
+                  price_id: priceId,
+                  currency: charge.currency.toUpperCase(),
+                  value: charge.amount / 100, // Convert cents to dollars
+                  payment_method: charge.payment_method_details?.type,
+                },
+                `subscription_paid_${charge.id}`
+              );
             }
           }
         }
@@ -188,14 +293,23 @@ export async function POST(request: NextRequest) {
 
         // Find subscriber by customer ID
         let subscriber_id = null;
+        let profile = null;
+        let customerEmail: string | undefined;
+        
         if (subscription.customer) {
           const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
           
-          const { data: profile } = await supabase
+          // Get customer email from Stripe
+          const customer = await stripe.customers.retrieve(customerId);
+          customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email || undefined : undefined;
+          
+          const { data: profileData } = await supabase
             .from("profiles")
-            .select("id")
+            .select("id, email")
             .eq("customer_id", customerId)
             .single();
+
+          profile = profileData;
 
           if (profile) {
             const { data: subscriber } = await supabase
@@ -213,6 +327,40 @@ export async function POST(request: NextRequest) {
         // Get the product ID from the subscription items
         const subscriptionItem = subscription.items.data[0];
         if (subscriptionItem && subscriber_id && event.type === "customer.subscription.created") {
+          // Determine subscription type (monthly vs annual)
+          const priceId = subscriptionItem.price.id;
+          const subscriptionType = 
+            priceId === process.env.STRIPE_PRICE_ID_MONTHLY 
+              ? "monthly" 
+              : priceId === process.env.STRIPE_PRICE_ID_ANNUAL
+              ? "annual" 
+              : "unknown";
+
+          // Check if this is a trial initiation
+          const hasTrial = subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000);
+          
+          if (hasTrial) {
+            // Track trial initiation - all trials as one event (as per marketing requirements)
+            await trackMetaConversionFromWebhook(
+              'Subscribe', // Meta event for subscription start
+              {
+                email: customerEmail || profile?.email,
+                userId: profile?.id,
+              },
+              {
+                subscription_type: subscriptionType,
+                trial_days: subscription.trial_end 
+                  ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
+                  : undefined,
+                subscription_id: subscription.id,
+                price_id: priceId,
+                currency: subscription.currency,
+                value: subscriptionItem.price.unit_amount ? (subscriptionItem.price.unit_amount / 100) : undefined,
+              },
+              `trial_${subscription.id}`
+            );
+          }
+
           // Create automation event for new subscription
           await supabase.rpc('create_automation_event', {
             p_event_type: 'purchase',

@@ -132,3 +132,4 @@ If GA4 tags aren't firing:
 3. Make sure triggers are set to "All Pages"
 4. Check GA4 dashboard hasn't blocked the data stream
 
+

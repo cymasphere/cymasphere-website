@@ -1,0 +1,65 @@
+"use server";
+
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+/**
+ * API endpoint to get checkout session details for dataLayer tracking
+ * Returns JSON instead of redirecting
+ */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const sessionId = searchParams.get("session_id");
+
+  if (!sessionId) {
+    return NextResponse.json(
+      { error: "Missing session_id parameter" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Retrieve the session directly to get amount_total for one-time payments
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription", "payment_intent"],
+    });
+
+    // Extract value and currency
+    let value: number | null = null;
+    let currency: string = "USD";
+    let isTrial = false;
+
+    if (session.mode === "subscription" && session.subscription) {
+      const subscription = typeof session.subscription === "string"
+        ? await stripe.subscriptions.retrieve(session.subscription)
+        : session.subscription;
+      
+      isTrial = !!subscription.trial_end;
+      
+      if (!isTrial && subscription.items?.data?.[0]?.price) {
+        value = (subscription.items.data[0].price.unit_amount || 0) / 100;
+        currency = subscription.currency?.toUpperCase() || 'USD';
+      }
+    } else if (session.mode === "payment" && session.amount_total) {
+      // For one-time payments (lifetime), use amount_total
+      value = session.amount_total / 100; // Convert cents to dollars
+      currency = session.currency?.toUpperCase() || 'USD';
+    }
+
+    return NextResponse.json({
+      success: true,
+      value,
+      currency,
+      isTrial,
+    });
+  } catch (error) {
+    console.error("Error fetching checkout session details:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch session details" },
+      { status: 500 }
+    );
+  }
+}
+

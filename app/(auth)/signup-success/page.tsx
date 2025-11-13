@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import styled from "styled-components";
@@ -133,6 +133,16 @@ export default function SignupSuccess() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name") || "there";
   const email = searchParams.get("email") || "your email";
+
+  // Track registration success in dataLayer
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'registration_success'
+      });
+    }
+  }, []);
 
   return (
     <PageContainer>

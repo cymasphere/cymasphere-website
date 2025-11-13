@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -128,6 +128,74 @@ function CheckoutSuccessContent() {
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   const isTrial = searchParams.get("isTrial") === "true";
   const isLoggedIn = !!user;
+  const sessionId = searchParams.get("session_id");
+  const valueParam = searchParams.get("value");
+  const currencyParam = searchParams.get("currency");
+  const [subscriptionValue, setSubscriptionValue] = useState<number | null>(
+    valueParam ? parseFloat(valueParam) : null
+  );
+  const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
+    currencyParam || "USD"
+  );
+
+  // Track dataLayer events
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    window.dataLayer = window.dataLayer || [];
+
+    if (isTrial) {
+      // Track free trial
+      window.dataLayer.push({
+        event: 'free_trial'
+      });
+    } else if (subscriptionValue !== null) {
+      // Track paid subscription with value and currency
+      window.dataLayer.push({
+        event: 'subscription_success',
+        subscription: {
+          value: subscriptionValue,
+          currency: subscriptionCurrency
+        }
+      });
+    } else if (sessionId && !isTrial) {
+      // If we have session_id but no value, fetch it from API
+      fetch(`/api/checkout-session-details?session_id=${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.value !== null) {
+            setSubscriptionValue(data.value);
+            setSubscriptionCurrency(data.currency || 'USD');
+            window.dataLayer.push({
+              event: 'subscription_success',
+              subscription: {
+                value: data.value,
+                currency: data.currency || 'USD'
+              }
+            });
+          } else {
+            // Fallback: track without value
+            window.dataLayer.push({
+              event: 'subscription_success',
+              subscription: {
+                value: 0,
+                currency: 'USD'
+              }
+            });
+          }
+        })
+        .catch(() => {
+          // If we can't fetch, still track the event without value
+          window.dataLayer.push({
+            event: 'subscription_success',
+            subscription: {
+              value: 0,
+              currency: 'USD'
+            }
+          });
+        });
+    }
+  }, [isTrial, subscriptionValue, subscriptionCurrency, sessionId]);
 
   const handleContinue = () => {
     if (isLoggedIn) {

@@ -58,9 +58,38 @@ export async function GET(request: NextRequest) {
        sessionResult.subscription.trial_end)
     );
 
+    // Get subscription value and currency for dataLayer tracking
+    let subscriptionValue: number | undefined;
+    let subscriptionCurrency: string | undefined;
+
+    if (!isTrial && sessionResult.subscription && typeof sessionResult.subscription !== 'string') {
+      // Get the amount from the subscription
+      const subscription = sessionResult.subscription;
+      if (subscription.items?.data?.[0]?.price) {
+        subscriptionValue = (subscription.items.data[0].price.unit_amount || 0) / 100; // Convert cents to dollars
+        subscriptionCurrency = subscription.currency?.toUpperCase() || 'USD';
+      }
+    } else if (sessionResult.mode === 'payment') {
+      // For one-time payments (lifetime), we need to get amount_total from the session
+      // The session object should have amount_total, but we need to retrieve it with the session
+      // For now, we'll let the frontend fetch it via the session details API
+    }
+
+    // Build redirect URL with all necessary parameters
+    const params = new URLSearchParams({
+      isSignedUp: isSignedUp.toString(),
+      isTrial: isTrial.toString(),
+      session_id: sessionId,
+    });
+
+    if (subscriptionValue !== undefined && subscriptionCurrency) {
+      params.append('value', subscriptionValue.toString());
+      params.append('currency', subscriptionCurrency);
+    }
+
     // Payment successful, redirect to success page with appropriate parameters
     return NextResponse.redirect(
-      new URL(`/checkout-success?isSignedUp=${isSignedUp}&isTrial=${isTrial}`, request.url)
+      new URL(`/checkout-success?${params.toString()}`, request.url)
     );
   } catch (error) {
     console.error("Error processing checkout:", error);
