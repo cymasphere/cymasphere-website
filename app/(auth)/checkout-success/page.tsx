@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -123,11 +124,15 @@ const BackButton = styled.button`
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   const isTrial = searchParams.get("isTrial") === "true";
+  const isLoggedIn = !!user;
 
   const handleContinue = () => {
-    if (isSignedUp) {
+    if (isLoggedIn) {
+      router.push("/downloads");
+    } else if (isSignedUp) {
       router.push("/downloads");
     } else {
       router.push("/signup");
@@ -179,7 +184,7 @@ function CheckoutSuccessContent() {
         )}
 
         <BackButton onClick={handleContinue}>
-          {isSignedUp ? "Go to Downloads" : "Create Your Account"}
+          {isLoggedIn || isSignedUp ? "Download Cymasphere" : "Create Your Account"}
         </BackButton>
       </ContentContainer>
     </PageContainer>

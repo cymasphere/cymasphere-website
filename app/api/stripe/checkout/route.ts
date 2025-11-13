@@ -44,11 +44,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Determine if user is signed up (has a customerId, meaning they're logged in)
+    const isSignedUp = !!customerId;
+
     // Create checkout session with or without customer ID
     const result = await createCheckoutSession(
       resolved_customer_id,
       planType,
-      collectPaymentMethod
+      collectPaymentMethod,
+      isSignedUp
     );
 
     return NextResponse.json(result);
@@ -125,7 +129,8 @@ async function hasCustomerHadTrial(customerId: string): Promise<boolean> {
 async function createCheckoutSession(
   customerId: string | undefined,
   planType: PlanType,
-  collectPaymentMethod: boolean = false
+  collectPaymentMethod: boolean = false,
+  isSignedUp: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
     // Return error if customer ID is not provided
@@ -187,6 +192,7 @@ async function createCheckoutSession(
         plan_type: planType,
         customer_id: customerId,
         collect_payment_method: collectPaymentMethod.toString(),
+        is_signed_up: isSignedUp.toString(),
       },
     };
 

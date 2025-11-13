@@ -323,12 +323,14 @@ export async function hasCustomerHadTrial(
     });
 
     // Check if any subscription had a trial period
-    return subscriptions.data.some(
+    const hasHadTrial = subscriptions.data.some(
       (sub) =>
         sub.trial_start !== null ||
         sub.trial_end !== null ||
         sub.status === "trialing"
     );
+
+    return hasHadTrial;
   } catch (error) {
     console.error("Error checking customer trial history:", error);
     // If we can't check, assume they haven't had a trial to be safe
@@ -337,7 +339,7 @@ export async function hasCustomerHadTrial(
 }
 
 /**
- * Checks if a customer has previously had a trial subscription by email
+ * Server action: Checks if a customer has previously had a trial subscription by email
  * @param email Customer email to check
  * @returns Object with hasHadTrial boolean and customerId
  */
@@ -353,10 +355,12 @@ export async function checkCustomerTrialStatus(email: string): Promise<{
     // Check trial history
     const hasHadTrial = await hasCustomerHadTrial(customerId);
 
-    return {
+    const result = {
       hasHadTrial,
       customerId,
     };
+
+    return result;
   } catch (error) {
     console.error("Error checking customer trial status:", error);
     return {
@@ -413,6 +417,7 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
   mode?: string;
   hasTrialPeriod?: boolean;
   subscription?: Stripe.Subscription | string;
+  metadata?: Record<string, string>;
   error?: string;
 }> {
   try {
@@ -470,6 +475,7 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       mode: session.mode || undefined,
       hasTrialPeriod,
       subscription,
+      metadata: session.metadata || undefined,
     };
   } catch (error) {
     console.error("Error fetching checkout session:", error);

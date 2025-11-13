@@ -54,16 +54,31 @@ export async function customerPurchasedProFromSupabase(
       .order("created", { ascending: false });
 
     if (piError) {
-      console.error("Error querying payment intents:", piError);
-      return {
-        success: false,
-        subscription: "none",
-        error: piError,
-      };
+      // Check if it's a Stripe API error (400 Bad Request usually means invalid customer ID)
+      const errorMessage = piError.message || String(piError);
+      if (
+        errorMessage.includes("400 Bad Request") ||
+        errorMessage.includes("request middleware failed")
+      ) {
+        // Invalid customer ID or customer doesn't exist in Stripe
+        // Continue with empty payment intents array instead of returning error
+        console.warn(
+          `Could not fetch payment intents for customer ${customer_id}: Customer may not exist in Stripe`
+        );
+        // Continue with empty array - will check subscriptions below
+      } else {
+        console.error("Error querying payment intents:", piError);
+        return {
+          success: false,
+          subscription: "none",
+          error: piError,
+        };
+      }
     }
 
     // Check payment intents for lifetime purchase
-    for (const paymentIntent of paymentIntents) {
+    const safePaymentIntents = paymentIntents || [];
+    for (const paymentIntent of safePaymentIntents) {
       const attrs =
         ((paymentIntent as any).attrs as {
           metadata?: { purchase_type?: string };
@@ -92,13 +107,34 @@ export async function customerPurchasedProFromSupabase(
       .eq("customer", customer_id)
       .order("current_period_end", { ascending: false });
 
+    let safeSubscriptions = subscriptions || [];
+
     if (subscriptionsError) {
-      console.error("Error querying stripe_subscriptions:", subscriptionsError);
-      return {
-        success: false,
-        subscription: "none",
-        error: subscriptionsError,
-      };
+      // Check if it's a Stripe API error (400 Bad Request usually means invalid customer ID)
+      const errorMessage =
+        subscriptionsError.message || String(subscriptionsError);
+      if (
+        errorMessage.includes("400 Bad Request") ||
+        errorMessage.includes("request middleware failed")
+      ) {
+        // Invalid customer ID or customer doesn't exist in Stripe
+        // Continue with empty subscriptions array
+        console.warn(
+          `Could not fetch subscriptions for customer ${customer_id}: Customer may not exist in Stripe`
+        );
+        safeSubscriptions = [];
+        // Continue with empty array - will return "none" subscription below
+      } else {
+        console.error(
+          "Error querying stripe_subscriptions:",
+          subscriptionsError
+        );
+        return {
+          success: false,
+          subscription: "none",
+          error: subscriptionsError,
+        };
+      }
     }
 
     // Get subscription details from the subscriptions
@@ -108,9 +144,10 @@ export async function customerPurchasedProFromSupabase(
     let hasActiveSubscription = false;
     let activeSubscriptionType: "monthly" | "annual" | undefined;
 
-    for (const subscription of subscriptions || []) {
+    for (const subscription of safeSubscriptions) {
       // Skip canceled or incomplete subscriptions
-      const attrs = (subscription as any).attrs as StripeSubscriptionAttrs | null;
+      const attrs = (subscription as any)
+        .attrs as StripeSubscriptionAttrs | null;
 
       switch (attrs?.status) {
         case "active":
@@ -135,7 +172,9 @@ export async function customerPurchasedProFromSupabase(
 
           // Set expiration date
           if ((subscription as any).current_period_end) {
-            current_period_end = new Date((subscription as any).current_period_end);
+            current_period_end = new Date(
+              (subscription as any).current_period_end
+            );
           }
 
           // Check for trial end date
@@ -207,13 +246,10 @@ export async function getCustomerInvoices(
 ): Promise<{ invoices: InvoiceData[]; error: string | null }> {
   try {
     if (!customerId) {
-      return { invoices: [], error: "No customer ID provided" };
+      return { invoices: [], error: null };
     }
 
     // Create Supabase service role client to access the stripe_tables schema
-    const { createSupabaseServiceRole } = await import(
-      "@/utils/supabase/service"
-    );
     const supabase = await createSupabaseServiceRole();
 
     // Query the stripe_invoices table for invoices belonging to this customer
@@ -226,8 +262,21 @@ export async function getCustomerInvoices(
       .limit(limit);
 
     if (error) {
+      // Check if it's a Stripe API error (400 Bad Request usually means invalid customer ID)
+      const errorMessage = error.message || String(error);
+      if (
+        errorMessage.includes("400 Bad Request") ||
+        errorMessage.includes("request middleware failed")
+      ) {
+        // Invalid customer ID or customer doesn't exist in Stripe
+        // Return empty array instead of error to avoid breaking the UI
+        console.warn(
+          `Could not fetch invoices for customer ${customerId}: Customer may not exist in Stripe`
+        );
+        return { invoices: [], error: null };
+      }
       console.error("Error querying stripe_invoices:", error);
-      return { invoices: [], error: error.message };
+      return { invoices: [], error: null }; // Return empty array instead of error
     }
 
     // Format the invoice data for the UI

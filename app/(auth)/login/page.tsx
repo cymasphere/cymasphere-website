@@ -58,6 +58,7 @@ const BackButton = styled.span`
   font-size: 1rem;
   z-index: 10;
   transition: all 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     color: var(--text);
@@ -334,8 +335,11 @@ function Login() {
             })
           );
         }
+        // Only stop loading when there's an error
+        setLoading(false);
       } else {
         // Set success flag and let useEffect handle redirect after auth context updates
+        // Keep loading state active until redirect happens or error occurs
         setLoginSuccess(true);
       }
     } catch (error: unknown) {
@@ -344,7 +348,7 @@ function Login() {
           message: error instanceof Error ? error.message : String(error),
         })
       );
-    } finally {
+      // Stop loading when an error occurs
       setLoading(false);
     }
   }
@@ -435,7 +439,7 @@ function Login() {
             </Link>
           </ForgotPassword>
 
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !!auth.user}>
             <ButtonContent>
               {loading ? (
                 <>
