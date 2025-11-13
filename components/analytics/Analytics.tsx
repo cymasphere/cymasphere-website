@@ -29,7 +29,7 @@ export default function Analytics() {
           {/* GTM DataLayer initialization - must be before GTM container */}
           <Script
             id="gtm-datalayer"
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
@@ -39,7 +39,7 @@ export default function Analytics() {
           {/* GTM Container Script */}
           <Script
             id="gtm-container"
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
