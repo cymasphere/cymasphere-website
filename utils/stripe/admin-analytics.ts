@@ -731,10 +731,102 @@ export async function getAllUsersForCRM(
       }
     }
 
-    // Get total count for pagination
-    const { count: totalCount } = await query;
+    // Get search matching IDs if search term is provided
+    let searchMatchingIds: string[] | null = null;
+    if (searchTerm && searchTerm.trim().length > 0) {
+      const searchLower = searchTerm.trim();
+      const allMatchingIds: string[] = [];
+      
+      try {
+        // 1. Search profiles table for name and id matches (efficient DB query)
+        // This searches the entire profiles table, not just the current page
+        const nameIdQuery = supabase
+          .from("profiles")
+          .select("id")
+          .or(`first_name.ilike.%${searchLower}%,last_name.ilike.%${searchLower}%,id.ilike.%${searchLower}%`);
+        
+        const { data: nameIdMatches, error: nameIdError } = await nameIdQuery;
+        
+        if (!nameIdError && nameIdMatches) {
+          const nameIdMatchedIds = nameIdMatches.map(p => p.id);
+          allMatchingIds.push(...nameIdMatchedIds);
+        }
+        
+        // 2. Search auth.users for email matches (limited to first 5k users for performance)
+        // This is slower but necessary for email-only searches
+        try {
+          const { data: { users }, error: emailError } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 5000, // Limit to first 5k users for performance
+          });
+          
+          if (!emailError && users) {
+            const searchLowerEmail = searchLower.toLowerCase();
+            const emailMatches = users
+              .filter(user => user.email?.toLowerCase().includes(searchLowerEmail))
+              .map(user => user.id);
+            allMatchingIds.push(...emailMatches);
+          }
+        } catch (emailSearchError) {
+          console.error("Error searching emails (non-critical):", emailSearchError);
+          // Continue with name/id matches only
+        }
+        
+        // Remove duplicates
+        searchMatchingIds = [...new Set(allMatchingIds)];
+      } catch (searchError) {
+        console.error("Error in search preprocessing:", searchError);
+        searchMatchingIds = []; // Empty array means no matches
+      }
+    }
 
-    // Apply pagination
+    // Apply search filter to main query
+    if (searchMatchingIds !== null) {
+      if (searchMatchingIds.length > 0) {
+        query = query.in("id", searchMatchingIds);
+      } else {
+        // No matches found - return empty result
+        query = query.eq("id", "no-search-matches-00000000-0000-0000-0000-000000000000");
+      }
+    }
+
+    // Get total count for pagination (AFTER search filter is applied)
+    // Build count query with same filters
+    let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true });
+    
+    // Apply subscription filter to count query
+    if (subscriptionFilter && subscriptionFilter !== "all") {
+      const validSubscriptionTypes: SubscriptionType[] = [
+        "none",
+        "monthly",
+        "annual",
+        "lifetime",
+      ];
+      if (
+        validSubscriptionTypes.includes(
+          subscriptionFilter as SubscriptionType
+        ) ||
+        subscriptionFilter === "admin"
+      ) {
+        countQuery = countQuery.eq(
+          "subscription",
+          subscriptionFilter as SubscriptionType
+        );
+      }
+    }
+    
+    // Apply search filter to count query
+    if (searchMatchingIds !== null) {
+      if (searchMatchingIds.length > 0) {
+        countQuery = countQuery.in("id", searchMatchingIds);
+      } else {
+        countQuery = countQuery.eq("id", "no-search-matches-00000000-0000-0000-0000-000000000000");
+      }
+    }
+    
+    const { count: totalCount } = await countQuery;
+
+    // Apply pagination to data query
     const offset = (page - 1) * limit;
     query = query.range(offset, offset + limit - 1);
 
@@ -754,19 +846,8 @@ export async function getAllUsersForCRM(
       );
       const userEmail = authUser.user?.email || "";
 
-      // Filter by search term if provided
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesSearch =
-          userEmail.toLowerCase().includes(searchLower) ||
-          (profile.first_name &&
-            profile.first_name.toLowerCase().includes(searchLower)) ||
-          (profile.last_name &&
-            profile.last_name.toLowerCase().includes(searchLower)) ||
-          profile.id.toLowerCase().includes(searchLower);
-
-        if (!matchesSearch) continue;
-      }
+      // Note: Search filtering is now done at the database level before pagination
+      // All matching users (by name, id, or email) have already been filtered
 
       // Get last active from user sessions
       let lastActive: string | undefined;

@@ -38,9 +38,23 @@ const Header = styled.div`
   margin-bottom: 2rem;
 `;
 
+const TitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+`;
+
 const Title = styled.h1`
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -52,7 +66,6 @@ const Title = styled.h1`
 
   @media (max-width: 768px) {
     font-size: 2rem;
-    margin-bottom: 1rem;
   }
 `;
 
@@ -741,21 +754,23 @@ export default function UserManagementPage() {
       
       <motion.div initial="hidden" animate="visible" variants={fadeIn}>
         <Header>
-          <Title>
-            <FaUsers />
-            NFR Licenses
-          </Title>
+          <TitleRow>
+            <Title>
+              <FaUsers />
+              NFR Licenses
+            </Title>
+            {user && (
+              <CreateButton onClick={() => setShowCreateModal(true)}>
+                <FaPlus />
+                Add User
+              </CreateButton>
+            )}
+          </TitleRow>
           <Subtitle>Manage user pro status and notes by email address</Subtitle>
         </Header>
 
         {user && (
           <>
-            <ActionsBar>
-              <CreateButton onClick={() => setShowCreateModal(true)}>
-                <FaPlus />
-                Add User
-              </CreateButton>
-            </ActionsBar>
 
             {error && (
               <div style={{ color: 'var(--error)', textAlign: 'center', padding: '2rem' }}>
