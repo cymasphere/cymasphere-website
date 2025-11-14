@@ -45,6 +45,7 @@ import {
   getCustomerSubscriptions,
   getPrices
 } from "@/utils/stripe/actions";
+import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 
 const Container = styled.div`
   width: 100%;
@@ -175,7 +176,7 @@ const SearchInput = styled.input<{ $isLoading?: boolean }>`
   padding: 12px 16px 12px 44px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05) !important;
   color: var(--text);
   font-size: 0.9rem;
   transition: all 0.3s ease;
@@ -184,6 +185,28 @@ const SearchInput = styled.input<{ $isLoading?: boolean }>`
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active,
+  &:-webkit-autofill-selected {
+    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-clip: content-box !important;
+    caret-color: var(--text) !important;
+    transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s !important;
+  }
+
+  &:-moz-autofill,
+  &:-moz-autofill:hover,
+  &:-moz-autofill:focus {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text) !important;
+    box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
   }
 
   &::placeholder {
@@ -191,7 +214,7 @@ const SearchInput = styled.input<{ $isLoading?: boolean }>`
   }
 
   ${props => props.$isLoading && `
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.08) !important;
     border-color: var(--primary);
   `}
 `;
@@ -1029,7 +1052,7 @@ const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
   ${props => props.variant === 'danger' ? `
     background-color: #dc3545;
     color: white;
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: #c82333;
       transform: translateY(-1px);
     }
@@ -1037,10 +1060,15 @@ const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--text);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: rgba(255, 255, 255, 0.15);
     }
   `}
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
   
   svg {
     font-size: 0.9rem;
@@ -1096,6 +1124,17 @@ export default function AdminCRM() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
   const [newPlanType, setNewPlanType] = useState<'monthly' | 'annual'>('monthly');
+
+  // Delete user state
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmationData, setDeleteConfirmationData] = useState<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+  } | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -1360,7 +1399,12 @@ export default function AdminCRM() {
         console.log('Ban user:', user.id);
         break;
       case 'delete':
-        console.log('Delete user:', user.id);
+        setDeleteConfirmationData({
+          userId: user.id,
+          userName: getDisplayName(user),
+          userEmail: user.email,
+        });
+        setShowDeleteConfirmation(true);
         break;
     }
   };
@@ -1423,6 +1467,51 @@ export default function AdminCRM() {
     setRefundError(null);
   };
 
+  // Delete user handlers
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmationData) return;
+
+    const { userId } = deleteConfirmationData;
+    
+    try {
+      setDeleteLoading(userId);
+      setDeleteError(null);
+      setDeleteSuccess(null);
+      setShowDeleteConfirmation(false);
+
+      const result = await deleteUserAccount(userId);
+      
+      if (result.success) {
+        setDeleteSuccess(userId);
+        // Refresh user data to remove deleted user
+        fetchUsers();
+        // Clear confirmation data after a delay
+        setTimeout(() => {
+          setDeleteConfirmationData(null);
+        }, 2000);
+      } else {
+        setDeleteError(result.error || 'Failed to delete user');
+        setShowDeleteConfirmation(true); // Keep modal open on error
+      }
+    } catch (error) {
+      setDeleteError('An unexpected error occurred');
+      console.error('Delete user error:', error);
+      setShowDeleteConfirmation(true); // Keep modal open on error
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false);
+    setDeleteConfirmationData(null);
+  };
+
+  const clearDeleteMessages = () => {
+    setDeleteSuccess(null);
+    setDeleteError(null);
+  };
+
   // Auto-dismiss refund notifications
   useEffect(() => {
     if (refundSuccess) {
@@ -1441,6 +1530,25 @@ export default function AdminCRM() {
       return () => clearTimeout(timer);
     }
   }, [refundError]);
+
+  // Auto-dismiss delete notifications
+  useEffect(() => {
+    if (deleteSuccess) {
+      const timer = setTimeout(() => {
+        setDeleteSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteSuccess]);
+
+  useEffect(() => {
+    if (deleteError) {
+      const timer = setTimeout(() => {
+        setDeleteError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteError]);
 
   // Show page immediately - no early returns
   const showContent = !languageLoading && user;
@@ -1517,11 +1625,17 @@ export default function AdminCRM() {
                 <FaSearch />
               </SearchIcon>
               <SearchInput
-                type="text"
-                placeholder={t("admin.crmPage.searchPlaceholder", "Search users by name, email, or ID...")}
+                type="search"
+                placeholder={searchLoading ? "Loading..." : t("admin.crmPage.searchPlaceholder", "Search users by name, email, or ID...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 $isLoading={searchLoading}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-lpignore="true"
+                data-form-type="other"
               />
             </SearchContainer>
             
@@ -1978,7 +2092,34 @@ export default function AdminCRM() {
           </RefundNotification>
         )}
 
-        {/* Confirmation Modal */}
+        {/* Delete User Notifications */}
+        {deleteSuccess && (
+          <RefundNotification
+            type="success"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearDeleteMessages}
+          >
+            <FaCheck />
+            User deleted successfully!
+          </RefundNotification>
+        )}
+
+        {deleteError && !showDeleteConfirmation && (
+          <RefundNotification
+            type="error"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearDeleteMessages}
+          >
+            <FaExclamationTriangle />
+            {deleteError}
+          </RefundNotification>
+        )}
+
+        {/* Refund Confirmation Modal */}
         {showRefundConfirmation && (
           <ConfirmationModalOverlay
             initial={{ opacity: 0 }}
@@ -2015,6 +2156,74 @@ export default function AdminCRM() {
                   Refund
                 </ConfirmationButton>
                 <ConfirmationButton variant="secondary" onClick={handleCancelRefund}>
+                  <FaTimes />
+                  Cancel
+                </ConfirmationButton>
+              </ConfirmationButtons>
+            </ConfirmationModalContent>
+          </ConfirmationModalOverlay>
+        )}
+
+        {/* Delete User Confirmation Modal */}
+        {showDeleteConfirmation && deleteConfirmationData && (
+          <ConfirmationModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCancelDelete}
+          >
+            <ConfirmationModalContent
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ConfirmationTitle>
+                <FaExclamationTriangle />
+                Delete User Confirmation
+              </ConfirmationTitle>
+              <ConfirmationMessage>
+                Are you sure you want to delete this user? This action cannot be undone. All subscriptions will be canceled and the user account will be permanently deleted.
+              </ConfirmationMessage>
+              <ConfirmationDetails>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>Name</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue>{deleteConfirmationData.userName}</ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>Email</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue>{deleteConfirmationData.userEmail}</ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>User ID</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{deleteConfirmationData.userId}</ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+              </ConfirmationDetails>
+              {deleteError && (
+                <ConfirmationMessage style={{ color: '#e74c3c', marginTop: '1rem', marginBottom: '1rem' }}>
+                  <FaExclamationTriangle style={{ marginRight: '0.5rem' }} />
+                  {deleteError}
+                </ConfirmationMessage>
+              )}
+              <ConfirmationButtons>
+                <ConfirmationButton 
+                  variant="danger" 
+                  onClick={handleConfirmDelete}
+                  disabled={deleteLoading === deleteConfirmationData.userId}
+                >
+                  {deleteLoading === deleteConfirmationData.userId ? (
+                    <>
+                      <LoadingSpinner />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <FaTrash />
+                      Delete User
+                    </>
+                  )}
+                </ConfirmationButton>
+                <ConfirmationButton variant="secondary" onClick={handleCancelDelete} disabled={deleteLoading === deleteConfirmationData.userId}>
                   <FaTimes />
                   Cancel
                 </ConfirmationButton>

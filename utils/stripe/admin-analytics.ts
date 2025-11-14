@@ -783,10 +783,19 @@ export async function getAllUsersForCRM(
     // Apply search filter to main query
     if (searchMatchingIds !== null) {
       if (searchMatchingIds.length > 0) {
-        query = query.in("id", searchMatchingIds);
+        // Filter to only valid UUIDs to avoid type errors
+        const validUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const validIds = searchMatchingIds.filter(id => validUuidPattern.test(id));
+        
+        if (validIds.length > 0) {
+          query = query.in("id", validIds);
+        } else {
+          // No valid UUIDs found - return empty result by using a UUID that will never match
+          query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+        }
       } else {
-        // No matches found - return empty result
-        query = query.eq("id", "no-search-matches-00000000-0000-0000-0000-000000000000");
+        // No matches found - return empty result by using a UUID that will never match
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
       }
     }
 
@@ -818,9 +827,19 @@ export async function getAllUsersForCRM(
     // Apply search filter to count query
     if (searchMatchingIds !== null) {
       if (searchMatchingIds.length > 0) {
-        countQuery = countQuery.in("id", searchMatchingIds);
+        // Filter to only valid UUIDs to avoid type errors
+        const validUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const validIds = searchMatchingIds.filter(id => validUuidPattern.test(id));
+        
+        if (validIds.length > 0) {
+          countQuery = countQuery.in("id", validIds);
+        } else {
+          // No valid UUIDs found - return empty result by using a UUID that will never match
+          countQuery = countQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+        }
       } else {
-        countQuery = countQuery.eq("id", "no-search-matches-00000000-0000-0000-0000-000000000000");
+        // No matches found - return empty result by using a UUID that will never match
+        countQuery = countQuery.eq("id", "00000000-0000-0000-0000-000000000000");
       }
     }
     
