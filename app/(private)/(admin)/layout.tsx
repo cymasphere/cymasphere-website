@@ -728,7 +728,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               onClick={(e) => handleNavigation(e, "/admin/user-management")}
             >
               <FaUserShield />
-              CSR User Management
+              NFR Licenses
             </NavItem>
           </Link>
           <Link href="/admin/coupons" passHref legacyBehavior>

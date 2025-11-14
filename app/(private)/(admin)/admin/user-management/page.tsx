@@ -737,13 +737,13 @@ export default function UserManagementPage() {
 
   return (
     <Container>
-      <NextSEO title="CSR User Management - Admin" />
+      <NextSEO title="NFR Licenses - Admin" />
       
       <motion.div initial="hidden" animate="visible" variants={fadeIn}>
         <Header>
           <Title>
             <FaUsers />
-            CSR User Management
+            NFR Licenses
           </Title>
           <Subtitle>Manage user pro status and notes by email address</Subtitle>
         </Header>
@@ -770,18 +770,19 @@ export default function UserManagementPage() {
                     <TableHeaderCell>Email</TableHeaderCell>
                     <TableHeaderCell>Pro Status</TableHeaderCell>
                     <TableHeaderCell>Notes</TableHeaderCell>
+                    <TableHeaderCell style={{ textAlign: 'center', width: '60px' }}>Actions</TableHeaderCell>
                   </tr>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <tr>
-                      <TableCell colSpan={3} style={{ textAlign: 'center', padding: '3rem' }}>
+                      <TableCell colSpan={4} style={{ textAlign: 'center', padding: '3rem' }}>
                         <LoadingSpinner />
                       </TableCell>
                     </tr>
                   ) : records.length === 0 ? (
                     <tr>
-                      <TableCell colSpan={3}>
+                      <TableCell colSpan={4}>
                         <EmptyState>No users found. Click "Add User" to create one.</EmptyState>
                       </TableCell>
                     </tr>
@@ -789,13 +790,6 @@ export default function UserManagementPage() {
                     records.map((record) => (
                       <TableRow key={record.user_email}>
                         <EmailCell>
-                          <DeleteButton
-                            onClick={() => handleDelete(record.user_email)}
-                            disabled={updatingEmail === record.user_email}
-                            title="Delete user management record"
-                          >
-                            <FaTrash />
-                          </DeleteButton>
                           <span>{record.user_email}</span>
                         </EmailCell>
                         <TableCell>
@@ -845,6 +839,15 @@ export default function UserManagementPage() {
                               </SaveButton>
                             </NotesCellContainer>
                           )}
+                        </TableCell>
+                        <TableCell style={{ textAlign: 'center' }}>
+                          <DeleteButton
+                            onClick={() => handleDelete(record.user_email)}
+                            disabled={updatingEmail === record.user_email}
+                            title="Delete user management record"
+                          >
+                            <FaTrash />
+                          </DeleteButton>
                         </TableCell>
                       </TableRow>
                     ))

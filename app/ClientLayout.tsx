@@ -122,6 +122,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const shouldHideHeaderFooter =
     isAuthRoute || isDashboardRoute || isAdminRoute;
 
+  // Hide chat assistant on auth routes (login, signup, reset-password)
+  const shouldHideChat = isAuthRoute;
+
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>
@@ -132,7 +135,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               {children}
             </Main>
             {!shouldHideHeaderFooter && <Footer />}
-            <ChatWidget />
+            {!shouldHideChat && <ChatWidget />}
           </LayoutWrapper>
         </AuthProvider>
       </ToastProvider>
