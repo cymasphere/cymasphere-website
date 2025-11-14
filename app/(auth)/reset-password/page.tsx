@@ -331,10 +331,63 @@ function ResetPasswordClient() {
 
   // Check if this is a password reset (has valid session) or password request
   useEffect(() => {
-    if (searchParams.get("code")) {
-      setIsReset(true);
-    }
-  }, [searchParams]);
+    const checkSessionAndTokens = async () => {
+      // First, check if user already has a valid session
+      const {
+        data: { session: existingSession },
+      } = await supabase.auth.getSession();
+      if (existingSession) {
+        setIsReset(true);
+        return;
+      }
+
+      // Check for code query parameter (password reset link)
+      if (searchParams.get("code")) {
+        setIsReset(true);
+        return;
+      }
+
+      // Check for hash fragment tokens (invite or recovery)
+      if (typeof window === "undefined") return;
+
+      const hash = window.location.hash.substring(1); // Remove the #
+      if (!hash) return;
+
+      // Parse hash parameters
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const type = params.get("type");
+
+      // Handle invite tokens
+      if (type === "invite" && accessToken && refreshToken) {
+        try {
+          // Set the session using the tokens from the hash
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            console.error("Error setting session from invite:", sessionError);
+            setError("Invalid or expired invite link");
+            return;
+          }
+
+          // Clear the hash from URL
+          window.history.replaceState(null, "", window.location.pathname);
+
+          // Set to reset mode to show password form
+          setIsReset(true);
+        } catch (err) {
+          console.error("Error handling invite tokens:", err);
+          setError("Failed to process invite link");
+        }
+      }
+    };
+
+    checkSessionAndTokens();
+  }, [searchParams, supabase]);
 
   // Wait for translations to load
   useEffect(() => {

@@ -10,6 +10,7 @@ import {
   FaArrowLeft,
   FaShieldAlt,
   FaUsers,
+  FaUserShield,
   FaTicketAlt,
   FaChartBar,
   FaCog,
@@ -719,6 +720,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <FaUsers />
               Users
+            </NavItem>
+          </Link>
+          <Link href="/admin/user-management" passHref legacyBehavior>
+            <NavItem
+              $active={pathname === "/admin/user-management" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/user-management")}
+            >
+              <FaUserShield />
+              CSR User Management
             </NavItem>
           </Link>
           <Link href="/admin/coupons" passHref legacyBehavior>

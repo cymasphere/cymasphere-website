@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
+import { checkUserManagementPro } from "@/utils/supabase/user-management";
 
 export async function signUpWithStripe(
   first_name: string,
@@ -124,6 +125,28 @@ export async function updateStripe(
 ): Promise<{ success: boolean; profile?: Profile; error?: Error | unknown }> {
   try {
     let updatedProfile: Profile = { ...profile };
+
+    // First, check user_management table for pro status
+    const userManagementCheck = await checkUserManagementPro(email);
+    
+    if (userManagementCheck.error) {
+      // Log error but continue with Stripe check as fallback
+      console.warn("Error checking user_management:", userManagementCheck.error);
+    } else if (userManagementCheck.hasPro) {
+      // User has pro status via user_management table - set to lifetime and return
+      updatedProfile.subscription = "lifetime";
+      updatedProfile.subscription_expiration = null;
+      updatedProfile.trial_expiration = null;
+
+      // Update profile if subscription changed
+      if (updatedProfile.subscription !== profile.subscription) {
+        updatedProfile = await updateUserProfile(updatedProfile);
+      }
+
+      return { success: true, profile: updatedProfile };
+    }
+
+    // If user_management check didn't grant pro, fall back to Stripe check
     // If no customer ID, user has no Stripe purchases
     if (!updatedProfile.customer_id) {
       updatedProfile.customer_id = await findOrCreateCustomer(email);
