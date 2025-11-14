@@ -15,6 +15,8 @@ import { GoogleAnalytics, MetaPixel } from "@/components/common/NextScript";
  * - NEXT_PUBLIC_GTM_ID: Google Tag Manager Container ID (e.g., GTM-XXXXXXX)
  * - NEXT_PUBLIC_GA_ID: Google Analytics Measurement ID (e.g., G-XXXXXXXXXX) - Optional if using GTM
  * - NEXT_PUBLIC_META_PIXEL_ID: Meta Pixel ID (e.g., 123456789012345) - Optional
+ * 
+ * Updated: Environment variables configured in Vercel
  */
 export default function Analytics() {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
