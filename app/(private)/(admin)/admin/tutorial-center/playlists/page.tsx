@@ -7,6 +7,7 @@ import { FaArrowLeft, FaPlay } from "react-icons/fa";
 import PlaylistViewer from "../components/PlaylistViewer";
 import VideoPlayer from "../components/VideoPlayer";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
+import { getPlaylists, getUserProfile, generatePlaylist } from "@/app/actions/tutorials";
 // Removed loading spinner per request
 
 const Container = styled.div`
@@ -23,6 +24,9 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 `;
 
 const BackButton = styled(Link)`
@@ -54,6 +58,7 @@ const DropdownContainer = styled.div`
   width: 350px;
   padding-left: 1rem;
   margin: 0 auto;
+  z-index: 1001;
 `;
 
 const DropdownButton = styled.button.withConfig({
@@ -99,10 +104,11 @@ const DropdownMenu = styled.div.withConfig({
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 1002;
   max-height: 400px;
   overflow-y: auto;
   display: ${props => props.isOpen ? 'block' : 'none'};
+  margin-top: 0.25rem;
 `;
 
 const PlaylistItem = styled.div.withConfig({
