@@ -263,18 +263,22 @@ export async function createUserManagementWithInvite(
       const serviceSupabase = await createSupabaseServiceRole();
 
       // Construct the redirect URL to reset password page
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.cymasphere.com';
+      const baseUrl = "https://cymasphere.com";
       const redirectTo = `${baseUrl}/reset-password`;
 
       // Build user metadata with name if provided
-      const userMetadata: { invited_by: string; first_name?: string; last_name?: string } = {
+      const userMetadata: {
+        invited_by: string;
+        first_name?: string;
+        last_name?: string;
+      } = {
         invited_by: "admin",
       };
-      
+
       if (first_name) {
         userMetadata.first_name = first_name;
       }
-      
+
       if (last_name) {
         userMetadata.last_name = last_name;
       }
@@ -322,9 +326,7 @@ export async function createUserManagementWithInvite(
 /**
  * Delete user_management record (admin only)
  */
-export async function deleteUserManagementRecord(
-  user_email: string
-): Promise<{
+export async function deleteUserManagementRecord(user_email: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
@@ -362,4 +364,3 @@ export async function deleteUserManagementRecord(
     };
   }
 }
-
