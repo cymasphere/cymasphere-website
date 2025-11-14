@@ -262,7 +262,8 @@ const ExportButton = styled.button`
 const TableContainer = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid rgba(255, 255, 255, 0.05);
 
   @media (max-width: 768px) {
@@ -345,6 +346,7 @@ const TableCell = styled.td`
   /* Allow wrapping for action buttons */
   &:last-child {
     white-space: normal;
+    overflow: visible;
   }
 `;
 
@@ -815,9 +817,10 @@ const MoreMenuDropdown = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: 10000;
   min-width: 160px;
   overflow: hidden;
+  margin-top: 4px;
 `;
 
 const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
