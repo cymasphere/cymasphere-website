@@ -542,3 +542,133 @@ export async function getAdditionalUserDataAdmin(userIds: string[]): Promise<{
     };
   }
 }
+
+/**
+ * Get support tickets for a user with admin check (admin only)
+ */
+export async function getUserSupportTicketsAdmin(userId: string): Promise<{
+  tickets: Array<{
+    id: string;
+    ticket_number: string;
+    subject: string;
+    status: string;
+    priority: string;
+    created_at: string;
+    updated_at: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { tickets: [], error: "Unauthorized" };
+    }
+
+    const { data: tickets, error: ticketsError } = await supabase
+      .from("support_tickets")
+      .select(
+        "id, ticket_number, subject, status, priority, created_at, updated_at"
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (ticketsError) {
+      // If table doesn't exist (42P01), return empty tickets silently
+      // This allows the UI to work even if the migration hasn't been run yet
+      if (ticketsError.code === "42P01") {
+        return { tickets: [] };
+      }
+      console.error("Error fetching support tickets:", ticketsError);
+      return {
+        tickets: [],
+        error: ticketsError.message || "Failed to fetch support tickets",
+      };
+    }
+
+    return { tickets: tickets || [] };
+  } catch (error) {
+    console.error("Error in getUserSupportTicketsAdmin:", error);
+    return {
+      tickets: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch support tickets",
+    };
+  }
+}
+
+/**
+ * Get support ticket counts for multiple users with admin check (admin only)
+ * Returns a map of userId -> ticket count
+ */
+export async function getUserSupportTicketCountsAdmin(
+  userIds: string[]
+): Promise<{
+  counts: Record<string, number>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { counts: {}, error: "Unauthorized" };
+    }
+
+    if (userIds.length === 0) {
+      return { counts: {} };
+    }
+
+    // Use service role to bypass RLS for admin queries
+    const serviceSupabase = await createSupabaseServiceRole();
+
+    const { data: tickets, error: ticketsError } = await serviceSupabase
+      .from("support_tickets")
+      .select("user_id")
+      .in("user_id", userIds);
+
+    if (ticketsError) {
+      // If table doesn't exist (42P01), return empty counts silently
+      // This allows the UI to work even if the migration hasn't been run yet
+      if (ticketsError.code === "42P01") {
+        const counts: Record<string, number> = {};
+        userIds.forEach((userId) => {
+          counts[userId] = 0;
+        });
+        return { counts };
+      }
+      console.error("Error fetching support ticket counts:", ticketsError);
+      return {
+        counts: {},
+        error: ticketsError.message || "Failed to fetch support ticket counts",
+      };
+    }
+
+    // Count tickets per user
+    const counts: Record<string, number> = {};
+    userIds.forEach((userId) => {
+      counts[userId] = 0;
+    });
+
+    if (tickets) {
+      tickets.forEach((ticket) => {
+        const userId = ticket.user_id;
+        if (userId && counts[userId] !== undefined) {
+          counts[userId] = (counts[userId] || 0) + 1;
+        }
+      });
+    }
+
+    return { counts };
+  } catch (error) {
+    console.error("Error in getUserSupportTicketCountsAdmin:", error);
+    return {
+      counts: {},
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch support ticket counts",
+    };
+  }
+}

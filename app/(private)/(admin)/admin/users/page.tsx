@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import NextSEO from "@/components/NextSEO";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
 import {
@@ -37,6 +38,8 @@ import {
   getAllUsersForCRMAdmin,
   getUsersForCRMCountAdmin,
   getAdditionalUserDataAdmin,
+  getUserSupportTicketsAdmin,
+  getUserSupportTicketCountsAdmin,
 } from "@/app/actions/user-management";
 import type { UserData } from "@/utils/stripe/admin-analytics";
 import {
@@ -1236,6 +1239,21 @@ export default function AdminCRM() {
   // Modal state
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [supportTickets, setSupportTickets] = useState<
+    Array<{
+      id: string;
+      ticket_number: string;
+      subject: string;
+      status: string;
+      priority: string;
+      created_at: string;
+      updated_at: string;
+    }>
+  >([]);
+  const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
+  const [supportTicketCounts, setSupportTicketCounts] = useState<
+    Record<string, number>
+  >({});
 
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
@@ -1348,6 +1366,8 @@ export default function AdminCRM() {
 
       // All sorting is done in the database query - just use the results as-is
       setUsers(result.users);
+      // Clear support ticket counts when users change (will be repopulated)
+      setSupportTicketCounts({});
 
       // Fetch additional data (lastActive, totalSpent) separately
       // This allows users to be displayed immediately while additional data loads
@@ -1378,6 +1398,23 @@ export default function AdminCRM() {
           })
           .catch((err) => {
             console.error("Error fetching additional user data:", err);
+          });
+
+        // Fetch support ticket counts
+        getUserSupportTicketCountsAdmin(userIds)
+          .then((countsData) => {
+            if (countsData.error) {
+              console.error(
+                "Error fetching support ticket counts:",
+                countsData.error
+              );
+              return;
+            }
+
+            setSupportTicketCounts(countsData.counts);
+          })
+          .catch((err) => {
+            console.error("Error fetching support ticket counts:", err);
           });
       }
     } catch (err) {
@@ -1508,14 +1545,10 @@ export default function AdminCRM() {
     return ["lifetime", "admin"].includes(subscription);
   };
 
-  // Mock function to get support ticket count for a user
+  // Get support ticket count for a user from fetched data
   const getSupportTicketCount = (userId: string) => {
-    // This would normally come from your database
-    const mockCounts = [0, 1, 2, 3, 5];
-    const hash = userId
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return mockCounts[hash % mockCounts.length];
+    // Get real count from fetched data, default to 0 if not loaded yet
+    return supportTicketCounts[userId] || 0;
   };
 
   const formatDate = (dateString: string) => {
@@ -1605,6 +1638,9 @@ export default function AdminCRM() {
     } else {
       setUserSubscriptions([]);
     }
+
+    // Fetch support tickets for the user
+    await fetchUserSupportTickets(user.id);
   };
 
   const fetchUserSubscriptions = async (customerId: string) => {
@@ -1626,12 +1662,32 @@ export default function AdminCRM() {
     }
   };
 
+  const fetchUserSupportTickets = async (userId: string) => {
+    try {
+      setLoadingSupportTickets(true);
+      const result = await getUserSupportTicketsAdmin(userId);
+
+      if (result.error) {
+        console.error("Error fetching support tickets:", result.error);
+        setSupportTickets([]);
+      } else {
+        setSupportTickets(result.tickets);
+      }
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      setSupportTickets([]);
+    } finally {
+      setLoadingSupportTickets(false);
+    }
+  };
+
   const closeModal = () => {
     setShowUserModal(false);
     setSelectedUser(null);
     setUserSubscriptions([]);
     setSubscriptionError(null);
     setSubscriptionSuccess(null);
+    setSupportTickets([]);
   };
 
   // Mock detailed data for demonstration
@@ -2717,6 +2773,110 @@ export default function AdminCRM() {
                   </>
                 ) : (
                   <EmptyState>No subscriptions found</EmptyState>
+                )}
+              </ModalSection>
+
+              {/* Support Tickets */}
+              <ModalSection>
+                <SectionTitle>
+                  <FaTicketAlt />
+                  Support Tickets
+                </SectionTitle>
+                {loadingSupportTickets ? (
+                  <EmptyState>Loading support tickets...</EmptyState>
+                ) : supportTickets.length > 0 ? (
+                  <>
+                    <div style={{ marginBottom: "1rem" }}>
+                      <Link
+                        href="/admin/support-tickets"
+                        style={{
+                          color: "var(--primary)",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        <FaTicketAlt />
+                        View all tickets
+                      </Link>
+                    </div>
+                    <DataTable>
+                      <DataTableHeader>
+                        <tr>
+                          <DataTableHeaderCell>Ticket #</DataTableHeaderCell>
+                          <DataTableHeaderCell>Subject</DataTableHeaderCell>
+                          <DataTableHeaderCell>Status</DataTableHeaderCell>
+                          <DataTableHeaderCell>Priority</DataTableHeaderCell>
+                          <DataTableHeaderCell>Created</DataTableHeaderCell>
+                        </tr>
+                      </DataTableHeader>
+                      <DataTableBody>
+                        {supportTickets.map((ticket) => (
+                          <DataTableRow key={ticket.id}>
+                            <DataTableCell>
+                              <Link
+                                href={`/admin/support-tickets?ticket=${ticket.id}`}
+                                style={{
+                                  color: "var(--primary)",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                {ticket.ticket_number}
+                              </Link>
+                            </DataTableCell>
+                            <DataTableCell>{ticket.subject}</DataTableCell>
+                            <DataTableCell>
+                              <span
+                                style={{
+                                  textTransform: "capitalize",
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "4px",
+                                  backgroundColor:
+                                    ticket.status === "open"
+                                      ? "rgba(52, 152, 219, 0.2)"
+                                      : ticket.status === "in_progress"
+                                      ? "rgba(241, 196, 15, 0.2)"
+                                      : ticket.status === "resolved"
+                                      ? "rgba(46, 204, 113, 0.2)"
+                                      : "rgba(149, 165, 166, 0.2)",
+                                  color: "var(--text)",
+                                }}
+                              >
+                                {ticket.status.replace("_", " ")}
+                              </span>
+                            </DataTableCell>
+                            <DataTableCell>
+                              <span
+                                style={{
+                                  textTransform: "capitalize",
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "4px",
+                                  backgroundColor:
+                                    ticket.priority === "urgent"
+                                      ? "rgba(231, 76, 60, 0.2)"
+                                      : ticket.priority === "high"
+                                      ? "rgba(230, 126, 34, 0.2)"
+                                      : ticket.priority === "medium"
+                                      ? "rgba(241, 196, 15, 0.2)"
+                                      : "rgba(149, 165, 166, 0.2)",
+                                  color: "var(--text)",
+                                }}
+                              >
+                                {ticket.priority}
+                              </span>
+                            </DataTableCell>
+                            <DataTableCell>
+                              {formatDate(ticket.created_at)}
+                            </DataTableCell>
+                          </DataTableRow>
+                        ))}
+                      </DataTableBody>
+                    </DataTable>
+                  </>
+                ) : (
+                  <EmptyState>No support tickets found</EmptyState>
                 )}
               </ModalSection>
 
