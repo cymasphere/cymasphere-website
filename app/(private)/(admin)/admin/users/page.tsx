@@ -33,11 +33,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
-
-import TableLoadingRow from "@/components/common/TableLoadingRow";
 import {
   getAllUsersForCRMAdmin,
   getUsersForCRMCountAdmin,
+  getAdditionalUserDataAdmin,
 } from "@/app/actions/user-management";
 import type { UserData } from "@/utils/stripe/admin-analytics";
 import {
@@ -298,6 +297,7 @@ const TableContainer = styled.div`
   overflow-x: auto;
   overflow-y: visible;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
 
   @media (max-width: 768px) {
     overflow-x: auto;
@@ -376,6 +376,26 @@ const TableHeaderCell = styled.th<{ $sortable?: boolean }>`
   }
 `;
 
+const LastActiveHeaderCell = styled(TableHeaderCell)`
+  min-width: 180px;
+`;
+
+const LoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  color: var(--text-secondary);
+  gap: 0.75rem;
+`;
+
 const TableBody = styled.tbody``;
 
 const TableRow = styled.tr`
@@ -406,6 +426,12 @@ const TableCell = styled.td`
     white-space: normal;
     overflow: visible;
   }
+`;
+
+const LastActiveTableCell = styled(TableCell)`
+  min-width: 180px;
+  white-space: normal;
+  overflow: visible;
 `;
 
 const UserAvatar = styled.div<{ $color: string }>`
@@ -1322,6 +1348,38 @@ export default function AdminCRM() {
 
       // All sorting is done in the database query - just use the results as-is
       setUsers(result.users);
+
+      // Fetch additional data (lastActive, totalSpent) separately
+      // This allows users to be displayed immediately while additional data loads
+      if (result.users.length > 0) {
+        const userIds = result.users.map((u) => u.id);
+        getAdditionalUserDataAdmin(userIds)
+          .then((additionalData) => {
+            if (additionalData.error) {
+              console.error(
+                "Error fetching additional data:",
+                additionalData.error
+              );
+              return;
+            }
+
+            // Update users with additional data
+            setUsers((prevUsers) =>
+              prevUsers.map((user) => ({
+                ...user,
+                lastActive:
+                  additionalData.lastActive[user.id] || user.createdAt, // Fallback to join date if no session data
+                totalSpent:
+                  additionalData.totalSpent[user.id] !== undefined
+                    ? additionalData.totalSpent[user.id]
+                    : 0, // Default to 0 if no data found
+              }))
+            );
+          })
+          .catch((err) => {
+            console.error("Error fetching additional user data:", err);
+          });
+      }
     } catch (err) {
       console.error("Error fetching users:", err);
       setError("Failed to load user data");
@@ -1461,7 +1519,21 @@ export default function AdminCRM() {
   };
 
   const formatDate = (dateString: string) => {
+    // Convert UTC to local time and format as date only
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const formatDateTime = (dateString: string) => {
+    // Convert UTC to local time and format with date and time
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -2113,6 +2185,26 @@ export default function AdminCRM() {
             </FiltersSection>
 
             <TableContainer>
+              {loading && (
+                <LoadingOverlay>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      border: "3px solid rgba(108, 99, 255, 0.3)",
+                      borderTop: "3px solid var(--primary)",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  Loading users...
+                </LoadingOverlay>
+              )}
               <Table>
                 <TableHeader>
                   <tr>
@@ -2147,9 +2239,9 @@ export default function AdminCRM() {
                       {t("admin.crmPage.userTable.joinDate", "Join Date")}
                       {getSortIcon("createdAt")}
                     </TableHeaderCell>
-                    <TableHeaderCell $sortable={false}>
+                    <LastActiveHeaderCell $sortable={false}>
                       Last Active
-                    </TableHeaderCell>
+                    </LastActiveHeaderCell>
                     <TableHeaderCell $sortable={false}>
                       Support Tickets
                     </TableHeaderCell>
@@ -2161,7 +2253,28 @@ export default function AdminCRM() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableLoadingRow colSpan={8} message="Loading users..." />
+                    <>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <TableRow
+                          key={`loading-placeholder-${i}`}
+                          style={{ pointerEvents: "none" }}
+                        >
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <LastActiveTableCell>
+                            {/* Simulate wrapped content to match actual row height */}
+                            <span style={{ visibility: "hidden" }}>
+                              11/15/2025, 02:30 PM
+                            </span>
+                          </LastActiveTableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                        </TableRow>
+                      ))}
+                    </>
                   ) : (
                     users.map((userData, index) => {
                       const supportTicketCount = getSupportTicketCount(
@@ -2210,11 +2323,11 @@ export default function AdminCRM() {
                           <TableCell>
                             {formatDate(userData.createdAt)}
                           </TableCell>
-                          <TableCell>
-                            {userData.lastActive
-                              ? formatDate(userData.lastActive)
-                              : "Never"}
-                          </TableCell>
+                          <LastActiveTableCell>
+                            {formatDateTime(
+                              userData.lastActive || userData.createdAt
+                            )}
+                          </LastActiveTableCell>
                           <TableCell>
                             <SupportTicketsCount>
                               <FaTicketAlt />
@@ -2224,7 +2337,13 @@ export default function AdminCRM() {
                             </SupportTicketsCount>
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(userData.totalSpent)}
+                            {userData.totalSpent === -1 ? (
+                              <LoadingSpinner
+                                style={{ display: "inline-block" }}
+                              />
+                            ) : (
+                              formatCurrency(userData.totalSpent)
+                            )}
                           </TableCell>
                           <TableCell>
                             <MoreMenuContainer
@@ -2415,9 +2534,9 @@ export default function AdminCRM() {
                   <InfoItem>
                     <InfoLabel>Last Active</InfoLabel>
                     <InfoValue>
-                      {selectedUser.lastActive
-                        ? formatDate(selectedUser.lastActive)
-                        : "Never"}
+                      {formatDateTime(
+                        selectedUser.lastActive || selectedUser.createdAt
+                      )}
                     </InfoValue>
                   </InfoItem>
                   <InfoItem>

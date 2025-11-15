@@ -5,6 +5,7 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import {
   getAllUsersForCRM,
   getUsersForCRMCount,
+  getAdditionalUserData,
 } from "@/utils/stripe/admin-analytics";
 import { fetchProfile } from "@/utils/supabase/actions";
 
@@ -507,6 +508,37 @@ export async function updateUserProfileFromStripe(userId: string): Promise<{
     return {
       success: false,
       error: "Internal server error",
+    };
+  }
+}
+
+/**
+ * Get additional user data (lastActive, totalSpent) with admin check (admin only)
+ * This is called separately after users are displayed to improve perceived performance
+ */
+export async function getAdditionalUserDataAdmin(userIds: string[]): Promise<{
+  lastActive: Record<string, string>;
+  totalSpent: Record<string, number>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { lastActive: {}, totalSpent: {}, error: "Unauthorized" };
+    }
+
+    const result = await getAdditionalUserData(userIds);
+    return result;
+  } catch (error) {
+    console.error("Error in getAdditionalUserDataAdmin:", error);
+    return {
+      lastActive: {},
+      totalSpent: {},
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch additional data",
     };
   }
 }

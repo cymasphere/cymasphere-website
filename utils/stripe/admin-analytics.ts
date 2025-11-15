@@ -1000,92 +1000,137 @@ export async function getAllUsersForCRM(
     // Rest of the function uses allProfiles
     const profiles = allProfiles;
 
-    // Extract emails from profiles table (email column is synced from auth.users)
-    const profileIds = profiles.map((p) => p.id);
-    const userEmailsMap = new Map<string, string>();
-    const lastActiveMap = new Map<string, string>();
+    // Build users array immediately with basic data from profiles
+    // This allows the UI to show users right away while additional data loads
+    const users: UserData[] = [];
 
-    // Populate email map from profiles data
-    profiles.forEach((profile: any) => {
-      if (profile.email) {
-        userEmailsMap.set(profile.id, profile.email);
-      }
-    });
-    console.log(`Using ${userEmailsMap.size} emails from profiles table`);
+    for (const profile of profiles) {
+      const userEmail =
+        (profile as typeof profile & { email?: string }).email || "";
 
-    // Batch fetch all user sessions
-    console.log("Fetching user sessions...");
-    if (profileIds.length > 0) {
-      try {
-        const { data: allSessions, error: sessionsError } = await supabase
-          .from("user_sessions")
-          .select("user_id, refreshed_at, updated_at, created_at")
-          .in("user_id", profileIds);
-
-        if (sessionsError) {
-          console.error("Error fetching sessions:", sessionsError);
-        } else {
-          console.log(`Fetched ${allSessions?.length || 0} sessions`);
-        }
-
-        if (allSessions) {
-          // Group by user_id and get the most recent session for each user
-          const sessionsByUser = new Map<string, any>();
-          allSessions.forEach((session) => {
-            const existing = sessionsByUser.get(session.user_id);
-            if (!existing) {
-              sessionsByUser.set(session.user_id, session);
-            } else {
-              // Compare timestamps to find most recent
-              const existingTime =
-                existing.refreshed_at ||
-                existing.updated_at ||
-                existing.created_at;
-              const currentTime =
-                session.refreshed_at ||
-                session.updated_at ||
-                session.created_at;
-              if (
-                currentTime &&
-                (!existingTime || currentTime > existingTime)
-              ) {
-                sessionsByUser.set(session.user_id, session);
-              }
-            }
-          });
-
-          sessionsByUser.forEach((session, userId) => {
-            lastActiveMap.set(
-              userId,
-              session.refreshed_at || session.updated_at || session.created_at
-            );
-          });
-        }
-      } catch (sessionsErr) {
-        console.error("Error batch fetching user sessions:", sessionsErr);
-      }
+      users.push({
+        id: profile.id,
+        email: userEmail,
+        firstName: profile.first_name || undefined,
+        lastName: profile.last_name || undefined,
+        subscription: profile.subscription || "none",
+        customerId: profile.customer_id || undefined,
+        subscriptionExpiration: profile.subscription_expiration || undefined,
+        trialExpiration: profile.trial_expiration || undefined,
+        createdAt: profile.updated_at || new Date().toISOString(),
+        lastActive: profile.updated_at || new Date().toISOString(), // Default to join date, will be updated if session data exists
+        totalSpent: -1, // -1 indicates loading, will be updated when data loads
+      });
     }
 
-    // Fetch invoices and payment intents directly from Stripe API for all customer IDs
-    const customerIds = profiles
-      .map((p) => p.customer_id)
-      .filter((id): id is string => !!id);
+    // Return users immediately - additional data will be fetched separately
+    return {
+      users,
+    };
+  } catch (error) {
+    console.error("Error fetching users for CRM:", error);
+    // Return empty array instead of throwing to prevent frontend from hanging
+    return {
+      users: [],
+    };
+  }
+}
 
-    console.log(`Fetching Stripe data for ${customerIds.length} customers...`);
-    const invoicesMap = new Map<string, number>();
-    const paymentsMap = new Map<string, number>();
+/**
+ * Fetches additional user data (lastActive, totalSpent) for given user IDs
+ * This is called separately after users are displayed to improve perceived performance
+ */
+export async function getAdditionalUserData(userIds: string[]): Promise<{
+  lastActive: Record<string, string>;
+  totalSpent: Record<string, number>;
+}> {
+  const lastActiveMap: Record<string, string> = {};
+  const totalSpentMap: Record<string, number> = {};
 
+  if (userIds.length === 0) {
+    return { lastActive: lastActiveMap, totalSpent: totalSpentMap };
+  }
+
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    // Fetch user sessions for lastActive
+    try {
+      const { data: allSessions, error: sessionsError } = await supabase
+        .from("user_sessions")
+        .select("user_id, refreshed_at, updated_at, created_at")
+        .in("user_id", userIds);
+
+      if (!sessionsError && allSessions) {
+        // Group by user_id and get the most recent session for each user
+        const sessionsByUser = new Map<
+          string,
+          {
+            user_id: string;
+            refreshed_at?: string | null;
+            updated_at?: string | null;
+            created_at?: string | null;
+          }
+        >();
+        allSessions.forEach((session) => {
+          const existing = sessionsByUser.get(session.user_id);
+          if (!existing) {
+            sessionsByUser.set(session.user_id, session);
+          } else {
+            // Compare timestamps to find most recent
+            const existingTime =
+              existing.refreshed_at ||
+              existing.updated_at ||
+              existing.created_at;
+            const currentTime =
+              session.refreshed_at || session.updated_at || session.created_at;
+            if (currentTime && (!existingTime || currentTime > existingTime)) {
+              sessionsByUser.set(session.user_id, session);
+            }
+          }
+        });
+
+        sessionsByUser.forEach((session, userId) => {
+          const lastActive =
+            session.refreshed_at || session.updated_at || session.created_at;
+          if (lastActive) {
+            lastActiveMap[userId] = lastActive;
+          }
+        });
+      }
+    } catch (sessionsErr) {
+      console.error("Error batch fetching user sessions:", sessionsErr);
+    }
+
+    // Fetch customer IDs from profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, customer_id")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching customer IDs:", profilesError);
+      return { lastActive: lastActiveMap, totalSpent: totalSpentMap };
+    }
+
+    const customerIds =
+      profiles?.map((p) => p.customer_id).filter((id): id is string => !!id) ||
+      [];
+
+    // Fetch Stripe data for totalSpent
     if (customerIds.length > 0) {
       try {
+        const invoicesMap = new Map<string, number>();
+        const paymentsMap = new Map<string, number>();
+
         // Fetch invoices directly from Stripe API for each customer
         const invoicePromises = customerIds.map(async (customerId) => {
           try {
             const invoices = await stripe.invoices.list({
               customer: customerId,
-              limit: 100, // Get up to 100 invoices per customer
+              limit: 100,
             });
 
-            // Sum up paid invoices
             const paidTotal = invoices.data
               .filter((inv) => inv.status === "paid")
               .reduce((sum, inv) => sum + (inv.amount_paid || 0), 0);
@@ -1106,10 +1151,9 @@ export async function getAllUsersForCRM(
           try {
             const paymentIntents = await stripe.paymentIntents.list({
               customer: customerId,
-              limit: 100, // Get up to 100 payment intents per customer
+              limit: 100,
             });
 
-            // Sum up succeeded payment intents that aren't refunded
             const succeededTotal = paymentIntents.data
               .filter((pi) => pi.status === "succeeded" && !pi.refunded)
               .reduce((sum, pi) => sum + (pi.amount || 0), 0);
@@ -1125,58 +1169,28 @@ export async function getAllUsersForCRM(
           }
         });
 
-        // Execute all fetches in parallel
         await Promise.allSettled([...invoicePromises, ...paymentPromises]);
 
-        console.log(
-          `Fetched Stripe data for ${customerIds.length} customers (${invoicesMap.size} with invoices, ${paymentsMap.size} with payments)`
-        );
+        // Map customer IDs to user IDs and calculate totalSpent
+        profiles?.forEach((profile) => {
+          if (profile.customer_id) {
+            const invoiceTotal = invoicesMap.get(profile.customer_id) || 0;
+            const paymentTotal = paymentsMap.get(profile.customer_id) || 0;
+            const total = (invoiceTotal + paymentTotal) / 100;
+            if (total > 0) {
+              totalSpentMap[profile.id] = total;
+            }
+          }
+        });
       } catch (stripeErr) {
         console.error("Error batch fetching Stripe data:", stripeErr);
       }
     }
 
-    // Build users array using batched data
-    // IMPORTANT: Preserve the order from the database query (which includes sorting)
-    // The profiles array is already sorted by the database query, so we maintain that order
-    const users: UserData[] = [];
-
-    for (const profile of profiles) {
-      const userEmail = userEmailsMap.get(profile.id) || "";
-      const lastActive = lastActiveMap.get(profile.id);
-
-      // Calculate total spent from batched data
-      let totalSpent = 0;
-      if (profile.customer_id) {
-        const invoiceTotal = invoicesMap.get(profile.customer_id) || 0;
-        const paymentTotal = paymentsMap.get(profile.customer_id) || 0;
-        totalSpent = (invoiceTotal + paymentTotal) / 100;
-      }
-
-      users.push({
-        id: profile.id,
-        email: userEmail,
-        firstName: profile.first_name || undefined,
-        lastName: profile.last_name || undefined,
-        subscription: profile.subscription || "none",
-        customerId: profile.customer_id || undefined,
-        subscriptionExpiration: profile.subscription_expiration || undefined,
-        trialExpiration: profile.trial_expiration || undefined,
-        createdAt: profile.updated_at || new Date().toISOString(),
-        lastActive,
-        totalSpent,
-      });
-    }
-
-    return {
-      users,
-    };
+    return { lastActive: lastActiveMap, totalSpent: totalSpentMap };
   } catch (error) {
-    console.error("Error fetching users for CRM:", error);
-    // Return empty array instead of throwing to prevent frontend from hanging
-    return {
-      users: [],
-    };
+    console.error("Error fetching additional user data:", error);
+    return { lastActive: lastActiveMap, totalSpent: totalSpentMap };
   }
 }
 
