@@ -693,25 +693,33 @@ export async function getRecentActivity(
 }
 
 /**
- * Fetches all users with their Stripe data for the CRM
+ * Get total count of users for CRM (separate from pagination)
  */
-export async function getAllUsersForCRM(
-  page: number = 1,
-  limit: number = 50,
+export async function getUsersForCRMCount(
   searchTerm?: string,
   subscriptionFilter?: string
-): Promise<{
-  users: UserData[];
-  totalCount: number;
-  totalPages: number;
-}> {
+): Promise<number> {
   try {
     const supabase = await createSupabaseServiceRole();
 
-    let query = supabase.from("profiles").select("*", { count: "exact" });
+    // Build count query
+    let countQuery = supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
 
-    // Apply subscription filter
-    if (subscriptionFilter && subscriptionFilter !== "all") {
+    // Handle admin filter separately
+    if (subscriptionFilter === "admin") {
+      const { data: admins, error: adminsError } = await supabase
+        .from("admins")
+        .select("user");
+
+      if (!adminsError && admins && admins.length > 0) {
+        const adminIds = admins.map((admin: { user: string }) => admin.user);
+        countQuery = countQuery.in("id", adminIds);
+      } else {
+        return 0;
+      }
+    } else if (subscriptionFilter && subscriptionFilter !== "all") {
       const validSubscriptionTypes: SubscriptionType[] = [
         "none",
         "monthly",
@@ -719,10 +727,133 @@ export async function getAllUsersForCRM(
         "lifetime",
       ];
       if (
-        validSubscriptionTypes.includes(
+        validSubscriptionTypes.includes(subscriptionFilter as SubscriptionType)
+      ) {
+        countQuery = countQuery.eq(
+          "subscription",
           subscriptionFilter as SubscriptionType
-        ) ||
-        subscriptionFilter === "admin"
+        );
+      }
+    }
+
+    // Apply search filter if provided
+    if (searchTerm && searchTerm.trim().length > 0) {
+      const searchLower = searchTerm.trim();
+      const searchMatchingIds: string[] = [];
+
+      // Search profiles table
+      const { data: nameIdMatches } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(
+          `first_name.ilike.%${searchLower}%,last_name.ilike.%${searchLower}%,id.ilike.%${searchLower}%`
+        );
+
+      if (nameIdMatches) {
+        searchMatchingIds.push(...nameIdMatches.map((p) => p.id));
+      }
+
+      // Search auth.users for email (limited to 5k for performance)
+      try {
+        const {
+          data: { users },
+          error: emailError,
+        } = await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 5000,
+        });
+
+        if (!emailError && users) {
+          const searchLowerEmail = searchLower.toLowerCase();
+          const emailMatches = users
+            .filter((user) =>
+              user.email?.toLowerCase().includes(searchLowerEmail)
+            )
+            .map((user) => user.id);
+          searchMatchingIds.push(...emailMatches);
+        }
+      } catch (emailSearchError) {
+        // Continue with name/id matches only
+      }
+
+      const validIds = [...new Set(searchMatchingIds)].filter((id) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          id
+        )
+      );
+
+      if (validIds.length > 0) {
+        countQuery = countQuery.in("id", validIds);
+      } else {
+        return 0;
+      }
+    }
+
+    const { count, error } = await countQuery;
+
+    if (error) {
+      console.error("Error fetching users count:", error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error("Error in getUsersForCRMCount:", error);
+    return 0;
+  }
+}
+
+/**
+ * Fetches paginated users with their Stripe data for the CRM
+ * Does NOT fetch total count - use getUsersForCRMCount separately
+ */
+export async function getAllUsersForCRM(
+  page: number = 1,
+  limit: number = 50,
+  searchTerm?: string,
+  subscriptionFilter?: string,
+  sortField?: string,
+  sortDirection?: "asc" | "desc"
+): Promise<{
+  users: UserData[];
+}> {
+  try {
+    const supabase = await createSupabaseServiceRole();
+
+    // Query from profiles table which now includes email column (synced from auth.users)
+    // This allows sorting and filtering by email at the database level
+    let query = supabase.from("profiles").select("*", { count: "exact" });
+
+    // Handle admin filter separately (admin is not a subscription type)
+    let adminUserIds: string[] | null = null;
+    if (subscriptionFilter === "admin") {
+      // Get all admin user IDs
+      const { data: admins, error: adminsError } = await supabase
+        .from("admins")
+        .select("user");
+
+      if (!adminsError && admins) {
+        adminUserIds = admins.map((admin: { user: string }) => admin.user);
+        if (adminUserIds.length > 0) {
+          query = query.in("id", adminUserIds);
+        } else {
+          // No admins found - return empty result
+          query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+        }
+      } else {
+        // Error fetching admins - return empty result
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+      }
+    } else if (subscriptionFilter && subscriptionFilter !== "all") {
+      // Apply subscription filter for valid subscription types
+      const validSubscriptionTypes: SubscriptionType[] = [
+        "none",
+        "monthly",
+        "annual",
+        "lifetime",
+      ];
+      if (
+        validSubscriptionTypes.includes(subscriptionFilter as SubscriptionType)
       ) {
         query = query.eq(
           "subscription",
@@ -731,193 +862,294 @@ export async function getAllUsersForCRM(
       }
     }
 
-    // Get search matching IDs if search term is provided
-    let searchMatchingIds: string[] | null = null;
+    // Apply search filtering at the database query level
     if (searchTerm && searchTerm.trim().length > 0) {
       const searchLower = searchTerm.trim();
-      const allMatchingIds: string[] = [];
-      
-      try {
-        // 1. Search profiles table for name and id matches (efficient DB query)
-        // This searches the entire profiles table, not just the current page
-        const nameIdQuery = supabase
-          .from("profiles")
-          .select("id")
-          .or(`first_name.ilike.%${searchLower}%,last_name.ilike.%${searchLower}%,id.ilike.%${searchLower}%`);
-        
-        const { data: nameIdMatches, error: nameIdError } = await nameIdQuery;
-        
-        if (!nameIdError && nameIdMatches) {
-          const nameIdMatchedIds = nameIdMatches.map(p => p.id);
-          allMatchingIds.push(...nameIdMatchedIds);
-        }
-        
-        // 2. Search auth.users for email matches (limited to first 5k users for performance)
-        // This is slower but necessary for email-only searches
-        try {
-          const { data: { users }, error: emailError } = await supabase.auth.admin.listUsers({
-            page: 1,
-            perPage: 5000, // Limit to first 5k users for performance
-          });
-          
-          if (!emailError && users) {
-            const searchLowerEmail = searchLower.toLowerCase();
-            const emailMatches = users
-              .filter(user => user.email?.toLowerCase().includes(searchLowerEmail))
-              .map(user => user.id);
-            allMatchingIds.push(...emailMatches);
-          }
-        } catch (emailSearchError) {
-          console.error("Error searching emails (non-critical):", emailSearchError);
-          // Continue with name/id matches only
-        }
-        
-        // Remove duplicates
-        searchMatchingIds = [...new Set(allMatchingIds)];
-      } catch (searchError) {
-        console.error("Error in search preprocessing:", searchError);
-        searchMatchingIds = []; // Empty array means no matches
-      }
-    }
 
-    // Apply search filter to main query
-    if (searchMatchingIds !== null) {
-      if (searchMatchingIds.length > 0) {
-        // Filter to only valid UUIDs to avoid type errors
-        const validUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const validIds = searchMatchingIds.filter(id => validUuidPattern.test(id));
-        
-        if (validIds.length > 0) {
-          query = query.in("id", validIds);
-        } else {
-          // No valid UUIDs found - return empty result by using a UUID that will never match
-          query = query.eq("id", "00000000-0000-0000-0000-000000000000");
-        }
-      } else {
-        // No matches found - return empty result by using a UUID that will never match
-        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
-      }
-    }
-
-    // Get total count for pagination (AFTER search filter is applied)
-    // Build count query with same filters
-    let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true });
-    
-    // Apply subscription filter to count query
-    if (subscriptionFilter && subscriptionFilter !== "all") {
-      const validSubscriptionTypes: SubscriptionType[] = [
-        "none",
-        "monthly",
-        "annual",
-        "lifetime",
+      // Use or() with multiple ilike conditions
+      // Search by first name, last name, and email
+      const orConditions = [
+        `first_name.ilike.%${searchLower}%`,
+        `last_name.ilike.%${searchLower}%`,
+        `email.ilike.%${searchLower}%`,
       ];
-      if (
-        validSubscriptionTypes.includes(
-          subscriptionFilter as SubscriptionType
-        ) ||
-        subscriptionFilter === "admin"
-      ) {
-        countQuery = countQuery.eq(
-          "subscription",
-          subscriptionFilter as SubscriptionType
+
+      // For full name search (e.g., "ryan johnson"), split and search for both parts
+      const parts = searchLower.trim().split(/\s+/);
+      if (parts.length > 1) {
+        // If search term has multiple words, also search for "first_name matches part1 AND last_name matches part2"
+        // We'll handle this by adding conditions that match any part in first or last name
+        for (const part of parts) {
+          if (part.length > 0) {
+            orConditions.push(`first_name.ilike.%${part}%`);
+            orConditions.push(`last_name.ilike.%${part}%`);
+          }
+        }
+      }
+
+      const orConditionsStr = orConditions.join(",");
+      query = query.or(orConditionsStr);
+    }
+
+    // Map frontend sort fields to database column names
+    // All these fields can be sorted at the database level before pagination
+    const dbSortableFields: Record<string, string> = {
+      firstName: "first_name",
+      lastName: "last_name",
+      subscription: "subscription",
+      createdAt: "updated_at", // Using updated_at as created_at equivalent
+      email: "email", // Email is now available in profiles table (synced from auth.users)
+    };
+
+    // Apply sorting to the query if the field can be sorted in the database
+    // This MUST be done BEFORE pagination to ensure correct results
+    if (sortField && sortField in dbSortableFields) {
+      const dbSortField = dbSortableFields[sortField];
+      const ascending = sortDirection === "asc";
+
+      console.log(
+        `Applying database sort: field=${sortField}, dbField=${dbSortField}, direction=${sortDirection}, ascending=${ascending}`
+      );
+
+      // For firstName, sort by both first_name and last_name for proper alphabetical sorting
+      // Users without names (NULL or empty string) should always appear last
+      if (sortField === "firstName") {
+        // Include all users but ensure those without names sort last
+        // Strategy: Sort by "has a name" first (users with names first), then alphabetically
+        // This ensures:
+        // - Users WITH names are sorted alphabetically (A-Z or Z-A based on direction)
+        // - Users WITHOUT names always appear at the end (regardless of sort direction)
+
+        console.log(
+          `Sorting by firstName: users with names will sort ${
+            ascending ? "A-Z" : "Z-A"
+          }, users without names always last`
+        );
+
+        // First order by whether the field is empty/null (0 = has name, 1 = no name)
+        // Then order by the actual field value
+        query = query
+          .order("first_name", {
+            ascending,
+            nullsFirst: false, // Treat NULL and empty as equal, sort to end
+          })
+          .order("last_name", {
+            ascending,
+            nullsFirst: false, // Secondary sort by last name
+          });
+      } else if (sortField === "lastName") {
+        // Similar logic for lastName: sort by lastName first, then firstName
+        // Users without either name will appear at the end
+        console.log(
+          `Sorting by lastName: users with names will sort ${
+            ascending ? "A-Z" : "Z-A"
+          }, users without names always last`
+        );
+
+        query = query
+          .order("last_name", {
+            ascending,
+            nullsFirst: false, // Treat NULL and empty as equal, sort to end
+          })
+          .order("first_name", {
+            ascending,
+            nullsFirst: false, // Secondary sort by first name
+          });
+      } else {
+        query = query.order(dbSortField, {
+          ascending,
+          nullsFirst: false, // NULLs always last
+        });
+      }
+    } else {
+      // Default sorting by updated_at desc if no sort specified or field can't be sorted in DB
+      // Note: Fields like 'email', 'lastActive', and 'totalSpent' cannot be sorted at DB level
+      // as they require data from external sources (auth.users, stripe API, etc)
+      if (!sortField) {
+        console.log(
+          "No sort field specified, using default sort by updated_at desc"
+        );
+      } else {
+        console.log(
+          `Sort field ${sortField} cannot be sorted in database (${sortField} field not in dbSortableFields), using default sort`
         );
       }
+      query = query.order("updated_at", {
+        ascending: false,
+        nullsFirst: false,
+      });
     }
-    
-    // Apply search filter to count query
-    if (searchMatchingIds !== null) {
-      if (searchMatchingIds.length > 0) {
-        // Filter to only valid UUIDs to avoid type errors
-        const validUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const validIds = searchMatchingIds.filter(id => validUuidPattern.test(id));
-        
-        if (validIds.length > 0) {
-          countQuery = countQuery.in("id", validIds);
-        } else {
-          // No valid UUIDs found - return empty result by using a UUID that will never match
-          countQuery = countQuery.eq("id", "00000000-0000-0000-0000-000000000000");
-        }
-      } else {
-        // No matches found - return empty result by using a UUID that will never match
-        countQuery = countQuery.eq("id", "00000000-0000-0000-0000-000000000000");
-      }
-    }
-    
-    const { count: totalCount } = await countQuery;
 
-    // Apply pagination to data query
+    // All sorting and filtering happens at the database level
+    // Apply pagination at the database level (always, for all sort types)
     const offset = (page - 1) * limit;
     query = query.range(offset, offset + limit - 1);
 
-    const { data: profiles, error: profilesError } = await query;
+    const { data: allProfiles, error: profilesError } = await query;
 
     if (profilesError) {
       console.error("Error fetching profiles for CRM:", profilesError);
       throw profilesError;
     }
 
+    if (!allProfiles || allProfiles.length === 0) {
+      console.log("No profiles found for CRM query");
+      return { users: [] };
+    }
+
+    // Rest of the function uses allProfiles
+    const profiles = allProfiles;
+
+    // Extract emails from profiles table (email column is synced from auth.users)
+    const profileIds = profiles.map((p) => p.id);
+    const userEmailsMap = new Map<string, string>();
+    const lastActiveMap = new Map<string, string>();
+
+    // Populate email map from profiles data
+    profiles.forEach((profile: any) => {
+      if (profile.email) {
+        userEmailsMap.set(profile.id, profile.email);
+      }
+    });
+    console.log(`Using ${userEmailsMap.size} emails from profiles table`);
+
+    // Batch fetch all user sessions
+    console.log("Fetching user sessions...");
+    if (profileIds.length > 0) {
+      try {
+        const { data: allSessions, error: sessionsError } = await supabase
+          .from("user_sessions")
+          .select("user_id, refreshed_at, updated_at, created_at")
+          .in("user_id", profileIds);
+
+        if (sessionsError) {
+          console.error("Error fetching sessions:", sessionsError);
+        } else {
+          console.log(`Fetched ${allSessions?.length || 0} sessions`);
+        }
+
+        if (allSessions) {
+          // Group by user_id and get the most recent session for each user
+          const sessionsByUser = new Map<string, any>();
+          allSessions.forEach((session) => {
+            const existing = sessionsByUser.get(session.user_id);
+            if (!existing) {
+              sessionsByUser.set(session.user_id, session);
+            } else {
+              // Compare timestamps to find most recent
+              const existingTime =
+                existing.refreshed_at ||
+                existing.updated_at ||
+                existing.created_at;
+              const currentTime =
+                session.refreshed_at ||
+                session.updated_at ||
+                session.created_at;
+              if (
+                currentTime &&
+                (!existingTime || currentTime > existingTime)
+              ) {
+                sessionsByUser.set(session.user_id, session);
+              }
+            }
+          });
+
+          sessionsByUser.forEach((session, userId) => {
+            lastActiveMap.set(
+              userId,
+              session.refreshed_at || session.updated_at || session.created_at
+            );
+          });
+        }
+      } catch (sessionsErr) {
+        console.error("Error batch fetching user sessions:", sessionsErr);
+      }
+    }
+
+    // Fetch invoices and payment intents directly from Stripe API for all customer IDs
+    const customerIds = profiles
+      .map((p) => p.customer_id)
+      .filter((id): id is string => !!id);
+
+    console.log(`Fetching Stripe data for ${customerIds.length} customers...`);
+    const invoicesMap = new Map<string, number>();
+    const paymentsMap = new Map<string, number>();
+
+    if (customerIds.length > 0) {
+      try {
+        // Fetch invoices directly from Stripe API for each customer
+        const invoicePromises = customerIds.map(async (customerId) => {
+          try {
+            const invoices = await stripe.invoices.list({
+              customer: customerId,
+              limit: 100, // Get up to 100 invoices per customer
+            });
+
+            // Sum up paid invoices
+            const paidTotal = invoices.data
+              .filter((inv) => inv.status === "paid")
+              .reduce((sum, inv) => sum + (inv.amount_paid || 0), 0);
+
+            if (paidTotal > 0) {
+              invoicesMap.set(customerId, paidTotal);
+            }
+          } catch (err) {
+            console.error(
+              `Error fetching invoices for customer ${customerId}:`,
+              err
+            );
+          }
+        });
+
+        // Fetch payment intents directly from Stripe API for each customer
+        const paymentPromises = customerIds.map(async (customerId) => {
+          try {
+            const paymentIntents = await stripe.paymentIntents.list({
+              customer: customerId,
+              limit: 100, // Get up to 100 payment intents per customer
+            });
+
+            // Sum up succeeded payment intents that aren't refunded
+            const succeededTotal = paymentIntents.data
+              .filter((pi) => pi.status === "succeeded" && !pi.refunded)
+              .reduce((sum, pi) => sum + (pi.amount || 0), 0);
+
+            if (succeededTotal > 0) {
+              paymentsMap.set(customerId, succeededTotal);
+            }
+          } catch (err) {
+            console.error(
+              `Error fetching payment intents for customer ${customerId}:`,
+              err
+            );
+          }
+        });
+
+        // Execute all fetches in parallel
+        await Promise.allSettled([...invoicePromises, ...paymentPromises]);
+
+        console.log(
+          `Fetched Stripe data for ${customerIds.length} customers (${invoicesMap.size} with invoices, ${paymentsMap.size} with payments)`
+        );
+      } catch (stripeErr) {
+        console.error("Error batch fetching Stripe data:", stripeErr);
+      }
+    }
+
+    // Build users array using batched data
+    // IMPORTANT: Preserve the order from the database query (which includes sorting)
+    // The profiles array is already sorted by the database query, so we maintain that order
     const users: UserData[] = [];
 
-    for (const profile of profiles || []) {
-      // Get auth user for email
-      const { data: authUser } = await supabase.auth.admin.getUserById(
-        profile.id
-      );
-      const userEmail = authUser.user?.email || "";
+    for (const profile of profiles) {
+      const userEmail = userEmailsMap.get(profile.id) || "";
+      const lastActive = lastActiveMap.get(profile.id);
 
-      // Note: Search filtering is now done at the database level before pagination
-      // All matching users (by name, id, or email) have already been filtered
-
-      // Get last active from user sessions
-      let lastActive: string | undefined;
-      const { data: userSessions } = await supabase
-        .from("user_sessions")
-        .select("refreshed_at, updated_at, created_at")
-        .eq("user_id", profile.id)
-        .order("refreshed_at", { ascending: false, nullsFirst: false })
-        .order("updated_at", { ascending: false, nullsFirst: false })
-        .limit(1);
-
-      if (userSessions && userSessions.length > 0) {
-        const session = userSessions[0];
-        // Use the most recent timestamp available
-        lastActive =
-          session.refreshed_at ||
-          session.updated_at ||
-          session.created_at ||
-          undefined;
-      }
-
-      // Calculate total spent
+      // Calculate total spent from batched data
       let totalSpent = 0;
       if (profile.customer_id) {
-        // Get total from invoices
-        const { data: customerInvoices } = await supabase
-          .schema("stripe_tables" as any)
-          .from("stripe_invoices")
-          .select("total, status")
-          .eq("customer", profile.customer_id);
-
-        const invoiceTotal =
-          customerInvoices
-            ?.filter((inv: any) => inv.status === "paid")
-            .reduce((sum: number, inv: any) => sum + (inv.total || 0), 0) || 0;
-
-        // Get total from payment intents
-        const { data: customerPayments } = await supabase
-          .schema("stripe_tables" as any)
-          .from("stripe_payment_intents")
-          .select("amount, attrs")
-          .eq("customer", profile.customer_id);
-
-        const paymentTotal =
-          customerPayments
-            ?.filter((pi: any) => {
-              const attrs = pi.attrs as any;
-              return attrs?.status === "succeeded" && !attrs?.refunded;
-            })
-            .reduce((sum: number, pi: any) => sum + (pi.amount || 0), 0) || 0;
-
+        const invoiceTotal = invoicesMap.get(profile.customer_id) || 0;
+        const paymentTotal = paymentsMap.get(profile.customer_id) || 0;
         totalSpent = (invoiceTotal + paymentTotal) / 100;
       }
 
@@ -936,16 +1168,15 @@ export async function getAllUsersForCRM(
       });
     }
 
-    const totalPages = Math.ceil((totalCount || 0) / limit);
-
     return {
       users,
-      totalCount: totalCount || 0,
-      totalPages,
     };
   } catch (error) {
     console.error("Error fetching users for CRM:", error);
-    throw error;
+    // Return empty array instead of throwing to prevent frontend from hanging
+    return {
+      users: [],
+    };
   }
 }
 
@@ -972,35 +1203,96 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
         date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
       );
 
-      // Get invoices for this month
-      const { data: invoices } = await supabase
-        .schema("stripe_tables" as any)
-        .from("stripe_invoices")
-        .select("total, status")
-        .gte("period_end", monthStart.toISOString())
-        .lte("period_end", monthEnd.toISOString())
-        .eq("status", "paid");
+      // Get invoices for this month directly from Stripe API
+      let invoiceRevenue = 0;
+      try {
+        const invoices = await stripe.invoices.list({
+          created: {
+            gte: Math.floor(monthStart.getTime() / 1000),
+            lte: Math.floor(monthEnd.getTime() / 1000),
+          },
+          status: "paid",
+          limit: 100, // Stripe API limit
+        });
 
-      // Get payment intents for this month
-      const { data: payments } = await supabase
-        .schema("stripe_tables" as any)
-        .from("stripe_payment_intents")
-        .select("amount, attrs")
-        .gte("created", monthStart.toISOString())
-        .lte("created", monthEnd.toISOString());
-
-      const invoiceRevenue =
-        invoices?.reduce(
-          (sum: number, inv: any) => sum + (inv.total || 0),
+        invoiceRevenue = invoices.data.reduce(
+          (sum, inv) => sum + (inv.amount_paid || 0),
           0
-        ) || 0;
-      const paymentRevenue =
-        payments
-          ?.filter((pi: any) => {
-            const attrs = pi.attrs as any;
-            return attrs?.status === "succeeded" && !attrs?.refunded;
-          })
-          .reduce((sum: number, pi: any) => sum + (pi.amount || 0), 0) || 0;
+        );
+
+        // Handle pagination if there are more than 100 invoices
+        let hasMore = invoices.has_more;
+        let lastInvoiceId = invoices.data[invoices.data.length - 1]?.id;
+        while (hasMore && lastInvoiceId) {
+          const nextPage = await stripe.invoices.list({
+            created: {
+              gte: Math.floor(monthStart.getTime() / 1000),
+              lte: Math.floor(monthEnd.getTime() / 1000),
+            },
+            status: "paid",
+            limit: 100,
+            starting_after: lastInvoiceId,
+          });
+
+          invoiceRevenue += nextPage.data.reduce(
+            (sum, inv) => sum + (inv.amount_paid || 0),
+            0
+          );
+
+          hasMore = nextPage.has_more;
+          lastInvoiceId = nextPage.data[nextPage.data.length - 1]?.id;
+        }
+      } catch (err) {
+        console.error(
+          `Error fetching invoices for month ${labels[labels.length - 1]}:`,
+          err
+        );
+      }
+
+      // Get payment intents for this month directly from Stripe API
+      let paymentRevenue = 0;
+      try {
+        const paymentIntents = await stripe.paymentIntents.list({
+          created: {
+            gte: Math.floor(monthStart.getTime() / 1000),
+            lte: Math.floor(monthEnd.getTime() / 1000),
+          },
+          limit: 100, // Stripe API limit
+        });
+
+        paymentRevenue = paymentIntents.data
+          .filter((pi) => pi.status === "succeeded" && !pi.refunded)
+          .reduce((sum, pi) => sum + (pi.amount || 0), 0);
+
+        // Handle pagination if there are more than 100 payment intents
+        let hasMore = paymentIntents.has_more;
+        let lastPaymentId =
+          paymentIntents.data[paymentIntents.data.length - 1]?.id;
+        while (hasMore && lastPaymentId) {
+          const nextPage = await stripe.paymentIntents.list({
+            created: {
+              gte: Math.floor(monthStart.getTime() / 1000),
+              lte: Math.floor(monthEnd.getTime() / 1000),
+            },
+            limit: 100,
+            starting_after: lastPaymentId,
+          });
+
+          paymentRevenue += nextPage.data
+            .filter((pi) => pi.status === "succeeded" && !pi.refunded)
+            .reduce((sum, pi) => sum + (pi.amount || 0), 0);
+
+          hasMore = nextPage.has_more;
+          lastPaymentId = nextPage.data[nextPage.data.length - 1]?.id;
+        }
+      } catch (err) {
+        console.error(
+          `Error fetching payment intents for month ${
+            labels[labels.length - 1]
+          }:`,
+          err
+        );
+      }
 
       data.push((invoiceRevenue + paymentRevenue) / 100);
     }

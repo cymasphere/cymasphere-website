@@ -722,10 +722,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Users
             </NavItem>
           </Link>
-          <Link href="/admin/user-management" passHref legacyBehavior>
+          <Link href="/admin/nfr" passHref legacyBehavior>
             <NavItem
-              $active={pathname === "/admin/user-management" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/user-management")}
+              $active={pathname === "/admin/nfr" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/nfr")}
             >
               <FaUserShield />
               NFR Licenses

@@ -2,6 +2,11 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import {
+  getAllUsersForCRM,
+  getUsersForCRMCount,
+} from "@/utils/stripe/admin-analytics";
+import { fetchProfile } from "@/utils/supabase/actions";
 
 export interface UserManagementRecord {
   user_email: string;
@@ -358,6 +363,147 @@ export async function deleteUserManagementRecord(user_email: string): Promise<{
     return { success: true, error: null };
   } catch (error) {
     console.error("Unexpected error:", error);
+    return {
+      success: false,
+      error: "Internal server error",
+    };
+  }
+}
+
+/**
+ * Get all users for CRM with admin check (admin only)
+ * Wrapper around getAllUsersForCRM that adds admin authorization
+ */
+export async function getAllUsersForCRMAdmin(
+  page: number = 1,
+  limit: number = 50,
+  searchTerm?: string,
+  subscriptionFilter?: string,
+  sortField?: string,
+  sortDirection?: "asc" | "desc"
+): Promise<{
+  users: Array<{
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    subscription: string;
+    customerId?: string;
+    subscriptionExpiration?: string;
+    trialExpiration?: string;
+    createdAt: string;
+    lastActive?: string;
+    totalSpent: number;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { users: [], error: "Unauthorized" };
+    }
+
+    const result = await getAllUsersForCRM(
+      page,
+      limit,
+      searchTerm,
+      subscriptionFilter,
+      sortField,
+      sortDirection
+    );
+
+    return { users: result.users };
+  } catch (error) {
+    console.error("Error in getAllUsersForCRMAdmin:", error);
+    return {
+      users: [],
+      error: error instanceof Error ? error.message : "Failed to fetch users",
+    };
+  }
+}
+
+/**
+ * Get user count for CRM with admin check (admin only)
+ * Wrapper around getUsersForCRMCount that adds admin authorization
+ */
+export async function getUsersForCRMCountAdmin(
+  searchTerm?: string,
+  subscriptionFilter?: string
+): Promise<{
+  count: number;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { count: 0, error: "Unauthorized" };
+    }
+
+    const count = await getUsersForCRMCount(searchTerm, subscriptionFilter);
+    return { count };
+  } catch (error) {
+    console.error("Error in getUsersForCRMCountAdmin:", error);
+    return {
+      count: 0,
+      error:
+        error instanceof Error ? error.message : "Failed to fetch user count",
+    };
+  }
+}
+
+/**
+ * Update user profile from Stripe (admin only)
+ * This is the same function used in AuthContext when users log in
+ * @param userId The user ID to update
+ * @returns Object indicating success and any errors
+ */
+export async function updateUserProfileFromStripe(userId: string): Promise<{
+  success: boolean;
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    if (!userId || typeof userId !== "string") {
+      return { success: false, error: "Valid user ID is required" };
+    }
+
+    // Fetch the user's profile using the existing function
+    const { profile, error: profileError } = await fetchProfile(userId);
+
+    if (profileError || !profile) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Get user email from the profiles table (now synced from auth.users)
+    const email = (profile as any).email;
+    if (!email) {
+      return { success: false, error: "User email not found in profile" };
+    }
+
+    // Import and call updateStripe (same function used in AuthContext)
+    const { updateStripe } = await import("@/utils/supabase/actions");
+    const { success, error: updateError } = await updateStripe(email, profile);
+
+    if (!success) {
+      return {
+        success: false,
+        error:
+          updateError instanceof Error
+            ? updateError.message
+            : "Failed to update profile from Stripe",
+      };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Unexpected error updating user profile from Stripe:", error);
     return {
       success: false,
       error: "Internal server error",

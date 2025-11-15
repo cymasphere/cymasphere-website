@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
-import { 
-  FaUsers, 
+import {
+  FaUsers,
   FaSearch,
   FaFilter,
   FaEye,
@@ -35,17 +35,22 @@ import { motion } from "framer-motion";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
-import { getAllUsersForCRM, UserData } from "@/utils/stripe/admin-analytics";
-import { 
-  refundPaymentIntent, 
+import {
+  getAllUsersForCRMAdmin,
+  getUsersForCRMCountAdmin,
+} from "@/app/actions/user-management";
+import type { UserData } from "@/utils/stripe/admin-analytics";
+import {
+  refundPaymentIntent,
   refundInvoice,
   cancelSubscriptionAdmin,
   reactivateSubscription,
   changeSubscriptionPlan,
   getCustomerSubscriptions,
-  getPrices
+  getPrices,
 } from "@/utils/stripe/actions";
 import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
+import { updateUserProfileFromStripe } from "@/app/actions/user-management";
 
 const Container = styled.div`
   width: 100%;
@@ -198,7 +203,8 @@ const SearchInput = styled.input<{ $isLoading?: boolean }>`
     background-color: rgba(255, 255, 255, 0.05) !important;
     background-clip: content-box !important;
     caret-color: var(--text) !important;
-    transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s !important;
+    transition: background-color 5000s ease-in-out 0s,
+      color 5000s ease-in-out 0s !important;
   }
 
   &:-moz-autofill,
@@ -213,7 +219,9 @@ const SearchInput = styled.input<{ $isLoading?: boolean }>`
     color: var(--text-secondary);
   }
 
-  ${props => props.$isLoading && `
+  ${(props) =>
+    props.$isLoading &&
+    `
     background-color: rgba(255, 255, 255, 0.08) !important;
     border-color: var(--primary);
   `}
@@ -226,8 +234,10 @@ const SearchIcon = styled.div<{ $isLoading?: boolean }>`
   transform: translateY(-50%);
   color: var(--text-secondary);
   font-size: 1rem;
-  
-  ${props => props.$isLoading && `
+
+  ${(props) =>
+    props.$isLoading &&
+    `
     color: var(--primary);
     animation: pulse 1.5s ease-in-out infinite;
     
@@ -291,7 +301,7 @@ const TableContainer = styled.div`
 
   @media (max-width: 768px) {
     overflow-x: auto;
-    
+
     table {
       min-width: 1000px;
     }
@@ -304,33 +314,58 @@ const Table = styled.table`
   table-layout: fixed;
 
   /* Define column widths */
-  th:nth-child(1), td:nth-child(1) { width: 200px; } /* Name */
-  th:nth-child(2), td:nth-child(2) { width: 220px; } /* Email */
-  th:nth-child(3), td:nth-child(3) { width: 140px; } /* Subscription */
-  th:nth-child(4), td:nth-child(4) { width: 110px; } /* Join Date */
-  th:nth-child(5), td:nth-child(5) { width: 110px; } /* Last Active */
-  th:nth-child(6), td:nth-child(6) { width: 120px; } /* Support Tickets */
-  th:nth-child(7), td:nth-child(7) { width: 120px; } /* Total Spent */
-  th:nth-child(8), td:nth-child(8) { width: 80px; } /* Actions */
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 200px;
+  } /* Name */
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 220px;
+  } /* Email */
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 140px;
+  } /* Subscription */
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 110px;
+  } /* Join Date */
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 110px;
+  } /* Last Active */
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 120px;
+  } /* Support Tickets */
+  th:nth-child(7),
+  td:nth-child(7) {
+    width: 120px;
+  } /* Total Spent */
+  th:nth-child(8),
+  td:nth-child(8) {
+    width: 80px;
+  } /* Actions */
 `;
 
 const TableHeader = styled.thead`
   background-color: rgba(255, 255, 255, 0.02);
 `;
 
-const TableHeaderCell = styled.th`
+const TableHeaderCell = styled.th<{ $sortable?: boolean }>`
   padding: 1rem;
   text-align: left;
   font-weight: 600;
   color: var(--text);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
+  cursor: ${(props) => (props.$sortable !== false ? "pointer" : "default")};
   user-select: none;
   transition: background-color 0.2s ease;
   position: relative;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: ${(props) =>
+      props.$sortable !== false ? "rgba(255, 255, 255, 0.02)" : "transparent"};
   }
 
   svg {
@@ -377,7 +412,7 @@ const UserAvatar = styled.div<{ $color: string }>`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: ${props => props.$color};
+  background-color: ${(props) => props.$color};
   color: white;
   display: flex;
   align-items: center;
@@ -413,7 +448,10 @@ const UserEmail = styled.div`
   max-width: 200px;
 `;
 
-const SubscriptionBadge = styled.span<{ $color: string; $variant?: 'default' | 'premium' }>`
+const SubscriptionBadge = styled.span<{
+  $color: string;
+  $variant?: "default" | "premium";
+}>`
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -423,12 +461,14 @@ const SubscriptionBadge = styled.span<{ $color: string; $variant?: 'default' | '
   align-items: center;
   gap: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    
-  background-color: ${props => props.$color};
+
+  background-color: ${(props) => props.$color};
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  
-  ${props => props.$variant === 'premium' && `
+
+  ${(props) =>
+    props.$variant === "premium" &&
+    `
     background: linear-gradient(135deg, ${props.$color}, ${props.$color}dd);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -449,7 +489,7 @@ const SupportTicketsCount = styled.div`
 `;
 
 const TicketBadge = styled.span<{ $count: number }>`
-  background-color: ${props => props.$count > 0 ? '#e74c3c' : '#95a5a6'};
+  background-color: ${(props) => (props.$count > 0 ? "#e74c3c" : "#95a5a6")};
   color: white;
   border-radius: 12px;
   padding: 2px 8px;
@@ -464,7 +504,9 @@ const ActionButtons = styled.div`
   gap: 0.5rem;
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{
+  variant?: "primary" | "secondary" | "danger";
+}>`
   padding: 6px 8px;
   border: none;
   border-radius: 4px;
@@ -473,10 +515,10 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   ${(props) => {
     switch (props.variant) {
-      case 'primary':
+      case "primary":
         return `
           background-color: rgba(108, 99, 255, 0.1);
           color: var(--primary);
@@ -484,7 +526,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'danger
             background-color: rgba(108, 99, 255, 0.2);
           }
         `;
-      case 'danger':
+      case "danger":
         return `
           background-color: rgba(220, 53, 69, 0.1);
           color: #dc3545;
@@ -533,10 +575,14 @@ const SearchLoadingSpinner = styled.div`
   border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -551,8 +597,9 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
   margin: 0 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
-  background-color: ${props => props.$active ? 'var(--primary)' : 'transparent'};
-  color: ${props => props.$active ? 'white' : 'var(--text)'};
+  background-color: ${(props) =>
+    props.$active ? "var(--primary)" : "transparent"};
+  color: ${(props) => (props.$active ? "white" : "var(--text)")};
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -765,34 +812,34 @@ const StatusBadge = styled.span<{ $status: string }>`
   text-transform: capitalize;
   background-color: ${({ $status }) => {
     switch ($status) {
-      case 'active':
-      case 'succeeded':
-      case 'paid':
-        return 'rgba(46, 204, 113, 0.2)';
-      case 'canceled':
-      case 'failed':
-        return 'rgba(231, 76, 60, 0.2)';
-      case 'pending':
-      case 'processing':
-        return 'rgba(241, 196, 15, 0.2)';
+      case "active":
+      case "succeeded":
+      case "paid":
+        return "rgba(46, 204, 113, 0.2)";
+      case "canceled":
+      case "failed":
+        return "rgba(231, 76, 60, 0.2)";
+      case "pending":
+      case "processing":
+        return "rgba(241, 196, 15, 0.2)";
       default:
-        return 'rgba(149, 165, 166, 0.2)';
+        return "rgba(149, 165, 166, 0.2)";
     }
   }};
   color: ${({ $status }) => {
     switch ($status) {
-      case 'active':
-      case 'succeeded':
-      case 'paid':
-        return '#2ecc71';
-      case 'canceled':
-      case 'failed':
-        return '#e74c3c';
-      case 'pending':
-      case 'processing':
-        return '#f1c40f';
+      case "active":
+      case "succeeded":
+      case "paid":
+        return "#2ecc71";
+      case "canceled":
+      case "failed":
+        return "#e74c3c";
+      case "pending":
+      case "processing":
+        return "#f1c40f";
       default:
-        return '#95a5a6';
+        return "#95a5a6";
     }
   }};
 `;
@@ -802,6 +849,53 @@ const EmptyState = styled.div`
   padding: 2rem;
   color: var(--text-secondary);
   font-style: italic;
+`;
+
+const PlanSelect = styled.select<{ $disabled?: boolean }>`
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s ease;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background-color: var(--card-bg);
+    color: var(--text);
+    padding: 8px;
+  }
+
+  option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  option:checked {
+    background-color: var(--primary);
+    color: white;
+  }
 `;
 
 // More Menu Components
@@ -846,12 +940,12 @@ const MoreMenuDropdown = styled(motion.div)`
   margin-top: 4px;
 `;
 
-const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
+const MoreMenuItem = styled.button<{ variant?: "danger" }>`
   width: 100%;
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${props => props.variant === 'danger' ? '#e74c3c' : 'var(--text)'};
+  color: ${(props) => (props.variant === "danger" ? "#e74c3c" : "var(--text)")};
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -861,7 +955,10 @@ const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
   font-size: 0.9rem;
 
   &:hover {
-    background-color: ${props => props.variant === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+    background-color: ${(props) =>
+      props.variant === "danger"
+        ? "rgba(231, 76, 60, 0.1)"
+        : "rgba(255, 255, 255, 0.05)"};
   }
 
   svg {
@@ -871,7 +968,10 @@ const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
 `;
 
 // Refund Components
-const RefundButton = styled.button<{ variant?: 'primary' | 'danger'; disabled?: boolean }>`
+const RefundButton = styled.button<{
+  variant?: "primary" | "danger";
+  disabled?: boolean;
+}>`
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
@@ -882,16 +982,18 @@ const RefundButton = styled.button<{ variant?: 'primary' | 'danger'; disabled?: 
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  
-  ${props => props.disabled && `
+
+  ${(props) =>
+    props.disabled &&
+    `
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
   `}
-  
-  ${props => {
+
+  ${(props) => {
     switch (props.variant) {
-      case 'danger':
+      case "danger":
         return `
           background-color: rgba(220, 53, 69, 0.1);
           color: #dc3545;
@@ -917,7 +1019,7 @@ const RefundButton = styled.button<{ variant?: 'primary' | 'danger'; disabled?: 
   }
 `;
 
-const RefundNotification = styled(motion.div)<{ type: 'success' | 'error' }>`
+const RefundNotification = styled(motion.div)<{ type: "success" | "error" }>`
   position: fixed;
   top: 20px;
   right: 20px;
@@ -930,15 +1032,18 @@ const RefundNotification = styled(motion.div)<{ type: 'success' | 'error' }>`
   align-items: center;
   gap: 0.5rem;
   max-width: 400px;
-  
-  ${props => props.type === 'success' ? `
+
+  ${(props) =>
+    props.type === "success"
+      ? `
     background-color: #2ecc71;
     border: 1px solid #27ae60;
-  ` : `
+  `
+      : `
     background-color: #e74c3c;
     border: 1px solid #c0392b;
   `}
-  
+
   svg {
     font-size: 1rem;
   }
@@ -951,10 +1056,14 @@ const LoadingSpinner = styled.div`
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -1013,7 +1122,7 @@ const ConfirmationDetailItem = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -1036,7 +1145,7 @@ const ConfirmationButtons = styled.div`
   justify-content: center;
 `;
 
-const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
+const ConfirmationButton = styled.button<{ variant: "danger" | "secondary" }>`
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -1048,15 +1157,18 @@ const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
   gap: 0.5rem;
   min-width: 120px;
   justify-content: center;
-  
-  ${props => props.variant === 'danger' ? `
+
+  ${(props) =>
+    props.variant === "danger"
+      ? `
     background-color: #dc3545;
     color: white;
     &:hover:not(:disabled) {
       background-color: #c82333;
       transform: translateY(-1px);
     }
-  ` : `
+  `
+      : `
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--text);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1064,12 +1176,12 @@ const ConfirmationButton = styled.button<{ variant: 'danger' | 'secondary' }>`
       background-color: rgba(255, 255, 255, 0.15);
     }
   `}
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   svg {
     font-size: 0.9rem;
   }
@@ -1094,11 +1206,11 @@ export default function AdminCRM() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const usersPerPage = 10;
-  
+
   // Modal state
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  
+
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
 
@@ -1111,19 +1223,30 @@ export default function AdminCRM() {
   const [showRefundConfirmation, setShowRefundConfirmation] = useState(false);
   const [refundConfirmationData, setRefundConfirmationData] = useState<{
     id: string;
-    type: 'purchase' | 'invoice';
+    type: "purchase" | "invoice";
     amount: number;
     description: string;
   } | null>(null);
 
   // Subscription management state
-  const [subscriptionLoading, setSubscriptionLoading] = useState<string | null>(null);
-  const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(null);
-  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState<string | null>(
+    null
+  );
+  const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(
+    null
+  );
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(
+    null
+  );
   const [availablePlans, setAvailablePlans] = useState<any>(null);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
-  const [newPlanType, setNewPlanType] = useState<'monthly' | 'annual'>('monthly');
+  const [userSubscriptions, setUserSubscriptions] = useState<any[]>([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [cancelConfirmationData, setCancelConfirmationData] = useState<{
+    subscriptionId: string;
+    customerId: string;
+    userName: string;
+  } | null>(null);
 
   // Delete user state
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
@@ -1149,45 +1272,56 @@ export default function AdminCRM() {
     return () => clearTimeout(timer);
   }, [searchTerm, debouncedSearchTerm]);
 
+  // Fetch count separately (only when search/filter changes)
+  const fetchCount = async () => {
+    try {
+      const result = await getUsersForCRMCountAdmin(
+        debouncedSearchTerm || undefined,
+        subscriptionFilter
+      );
+
+      if (result.error) {
+        console.error("Error fetching count:", result.error);
+        return;
+      }
+
+      setTotalCount(result.totalCount);
+      setTotalPages(Math.ceil(result.totalCount / usersPerPage));
+    } catch (err) {
+      console.error("Error fetching count:", err);
+    }
+  };
+
+  // Fetch users (data only, no count)
   const fetchUsers = async (isSearchOperation = false) => {
     try {
       if (isSearchOperation) {
         setSearchLoading(true);
       } else {
-      setLoading(true);
+        setLoading(true);
       }
-      
-      const result = await getAllUsersForCRM(
+
+      console.log(
+        `[Frontend] Fetching users with sortField=${sortField}, sortDirection=${sortDirection}`
+      );
+
+      const result = await getAllUsersForCRMAdmin(
         currentPage,
         usersPerPage,
         debouncedSearchTerm || undefined,
-        subscriptionFilter
+        subscriptionFilter,
+        sortField,
+        sortDirection
       );
-      
-      // Sort the users locally since the API doesn't handle sorting yet
-      const sortedUsers = [...result.users].sort((a, b) => {
-        const aValue = a[sortField];
-        const bValue = b[sortField];
-        
-        if (aValue === undefined) return 1;
-        if (bValue === undefined) return -1;
-        
-        if (typeof aValue === "string" && typeof bValue === "string") {
-          const comparison = aValue.localeCompare(bValue);
-          return sortDirection === "asc" ? comparison : -comparison;
-        }
-        
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          const comparison = aValue - bValue;
-          return sortDirection === "asc" ? comparison : -comparison;
-        }
-        
-        return 0;
-      });
 
-      setUsers(sortedUsers);
-      setTotalPages(result.totalPages);
-      setTotalCount(result.totalCount);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      console.log(`[Frontend] Received ${result.users.length} users from API`);
+
+      // All sorting is done in the database query - just use the results as-is
+      setUsers(result.users);
     } catch (err) {
       console.error("Error fetching users:", err);
       setError("Failed to load user data");
@@ -1195,48 +1329,93 @@ export default function AdminCRM() {
       if (isSearchOperation) {
         setSearchLoading(false);
       } else {
-      setLoading(false);
+        setLoading(false);
       }
     }
   };
 
+  // Fetch count when search/filter changes (independent of pagination)
   useEffect(() => {
-    // Only fetch users if we have a user and language is loaded
+    if (user && !languageLoading) {
+      fetchCount();
+    }
+  }, [user, languageLoading, debouncedSearchTerm, subscriptionFilter]);
+
+  // Fetch users when page/sort changes or on initial load
+  useEffect(() => {
     if (user && !languageLoading) {
       // Determine if this is a search operation by checking if search term changed
       const isSearchOperation = debouncedSearchTerm !== previousSearchTerm;
-      
+
       fetchUsers(isSearchOperation);
-      
+
       // Update previous search term
       setPreviousSearchTerm(debouncedSearchTerm);
     }
-  }, [currentPage, debouncedSearchTerm, subscriptionFilter, sortField, sortDirection, user, languageLoading]);
+  }, [
+    currentPage,
+    debouncedSearchTerm,
+    subscriptionFilter,
+    sortField,
+    sortDirection,
+    user,
+    languageLoading,
+  ]);
 
   // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       // Only close if clicking outside of any more menu container
-      if (!target.closest('[data-more-menu]')) {
+      if (!target.closest("[data-more-menu]")) {
         setOpenMoreMenu(null);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const handleSort = (field: keyof UserData) => {
+    // Only allow sorting on fields that can be sorted in the database
+    // Email is now sortable because we fetch it with the service role
+    // Fields like 'lastActive' and 'totalSpent' come from external sources and cannot be sorted
+    const sortableFields = [
+      "firstName",
+      "lastName",
+      "subscription",
+      "createdAt",
+      "email",
+    ];
+    if (!sortableFields.includes(field as string)) {
+      console.log(`Field "${field}" is not sortable at database level`);
+      return; // Don't allow sorting on this field
+    }
+
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field);
+      setSortField(field as keyof UserData);
       setSortDirection("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
   const getSortIcon = (field: keyof UserData) => {
+    // Only show sort indicator for sortable fields
+    const sortableFields = [
+      "firstName",
+      "lastName",
+      "subscription",
+      "createdAt",
+      "email",
+    ];
+    const isSortable = sortableFields.includes(field as string);
+
+    if (!isSortable) {
+      return null; // Don't show sort icon for non-sortable fields
+    }
+
     if (sortField !== field) return <FaSort />;
     return sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />;
   };
@@ -1275,7 +1454,9 @@ export default function AdminCRM() {
   const getSupportTicketCount = (userId: string) => {
     // This would normally come from your database
     const mockCounts = [0, 1, 2, 3, 5];
-    const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = userId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return mockCounts[hash % mockCounts.length];
   };
 
@@ -1284,14 +1465,19 @@ export default function AdminCRM() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   const getDisplayName = (user: UserData) => {
-    if (user.firstName && user.lastName && user.firstName.trim() && user.lastName.trim()) {
+    if (
+      user.firstName &&
+      user.lastName &&
+      user.firstName.trim() &&
+      user.lastName.trim()
+    ) {
       return `${user.firstName.trim()} ${user.lastName.trim()}`;
     }
     if (user.email && user.email.includes("@")) {
@@ -1301,7 +1487,12 @@ export default function AdminCRM() {
   };
 
   const getInitials = (user: UserData) => {
-    if (user.firstName && user.lastName && user.firstName.length > 0 && user.lastName.length > 0) {
+    if (
+      user.firstName &&
+      user.lastName &&
+      user.firstName.length > 0 &&
+      user.lastName.length > 0
+    ) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
     if (user.email && user.email.length > 0) {
@@ -1312,63 +1503,146 @@ export default function AdminCRM() {
 
   const getAvatarColor = (email: string) => {
     const colors = [
-      "#6c63ff", "#4ecdc4", "#ffd93d", "#ff6b6b", "#95a5a6",
-      "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6"
+      "#6c63ff",
+      "#4ecdc4",
+      "#ffd93d",
+      "#ff6b6b",
+      "#95a5a6",
+      "#e74c3c",
+      "#3498db",
+      "#2ecc71",
+      "#f39c12",
+      "#9b59b6",
     ];
     if (!email || email.length === 0) {
       return colors[0]; // Default to first color
     }
-    const index = email.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = email
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
-  const handleViewUser = (user: UserData) => {
+  const handleViewUser = async (user: UserData) => {
     setSelectedUser(user);
     setShowUserModal(true);
+
+    // Fetch real subscription data if user has a customer ID
+    if (user.customerId) {
+      await fetchUserSubscriptions(user.customerId);
+    } else {
+      setUserSubscriptions([]);
+    }
+  };
+
+  const fetchUserSubscriptions = async (customerId: string) => {
+    try {
+      setLoadingSubscriptions(true);
+      const result = await getCustomerSubscriptions(customerId);
+
+      if (result.success && result.subscriptions) {
+        setUserSubscriptions(result.subscriptions);
+      } else {
+        setUserSubscriptions([]);
+        console.error("Error fetching subscriptions:", result.error);
+      }
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      setUserSubscriptions([]);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
   };
 
   const closeModal = () => {
     setShowUserModal(false);
     setSelectedUser(null);
+    setUserSubscriptions([]);
+    setSubscriptionError(null);
+    setSubscriptionSuccess(null);
   };
 
   // Mock detailed data for demonstration
   const getMockUserDetails = (user: UserData) => {
-    const mockSubscriptions = user.subscription !== "none" ? [
-      {
-        id: `sub_${user.id.slice(0, 8)}`,
-        status: "active",
-        currentPeriodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        cancelAtPeriodEnd: false,
-        priceId: `price_${user.subscription}`,
-        amount: user.subscription === "monthly" ? 0 : user.subscription === "annual" ? 0 : 0,
-        interval: user.subscription === "monthly" ? "month" : user.subscription === "annual" ? "year" : "lifetime",
-      }
-    ] : [];
+    const mockSubscriptions =
+      user.subscription !== "none"
+        ? [
+            {
+              id: `sub_${user.id.slice(0, 8)}`,
+              status: "active",
+              currentPeriodStart: new Date(
+                Date.now() - 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              currentPeriodEnd: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              cancelAtPeriodEnd: false,
+              priceId: `price_${user.subscription}`,
+              amount:
+                user.subscription === "monthly"
+                  ? 0
+                  : user.subscription === "annual"
+                  ? 0
+                  : 0,
+              interval:
+                user.subscription === "monthly"
+                  ? "month"
+                  : user.subscription === "annual"
+                  ? "year"
+                  : "lifetime",
+            },
+          ]
+        : [];
 
-    const mockPurchases = user.totalSpent > 0 ? [
-      {
-        id: `pi_${user.id.slice(0, 8)}`,
-        amount: user.totalSpent,
-        status: "succeeded",
-        createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-        description: user.subscription === "lifetime" ? "Lifetime Access Purchase" : "One-time purchase",
-      }
-    ] : [];
+    const mockPurchases =
+      user.totalSpent > 0
+        ? [
+            {
+              id: `pi_${user.id.slice(0, 8)}`,
+              amount: user.totalSpent,
+              status: "succeeded",
+              createdAt: new Date(
+                Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              description:
+                user.subscription === "lifetime"
+                  ? "Lifetime Access Purchase"
+                  : "One-time purchase",
+            },
+          ]
+        : [];
 
-    const mockInvoices = user.subscription !== "none" ? [
-      {
-        id: `in_${user.id.slice(0, 8)}`,
-        number: `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-        amount: user.subscription === "monthly" ? 0 : user.subscription === "annual" ? 0 : 0,
-        status: "paid",
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        paidAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        description: `${user.subscription.charAt(0).toUpperCase() + user.subscription.slice(1)} subscription`,
-      }
-    ] : [];
+    const mockInvoices =
+      user.subscription !== "none"
+        ? [
+            {
+              id: `in_${user.id.slice(0, 8)}`,
+              number: `INV-${new Date().getFullYear()}-${String(
+                Math.floor(Math.random() * 10000)
+              ).padStart(4, "0")}`,
+              amount:
+                user.subscription === "monthly"
+                  ? 0
+                  : user.subscription === "annual"
+                  ? 0
+                  : 0,
+              status: "paid",
+              createdAt: new Date(
+                Date.now() - 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              paidAt: new Date(
+                Date.now() - 29 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              dueDate: new Date(
+                Date.now() - 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              description: `${
+                user.subscription.charAt(0).toUpperCase() +
+                user.subscription.slice(1)
+              } subscription`,
+            },
+          ]
+        : [];
 
     return {
       subscriptions: mockSubscriptions,
@@ -1384,21 +1658,21 @@ export default function AdminCRM() {
 
   const handleMoreMenuAction = (action: string, user: UserData) => {
     setOpenMoreMenu(null);
-    
+
     switch (action) {
-      case 'view':
+      case "view":
         handleViewUser(user);
         break;
-      case 'edit':
-        console.log('Edit user:', user.id);
+      case "edit":
+        console.log("Edit user:", user.id);
         break;
-      case 'email':
-        console.log('Send email to:', user.email);
+      case "email":
+        console.log("Send email to:", user.email);
         break;
-      case 'ban':
-        console.log('Ban user:', user.id);
+      case "ban":
+        console.log("Ban user:", user.id);
         break;
-      case 'delete':
+      case "delete":
         setDeleteConfirmationData({
           userId: user.id,
           userName: getDisplayName(user),
@@ -1410,7 +1684,12 @@ export default function AdminCRM() {
   };
 
   // Refund handlers
-  const showRefundConfirmationDialog = (id: string, type: 'purchase' | 'invoice', amount: number, description: string) => {
+  const showRefundConfirmationDialog = (
+    id: string,
+    type: "purchase" | "invoice",
+    amount: number,
+    description: string
+  ) => {
     setRefundConfirmationData({ id, type, amount, description });
     setShowRefundConfirmation(true);
   };
@@ -1419,7 +1698,7 @@ export default function AdminCRM() {
     if (!refundConfirmationData) return;
 
     const { id, type, amount } = refundConfirmationData;
-    
+
     try {
       setRefundLoading(id);
       setRefundError(null);
@@ -1428,22 +1707,22 @@ export default function AdminCRM() {
       setRefundConfirmationData(null);
 
       let result;
-      if (type === 'purchase') {
+      if (type === "purchase") {
         result = await refundPaymentIntent(id);
       } else {
         result = await refundInvoice(id);
       }
-      
+
       if (result.success) {
         setRefundSuccess(id);
         // Refresh user data to show updated information
         fetchUsers();
       } else {
-        setRefundError(result.error || 'Failed to process refund');
+        setRefundError(result.error || "Failed to process refund");
       }
     } catch (error) {
-      setRefundError('An unexpected error occurred');
-      console.error('Refund error:', error);
+      setRefundError("An unexpected error occurred");
+      console.error("Refund error:", error);
     } finally {
       setRefundLoading(null);
     }
@@ -1454,12 +1733,20 @@ export default function AdminCRM() {
     setRefundConfirmationData(null);
   };
 
-  const handleRefundPurchase = (purchaseId: string, amount: number, description: string) => {
-    showRefundConfirmationDialog(purchaseId, 'purchase', amount, description);
+  const handleRefundPurchase = (
+    purchaseId: string,
+    amount: number,
+    description: string
+  ) => {
+    showRefundConfirmationDialog(purchaseId, "purchase", amount, description);
   };
 
-  const handleRefundInvoiceClick = (invoiceId: string, amount: number, description: string) => {
-    showRefundConfirmationDialog(invoiceId, 'invoice', amount, description);
+  const handleRefundInvoiceClick = (
+    invoiceId: string,
+    amount: number,
+    description: string
+  ) => {
+    showRefundConfirmationDialog(invoiceId, "invoice", amount, description);
   };
 
   const clearRefundMessages = () => {
@@ -1472,7 +1759,7 @@ export default function AdminCRM() {
     if (!deleteConfirmationData) return;
 
     const { userId } = deleteConfirmationData;
-    
+
     try {
       setDeleteLoading(userId);
       setDeleteError(null);
@@ -1480,7 +1767,7 @@ export default function AdminCRM() {
       setShowDeleteConfirmation(false);
 
       const result = await deleteUserAccount(userId);
-      
+
       if (result.success) {
         setDeleteSuccess(userId);
         // Refresh user data to remove deleted user
@@ -1490,12 +1777,12 @@ export default function AdminCRM() {
           setDeleteConfirmationData(null);
         }, 2000);
       } else {
-        setDeleteError(result.error || 'Failed to delete user');
+        setDeleteError(result.error || "Failed to delete user");
         setShowDeleteConfirmation(true); // Keep modal open on error
       }
     } catch (error) {
-      setDeleteError('An unexpected error occurred');
-      console.error('Delete user error:', error);
+      setDeleteError("An unexpected error occurred");
+      console.error("Delete user error:", error);
       setShowDeleteConfirmation(true); // Keep modal open on error
     } finally {
       setDeleteLoading(null);
@@ -1510,6 +1797,146 @@ export default function AdminCRM() {
   const clearDeleteMessages = () => {
     setDeleteSuccess(null);
     setDeleteError(null);
+  };
+
+  // Subscription management handlers
+  const handleCancelSubscription = (
+    subscriptionId: string,
+    customerId: string
+  ) => {
+    if (!selectedUser) return;
+    setCancelConfirmationData({
+      subscriptionId,
+      customerId,
+      userName: getDisplayName(selectedUser),
+    });
+    setShowCancelConfirmation(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelConfirmationData) return;
+
+    try {
+      setSubscriptionLoading(cancelConfirmationData.subscriptionId);
+      setSubscriptionError(null);
+      setSubscriptionSuccess(null);
+      setShowCancelConfirmation(false);
+
+      const result = await cancelSubscriptionAdmin(
+        cancelConfirmationData.subscriptionId
+      );
+
+      if (result.success) {
+        setSubscriptionSuccess(cancelConfirmationData.subscriptionId);
+        // Update user profile from Stripe (same as AuthContext refreshUser)
+        if (selectedUser?.id) {
+          await updateUserProfileFromStripe(selectedUser.id);
+        }
+        // Refresh subscriptions from Stripe
+        await fetchUserSubscriptions(cancelConfirmationData.customerId);
+        // Refresh user list to show updated subscription status
+        fetchUsers();
+      } else {
+        setSubscriptionError(result.error || "Failed to cancel subscription");
+      }
+    } catch (error) {
+      setSubscriptionError("An unexpected error occurred");
+      console.error("Cancel subscription error:", error);
+    } finally {
+      setSubscriptionLoading(null);
+      setCancelConfirmationData(null);
+    }
+  };
+
+  const handleCancelCancel = () => {
+    setShowCancelConfirmation(false);
+    setCancelConfirmationData(null);
+  };
+
+  const handleReactivateSubscription = async (
+    subscriptionId: string,
+    customerId: string
+  ) => {
+    try {
+      setSubscriptionLoading(subscriptionId);
+      setSubscriptionError(null);
+      setSubscriptionSuccess(null);
+
+      const result = await reactivateSubscription(subscriptionId);
+
+      if (result.success) {
+        setSubscriptionSuccess(subscriptionId);
+        // Update user profile from Stripe (same as AuthContext refreshUser)
+        if (selectedUser?.id) {
+          await updateUserProfileFromStripe(selectedUser.id);
+        }
+        // Refresh subscriptions from Stripe
+        await fetchUserSubscriptions(customerId);
+        // Refresh user list to show updated subscription status
+        fetchUsers();
+      } else {
+        setSubscriptionError(
+          result.error || "Failed to reactivate subscription"
+        );
+      }
+    } catch (error) {
+      setSubscriptionError("An unexpected error occurred");
+      console.error("Reactivate subscription error:", error);
+    } finally {
+      setSubscriptionLoading(null);
+    }
+  };
+
+  const handleChangePlan = async (
+    subscriptionId: string,
+    newPlanType: "monthly" | "annual",
+    customerId: string
+  ) => {
+    try {
+      setSubscriptionLoading(subscriptionId);
+      setSubscriptionError(null);
+      setSubscriptionSuccess(null);
+
+      // Get price ID for the new plan
+      const pricesResult = await getPrices();
+      if (!pricesResult.prices) {
+        setSubscriptionError("Failed to fetch plan prices");
+        return;
+      }
+
+      const newPriceId =
+        newPlanType === "monthly"
+          ? pricesResult.prices.monthly.id
+          : pricesResult.prices.annual.id;
+
+      const result = await changeSubscriptionPlan(subscriptionId, newPriceId);
+
+      if (result.success) {
+        setSubscriptionSuccess(subscriptionId);
+        // Update user profile from Stripe (same as AuthContext refreshUser)
+        if (selectedUser?.id) {
+          await updateUserProfileFromStripe(selectedUser.id);
+        }
+        // Refresh subscriptions from Stripe
+        await fetchUserSubscriptions(customerId);
+        // Refresh user list to show updated subscription status
+        fetchUsers();
+      } else {
+        setSubscriptionError(
+          result.error || "Failed to change subscription plan"
+        );
+      }
+    } catch (error) {
+      setSubscriptionError("An unexpected error occurred");
+      console.error("Change plan error:", error);
+    } finally {
+      setSubscriptionLoading(null);
+    }
+  };
+
+  const clearSubscriptionMessages = () => {
+    setSubscriptionSuccess(null);
+    setSubscriptionError(null);
   };
 
   // Auto-dismiss refund notifications
@@ -1550,6 +1977,25 @@ export default function AdminCRM() {
     }
   }, [deleteError]);
 
+  // Auto-dismiss subscription notifications
+  useEffect(() => {
+    if (subscriptionSuccess) {
+      const timer = setTimeout(() => {
+        setSubscriptionSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [subscriptionSuccess]);
+
+  useEffect(() => {
+    if (subscriptionError) {
+      const timer = setTimeout(() => {
+        setSubscriptionError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [subscriptionError]);
+
   // Show page immediately - no early returns
   const showContent = !languageLoading && user;
 
@@ -1568,7 +2014,11 @@ export default function AdminCRM() {
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
   };
 
   const staggerChildren = {
@@ -1587,256 +2037,322 @@ export default function AdminCRM() {
         <Header>
           <Title>
             <FaUsers />
-            {showContent ? t("admin.usersPage.title", "Users Management") : "Users Management"}
+            {showContent
+              ? t("admin.usersPage.title", "Users Management")
+              : "Users Management"}
           </Title>
-          <Subtitle>{showContent ? t("admin.usersPage.subtitle", "Manage users, subscriptions, purchases, and invoices") : "Manage users, subscriptions, purchases, and invoices"}</Subtitle>
+          <Subtitle>
+            {showContent
+              ? t(
+                  "admin.usersPage.subtitle",
+                  "Manage users, subscriptions, purchases, and invoices"
+                )
+              : "Manage users, subscriptions, purchases, and invoices"}
+          </Subtitle>
         </Header>
 
         {showContent && (
           <>
+            <FiltersSection>
+              <FiltersRow>
+                <SearchContainer>
+                  <SearchIcon $isLoading={searchLoading}>
+                    <FaSearch />
+                  </SearchIcon>
+                  <SearchInput
+                    type="search"
+                    placeholder={
+                      searchLoading
+                        ? "Loading..."
+                        : t(
+                            "admin.crmPage.searchPlaceholder",
+                            "Search users by name, email, or ID..."
+                          )
+                    }
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    $isLoading={searchLoading}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                  />
+                </SearchContainer>
 
-        <StatsGrid>
-          <StatCard variants={fadeIn}>
-            <StatContent>
-              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : totalCount}</StatValue>
-              <StatLabel>Total Users</StatLabel>
-            </StatContent>
-          </StatCard>
-          <StatCard variants={fadeIn}>
-            <StatContent>
-              <StatValue>{loading ? <StatLoadingSpinner size={20} /> : users.filter(u => u.subscription !== "none").length}</StatValue>
-              <StatLabel>Paid Users</StatLabel>
-            </StatContent>
-          </StatCard>
-          <StatCard variants={fadeIn}>
-            <StatContent>
-              <StatValue>
-                {loading ? <StatLoadingSpinner size={20} /> : formatCurrency(users.reduce((sum, u) => sum + u.totalSpent, 0))}
-              </StatValue>
-              <StatLabel>Total Revenue</StatLabel>
-            </StatContent>
-          </StatCard>
-        </StatsGrid>
-
-        <FiltersSection>
-          <FiltersRow>
-            <SearchContainer>
-              <SearchIcon $isLoading={searchLoading}>
-                <FaSearch />
-              </SearchIcon>
-              <SearchInput
-                type="search"
-                placeholder={searchLoading ? "Loading..." : t("admin.crmPage.searchPlaceholder", "Search users by name, email, or ID...")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                $isLoading={searchLoading}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                data-lpignore="true"
-                data-form-type="other"
-              />
-            </SearchContainer>
-            
-            <FilterSelect
-              value={subscriptionFilter}
-              onChange={(e) => setSubscriptionFilter(e.target.value)}
-            >
-              <option value="all">{t("admin.crmPage.filters.all", "All Users")}</option>
-              <option value="none">{t("admin.crmPage.filters.free", "Free Users")}</option>
-              <option value="monthly">{t("admin.crmPage.filters.monthly", "Monthly Subscribers")}</option>
-              <option value="annual">{t("admin.crmPage.filters.annual", "Annual Subscribers")}</option>
-              <option value="lifetime">{t("admin.crmPage.filters.lifetime", "Lifetime Users")}</option>
-              <option value="admin">{t("admin.crmPage.filters.admin", "Admin Users")}</option>
-            </FilterSelect>
-
-            <ExportButton>
-              <FaDownload />
-              {t("common.export", "Export")}
-            </ExportButton>
-          </FiltersRow>
-        </FiltersSection>
-
-        <TableContainer>
-          <Table>
-            <TableHeader>
-              <tr>
-                <TableHeaderCell onClick={() => handleSort('firstName')}>
-                  {t("admin.crmPage.userTable.name", "Name")}
-                  {getSortIcon('firstName')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('email')}>
-                  {t("admin.crmPage.userTable.email", "Email")}
-                  {getSortIcon('email')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('subscription')}>
-                  {t("admin.crmPage.userTable.subscription", "Subscription")}
-                  {getSortIcon('subscription')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('createdAt')}>
-                  {t("admin.crmPage.userTable.joinDate", "Join Date")}
-                  {getSortIcon('createdAt')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('lastActive')}>
-                  Last Active
-                  {getSortIcon('lastActive')}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  Support Tickets
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('totalSpent')}>
-                  {t("admin.crmPage.userTable.totalSpent", "Total Spent")}
-                  {getSortIcon('totalSpent')}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  Actions
-                </TableHeaderCell>
-              </tr>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableLoadingRow colSpan={8} message="Loading users..." />
-              ) : users.map((userData, index) => {
-                const supportTicketCount = getSupportTicketCount(userData.id);
-                return (
-                <TableRow
-                  key={userData.id}
-                  as={motion.tr}
-                  variants={fadeIn}
-                  custom={index}
-                  initial="hidden"
-                  animate="visible"
-                    onClick={() => handleViewUser(userData)}
+                <FilterSelect
+                  value={subscriptionFilter}
+                  onChange={(e) => setSubscriptionFilter(e.target.value)}
                 >
-                  <TableCell>
-                    <UserInfo>
-                      <UserAvatar $color={getAvatarColor(userData.email)}>
-                        {getInitials(userData)}
-                      </UserAvatar>
-                      <UserDetails>
-                        <UserName>{getDisplayName(userData)}</UserName>
-                      </UserDetails>
-                    </UserInfo>
-                  </TableCell>
-                  <TableCell>
-                    <UserEmail>{userData.email}</UserEmail>
-                  </TableCell>
-                  <TableCell>
-                      <SubscriptionBadge 
-                        $color={getSubscriptionBadgeColor(userData.subscription)}
-                        $variant={isSubscriptionPremium(userData.subscription) ? 'premium' : 'default'}
-                      >
-                        {getSubscriptionIcon(userData.subscription)}
-                      {userData.subscription}
-                    </SubscriptionBadge>
-                  </TableCell>
-                  <TableCell>{formatDate(userData.createdAt)}</TableCell>
-                    <TableCell>{userData.lastActive ? formatDate(userData.lastActive) : 'Never'}</TableCell>
-                    <TableCell>
-                      <SupportTicketsCount>
-                        <FaTicketAlt />
-                        <TicketBadge $count={supportTicketCount}>
-                          {supportTicketCount}
-                        </TicketBadge>
-                      </SupportTicketsCount>
-                    </TableCell>
-                  <TableCell>{formatCurrency(userData.totalSpent)}</TableCell>
-                  <TableCell>
-                      <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
-                        <MoreMenuButton 
-                          onClick={(e) => handleMoreMenuClick(userData.id, e)}
-                        >
-                          <FaEllipsisV />
-                        </MoreMenuButton>
-                        
-                        {openMoreMenu === userData.id && (
-                          <MoreMenuDropdown
-                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('view', userData)}>
-                        <FaEye />
-                              View Profile
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('edit', userData)}>
-                        <FaEdit />
-                              Edit User
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('email', userData)}>
-                        <FaEnvelope />
-                              Send Email
-                            </MoreMenuItem>
-                            <MoreMenuItem onClick={() => handleMoreMenuAction('ban', userData)}>
-                              <FaBan />
-                              Ban User
-                            </MoreMenuItem>
-                            <MoreMenuItem 
-                              variant="danger" 
-                              onClick={() => handleMoreMenuAction('delete', userData)}
-                            >
-                        <FaTrash />
-                              Delete User
-                            </MoreMenuItem>
-                          </MoreMenuDropdown>
-                        )}
-                      </MoreMenuContainer>
-                  </TableCell>
-                </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          
-          <Pagination>
-            <PaginationInfo>
-              {searchLoading ? (
-                <>
-                  {t("admin.crmPage.loading", "Loading...")}
-                  <SearchLoadingSpinner />
-                </>
-              ) : (
-                `Showing ${((currentPage - 1) * usersPerPage) + 1} to ${Math.min(currentPage * usersPerPage, totalCount)} of ${totalCount} users`
-              )}
-            </PaginationInfo>
-            <PaginationButtons>
-              <PaginationButton 
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <FaChevronLeft />
-              </PaginationButton>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => 
-                  page === 1 || 
-                  page === totalPages || 
-                  Math.abs(page - currentPage) <= 2
-                )
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <PaginationEllipsis>...</PaginationEllipsis>
-                    )}
-                    <PaginationButton
-                      onClick={() => setCurrentPage(page)}
-                      $active={currentPage === page}
+                  <option value="all">
+                    {t("admin.crmPage.filters.all", "All Users")}
+                  </option>
+                  <option value="none">
+                    {t("admin.crmPage.filters.free", "Free Users")}
+                  </option>
+                  <option value="monthly">
+                    {t("admin.crmPage.filters.monthly", "Monthly Subscribers")}
+                  </option>
+                  <option value="annual">
+                    {t("admin.crmPage.filters.annual", "Annual Subscribers")}
+                  </option>
+                  <option value="lifetime">
+                    {t("admin.crmPage.filters.lifetime", "Lifetime Users")}
+                  </option>
+                  <option value="admin">
+                    {t("admin.crmPage.filters.admin", "Admin Users")}
+                  </option>
+                </FilterSelect>
+
+                <ExportButton>
+                  <FaDownload />
+                  {t("common.export", "Export")}
+                </ExportButton>
+              </FiltersRow>
+            </FiltersSection>
+
+            <TableContainer>
+              <Table>
+                <TableHeader>
+                  <tr>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("firstName")}
                     >
-                      {page}
-                    </PaginationButton>
-                  </React.Fragment>
-                ))}
-              <PaginationButton 
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <FaChevronRight />
-              </PaginationButton>
-            </PaginationButtons>
-          </Pagination>
-        </TableContainer>
-        </>
+                      {t("admin.crmPage.userTable.name", "Name")}
+                      {getSortIcon("firstName")}
+                    </TableHeaderCell>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("email")}
+                    >
+                      {t("admin.crmPage.userTable.email", "Email")}
+                      {getSortIcon("email")}
+                    </TableHeaderCell>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("subscription")}
+                    >
+                      {t(
+                        "admin.crmPage.userTable.subscription",
+                        "Subscription"
+                      )}
+                      {getSortIcon("subscription")}
+                    </TableHeaderCell>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("createdAt")}
+                    >
+                      {t("admin.crmPage.userTable.joinDate", "Join Date")}
+                      {getSortIcon("createdAt")}
+                    </TableHeaderCell>
+                    <TableHeaderCell $sortable={false}>
+                      Last Active
+                    </TableHeaderCell>
+                    <TableHeaderCell $sortable={false}>
+                      Support Tickets
+                    </TableHeaderCell>
+                    <TableHeaderCell $sortable={false}>
+                      {t("admin.crmPage.userTable.totalSpent", "Total Spent")}
+                    </TableHeaderCell>
+                    <TableHeaderCell $sortable={false}>Actions</TableHeaderCell>
+                  </tr>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableLoadingRow colSpan={8} message="Loading users..." />
+                  ) : (
+                    users.map((userData, index) => {
+                      const supportTicketCount = getSupportTicketCount(
+                        userData.id
+                      );
+                      return (
+                        <TableRow
+                          key={userData.id}
+                          as={motion.tr}
+                          variants={fadeIn}
+                          custom={index}
+                          initial="hidden"
+                          animate="visible"
+                          onClick={() => handleViewUser(userData)}
+                        >
+                          <TableCell>
+                            <UserInfo>
+                              <UserAvatar
+                                $color={getAvatarColor(userData.email)}
+                              >
+                                {getInitials(userData)}
+                              </UserAvatar>
+                              <UserDetails>
+                                <UserName>{getDisplayName(userData)}</UserName>
+                              </UserDetails>
+                            </UserInfo>
+                          </TableCell>
+                          <TableCell>
+                            <UserEmail>{userData.email}</UserEmail>
+                          </TableCell>
+                          <TableCell>
+                            <SubscriptionBadge
+                              $color={getSubscriptionBadgeColor(
+                                userData.subscription
+                              )}
+                              $variant={
+                                isSubscriptionPremium(userData.subscription)
+                                  ? "premium"
+                                  : "default"
+                              }
+                            >
+                              {getSubscriptionIcon(userData.subscription)}
+                              {userData.subscription}
+                            </SubscriptionBadge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(userData.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            {userData.lastActive
+                              ? formatDate(userData.lastActive)
+                              : "Never"}
+                          </TableCell>
+                          <TableCell>
+                            <SupportTicketsCount>
+                              <FaTicketAlt />
+                              <TicketBadge $count={supportTicketCount}>
+                                {supportTicketCount}
+                              </TicketBadge>
+                            </SupportTicketsCount>
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(userData.totalSpent)}
+                          </TableCell>
+                          <TableCell>
+                            <MoreMenuContainer
+                              data-more-menu
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreMenuButton
+                                onClick={(e) =>
+                                  handleMoreMenuClick(userData.id, e)
+                                }
+                              >
+                                <FaEllipsisV />
+                              </MoreMenuButton>
+
+                              {openMoreMenu === userData.id && (
+                                <MoreMenuDropdown
+                                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                  <MoreMenuItem
+                                    onClick={() =>
+                                      handleMoreMenuAction("view", userData)
+                                    }
+                                  >
+                                    <FaEye />
+                                    View Profile
+                                  </MoreMenuItem>
+                                  <MoreMenuItem
+                                    onClick={() =>
+                                      handleMoreMenuAction("edit", userData)
+                                    }
+                                  >
+                                    <FaEdit />
+                                    Edit User
+                                  </MoreMenuItem>
+                                  <MoreMenuItem
+                                    onClick={() =>
+                                      handleMoreMenuAction("email", userData)
+                                    }
+                                  >
+                                    <FaEnvelope />
+                                    Send Email
+                                  </MoreMenuItem>
+                                  <MoreMenuItem
+                                    onClick={() =>
+                                      handleMoreMenuAction("ban", userData)
+                                    }
+                                  >
+                                    <FaBan />
+                                    Ban User
+                                  </MoreMenuItem>
+                                  <MoreMenuItem
+                                    variant="danger"
+                                    onClick={() =>
+                                      handleMoreMenuAction("delete", userData)
+                                    }
+                                  >
+                                    <FaTrash />
+                                    Delete User
+                                  </MoreMenuItem>
+                                </MoreMenuDropdown>
+                              )}
+                            </MoreMenuContainer>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+
+              <Pagination>
+                <PaginationInfo>
+                  {searchLoading ? (
+                    <>
+                      {t("admin.crmPage.loading", "Loading...")}
+                      <SearchLoadingSpinner />
+                    </>
+                  ) : (
+                    `Showing ${
+                      (currentPage - 1) * usersPerPage + 1
+                    } to ${Math.min(
+                      currentPage * usersPerPage,
+                      totalCount
+                    )} of ${totalCount} users`
+                  )}
+                </PaginationInfo>
+                <PaginationButtons>
+                  <PaginationButton
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <FaChevronLeft />
+                  </PaginationButton>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (page) =>
+                        page === 1 ||
+                        page === totalPages ||
+                        Math.abs(page - currentPage) <= 2
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationEllipsis>...</PaginationEllipsis>
+                        )}
+                        <PaginationButton
+                          onClick={() => setCurrentPage(page)}
+                          $active={currentPage === page}
+                        >
+                          {page}
+                        </PaginationButton>
+                      </React.Fragment>
+                    ))}
+                  <PaginationButton
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <FaChevronRight />
+                  </PaginationButton>
+                </PaginationButtons>
+              </Pagination>
+            </TableContainer>
+          </>
         )}
 
         {/* User Detail Modal */}
@@ -1877,9 +2393,15 @@ export default function AdminCRM() {
                   <InfoItem>
                     <InfoLabel>Subscription</InfoLabel>
                     <InfoValue>
-                      <SubscriptionBadge 
-                        $color={getSubscriptionBadgeColor(selectedUser.subscription)}
-                        $variant={isSubscriptionPremium(selectedUser.subscription) ? 'premium' : 'default'}
+                      <SubscriptionBadge
+                        $color={getSubscriptionBadgeColor(
+                          selectedUser.subscription
+                        )}
+                        $variant={
+                          isSubscriptionPremium(selectedUser.subscription)
+                            ? "premium"
+                            : "default"
+                        }
                       >
                         {getSubscriptionIcon(selectedUser.subscription)}
                         {selectedUser.subscription}
@@ -1892,15 +2414,21 @@ export default function AdminCRM() {
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Last Active</InfoLabel>
-                    <InfoValue>{selectedUser.lastActive ? formatDate(selectedUser.lastActive) : 'Never'}</InfoValue>
+                    <InfoValue>
+                      {selectedUser.lastActive
+                        ? formatDate(selectedUser.lastActive)
+                        : "Never"}
+                    </InfoValue>
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Total Spent</InfoLabel>
-                    <InfoValue>{formatCurrency(selectedUser.totalSpent)}</InfoValue>
+                    <InfoValue>
+                      {formatCurrency(selectedUser.totalSpent)}
+                    </InfoValue>
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Customer ID</InfoLabel>
-                    <InfoValue>{selectedUser.customerId || 'N/A'}</InfoValue>
+                    <InfoValue>{selectedUser.customerId || "N/A"}</InfoValue>
                   </InfoItem>
                 </InfoGrid>
               </ModalSection>
@@ -1911,41 +2439,166 @@ export default function AdminCRM() {
                   <FaCrown />
                   Subscriptions
                 </SectionTitle>
-                {(() => {
-                  const details = getMockUserDetails(selectedUser);
-                  return details.subscriptions.length > 0 ? (
+                {loadingSubscriptions ? (
+                  <EmptyState>Loading subscriptions...</EmptyState>
+                ) : userSubscriptions.length > 0 ? (
+                  <>
                     <DataTable>
                       <DataTableHeader>
                         <tr>
                           <DataTableHeaderCell>ID</DataTableHeaderCell>
                           <DataTableHeaderCell>Status</DataTableHeaderCell>
+                          <DataTableHeaderCell>Plan</DataTableHeaderCell>
                           <DataTableHeaderCell>Amount</DataTableHeaderCell>
-                          <DataTableHeaderCell>Interval</DataTableHeaderCell>
-                          <DataTableHeaderCell>Current Period</DataTableHeaderCell>
+                          <DataTableHeaderCell>
+                            Current Period
+                          </DataTableHeaderCell>
                           <DataTableHeaderCell>Auto Renew</DataTableHeaderCell>
+                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
                         </tr>
                       </DataTableHeader>
                       <DataTableBody>
-                        {details.subscriptions.map((sub) => (
-                          <DataTableRow key={sub.id}>
-                            <DataTableCell>{sub.id}</DataTableCell>
-                            <DataTableCell>
-                              <StatusBadge $status={sub.status}>{sub.status}</StatusBadge>
-                            </DataTableCell>
-                            <DataTableCell>{formatCurrency(sub.amount)}</DataTableCell>
-                            <DataTableCell>{sub.interval}</DataTableCell>
-                            <DataTableCell>
-                              {formatDate(sub.currentPeriodStart)} - {formatDate(sub.currentPeriodEnd)}
-                            </DataTableCell>
-                            <DataTableCell>{sub.cancelAtPeriodEnd ? 'No' : 'Yes'}</DataTableCell>
-                          </DataTableRow>
-                        ))}
+                        {userSubscriptions.map((sub) => {
+                          const isActive =
+                            sub.status === "active" ||
+                            sub.status === "trialing";
+                          const isCanceled =
+                            sub.status === "canceled" ||
+                            sub.cancel_at_period_end;
+                          const price = sub.items?.[0]?.price;
+                          const priceId = price?.id || "";
+                          const interval = price?.recurring?.interval || "";
+                          const isMonthly = interval === "month";
+                          const isAnnual = interval === "year";
+                          const currentPlan = isMonthly
+                            ? "monthly"
+                            : isAnnual
+                            ? "annual"
+                            : "unknown";
+                          const amount = price?.unit_amount
+                            ? price.unit_amount / 100
+                            : 0;
+                          const customerId =
+                            typeof sub.customer === "string"
+                              ? sub.customer
+                              : sub.customer?.id ||
+                                selectedUser?.customerId ||
+                                "";
+
+                          return (
+                            <DataTableRow key={sub.id}>
+                              <DataTableCell
+                                style={{
+                                  fontSize: "0.8rem",
+                                  wordBreak: "break-all",
+                                }}
+                              >
+                                {sub.id}
+                              </DataTableCell>
+                              <DataTableCell>
+                                <StatusBadge $status={sub.status}>
+                                  {sub.status}
+                                </StatusBadge>
+                              </DataTableCell>
+                              <DataTableCell>
+                                <PlanSelect
+                                  value={currentPlan}
+                                  onChange={(e) => {
+                                    const newPlan = e.target.value as
+                                      | "monthly"
+                                      | "annual";
+                                    if (newPlan !== currentPlan && isActive) {
+                                      handleChangePlan(
+                                        sub.id,
+                                        newPlan,
+                                        customerId
+                                      );
+                                    }
+                                  }}
+                                  disabled={
+                                    !isActive || subscriptionLoading === sub.id
+                                  }
+                                  $disabled={
+                                    !isActive || subscriptionLoading === sub.id
+                                  }
+                                >
+                                  <option value="monthly">Monthly</option>
+                                  <option value="annual">Annual</option>
+                                </PlanSelect>
+                              </DataTableCell>
+                              <DataTableCell>
+                                {formatCurrency(amount)}
+                              </DataTableCell>
+                              <DataTableCell>
+                                {sub.current_period_start &&
+                                sub.current_period_end
+                                  ? `${new Date(
+                                      sub.current_period_start * 1000
+                                    ).toLocaleDateString()} - ${new Date(
+                                      sub.current_period_end * 1000
+                                    ).toLocaleDateString()}`
+                                  : "N/A"}
+                              </DataTableCell>
+                              <DataTableCell>
+                                {isCanceled ? "No" : "Yes"}
+                              </DataTableCell>
+                              <DataTableCell>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: "0.5rem",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  {isActive && !isCanceled && (
+                                    <RefundButton
+                                      variant="danger"
+                                      disabled={subscriptionLoading === sub.id}
+                                      onClick={() =>
+                                        handleCancelSubscription(
+                                          sub.id,
+                                          customerId
+                                        )
+                                      }
+                                    >
+                                      {subscriptionLoading === sub.id ? (
+                                        <LoadingSpinner />
+                                      ) : (
+                                        <FaBan />
+                                      )}
+                                      Cancel
+                                    </RefundButton>
+                                  )}
+                                  {isCanceled && (
+                                    <RefundButton
+                                      variant="primary"
+                                      disabled={subscriptionLoading === sub.id}
+                                      onClick={() =>
+                                        handleReactivateSubscription(
+                                          sub.id,
+                                          customerId
+                                        )
+                                      }
+                                    >
+                                      {subscriptionLoading === sub.id ? (
+                                        <LoadingSpinner />
+                                      ) : (
+                                        <FaUndo />
+                                      )}
+                                      Reactivate
+                                    </RefundButton>
+                                  )}
+                                </div>
+                              </DataTableCell>
+                            </DataTableRow>
+                          );
+                        })}
                       </DataTableBody>
                     </DataTable>
-                  ) : (
-                    <EmptyState>No active subscriptions</EmptyState>
-                  );
-                })()}
+                  </>
+                ) : (
+                  <EmptyState>No subscriptions found</EmptyState>
+                )}
               </ModalSection>
 
               {/* Purchases */}
@@ -1972,25 +2625,41 @@ export default function AdminCRM() {
                         {details.purchases.map((purchase) => (
                           <DataTableRow key={purchase.id}>
                             <DataTableCell>{purchase.id}</DataTableCell>
-                            <DataTableCell>{purchase.description}</DataTableCell>
-                            <DataTableCell>{formatCurrency(purchase.amount)}</DataTableCell>
                             <DataTableCell>
-                              <StatusBadge $status={purchase.status}>{purchase.status}</StatusBadge>
+                              {purchase.description}
                             </DataTableCell>
-                            <DataTableCell>{formatDate(purchase.createdAt)}</DataTableCell>
                             <DataTableCell>
-                              {purchase.status === 'succeeded' && (
+                              {formatCurrency(purchase.amount)}
+                            </DataTableCell>
+                            <DataTableCell>
+                              <StatusBadge $status={purchase.status}>
+                                {purchase.status}
+                              </StatusBadge>
+                            </DataTableCell>
+                            <DataTableCell>
+                              {formatDate(purchase.createdAt)}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {purchase.status === "succeeded" && (
                                 <RefundButton
                                   variant="danger"
                                   disabled={refundLoading === purchase.id}
-                                  onClick={() => handleRefundPurchase(purchase.id, purchase.amount, purchase.description)}
+                                  onClick={() =>
+                                    handleRefundPurchase(
+                                      purchase.id,
+                                      purchase.amount,
+                                      purchase.description
+                                    )
+                                  }
                                 >
                                   {refundLoading === purchase.id ? (
                                     <LoadingSpinner />
                                   ) : (
                                     <FaUndo />
                                   )}
-                                  {refundSuccess === purchase.id ? 'Refunded' : 'Refund'}
+                                  {refundSuccess === purchase.id
+                                    ? "Refunded"
+                                    : "Refund"}
                                 </RefundButton>
                               )}
                             </DataTableCell>
@@ -2030,25 +2699,43 @@ export default function AdminCRM() {
                           <DataTableRow key={invoice.id}>
                             <DataTableCell>{invoice.id}</DataTableCell>
                             <DataTableCell>{invoice.number}</DataTableCell>
-                            <DataTableCell>{formatCurrency(invoice.amount)}</DataTableCell>
                             <DataTableCell>
-                              <StatusBadge $status={invoice.status}>{invoice.status}</StatusBadge>
+                              {formatCurrency(invoice.amount)}
                             </DataTableCell>
-                            <DataTableCell>{formatDate(invoice.createdAt)}</DataTableCell>
-                            <DataTableCell>{invoice.paidAt ? formatDate(invoice.paidAt) : 'N/A'}</DataTableCell>
                             <DataTableCell>
-                              {invoice.status === 'paid' && (
+                              <StatusBadge $status={invoice.status}>
+                                {invoice.status}
+                              </StatusBadge>
+                            </DataTableCell>
+                            <DataTableCell>
+                              {formatDate(invoice.createdAt)}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {invoice.paidAt
+                                ? formatDate(invoice.paidAt)
+                                : "N/A"}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {invoice.status === "paid" && (
                                 <RefundButton
                                   variant="danger"
                                   disabled={refundLoading === invoice.id}
-                                  onClick={() => handleRefundInvoiceClick(invoice.id, invoice.amount, invoice.number)}
+                                  onClick={() =>
+                                    handleRefundInvoiceClick(
+                                      invoice.id,
+                                      invoice.amount,
+                                      invoice.number
+                                    )
+                                  }
                                 >
                                   {refundLoading === invoice.id ? (
                                     <LoadingSpinner />
                                   ) : (
                                     <FaUndo />
                                   )}
-                                  {refundSuccess === invoice.id ? 'Refunded' : 'Refund'}
+                                  {refundSuccess === invoice.id
+                                    ? "Refunded"
+                                    : "Refund"}
                                 </RefundButton>
                               )}
                             </DataTableCell>
@@ -2119,6 +2806,33 @@ export default function AdminCRM() {
           </RefundNotification>
         )}
 
+        {/* Subscription Management Notifications */}
+        {subscriptionSuccess && (
+          <RefundNotification
+            type="success"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearSubscriptionMessages}
+          >
+            <FaCheck />
+            Subscription updated successfully!
+          </RefundNotification>
+        )}
+
+        {subscriptionError && !showCancelConfirmation && (
+          <RefundNotification
+            type="error"
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            onClick={clearSubscriptionMessages}
+          >
+            <FaExclamationTriangle />
+            {subscriptionError}
+          </RefundNotification>
+        )}
+
         {/* Refund Confirmation Modal */}
         {showRefundConfirmation && (
           <ConfirmationModalOverlay
@@ -2143,21 +2857,123 @@ export default function AdminCRM() {
               <ConfirmationDetails>
                 <ConfirmationDetailItem>
                   <ConfirmationDetailLabel>Amount</ConfirmationDetailLabel>
-                  <ConfirmationDetailValue>{refundConfirmationData ? formatCurrency(refundConfirmationData.amount) : 'N/A'}</ConfirmationDetailValue>
+                  <ConfirmationDetailValue>
+                    {refundConfirmationData
+                      ? formatCurrency(refundConfirmationData.amount)
+                      : "N/A"}
+                  </ConfirmationDetailValue>
                 </ConfirmationDetailItem>
                 <ConfirmationDetailItem>
                   <ConfirmationDetailLabel>Description</ConfirmationDetailLabel>
-                  <ConfirmationDetailValue>{refundConfirmationData?.description}</ConfirmationDetailValue>
+                  <ConfirmationDetailValue>
+                    {refundConfirmationData?.description}
+                  </ConfirmationDetailValue>
                 </ConfirmationDetailItem>
               </ConfirmationDetails>
               <ConfirmationButtons>
-                <ConfirmationButton variant="danger" onClick={handleConfirmRefund}>
+                <ConfirmationButton
+                  variant="danger"
+                  onClick={handleConfirmRefund}
+                >
                   <FaTrash />
                   Refund
                 </ConfirmationButton>
-                <ConfirmationButton variant="secondary" onClick={handleCancelRefund}>
+                <ConfirmationButton
+                  variant="secondary"
+                  onClick={handleCancelRefund}
+                >
                   <FaTimes />
                   Cancel
+                </ConfirmationButton>
+              </ConfirmationButtons>
+            </ConfirmationModalContent>
+          </ConfirmationModalOverlay>
+        )}
+
+        {/* Cancel Subscription Confirmation Modal */}
+        {showCancelConfirmation && cancelConfirmationData && (
+          <ConfirmationModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCancelCancel}
+          >
+            <ConfirmationModalContent
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ConfirmationTitle>
+                <FaExclamationTriangle />
+                Cancel Subscription
+              </ConfirmationTitle>
+              <ConfirmationMessage>
+                Are you sure you want to cancel this subscription? This action
+                will cancel the subscription immediately.
+              </ConfirmationMessage>
+              <ConfirmationDetails>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>User</ConfirmationDetailLabel>
+                  <ConfirmationDetailValue>
+                    {cancelConfirmationData.userName}
+                  </ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+                <ConfirmationDetailItem>
+                  <ConfirmationDetailLabel>
+                    Subscription ID
+                  </ConfirmationDetailLabel>
+                  <ConfirmationDetailValue
+                    style={{ fontSize: "0.8rem", wordBreak: "break-all" }}
+                  >
+                    {cancelConfirmationData.subscriptionId}
+                  </ConfirmationDetailValue>
+                </ConfirmationDetailItem>
+              </ConfirmationDetails>
+              {subscriptionError && (
+                <ConfirmationMessage
+                  style={{
+                    color: "#e74c3c",
+                    marginTop: "1rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <FaExclamationTriangle style={{ marginRight: "0.5rem" }} />
+                  {subscriptionError}
+                </ConfirmationMessage>
+              )}
+              <ConfirmationButtons>
+                <ConfirmationButton
+                  variant="danger"
+                  onClick={handleConfirmCancel}
+                  disabled={
+                    subscriptionLoading ===
+                    cancelConfirmationData.subscriptionId
+                  }
+                >
+                  {subscriptionLoading ===
+                  cancelConfirmationData.subscriptionId ? (
+                    <>
+                      <LoadingSpinner />
+                      Canceling...
+                    </>
+                  ) : (
+                    <>
+                      <FaBan />
+                      Cancel Subscription
+                    </>
+                  )}
+                </ConfirmationButton>
+                <ConfirmationButton
+                  variant="secondary"
+                  onClick={handleCancelCancel}
+                  disabled={
+                    subscriptionLoading ===
+                    cancelConfirmationData.subscriptionId
+                  }
+                >
+                  <FaTimes />
+                  Keep Active
                 </ConfirmationButton>
               </ConfirmationButtons>
             </ConfirmationModalContent>
@@ -2183,31 +2999,47 @@ export default function AdminCRM() {
                 Delete User Confirmation
               </ConfirmationTitle>
               <ConfirmationMessage>
-                Are you sure you want to delete this user? This action cannot be undone. All subscriptions will be canceled and the user account will be permanently deleted.
+                Are you sure you want to delete this user? This action cannot be
+                undone. All subscriptions will be canceled and the user account
+                will be permanently deleted.
               </ConfirmationMessage>
               <ConfirmationDetails>
                 <ConfirmationDetailItem>
                   <ConfirmationDetailLabel>Name</ConfirmationDetailLabel>
-                  <ConfirmationDetailValue>{deleteConfirmationData.userName}</ConfirmationDetailValue>
+                  <ConfirmationDetailValue>
+                    {deleteConfirmationData.userName}
+                  </ConfirmationDetailValue>
                 </ConfirmationDetailItem>
                 <ConfirmationDetailItem>
                   <ConfirmationDetailLabel>Email</ConfirmationDetailLabel>
-                  <ConfirmationDetailValue>{deleteConfirmationData.userEmail}</ConfirmationDetailValue>
+                  <ConfirmationDetailValue>
+                    {deleteConfirmationData.userEmail}
+                  </ConfirmationDetailValue>
                 </ConfirmationDetailItem>
                 <ConfirmationDetailItem>
                   <ConfirmationDetailLabel>User ID</ConfirmationDetailLabel>
-                  <ConfirmationDetailValue style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{deleteConfirmationData.userId}</ConfirmationDetailValue>
+                  <ConfirmationDetailValue
+                    style={{ fontSize: "0.8rem", wordBreak: "break-all" }}
+                  >
+                    {deleteConfirmationData.userId}
+                  </ConfirmationDetailValue>
                 </ConfirmationDetailItem>
               </ConfirmationDetails>
               {deleteError && (
-                <ConfirmationMessage style={{ color: '#e74c3c', marginTop: '1rem', marginBottom: '1rem' }}>
-                  <FaExclamationTriangle style={{ marginRight: '0.5rem' }} />
+                <ConfirmationMessage
+                  style={{
+                    color: "#e74c3c",
+                    marginTop: "1rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <FaExclamationTriangle style={{ marginRight: "0.5rem" }} />
                   {deleteError}
                 </ConfirmationMessage>
               )}
               <ConfirmationButtons>
-                <ConfirmationButton 
-                  variant="danger" 
+                <ConfirmationButton
+                  variant="danger"
                   onClick={handleConfirmDelete}
                   disabled={deleteLoading === deleteConfirmationData.userId}
                 >
@@ -2223,7 +3055,11 @@ export default function AdminCRM() {
                     </>
                   )}
                 </ConfirmationButton>
-                <ConfirmationButton variant="secondary" onClick={handleCancelDelete} disabled={deleteLoading === deleteConfirmationData.userId}>
+                <ConfirmationButton
+                  variant="secondary"
+                  onClick={handleCancelDelete}
+                  disabled={deleteLoading === deleteConfirmationData.userId}
+                >
                   <FaTimes />
                   Cancel
                 </ConfirmationButton>
@@ -2234,4 +3070,4 @@ export default function AdminCRM() {
       </motion.div>
     </Container>
   );
-} 
+}

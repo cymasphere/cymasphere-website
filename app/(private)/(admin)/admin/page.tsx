@@ -18,7 +18,6 @@ import {
   getActiveSubscriptions,
   getLifetimeCustomers,
   getMonthlyRevenue,
-  getLifetimeRevenue,
   getTrialUsers,
   getChurnRate,
   getAdminUsers,
@@ -400,7 +399,6 @@ export default function AdminDashboard() {
   const [activeSubscriptionsData, setActiveSubscriptionsData] = useState<{ activeSubscriptions: number; monthlySubscribers: number; annualSubscribers: number } | null>(null);
   const [lifetimeCustomers, setLifetimeCustomers] = useState<number | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number | null>(null);
-  const [lifetimeRevenue, setLifetimeRevenue] = useState<number | null>(null);
   const [trialUsers, setTrialUsers] = useState<number | null>(null);
   const [churnRate, setChurnRate] = useState<number | null>(null);
   const [adminUsers, setAdminUsers] = useState<number | null>(null);
@@ -411,7 +409,6 @@ export default function AdminDashboard() {
   const [loadingActiveSubscriptions, setLoadingActiveSubscriptions] = useState(true);
   const [loadingLifetimeCustomers, setLoadingLifetimeCustomers] = useState(true);
   const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
-  const [loadingLifetimeRevenue, setLoadingLifetimeRevenue] = useState(true);
   const [loadingTrialUsers, setLoadingTrialUsers] = useState(true);
   const [loadingChurnRate, setLoadingChurnRate] = useState(true);
   const [loadingAdminUsers, setLoadingAdminUsers] = useState(true);
@@ -469,18 +466,6 @@ export default function AdminDashboard() {
       }
     };
 
-    const fetchLifetimeRevenue = async () => {
-      try {
-        setLoadingLifetimeRevenue(true);
-        const data = await getLifetimeRevenue();
-        setLifetimeRevenue(data);
-      } catch (err) {
-        console.error("Error fetching lifetime revenue:", err);
-      } finally {
-        setLoadingLifetimeRevenue(false);
-      }
-    };
-
     const fetchTrialUsers = async () => {
       try {
         setLoadingTrialUsers(true);
@@ -534,7 +519,6 @@ export default function AdminDashboard() {
     fetchActiveSubscriptions();
     fetchLifetimeCustomers();
     fetchMonthlyRevenue();
-    fetchLifetimeRevenue();
     fetchTrialUsers();
     fetchChurnRate();
     fetchAdminUsers();
@@ -843,17 +827,6 @@ export default function AdminDashboard() {
           </RecentActivitySection>
 
           <AdditionalStatsGrid>
-            <AdditionalStatCard variants={fadeIn}>
-              <StatLabel>Total Revenue</StatLabel>
-              <StatValue>
-                {loadingLifetimeRevenue ? (
-                  <StatLoadingSpinner size={16} />
-                ) : (
-                  formatCurrency(lifetimeRevenue ?? 0)
-                )}
-              </StatValue>
-            </AdditionalStatCard>
-
             <AdditionalStatCard variants={fadeIn}>
               <StatLabel>Trial Users</StatLabel>
               <StatValue>
