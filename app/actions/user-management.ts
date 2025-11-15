@@ -482,15 +482,10 @@ export async function updateUserProfileFromStripe(userId: string): Promise<{
       return { success: false, error: "User profile not found" };
     }
 
-    // Get user email from the profiles table (now synced from auth.users)
-    const email = (profile as any).email;
-    if (!email) {
-      return { success: false, error: "User email not found in profile" };
-    }
-
     // Import and call updateStripe (same function used in AuthContext)
+    // Email is already in the profile, so we just pass the profile
     const { updateStripe } = await import("@/utils/supabase/actions");
-    const { success, error: updateError } = await updateStripe(email, profile);
+    const { success, error: updateError } = await updateStripe(profile);
 
     if (!success) {
       return {

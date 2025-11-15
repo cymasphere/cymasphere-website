@@ -2041,14 +2041,29 @@ export default function AdminCRM() {
 
       if (result.success) {
         setSubscriptionSuccess(subscriptionId);
+
+        // Wait a moment for Stripe to propagate the changes
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Update user profile from Stripe (same as AuthContext refreshUser)
+        // This must happen after Stripe changes are propagated
         if (selectedUser?.id) {
-          await updateUserProfileFromStripe(selectedUser.id);
+          const updateResult = await updateUserProfileFromStripe(
+            selectedUser.id
+          );
+          if (!updateResult.success) {
+            console.error(
+              "Failed to update user profile from Stripe:",
+              updateResult.error
+            );
+          }
         }
+
         // Refresh subscriptions from Stripe
         await fetchUserSubscriptions(customerId);
+
         // Refresh user list to show updated subscription status
-        fetchUsers();
+        await fetchUsers();
       } else {
         setSubscriptionError(
           result.error || "Failed to change subscription plan"

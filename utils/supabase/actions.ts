@@ -102,7 +102,10 @@ export async function fetchIsAdmin(
 
   // Handle errors (other than "no rows found" which maybeSingle handles gracefully)
   if (error) {
-    console.log(`[fetchIsAdmin] Error checking admin status for user ${id}:`, error);
+    console.log(
+      `[fetchIsAdmin] Error checking admin status for user ${id}:`,
+      error
+    );
     return { is_admin: false, error };
   }
 
@@ -120,18 +123,26 @@ export async function fetchIsAdmin(
  * - Updates profile with appropriate status
  */
 export async function updateStripe(
-  email: string,
   profile: Profile
 ): Promise<{ success: boolean; profile?: Profile; error?: Error | unknown }> {
   try {
     let updatedProfile: Profile = { ...profile };
 
+    // Get email from profile
+    const email = profile.email;
+    if (!email) {
+      return { success: false, error: new Error("Email not found in profile") };
+    }
+
     // First, check user_management table for pro status
     const userManagementCheck = await checkUserManagementPro(email);
-    
+
     if (userManagementCheck.error) {
       // Log error but continue with Stripe check as fallback
-      console.warn("Error checking user_management:", userManagementCheck.error);
+      console.warn(
+        "Error checking user_management:",
+        userManagementCheck.error
+      );
     } else if (userManagementCheck.hasPro) {
       // User has pro status via user_management table - set to lifetime and return
       updatedProfile.subscription = "lifetime";
