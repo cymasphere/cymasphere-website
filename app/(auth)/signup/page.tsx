@@ -390,6 +390,18 @@ function SignUp() {
     setError("");
 
     // Validate form
+    if (!formData.firstName.trim()) {
+      return setError(
+        t("signup.errors.firstNameRequired", "First name is required")
+      );
+    }
+
+    if (!formData.lastName.trim()) {
+      return setError(
+        t("signup.errors.lastNameRequired", "Last name is required")
+      );
+    }
+
     if (formData.password !== formData.confirmPassword) {
       return setError(
         t("signup.errors.passwordsDoNotMatch", "Passwords do not match")
@@ -592,7 +604,7 @@ function SignUp() {
           <NameFieldsContainer>
             <FormGroup>
               <Label htmlFor="firstName">
-                {t("signup.firstName", "First Name")}
+                {t("signup.firstName", "First Name")} *
               </Label>
               <Input
                 type="text"
@@ -607,7 +619,7 @@ function SignUp() {
 
             <FormGroup>
               <Label htmlFor="lastName">
-                {t("signup.lastName", "Last Name")}
+                {t("signup.lastName", "Last Name")} *
               </Label>
               <Input
                 type="text"
