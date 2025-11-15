@@ -1285,8 +1285,8 @@ export default function AdminCRM() {
         return;
       }
 
-      setTotalCount(result.totalCount);
-      setTotalPages(Math.ceil(result.totalCount / usersPerPage));
+      setTotalCount(result.count);
+      setTotalPages(Math.ceil(result.count / usersPerPage));
     } catch (err) {
       console.error("Error fetching count:", err);
     }
