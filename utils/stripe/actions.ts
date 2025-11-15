@@ -1417,6 +1417,7 @@ export async function changeSubscriptionPlan(
     }
 
     // Update the subscription with the new price
+    // Preserve the current billing cycle end date by anchoring billing to the end of current period
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       items: [
         {
@@ -1424,7 +1425,8 @@ export async function changeSubscriptionPlan(
           price: newPriceId,
         },
       ],
-      proration_behavior: "create_prorations", // Create prorations for the change
+      proration_behavior: "none", // No prorations - just change the plan
+      billing_cycle_anchor: "now", // Keep the current billing cycle end date
     });
 
     // Serialize the subscription object
