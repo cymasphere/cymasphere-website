@@ -1519,6 +1519,51 @@ export type Database = {
           },
         ]
       }
+      meta_conversion_events: {
+        Row: {
+          client_ip: unknown
+          created_at: string | null
+          custom_data: Json | null
+          error_message: string | null
+          event_id: string | null
+          event_name: string
+          id: string
+          meta_response_id: string | null
+          status: string
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          client_ip?: unknown
+          created_at?: string | null
+          custom_data?: Json | null
+          error_message?: string | null
+          event_id?: string | null
+          event_name: string
+          id?: string
+          meta_response_id?: string | null
+          status: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          client_ip?: unknown
+          created_at?: string | null
+          custom_data?: Json | null
+          error_message?: string | null
+          event_id?: string | null
+          event_name?: string
+          id?: string
+          meta_response_id?: string | null
+          status?: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       playlist_videos: {
         Row: {
           condition_app_mode: string | null
@@ -1580,6 +1625,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           customer_id: string | null
+          email: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -1592,6 +1638,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           customer_id?: string | null
+          email?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -1604,6 +1651,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           customer_id?: string | null
+          email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -1828,6 +1876,24 @@ export type Database = {
           youtube_duration_cached?: number | null
           youtube_duration_last_updated?: string | null
           youtube_video_id?: string | null
+        }
+        Relationships: []
+      }
+      user_management: {
+        Row: {
+          notes: string | null
+          pro: boolean
+          user_email: string
+        }
+        Insert: {
+          notes?: string | null
+          pro?: boolean
+          user_email: string
+        }
+        Update: {
+          notes?: string | null
+          pro?: boolean
+          user_email?: string
         }
         Relationships: []
       }
@@ -2124,6 +2190,8 @@ export type Database = {
         Args: { p_enrollment_id: string; p_step_config: Json }
         Returns: Json
       }
+      get_lifetime_revenue: { Args: never; Returns: number }
+      get_monthly_revenue: { Args: never; Returns: number }
       get_next_automation_job: {
         Args: never
         Returns: {
