@@ -400,6 +400,7 @@ const FeaturesSection = () => {
     // Check if translations are ready
     const isReady = t("features.songBuilder.title") !== "features.songBuilder.title";
     
+    // Defer processing heavy feature data to avoid blocking render
     if (!isReady) {
       return [];
     }

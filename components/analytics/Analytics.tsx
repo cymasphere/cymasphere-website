@@ -17,6 +17,7 @@ import { GoogleAnalytics, MetaPixel } from "@/components/common/NextScript";
  * - NEXT_PUBLIC_META_PIXEL_ID: Meta Pixel ID (e.g., 123456789012345) - Optional
  * 
  * Updated: Environment variables configured in Vercel
+ * NOTE: GTM DataLayer now uses 'afterInteractive' to not block FCP
  */
 export default function Analytics() {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
@@ -28,20 +29,20 @@ export default function Analytics() {
       {/* Google Tag Manager - Initialize dataLayer first */}
       {gtmId && (
         <>
-          {/* GTM DataLayer initialization - must be before GTM container */}
+          {/* GTM DataLayer initialization - use afterInteractive to not block FCP */}
           <Script
             id="gtm-datalayer"
-            strategy="beforeInteractive"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
               `,
             }}
           />
-          {/* GTM Container Script */}
+          {/* GTM Container Script - use afterInteractive to not block FCP */}
           <Script
             id="gtm-container"
-            strategy="beforeInteractive"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

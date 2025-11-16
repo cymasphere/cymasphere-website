@@ -73,28 +73,58 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
 
-  // Load YouTube Iframe API
+  // Defer YouTube Iframe API loading - not needed for FCP
+  // Load it after a delay to avoid blocking initial render
   useEffect(() => {
-    if (typeof window !== 'undefined' && !window.YT) {
-      console.log('Loading YouTube Iframe API...');
-      const script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.async = true;
-      script.onload = () => {
-        console.log('YouTube Iframe API script loaded');
-      };
-      script.onerror = () => {
-        console.error('Failed to load YouTube Iframe API script');
-      };
-      document.head.appendChild(script);
+    // Only load YouTube API on routes that actually need it
+    const needsYoutube = pathname?.includes('/admin') || pathname?.includes('/dashboard') || pathname?.includes('/tutorials');
+    
+    if (!needsYoutube) {
+      // Load after 3 seconds for non-admin routes
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined' && !window.YT) {
+          console.log('Loading YouTube Iframe API...');
+          const script = document.createElement('script');
+          script.src = 'https://www.youtube.com/iframe_api';
+          script.async = true;
+          script.onload = () => {
+            console.log('YouTube Iframe API script loaded');
+          };
+          script.onerror = () => {
+            console.error('Failed to load YouTube Iframe API script');
+          };
+          document.head.appendChild(script);
+          
+          window.onYouTubeIframeAPIReady = () => {
+            console.log('YouTube Iframe API ready callback triggered');
+          };
+        }
+      }, 3000);
       
-      window.onYouTubeIframeAPIReady = () => {
-        console.log('YouTube Iframe API ready callback triggered');
-      };
-    } else if (window.YT) {
-      console.log('YouTube API already loaded');
+      return () => clearTimeout(timer);
+    } else {
+      // Load immediately for admin/dashboard routes
+      if (typeof window !== 'undefined' && !window.YT) {
+        console.log('Loading YouTube Iframe API...');
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        script.onload = () => {
+          console.log('YouTube Iframe API script loaded');
+        };
+        script.onerror = () => {
+          console.error('Failed to load YouTube Iframe API script');
+        };
+        document.head.appendChild(script);
+        
+        window.onYouTubeIframeAPIReady = () => {
+          console.log('YouTube Iframe API ready callback triggered');
+        };
+      } else if (window.YT) {
+        console.log('YouTube API already loaded');
+      }
     }
-  }, []);
+  }, [pathname]);
 
   // Timezone tracking is now handled directly in AuthContext
 

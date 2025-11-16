@@ -1,13 +1,35 @@
 "use client";
 
-// Test deployment - automatic deployment working! 🚀
-import { Suspense } from "react";
+// Performance optimized homepage
+import { Suspense, lazy } from "react";
 import HeroSection from "@/components/sections/HeroSection";
-import FeaturesSection from "@/components/sections/FeaturesSection";
-import HowItWorksSection from "@/components/sections/HowItWorksSection";
-import PricingSection from "@/components/sections/PricingSection";
-import FAQSection from "@/components/sections/FAQSection";
-import ContactSection from "@/components/sections/ContactSection";
+import dynamic from "next/dynamic";
+
+// Lazy load non-critical sections with dynamic imports
+const FeaturesSection = dynamic(() => import("@/components/sections/FeaturesSection"), {
+  ssr: true,
+  loading: () => <GenericSectionSkeleton height="600px" />,
+});
+
+const HowItWorksSection = dynamic(() => import("@/components/sections/HowItWorksSection"), {
+  ssr: true,
+  loading: () => <GenericSectionSkeleton height="800px" />,
+});
+
+const PricingSection = dynamic(() => import("@/components/sections/PricingSection"), {
+  ssr: true,
+  loading: () => <GenericSectionSkeleton height="800px" />,
+});
+
+const FAQSection = dynamic(() => import("@/components/sections/FAQSection"), {
+  ssr: true,
+  loading: () => <GenericSectionSkeleton height="600px" />,
+});
+
+const ContactSection = dynamic(() => import("@/components/sections/ContactSection"), {
+  ssr: true,
+  loading: () => <GenericSectionSkeleton height="500px" />,
+});
 
 // Simple reusable skeleton for all sections
 const GenericSectionSkeleton = ({ height = "600px" }: { height?: string }) => {
@@ -29,24 +51,17 @@ const GenericSectionSkeleton = ({ height = "600px" }: { height?: string }) => {
 export default function Home() {
   return (
     <>
+      {/* Hero section is critical - render immediately */}
       <Suspense fallback={<GenericSectionSkeleton height="600px" />}>
         <HeroSection />
       </Suspense>
-      <Suspense fallback={<GenericSectionSkeleton height="600px" />}>
-        <FeaturesSection />
-      </Suspense>
-      <Suspense fallback={<GenericSectionSkeleton height="800px" />}>
-        <HowItWorksSection />
-      </Suspense>
-      <Suspense fallback={<GenericSectionSkeleton height="800px" />}>
-        <PricingSection />
-      </Suspense>
-      <Suspense fallback={<GenericSectionSkeleton height="600px" />}>
-        <FAQSection />
-      </Suspense>
-      <Suspense fallback={<GenericSectionSkeleton height="500px" />}>
-        <ContactSection />
-      </Suspense>
+      
+      {/* Secondary sections - lazy load to optimize FCP */}
+      <FeaturesSection />
+      <HowItWorksSection />
+      <PricingSection />
+      <FAQSection />
+      <ContactSection />
     </>
   );
 }
