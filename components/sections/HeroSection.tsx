@@ -263,12 +263,11 @@ const HeroSection = () => {
   const isMobile = windowWidth <= 768;
 
   // Measure all word widths once on first render and when language changes
-  // Defer this to avoid blocking FCP
   useEffect(() => {
     // Skip SSR execution
     if (typeof window === "undefined") return;
 
-    // Use a longer timeout to ensure DOM is fully rendered and FCP is done
+    // Use a timeout to ensure DOM is fully rendered
     const timeoutId = setTimeout(() => {
       if (wordMeasureRef.current) {
         const widths: Record<number, number> = {};
@@ -302,7 +301,7 @@ const HeroSection = () => {
         
         console.log("Measured widths:", widths);
       }
-    }, 800); // Increased timeout to 800ms to ensure FCP is complete before measurement
+    }, 100); // Short timeout to ensure DOM is ready
     
     return () => clearTimeout(timeoutId);
   }, [titleWords, isMobile]);
@@ -464,7 +463,6 @@ const HeroSection = () => {
   }, [titleWords]);
 
   // Use the synth in a way consistent with the Try Me section
-  // Defer initialization to avoid blocking FCP
   useEffect(() => {
     let localSynth: DisposableSynth = null;
 
@@ -570,14 +568,10 @@ const HeroSection = () => {
       }
     };
 
-    // Defer synth initialization to after FCP (1.5 seconds)
-    const timerId = setTimeout(() => {
-      initializeSynth();
-    }, 1500);
+    initializeSynth();
 
     // Clean up
     return () => {
-      clearTimeout(timerId);
       if (localSynth) {
         try {
           disposeSynth(localSynth);
@@ -1474,7 +1468,7 @@ const HeroSection = () => {
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           $loaded={videoLoaded}
           disablePictureInPicture
           disableRemotePlayback
@@ -1488,7 +1482,6 @@ const HeroSection = () => {
           }}
           onCanPlay={() => {
             console.log('Video can play');
-            setVideoLoaded(true);
           }}
           style={{ 
             willChange: 'auto',
@@ -1496,8 +1489,8 @@ const HeroSection = () => {
             perspective: '1000px'
           }}
         >
-          <source src="/images/hero-background.webm" type="video/webm" />
           <source src="/images/hero-background.mp4" type="video/mp4" />
+          <source src="/images/hero-background.webm" type="video/webm" />
         </BackgroundVideo>
       )}
       {renderContent()}

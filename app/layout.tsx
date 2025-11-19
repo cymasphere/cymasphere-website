@@ -93,24 +93,6 @@ export default function RootLayout({
 }: RootLayoutProps) {
   return (
     <html lang="en" className={`${geistSans.variable} ${montserrat.variable}`}>
-      <head>
-        {/* Preload critical resources */}
-        <link
-          rel="preload"
-          href="/images/hero-background.webm"
-          as="video"
-          type="video/webm"
-        />
-        <link
-          rel="preload"
-          href="/images/hero-background.mp4"
-          as="video"
-          type="video/mp4"
-        />
-        {/* DNS prefetch for external services */}
-        <link rel="dns-prefetch" href="//www.googletagmanager.com" />
-        <link rel="dns-prefetch" href="//www.youtube.com" />
-      </head>
       <body>
         <Analytics />
         <SpeedInsights />
