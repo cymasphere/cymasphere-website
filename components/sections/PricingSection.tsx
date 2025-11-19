@@ -1167,7 +1167,7 @@ const PricingContainer = styled.section`
 `;
 
 const ContentContainer = styled.div`
-  max-width: 1200px;
+  max-width: 550px;
   margin: 0 auto;
   position: relative;
   z-index: 3;
