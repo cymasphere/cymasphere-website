@@ -39,7 +39,7 @@ const PricingCardContainer = styled(motion.div)<{
   overflow: visible;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  max-width: 900px;
+  max-width: 450px;
   margin: 0 auto;
   border: 2px solid
     ${(props) =>
@@ -180,18 +180,9 @@ const FeaturesList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 1rem 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem 1.5rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 `;
 
 const Feature = styled.li`
