@@ -127,3 +127,5 @@ If you prefer to load GA directly (not through GTM):
 This way, all GA configuration happens in GTM - no code deployments needed for future changes!
 
 
+
+

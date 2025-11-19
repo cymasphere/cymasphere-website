@@ -7,6 +7,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackUserData, hashEmail } from "@/utils/analytics";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -138,20 +139,50 @@ function CheckoutSuccessContent() {
     currencyParam || "USD"
   );
 
-  // Track dataLayer events
+  // Track dataLayer events with user data
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     window.dataLayer = window.dataLayer || [];
 
+    // Get user data
+    const userId = user?.id || user?.profile?.id;
+    const userEmail = user?.email || user?.profile?.email;
+
+    // Helper function to push event with user data
+    const pushEventWithUserData = async (eventData: any) => {
+      if (userId && userEmail) {
+        // First push user data
+        await trackUserData({
+          user_id: userId,
+          email: userEmail,
+        });
+        
+        // Get email hash for the event
+        const emailHash = await hashEmail(userEmail);
+        
+        // Then push the event with user data
+        window.dataLayer.push({
+          ...eventData,
+          user: {
+            user_id: userId,
+            email_sha256: emailHash,
+          },
+        });
+      } else {
+        // Fallback: push event without user data
+        window.dataLayer.push(eventData);
+      }
+    };
+
     if (isTrial) {
-      // Track free trial
-      window.dataLayer.push({
+      // Track free trial with user data
+      pushEventWithUserData({
         event: 'free_trial'
       });
     } else if (subscriptionValue !== null) {
       // Track paid subscription with value and currency
-      window.dataLayer.push({
+      pushEventWithUserData({
         event: 'subscription_success',
         subscription: {
           value: subscriptionValue,
@@ -166,7 +197,7 @@ function CheckoutSuccessContent() {
           if (data.success && data.value !== null) {
             setSubscriptionValue(data.value);
             setSubscriptionCurrency(data.currency || 'USD');
-            window.dataLayer.push({
+            pushEventWithUserData({
               event: 'subscription_success',
               subscription: {
                 value: data.value,
@@ -175,7 +206,7 @@ function CheckoutSuccessContent() {
             });
           } else {
             // Fallback: track without value
-            window.dataLayer.push({
+            pushEventWithUserData({
               event: 'subscription_success',
               subscription: {
                 value: 0,
@@ -186,7 +217,7 @@ function CheckoutSuccessContent() {
         })
         .catch(() => {
           // If we can't fetch, still track the event without value
-          window.dataLayer.push({
+          pushEventWithUserData({
             event: 'subscription_success',
             subscription: {
               value: 0,
@@ -195,7 +226,7 @@ function CheckoutSuccessContent() {
           });
         });
     }
-  }, [isTrial, subscriptionValue, subscriptionCurrency, sessionId]);
+  }, [isTrial, subscriptionValue, subscriptionCurrency, sessionId, user]);
 
   const handleContinue = () => {
     if (isLoggedIn) {

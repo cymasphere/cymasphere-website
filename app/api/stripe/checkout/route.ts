@@ -1,8 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PlanType } from "@/types/stripe";
+import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import { randomUUID } from "crypto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+/**
+ * Map price_id to plan name for Meta tracking
+ * Returns format: monthly_6, annual_59, lifetime_149
+ */
+async function getPlanName(priceId: string, planType: PlanType): Promise<string> {
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    const amount = (price.unit_amount || 0) / 100; // Convert cents to dollars
+    
+    if (planType === "monthly") {
+      return `monthly_${amount}`;
+    } else if (planType === "annual") {
+      return `annual_${amount}`;
+    } else if (planType === "lifetime") {
+      return `lifetime_${amount}`;
+    }
+    
+    return `${planType}_${amount}`;
+  } catch (error) {
+    console.error("Error fetching price for plan name:", error);
+    return `${planType}_unknown`;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -175,6 +201,40 @@ async function createCheckoutSession(
       // If customer has had a trial before, no trial_period_days - they'll be charged immediately
     }
 
+    // Get user_id and email from Supabase if customer_id is available
+    let userId: string | undefined;
+    let userEmail: string | undefined;
+    
+    if (customerId) {
+      try {
+        const supabase = await createSupabaseServiceRole();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, email")
+          .eq("customer_id", customerId)
+          .single();
+        
+        if (profile) {
+          userId = profile.id;
+          userEmail = profile.email;
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        // Continue without user data
+      }
+    }
+
+    // Get plan name for Meta tracking with trial period
+    let planName = await getPlanName(priceId, planType);
+    
+    // Add trial period to plan name for better tracking
+    if (mode === "subscription" && subscriptionData?.trial_period_days) {
+      planName = `${planName}_trial${subscriptionData.trial_period_days}`;
+    }
+    
+    // Generate event_id for deduplication
+    const eventId = randomUUID();
+
     // Build session parameters with proper URL fallbacks
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
@@ -190,9 +250,13 @@ async function createCheckoutSession(
       cancel_url: `${baseUrl}/checkout-canceled`,
       metadata: {
         plan_type: planType,
+        plan_name: planName,
         customer_id: customerId,
         collect_payment_method: collectPaymentMethod.toString(),
         is_signed_up: isSignedUp.toString(),
+        ...(userId && { user_id: userId }),
+        ...(userEmail && { email: userEmail }),
+        event_id: eventId,
       },
     };
 

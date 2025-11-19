@@ -86,6 +86,13 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Checkout session completed:", session.id);
 
+        // Get metadata from session
+        const metadata = session.metadata || {};
+        const userId = metadata.user_id;
+        const userEmail = metadata.email;
+        const planName = metadata.plan_name || metadata.plan_type;
+        const eventId = metadata.event_id || `checkout_${session.id}`;
+
         // Update user subscription status based on session
         if (session.customer && session.mode === "subscription") {
           const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
@@ -118,6 +125,65 @@ export async function POST(request: NextRequest) {
                 trial_expiration: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
               })
               .eq("id", profile.id);
+
+            // Check if this is a free trial
+            const hasTrial = subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000);
+            
+            if (hasTrial) {
+              // Track free trial to Meta CAPI
+              await trackMetaConversionFromWebhook(
+                'Subscribe', // Meta event for subscription start (trial)
+                {
+                  email: userEmail || profile.email,
+                  userId: userId || profile.id,
+                },
+                {
+                  content_name: planName || subscriptionType,
+                  subscription_type: subscriptionType,
+                  trial_days: subscription.trial_end 
+                    ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
+                    : undefined,
+                  subscription_id: subscription.id,
+                  price_id: subscription.items.data[0]?.price.id,
+                  currency: subscription.currency,
+                  value: subscription.items.data[0]?.price.unit_amount ? (subscription.items.data[0].price.unit_amount / 100) : undefined,
+                },
+                eventId
+              );
+            }
+          }
+        } else if (session.mode === "payment") {
+          // Handle one-time payment (lifetime)
+          const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
+          
+          // Find user by customer ID
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("customer_id", customerId)
+            .single();
+
+          if (profile) {
+            // Get payment intent to get amount
+            const paymentIntent = await stripe.paymentIntents.retrieve(
+              session.payment_intent as string
+            );
+
+            // Track purchase to Meta CAPI
+            await trackMetaConversionFromWebhook(
+              'Purchase', // Meta event for one-time purchase
+              {
+                email: userEmail || profile.email,
+                userId: userId || profile.id,
+              },
+              {
+                content_name: planName || 'lifetime',
+                value: paymentIntent.amount / 100, // Convert cents to dollars
+                currency: paymentIntent.currency.toUpperCase(),
+                payment_method: paymentIntent.payment_method_types?.[0],
+              },
+              eventId
+            );
           }
         }
         break;
@@ -181,19 +247,28 @@ export async function POST(request: NextRequest) {
                   ? "annual" 
                   : "unknown";
               
+              // Get plan name (monthly_6, annual_59, etc.)
+              const amount = charge.amount / 100;
+              const planName = subscriptionType === "monthly" 
+                ? `monthly_${amount}` 
+                : subscriptionType === "annual"
+                ? `annual_${amount}`
+                : `${subscriptionType}_${amount}`;
+
               // Track paid subscription to Meta (differentiate monthly vs annual)
               await trackMetaConversionFromWebhook(
-                'Purchase', // Meta event for paid subscription
+                'Subscribe', // Meta event for paid subscription (monthly/annual)
                 {
                   email: customerEmail || profile?.email,
                   userId: profile?.id,
                 },
                 {
+                  content_name: planName,
                   subscription_type: subscriptionType,
                   subscription_id: subscriptionId,
                   price_id: priceId,
                   currency: charge.currency.toUpperCase(),
-                  value: charge.amount / 100, // Convert cents to dollars
+                  value: amount,
                   payment_method: charge.payment_method_details?.type,
                 },
                 `subscription_paid_${charge.id}`
@@ -336,6 +411,14 @@ export async function POST(request: NextRequest) {
               ? "annual" 
               : "unknown";
 
+          // Get plan name (monthly_6, annual_59, etc.)
+          const amount = subscriptionItem.price.unit_amount ? (subscriptionItem.price.unit_amount / 100) : 0;
+          const planName = subscriptionType === "monthly" 
+            ? `monthly_${amount}` 
+            : subscriptionType === "annual"
+            ? `annual_${amount}`
+            : `${subscriptionType}_${amount}`;
+
           // Check if this is a trial initiation
           const hasTrial = subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000);
           
@@ -348,6 +431,7 @@ export async function POST(request: NextRequest) {
                 userId: profile?.id,
               },
               {
+                content_name: planName,
                 subscription_type: subscriptionType,
                 trial_days: subscription.trial_end 
                   ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
@@ -355,7 +439,7 @@ export async function POST(request: NextRequest) {
                 subscription_id: subscription.id,
                 price_id: priceId,
                 currency: subscription.currency,
-                value: subscriptionItem.price.unit_amount ? (subscriptionItem.price.unit_amount / 100) : undefined,
+                value: amount,
               },
               `trial_${subscription.id}`
             );

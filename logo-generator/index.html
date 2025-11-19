@@ -210,6 +210,7 @@
             opacity: 0.5;
             background: linear-gradient(90deg, var(--primary), var(--accent));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -349,8 +350,27 @@
             </div>
         </div>
 
+        <div class="controls animation-controls">
+            <div class="control-group">
+                <label for="videoFPS">Video FPS:</label>
+                <select id="videoFPS">
+                    <option value="24">24 fps</option>
+                    <option value="30" selected>30 fps</option>
+                    <option value="60">60 fps</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="videoCycles">Animation Cycles:</label>
+                <input type="number" id="videoCycles" min="1" max="10" value="2" step="1">
+                <small id="cycleDurationInfo" style="display: block; margin-top: 4px; opacity: 0.7; font-size: 0.85rem;">
+                    (2 cycles = 6 seconds)
+                </small>
+            </div>
+        </div>
+
         <div class="actions">
-            <button id="download">Download Logo</button>
+            <button id="download">Download Logo (PNG)</button>
+            <button id="downloadVideo">Download Video (WebM)</button>
         </div>
     </div>
 
@@ -362,9 +382,12 @@
             const animationFrameSlider = document.getElementById('animationFrame');
             const animateButton = document.getElementById('animateButton');
             const downloadButton = document.getElementById('download');
+            const downloadVideoButton = document.getElementById('downloadVideo');
             const frameValueDisplay = document.getElementById('frameValue');
             const logoPreview = document.getElementById('logoPreview');
             const previewScale = document.getElementById('previewScale');
+            const videoFPS = document.getElementById('videoFPS');
+            const videoCycles = document.getElementById('videoCycles');
             
             // Animation variables
             let isAnimating = false;
@@ -528,8 +551,11 @@
                         ballY = centerY;
                     }
                     
-                    // Draw energy ball with extra outer glow
-                    drawEnergyBall(ctx, ballX, ballY, ballSize);
+                    // Draw energy ball - convert slider rotation to animation time
+                    // Rotation is 3 seconds for full 360°, so convert slider degrees to time
+                    const sliderRotation = parseInt(animationFrameSlider.value);
+                    const animationTime = (sliderRotation / 360) * 3; // Convert degrees to animation time
+                    drawEnergyBall(ctx, ballX, ballY, ballSize, animationTime);
                 }
                 
                 if (exportType === 'both' || exportType === 'text') {
@@ -607,16 +633,35 @@
             }
             
             // Helper function to draw the energy ball on canvas
-            function drawEnergyBall(ctx, x, y, size) {
+            // animationTime: time in seconds for animations (pulse, shimmer, rotation)
+            function drawEnergyBall(ctx, x, y, size, animationTime = 0) {
                 const radius = size / 2;
                 
                 // Save context state
                 ctx.save();
                 
-                // Draw outer glow with much larger radius to ensure it's not cut off
+                // Calculate pulse animation (2s cycle)
+                const pulseCycle = (animationTime % 2) / 2; // 0 to 1 over 2 seconds
+                let pulseScale, pulseShadow;
+                if (pulseCycle < 0.7) {
+                    // Scale from 0.95 to 1.0 (0% to 70% of cycle)
+                    pulseScale = 0.95 + (pulseCycle / 0.7) * 0.05;
+                    // Shadow from 0 to 10px
+                    pulseShadow = (pulseCycle / 0.7) * 10;
+                } else {
+                    // Scale from 1.0 back to 0.95 (70% to 100% of cycle)
+                    pulseScale = 1.0 - ((pulseCycle - 0.7) / 0.3) * 0.05;
+                    // Shadow from 10px back to 0
+                    pulseShadow = 10 - ((pulseCycle - 0.7) / 0.3) * 10;
+                }
+                
+                // Apply pulse scale
+                const scaledRadius = radius * pulseScale;
+                
+                // Draw outer glow with pulse effect
                 const glowGradient = ctx.createRadialGradient(
-                    x, y, radius * 0.3,
-                    x, y, radius * 1.8 // Increase size of outer glow significantly
+                    x, y, scaledRadius * 0.3,
+                    x, y, scaledRadius * 1.8
                 );
                 glowGradient.addColorStop(0, 'rgba(108, 99, 255, 0.7)');
                 glowGradient.addColorStop(0.4, 'rgba(78, 205, 196, 0.3)');
@@ -624,14 +669,37 @@
                 glowGradient.addColorStop(1, 'rgba(108, 99, 255, 0)');
                 
                 ctx.beginPath();
-                ctx.arc(x, y, radius * 1.8, 0, Math.PI * 2); // Much larger glow radius
+                ctx.arc(x, y, scaledRadius * 1.8, 0, Math.PI * 2);
                 ctx.fillStyle = glowGradient;
                 ctx.fill();
                 
-                // Draw ring with slightly larger radius
-                const ringWidth = radius * 0.08;
-                const ringRadius = radius * 1.2; // Slightly larger ring
-                const rotation = (parseInt(animationFrameSlider.value) * Math.PI) / 180;
+                // Draw shimmer effect (3s cycle) - animated gradient background
+                const shimmerCycle = (animationTime % 3) / 3; // 0 to 1 over 3 seconds
+                const shimmerPosition = -200 + shimmerCycle * 400; // -200% to 200%
+                
+                // Draw shimmer background (the ::before pseudo-element effect)
+                const shimmerGradient = ctx.createLinearGradient(
+                    x - scaledRadius * 1.1, y - scaledRadius * 1.1,
+                    x + scaledRadius * 1.1, y + scaledRadius * 1.1
+                );
+                // Create animated gradient based on shimmer position
+                const gradientStart = (shimmerPosition + 200) / 400; // Normalize to 0-1
+                shimmerGradient.addColorStop(Math.max(0, gradientStart - 0.3), 'rgba(108, 99, 255, 0.8)');
+                shimmerGradient.addColorStop(gradientStart, 'rgba(78, 205, 196, 0.8)');
+                shimmerGradient.addColorStop(Math.min(1, gradientStart + 0.3), 'rgba(108, 99, 255, 0.8)');
+                
+                ctx.beginPath();
+                ctx.arc(x, y, scaledRadius * 1.1, 0, Math.PI * 2);
+                ctx.fillStyle = shimmerGradient;
+                ctx.globalAlpha = 0.7;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+                
+                // Draw ring with rotation (3s cycle for full rotation)
+                const ringWidth = scaledRadius * 0.08;
+                const ringRadius = scaledRadius * 1.2;
+                const rotationCycle = (animationTime % 3) / 3; // 0 to 1 over 3 seconds
+                const rotation = rotationCycle * Math.PI * 2; // 0 to 2π
                 
                 // Draw the accent colored part of the ring (top)
                 ctx.strokeStyle = 'rgba(78, 205, 196, 0.9)';
@@ -650,23 +718,23 @@
                 
                 // Draw ball with smoother gradient
                 const ballGradient = ctx.createRadialGradient(
-                    x - radius * 0.3, y - radius * 0.3, 0,
-                    x, y, radius
+                    x - scaledRadius * 0.3, y - scaledRadius * 0.3, 0,
+                    x, y, scaledRadius
                 );
                 ballGradient.addColorStop(0, '#6c63ff');  // primary at center
                 ballGradient.addColorStop(0.7, '#5596dd'); // blend
                 ballGradient.addColorStop(1, '#4ecdc4');  // accent at edge
                 
                 ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.arc(x, y, scaledRadius, 0, Math.PI * 2);
                 ctx.fillStyle = ballGradient;
-                ctx.shadowColor = 'rgba(108, 99, 255, 0.6)';
-                ctx.shadowBlur = radius * 0.3; // Increase shadow blur
+                ctx.shadowColor = `rgba(108, 99, 255, ${0.6 + pulseShadow / 10 * 0.1})`;
+                ctx.shadowBlur = scaledRadius * 0.3 + pulseShadow;
                 ctx.fill();
                 ctx.shadowColor = 'transparent';
                 
                 // Draw core with more realistic gradient
-                const coreRadius = radius * 0.6;
+                const coreRadius = scaledRadius * 0.6;
                 const coreGradient = ctx.createRadialGradient(
                     x - coreRadius * 0.3, y - coreRadius * 0.3, 0,
                     x, y, coreRadius
@@ -679,17 +747,213 @@
                 ctx.arc(x, y, coreRadius, 0, Math.PI * 2);
                 ctx.fillStyle = coreGradient;
                 ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                ctx.shadowBlur = radius * 0.4; // Increase core glow
+                ctx.shadowBlur = scaledRadius * 0.4;
                 ctx.fill();
                 
                 // Add highlight for more realistic look
                 ctx.beginPath();
-                ctx.arc(x - radius * 0.2, y - radius * 0.2, radius * 0.1, 0, Math.PI * 2);
+                ctx.arc(x - scaledRadius * 0.2, y - scaledRadius * 0.2, scaledRadius * 0.1, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                 ctx.fill();
                 
                 // Restore context state
                 ctx.restore();
+            }
+            
+            // Export animation as video
+            async function exportVideo() {
+                const exportType = exportTypeSelect.value;
+                const exportSize = parseInt(exportSizeSelect.value);
+                const fps = parseInt(videoFPS.value);
+                const cycles = parseInt(videoCycles.value);
+                
+                // Calculate duration based on longest animation cycle (3 seconds for rotation/shimmer)
+                // Pulse is 2s, but rotation/shimmer are 3s, so use 3s as the base
+                const cycleDuration = 3; // seconds per full cycle (rotation/shimmer)
+                const duration = cycles * cycleDuration;
+                const totalFrames = Math.ceil(fps * duration);
+                
+                // Disable button during export
+                downloadVideoButton.disabled = true;
+                downloadVideoButton.textContent = `Rendering ${cycles} cycle${cycles > 1 ? 's' : ''} (${totalFrames} frames)...`;
+                
+                try {
+                    // Create a hidden canvas for video rendering
+                    const videoCanvas = document.createElement('canvas');
+                    const videoCtx = videoCanvas.getContext('2d');
+                    
+                    // Calculate canvas dimensions (same as image export)
+                    let width, height, padding;
+                    
+                    if (exportType === 'ball') {
+                        padding = Math.round(exportSize * 0.5);
+                        height = exportSize + padding * 2;
+                        width = height;
+                    } else if (exportType === 'text') {
+                        padding = Math.round(exportSize * 0.1);
+                        height = Math.round(exportSize * 0.25);
+                        videoCtx.font = `bold ${height * 0.7}px Montserrat, sans-serif`;
+                        const textWidth = videoCtx.measureText('CYMASPHERE').width;
+                        width = textWidth + padding * 2;
+                    } else { // both
+                        padding = Math.round(exportSize * 0.25);
+                        height = Math.round(exportSize * 0.35);
+                        const fontSize = height * 0.7;
+                        videoCtx.font = `bold ${fontSize}px Montserrat, sans-serif`;
+                        const textWidth = videoCtx.measureText('CYMASPHERE').width;
+                        const ballSize = height * 0.9;
+                        width = ballSize + textWidth + padding * 2.5;
+                    }
+                    
+                    videoCanvas.width = width + Math.round(padding * 0.5);
+                    videoCanvas.height = height + Math.round(padding * 0.5);
+                    
+                    const centerX = videoCanvas.width / 2;
+                    const centerY = videoCanvas.height / 2;
+                    
+                    // Render function for a single frame
+                    function renderFrame(frameNumber) {
+                        // Clear canvas
+                        videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+                        
+                        // Calculate animation time in seconds for this frame
+                        // This ensures all animations (pulse, shimmer, rotation) play correctly
+                        const frameTime = frameNumber / fps;
+                        
+                        // Draw logo elements at this frame
+                        if (exportType === 'both' || exportType === 'ball') {
+                            let ballSize;
+                            let ballX, ballY;
+                            
+                            if (exportType === 'ball') {
+                                ballSize = exportSize;
+                                ballX = centerX;
+                                ballY = centerY;
+                            } else {
+                                ballSize = height * 0.9;
+                                ballX = padding + ballSize / 2;
+                                ballY = centerY;
+                            }
+                            
+                            // Draw with full animation time
+                            drawEnergyBall(videoCtx, ballX, ballY, ballSize, frameTime);
+                        }
+                        
+                        if (exportType === 'both' || exportType === 'text') {
+                            const fontSize = height * 0.7;
+                            let textX;
+                            
+                            if (exportType === 'both') {
+                                const ballSize = height * 0.9;
+                                textX = ballSize + padding * 1.3;
+                            } else {
+                                textX = centerX - videoCtx.measureText('CYMASPHERE').width / 2;
+                            }
+                            
+                            const textY = centerY;
+                            const pixelSize = Math.round(fontSize);
+                            videoCtx.font = `bold ${pixelSize}px Montserrat, sans-serif`;
+                            videoCtx.textBaseline = 'middle';
+                            videoCtx.textAlign = 'left';
+                            
+                            const cymaText = 'CYMA';
+                            const sphereText = 'SPHERE';
+                            const cymaMetrics = videoCtx.measureText(cymaText);
+                            const cymaWidth = cymaMetrics.width;
+                            
+                            const textGradient = videoCtx.createLinearGradient(
+                                textX, 0, 
+                                textX + cymaWidth, 0
+                            );
+                            textGradient.addColorStop(0, '#6c63ff');
+                            textGradient.addColorStop(1, '#4ecdc4');
+                            
+                            videoCtx.fillStyle = textGradient;
+                            const charSpacing = pixelSize * 0.05;
+                            let charX = textX;
+                            
+                            for (let i = 0; i < cymaText.length; i++) {
+                                const char = cymaText[i];
+                                videoCtx.fillText(char, charX, textY);
+                                charX += videoCtx.measureText(char).width + charSpacing;
+                            }
+                            
+                            videoCtx.fillStyle = '#FFFFFF';
+                            charX += pixelSize * 0.05;
+                            
+                            for (let i = 0; i < sphereText.length; i++) {
+                                const char = sphereText[i];
+                                videoCtx.fillText(char, charX, textY);
+                                charX += videoCtx.measureText(char).width + charSpacing;
+                            }
+                        }
+                    }
+                    
+                    // Create MediaRecorder stream from canvas
+                    const stream = videoCanvas.captureStream(fps);
+                    const mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'video/webm;codecs=vp9',
+                        videoBitsPerSecond: 8000000 // 8 Mbps for high quality
+                    });
+                    
+                    const chunks = [];
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) {
+                            chunks.push(e.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = `cymasphere-logo-${exportType}-${width}x${height}-${fps}fps-${cycles}cycles.webm`;
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        
+                        downloadVideoButton.disabled = false;
+                        downloadVideoButton.textContent = 'Download Video (WebM)';
+                    };
+                    
+                    // Start recording
+                    mediaRecorder.start();
+                    
+                    // Render frames at specified FPS
+                    const frameDelay = 1000 / fps;
+                    let currentFrame = 0;
+                    
+                    const renderLoop = () => {
+                        if (currentFrame >= totalFrames) {
+                            // Stop recording after all frames
+                            mediaRecorder.stop();
+                            stream.getTracks().forEach(track => track.stop());
+                            return;
+                        }
+                        
+                        // Render the frame with animation time
+                        renderFrame(currentFrame);
+                        
+                        // Update progress
+                        if (currentFrame % Math.ceil(totalFrames / 10) === 0) {
+                            downloadVideoButton.textContent = `Rendering... ${Math.round((currentFrame / totalFrames) * 100)}%`;
+                        }
+                        
+                        currentFrame++;
+                        
+                        // Schedule next frame
+                        setTimeout(renderLoop, frameDelay);
+                    };
+                    
+                    // Start rendering
+                    renderLoop();
+                    
+                } catch (error) {
+                    console.error('Video export error:', error);
+                    alert('Video export failed. Your browser may not support MediaRecorder API. Try using Chrome or Firefox.');
+                    downloadVideoButton.disabled = false;
+                    downloadVideoButton.textContent = 'Download Video (WebM)';
+                }
             }
             
             // Event Listeners
@@ -718,10 +982,22 @@
             });
             
             downloadButton.addEventListener('click', exportLogo);
+            downloadVideoButton.addEventListener('click', exportVideo);
+            
+            // Update cycle duration info when cycles change
+            function updateCycleDurationInfo() {
+                const cycles = parseInt(videoCycles.value) || 2;
+                const duration = cycles * 3; // 3 seconds per cycle
+                const cycleDurationInfo = document.getElementById('cycleDurationInfo');
+                cycleDurationInfo.textContent = `(${cycles} cycle${cycles > 1 ? 's' : ''} = ${duration} second${duration > 1 ? 's' : ''})`;
+            }
+            
+            videoCycles.addEventListener('input', updateCycleDurationInfo);
             
             // Initialize
             updateLogoPreview();
             updateFrameDisplay();
+            updateCycleDurationInfo();
         });
     </script>
 </body>

@@ -20,6 +20,28 @@ declare global {
 }
 
 /**
+ * Hash email with SHA-256 (client-side)
+ * Normalizes email: lowercase, trim whitespace, then hash
+ */
+export async function hashEmail(email: string): Promise<string> {
+  if (!email) return '';
+  
+  // Normalize: lowercase, trim whitespace
+  const normalized = email.toLowerCase().trim();
+  
+  if (!normalized) return '';
+  
+  // Use Web Crypto API for SHA-256 hashing
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
+}
+
+/**
  * Track a custom event to Google Analytics/GTM
  */
 export function trackEvent(
@@ -275,6 +297,39 @@ export function trackGAEvent(eventName: string, params?: Record<string, any>): v
     event: eventName,
     ...params,
   });
+}
+
+/**
+ * Push user data to dataLayer for advanced tracking
+ * This allows Meta and other platforms to connect events across sessions
+ * 
+ * Usage:
+ *   await trackUserData({
+ *     user_id: '12345',
+ *     email: 'user@example.com'
+ *   });
+ */
+export async function trackUserData(data: {
+  user_id: string;
+  email: string;
+}): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const email_sha256 = await hashEmail(data.email);
+    
+    if (window.dataLayer) {
+      window.dataLayer.push({
+        event: 'user_data',
+        user: {
+          user_id: data.user_id,
+          email_sha256: email_sha256,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error tracking user data:', error);
+  }
 }
 
 /**
