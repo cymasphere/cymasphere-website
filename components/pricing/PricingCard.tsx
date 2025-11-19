@@ -552,8 +552,9 @@ export default function PricingCard({
   const handleCheckout = async (collectPaymentMethod: boolean) => {
     if (!prices) return;
 
-    // If user is not logged in and starting a trial, show email collection modal
-    if (!user && (trialType === "7day" || trialType === "14day")) {
+    // If user is not logged in, show email collection modal
+    // (for trials or lifetime purchases)
+    if (!user) {
       setShowEmailModal(true);
       return;
     }
@@ -605,6 +606,7 @@ export default function PricingCard({
 
       const result = await initiateCheckout(billingPeriod, {
         collectPaymentMethod,
+        email, // Pass the email from the modal
       });
 
       if (result.success) {

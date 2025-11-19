@@ -16,6 +16,7 @@ interface UseCheckoutReturn {
       collectPaymentMethod?: boolean;
       willProvideCard?: boolean;
       hasHadTrial?: boolean;
+      email?: string;
     }
   ) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
@@ -39,6 +40,7 @@ export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn
         collectPaymentMethod?: boolean;
         willProvideCard?: boolean;
         hasHadTrial?: boolean;
+        email?: string;
       }
     ): Promise<{ success: boolean; error?: string }> => {
       // Reset error state
@@ -71,9 +73,9 @@ export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn
           collectPaymentMethod = true;
         }
 
-        // Get user info
+        // Get user info (prioritize passed email from modal over user email)
         const customerId = user?.profile?.customer_id || undefined;
-        const userEmail = user?.email || undefined;
+        const userEmail = checkoutOptions?.email || user?.email || undefined;
 
         // Call the checkout API
         const response = await fetch("/api/stripe/checkout", {
