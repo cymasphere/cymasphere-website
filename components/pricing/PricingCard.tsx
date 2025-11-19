@@ -450,6 +450,7 @@ export default function PricingCard({
     const baseAmount = currentPlan.amount / 100;
     let discountedAmount = baseAmount;
     let discountText = "";
+    let originalPrice = undefined;
 
     if (currentPlan.discount) {
       if (currentPlan.discount.percent_off) {
@@ -459,14 +460,23 @@ export default function PricingCard({
         discountedAmount = baseAmount - currentPlan.discount.amount_off / 100;
         discountText = `$${currentPlan.discount.amount_off / 100} OFF`;
       }
+      originalPrice = `$${baseAmount.toFixed(0)}`;
     }
+
+    // Show original strikethrough prices (industry standard: progressive discounts)
+    if (billingPeriod === "lifetime") {
+      originalPrice = "$249";  // $149 is 40% off $249
+    } else if (billingPeriod === "annual") {
+      originalPrice = "$79";   // $59 is 25% off $79
+    }
+    // Monthly: No discount (standard practice - no strikethrough)
 
     return {
       display: `$${discountedAmount.toFixed(0)}`,
-      original: currentPlan.discount ? `$${baseAmount.toFixed(0)}` : undefined,
+      original: originalPrice,
       discountText,
     };
-  }, [currentPlan]);
+  }, [currentPlan, billingPeriod]);
 
   // Get period text
   const getPeriodText = () => {
