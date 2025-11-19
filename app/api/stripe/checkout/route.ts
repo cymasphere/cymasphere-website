@@ -46,27 +46,67 @@ export async function POST(request: NextRequest) {
     } = body;
 
     let resolved_customer_id: string | undefined;
+    let needsDatabaseUpdate = false;
 
     // If email is provided, find or create customer
     if (!customerId && email) {
       resolved_customer_id = await findOrCreateCustomer(email);
     } else if (customerId) {
-      resolved_customer_id = customerId;
+      // Validate that the customer exists in Stripe
+      try {
+        await stripe.customers.retrieve(customerId);
+        resolved_customer_id = customerId;
+      } catch (error: any) {
+        // Customer doesn't exist in Stripe, try to find/create using email
+        console.warn(`Customer ${customerId} not found in Stripe, attempting to find/create using email`);
+        if (email) {
+          resolved_customer_id = await findOrCreateCustomer(email);
+          console.log(`Found/created customer using email: ${resolved_customer_id}`);
+          // Mark that we need to update the database with the new customer_id
+          needsDatabaseUpdate = true;
+        } else {
+          // No email available, return error
+          return NextResponse.json({
+            url: null,
+            error: `No such customer: '${customerId}'. Please provide an email address.`,
+          }, { status: 400 });
+        }
+      }
+    }
+
+    // Update database with new customer_id if needed (for logged-in users)
+    if (needsDatabaseUpdate && resolved_customer_id && customerId) {
+      try {
+        const supabase = await createSupabaseServiceRole();
+        await supabase
+          .from("profiles")
+          .update({ customer_id: resolved_customer_id })
+          .eq("customer_id", customerId);
+        console.log(`Updated database: replaced ${customerId} with ${resolved_customer_id}`);
+      } catch (error) {
+        console.error("Error updating customer_id in database:", error);
+        // Continue with checkout even if database update fails
+      }
     }
 
     // Check if customer has had a trial before
     if (resolved_customer_id) {
-      const hasHadTrial = await hasCustomerHadTrial(resolved_customer_id);
+      try {
+        const hasHadTrial = await hasCustomerHadTrial(resolved_customer_id);
 
-      // If customer has had a trial and we're trying to give them another trial, return error
-      if (hasHadTrial && !collectPaymentMethod && planType !== "lifetime") {
-        return NextResponse.json({
-          url: null,
-          error: "TRIAL_USED_BEFORE",
-          message:
-            "You've already used a trial before. Please provide payment information to proceed.",
-          hasHadTrial: true,
-        });
+        // If customer has had a trial and we're trying to give them another trial, return error
+        if (hasHadTrial && !collectPaymentMethod && planType !== "lifetime") {
+          return NextResponse.json({
+            url: null,
+            error: "TRIAL_USED_BEFORE",
+            message:
+              "You've already used a trial before. Please provide payment information to proceed.",
+            hasHadTrial: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking trial history:", error);
+        // Continue with checkout even if trial check fails
       }
     }
 
@@ -177,7 +217,13 @@ async function createCheckoutSession(
     }
 
     // Check if customer has previously had a trial
-    const hasHadTrial = await hasCustomerHadTrial(customerId);
+    let hasHadTrial = false;
+    try {
+      hasHadTrial = await hasCustomerHadTrial(customerId);
+    } catch (error) {
+      console.error("Error checking trial history in createCheckoutSession:", error);
+      // Continue with checkout even if trial check fails
+    }
 
     // Determine mode based on plan type
     let mode: "subscription" | "payment";
