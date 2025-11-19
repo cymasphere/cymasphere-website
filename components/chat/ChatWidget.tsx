@@ -377,6 +377,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [audioInitialized, setAudioInitialized] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -447,11 +448,62 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     };
   }, [audioInitialized]);
 
+  // Check if email modal is open (detect modal overlay with z-index 9999)
+  useEffect(() => {
+    const checkEmailModal = () => {
+      // Check for modal overlay - EmailCollectionModal uses z-index 9999
+      const allElements = document.querySelectorAll('*');
+      let hasEmailModal = false;
+      
+      for (const el of allElements) {
+        const styles = window.getComputedStyle(el);
+        if (styles.zIndex === '9999' && styles.position === 'fixed') {
+          // Check if it's a modal overlay (has backdrop blur or specific styling)
+          if (styles.backdropFilter || styles.backgroundColor === 'rgba(0, 0, 0, 0.7)') {
+            hasEmailModal = true;
+            break;
+          }
+        }
+      }
+      
+      setIsEmailModalOpen(hasEmailModal);
+      
+      // If modal just opened, close chat widget
+      if (hasEmailModal && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    // Check immediately
+    checkEmailModal();
+
+    // Set up observer to watch for modal changes
+    const observer = new MutationObserver(() => {
+      checkEmailModal();
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class']
+    });
+
+    // Also check periodically as fallback
+    const interval = setInterval(checkEmailModal, 200);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, [isOpen]);
+
   // Auto-open chat widget after 15 seconds if not on dashboard pages
   useEffect(() => {
     const isDashboardPage = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
     
-    if (!isDashboardPage && !hasAutoOpened && !isOpen) {
+    // Don't auto-open if email modal is open
+    if (!isDashboardPage && !hasAutoOpened && !isOpen && !isEmailModalOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
         setHasAutoOpened(true);
@@ -467,7 +519,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [pathname, hasAutoOpened, isOpen, audioInitialized]);
+  }, [pathname, hasAutoOpened, isOpen, audioInitialized, isEmailModalOpen]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
