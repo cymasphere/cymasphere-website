@@ -38,15 +38,15 @@ const PricingCardContainer = styled(motion.div)<{
   border-radius: 12px;
   overflow: visible;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   max-width: 420px;
   margin: 0 auto;
   border: 2px solid
     ${(props) =>
       props.$isLifetimeOwner
-        ? "linear-gradient(135deg, #f59e0b, #d97706)"
+        ? "#f59e0b"
         : props.$isCurrentPlan
-        ? "linear-gradient(135deg, #10b981, #059669)"
+        ? "#10b981"
         : "var(--primary)"};
   z-index: 5;
 
