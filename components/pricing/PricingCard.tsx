@@ -39,7 +39,7 @@ const PricingCardContainer = styled(motion.div)<{
   overflow: visible;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
   border: 2px solid
     ${(props) =>
@@ -99,7 +99,7 @@ const CardTrialBadge = styled.div`
 `;
 
 const CardHeader = styled.div`
-  padding: 2rem 1.5rem 1rem;
+  padding: 1.5rem 1.5rem 0.75rem;
   text-align: center;
 `;
 
@@ -128,18 +128,28 @@ const PlanName = styled.div`
 `;
 
 const PriceDisplay = styled.div`
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 0;
+  position: relative;
 `;
 
-const OriginalPrice = styled.div`
-  font-size: 1rem;
+const OriginalPrice = styled.div<{ $hasPeriod?: boolean }>`
+  font-size: 1.2rem;
   text-decoration: line-through;
   color: var(--text-secondary);
-  opacity: 0.7;
-  margin-bottom: 0.25rem;
+  opacity: 0.5;
+  font-weight: 500;
+  position: absolute;
+  right: ${props => props.$hasPeriod ? 'calc(50% + 5.5rem)' : 'calc(50% + 4rem)'};
+  
+  @media (max-width: 480px) {
+    right: ${props => props.$hasPeriod ? 'calc(50% + 4.5rem)' : 'calc(50% + 3rem)'};
+    font-size: 1rem;
+  }
 `;
 
 const Price = styled.span`
@@ -152,8 +162,10 @@ const Price = styled.span`
 
 const BillingPeriod = styled.span`
   font-size: 1.2rem;
-  color: var(--text-secondary);
-  margin-left: 0.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-left: 0.25rem;
 `;
 
 const DiscountTag = styled.span<{ $isSale?: boolean }>`
@@ -182,22 +194,22 @@ const DiscountTag = styled.span<{ $isSale?: boolean }>`
 `;
 
 const CardBody = styled.div`
-  padding: 1rem 1.5rem 2rem;
+  padding: 0.5rem 1.5rem 1.5rem;
 `;
 
 const Divider = styled.hr`
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 `;
 
 const FeaturesList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0;
 `;
 
 const Feature = styled.li`
@@ -244,8 +256,8 @@ const RadioOptionTitle = styled.div`
 const RadioButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 15px 0;
+  gap: 6px;
+  margin: 8px 0;
 `;
 
 const RadioOption = styled.label`
@@ -254,17 +266,13 @@ const RadioOption = styled.label`
   cursor: pointer;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  padding: 10px;
+  padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
-  margin-bottom: 5px;
+  margin-bottom: 0;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
-  }
-
-  &:last-child {
-    margin-bottom: 0;
   }
 `;
 
@@ -347,13 +355,13 @@ const TrialMessage = styled.div`
   background: rgba(108, 99, 255, 0.1);
   border: 1px solid rgba(108, 99, 255, 0.3);
   border-radius: 8px;
-  padding: 12px 16px;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 10px 12px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   font-size: 0.9rem;
   color: var(--text);
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.4;
 `;
 
 const Loader = styled.div`
@@ -504,11 +512,11 @@ export default function PricingCard({
           const discount = Math.round(((249 - salePrice) / 249) * 100);
           discountText = `${discount}% OFF`;
         } else if (billingPeriod === "annual") {
-          originalPrice = "$79";
+          originalPrice = "$79/year";
           const discount = Math.round(((79 - salePrice) / 79) * 100);
           discountText = `${discount}% OFF`;
         } else {
-          originalPrice = `$${baseAmount.toFixed(0)}`;
+          originalPrice = `$${baseAmount.toFixed(0)}/month`;
           const discount = Math.round(((baseAmount - salePrice) / baseAmount) * 100);
           discountText = `${discount}% OFF`;
         }
@@ -523,15 +531,22 @@ export default function PricingCard({
         discountedAmount = baseAmount - currentPlan.discount.amount_off / 100;
         discountText = `$${currentPlan.discount.amount_off / 100} OFF`;
       }
-      originalPrice = `$${baseAmount.toFixed(0)}`;
+      if (billingPeriod === "monthly") {
+        originalPrice = `$${baseAmount.toFixed(0)}/month`;
+      } else if (billingPeriod === "annual") {
+        originalPrice = `$${baseAmount.toFixed(0)}/year`;
+      } else {
+        originalPrice = `$${baseAmount.toFixed(0)}`;
+      }
     } else {
       // No sale, no discount - show standard strikethrough prices
       if (billingPeriod === "lifetime") {
         originalPrice = "$249";  // $149 is 40% off $249
       } else if (billingPeriod === "annual") {
-        originalPrice = "$79";   // $59 is 25% off $79
+        originalPrice = "$79/year";   // $59 is 25% off $79
+      } else if (billingPeriod === "monthly") {
+        originalPrice = "$8/month";    // $6 is 25% off $8
       }
-      // Monthly: No discount (standard practice - no strikethrough)
     }
 
     return {
@@ -787,24 +802,42 @@ export default function PricingCard({
               <LoadingSpinner size="small" />
             </div>
           ) : (
-            <PriceDisplay>
-              {priceDetails.original && (
-                <OriginalPrice>
-                  {priceDetails.original}
-                  {getPeriodText()}
-                </OriginalPrice>
-              )}
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <Price>{priceDetails.display}</Price>
-                <BillingPeriod>{getPeriodText()}</BillingPeriod>
-                {priceDetails.discountText && (
-                  <DiscountTag $isSale={priceDetails.isSale}>
-                    {priceDetails.isSale ? '🔥 ' : ''}{priceDetails.discountText}
-                  </DiscountTag>
+            <>
+              <PriceDisplay>
+                {priceDetails.original && (
+                  <OriginalPrice $hasPeriod={billingPeriod !== 'lifetime'}>
+                    {priceDetails.original}
+                  </OriginalPrice>
                 )}
-              </div>
+                <div style={{ display: "flex", alignItems: "center", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <Price>{priceDetails.display}</Price>
+                    <BillingPeriod>{getPeriodText()}</BillingPeriod>
+                    {priceDetails.discountText && (
+                      <DiscountTag $isSale={priceDetails.isSale}>
+                        {priceDetails.isSale ? '🔥 ' : ''}{priceDetails.discountText}
+                      </DiscountTag>
+                    )}
+                  </div>
+                </div>
+              </PriceDisplay>
+              {billingPeriod === "monthly" && (
+                <div style={{ 
+                  marginTop: "5px", 
+                  fontSize: "0.9rem", 
+                  textAlign: "center",
+                  color: "#b0b0b0"
+                }}>
+                  {t("pricing.cancelAnytime", "Cancel anytime")}
+                </div>
+              )}
               {billingPeriod === "annual" && currentPlan && (
-                <div style={{ marginTop: "5px", fontSize: "1rem" }}>
+                <div style={{ 
+                  marginTop: "5px", 
+                  fontSize: "0.9rem", 
+                  textAlign: "center",
+                  color: "#b0b0b0"
+                }}>
                   {t("pricing.equivalentTo", "Equivalent to")}{" "}
                   ${(currentPlan.amount / 100 / 12).toFixed(2)}
                   {t("pricing.perMonth", "/month")}{" "}
@@ -812,17 +845,16 @@ export default function PricingCard({
                 </div>
               )}
               {billingPeriod === "lifetime" && (
-                <div
-                  style={{
-                    marginTop: "5px",
-                    fontSize: "1rem",
-                    opacity: 0.8,
-                  }}
-                >
+                <div style={{
+                  marginTop: "5px",
+                  fontSize: "0.9rem",
+                  textAlign: "center",
+                  color: "#b0b0b0"
+                }}>
                   {t("pricing.oneTimePurchase", "one-time purchase")}
                 </div>
               )}
-            </PriceDisplay>
+            </>
           )}
         </CardHeader>
 

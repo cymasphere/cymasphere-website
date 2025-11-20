@@ -310,6 +310,14 @@
     "proSolution": "Complete compositional suite for musicians",
     "currencySymbol": "$",
     "allPlansInclude": "All Plans Include:",
+    "cancelAnytime": "Cancel anytime",
+    "equivalentTo": "Equivalent to",
+    "goToDashboard": "Go to Dashboard",
+    "manageSubscription": "Manage Subscription",
+    "upgradeNow": "Upgrade Now",
+    "currentPlan": "Current Plan",
+    "lifetimeOwner": "Lifetime Owner",
+    "noTrialAvailable": "You've already used a free trial. Start a subscription to continue enjoying all premium features.",
     "features": [
       "Song Builder with Multi-Track Management",
       "Intelligent Pattern Editor & Chord Adaptation",
@@ -336,7 +344,6 @@
       "or": "or"
     },
     "processing": "Processing",
-    "upgradeNow": "Upgrade Now",
     "buyNow": "Buy Now"
   },
   "faq": {

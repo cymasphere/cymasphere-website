@@ -1197,8 +1197,8 @@ const ContentContainer = styled.div`
 const SectionTitle = styled.h2`
   font-size: 2.2rem;
   text-align: center;
-  margin-bottom: 0.8rem;
-  margin-top: 20px;
+  margin-bottom: 0.5rem;
+  margin-top: 0;
   position: relative;
   pointer-events: none; /* No need for interaction */
 
@@ -1220,7 +1220,7 @@ const SectionSubtitle = styled.p`
   color: var(--text-secondary);
   font-size: 1rem;
   max-width: 700px;
-  margin: 0 auto 40px;
+  margin: 0 auto 15px;
   pointer-events: none; /* No need for interaction */
 `;
 
@@ -1246,7 +1246,7 @@ const TrialBanner = styled.div`
   border: 1px solid rgba(108, 99, 255, 0.3);
   border-radius: 10px;
   padding: 15px 20px;
-  margin: 20px auto 30px;
+  margin: 10px auto 15px;
   max-width: 700px;
   pointer-events: none;
 `;

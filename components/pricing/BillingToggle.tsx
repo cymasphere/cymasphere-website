@@ -9,7 +9,7 @@ const BillingToggleContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   position: relative;
   width: 100%;
   max-width: 400px;
@@ -68,7 +68,7 @@ const SavingsInfo = styled.p`
   text-align: center;
   color: var(--text-secondary);
   font-size: 0.9rem;
-  margin-top: 10px;
+  margin-top: 5px;
 
   span {
     color: var(--accent);
