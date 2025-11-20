@@ -946,51 +946,57 @@ export default function BillingPage() {
             </CardTitle>
             <CardContent>
               <PlanDetails>
-                <PlanName>
-                  {t("dashboard.billing.noActivePlan", "No Active Subscription")}
-                </PlanName>
-                <PlanDescription>
-                  {t(
-                    "dashboard.billing.noActivePlanDesc",
-                    "You currently don't have an active subscription. Subscribe below to unlock all premium features."
-                  )}
-                </PlanDescription>
-
-                {/* Trial Status */}
-                {hasHadTrial !== null && (
-                  <div
-                    style={{
-                      marginTop: "1rem",
-                      padding: "0.75rem",
-                      background: hasHadTrial 
-                        ? "rgba(255, 87, 51, 0.1)" 
-                        : "rgba(16, 185, 129, 0.1)",
-                      borderRadius: "6px",
-                      fontSize: "0.9rem",
-                      display: "flex",
-                      alignItems: "center",
-                      color: hasHadTrial ? "var(--warning)" : "var(--success)",
-                    }}
-                  >
-                    {hasHadTrial ? (
-                      <>
-                        <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
-                        {t(
-                          "dashboard.billing.trialCompleted",
-                          "Free trial completed"
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <FaGift style={{ marginRight: "0.5rem", flexShrink: 0 }} />
-                        {t(
-                          "dashboard.billing.trialAvailable",
-                          "Free trial available - choose a plan below to start"
-                        )}
-                      </>
+                {/* Left Column */}
+                <div>
+                  <PlanName>
+                    {t("dashboard.billing.noActivePlan", "No Active Subscription")}
+                  </PlanName>
+                  <PlanDescription>
+                    {t(
+                      "dashboard.billing.noActivePlanDesc",
+                      "You currently don't have an active subscription. Subscribe below to unlock all premium features."
                     )}
-                  </div>
-                )}
+                  </PlanDescription>
+                </div>
+
+                {/* Right Column */}
+                <div>
+                  {/* Trial Status */}
+                  {hasHadTrial !== null && (
+                    <div
+                      style={{
+                        marginTop: "0",
+                        padding: "0.75rem",
+                        background: hasHadTrial 
+                          ? "rgba(255, 87, 51, 0.1)" 
+                          : "rgba(16, 185, 129, 0.1)",
+                        borderRadius: "6px",
+                        fontSize: "0.9rem",
+                        display: "flex",
+                        alignItems: "center",
+                        color: hasHadTrial ? "var(--warning)" : "var(--success)",
+                      }}
+                    >
+                      {hasHadTrial ? (
+                        <>
+                          <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                          {t(
+                            "dashboard.billing.trialCompleted",
+                            "Free trial completed"
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <FaGift style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                          {t(
+                            "dashboard.billing.trialAvailable",
+                            "Free trial available - choose a plan below to start"
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </PlanDetails>
             </CardContent>
           </BillingCard>
