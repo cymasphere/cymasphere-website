@@ -449,6 +449,18 @@ const getInstructions = (
           "Cymasphere will output MIDI to the virtual MIDI device, which will come back into Logic Pro like an external keyboard",
         ],
       });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Logic Pro's transport",
+          "In Logic Pro, go to Logic Pro > Control Surfaces > Learn Assignment for...",
+          "Select the control you want to map (e.g., Play, Stop, Record)",
+          "In Cymasphere, click the corresponding transport button",
+          "Logic Pro will detect the MIDI message and create the assignment",
+          "Repeat for other transport controls (Play, Stop, Record, etc.)",
+          "Now Cymasphere's transport controls will control Logic Pro's transport!",
+        ],
+      });
     } else {
       instructions.push({
         title: "Add Cymasphere as Plugin in Logic Pro",
@@ -461,6 +473,18 @@ const getInstructions = (
           "Set the MIDI input channel of the instrument track to 1, 2, 3, or the appropriate channel",
           "Record-enable the instrument track",
           "Open Cymasphere and press voicing buttons in Palette view—you should see the instrument track metering and hear audio",
+        ],
+      });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Logic Pro's transport",
+          "In Logic Pro, go to Logic Pro > Control Surfaces > Learn Assignment for...",
+          "Select the control you want to map (e.g., Play, Stop, Record)",
+          "In Cymasphere, click the corresponding transport button",
+          "Logic Pro will detect the MIDI message and create the assignment",
+          "Repeat for other transport controls (Play, Stop, Record, etc.)",
+          "Now Cymasphere's transport controls will control Logic Pro's transport!",
         ],
       });
     }
@@ -476,6 +500,20 @@ const getInstructions = (
           "Cymasphere will send MIDI to Ableton through the virtual MIDI device",
         ],
       });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
+          `Go to Preferences > MIDI and enable ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"} as a Remote input`,
+          "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
+          "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
+          "In Cymasphere, click the corresponding transport button",
+          "Ableton will detect the MIDI message and create the assignment",
+          "Repeat for other transport controls you want to map",
+          "Click the MIDI button again (or press Cmd/Ctrl + M) to exit MIDI Map Mode",
+          "Now Cymasphere's transport controls will control Ableton Live's transport!",
+        ],
+      });
     } else {
       instructions.push({
         title: "Set Up Cymasphere Plugin in Ableton Live",
@@ -487,6 +525,20 @@ const getInstructions = (
           "Create an instrument track with any virtual instrument",
           "Record-enable both the MIDI track and instrument track (not the Cymasphere track)",
           "Open Cymasphere and press voicing buttons in Palette view—you'll see MIDI flow from Cymasphere → MIDI track → instrument track",
+        ],
+      });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
+          `Go to Preferences > MIDI and enable ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"} as a Remote input`,
+          "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
+          "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
+          "In Cymasphere, click the corresponding transport button",
+          "Ableton will detect the MIDI message and create the assignment",
+          "Repeat for other transport controls you want to map",
+          "Click the MIDI button again (or press Cmd/Ctrl + M) to exit MIDI Map Mode",
+          "Now Cymasphere's transport controls will control Ableton Live's transport!",
         ],
       });
     }
