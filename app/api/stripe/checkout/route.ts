@@ -38,11 +38,13 @@ export async function POST(request: NextRequest) {
       email,
       customerId,
       collectPaymentMethod = false,
+      isPlanChange = false,
     }: {
       planType: PlanType;
       email?: string;
       customerId?: string;
       collectPaymentMethod?: boolean;
+      isPlanChange?: boolean;
     } = body;
 
     let resolved_customer_id: string | undefined;
@@ -118,7 +120,8 @@ export async function POST(request: NextRequest) {
       resolved_customer_id,
       planType,
       collectPaymentMethod,
-      isSignedUp
+      isSignedUp,
+      isPlanChange
     );
 
     return NextResponse.json(result);
@@ -196,7 +199,8 @@ async function createCheckoutSession(
   customerId: string | undefined,
   planType: PlanType,
   collectPaymentMethod: boolean = false,
-  isSignedUp: boolean = false
+  isSignedUp: boolean = false,
+  isPlanChange: boolean = false
 ): Promise<{ url: string | null; error?: string }> {
   try {
     // Return error if customer ID is not provided
@@ -238,13 +242,14 @@ async function createCheckoutSession(
       // All other plans are subscriptions
       mode = "subscription";
 
-      // Only add trial if customer hasn't had one before
-      if (!hasHadTrial) {
+      // For plan changes, NEVER add a trial period - user already has a subscription
+      // Only add trial for new subscriptions if customer hasn't had one before
+      if (!isPlanChange && !hasHadTrial) {
         subscriptionData = {
           trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
         };
       }
-      // If customer has had a trial before, no trial_period_days - they'll be charged immediately
+      // If this is a plan change OR customer has had a trial before, no trial_period_days - they'll be charged immediately
     }
 
     // Get user_id and email from Supabase if customer_id is available

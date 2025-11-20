@@ -30,7 +30,7 @@ const ModalContent = styled(motion.div)`
   background: rgba(25, 23, 36, 0.95);
   border-radius: 16px;
   width: 100%;
-  max-width: 900px;
+  max-width: 600px;
   max-height: 90vh;
   overflow: auto;
   box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);

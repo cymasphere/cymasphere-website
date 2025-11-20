@@ -737,7 +737,14 @@
       "nextBilling": "Sonraki faturalama tarihi",
       "planDescription": "Müzik prodüktörleri için komple çözüm",
       "trialBanner": "Şu anda tüm premium özelliklere tam erişimi olan {{trialDays}} günlük ücretsiz deneme sürecindesiniz. {{daysLeft}} gün kaldı. İlk ödemeniz ₺{{amount}} {{date}} tarihinde olacak.",
-      "showingDefaultPrices": "Varsayılan fiyatlar gösteriliyor."
+      "showingDefaultPrices": "Varsayılan fiyatlar gösteriliyor.",
+      "loadingInvoices": "Faturalar yükleniyor...",
+      "subscriptionStatus": "Abonelik Durumu",
+      "noActivePlan": "Aktif Abonelik Yok",
+      "noActivePlanDesc": "Şu anda aktif bir aboneliğiniz yok. Tüm premium özelliklerin kilidini açmak için aşağıdan abone olun.",
+      "trialCompleted": "Ücretsiz deneme tamamlandı",
+      "trialAvailable": "Ücretsiz deneme mevcut - başlamak için aşağıdan bir plan seçin",
+      "usedFreeTrial": "Bu aboneliği başlatmak için ücretsiz denemenizi kullandınız"
     },
     "downloads": {
       "title": "İndirmeler",

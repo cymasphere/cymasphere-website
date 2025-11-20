@@ -745,6 +745,12 @@
       "trialBanner": "Sie sind derzeit in einer {{trialDays}}-tägigen kostenlosen Testversion mit vollem Zugriff auf alle Premium-Funktionen. {{daysLeft}} Tage verbleibend. Ihre erste Zahlung von {{amount}}€ erfolgt am {{date}}.",
       "showingDefaultPrices": "Standardpreise werden angezeigt.",
       "loadingInvoices": "Rechnungen werden geladen...",
+      "subscriptionStatus": "Abonnementstatus",
+      "noActivePlan": "Kein aktives Abonnement",
+      "noActivePlanDesc": "Sie haben derzeit kein aktives Abonnement. Abonnieren Sie unten, um alle Premium-Funktionen freizuschalten.",
+      "trialCompleted": "Kostenlose Testversion abgeschlossen",
+      "trialAvailable": "Kostenlose Testversion verfügbar - wählen Sie unten einen Plan, um zu beginnen",
+      "usedFreeTrial": "Sie haben Ihre kostenlose Testversion verwendet, um dieses Abonnement zu starten",
       "planDescription": "Komplettlösung für Musikproduzenten"
     },
     "downloads": {

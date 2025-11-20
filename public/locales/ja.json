@@ -764,7 +764,14 @@
       "nextBilling": "次回請求日",
       "planDescription": "音楽プロデューサー向けの完全ソリューション",
       "trialBanner": "現在{{trialDays}}日間の無料トライアル中で、すべてのプレミアム機能にフルアクセスできます。残り{{daysLeft}}日。初回支払い${{amount}}は{{date}}です。",
-      "showingDefaultPrices": "デフォルト価格を表示中。"
+      "showingDefaultPrices": "デフォルト価格を表示中。",
+      "loadingInvoices": "請求書を読み込んでいます...",
+      "subscriptionStatus": "サブスクリプション状態",
+      "noActivePlan": "有効なサブスクリプションなし",
+      "noActivePlanDesc": "現在、有効なサブスクリプションがありません。すべてのプレミアム機能のロックを解除するには、以下からサブスクリプションを購読してください。",
+      "trialCompleted": "無料トライアル完了",
+      "trialAvailable": "無料トライアル利用可能 - 開始するには以下からプランを選択してください",
+      "usedFreeTrial": "このサブスクリプションを開始するために無料トライアルを使用しました"
     },
     "downloads": {
       "title": "ダウンロード",

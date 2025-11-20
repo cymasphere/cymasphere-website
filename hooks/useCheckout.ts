@@ -17,6 +17,7 @@ interface UseCheckoutReturn {
       willProvideCard?: boolean;
       hasHadTrial?: boolean;
       email?: string;
+      isPlanChange?: boolean;
     }
   ) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
@@ -49,7 +50,8 @@ export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn
 
       try {
         // If user is logged in and has a subscription, redirect to dashboard
-        if (user?.profile && user.profile.subscription !== "none") {
+        // UNLESS this is a plan change (allow existing subscribers to change plans)
+        if (user?.profile && user.profile.subscription !== "none" && !checkoutOptions?.isPlanChange) {
           router.push("/dashboard");
           return { success: false, error: "User already has a subscription" };
         }
@@ -88,6 +90,7 @@ export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn
             email: userEmail,
             customerId,
             collectPaymentMethod,
+            isPlanChange: checkoutOptions?.isPlanChange || false,
           }),
         });
 

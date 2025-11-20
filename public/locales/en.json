@@ -733,7 +733,13 @@
       "planDescription": "Complete solution for music producers",
       "trialBanner": "You're currently on a {{trialDays}}-day free trial with full access to all premium features. {{daysLeft}} days remaining. Your first payment of ${{amount}} will be on {{date}}.",
       "showingDefaultPrices": "Showing default prices.",
-      "loadingInvoices": "Loading invoices..."
+      "loadingInvoices": "Loading invoices...",
+      "subscriptionStatus": "Subscription Status",
+      "noActivePlan": "No Active Subscription",
+      "noActivePlanDesc": "You currently don't have an active subscription. Subscribe below to unlock all premium features.",
+      "trialCompleted": "Free trial completed",
+      "trialAvailable": "Free trial available - choose a plan below to start",
+      "usedFreeTrial": "You used your free trial to start this subscription"
     },
     "downloads": {
       "title": "Downloads",

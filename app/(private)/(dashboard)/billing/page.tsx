@@ -15,7 +15,6 @@ import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { SubscriptionType } from "@/utils/supabase/types";
 import {
   getUpcomingInvoice,
-  updateSubscription,
   createCustomerPortalSession,
 } from "@/utils/stripe/actions";
 import { useCheckout } from "@/hooks/useCheckout";
@@ -30,6 +29,22 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
+import dynamic from "next/dynamic";
+
+// Type definitions for CymasphereLogo component
+interface CymasphereLogoProps {
+  size?: string;
+  fontSize?: string;
+  showText?: boolean;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  className?: string;
+}
+
+// Use dynamic import to handle JavaScript component in TypeScript
+const CymasphereLogo = dynamic(() => import("@/components/common/CymasphereLogo"), {
+  ssr: false,
+}) as React.ComponentType<CymasphereLogoProps>;
 
 // Extended profile interface with additional fields we need
 interface ProfileWithSubscriptionDetails {
@@ -102,33 +117,77 @@ const CardContent = styled.div`
   }
 `;
 
+const ButtonContainer = styled.div`
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr !important;
+  }
+`;
+
 const PlanDetails = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
   margin-bottom: 1.5rem;
 
   @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     align-items: center;
     text-align: center;
   }
 `;
 
 const PlanName = styled.div`
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 2.5rem;
+  font-weight: 700;
   color: var(--text);
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .pro-label {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  .plan-type {
+    font-size: 2.5rem;
+    color: var(--text);
+    font-weight: 700;
+  }
 `;
 
 const PlanPrice = styled.div`
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin-bottom: 0.25rem;
+  display: inline-block;
+  margin-left: 1rem;
 
   span {
     font-size: 1rem;
-    color: var(--text-secondary);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 `;
 
@@ -147,6 +206,8 @@ const Button = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  min-width: 0;
 
   &:hover {
     transform: translateY(-2px);
@@ -666,133 +727,39 @@ export default function BillingPage() {
     }
 
     // For existing users with an active plan switching between monthly/annual
-    // Update the subscription in Stripe and refresh the user
+    // Redirect them to Stripe Checkout to review and confirm the change
     try {
-      // Call the updateSubscription function with user's customer ID and plan type
+      // Convert SubscriptionType to PlanType for checkout
+      let validPlanType: "monthly" | "annual" | "lifetime";
       if (
-        user &&
-        user.profile.customer_id &&
-        (selectedBillingPeriod === "monthly" ||
-          selectedBillingPeriod === "annual")
+        selectedBillingPeriod === "monthly" ||
+        selectedBillingPeriod === "annual" ||
+        selectedBillingPeriod === "lifetime"
       ) {
-        // Modified to use just customer_id and plan type
-        const { success, error } = await updateSubscription(
-          user.profile.customer_id,
-          selectedBillingPeriod
-        );
+        validPlanType = selectedBillingPeriod;
+      } else {
+        // Default to monthly for any other invalid types
+        validPlanType = "monthly";
+      }
 
-        if (!success) {
-          throw new Error(error || "Failed to update subscription");
-        }
+      // Keep modal open and show loading spinner while creating checkout session
+      // Redirect to Stripe Checkout for plan change
+      const result = await initiateCheckoutHook(validPlanType, {
+        hasHadTrial: hasHadTrial === true,
+        isPlanChange: true,
+      });
 
-        // Wait a moment for Stripe webhook to update the database
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        
-        // Refresh all data after subscription update
-        await refreshAllData();
-
-        // Close the plan modal first
+      // If checkout was successful, the redirect will happen automatically
+      // If there was an error, close modal and reset loading
+      if (!result.success) {
+        setIsPlanChangeLoading(false);
         setShowPlanModal(false);
-
-        // Then show appropriate confirmation message based on what changed
-        if (
-          userSubscription.subscription === "annual" &&
-          selectedBillingPeriod === "monthly"
-        ) {
-          setConfirmationTitle(
-            t("dashboard.billing.planChangeScheduled", "Plan Change Scheduled")
-          );
-          setConfirmationMessage(
-            t(
-              "dashboard.billing.planChangeScheduledMessage",
-              "Your plan will be changed to monthly at the end of your current billing period on {{date}}.",
-              {
-                date: formatDate(userSubscription.subscription_expiration),
-              }
-            )
-          );
-        } else {
-          setConfirmationTitle(
-            t("dashboard.billing.planUpdated", "Plan Updated")
-          );
-          setConfirmationMessage(
-            t(
-              "dashboard.billing.planUpdatedMessage",
-              "Your subscription has been changed to the {{plan}} plan. The changes will take effect immediately.",
-              {
-                plan: selectedBillingPeriod,
-              }
-            )
-          );
-        }
-
-        // Show confirmation modal after plan update completes
-        setShowConfirmationModal(true);
       }
+      // If successful, keep loading state until redirect happens
     } catch (error) {
-      console.error("Error updating subscription:", error);
-      // Show error notification
-      setConfirmationTitle(
-        t(
-          "dashboard.billing.subscriptionUpdateFailed",
-          "Subscription Update Failed"
-        )
-      );
-
-      // Provide a more user-friendly error message based on the error
-      let errorMessage = t(
-        "dashboard.billing.unexpectedError",
-        "An unexpected error occurred while updating your subscription."
-      );
-
-      if (error instanceof Error) {
-        const errorText = error.message;
-
-        if (errorText.includes("No active subscription found")) {
-          errorMessage = t(
-            "dashboard.billing.noActiveSubscription",
-            "We couldn't find an active subscription for your account. Please contact support for assistance."
-          );
-        } else if (errorText.includes("billing cycle")) {
-          errorMessage = t(
-            "dashboard.billing.billingCycleError",
-            "We couldn't change your billing cycle. Please contact support for assistance with changing between monthly and annual plans."
-          );
-        } else if (errorText.includes("payment method")) {
-          errorMessage = t(
-            "dashboard.billing.paymentMethodError",
-            "There was an issue with your payment method. Please update your payment information and try again."
-          );
-        } else if (
-          errorText.includes("permission") ||
-          errorText.includes("unauthorized")
-        ) {
-          errorMessage = t(
-            "dashboard.billing.permissionError",
-            "You don't have permission to make this change. Please contact support for assistance."
-          );
-        } else if (errorText.includes("proration")) {
-          errorMessage = t(
-            "dashboard.billing.prorationError",
-            "There was an issue calculating your bill for the new plan. Please try again later or contact support."
-          );
-        } else {
-          // If it's a specific error we want to show to the user
-          errorMessage = t(
-            "dashboard.billing.specificError",
-            "Failed to update your subscription: {{error}}",
-            {
-              error: errorText,
-            }
-          );
-        }
-      }
-
-      setConfirmationMessage(errorMessage);
-      setShowConfirmationModal(true);
-      setShowPlanModal(false);
-    } finally {
+      console.error("Error initiating checkout:", error);
       setIsPlanChangeLoading(false);
+      setShowPlanModal(false);
     }
   };
 
@@ -966,8 +933,69 @@ export default function BillingPage() {
       )}
 
       {isSubscriptionNone(userSubscription.subscription) ? (
-        // Show pricing card when user has no subscription
+        // Show subscription status and pricing card when user has no subscription
         <div style={{ marginTop: "2rem" }}>
+          {/* Subscription Status Card */}
+          <BillingCard
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <CardTitle>
+              <FaInfoCircle /> {t("dashboard.billing.subscriptionStatus", "Subscription Status")}
+            </CardTitle>
+            <CardContent>
+              <PlanDetails>
+                <PlanName>
+                  {t("dashboard.billing.noActivePlan", "No Active Subscription")}
+                </PlanName>
+                <PlanDescription>
+                  {t(
+                    "dashboard.billing.noActivePlanDesc",
+                    "You currently don't have an active subscription. Subscribe below to unlock all premium features."
+                  )}
+                </PlanDescription>
+
+                {/* Trial Status */}
+                {hasHadTrial !== null && (
+                  <div
+                    style={{
+                      marginTop: "1rem",
+                      padding: "0.75rem",
+                      background: hasHadTrial 
+                        ? "rgba(255, 87, 51, 0.1)" 
+                        : "rgba(16, 185, 129, 0.1)",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      display: "flex",
+                      alignItems: "center",
+                      color: hasHadTrial ? "var(--warning)" : "var(--success)",
+                    }}
+                  >
+                    {hasHadTrial ? (
+                      <>
+                        <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                        {t(
+                          "dashboard.billing.trialCompleted",
+                          "Free trial completed"
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <FaGift style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                        {t(
+                          "dashboard.billing.trialAvailable",
+                          "Free trial available - choose a plan below to start"
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </PlanDetails>
+            </CardContent>
+          </BillingCard>
+
+          {/* Pricing Card */}
           <BillingToggle
             billingPeriod={selectedBillingPeriodForPricing}
             onBillingPeriodChange={(period) =>
@@ -996,27 +1024,44 @@ export default function BillingPage() {
           </CardTitle>
           <CardContent>
             <PlanDetails>
-              <>
+              {/* Left Column */}
+              <div>
                 <PlanName>
-                  {isSubscriptionLifetime(userSubscription.subscription)
-                    ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                    : subscriptionInterval === "month"
-                    ? t("dashboard.billing.monthly", "Monthly")
-                    : t("dashboard.billing.yearly", "Yearly")}
+                  <div className="logo-container">
+                    <CymasphereLogo
+                      size="36px"
+                      fontSize="1.5rem"
+                      showText={true}
+                      onClick={(e: React.MouseEvent) => e.preventDefault()}
+                      href=""
+                      className=""
+                    />
+                    <span className="pro-label">PRO</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "1rem" }}>
+                    <div className="plan-type">
+                      {isSubscriptionLifetime(userSubscription.subscription)
+                        ? t("dashboard.billing.lifetimePlan", "Lifetime")
+                        : subscriptionInterval === "month"
+                        ? t("dashboard.billing.monthly", "Monthly")
+                        : t("dashboard.billing.yearly", "Yearly")}
+                    </div>
+                    <span style={{ color: "var(--text-secondary)", fontSize: "2.5rem", fontWeight: 700 }}>—</span>
+                    <PlanPrice>
+                      {isSubscriptionNone(userSubscription.subscription)
+                        ? "$0.00"
+                        : isSubscriptionLifetime(userSubscription.subscription)
+                        ? getCurrentPrice() === "--"
+                          ? "--"
+                          : "$" + getCurrentPrice()
+                        : `$${getCurrentPrice()} / ${
+                            subscriptionInterval === "month"
+                              ? t("dashboard.billing.month", "month")
+                              : t("dashboard.billing.year", "year")
+                          }`}
+                    </PlanPrice>
+                  </div>
                 </PlanName>
-                <PlanPrice>
-                  {isSubscriptionNone(userSubscription.subscription)
-                    ? "$0.00"
-                    : isSubscriptionLifetime(userSubscription.subscription)
-                    ? getCurrentPrice() === "--"
-                      ? "--"
-                      : "$" + getCurrentPrice()
-                    : `$${getCurrentPrice()} / ${
-                        subscriptionInterval === "month"
-                          ? t("dashboard.billing.month", "month")
-                          : t("dashboard.billing.year", "year")
-                      }`}
-                </PlanPrice>
                 <PlanDescription>
                   {isSubscriptionNone(userSubscription.subscription)
                     ? t(
@@ -1033,11 +1078,14 @@ export default function BillingPage() {
                         "Full access to all premium features and content"
                       )}
                 </PlanDescription>
+              </div>
 
+              {/* Right Column */}
+              <div>
                 {/* Next billing date */}
                 {!isSubscriptionNone(userSubscription.subscription) &&
                   !isSubscriptionLifetime(userSubscription.subscription) && (
-                    <div style={{ marginTop: "1rem" }}>
+                    <div style={{ marginTop: "0" }}>
                       <div
                         style={{
                           fontSize: "0.9rem",
@@ -1048,7 +1096,7 @@ export default function BillingPage() {
                         {t(
                           "dashboard.billing.nextBilling",
                           "Next billing date"
-                        )}
+                        )}:
                       </div>
                       <div>
                         {formatDate(userSubscription.subscription_expiration)}
@@ -1083,12 +1131,32 @@ export default function BillingPage() {
                     )}
                   </div>
                 )}
-              </>
+
+                {/* Trial Status - show if we know the status */}
+                {hasHadTrial !== null && (
+                  <div
+                    style={{
+                      marginTop: "0.75rem",
+                      padding: "0.75rem",
+                      background: "rgba(16, 185, 129, 0.1)",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "var(--success)",
+                    }}
+                  >
+                    <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                    {t(
+                      "dashboard.billing.usedFreeTrial",
+                      "You used your free trial to start this subscription"
+                    )}
+                  </div>
+                )}
+              </div>
             </PlanDetails>
 
-            <div
-              style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
-            >
+            <ButtonContainer>
               <Button onClick={handleManageBilling}>
                 {t("dashboard.billing.manageBilling", "Manage Billing")}
               </Button>
@@ -1103,7 +1171,7 @@ export default function BillingPage() {
                   {t("dashboard.billing.changePlan", "Change Plan")}
                 </Button>
               )}
-            </div>
+            </ButtonContainer>
           </CardContent>
         </BillingCard>
       )}
@@ -1204,6 +1272,7 @@ export default function BillingPage() {
             yearlyPrice={yearlyPrice ?? 0}
             lifetimePrice={lifetimePrice ?? 0}
             planDescription={t("pricing.proSolution")}
+            isPlanChangeLoading={isPlanChangeLoading}
             planFeatures={(() => {
               // Use the same features array as the main pricing section
               try {
@@ -1281,6 +1350,9 @@ export default function BillingPage() {
                       confirmationTitle.includes("Failed")
                         ? "var(--error)"
                         : "var(--primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   {confirmationTitle.includes("Upgrading") ? (

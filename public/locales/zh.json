@@ -680,7 +680,13 @@
       "planDescription": "音乐制作人完整解决方案",
       "trialBanner": "您目前正在{{trialDays}}天免费试用期内，可完全访问所有高级功能。剩余{{daysLeft}}天。您的首次付款￥{{amount}}将在{{date}}进行。",
       "showingDefaultPrices": "显示默认价格。",
-      "loadingInvoices": "正在加载发票..."
+      "loadingInvoices": "正在加载发票...",
+      "subscriptionStatus": "订阅状态",
+      "noActivePlan": "无有效订阅",
+      "noActivePlanDesc": "您目前没有有效的订阅。在下方订阅以解锁所有高级功能。",
+      "trialCompleted": "免费试用已完成",
+      "trialAvailable": "免费试用可用 - 在下方选择计划开始",
+      "usedFreeTrial": "您使用了免费试用来启动此订阅"
     },
     "downloads": {
       "title": "下载",

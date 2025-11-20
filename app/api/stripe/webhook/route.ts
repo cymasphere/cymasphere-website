@@ -401,6 +401,31 @@ export async function POST(request: NextRequest) {
 
         // Get the product ID from the subscription items
         const subscriptionItem = subscription.items.data[0];
+        
+        // Update profile with new subscription details (for both created and updated)
+        if (profile && subscriptionItem) {
+          const priceId = subscriptionItem.price.id;
+          const subscriptionType = 
+            priceId === process.env.STRIPE_PRICE_ID_MONTHLY 
+              ? "monthly" 
+              : priceId === process.env.STRIPE_PRICE_ID_ANNUAL
+              ? "annual" 
+              : "none";
+
+          // Update the profile in the database
+          await supabase
+            .from("profiles")
+            .update({
+              subscription: subscriptionType,
+              subscription_expiration: new Date(subscription.current_period_end * 1000).toISOString(),
+              trial_expiration: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+            })
+            .eq("id", profile.id);
+
+          console.log(`Updated profile ${profile.id} subscription to ${subscriptionType}`);
+        }
+
+        // Only run tracking/automation for new subscriptions
         if (subscriptionItem && subscriber_id && event.type === "customer.subscription.created") {
           // Determine subscription type (monthly vs annual)
           const priceId = subscriptionItem.price.id;

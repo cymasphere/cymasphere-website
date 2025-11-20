@@ -595,8 +595,12 @@ export default function PricingCard({
     user.profile.subscription !== "none";
 
   // Determine if we should show trial options
+  // Don't show if user already has an active subscription
   const shouldShowTrialOptions =
-    showTrialOptions && !hasHadStripeTrial && billingPeriod !== "lifetime";
+    showTrialOptions && 
+    !hasHadStripeTrial && 
+    billingPeriod !== "lifetime" &&
+    user?.profile?.subscription === "none";
 
   // Determine if we should show the "no trial available" message
   // Show when: user has had a trial before, and billing period is not lifetime

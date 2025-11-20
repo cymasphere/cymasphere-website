@@ -650,7 +650,13 @@
       "planDescription": "Solução completa para produtores musicais",
       "trialBanner": "Você está atualmente em um teste gratuito de {{trialDays}} dias com acesso completo a todos os recursos premium. {{daysLeft}} dias restantes. Seu primeiro pagamento de R${{amount}} será em {{date}}.",
       "showingDefaultPrices": "Mostrando preços padrão.",
-      "loadingInvoices": "Carregando faturas..."
+      "loadingInvoices": "Carregando faturas...",
+      "subscriptionStatus": "Status da Assinatura",
+      "noActivePlan": "Nenhuma Assinatura Ativa",
+      "noActivePlanDesc": "Você não tem uma assinatura ativa no momento. Assine abaixo para desbloquear todos os recursos premium.",
+      "trialCompleted": "Teste gratuito concluído",
+      "trialAvailable": "Teste gratuito disponível - escolha um plano abaixo para começar",
+      "usedFreeTrial": "Você usou seu teste gratuito para iniciar esta assinatura"
     },
     "downloads": {
       "title": "Downloads",
