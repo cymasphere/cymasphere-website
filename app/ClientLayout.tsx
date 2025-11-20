@@ -160,7 +160,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     pathname?.includes("/profile") ||
     pathname?.includes("/billing") ||
     pathname?.includes("/downloads") ||
-    pathname?.includes("/settings");
+    pathname?.includes("/settings") ||
+    pathname?.includes("/getting-started");
 
   // Check if the route is in the admin section
   const isAdminRoute = pathname?.includes("/admin");
@@ -169,9 +170,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const shouldHideHeaderFooter =
     isAuthRoute || isDashboardRoute || isAdminRoute;
 
-  // Hide chat assistant on auth routes and pricing pages
+  // Hide chat assistant on auth routes, pricing pages, and getting-started page
   const isPricingRoute = pathname?.includes("/pricing") || pathname === "/";
-  const shouldHideChat = isAuthRoute || isPricingRoute;
+  const isGettingStartedRoute = pathname?.includes("/getting-started");
+  const shouldHideChat = isAuthRoute || isPricingRoute || isGettingStartedRoute;
 
   return (
     <ThemeProvider theme={theme}>

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Set headers for PDF download
     const headers = new Headers();
     headers.set('Content-Type', 'application/pdf');
-    headers.set('Content-Disposition', 'attachment; filename="Cymasphere-QuickStart-Guide.pdf"');
+    headers.set('Content-Disposition', 'inline; filename="Cymasphere-QuickStart-Guide.pdf"');
     headers.set('Cache-Control', 'no-cache, no-store, must-revalidate'); // Disable caching for testing
     headers.set('Pragma', 'no-cache');
     headers.set('Expires', '0');

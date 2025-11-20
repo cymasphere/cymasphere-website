@@ -14,6 +14,7 @@ import {
   FaHome,
   FaArrowLeft,
   FaShieldAlt,
+  FaRocket,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -616,6 +617,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </NavItem>
           </Link>
+          <Link href="/getting-started" passHref legacyBehavior>
+            <NavItem
+              $active={pathname === "/getting-started" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/getting-started")}
+            >
+              <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
+            </NavItem>
+          </Link>
           <Link href="/settings" passHref legacyBehavior>
             <NavItem
               $active={pathname === "/settings" ? "true" : "false"}
@@ -754,11 +763,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/getting-started" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/getting-started" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={4}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/getting-started")}
+            >
+              <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
+            </MobileNavItem>
+          </Link>
+
           <Link href="/settings" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={4}
+              custom={5}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/settings")}

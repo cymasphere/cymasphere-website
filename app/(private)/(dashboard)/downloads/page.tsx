@@ -7,9 +7,11 @@ import {
   FaApple,
   FaFilePdf,
   FaInfoCircle,
+  FaRocket,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 const DownloadsContainer = styled.div`
   width: 100%;
@@ -284,6 +286,7 @@ const ResourceLink = styled.a`
 function Downloads() {
   const { t } = useTranslation();
   const { supabase } = useAuth();
+  const router = useRouter();
   const [fileInfo, setFileInfo] = useState({
     windows: { size: "Loading...", lastModified: "Loading..." },
     macos: { size: "Loading...", lastModified: "Loading..." },
@@ -543,26 +546,28 @@ function Downloads() {
             <ResourcesList>
               <ResourceItem>
                 <ResourceIcon>
-                  <FaFilePdf />
+                  <FaRocket />
                 </ResourceIcon>
                 <ResourceInfo>
                   <ResourceTitle>
-                    {t("dashboard.downloads.quickStart", "Quick Start Guide")}
+                    {t("dashboard.downloads.gettingStarted", "Getting Started Wizard")}
                   </ResourceTitle>
                   <ResourceDescription>
                     {t(
-                      "dashboard.downloads.quickStartDesc",
-                      "Get up and running with Cymasphere in minutes"
+                      "dashboard.downloads.gettingStartedDesc",
+                      "Interactive guide to set up Cymasphere for your OS and DAW"
                     )}
                   </ResourceDescription>
                 </ResourceInfo>
                 <ResourceLink
-                  href="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/documentation//Cymasphere-QuickStart-Guide.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push("/getting-started");
+                  }}
                 >
-                  {t("dashboard.downloads.downloadPdf", "Download PDF")}{" "}
-                  <FaDownload />
+                  {t("dashboard.downloads.startWizard", "Start Wizard")}{" "}
+                  <FaRocket />
                 </ResourceLink>
               </ResourceItem>
             </ResourcesList>

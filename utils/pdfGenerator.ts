@@ -345,8 +345,37 @@ export class CymasphereQuickstartPDF {
     
     currentY += step2Height + 10;
     
-    // Step 3: Get Help
-    this.addStepCard('3', 'Get Started', [
+    // Step 3: Virtual MIDI Setup
+    const step3Height = this.addStepCard('3', 'Set Up Virtual MIDI Device', [
+      'To use Cymasphere with your DAW, you need a virtual MIDI device:',
+      '',
+      'macOS:',
+      '• Open "Audio MIDI Setup" (Applications > Utilities)',
+      '• Click "Window" > "Show MIDI Studio"',
+      '• Double-click "IAC Driver"',
+      '• Check "Device is online"',
+      '• Click "Done"',
+      '',
+      'Windows:',
+      '• Download and install LoopMIDI from tobias-erichsen.de',
+      '• Launch LoopMIDI and click "+" to create a new port',
+      '• Name it (e.g., "Cymasphere MIDI")',
+      '• Keep LoopMIDI running while using Cymasphere',
+      '',
+      'After creating and enabling the virtual MIDI device:',
+      '',
+      'In Logic Pro:',
+      '• Create a software instrument track',
+      '• Add an External Instrument track, and set the MIDI destination to the IAC Driver (macOS) or LoopMIDI port (Windows)',
+      '• Add an instrument track with any virtual instrument',
+      '',
+      'Now Cymasphere will output MIDI to the virtual MIDI device, which will come back into the DAW like an external keyboard, and any record-enabled instrument tracks will play that MIDI.'
+    ], currentY);
+    
+    currentY += step3Height + 10;
+    
+    // Step 4: Get Started
+    this.addStepCard('4', 'Get Started', [
       '• Built-in help manager provides complete documentation (no separate PDF manual)',
       '• Explore presets and experiment with different scales and voicings',
       '• Join our Discord community for tips and support'

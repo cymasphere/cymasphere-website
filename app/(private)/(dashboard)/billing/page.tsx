@@ -740,7 +740,7 @@ export default function BillingPage() {
       } else {
         // Default to monthly for any other invalid types
         validPlanType = "monthly";
-      }
+        }
 
       // Keep modal open and show loading spinner while creating checkout session
       // Redirect to Stripe Checkout for plan change
@@ -748,7 +748,7 @@ export default function BillingPage() {
         hasHadTrial: hasHadTrial === true,
         isPlanChange: true,
       });
-
+        
       // If checkout was successful, the redirect will happen automatically
       // If there was an error, close modal and reset loading
       if (!result.success) {
@@ -1046,26 +1046,26 @@ export default function BillingPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "1rem" }}>
                     <div className="plan-type">
-                      {isSubscriptionLifetime(userSubscription.subscription)
-                        ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                        : subscriptionInterval === "month"
-                        ? t("dashboard.billing.monthly", "Monthly")
-                        : t("dashboard.billing.yearly", "Yearly")}
+                  {isSubscriptionLifetime(userSubscription.subscription)
+                    ? t("dashboard.billing.lifetimePlan", "Lifetime")
+                    : subscriptionInterval === "month"
+                    ? t("dashboard.billing.monthly", "Monthly")
+                    : t("dashboard.billing.yearly", "Yearly")}
                     </div>
                     <span style={{ color: "var(--text-secondary)", fontSize: "2.5rem", fontWeight: 700 }}>—</span>
-                    <PlanPrice>
-                      {isSubscriptionNone(userSubscription.subscription)
-                        ? "$0.00"
-                        : isSubscriptionLifetime(userSubscription.subscription)
-                        ? getCurrentPrice() === "--"
-                          ? "--"
-                          : "$" + getCurrentPrice()
-                        : `$${getCurrentPrice()} / ${
-                            subscriptionInterval === "month"
-                              ? t("dashboard.billing.month", "month")
-                              : t("dashboard.billing.year", "year")
-                          }`}
-                    </PlanPrice>
+                <PlanPrice>
+                  {isSubscriptionNone(userSubscription.subscription)
+                    ? "$0.00"
+                    : isSubscriptionLifetime(userSubscription.subscription)
+                    ? getCurrentPrice() === "--"
+                      ? "--"
+                      : "$" + getCurrentPrice()
+                    : `$${getCurrentPrice()} / ${
+                        subscriptionInterval === "month"
+                          ? t("dashboard.billing.month", "month")
+                          : t("dashboard.billing.year", "year")
+                      }`}
+                </PlanPrice>
                   </div>
                 </PlanName>
                 <PlanDescription>
@@ -1140,7 +1140,7 @@ export default function BillingPage() {
 
                 {/* Trial Status - show if we know the status */}
                 {hasHadTrial !== null && (
-                  <div
+            <div
                     style={{
                       marginTop: "0.75rem",
                       padding: "0.75rem",
