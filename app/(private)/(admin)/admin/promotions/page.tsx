@@ -871,9 +871,10 @@ export default function PromotionsPage() {
       )}
 
       {/* Create/Edit Modal */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showModal && (
           <Modal
+            key="edit-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1102,11 +1103,13 @@ export default function PromotionsPage() {
             </ModalContent>
           </Modal>
         )}
+      </AnimatePresence>
 
-        {/* Delete Confirmation Modal */}
-        <AnimatePresence>
-          {showDeleteModal && promotionToDelete && (
-            <Modal
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence mode="wait">
+        {showDeleteModal && promotionToDelete && (
+          <Modal
+            key="delete-modal"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1194,8 +1197,7 @@ export default function PromotionsPage() {
             </Modal>
           )}
         </AnimatePresence>
-      </AnimatePresence>
-    </Container>
-  );
-}
+      </Container>
+    );
+  }
 
