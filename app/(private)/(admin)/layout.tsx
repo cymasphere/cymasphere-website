@@ -740,6 +740,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Coupons
             </NavItem>
           </Link>
+          <Link href="/admin/promotions" passHref legacyBehavior>
+            <NavItem
+              $active={pathname === "/admin/promotions" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/admin/promotions")}
+            >
+              <FaBullhorn />
+              Promotions
+            </NavItem>
+          </Link>
           <Link href="/admin/support-tickets" passHref legacyBehavior>
             <NavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
@@ -1090,6 +1099,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <FaTag />
               Coupons
+            </MobileNavItem>
+          </Link>
+
+          <Link href="/admin/promotions" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/admin/promotions" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={2}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/admin/promotions")}
+            >
+              <FaBullhorn />
+              Promotions
             </MobileNavItem>
           </Link>
 

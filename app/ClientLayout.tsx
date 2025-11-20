@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, Suspense } from "react";
+import React, { useEffect, Suspense, useState } from "react";
 import styled from "styled-components";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
@@ -9,6 +9,7 @@ import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
+import PromotionBanner from "@/components/banners/PromotionBanner";
 
 // Lazy load ChatWidget - not needed on first paint
 const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
@@ -72,6 +73,22 @@ interface ClientLayoutProps {
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
+  const [hasActivePromotion, setHasActivePromotion] = useState(false);
+
+  // Check if there's an active promotion
+  useEffect(() => {
+    const checkPromotion = async () => {
+      try {
+        const response = await fetch('/api/promotions/active');
+        const data = await response.json();
+        setHasActivePromotion(data.success && !!data.promotion);
+      } catch (error) {
+        setHasActivePromotion(false);
+      }
+    };
+
+    checkPromotion();
+  }, []);
 
   // Defer YouTube Iframe API loading - not needed for FCP
   // Load it after a delay to avoid blocking initial render
@@ -152,15 +169,17 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const shouldHideHeaderFooter =
     isAuthRoute || isDashboardRoute || isAdminRoute;
 
-  // Hide chat assistant on auth routes (login, signup, reset-password)
-  const shouldHideChat = isAuthRoute;
+  // Hide chat assistant on auth routes and pricing pages
+  const isPricingRoute = pathname?.includes("/pricing") || pathname === "/";
+  const shouldHideChat = isAuthRoute || isPricingRoute;
 
   return (
     <ThemeProvider theme={theme}>
       <ToastProvider>
         <AuthProvider>
           <LayoutWrapper>
-            {!shouldHideHeaderFooter && <NextHeader />}
+            {!shouldHideHeaderFooter && <NextHeader hasActiveBanner={hasActivePromotion} />}
+            {!shouldHideHeaderFooter && <PromotionBanner showCountdown={true} />}
             <Main>
               {children}
             </Main>

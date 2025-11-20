@@ -23,6 +23,7 @@ import i18next from "i18next";
 // Import common pricing components
 import BillingToggle from "../pricing/BillingToggle";
 import PricingCard from "../pricing/PricingCard";
+import PromotionBanner from "../banners/PromotionBanner";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1381,6 +1382,23 @@ const PricingSection = () => {
   }, [user, hasHadStripeTrial]);
 
 
+  // Check for active sale (fetched by banner component)
+  const [hasActiveSale, setHasActiveSale] = useState(false);
+
+  useEffect(() => {
+    const checkActiveSale = async () => {
+      try {
+        const response = await fetch('/api/promotions/active');
+        const data = await response.json();
+        setHasActiveSale(data.success && data.promotion);
+      } catch (error) {
+        console.error('Error checking active sale:', error);
+      }
+    };
+
+    checkActiveSale();
+  }, []);
+
   return (
     <PricingContainer id="pricing">
       {/* Render ChordWeb only once on initial mount - won't be affected by state changes */}
@@ -1396,6 +1414,9 @@ const PricingSection = () => {
           <SectionTitle>
             {t("pricing.simpleTransparent", "Simple, Transparent Pricing")}
           </SectionTitle>
+
+          {/* Promotional Sale Banner */}
+          {hasActiveSale && <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (

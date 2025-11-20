@@ -139,6 +139,37 @@ function CheckoutSuccessContent() {
     currencyParam || "USD"
   );
 
+  // Track promotion conversion
+  useEffect(() => {
+    const trackPromotionConversion = async () => {
+      // Only track for paid subscriptions and lifetime (not free trials)
+      if (!isTrial && subscriptionValue && subscriptionValue > 0) {
+        try {
+          // Get active promotion
+          const response = await fetch('/api/promotions/active?plan=lifetime');
+          const data = await response.json();
+          
+          if (data.success && data.promotion) {
+            // Track conversion
+            await fetch('/api/promotions/track', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                promotion_id: data.promotion.id,
+                type: 'conversion',
+                value: subscriptionValue,
+              }),
+            });
+          }
+        } catch (error) {
+          console.error('Error tracking promotion conversion:', error);
+        }
+      }
+    };
+
+    trackPromotionConversion();
+  }, [isTrial, subscriptionValue]);
+
   // Track dataLayer events with user data
   useEffect(() => {
     if (typeof window === 'undefined') return;

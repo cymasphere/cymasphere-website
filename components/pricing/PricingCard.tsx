@@ -39,7 +39,7 @@ const PricingCardContainer = styled(motion.div)<{
   overflow: visible;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  max-width: 450px;
+  max-width: 400px;
   margin: 0 auto;
   border: 2px solid
     ${(props) =>
@@ -156,14 +156,29 @@ const BillingPeriod = styled.span`
   margin-left: 0.5rem;
 `;
 
-const DiscountTag = styled.span`
-  background: linear-gradient(135deg, var(--accent), var(--primary));
+const DiscountTag = styled.span<{ $isSale?: boolean }>`
+  background: ${props => props.$isSale 
+    ? 'linear-gradient(135deg, #FF6B6B, #FF0000)' 
+    : 'linear-gradient(135deg, var(--accent), var(--primary))'};
   color: white;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.7rem;
   font-weight: 600;
   margin-left: 8px;
+  box-shadow: ${props => props.$isSale 
+    ? '0 4px 12px rgba(255, 107, 107, 0.4)' 
+    : 'none'};
+  animation: ${props => props.$isSale ? 'pulse 2s ease-in-out infinite' : 'none'};
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
 `;
 
 const CardBody = styled.div`
@@ -390,6 +405,7 @@ export default function PricingCard({
     "short" | "long" | null
   >(null);
   const [hasHadStripeTrial, setHasHadStripeTrial] = useState<boolean>(false);
+  const [activePromotion, setActivePromotion] = useState<any>(null);
 
   // Fetch prices from Stripe
   useEffect(() => {
@@ -413,6 +429,27 @@ export default function PricingCard({
 
     fetchPrices();
   }, []);
+
+  // Fetch active promotion
+  useEffect(() => {
+    const fetchPromotion = async () => {
+      try {
+        const response = await fetch(`/api/promotions/active?plan=${billingPeriod}`);
+        const data = await response.json();
+        
+        if (data.success && data.promotion) {
+          setActivePromotion(data.promotion);
+        } else {
+          setActivePromotion(null);
+        }
+      } catch (error) {
+        console.error('Error fetching promotion:', error);
+        setActivePromotion(null);
+      }
+    };
+
+    fetchPromotion();
+  }, [billingPeriod]);
 
   // Fetch trial status when user is logged in
   useEffect(() => {
@@ -445,14 +482,40 @@ export default function PricingCard({
 
   // Calculate price details
   const priceDetails = useMemo(() => {
-    if (!currentPlan) return { display: "--", original: undefined, discountText: "" };
+    if (!currentPlan) return { display: "--", original: undefined, discountText: "", isSale: false };
 
     const baseAmount = currentPlan.amount / 100;
     let discountedAmount = baseAmount;
     let discountText = "";
     let originalPrice = undefined;
+    let isSale = false;
 
-    if (currentPlan.discount) {
+    // Check if there's an active promotion for this plan from database
+    if (activePromotion && activePromotion.applicable_plans?.includes(billingPeriod)) {
+      // Get sale price for this plan
+      const salePriceField = `sale_price_${billingPeriod}`;
+      const salePrice = activePromotion[salePriceField];
+      
+      if (salePrice !== null && salePrice !== undefined) {
+        discountedAmount = salePrice;
+        // Use retail price for strikethrough to show bigger discount
+        if (billingPeriod === "lifetime") {
+          originalPrice = "$249";
+          const discount = Math.round(((249 - salePrice) / 249) * 100);
+          discountText = `${discount}% OFF`;
+        } else if (billingPeriod === "annual") {
+          originalPrice = "$79";
+          const discount = Math.round(((79 - salePrice) / 79) * 100);
+          discountText = `${discount}% OFF`;
+        } else {
+          originalPrice = `$${baseAmount.toFixed(0)}`;
+          const discount = Math.round(((baseAmount - salePrice) / baseAmount) * 100);
+          discountText = `${discount}% OFF`;
+        }
+        isSale = true;
+      }
+    } else if (currentPlan.discount) {
+      // Stripe discount applied
       if (currentPlan.discount.percent_off) {
         discountedAmount = baseAmount * (1 - currentPlan.discount.percent_off / 100);
         discountText = `${currentPlan.discount.percent_off}% OFF`;
@@ -461,22 +524,23 @@ export default function PricingCard({
         discountText = `$${currentPlan.discount.amount_off / 100} OFF`;
       }
       originalPrice = `$${baseAmount.toFixed(0)}`;
+    } else {
+      // No sale, no discount - show standard strikethrough prices
+      if (billingPeriod === "lifetime") {
+        originalPrice = "$249";  // $149 is 40% off $249
+      } else if (billingPeriod === "annual") {
+        originalPrice = "$79";   // $59 is 25% off $79
+      }
+      // Monthly: No discount (standard practice - no strikethrough)
     }
-
-    // Show original strikethrough prices (industry standard: progressive discounts)
-    if (billingPeriod === "lifetime") {
-      originalPrice = "$249";  // $149 is 40% off $249
-    } else if (billingPeriod === "annual") {
-      originalPrice = "$79";   // $59 is 25% off $79
-    }
-    // Monthly: No discount (standard practice - no strikethrough)
 
     return {
       display: `$${discountedAmount.toFixed(0)}`,
       original: originalPrice,
       discountText,
+      isSale,
     };
-  }, [currentPlan, billingPeriod]);
+  }, [currentPlan, billingPeriod, activePromotion]);
 
   // Get period text
   const getPeriodText = () => {
@@ -734,7 +798,9 @@ export default function PricingCard({
                 <Price>{priceDetails.display}</Price>
                 <BillingPeriod>{getPeriodText()}</BillingPeriod>
                 {priceDetails.discountText && (
-                  <DiscountTag>{priceDetails.discountText}</DiscountTag>
+                  <DiscountTag $isSale={priceDetails.isSale}>
+                    {priceDetails.isSale ? '🔥 ' : ''}{priceDetails.discountText}
+                  </DiscountTag>
                 )}
               </div>
               {billingPeriod === "annual" && currentPlan && (

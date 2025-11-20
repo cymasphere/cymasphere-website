@@ -331,8 +331,54 @@ async function createCheckoutSession(
         : "if_required";
     }
 
-    // Enable entering promotion codes on the Checkout page
-    sessionParams.allow_promotion_codes = true;
+    // Auto-apply sale discount code if there's an active promotion from database
+    let hasAutoDiscount = false;
+    try {
+      const supabase = await createSupabaseServiceRole();
+      const { data: activePromotion } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('active', true)
+        .contains('applicable_plans', [planType])
+        .order('priority', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (activePromotion && activePromotion.stripe_coupon_code) {
+        // Check if promotion is within date range
+        const now = new Date();
+        const startValid = !activePromotion.start_date || new Date(activePromotion.start_date) <= now;
+        const endValid = !activePromotion.end_date || new Date(activePromotion.end_date) >= now;
+
+        if (startValid && endValid) {
+          // Validate that the coupon exists in Stripe before applying
+          try {
+            await stripe.coupons.retrieve(activePromotion.stripe_coupon_code);
+            // Coupon exists, safe to apply
+            sessionParams.discounts = [
+              {
+                coupon: activePromotion.stripe_coupon_code,
+              },
+            ];
+            hasAutoDiscount = true;
+            console.log(`🎁 Auto-applying promotion coupon: ${activePromotion.stripe_coupon_code} for ${planType} plan`);
+          } catch (couponError: any) {
+            // Coupon doesn't exist in Stripe
+            console.warn(`⚠️ Coupon ${activePromotion.stripe_coupon_code} not found in Stripe, skipping auto-apply`);
+            // Continue without discount - user can still enter code manually
+          }
+        }
+      }
+    } catch (error) {
+      console.log('No active promotion found for plan:', planType);
+      // Continue without discount if promotion lookup fails
+    }
+
+    // Only enable manual promotion codes if we're NOT auto-applying a discount
+    // Stripe doesn't allow both allow_promotion_codes and discounts together
+    if (!hasAutoDiscount) {
+      sessionParams.allow_promotion_codes = true;
+    }
 
     // Create the checkout session
     const session = await stripe.checkout.sessions.create(sessionParams);

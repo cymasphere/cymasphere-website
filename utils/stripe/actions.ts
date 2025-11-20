@@ -1260,6 +1260,54 @@ export async function listPromotionCodes(options?: {
 }
 
 /**
+ * List all coupons with optional filters
+ * @param options Filter options
+ */
+export async function listCoupons(options?: {
+  limit?: number;
+}): Promise<{ coupons: any[]; error?: string }> {
+  try {
+    const listParams: Stripe.CouponListParams = {
+      limit: options?.limit || 100,
+    };
+
+    const coupons = await stripe.coupons.list(listParams);
+
+    // Serialize the coupons to plain objects
+    const serializedCoupons = coupons.data.map((coupon) => ({
+      id: coupon.id,
+      object: coupon.object,
+      amount_off: coupon.amount_off,
+      created: coupon.created,
+      currency: coupon.currency,
+      duration: coupon.duration,
+      duration_in_months: coupon.duration_in_months,
+      livemode: coupon.livemode,
+      max_redemptions: coupon.max_redemptions,
+      metadata: coupon.metadata,
+      name: coupon.name,
+      percent_off: coupon.percent_off,
+      redeem_by: coupon.redeem_by,
+      times_redeemed: coupon.times_redeemed,
+      valid: coupon.valid,
+    }));
+
+    return {
+      coupons: serializedCoupons,
+    };
+  } catch (error) {
+    console.error("Error listing coupons:", error);
+    return {
+      coupons: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to list coupons",
+    };
+  }
+}
+
+/**
  * Deactivate a promotion code
  * @param promotionCodeId The promotion code ID to deactivate
  */

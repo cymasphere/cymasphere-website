@@ -164,10 +164,10 @@ export default function SignupSuccess() {
         });
       } else {
         // Fallback: push registration event without user data
-        window.dataLayer.push({
-          event: 'registration_success'
-        });
-      }
+      window.dataLayer.push({
+        event: 'registration_success'
+      });
+    }
     }
   }, [user, email]);
 

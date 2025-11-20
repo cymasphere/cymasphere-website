@@ -94,6 +94,7 @@ const menuItemVariants = {
 const HeaderContainer = styled.header<{
   $isScrolled: boolean;
   $menuOpen: boolean;
+  $hasActiveBanner: boolean;
 }>`
   position: fixed;
   top: 0;
@@ -101,11 +102,11 @@ const HeaderContainer = styled.header<{
   right: 0;
   z-index: 3000;
   background: ${(props) =>
-    props.$isScrolled || props.$menuOpen
+    props.$isScrolled || props.$menuOpen || props.$hasActiveBanner
       ? "rgba(15, 14, 23, 0.95)"
       : "linear-gradient(180deg, rgba(15, 14, 23, 0.8) 0%, rgba(15, 14, 23, 0.4) 50%, rgba(15, 14, 23, 0.1) 100%)"};
   backdrop-filter: ${(props) =>
-    props.$isScrolled || props.$menuOpen ? "blur(8px)" : "blur(4px)"};
+    props.$isScrolled || props.$menuOpen || props.$hasActiveBanner ? "blur(8px)" : "blur(4px)"};
   transition: all 0.3s ease-in-out;
 `;
 
@@ -113,7 +114,7 @@ const HeaderContent = styled.div<{ $isScrolled: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${(props) => (props.$isScrolled ? "15px 30px" : "25px 30px")};
+  padding: 15px 30px;
   max-width: 1400px;
   margin: 0 auto;
   transition: padding 0.3s ease;
@@ -121,7 +122,7 @@ const HeaderContent = styled.div<{ $isScrolled: boolean }>`
   z-index: 3500;
 
   @media (max-width: 768px) {
-    padding: ${(props) => (props.$isScrolled ? "12px 20px" : "20px 20px")};
+    padding: 12px 20px;
   }
 `;
 
@@ -579,7 +580,11 @@ const UserMenuLogout = styled.button`
   }
 `;
 
-const NextHeader = () => {
+interface NextHeaderProps {
+  hasActiveBanner?: boolean;
+}
+
+const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
   const router = useRouter();
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -740,7 +745,7 @@ const NextHeader = () => {
 
   return (
     <>
-      <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen}>
+      <HeaderContainer $isScrolled={isScrolled} $menuOpen={menuOpen} $hasActiveBanner={hasActiveBanner}>
         <HeaderContent $isScrolled={isScrolled}>
           <span
             onClick={playSound}
