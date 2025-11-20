@@ -381,6 +381,14 @@
     "proSolution": "Suite compositiva completa per musicisti",
     "currencySymbol": "€",
     "allPlansInclude": "Tutti i piani includono:",
+    "cancelAnytime": "Annulla in qualsiasi momento",
+    "equivalentTo": "Equivalente a",
+    "goToDashboard": "Vai alla Dashboard",
+    "manageSubscription": "Gestisci Abbonamento",
+    "upgradeNow": "Aggiorna Ora",
+    "currentPlan": "Piano Attuale",
+    "lifetimeOwner": "Proprietario a Vita",
+    "noTrialAvailable": "Hai già utilizzato una prova gratuita. Avvia un abbonamento per continuare a godere di tutte le funzionalità premium.",
     "features": [
       "Song Builder con gestione multi-traccia",
       "Editor pattern intelligente e adattamento accordi",
@@ -409,6 +417,9 @@
     "processing": "Elaborazione",
     "upgradeNow": "Aggiorna ora",
     "buyNow": "Acquista ora"
+  },
+  "promotion": {
+    "viewOffers": "Visualizza Offerte"
   },
   "faq": {
     "title": "Domande frequenti",

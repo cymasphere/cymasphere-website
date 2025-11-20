@@ -359,6 +359,14 @@
     "proSolution": "Müzisyenler için komple kompozisyon paketi",
     "currencySymbol": "₺",
     "allPlansInclude": "Tüm Planlar Şunları İçerir:",
+    "cancelAnytime": "İstediğiniz zaman iptal edin",
+    "equivalentTo": "Eşdeğer",
+    "goToDashboard": "Gösterge Paneline Git",
+    "manageSubscription": "Aboneliği Yönet",
+    "upgradeNow": "Şimdi Yükselt",
+    "currentPlan": "Mevcut Plan",
+    "lifetimeOwner": "Ömür Boyu Sahibi",
+    "noTrialAvailable": "Zaten ücretsiz deneme kullandınız. Tüm premium özelliklerin keyfini çıkarmaya devam etmek için bir abonelik başlatın.",
     "features": [
       "Çoklu Parça Yönetimi ile Şarkı Oluşturucu",
       "Akıllı Desen Editörü ve Akor Adaptasyonu",
@@ -440,6 +448,9 @@
     "processing": "İşleniyor...",
     "upgradeNow": "Şimdi Yükselt",
     "buyNow": "Şimdi Satın Al"
+  },
+  "promotion": {
+    "viewOffers": "Teklifleri Görüntüle"
   },
   "language": {
     "en": "English",

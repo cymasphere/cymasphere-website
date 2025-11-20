@@ -409,6 +409,14 @@
     "oneTimePurchase": "一回購入",
     "proSolution": "ミュージシャンのための完全な作曲スイート",
     "allPlansInclude": "すべてのプランに含まれるもの：",
+    "cancelAnytime": "いつでもキャンセル可能",
+    "equivalentTo": "相当",
+    "goToDashboard": "ダッシュボードへ",
+    "manageSubscription": "サブスクリプション管理",
+    "upgradeNow": "今すぐアップグレード",
+    "currentPlan": "現在のプラン",
+    "lifetimeOwner": "ライフタイムオーナー",
+    "noTrialAvailable": "すでに無料トライアルを使用しました。すべてのプレミアム機能を引き続き楽しむにはサブスクリプションを開始してください。",
     "features": [
       "マルチトラック管理を備えたソングビルダー",
       "インテリジェントパターンエディタとコード適応",
@@ -437,6 +445,9 @@
     "processing": "処理中",
     "upgradeNow": "今すぐアップグレード",
     "buyNow": "今すぐ購入"
+  },
+  "promotion": {
+    "viewOffers": "オファーを見る"
   },
   "faq": {
     "title": "よくある質問",

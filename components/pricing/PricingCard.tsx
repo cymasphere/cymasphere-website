@@ -512,11 +512,11 @@ export default function PricingCard({
           const discount = Math.round(((249 - salePrice) / 249) * 100);
           discountText = `${discount}% OFF`;
         } else if (billingPeriod === "annual") {
-          originalPrice = "$79/year";
+          originalPrice = `$79${t("pricing.perYear", "/year")}`;
           const discount = Math.round(((79 - salePrice) / 79) * 100);
           discountText = `${discount}% OFF`;
         } else {
-          originalPrice = `$${baseAmount.toFixed(0)}/month`;
+          originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perMonth", "/month")}`;
           const discount = Math.round(((baseAmount - salePrice) / baseAmount) * 100);
           discountText = `${discount}% OFF`;
         }
@@ -532,9 +532,9 @@ export default function PricingCard({
         discountText = `$${currentPlan.discount.amount_off / 100} OFF`;
       }
       if (billingPeriod === "monthly") {
-        originalPrice = `$${baseAmount.toFixed(0)}/month`;
+        originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perMonth", "/month")}`;
       } else if (billingPeriod === "annual") {
-        originalPrice = `$${baseAmount.toFixed(0)}/year`;
+        originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perYear", "/year")}`;
       } else {
         originalPrice = `$${baseAmount.toFixed(0)}`;
       }
@@ -543,9 +543,9 @@ export default function PricingCard({
       if (billingPeriod === "lifetime") {
         originalPrice = "$249";  // $149 is 40% off $249
       } else if (billingPeriod === "annual") {
-        originalPrice = "$79/year";   // $59 is 25% off $79
+        originalPrice = `$79${t("pricing.perYear", "/year")}`;   // $59 is 25% off $79
       } else if (billingPeriod === "monthly") {
-        originalPrice = "$8/month";    // $6 is 25% off $8
+        originalPrice = `$8${t("pricing.perMonth", "/month")}`;    // $6 is 25% off $8
       }
     }
 

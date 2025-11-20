@@ -408,6 +408,14 @@
     "oneTimePurchase": "compra única",
     "proSolution": "Suite compositiva completa para músicos",
     "allPlansInclude": "Todos los Planes Incluyen:",
+    "cancelAnytime": "Cancela cuando quieras",
+    "equivalentTo": "Equivalente a",
+    "goToDashboard": "Ir al Panel",
+    "manageSubscription": "Gestionar Suscripción",
+    "upgradeNow": "Actualizar Ahora",
+    "currentPlan": "Plan Actual",
+    "lifetimeOwner": "Propietario Vitalicio",
+    "noTrialAvailable": "Ya has usado una prueba gratuita. Inicia una suscripción para seguir disfrutando de todas las funciones premium.",
     "features": [
       "Creador de Canciones con Gestión Multi-Pista",
       "Editor de Patrones Inteligente y Adaptación de Acordes",
@@ -436,6 +444,9 @@
     "processing": "Procesando",
     "upgradeNow": "Actualizar Ahora",
     "buyNow": "Comprar Ahora"
+  },
+  "promotion": {
+    "viewOffers": "Ver Ofertas"
   },
   "faq": {
     "title": "Preguntas Frecuentes",

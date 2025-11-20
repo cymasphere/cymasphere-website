@@ -407,6 +407,14 @@
     "oneTimePurchase": "einmaliger Kauf",
     "proSolution": "Vollständige Kompositions-Suite für Musiker",
     "allPlansInclude": "Alle Pläne beinhalten:",
+    "cancelAnytime": "Jederzeit kündbar",
+    "equivalentTo": "Entspricht",
+    "goToDashboard": "Zum Dashboard",
+    "manageSubscription": "Abonnement verwalten",
+    "upgradeNow": "Jetzt upgraden",
+    "currentPlan": "Aktueller Plan",
+    "lifetimeOwner": "Lebenslanger Besitzer",
+    "noTrialAvailable": "Sie haben bereits eine kostenlose Testversion genutzt. Starten Sie ein Abonnement, um weiterhin alle Premium-Funktionen zu genießen.",
     "features": [
       "Song-Builder mit Multi-Track-Management",
       "Intelligenter Pattern-Editor & Akkord-Anpassung",
@@ -435,6 +443,9 @@
     "processing": "Verarbeitung",
     "upgradeNow": "Jetzt upgraden",
     "buyNow": "Jetzt kaufen"
+  },
+  "promotion": {
+    "viewOffers": "Angebote Ansehen"
   },
   "faq": {
     "title": "Häufig gestellte Fragen",

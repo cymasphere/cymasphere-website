@@ -346,6 +346,9 @@
     "processing": "Processing",
     "buyNow": "Buy Now"
   },
+  "promotion": {
+    "viewOffers": "View Offers"
+  },
   "faq": {
     "title": "Frequently Asked Questions",
     "subtitle": "Find answers to common questions about Cymasphere",

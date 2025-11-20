@@ -296,6 +296,14 @@
     "proSolution": "音乐家完整作曲套件",
     "currencySymbol": "￥",
     "allPlansInclude": "所有套餐包含：",
+    "cancelAnytime": "随时取消",
+    "equivalentTo": "相当于",
+    "goToDashboard": "前往仪表板",
+    "manageSubscription": "管理订阅",
+    "upgradeNow": "立即升级",
+    "currentPlan": "当前套餐",
+    "lifetimeOwner": "终身拥有者",
+    "noTrialAvailable": "您已经使用过免费试用。开始订阅以继续享受所有高级功能。",
     "features": [
       "歌曲构建器与多轨管理",
       "智能模式编辑器和和弦适应",
@@ -324,6 +332,9 @@
     "processing": "处理中",
     "upgradeNow": "立即升级",
     "buyNow": "立即购买"
+  },
+  "promotion": {
+    "viewOffers": "查看优惠"
   },
   "faq": {
     "title": "常见问题",

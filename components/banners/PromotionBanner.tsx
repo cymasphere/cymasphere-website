@@ -7,6 +7,7 @@ import { FaFire, FaGift, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import EmailCollectionModal from '../modals/EmailCollectionModal';
 
 const BannerContainer = styled(motion.div)<{ $background: string; $variant: 'sticky' | 'card' }>`
@@ -338,6 +339,7 @@ interface Promotion {
 }
 
 export default function PromotionBanner({ showCountdown = true, dismissible = true, variant = 'sticky' }: PromotionBannerProps) {
+  const { t } = useTranslation();
   const [sale, setSale] = React.useState<Promotion | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -522,10 +524,10 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
   };
 
   const getButtonText = () => {
-    if (loading) return 'Loading...';
-    if (isMultiplePlans) return 'View Offers';
-    if (singlePlan === 'lifetime') return 'Buy Now';
-    return 'Start Trial';
+    if (loading) return t('common.loading', 'Loading...');
+    if (isMultiplePlans) return t('promotion.viewOffers', 'View Offers');
+    if (singlePlan === 'lifetime') return t('pricing.buyNow', 'Buy Now');
+    return t('pricing.freeTrial.startTrial', 'Start Trial');
   };
 
   if (isClosed) return null;

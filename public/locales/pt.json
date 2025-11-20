@@ -359,6 +359,14 @@
     "proSolution": "Suíte compositiva completa para músicos",
     "currencySymbol": "R$",
     "allPlansInclude": "Todos os planos incluem:",
+    "cancelAnytime": "Cancele a qualquer momento",
+    "equivalentTo": "Equivalente a",
+    "goToDashboard": "Ir ao Painel",
+    "manageSubscription": "Gerenciar Assinatura",
+    "upgradeNow": "Atualizar Agora",
+    "currentPlan": "Plano Atual",
+    "lifetimeOwner": "Proprietário Vitalício",
+    "noTrialAvailable": "Você já usou uma avaliação gratuita. Inicie uma assinatura para continuar aproveitando todos os recursos premium.",
     "features": [
       "Construtor de músicas com gerenciamento multi-faixa",
       "Editor de padrões inteligente e adaptação de acordes",
@@ -387,6 +395,9 @@
     "processing": "Processando",
     "upgradeNow": "Fazer upgrade agora",
     "buyNow": "Comprar agora"
+  },
+  "promotion": {
+    "viewOffers": "Ver Ofertas"
   },
   "contact": {
     "title": "Entre em contato",
