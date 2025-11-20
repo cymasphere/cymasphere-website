@@ -218,8 +218,21 @@ export async function POST(request: NextRequest) {
     // Convert date inputs to UTC timestamps
     const formatDateToUTC = (dateString: string | null | undefined) => {
       if (!dateString) return null;
+      
+      // If already an ISO string, return as is
+      if (dateString.includes('T') && dateString.includes('Z')) {
+        return dateString;
+      }
+      
       // Parse as local date and convert to UTC timestamp for storage
       const date = new Date(dateString + 'T00:00:00.000Z');
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return null;
+      }
+      
       return date.toISOString();
     };
 

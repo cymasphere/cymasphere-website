@@ -681,13 +681,32 @@ export default function PromotionsPage() {
 
   const handleToggle = async (promotion: Promotion) => {
     try {
+      // Convert ISO dates back to YYYY-MM-DD format for the API
+      const formatDateForAPI = (isoString: string | null) => {
+        if (!isoString) return '';
+        return isoString.split('T')[0];
+      };
+
+      // Only send the fields needed for toggle - preserve all other data
       const response = await fetch('/api/admin/promotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: promotion.id,
-          ...promotion,
-          active: !promotion.active,
+          name: promotion.name,
+          title: promotion.title,
+          description: promotion.description,
+          active: !promotion.active, // Toggle the active status
+          start_date: formatDateForAPI(promotion.start_date),
+          end_date: formatDateForAPI(promotion.end_date),
+          applicable_plans: promotion.applicable_plans,
+          discount_type: promotion.discount_type,
+          discount_value: promotion.discount_value,
+          stripe_coupon_code: promotion.stripe_coupon_code,
+          stripe_coupon_id: promotion.stripe_coupon_id,
+          stripe_coupon_created: promotion.stripe_coupon_created,
+          banner_theme: promotion.banner_theme,
+          priority: promotion.priority,
         }),
       });
 
@@ -695,6 +714,8 @@ export default function PromotionsPage() {
 
       if (data.success) {
         loadPromotions();
+      } else {
+        console.error('Error toggling promotion:', data.error);
       }
     } catch (error) {
       console.error('Error toggling promotion:', error);
