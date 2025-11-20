@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import NextSEO from "@/components/NextSEO";
-import {
+import { 
   FaTicketAlt, 
   FaPlus,
   FaSearch,
@@ -27,7 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { 
   createOneTimeDiscountCode, 
-  listPromotionCodes,
+  listPromotionCodes, 
   listCoupons,
   deactivatePromotionCode 
 } from "@/utils/stripe/actions";
@@ -203,8 +203,8 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
           &:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
-          }
-        `;
+  }
+`;
     }
   }}
 
@@ -239,7 +239,7 @@ const Th = styled.th<{ $sortable?: boolean }>`
   transition: background 0.2s ease;
 
   ${props => props.$sortable && `
-    &:hover {
+  &:hover {
       background: rgba(255, 255, 255, 0.05);
     }
   `}
@@ -712,13 +712,13 @@ export default function AdminCoupons() {
       if (itemToDelete.type === 'promotion_code') {
         // Deactivate promotion code
         const result = await deactivatePromotionCode(itemToDelete.id);
-        
-        if (result.success) {
+      
+      if (result.success) {
           showNotification('success', 'Promotion code deactivated successfully');
           setShowDeleteModal(false);
           setItemToDelete(null);
-          fetchPromotionCodes();
-        } else {
+        fetchPromotionCodes();
+      } else {
           showNotification('error', result.error || 'Failed to deactivate promotion code');
         }
       } else {
@@ -991,7 +991,7 @@ export default function AdminCoupons() {
               {filteredAndSortedCoupons.map((code) => (
               <Tr key={code.id}>
                 <Td>
-                  <CouponCode>{code.code}</CouponCode>
+                <CouponCode>{code.code}</CouponCode>
                 </Td>
                 <Td>
                   {code.coupon.name || '-'}
@@ -1001,11 +1001,11 @@ export default function AdminCoupons() {
                 </Td>
                 <Td>
                   <StatusBadge $active={code.active}>
-                    {code.active ? 'Active' : 'Inactive'}
+                  {code.active ? 'Active' : 'Inactive'}
                   </StatusBadge>
                 </Td>
                 <Td>
-                  {code.times_redeemed} / {code.max_redemptions || '∞'}
+                    {code.times_redeemed} / {code.max_redemptions || '∞'}
                 </Td>
                 <Td>
                   {formatDate(code.created)}
@@ -1015,26 +1015,26 @@ export default function AdminCoupons() {
                 </Td>
                 <Td>
                   <ActionButtons>
-                    <ActionButton
+                <ActionButton
                       $variant="primary"
-                      onClick={() => handleCopyCode(code.code)}
+                  onClick={() => handleCopyCode(code.code)}
                       title="Copy code"
-                    >
-                      <FaCopy />
-                    </ActionButton>
-                    {code.active && (
-                      <ActionButton
+                >
+                  <FaCopy />
+                </ActionButton>
+                {code.active && (
+                  <ActionButton
                         $variant="danger"
                         onClick={() => handleDeactivateClick(code.id, code.code, code.type)}
                         title={code.type === 'coupon' ? 'Delete' : 'Deactivate'}
-                      >
+                  >
                         {code.type === 'coupon' ? <FaTrash /> : <FaBan />}
-                      </ActionButton>
-                    )}
+                  </ActionButton>
+                )}
                   </ActionButtons>
                 </Td>
               </Tr>
-              ))}
+          ))}
             </Tbody>
           </Table>
         )}

@@ -399,7 +399,7 @@ export default function PricingCard({
   hideButton = false,
   variant = "default",
 }: PricingCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
   const { initiateCheckout } = useCheckout();
@@ -555,7 +555,7 @@ export default function PricingCard({
       discountText,
       isSale,
     };
-  }, [currentPlan, billingPeriod, activePromotion]);
+  }, [currentPlan, billingPeriod, activePromotion, t, i18n.language]);
 
   // Get period text
   const getPeriodText = () => {

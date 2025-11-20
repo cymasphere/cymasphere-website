@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
                 : subscriptionType === "annual"
                 ? `annual_${amount}`
                 : `${subscriptionType}_${amount}`;
-
+              
               // Track paid subscription to Meta (differentiate monthly vs annual)
               await trackMetaConversionFromWebhook(
                 'Subscribe', // Meta event for paid subscription (monthly/annual)

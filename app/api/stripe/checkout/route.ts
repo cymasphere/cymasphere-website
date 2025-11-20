@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       // Validate that the customer exists in Stripe
       try {
         await stripe.customers.retrieve(customerId);
-        resolved_customer_id = customerId;
+      resolved_customer_id = customerId;
       } catch (error: any) {
         // Customer doesn't exist in Stripe, try to find/create using email
         console.warn(`Customer ${customerId} not found in Stripe, attempting to find/create using email`);
@@ -92,17 +92,17 @@ export async function POST(request: NextRequest) {
     // Check if customer has had a trial before
     if (resolved_customer_id) {
       try {
-        const hasHadTrial = await hasCustomerHadTrial(resolved_customer_id);
+      const hasHadTrial = await hasCustomerHadTrial(resolved_customer_id);
 
-        // If customer has had a trial and we're trying to give them another trial, return error
-        if (hasHadTrial && !collectPaymentMethod && planType !== "lifetime") {
-          return NextResponse.json({
-            url: null,
-            error: "TRIAL_USED_BEFORE",
-            message:
-              "You've already used a trial before. Please provide payment information to proceed.",
-            hasHadTrial: true,
-          });
+      // If customer has had a trial and we're trying to give them another trial, return error
+      if (hasHadTrial && !collectPaymentMethod && planType !== "lifetime") {
+        return NextResponse.json({
+          url: null,
+          error: "TRIAL_USED_BEFORE",
+          message:
+            "You've already used a trial before. Please provide payment information to proceed.",
+          hasHadTrial: true,
+        });
         }
       } catch (error) {
         console.error("Error checking trial history:", error);
@@ -377,7 +377,7 @@ async function createCheckoutSession(
     // Only enable manual promotion codes if we're NOT auto-applying a discount
     // Stripe doesn't allow both allow_promotion_codes and discounts together
     if (!hasAutoDiscount) {
-      sessionParams.allow_promotion_codes = true;
+    sessionParams.allow_promotion_codes = true;
     }
 
     // Create the checkout session
