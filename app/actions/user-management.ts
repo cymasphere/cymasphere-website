@@ -126,6 +126,30 @@ export async function createUserManagementRecord(
       return { data: null, error: "Failed to create record" };
     }
 
+    // If pro status is true, also update the user's profile subscription
+    if (pro) {
+      try {
+        // Find user by email in auth.users
+        const serviceSupabase = await createSupabaseServiceRole();
+        const { data: authUser } = await serviceSupabase.auth.admin.listUsers();
+        const matchingUser = authUser?.users.find(
+          (u) => u.email?.toLowerCase().trim() === user_email.toLowerCase().trim()
+        );
+
+        if (matchingUser) {
+          // Use updateUserProfileFromStripe to properly update the profile
+          // This will check user_management and update subscription accordingly
+          await updateUserProfileFromStripe(matchingUser.id);
+        }
+      } catch (profileUpdateError) {
+        // Log but don't fail the user_management creation
+        console.error(
+          "Error updating profile after NFR creation:",
+          profileUpdateError
+        );
+      }
+    }
+
     return { data: data as UserManagementRecord, error: null };
   } catch (error) {
     console.error("Unexpected error:", error);
@@ -189,6 +213,30 @@ export async function updateUserManagementRecord(
 
       console.error("Error updating user_management record:", error);
       return { data: null, error: "Failed to update record" };
+    }
+
+    // If pro status was updated, also update the user's profile subscription
+    if (typeof updates.pro === "boolean") {
+      try {
+        // Find user by email in auth.users
+        const serviceSupabase = await createSupabaseServiceRole();
+        const { data: authUser } = await serviceSupabase.auth.admin.listUsers();
+        const matchingUser = authUser?.users.find(
+          (u) => u.email?.toLowerCase().trim() === user_email.toLowerCase().trim()
+        );
+
+        if (matchingUser) {
+          // Use updateUserProfileFromStripe to properly update the profile
+          // This will check user_management and update subscription accordingly
+          await updateUserProfileFromStripe(matchingUser.id);
+        }
+      } catch (profileUpdateError) {
+        // Log but don't fail the user_management update
+        console.error(
+          "Error updating profile after NFR change:",
+          profileUpdateError
+        );
+      }
     }
 
     return { data: data as UserManagementRecord, error: null };
@@ -455,6 +503,51 @@ export async function getUsersForCRMCountAdmin(
 }
 
 /**
+ * Update user profile from Stripe by email (admin only)
+ * Finds the user by email and updates their profile
+ * @param userEmail The user email to update
+ * @returns Object indicating success and any errors
+ */
+export async function updateUserProfileFromStripeByEmail(
+  userEmail: string
+): Promise<{
+  success: boolean;
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    if (!userEmail || typeof userEmail !== "string") {
+      return { success: false, error: "Valid email is required" };
+    }
+
+    // Find user by email using service role
+    const serviceSupabase = await createSupabaseServiceRole();
+    const { data: authUser } = await serviceSupabase.auth.admin.listUsers();
+    const matchingUser = authUser?.users.find(
+      (u) => u.email?.toLowerCase().trim() === userEmail.toLowerCase().trim()
+    );
+
+    if (!matchingUser) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Use the existing function with the user ID
+    return await updateUserProfileFromStripe(matchingUser.id);
+  } catch (error) {
+    console.error("Unexpected error updating user profile by email:", error);
+    return {
+      success: false,
+      error: "Internal server error",
+    };
+  }
+}
+
+/**
  * Update user profile from Stripe (admin only)
  * This is the same function used in AuthContext when users log in
  * @param userId The user ID to update
@@ -476,6 +569,7 @@ export async function updateUserProfileFromStripe(userId: string): Promise<{
     }
 
     // Fetch the user's profile using the existing function
+    const { fetchProfile } = await import("@/utils/supabase/actions");
     const { profile, error: profileError } = await fetchProfile(userId);
 
     if (profileError || !profile) {

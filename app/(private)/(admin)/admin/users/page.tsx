@@ -510,6 +510,30 @@ const SubscriptionBadge = styled.span<{
   }
 `;
 
+const NfrBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  margin-left: 0.5rem;
+`;
+
+const SubscriptionCell = styled(TableCell)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+`;
+
 const SupportTicketsCount = styled.div`
   display: flex;
   align-items: center;
@@ -1525,6 +1549,8 @@ export default function AdminCRM() {
         return "#d4a017"; // Darker gold
       case "admin":
         return "#d63447"; // Darker red
+      case "nfr":
+        return "#9b59b6"; // Purple for NFR
       default:
         return "#6c757d"; // Darker gray
     }
@@ -1535,6 +1561,8 @@ export default function AdminCRM() {
       case "admin":
         return <FaUserShield />;
       case "lifetime":
+        return <FaCrown />;
+      case "nfr":
         return <FaCrown />;
       default:
         return null;
@@ -2376,21 +2404,21 @@ export default function AdminCRM() {
                           <TableCell>
                             <UserEmail>{userData.email}</UserEmail>
                           </TableCell>
-                          <TableCell>
+                          <SubscriptionCell>
                             <SubscriptionBadge
                               $color={getSubscriptionBadgeColor(
-                                userData.subscription
+                                userData.hasNfr ? "nfr" : userData.subscription
                               )}
                               $variant={
-                                isSubscriptionPremium(userData.subscription)
+                                userData.hasNfr || isSubscriptionPremium(userData.subscription)
                                   ? "premium"
                                   : "default"
                               }
                             >
-                              {getSubscriptionIcon(userData.subscription)}
-                              {userData.subscription}
+                              {userData.hasNfr ? <FaCrown /> : getSubscriptionIcon(userData.subscription)}
+                              {userData.hasNfr ? "NFR" : userData.subscription}
                             </SubscriptionBadge>
-                          </TableCell>
+                          </SubscriptionCell>
                           <TableCell>
                             {formatDate(userData.createdAt)}
                           </TableCell>
@@ -2585,16 +2613,16 @@ export default function AdminCRM() {
                     <InfoValue>
                       <SubscriptionBadge
                         $color={getSubscriptionBadgeColor(
-                          selectedUser.subscription
+                          selectedUser.hasNfr ? "nfr" : selectedUser.subscription
                         )}
                         $variant={
-                          isSubscriptionPremium(selectedUser.subscription)
+                          selectedUser.hasNfr || isSubscriptionPremium(selectedUser.subscription)
                             ? "premium"
                             : "default"
                         }
                       >
-                        {getSubscriptionIcon(selectedUser.subscription)}
-                        {selectedUser.subscription}
+                        {selectedUser.hasNfr ? <FaCrown /> : getSubscriptionIcon(selectedUser.subscription)}
+                        {selectedUser.hasNfr ? "NFR" : selectedUser.subscription}
                       </SubscriptionBadge>
                     </InfoValue>
                   </InfoItem>

@@ -45,6 +45,7 @@ export interface UserData {
   createdAt: string;
   lastActive?: string;
   totalSpent: number;
+  hasNfr?: boolean;
 }
 
 export interface DetailedUserData extends UserData {
@@ -1000,6 +1001,39 @@ export async function getAllUsersForCRM(
     // Rest of the function uses allProfiles
     const profiles = allProfiles;
 
+    // Fetch NFR status from user_management table for all users
+    const userEmails = profiles
+      .map((p) => (p as typeof p & { email?: string }).email)
+      .filter((email): email is string => !!email && email.length > 0);
+
+    const nfrStatusMap: Record<string, boolean> = {};
+    if (userEmails.length > 0) {
+      try {
+        // Fetch all NFR records and match by normalized email (case-insensitive)
+        // This approach is more reliable than trying to filter in the query
+        const { data: nfrRecords, error: nfrError } = await supabase
+          .from("user_management")
+          .select("user_email, pro");
+
+        if (!nfrError && nfrRecords) {
+          // Create normalized email sets for efficient lookup
+          const normalizedUserEmails = new Set(
+            userEmails.map((e) => e.toLowerCase().trim())
+          );
+          
+          // Match records by normalized email
+          nfrRecords.forEach((record) => {
+            const normalizedRecordEmail = record.user_email.toLowerCase().trim();
+            if (normalizedUserEmails.has(normalizedRecordEmail)) {
+              nfrStatusMap[normalizedRecordEmail] = record.pro ?? false;
+            }
+          });
+        }
+      } catch (nfrErr) {
+        console.error("Error fetching NFR status:", nfrErr);
+      }
+    }
+
     // Build users array immediately with basic data from profiles
     // This allows the UI to show users right away while additional data loads
     const users: UserData[] = [];
@@ -1007,6 +1041,8 @@ export async function getAllUsersForCRM(
     for (const profile of profiles) {
       const userEmail =
         (profile as typeof profile & { email?: string }).email || "";
+      const normalizedEmail = userEmail.toLowerCase().trim();
+      const hasNfr = nfrStatusMap[normalizedEmail] ?? false;
 
       users.push({
         id: profile.id,
@@ -1020,6 +1056,7 @@ export async function getAllUsersForCRM(
         createdAt: profile.updated_at || new Date().toISOString(),
         lastActive: profile.updated_at || new Date().toISOString(), // Default to join date, will be updated if session data exists
         totalSpent: -1, // -1 indicates loading, will be updated when data loads
+        hasNfr,
       });
     }
 

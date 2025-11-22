@@ -433,6 +433,9 @@ export default function BillingPage() {
   // State for trial status checking
   const [hasHadTrial, setHasHadTrial] = useState<boolean | null>(null);
   
+  // State for NFR status
+  const [hasNfr, setHasNfr] = useState<boolean | null>(null);
+  
   // State for billing period selection (for pricing card)
   const [selectedBillingPeriodForPricing, setSelectedBillingPeriodForPricing] =
     useState<PlanType>("monthly");
@@ -531,6 +534,29 @@ export default function BillingPage() {
       setHasHadTrial(false); // Default to false on error
     }
   }, [user?.email]);
+
+  // Fetch NFR status
+  useEffect(() => {
+    async function fetchNfrStatus() {
+      try {
+        const response = await fetch("/api/user/nfr-status");
+        const data = await response.json();
+        console.log("[Billing] NFR status response:", data);
+        if (data.hasNfr) {
+          setHasNfr(true);
+        } else {
+          setHasNfr(false);
+        }
+      } catch (err) {
+        console.error("Error fetching NFR status:", err);
+        setHasNfr(false);
+      }
+    }
+
+    if (user) {
+      fetchNfrStatus();
+    }
+  }, [user]);
 
   // Fetch all data: prices, upcoming invoice, invoices
   // This useEffect depends on lastUserUpdate to trigger refetching when user data changes
@@ -932,8 +958,8 @@ export default function BillingPage() {
         </AlertBanner>
       )}
 
-      {isSubscriptionNone(userSubscription.subscription) ? (
-        // Show subscription status and pricing card when user has no subscription
+      {isSubscriptionNone(userSubscription.subscription) && hasNfr === false ? (
+        // Show subscription status and pricing card when user has no subscription and no NFR
         <div style={{ marginTop: "2rem" }}>
           {/* Subscription Status Card */}
           <BillingCard
@@ -1046,7 +1072,9 @@ export default function BillingPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "1rem" }}>
                     <div className="plan-type">
-                  {isSubscriptionLifetime(userSubscription.subscription)
+                  {hasNfr
+                    ? "Elite Access"
+                    : isSubscriptionLifetime(userSubscription.subscription)
                     ? t("dashboard.billing.lifetimePlan", "Lifetime")
                     : subscriptionInterval === "month"
                     ? t("dashboard.billing.monthly", "Monthly")
@@ -1069,7 +1097,9 @@ export default function BillingPage() {
                   </div>
                 </PlanName>
                 <PlanDescription>
-                  {isSubscriptionNone(userSubscription.subscription)
+                  {hasNfr
+                    ? "Elite Access - Full access to all premium features"
+                    : isSubscriptionNone(userSubscription.subscription)
                     ? t(
                         "dashboard.billing.noPlanDesc",
                         "No active subscription"
@@ -1090,7 +1120,8 @@ export default function BillingPage() {
               <div>
                 {/* Next billing date */}
                 {!isSubscriptionNone(userSubscription.subscription) &&
-                  !isSubscriptionLifetime(userSubscription.subscription) && (
+                  !isSubscriptionLifetime(userSubscription.subscription) &&
+                  hasNfr !== true && (
                     <div style={{ marginTop: "0" }}>
                       <div
                         style={{
@@ -1183,7 +1214,7 @@ export default function BillingPage() {
       )}
 
       {/* Only show billing history for paid subscribers */}
-      {!isSubscriptionNone(userSubscription.subscription) && (
+      {(!isSubscriptionNone(userSubscription.subscription) || hasNfr === true) && (
         <BillingCard>
           <CardTitle>
             <FaHistory />{" "}

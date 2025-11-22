@@ -339,6 +339,7 @@ function DashboardPage() {
   const { user: userAuth } = useAuth();
   const user = userAuth!;
   const router = useRouter();
+  const [hasNfr, setHasNfr] = useState<boolean | null>(null);
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
@@ -415,6 +416,28 @@ function DashboardPage() {
 
     if (user) {
       fetchDeviceCount();
+    }
+  }, [user]);
+
+  // Fetch NFR status
+  useEffect(() => {
+    async function fetchNfrStatus() {
+      try {
+        const response = await fetch("/api/user/nfr-status");
+        const data = await response.json();
+        if (data.hasNfr) {
+          setHasNfr(true);
+        } else {
+          setHasNfr(false);
+        }
+      } catch (err) {
+        console.error("Error fetching NFR status:", err);
+        setHasNfr(false);
+      }
+    }
+
+    if (user) {
+      fetchNfrStatus();
     }
   }, [user]);
 
@@ -662,7 +685,9 @@ function DashboardPage() {
             </StatIcon>
           </StatHeader>
           <StatValue>
-            {user.profile.subscription === "none"
+            {hasNfr === true
+              ? "Elite Access"
+              : user.profile.subscription === "none"
               ? t("common.none", "None")
               : capitalize(user.profile.subscription)}
           </StatValue>
@@ -794,7 +819,9 @@ function DashboardPage() {
             <SubscriptionInfo>
               <InfoLabel>{t("dashboard.main.plan", "Current Plan")}</InfoLabel>
               <InfoValue>
-                {user.profile.subscription === "none"
+                {hasNfr === true
+                  ? "Elite Access"
+                  : user.profile.subscription === "none"
                   ? t("common.none", "None")
                   : capitalize(user.profile.subscription)}
               </InfoValue>
