@@ -436,3 +436,65 @@ export async function trackMetaConversion(
   }
 }
 
+/**
+ * Deduplication utility to prevent events from firing multiple times
+ * Uses sessionStorage to track fired events per page/session
+ * 
+ * @param eventName - The event name to check/fire
+ * @param eventId - Optional unique event ID (e.g., session_id, transaction_id)
+ * @returns true if event should fire, false if already fired
+ */
+export function shouldFireEvent(eventName: string, eventId?: string): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  const storageKey = `event_fired_${eventName}${eventId ? `_${eventId}` : ''}`;
+  
+  // Check if event was already fired in this session
+  const alreadyFired = sessionStorage.getItem(storageKey);
+  
+  if (alreadyFired) {
+    console.log(`⏭️ Event ${eventName} already fired, skipping (deduplication)`);
+    return false;
+  }
+  
+  // Mark as fired
+  sessionStorage.setItem(storageKey, 'true');
+  return true;
+}
+
+/**
+ * Track event with deduplication and event ID
+ * Prevents the same event from firing multiple times on page refresh/navigation
+ * 
+ * @param eventName - Event name (e.g., 'registration_success', 'subscription_success', 'purchase')
+ * @param eventData - Event data to push to dataLayer
+ * @param eventId - Unique event ID for deduplication (e.g., session_id, transaction_id)
+ * @returns Promise that resolves when event is tracked
+ */
+export async function trackEventOnce(
+  eventName: string,
+  eventData: Record<string, any> = {},
+  eventId?: string
+): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  
+  // Check deduplication
+  if (!shouldFireEvent(eventName, eventId)) {
+    return false;
+  }
+  
+  window.dataLayer = window.dataLayer || [];
+  
+  // Add event ID to event data for Meta deduplication
+  const eventPayload = {
+    event: eventName,
+    event_id: eventId || `${eventName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    ...eventData,
+  };
+  
+  window.dataLayer.push(eventPayload);
+  console.log(`✅ Tracked ${eventName} with deduplication`, eventPayload);
+  
+  return true;
+}
+

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
       value,
       currency,
       isTrial,
+      mode: session.mode, // 'payment' for lifetime, 'subscription' for recurring
     });
   } catch (error) {
     console.error("Error fetching checkout session details:", error);

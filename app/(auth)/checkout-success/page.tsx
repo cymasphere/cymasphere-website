@@ -7,7 +7,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import { trackUserData, hashEmail } from "@/utils/analytics";
+import { trackUserData, hashEmail, trackEventOnce, shouldFireEvent } from "@/utils/analytics";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -128,6 +128,7 @@ function CheckoutSuccessContent() {
   const { user } = useAuth();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   const isTrial = searchParams.get("isTrial") === "true";
+  const isLifetime = searchParams.get("isLifetime") === "true";
   const isLoggedIn = !!user;
   const sessionId = searchParams.get("session_id");
   const valueParam = searchParams.get("value");
@@ -170,20 +171,29 @@ function CheckoutSuccessContent() {
     trackPromotionConversion();
   }, [isTrial, subscriptionValue]);
 
-  // Track dataLayer events with user data
+  // Track dataLayer events with user data (with deduplication)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    window.dataLayer = window.dataLayer || [];
 
     // Get user data
     const userId = user?.id || user?.profile?.id;
     const userEmail = user?.email || user?.profile?.email;
 
-    // Helper function to push event with user data
-    const pushEventWithUserData = async (eventData: any) => {
+    // Helper function to track event with user data and deduplication
+    const trackEventWithUserData = async (
+      eventName: string,
+      eventData: Record<string, any> = {}
+    ) => {
+      // Use session_id as event ID for deduplication, or generate one
+      const eventId = sessionId || `${eventName}_${Date.now()}`;
+      
+      // Check if event should fire (deduplication check)
+      if (!shouldFireEvent(eventName, eventId)) {
+        return; // Event already fired, skip
+      }
+
+      // Track user data first (only once per session)
       if (userId && userEmail) {
-        // First push user data
         await trackUserData({
           user_id: userId,
           email: userEmail,
@@ -192,29 +202,43 @@ function CheckoutSuccessContent() {
         // Get email hash for the event
         const emailHash = await hashEmail(userEmail);
         
-        // Then push the event with user data
+        // Push the event with user data and event ID
+        window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
-          ...eventData,
+          event: eventName,
+          event_id: eventId,
           user: {
             user_id: userId,
             email_sha256: emailHash,
           },
+          ...eventData,
         });
       } else {
         // Fallback: push event without user data
-        window.dataLayer.push(eventData);
+        trackEventOnce(eventName, eventData, eventId);
       }
     };
 
     if (isTrial) {
       // Track free trial with user data
-      pushEventWithUserData({
-        event: 'free_trial'
+      trackEventWithUserData('free_trial');
+    } else if (isLifetime && subscriptionValue !== null) {
+      // Track lifetime purchase with Purchase event
+      trackEventWithUserData('purchase', {
+        value: subscriptionValue,
+        currency: subscriptionCurrency,
+        transaction_id: sessionId,
+        items: [{
+          item_id: 'lifetime',
+          item_name: 'Cymasphere Lifetime',
+          category: 'software',
+          quantity: 1,
+          price: subscriptionValue
+        }]
       });
     } else if (subscriptionValue !== null) {
       // Track paid subscription with value and currency
-      pushEventWithUserData({
-        event: 'subscription_success',
+      trackEventWithUserData('subscription_success', {
         subscription: {
           value: subscriptionValue,
           currency: subscriptionCurrency
@@ -228,17 +252,34 @@ function CheckoutSuccessContent() {
           if (data.success && data.value !== null) {
             setSubscriptionValue(data.value);
             setSubscriptionCurrency(data.currency || 'USD');
-            pushEventWithUserData({
-              event: 'subscription_success',
-              subscription: {
+            
+            // Check if it's a lifetime purchase based on mode
+            if (data.mode === 'payment') {
+              // Track as Purchase event for lifetime
+              trackEventWithUserData('purchase', {
                 value: data.value,
-                currency: data.currency || 'USD'
-              }
-            });
+                currency: data.currency || 'USD',
+                transaction_id: sessionId,
+                items: [{
+                  item_id: 'lifetime',
+                  item_name: 'Cymasphere Lifetime',
+                  category: 'software',
+                  quantity: 1,
+                  price: data.value
+                }]
+              });
+            } else {
+              // Track as subscription_success for recurring
+              trackEventWithUserData('subscription_success', {
+                subscription: {
+                  value: data.value,
+                  currency: data.currency || 'USD'
+                }
+              });
+            }
           } else {
-            // Fallback: track without value
-            pushEventWithUserData({
-              event: 'subscription_success',
+            // Fallback: track without value (assume subscription)
+            trackEventWithUserData('subscription_success', {
               subscription: {
                 value: 0,
                 currency: 'USD'
@@ -247,9 +288,8 @@ function CheckoutSuccessContent() {
           }
         })
         .catch(() => {
-          // If we can't fetch, still track the event without value
-          pushEventWithUserData({
-            event: 'subscription_success',
+          // If we can't fetch, still track the event without value (assume subscription)
+          trackEventWithUserData('subscription_success', {
             subscription: {
               value: 0,
               currency: 'USD'

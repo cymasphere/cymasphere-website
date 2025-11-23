@@ -75,10 +75,20 @@ export async function GET(request: NextRequest) {
       // For now, we'll let the frontend fetch it via the session details API
     }
 
+    // Determine if this is a lifetime purchase (one-time payment)
+    const isLifetime = sessionResult.mode === 'payment';
+    
+    // Get value for lifetime purchases
+    if (isLifetime && sessionResult.amountTotal) {
+      subscriptionValue = sessionResult.amountTotal / 100; // Convert cents to dollars
+      subscriptionCurrency = sessionResult.currency?.toUpperCase() || 'USD';
+    }
+
     // Build redirect URL with all necessary parameters
     const params = new URLSearchParams({
       isSignedUp: isSignedUp.toString(),
       isTrial: isTrial.toString(),
+      isLifetime: isLifetime.toString(),
       session_id: sessionId,
     });
 
