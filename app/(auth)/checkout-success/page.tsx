@@ -192,6 +192,9 @@ function CheckoutSuccessContent() {
         return; // Event already fired, skip
       }
 
+      // Initialize dataLayer
+      window.dataLayer = window.dataLayer || [];
+
       // Track user data first (only once per session)
       if (userId && userEmail) {
         await trackUserData({
@@ -203,7 +206,6 @@ function CheckoutSuccessContent() {
         const emailHash = await hashEmail(userEmail);
         
         // Push the event with user data and event ID
-        window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
           event: eventName,
           event_id: eventId,
@@ -214,14 +216,23 @@ function CheckoutSuccessContent() {
           ...eventData,
         });
       } else {
-        // Fallback: push event without user data
-        trackEventOnce(eventName, eventData, eventId);
+        // Fallback: push event without user data (deduplication already checked)
+        window.dataLayer.push({
+          event: eventName,
+          event_id: eventId,
+          ...eventData,
+        });
       }
     };
 
     if (isTrial) {
-      // Track free trial with user data
-      trackEventWithUserData('free_trial');
+      // Track free trial as subscription_success with value 0
+      trackEventWithUserData('subscription_success', {
+        subscription: {
+          value: 0,
+          currency: subscriptionCurrency || 'USD'
+        }
+      });
     } else if (isLifetime && subscriptionValue !== null) {
       // Track lifetime purchase with Purchase event
       trackEventWithUserData('purchase', {
