@@ -148,31 +148,31 @@ export default function SignupSuccess() {
     if (!trackEventOnce('registration_success', {}, eventId)) {
       return; // Event already fired, skip
     }
-    
-    // Push user data if we have user_id and email
-    const userId = user?.id || user?.profile?.id;
-    if (userId && email && email !== "your email") {
-      // Push user data first, then registration event
-      trackUserData({
-        user_id: userId,
-        email: email,
-      }).then(async () => {
-        // Get email hash for the event
-        const emailHash = await hashEmail(email);
-        
+      
+      // Push user data if we have user_id and email
+      const userId = user?.id || user?.profile?.id;
+      if (userId && email && email !== "your email") {
+        // Push user data first, then registration event
+        trackUserData({
+          user_id: userId,
+          email: email,
+        }).then(async () => {
+          // Get email hash for the event
+          const emailHash = await hashEmail(email);
+          
         // Push registration event with user data and event ID
         window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: 'registration_success',
+          window.dataLayer.push({
+            event: 'registration_success',
           event_id: eventId,
-          user: {
-            user_id: userId,
-            email_sha256: emailHash,
-          },
+            user: {
+              user_id: userId,
+              email_sha256: emailHash,
+            },
+          });
         });
-      });
-    } else {
-      // Fallback: push registration event without user data
+      } else {
+        // Fallback: push registration event without user data
       trackEventOnce('registration_success', {}, eventId);
     }
   }, [user, email]);
