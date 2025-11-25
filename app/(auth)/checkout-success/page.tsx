@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -139,6 +139,9 @@ function CheckoutSuccessContent() {
   const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
     currencyParam || "USD"
   );
+  
+  // Ref to track if we've already fired the analytics event
+  const hasTrackedEvent = useRef(false);
 
   // Track promotion conversion
   useEffect(() => {
@@ -174,8 +177,12 @@ function CheckoutSuccessContent() {
   // Track dataLayer events with user data (with deduplication)
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // Only track once
+    if (hasTrackedEvent.current) return;
+    hasTrackedEvent.current = true;
 
-    // Get user data
+    // Get user data (extracted once to avoid dependency issues)
     const userId = user?.id || user?.profile?.id;
     const userEmail = user?.email || user?.profile?.email;
 
@@ -282,11 +289,11 @@ function CheckoutSuccessContent() {
             } else {
               // Track as subscription_success for recurring
               trackEventWithUserData('subscription_success', {
-                subscription: {
-                  value: data.value,
-                  currency: data.currency || 'USD'
-                }
-              });
+              subscription: {
+                value: data.value,
+                currency: data.currency || 'USD'
+              }
+            });
             }
           } else {
             // Fallback: track without value (assume subscription)
@@ -308,7 +315,7 @@ function CheckoutSuccessContent() {
           });
         });
     }
-  }, [isTrial, subscriptionValue, subscriptionCurrency, sessionId, user]);
+  }, []); // Empty deps - run once on mount, ref prevents duplicate runs
 
   const handleContinue = () => {
     if (isLoggedIn) {
