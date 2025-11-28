@@ -483,8 +483,8 @@ const FeaturesSection = () => {
         color: "#FF6B35",
         rotation: cardRotations[6],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/sequencer-window.webp",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/sequencer-window-thumb.webp"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/DAW.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/DAW-thumb.webp"
         },
       },
       {
