@@ -152,6 +152,13 @@ const OriginalPrice = styled.div<{ $hasPeriod?: boolean }>`
   }
 `;
 
+const PriceContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+`;
+
 const Price = styled.span`
   font-size: 2.5rem;
   font-weight: 700;
@@ -177,7 +184,10 @@ const DiscountTag = styled.span<{ $isSale?: boolean }>`
   border-radius: 12px;
   font-size: 0.7rem;
   font-weight: 600;
+  position: absolute;
+  left: 100%;
   margin-left: 8px;
+  white-space: nowrap;
   box-shadow: ${props => props.$isSale 
     ? '0 4px 12px rgba(255, 107, 107, 0.4)' 
     : 'none'};
@@ -814,7 +824,7 @@ export default function PricingCard({
                   </OriginalPrice>
                 )}
                 <div style={{ display: "flex", alignItems: "center", flexDirection: "column", gap: "0.25rem" }}>
-                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <PriceContainer>
                     <Price>{priceDetails.display}</Price>
                     <BillingPeriod>{getPeriodText()}</BillingPeriod>
                     {priceDetails.discountText && (
@@ -822,7 +832,7 @@ export default function PricingCard({
                         {priceDetails.isSale ? '🔥 ' : ''}{priceDetails.discountText}
                       </DiscountTag>
                     )}
-                  </div>
+                  </PriceContainer>
                 </div>
               </PriceDisplay>
               {billingPeriod === "monthly" && (
