@@ -600,7 +600,7 @@ export default function PricingCard({
     showTrialOptions && 
     !hasHadStripeTrial && 
     billingPeriod !== "lifetime" &&
-    user?.profile?.subscription === "none";
+    (!user?.profile || user?.profile?.subscription === "none");
 
   // Determine if we should show the "no trial available" message
   // Show when: user has had a trial before, and billing period is not lifetime
@@ -618,7 +618,7 @@ export default function PricingCard({
     // Otherwise, only show if subscription is "none" and showTrialOptions is true
     return (
       showTrialOptions &&
-      user?.profile?.subscription === "none"
+      (!user?.profile || user?.profile?.subscription === "none")
     );
   }, [hasHadStripeTrial, showTrialOptions, billingPeriod, user?.profile?.subscription, hideButton, variant]);
 

@@ -1529,7 +1529,7 @@ const PricingSection = () => {
           <PricingCard
             billingPeriod={billingPeriod}
             onBillingPeriodChange={(period) => setBillingPeriod(period)}
-            showTrialOptions={!hasHadStripeTrial && user?.profile?.subscription === "none"}
+            showTrialOptions={!hasHadStripeTrial && (!user?.profile || user?.profile?.subscription === "none")}
           />
         </motion.div>
       </ContentContainer>
