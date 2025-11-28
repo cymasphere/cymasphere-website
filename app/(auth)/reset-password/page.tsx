@@ -341,9 +341,34 @@ function ResetPasswordClient() {
         return;
       }
 
-      // Check for code query parameter (password reset link)
-      if (searchParams.get("code")) {
-        setIsReset(true);
+      // Check for code query parameter (password reset link - PKCE flow)
+      const code = searchParams.get("code");
+      if (code) {
+        try {
+          console.log("[Reset Password] Exchanging code for session...");
+          // Exchange the code for a session
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error("[Reset Password] Error exchanging code:", exchangeError);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            return;
+          }
+
+          if (data.session) {
+            console.log("[Reset Password] Session established successfully");
+            // Clear the code from URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete("code");
+            window.history.replaceState({}, "", newUrl.toString());
+            setIsReset(true);
+          } else {
+            setError("Failed to establish session. Please request a new password reset.");
+          }
+        } catch (err) {
+          console.error("[Reset Password] Error processing reset code:", err);
+          setError("An error occurred while processing the reset link.");
+        }
         return;
       }
 
