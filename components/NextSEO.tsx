@@ -23,7 +23,7 @@ const NextSEO: React.FC<NextSEOProps> = ({
   keywords = "music, sound, visualization, audio, synthesis",
   canonical = "",
   ogType = "website",
-  ogImage = "/images/og-image.png",
+  ogImage = "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/meta/og-image.webp",
   twitterCard = "summary_large_image",
   noindex = false,
   children,

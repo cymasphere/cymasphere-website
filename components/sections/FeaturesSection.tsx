@@ -411,8 +411,8 @@ const FeaturesSection = () => {
         color: "#4A90E2",
         rotation: cardRotations[0],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/song-view.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/song-view.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/song_view.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/song_view-thumb.webp"
         },
       },
       {
@@ -423,8 +423,8 @@ const FeaturesSection = () => {
         color: "#50E3C2",
         rotation: cardRotations[1],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/palette-view.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/palette-view.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/palette_view.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/palette_view-thumb.webp"
         },
       },
       {
@@ -435,8 +435,8 @@ const FeaturesSection = () => {
         color: "#F5A623",
         rotation: cardRotations[2],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/pattern-view.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/pattern-view.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/pattern_view.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/pattern_view-thumb.webp"
         },
       },
       {
@@ -447,8 +447,8 @@ const FeaturesSection = () => {
         color: "#D0021B",
         rotation: cardRotations[3],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-view.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-view.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing_view.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing_view-thumb.webp"
         },
       },
       {
@@ -459,8 +459,8 @@ const FeaturesSection = () => {
         color: "#00BCD4",
         rotation: cardRotations[4],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/groove-generator.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/groove-generator.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/groove-generator.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/groove-generator-thumb.webp"
         },
       },
       {
@@ -471,8 +471,8 @@ const FeaturesSection = () => {
         color: "#4CAF50",
         rotation: cardRotations[5],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voice-channel-matrix.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voice-channel-matrix.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voice-channel-matrix.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voice-channel-matrix-thumb.webp"
         },
       },
       {
@@ -483,8 +483,8 @@ const FeaturesSection = () => {
         color: "#FF6B35",
         rotation: cardRotations[6],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/sequencer-window.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/sequencer-window.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/sequencer-window.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/sequencer-window-thumb.webp"
         },
       },
       {
@@ -495,8 +495,8 @@ const FeaturesSection = () => {
         color: "#9C27B0",
         rotation: cardRotations[7],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/track-types.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/track-types.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/track-types.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/track-types-thumb.webp"
         },
       },
       {
@@ -507,8 +507,8 @@ const FeaturesSection = () => {
         color: "#9013FE",
         rotation: cardRotations[8],
         image: {
-          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-track-view.png",
-          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-track-view.png"
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing-track-view.webp",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/optimized/voicing-track-view-thumb.webp"
         },
       },
     ];
