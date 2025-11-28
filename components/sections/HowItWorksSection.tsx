@@ -214,11 +214,27 @@ const WorkflowTitle = styled.h3<WorkflowTitleProps>`
     justify-content: center;
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    flex-shrink: 0;
     background: linear-gradient(135deg, var(--primary), var(--accent));
     border-radius: 50%;
     margin-right: 15px;
     font-size: 1.1rem;
     color: white;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+    
+    &:before {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      font-size: 1rem;
+      margin-right: 12px;
+    }
   }
 `;
 

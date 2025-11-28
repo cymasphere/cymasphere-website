@@ -384,7 +384,7 @@ function mapProductIdToSubscriptionType(
   productId: string
 ): "none" | "monthly" | "annual" | "lifetime" {
   // Map based on your App Store Connect product IDs
-  const productIdMap: Record<string, "monthly" | "annual" | "lifetime">> = {
+  const productIdMap: Record<string, "monthly" | "annual" | "lifetime"> = {
     "com.NNAudio.Cymasphere.basic": "lifetime", // Assuming basic is lifetime
     "com.NNAudio.Cymasphere.monthly.plan": "monthly",
     "com.NNAudio.Cymasphere.annual.plan": "annual",
