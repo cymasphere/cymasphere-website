@@ -8,6 +8,7 @@ import {
   FaFilePdf,
   FaInfoCircle,
   FaRocket,
+  FaTabletAlt,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +37,7 @@ const DownloadCard = styled.div`
   padding: 1.5rem;
   margin-bottom: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: visible;
 `;
 
 const CardTitle = styled.h3`
@@ -59,6 +61,7 @@ const DownloadsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
+  overflow: visible;
 `;
 
 const DownloadItem = styled.div`
@@ -67,7 +70,7 @@ const DownloadItem = styled.div`
   background-color: rgba(30, 30, 46, 0.5);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  overflow: visible;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
 
@@ -186,6 +189,29 @@ const DownloadButton = styled.a<{ disabled?: boolean }>`
     text-decoration: none;
     color: white;
   }
+`;
+
+const ComingSoonBadge = styled.div`
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  z-index: 10;
+  white-space: nowrap;
+`;
+
+const DownloadItemWithBadge = styled(DownloadItem)`
+  position: relative;
+  overflow: visible;
 `;
 
 const ResourcesSection = styled.div`
@@ -533,6 +559,60 @@ function Downloads() {
                 </DownloadButtonContainer>
               </DownloadDetails>
             </DownloadItem>
+
+            <DownloadItemWithBadge>
+              <ComingSoonBadge>
+                {t("dashboard.downloads.comingSoon", "Coming Soon")}
+              </ComingSoonBadge>
+              <DownloadHeader>
+                <DownloadIcon>
+                  <FaTabletAlt />
+                </DownloadIcon>
+                <DownloadInfo>
+                  <DownloadName>
+                    {t(
+                      "dashboard.downloads.ipadTitle",
+                      "Cymasphere for iPad"
+                    )}
+                  </DownloadName>
+                  <DownloadVersion>
+                    {t("dashboard.downloads.version", "Version")}{" "}
+                    {versionInfo.version}
+                  </DownloadVersion>
+                </DownloadInfo>
+              </DownloadHeader>
+              <DownloadDetails>
+                <div>
+                  <DownloadDescription>
+                    {t(
+                      "dashboard.downloads.ipadDesc",
+                      "Native iPad app with full feature set, optimized for iPad. Available soon on the App Store."
+                    )}
+                  </DownloadDescription>
+                  <DownloadMeta>
+                    <DownloadSize>—</DownloadSize>
+                    <DownloadDate>
+                      {t("dashboard.downloads.comingSoon", "Coming Soon")}
+                    </DownloadDate>
+                  </DownloadMeta>
+                </div>
+                <DownloadButtonContainer>
+                  <DownloadButton
+                    href="#"
+                    disabled={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    <FaApple />{" "}
+                    {t(
+                      "dashboard.downloads.viewOnAppStore",
+                      "View on App Store"
+                    )}
+                  </DownloadButton>
+                </DownloadButtonContainer>
+              </DownloadDetails>
+            </DownloadItemWithBadge>
           </DownloadsGrid>
         </CardContent>
       </DownloadCard>
