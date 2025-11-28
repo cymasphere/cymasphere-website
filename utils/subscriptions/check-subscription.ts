@@ -38,6 +38,16 @@ export async function checkUserSubscription(
     const nfrCheck = await checkUserManagementPro(profile.email);
     if (!nfrCheck.error && nfrCheck.hasPro) {
       console.log(`[checkUserSubscription] NFR access granted for ${profile.email}`);
+      
+      // Update profile with NFR lifetime access
+      await supabase
+        .from("profiles")
+        .update({
+          subscription: "lifetime",
+          subscription_expiration: null,
+        })
+        .eq("id", userId);
+      
       return {
         subscription: "lifetime",
         subscriptionExpiration: null,

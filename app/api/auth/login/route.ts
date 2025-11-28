@@ -161,6 +161,12 @@ export async function POST(
           const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
           const subscriptionCheck = await checkUserSubscription(user.id);
 
+          console.log(`[Login] Subscription check for ${user.email}:`, {
+            subscription: subscriptionCheck.subscription,
+            source: subscriptionCheck.source,
+            expiration: subscriptionCheck.subscriptionExpiration,
+          });
+
           // Update profile with subscription info
           const finalProfileWithSubscription = {
             ...profile,
@@ -169,13 +175,16 @@ export async function POST(
             email: user.email,
           };
 
+          console.log(`[Login] Returning profile with subscription: ${finalProfileWithSubscription.subscription}`);
+
           return ok(
             finalProfileWithSubscription,
             session.access_token,
             session.refresh_token,
             session.expires_at || null
           );
-        } catch {
+        } catch (error) {
+          console.error("[Login] Error checking subscription:", error);
           // Continue with original profile if subscription check fails
         }
 
