@@ -92,7 +92,7 @@ export default function RootLayout({
   children
 }: RootLayoutProps) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${montserrat.variable}`} suppressHydrationWarning>
       <head>
         {/* Preload critical resources */}
         <link

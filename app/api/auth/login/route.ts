@@ -155,24 +155,35 @@ export async function POST(
       }
 
       if (profile) {
-        // Check and update Stripe subscription status
+        // Check and update subscription status (both Stripe and iOS)
         try {
+          // First check Stripe
           const { success, profile: updatedProfile } = await updateStripe(
             user.email!,
             profile
           );
 
-          if (success && updatedProfile) {
-            // Use the updated profile from Stripe check
-            return ok(
-              { ...updatedProfile, email: user.email },
-              session.access_token,
-              session.refresh_token,
-              session.expires_at || null
-            );
-          }
+          // Then check iOS subscriptions and merge
+          const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
+          const subscriptionCheck = await checkUserSubscription(user.id);
+
+          // Use the subscription check result (it already updates the profile)
+          const finalProfile = updatedProfile || profile;
+          const finalProfileWithSubscription = {
+            ...finalProfile,
+            subscription: subscriptionCheck.subscription,
+            subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
+            email: user.email,
+          };
+
+          return ok(
+            finalProfileWithSubscription,
+            session.access_token,
+            session.refresh_token,
+            session.expires_at || null
+          );
         } catch {
-          // Continue with original profile if Stripe update fails
+          // Continue with original profile if subscription check fails
         }
 
         return ok(

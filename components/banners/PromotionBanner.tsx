@@ -521,6 +521,11 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
     }
     
     setIsClosed(true);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('promotionBannerDismissed', { 
+      detail: { promotionId: sale.id } 
+    }));
   };
 
   const getButtonText = () => {

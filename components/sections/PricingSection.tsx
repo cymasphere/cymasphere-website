@@ -1384,19 +1384,76 @@ const PricingSection = () => {
 
   // Check for active sale (fetched by banner component)
   const [hasActiveSale, setHasActiveSale] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   useEffect(() => {
     const checkActiveSale = async () => {
       try {
         const response = await fetch('/api/promotions/active');
         const data = await response.json();
-        setHasActiveSale(data.success && data.promotion);
+        
+        if (data.success && data.promotion) {
+          // Check if the promotion banner has been dismissed
+          const closedBanners = localStorage.getItem('closedPromotionBanners');
+          if (closedBanners) {
+            try {
+              const closedIds = JSON.parse(closedBanners);
+              if (closedIds.includes(data.promotion.id)) {
+                setIsBannerDismissed(true);
+              } else {
+                setIsBannerDismissed(false);
+              }
+            } catch (e) {
+              setIsBannerDismissed(false);
+            }
+          } else {
+            setIsBannerDismissed(false);
+          }
+          
+          setHasActiveSale(true);
+        } else {
+          setHasActiveSale(false);
+          setIsBannerDismissed(false);
+        }
       } catch (error) {
         console.error('Error checking active sale:', error);
+        setHasActiveSale(false);
+        setIsBannerDismissed(false);
       }
     };
 
     checkActiveSale();
+    
+    // Listen for storage changes to update when banner is dismissed (cross-tab)
+    const handleStorageChange = () => {
+      checkActiveSale();
+    };
+    
+    // Listen for custom event when banner is dismissed in same window
+    const handleBannerDismissed = () => {
+      // Immediately check localStorage to update state
+      const closedBanners = localStorage.getItem('closedPromotionBanners');
+      if (closedBanners) {
+        try {
+          const closedIds = JSON.parse(closedBanners);
+          // Re-check active sale to get current promotion ID and update state
+          checkActiveSale();
+        } catch (e) {
+          // Fallback to full check
+          checkActiveSale();
+        }
+      } else {
+        setIsBannerDismissed(false);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('promotionBannerDismissed', handleBannerDismissed);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('promotionBannerDismissed', handleBannerDismissed);
+    };
   }, []);
 
   return (
@@ -1415,8 +1472,8 @@ const PricingSection = () => {
             {t("pricing.simpleTransparent", "Simple, Transparent Pricing")}
           </SectionTitle>
 
-          {/* Promotional Sale Banner */}
-          {hasActiveSale && <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
+          {/* Promotional Sale Banner - Only show if header banner has been dismissed (to avoid duplicate) */}
+          {hasActiveSale && isBannerDismissed && <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (
