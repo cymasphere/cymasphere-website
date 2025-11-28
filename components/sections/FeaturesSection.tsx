@@ -114,7 +114,7 @@ const FeatureDescription = styled.p`
   transition: all 0.3s ease;
 `;
 
-const FeatureCard = styled(motion.div)<{ $rotation?: number }>`
+const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string }>`
   background: linear-gradient(
     ${props => props.$rotation || 165}deg,
     rgba(15, 14, 23, 0.98) 0%,
@@ -139,7 +139,27 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number }>`
   will-change: transform, box-shadow;
   backface-visibility: hidden;
 
+  /* Background image layer - static, no hover effects */
   &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: ${props => props.$imageUrl ? `url("${props.$imageUrl}")` : 'none'};
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 16px;
+    transition: none; /* No transition on hover */
+  }
+
+  /* Gradient overlay layer - static, no hover effects */
+  &::after {
     content: "";
     position: absolute;
     top: 0;
@@ -156,43 +176,20 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number }>`
         rgba(78, 205, 196, 0.1),
         transparent 50%
       );
-    z-index: 0;
+    z-index: 1;
     pointer-events: none;
     border-radius: 16px;
-  }
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-      circle at center,
-      rgba(108, 99, 255, 0.2) 0%,
-      transparent 70%
-    );
-    opacity: 0;
-    transform: scale(0.5);
-    z-index: -1;
-    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    will-change: opacity, transform;
+    transition: none; /* No transition on hover */
   }
 
   > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   &:hover {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     transform: translateY(-10px) translateZ(0);
-
-    &:after {
-      opacity: 0.8;
-      transform: scale(1.2);
-    }
 
     ${FeatureIcon} {
       transform: translateY(-5px) scale(1.05);
@@ -413,6 +410,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("songBuilder"),
         color: "#4A90E2",
         rotation: cardRotations[0],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/song-view.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/song-view.png"
+        },
       },
       {
         icon: <FaVolumeUp />,
@@ -421,6 +422,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("harmonyPalettes"),
         color: "#50E3C2",
         rotation: cardRotations[1],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/palette-view.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/palette-view.png"
+        },
       },
       {
         icon: <FaWaveSquare />,
@@ -429,6 +434,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("patternEditor"),
         color: "#F5A623",
         rotation: cardRotations[2],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/pattern-view.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/pattern-view.png"
+        },
       },
       {
         icon: <FaMusic />,
@@ -437,6 +446,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("voicingGenerator"),
         color: "#D0021B",
         rotation: cardRotations[3],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-view.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-view.png"
+        },
       },
       {
         icon: <GiBrain />,
@@ -445,6 +458,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("intelligentGeneration"),
         color: "#00BCD4",
         rotation: cardRotations[4],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/groove-generator.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/groove-generator.png"
+        },
       },
       {
         icon: <FaPuzzlePiece />,
@@ -453,6 +470,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("voiceHandling"),
         color: "#4CAF50",
         rotation: cardRotations[5],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voice-channel-matrix.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voice-channel-matrix.png"
+        },
       },
       {
         icon: <FaPlug />,
@@ -461,6 +482,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("dawIntegration"),
         color: "#FF6B35",
         rotation: cardRotations[6],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/sequencer-window.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/sequencer-window.png"
+        },
       },
       {
         icon: <FaList />,
@@ -469,6 +494,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("specializedTrackTypes"),
         color: "#9C27B0",
         rotation: cardRotations[7],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/track-types.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/track-types.png"
+        },
       },
       {
         icon: <FaClock />,
@@ -477,6 +506,10 @@ const FeaturesSection = () => {
         detailedDescription: formatDetailedDescription("progressionTimeline"),
         color: "#9013FE",
         rotation: cardRotations[8],
+        image: {
+          webp: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-track-view.png",
+          png: "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/feature-images/screenshots/voicing-track-view.png"
+        },
       },
     ];
   }, [t, currentLocale, i18n.language, cardRotations]);
@@ -504,6 +537,7 @@ const FeaturesSection = () => {
               viewport={{ once: true, margin: "-50px" }}
               variants={cardVariants}
               $rotation={feature.rotation}
+              $imageUrl={feature.image?.png || feature.image?.webp}
               onClick={() => {
                 setSelectedFeature(index);
                 setModalOpen(true);

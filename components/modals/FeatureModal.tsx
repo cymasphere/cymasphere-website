@@ -922,7 +922,7 @@ const LoadingWrapper = styled.div`
 interface Feature {
   title: string;
   detailedDescription?: string | React.ReactElement;
-  image?: string;
+  image?: { webp: string; png: string } | string; // Support both new object format and legacy string format
   // Add any other properties a feature might have
 }
 
@@ -1057,10 +1057,24 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
   }, [touchStart, touchEnd, features.length, handleNext, handlePrevious]);
 
   // Lazy load images only when needed (optimized)
-  const loadImage = useCallback((title: string, featureImage?: string) => {
+  const loadImage = useCallback((title: string, featureImage?: { webp: string; png: string } | string) => {
     if (imagesLoaded[title] || imageErrors[title]) return; // Already loaded or failed
     
-    const imagePaths = featureImage ? { webp: featureImage, png: featureImage } : getImagePath(title);
+    // Handle new image object format or legacy string format
+    let imagePaths: { webp: string; png: string } | null = null;
+    if (featureImage) {
+      if (typeof featureImage === 'string') {
+        // Legacy format: single string
+        imagePaths = { webp: featureImage, png: featureImage };
+      } else {
+        // New format: object with webp and png
+        imagePaths = featureImage;
+      }
+    } else {
+      // Fallback to title-based lookup
+      imagePaths = getImagePath(title);
+    }
+    
     if (!imagePaths) {
       return;
     }
@@ -1163,11 +1177,18 @@ const FeatureModal: React.FC<FeatureModalProps> = React.memo(({
   const currentFeature = useMemo(() => features[currentIndex] || {}, [features, currentIndex]);
   const { title, detailedDescription, image: featureImage } = currentFeature;
 
-  // Memoize image paths and loading state
-  const imagePaths = useMemo(() => 
-    featureImage ? { webp: featureImage, png: featureImage } : getImagePath(title),
-    [featureImage, title]
-  );
+  // Memoize image paths - prefer feature image property, fallback to title lookup
+  const imagePaths = useMemo(() => {
+    if (featureImage) {
+      // Handle new object format or legacy string format
+      if (typeof featureImage === 'string') {
+        return { webp: featureImage, png: featureImage };
+      }
+      return featureImage; // Already has webp and png
+    }
+    // Fallback to title-based lookup for backwards compatibility
+    return getImagePath(title);
+  }, [featureImage, title]);
   const isImageLoaded = imagesLoaded[title] || false;
   const hasImageError = imageErrors[title] || false;
 
