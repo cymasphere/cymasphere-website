@@ -10,6 +10,7 @@ import {
   FaCrown,
   FaGift,
   FaExternalLinkAlt,
+  FaApple,
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { SubscriptionType } from "@/utils/supabase/types";
@@ -54,6 +55,7 @@ interface ProfileWithSubscriptionDetails {
   last_name: string | null;
   subscription: SubscriptionType;
   subscription_interval?: "month" | "year" | null;
+  subscription_source?: "stripe" | "ios" | "nfr" | "none" | null;
   cancel_at_period_end?: boolean;
   trial_expiration: string | null;
   subscription_expiration: string | null;
@@ -1113,6 +1115,19 @@ export default function BillingPage() {
                         "dashboard.billing.paidPlanDesc",
                         "Full access to all premium features and content"
                       )}
+                  {userSubscription.subscription_source === "ios" && (
+                    <div style={{ 
+                      marginTop: "0.5rem", 
+                      fontSize: "0.85rem", 
+                      color: "var(--text-secondary)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.25rem"
+                    }}>
+                      <FaApple style={{ fontSize: "0.9rem" }} />
+                      <span>{t("dashboard.billing.appStoreSubscription", "Subscription managed through App Store")}</span>
+                    </div>
+                  )}
                 </PlanDescription>
               </div>
 

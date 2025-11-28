@@ -22,7 +22,7 @@ export async function checkUserManagementPro(
     const { data, error } = await supabase
       .from("user_management")
       .select("pro, notes")
-      .eq("user_email", email)
+      .ilike("user_email", email) // Case-insensitive match
       .single();
 
     if (error) {

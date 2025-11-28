@@ -21,7 +21,7 @@ export async function checkUserSubscription(
   // Get user's profile and email
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("customer_id, email")
+    .select("customer_id, email, subscription, subscription_expiration")
     .eq("id", userId)
     .single();
 
@@ -34,17 +34,23 @@ export async function checkUserSubscription(
   }
 
   // CHECK NFR STATUS FIRST (highest priority)
+  // NFR licenses are free elite access licenses managed in user_management table
+  // When NFR is detected, update subscription field so app recognizes access
+  // NFR grants lifetime access (free permanent license)
   if (profile.email) {
     const nfrCheck = await checkUserManagementPro(profile.email);
+    console.log(`[checkUserSubscription] NFR check for ${profile.email}:`, { hasPro: nfrCheck.hasPro, error: nfrCheck.error });
+    
     if (!nfrCheck.error && nfrCheck.hasPro) {
       console.log(`[checkUserSubscription] NFR access granted for ${profile.email}`);
       
-      // Update profile with NFR lifetime access
+      // NFR grants lifetime access - update subscription field so app recognizes it
       await supabase
         .from("profiles")
         .update({
           subscription: "lifetime",
           subscription_expiration: null,
+          subscription_source: "nfr",
         })
         .eq("id", userId);
       
@@ -54,6 +60,7 @@ export async function checkUserSubscription(
         source: "nfr",
       };
     }
+    // If NFR check returns false, continue to check iOS/Stripe below
   }
 
   // Check iOS subscriptions first
@@ -138,12 +145,13 @@ export async function checkUserSubscription(
     source = "none";
   }
 
-  // Update profile with final subscription status
+  // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
     .from("profiles")
     .update({
       subscription: finalSubscription,
       subscription_expiration: finalExpiration?.toISOString() || null,
+      subscription_source: source,
     })
     .eq("id", userId);
 

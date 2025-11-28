@@ -167,13 +167,14 @@ export async function POST(
             expiration: subscriptionCheck.subscriptionExpiration,
           });
 
-          // Update profile with subscription info
-          const finalProfileWithSubscription = {
-            ...profile,
-            subscription: subscriptionCheck.subscription,
-            subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
-            email: user.email,
-          };
+                 // Update profile with subscription info
+                 const finalProfileWithSubscription = {
+                   ...profile,
+                   subscription: subscriptionCheck.subscription,
+                   subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
+                   subscription_source: subscriptionCheck.source,
+                   email: user.email,
+                 };
 
           console.log(`[Login] Returning profile with subscription: ${finalProfileWithSubscription.subscription}`);
 

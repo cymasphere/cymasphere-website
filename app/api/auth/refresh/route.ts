@@ -119,30 +119,38 @@ export async function POST(
       }
 
       if (profile) {
-        // Check authorization from all sources (NFR, Stripe, iOS)
+        // Check and update subscription status (NFR, Stripe, and iOS)
         try {
-          const { checkUnifiedAuthorization } = await import("@/utils/subscriptions/unified-auth-check");
-          const authResult = await checkUnifiedAuthorization(user.id, user.email!);
+          // Use comprehensive check that handles NFR, Stripe, and iOS
+          const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
+          const subscriptionCheck = await checkUserSubscription(user.id);
 
-          // Use the unified auth check result (it already updates the profile)
-          const finalProfile = {
+          console.log(`[Refresh] Subscription check for ${user.email}:`, {
+            subscription: subscriptionCheck.subscription,
+            source: subscriptionCheck.source,
+            expiration: subscriptionCheck.subscriptionExpiration,
+          });
+
+          // Update profile with subscription info
+          const finalProfileWithSubscription = {
             ...profile,
-            subscription: authResult.subscription,
-            subscription_expiration: authResult.subscriptionExpiration?.toISOString() || null,
+            subscription: subscriptionCheck.subscription,
+            subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
+            subscription_source: subscriptionCheck.source,
             email: user.email,
           };
 
-          console.log(`Token refresh: User ${user.email} authorized via ${authResult.source}: ${authResult.subscription}`);
+          console.log(`[Refresh] Returning profile with subscription: ${finalProfileWithSubscription.subscription}`);
 
           return ok(
-            finalProfile,
+            finalProfileWithSubscription,
             session.access_token,
             session.refresh_token,
             session.expires_at || null
           );
         } catch (error) {
-          console.error("Error checking unified authorization:", error);
-          // Continue with original profile if auth check fails
+          console.error("[Refresh] Error checking subscription:", error);
+          // Continue with original profile if subscription check fails
         }
 
         return ok(
