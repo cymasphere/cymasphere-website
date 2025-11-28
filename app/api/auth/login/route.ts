@@ -155,22 +155,15 @@ export async function POST(
       }
 
       if (profile) {
-        // Check and update subscription status (both Stripe and iOS)
+        // Check and update subscription status (NFR, Stripe, and iOS)
         try {
-          // First check Stripe
-          const { success, profile: updatedProfile } = await updateStripe(
-            user.email!,
-            profile
-          );
-
-          // Then check iOS subscriptions and merge
+          // Use comprehensive check that handles NFR, Stripe, and iOS
           const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
           const subscriptionCheck = await checkUserSubscription(user.id);
 
-          // Use the subscription check result (it already updates the profile)
-          const finalProfile = updatedProfile || profile;
+          // Update profile with subscription info
           const finalProfileWithSubscription = {
-            ...finalProfile,
+            ...profile,
             subscription: subscriptionCheck.subscription,
             subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
             email: user.email,

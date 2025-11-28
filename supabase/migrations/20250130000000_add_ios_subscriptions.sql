@@ -107,3 +107,4 @@ COMMENT ON COLUMN ios_subscriptions.product_id IS 'Product ID from App Store Con
 COMMENT ON COLUMN ios_subscriptions.receipt_data IS 'Base64 encoded receipt data for validation';
 COMMENT ON COLUMN ios_subscriptions.validation_status IS 'Status of receipt validation: valid, expired, revoked, invalid';
 
+

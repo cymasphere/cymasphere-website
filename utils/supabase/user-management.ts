@@ -16,7 +16,8 @@ export async function checkUserManagementPro(
   email: string
 ): Promise<{ hasPro: boolean; notes: string | null; error: Error | null }> {
   try {
-    const supabase = await createClient();
+    // Use service role to bypass RLS for user_management table
+    const supabase = await createSupabaseServiceRole();
     
     const { data, error } = await supabase
       .from("user_management")

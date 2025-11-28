@@ -393,3 +393,4 @@ function mapProductIdToSubscriptionType(
   return productIdMap[productId] || "none";
 }
 
+

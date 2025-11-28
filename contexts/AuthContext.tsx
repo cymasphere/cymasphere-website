@@ -77,9 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (profile) {
-          // Check Stripe subscription status
+          // Check Stripe and NFR subscription status
           const { success, profile: updatedProfile } = await updateStripe(
-            session.user.email!,
             profile
           );
 

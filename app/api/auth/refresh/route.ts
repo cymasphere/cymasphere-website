@@ -119,25 +119,30 @@ export async function POST(
       }
 
       if (profile) {
-        // Check and update Stripe subscription status
+        // Check authorization from all sources (NFR, Stripe, iOS)
         try {
-          const { success, profile: updatedProfile } = await updateStripe(
-            user.email!,
-            profile
-          );
+          const { checkUnifiedAuthorization } = await import("@/utils/subscriptions/unified-auth-check");
+          const authResult = await checkUnifiedAuthorization(user.id, user.email!);
 
-          if (success && updatedProfile) {
-            // Use the updated profile from Stripe check
-            return ok(
-              { ...updatedProfile, email: user.email },
-              session.access_token,
-              session.refresh_token,
-              session.expires_at || null
-            );
-          }
-        } catch (stripeError) {
-          console.error("Error updating Stripe data:", stripeError);
-          // Continue with original profile if Stripe update fails
+          // Use the unified auth check result (it already updates the profile)
+          const finalProfile = {
+            ...profile,
+            subscription: authResult.subscription,
+            subscription_expiration: authResult.subscriptionExpiration?.toISOString() || null,
+            email: user.email,
+          };
+
+          console.log(`Token refresh: User ${user.email} authorized via ${authResult.source}: ${authResult.subscription}`);
+
+          return ok(
+            finalProfile,
+            session.access_token,
+            session.refresh_token,
+            session.expires_at || null
+          );
+        } catch (error) {
+          console.error("Error checking unified authorization:", error);
+          // Continue with original profile if auth check fails
         }
 
         return ok(

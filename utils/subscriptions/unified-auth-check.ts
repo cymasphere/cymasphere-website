@@ -2,26 +2,55 @@
 
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
-import { SubscriptionType } from "@/utils/supabase/types";
 import { checkUserManagementPro } from "@/utils/supabase/user-management";
+import { SubscriptionType } from "@/utils/supabase/types";
 
-/**
- * Comprehensive subscription check that includes NFR, Stripe, and iOS subscriptions
- * Returns the highest priority subscription (lifetime > annual > monthly > none)
- */
-export async function checkUserSubscription(
-  userId: string
-): Promise<{
+export type AuthorizationSource = "nfr" | "stripe" | "ios" | "none";
+
+export interface AuthorizationResult {
   subscription: SubscriptionType;
   subscriptionExpiration: Date | null;
-  source: "stripe" | "ios" | "nfr" | "none";
-}> {
+  source: AuthorizationSource;
+  isAuthorized: boolean;
+}
+
+/**
+ * Comprehensive authorization check that checks all three sources:
+ * 1. NFR (Not For Resale) via user_management table
+ * 2. Stripe subscriptions via stripe_tables
+ * 3. iOS subscriptions via ios_subscriptions table
+ * 
+ * Priority order: NFR (lifetime) > iOS/Stripe (by subscription type and expiration)
+ * 
+ * @param userId User ID from auth.users
+ * @param email User's email address
+ * @returns Authorization result with subscription type and source
+ */
+export async function checkUnifiedAuthorization(
+  userId: string,
+  email: string
+): Promise<AuthorizationResult> {
   const supabase = await createSupabaseServiceRole();
 
-  // Get user's profile and email
+  // Priority 1: Check NFR (user_management table)
+  // If user has NFR, they have lifetime access regardless of other subscriptions
+  const nfrCheck = await checkUserManagementPro(email);
+  
+  if (!nfrCheck.error && nfrCheck.hasPro) {
+    // User has NFR - this is lifetime access and takes highest priority
+    return {
+      subscription: "lifetime",
+      subscriptionExpiration: null,
+      source: "nfr",
+      isAuthorized: true,
+    };
+  }
+
+  // Priority 2 & 3: Check iOS and Stripe subscriptions
+  // Get user's profile for customer_id
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("customer_id, email")
+    .select("customer_id")
     .eq("id", userId)
     .single();
 
@@ -30,23 +59,11 @@ export async function checkUserSubscription(
       subscription: "none",
       subscriptionExpiration: null,
       source: "none",
+      isAuthorized: false,
     };
   }
 
-  // CHECK NFR STATUS FIRST (highest priority)
-  if (profile.email) {
-    const nfrCheck = await checkUserManagementPro(profile.email);
-    if (!nfrCheck.error && nfrCheck.hasPro) {
-      console.log(`[checkUserSubscription] NFR access granted for ${profile.email}`);
-      return {
-        subscription: "lifetime",
-        subscriptionExpiration: null,
-        source: "nfr",
-      };
-    }
-  }
-
-  // Check iOS subscriptions first
+  // Check iOS subscriptions
   const { data: iosSubscriptions, error: iosError } = await supabase
     .from("ios_subscriptions")
     .select("subscription_type, expires_date")
@@ -60,7 +77,6 @@ export async function checkUserSubscription(
   let iosExpiration: Date | null = null;
 
   if (!iosError && iosSubscriptions && iosSubscriptions.length > 0) {
-    // Get the subscription with the longest expiry (highest priority)
     const activeIOS = iosSubscriptions[0];
     iosSubscription = activeIOS.subscription_type as SubscriptionType;
     iosExpiration = new Date(activeIOS.expires_date);
@@ -91,7 +107,7 @@ export async function checkUserSubscription(
 
   let finalSubscription: SubscriptionType;
   let finalExpiration: Date | null;
-  let source: "nfr" | "stripe" | "ios" | "none";
+  let source: AuthorizationSource;
 
   if (iosPriority > stripePriority) {
     finalSubscription = iosSubscription;
@@ -141,7 +157,75 @@ export async function checkUserSubscription(
     subscription: finalSubscription,
     subscriptionExpiration: finalExpiration,
     source,
+    isAuthorized: finalSubscription !== "none",
   };
 }
 
+/**
+ * Get all active subscriptions for a user (for debugging/display purposes)
+ */
+export async function getAllUserSubscriptions(
+  userId: string,
+  email: string
+): Promise<{
+  nfr: { hasPro: boolean; notes: string | null } | null;
+  stripe: { subscription: SubscriptionType; expiresDate: Date | null } | null;
+  ios: { subscription: SubscriptionType; expiresDate: Date | null } | null;
+  final: AuthorizationResult;
+}> {
+  const supabase = await createSupabaseServiceRole();
+
+  // Check NFR
+  const nfrCheck = await checkUserManagementPro(email);
+  const nfr = !nfrCheck.error && nfrCheck.hasPro
+    ? { hasPro: true, notes: nfrCheck.notes }
+    : null;
+
+  // Check Stripe
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("customer_id")
+    .eq("id", userId)
+    .single();
+
+  let stripe: { subscription: SubscriptionType; expiresDate: Date | null } | null = null;
+  if (profile?.customer_id) {
+    const stripeResult = await customerPurchasedProFromSupabase(profile.customer_id);
+    if (stripeResult.success && stripeResult.subscription !== "none") {
+      stripe = {
+        subscription: stripeResult.subscription,
+        expiresDate: stripeResult.subscription_expiration || null,
+      };
+    }
+  }
+
+  // Check iOS
+  const { data: iosSubscriptions } = await supabase
+    .from("ios_subscriptions")
+    .select("subscription_type, expires_date")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .eq("validation_status", "valid")
+    .gt("expires_date", new Date().toISOString())
+    .order("expires_date", { ascending: false })
+    .limit(1);
+
+  let ios: { subscription: SubscriptionType; expiresDate: Date | null } | null = null;
+  if (iosSubscriptions && iosSubscriptions.length > 0) {
+    ios = {
+      subscription: iosSubscriptions[0].subscription_type as SubscriptionType,
+      expiresDate: new Date(iosSubscriptions[0].expires_date),
+    };
+  }
+
+  // Get final authorization
+  const final = await checkUnifiedAuthorization(userId, email);
+
+  return {
+    nfr,
+    stripe,
+    ios,
+    final,
+  };
+}
 
