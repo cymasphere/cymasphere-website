@@ -37,20 +37,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean receipt data - remove any whitespace/newlines that might have been added
-    const cleanedReceiptData = receiptData.trim().replace(/\s/g, '');
+    // Base64 strings should not have whitespace, but we preserve the original for comparison
+    let cleanedReceiptData = receiptData.trim().replace(/\s/g, '');
     console.log("[validate-receipt] Cleaned receipt data length:", cleanedReceiptData.length);
+    console.log("[validate-receipt] Original receipt data length:", receiptData.length);
     
-    // Validate that receipt data is valid base64
+    // Validate that receipt data is valid base64 and fix any padding issues
     try {
       const decoded = Buffer.from(cleanedReceiptData, 'base64');
       console.log("[validate-receipt] Receipt data is valid base64, decoded size:", decoded.length, "bytes");
-      // Re-encode to ensure it's properly formatted
+      
+      // Re-encode to ensure it's properly formatted (this fixes any padding issues)
       const reencoded = decoded.toString('base64');
       if (reencoded !== cleanedReceiptData) {
-        console.log("[validate-receipt] WARNING - Receipt data re-encoding doesn't match original (may have padding issues)");
+        console.log("[validate-receipt] WARNING - Receipt data re-encoding doesn't match original (fixing padding issues)");
+        console.log("[validate-receipt] Original length:", cleanedReceiptData.length, "Re-encoded length:", reencoded.length);
+        // Use the properly re-encoded version to ensure correct padding
+        cleanedReceiptData = reencoded;
+        console.log("[validate-receipt] Using re-encoded receipt data with proper padding");
+      } else {
+        console.log("[validate-receipt] Receipt data padding is correct");
       }
     } catch (base64Error) {
       console.error("[validate-receipt] ERROR - Receipt data is NOT valid base64:", base64Error);
+      console.error("[validate-receipt] Receipt data preview (first 100 chars):", receiptData.substring(0, 100));
       return NextResponse.json(
         { error: "Invalid receipt data format (not valid base64)" },
         { status: 400 }
@@ -108,6 +118,27 @@ export async function POST(request: NextRequest) {
     }
     
     console.log("[validate-receipt] Apple validation successful, proceeding to extract subscription info...");
+
+    // Validate bundle ID to ensure receipt is from the correct app
+    const expectedBundleId = "com.NNAudio.Cymasphere";
+    const receiptBundleId = validationResult.appleResponse?.receipt?.bundle_id;
+    
+    if (receiptBundleId && receiptBundleId !== expectedBundleId) {
+      console.log("[validate-receipt] ERROR - Bundle ID mismatch!");
+      console.log("[validate-receipt] Expected:", expectedBundleId);
+      console.log("[validate-receipt] Received:", receiptBundleId);
+      return NextResponse.json(
+        { 
+          error: "Receipt bundle ID does not match expected app",
+          details: `Expected ${expectedBundleId}, got ${receiptBundleId}`
+        },
+        { status: 400 }
+      );
+    } else if (!receiptBundleId) {
+      console.log("[validate-receipt] WARNING - No bundle_id in Apple response, skipping bundle ID validation");
+    } else {
+      console.log("[validate-receipt] Bundle ID validated successfully:", receiptBundleId);
+    }
 
     // Extract subscription information from Apple's response
     console.log("Extracting subscription info from Apple response...");
@@ -380,6 +411,16 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
         console.log("[validate-receipt] Apple response keys:", Object.keys(result));
         return { valid: true, appleResponse: result };
       }
+      // If still 21004 with secret, might be wrong environment - try production
+      if (result.status === 21004) {
+        console.log("[validate-receipt] Still got 21004 with secret, trying production URL as fallback...");
+        result = await validateWithURL("https://buy.itunes.apple.com/verifyReceipt", true);
+        console.log("[validate-receipt] Production validation (after 21004) result status:", result.status);
+        if (result.status === 0) {
+          console.log("[validate-receipt] Receipt validated successfully with production (after 21004)");
+          return { valid: true, appleResponse: result };
+        }
+      }
     }
     
     // Status 21007 = receipt is from production but we tried sandbox
@@ -406,6 +447,51 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
 
     console.log("[validate-receipt] Final validation failed with status:", result.status);
     console.log("[validate-receipt] Full Apple response:", JSON.stringify(result, null, 2));
+    
+    // Log ALL available fields from Apple response (even on error)
+    console.log("[validate-receipt] Apple response keys:", Object.keys(result));
+    console.log("[validate-receipt] Apple response status:", result.status);
+    console.log("[validate-receipt] Apple response environment:", result.environment);
+    
+    // Log receipt bundle ID if available (even in error response)
+    if (result.receipt) {
+      console.log("[validate-receipt] Receipt object exists, keys:", Object.keys(result.receipt));
+      if (result.receipt.bundle_id) {
+        console.log("[validate-receipt] Receipt bundle ID from Apple:", result.receipt.bundle_id);
+        console.log("[validate-receipt] Expected bundle ID: com.NNAudio.Cymasphere");
+        console.log("[validate-receipt] Bundle ID match:", result.receipt.bundle_id === "com.NNAudio.Cymasphere");
+        if (result.receipt.bundle_id !== "com.NNAudio.Cymasphere") {
+          console.log("[validate-receipt] *** BUNDLE ID MISMATCH DETECTED ***");
+          console.log("[validate-receipt] Receipt has:", result.receipt.bundle_id);
+          console.log("[validate-receipt] Expected:", "com.NNAudio.Cymasphere");
+        }
+      } else {
+        console.log("[validate-receipt] WARNING - No bundle_id in receipt object");
+      }
+      if (result.receipt.application_version) {
+        console.log("[validate-receipt] Receipt app version:", result.receipt.application_version);
+      }
+      if (result.receipt.original_application_version) {
+        console.log("[validate-receipt] Receipt original app version:", result.receipt.original_application_version);
+      }
+    } else {
+      console.log("[validate-receipt] WARNING - No receipt object in Apple response");
+    }
+    
+    // Log if receipt has any subscription data
+    if (result.receipt && result.receipt.in_app) {
+      console.log("[validate-receipt] Receipt contains", result.receipt.in_app.length, "in-app purchases");
+      if (result.receipt.in_app.length > 0) {
+        console.log("[validate-receipt] First IAP product_id:", result.receipt.in_app[0].product_id);
+      }
+    }
+    
+    if (result.latest_receipt_info) {
+      console.log("[validate-receipt] Receipt contains", result.latest_receipt_info.length, "latest receipt info items");
+      if (result.latest_receipt_info.length > 0) {
+        console.log("[validate-receipt] First latest_receipt_info product_id:", result.latest_receipt_info[0].product_id);
+      }
+    }
     
     // Special handling for 21004 - might mean receipt is invalid/expired or wrong app
     if (result.status === 21004) {
@@ -443,6 +529,21 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     let errorMessage = `Apple validation failed with status: ${result.status}`;
     if (result.status === 21004) {
       errorMessage += '. Receipt may be invalid, expired, or from a different app/bundle ID.';
+      
+      // Include bundle ID information if available (even in error response)
+      if (result.receipt && result.receipt.bundle_id) {
+        const receiptBundleId = result.receipt.bundle_id;
+        const expectedBundleId = "com.NNAudio.Cymasphere";
+        errorMessage += ` Receipt bundle ID: "${receiptBundleId}"`;
+        if (receiptBundleId !== expectedBundleId) {
+          errorMessage += ` (Expected: "${expectedBundleId}") - BUNDLE ID MISMATCH!`;
+        } else {
+          errorMessage += ' (matches expected bundle ID)';
+        }
+      } else {
+        errorMessage += ' (No bundle ID in Apple response - receipt may be completely invalid)';
+      }
+      
       errorMessage += ' For sandbox testing, verify in App Store Connect:';
       errorMessage += ' 1. The app is created (even if not submitted) with bundle ID "com.NNAudio.Cymasphere"';
       errorMessage += ' 2. The in-app purchases are created:';

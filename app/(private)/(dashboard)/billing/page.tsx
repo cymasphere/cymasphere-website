@@ -847,8 +847,34 @@ export default function BillingPage() {
     setWillProvideCard(newValue);
   };
 
-  // Update the handleManageBilling function to show loading state
+  // Handle "Manage Billing" depending on subscription source
   const handleManageBilling = async () => {
+    // If subscription is managed through the iOS App Store, send the user there
+    if (userSubscription.subscription_source === "ios") {
+      // For App Store subscriptions, billing is managed in the App Store / Apple ID settings,
+      // not via Stripe. Redirect to Apple's subscriptions management page.
+      try {
+        window.location.href = "https://apps.apple.com/account/subscriptions";
+      } catch {
+        // If redirect fails for some reason, fall back to an explanatory message.
+        setConfirmationTitle(
+          t(
+            "dashboard.billing.appStoreManageTitle",
+            "Manage Subscription in App Store"
+          )
+        );
+        setConfirmationMessage(
+          t(
+            "dashboard.billing.appStoreManageMessage",
+            "This subscription is billed through the Apple App Store. Open the App Store on your device, tap your account avatar, then tap Subscriptions to manage or cancel."
+          )
+        );
+        setShowConfirmationModal(true);
+      }
+      return;
+    }
+
+    // Stripe / web-managed subscriptions
     if (!user?.profile?.customer_id) {
       setConfirmationTitle("Error");
       setConfirmationMessage("No customer account found.");
