@@ -241,43 +241,57 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
   try {
     // Always try sandbox first for testing, then production if needed
     // Apple error 21007 means receipt is from sandbox but sent to production (or vice versa)
+    // Error 21004 means shared secret doesn't match (optional for sandbox)
     const sharedSecret = process.env.APPLE_SHARED_SECRET;
-    if (!sharedSecret) {
-      console.error("APPLE_SHARED_SECRET not configured");
-      return { valid: false, error: "Apple shared secret not configured" };
-    }
 
-    const validateWithURL = async (url: string) => {
+    const validateWithURL = async (url: string, useSecret: boolean = true) => {
+      const body: any = {
+        "receipt-data": receiptData,
+        "exclude-old-transactions": false,
+      };
+      
+      // Only include password if shared secret is available and we want to use it
+      // For sandbox testing, shared secret is optional
+      if (useSecret && sharedSecret) {
+        body.password = sharedSecret;
+      }
+      
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          "receipt-data": receiptData,
-          password: sharedSecret,
-          "exclude-old-transactions": false,
-        }),
+        body: JSON.stringify(body),
       });
       return await response.json();
     };
 
     // Try sandbox first (for testing)
+    // For sandbox, try without shared secret first (it's optional)
     console.log("Trying sandbox validation URL first...");
-    let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt");
+    let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
 
     // Status 0 = valid receipt
     if (result.status === 0) {
-      console.log("Receipt validated successfully with sandbox");
+      console.log("Receipt validated successfully with sandbox (no shared secret)");
       return { valid: true, appleResponse: result };
     }
 
+    // Status 21004 = shared secret doesn't match (try without it for sandbox)
     // Status 21007 = receipt is from production but we tried sandbox
     // Status 21008 = receipt is from sandbox but we tried production
-    if (result.status === 21007) {
+    if (result.status === 21004 && sharedSecret) {
+      // Shared secret doesn't match, try without it for sandbox
+      console.log("Shared secret doesn't match, trying sandbox without secret...");
+      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+      if (result.status === 0) {
+        console.log("Receipt validated successfully with sandbox (without shared secret)");
+        return { valid: true, appleResponse: result };
+      }
+    } else if (result.status === 21007) {
       // Receipt is from production, try production URL
       console.log("Receipt is from production, trying production URL...");
-      result = await validateWithURL("https://buy.itunes.apple.com/verifyReceipt");
+      result = await validateWithURL("https://buy.itunes.apple.com/verifyReceipt", true);
       if (result.status === 0) {
         console.log("Receipt validated successfully with production");
         return { valid: true, appleResponse: result };
@@ -285,7 +299,7 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     } else if (result.status === 21008) {
       // Receipt is from sandbox but we tried production, try sandbox
       console.log("Receipt is from sandbox, trying sandbox URL...");
-      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt");
+      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
       if (result.status === 0) {
         console.log("Receipt validated successfully with sandbox");
         return { valid: true, appleResponse: result };
