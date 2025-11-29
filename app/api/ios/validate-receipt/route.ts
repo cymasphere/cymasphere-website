@@ -332,30 +332,37 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     };
 
     // Try sandbox first (for testing)
-    // For sandbox, try without shared secret first (it's optional)
-    console.log("[validate-receipt] Trying sandbox validation URL first (without shared secret)...");
-    let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
-    console.log("[validate-receipt] Initial sandbox validation result status:", result.status);
+    // Try with shared secret first if available, then without
+    console.log("[validate-receipt] Trying sandbox validation URL first...");
+    let result;
+    
+    if (sharedSecret) {
+      console.log("[validate-receipt] Attempting sandbox validation WITH shared secret...");
+      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", true);
+      console.log("[validate-receipt] Sandbox validation (with secret) result status:", result.status);
+      
+      if (result.status === 0) {
+        console.log("[validate-receipt] Receipt validated successfully with sandbox (with shared secret)");
+        return { valid: true, appleResponse: result };
+      }
+      
+      // If 21004, try without secret
+      if (result.status === 21004) {
+        console.log("[validate-receipt] Got 21004 (shared secret mismatch), retrying sandbox WITHOUT secret...");
+        result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+        console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
+      }
+    } else {
+      console.log("[validate-receipt] No shared secret available, trying sandbox WITHOUT secret...");
+      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+      console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
+    }
 
     // Status 0 = valid receipt
     if (result.status === 0) {
-      console.log("[validate-receipt] Receipt validated successfully with sandbox (no shared secret)");
+      console.log("[validate-receipt] Receipt validated successfully with sandbox");
       console.log("[validate-receipt] Apple response keys:", Object.keys(result));
       return { valid: true, appleResponse: result };
-    }
-
-    // Status 21004 = shared secret doesn't match (shouldn't happen if we didn't send one)
-    // If we get 21004, it means we accidentally sent the secret, so try again without it
-    if (result.status === 21004) {
-      console.log("Got 21004 (shared secret mismatch), retrying sandbox without secret...");
-      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
-      console.log("Retry result status:", result.status);
-      if (result.status === 0) {
-        console.log("Receipt validated successfully with sandbox (without shared secret)");
-        return { valid: true, appleResponse: result };
-      } else {
-        console.log("Retry still failed with status:", result.status, "Error details:", JSON.stringify(result));
-      }
     }
     
     // Status 21007 = receipt is from production but we tried sandbox
