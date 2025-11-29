@@ -325,3 +325,4 @@ The app doesn't need to know the source (NFR, Stripe, or iOS) - it only needs to
 - iOS app receives subscription type in login/refresh responses
 - System is backwards compatible with existing users
 
+

@@ -108,3 +108,4 @@ COMMENT ON COLUMN ios_subscriptions.receipt_data IS 'Base64 encoded receipt data
 COMMENT ON COLUMN ios_subscriptions.validation_status IS 'Status of receipt validation: valid, expired, revoked, invalid';
 
 
+

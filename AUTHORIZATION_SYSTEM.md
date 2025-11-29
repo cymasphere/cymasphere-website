@@ -425,3 +425,4 @@ The unified authorization system ensures all users are properly authorized regar
 - **Updates** user profiles with current subscription status
 - **Works** seamlessly across web and iOS app
 
+

@@ -194,12 +194,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update profile
+    // Update profile with subscription and source
     const { error: profileUpdateError } = await supabase
       .from("profiles")
       .update({
         subscription: finalSubscriptionType,
         subscription_expiration: finalExpiration,
+        subscription_source: "ios", // Mark subscription as coming from iOS App Store
       })
       .eq("id", resolvedUserId);
 
@@ -392,5 +393,6 @@ function mapProductIdToSubscriptionType(
 
   return productIdMap[productId] || "none";
 }
+
 
 
