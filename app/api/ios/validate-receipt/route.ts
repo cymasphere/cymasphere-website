@@ -277,18 +277,20 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
       return { valid: true, appleResponse: result };
     }
 
-    // Status 21004 = shared secret doesn't match (try without it for sandbox)
-    // Status 21007 = receipt is from production but we tried sandbox
-    // Status 21008 = receipt is from sandbox but we tried production
-    if (result.status === 21004 && sharedSecret) {
-      // Shared secret doesn't match, try without it for sandbox
-      console.log("Shared secret doesn't match, trying sandbox without secret...");
+    // Status 21004 = shared secret doesn't match (shouldn't happen if we didn't send one)
+    // If we get 21004, it means we accidentally sent the secret, so try again without it
+    if (result.status === 21004) {
+      console.log("Got 21004 (shared secret mismatch), retrying sandbox without secret...");
       result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
       if (result.status === 0) {
         console.log("Receipt validated successfully with sandbox (without shared secret)");
         return { valid: true, appleResponse: result };
       }
-    } else if (result.status === 21007) {
+    }
+    
+    // Status 21007 = receipt is from production but we tried sandbox
+    // Status 21008 = receipt is from sandbox but we tried production
+    if (result.status === 21007) {
       // Receipt is from production, try production URL
       console.log("Receipt is from production, trying production URL...");
       result = await validateWithURL("https://buy.itunes.apple.com/verifyReceipt", true);
