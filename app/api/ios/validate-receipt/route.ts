@@ -42,24 +42,39 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createSupabaseServiceRole();
+    console.log("[validate-receipt] Supabase service role client created");
 
     // If accessToken is provided, get userId from it
     let resolvedUserId = userId;
     if (!resolvedUserId && accessToken) {
+      console.log("[validate-receipt] Resolving userId from accessToken...");
       const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
       if (authError || !user) {
+        console.log("[validate-receipt] ERROR - Invalid access token:", authError);
         return NextResponse.json(
           { error: "Invalid access token" },
           { status: 401 }
         );
       }
       resolvedUserId = user.id;
+      console.log("[validate-receipt] Resolved userId:", resolvedUserId, "Email:", user.email);
+    } else if (resolvedUserId) {
+      console.log("[validate-receipt] Using provided userId:", resolvedUserId);
+    } else {
+      console.log("[validate-receipt] ERROR - No userId or accessToken provided");
     }
 
     // Validate receipt with Apple
+    console.log("[validate-receipt] Starting Apple receipt validation...");
     const validationResult = await validateReceiptWithApple(receiptData);
+    console.log("[validate-receipt] Apple validation result:", {
+      valid: validationResult.valid,
+      error: validationResult.error,
+      hasAppleResponse: !!validationResult.appleResponse
+    });
 
     if (!validationResult.valid) {
+      console.log("[validate-receipt] ERROR - Apple validation failed:", validationResult.error);
       return NextResponse.json(
         { 
           error: "Receipt validation failed",
@@ -68,6 +83,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    console.log("[validate-receipt] Apple validation successful, proceeding to extract subscription info...");
 
     // Extract subscription information from Apple's response
     console.log("Extracting subscription info from Apple response...");
@@ -89,9 +106,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Map iOS product ID to subscription type
+    console.log("[validate-receipt] Mapping product ID to subscription type:", subscriptionInfo.productId);
     const subscriptionType = mapProductIdToSubscriptionType(subscriptionInfo.productId);
+    console.log("[validate-receipt] Mapped subscription type:", subscriptionType);
 
     if (subscriptionType === "none") {
+      console.log("[validate-receipt] ERROR - Unknown product ID:", subscriptionInfo.productId);
       return NextResponse.json(
         { error: "Unknown product ID: " + subscriptionInfo.productId },
         { status: 400 }
@@ -99,6 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's profile
+    console.log("[validate-receipt] Fetching user profile for userId:", resolvedUserId);
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
@@ -106,21 +127,33 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
+      console.log("[validate-receipt] ERROR - User profile not found:", profileError);
       return NextResponse.json(
         { error: "User profile not found" },
         { status: 404 }
       );
     }
+    console.log("[validate-receipt] User profile found:", profile.id);
 
     // Check if subscription already exists
-    const { data: existingSubscription } = await supabase
+    console.log("[validate-receipt] Checking for existing subscription with transaction_id:", subscriptionInfo.transactionId);
+    const { data: existingSubscription, error: existingError } = await supabase
       .from("ios_subscriptions")
       .select("*")
       .eq("transaction_id", subscriptionInfo.transactionId)
       .single();
+    
+    if (existingError && existingError.code !== 'PGRST116') { // PGRST116 = not found, which is OK
+      console.log("[validate-receipt] ERROR checking existing subscription:", existingError);
+    } else if (existingSubscription) {
+      console.log("[validate-receipt] Found existing subscription, will update:", existingSubscription.id);
+    } else {
+      console.log("[validate-receipt] No existing subscription found, will create new one");
+    }
 
     if (existingSubscription) {
       // Update existing subscription
+      console.log("[validate-receipt] Updating existing iOS subscription in database...");
       const { error: updateError } = await supabase
         .from("ios_subscriptions")
         .update({
@@ -137,14 +170,16 @@ export async function POST(request: NextRequest) {
         .eq("transaction_id", subscriptionInfo.transactionId);
 
       if (updateError) {
-        console.error("Error updating iOS subscription:", updateError);
+        console.error("[validate-receipt] ERROR - Failed to update iOS subscription:", updateError);
         return NextResponse.json(
           { error: "Failed to update subscription" },
           { status: 500 }
         );
       }
+      console.log("[validate-receipt] Successfully updated iOS subscription in database");
     } else {
       // Create new subscription record
+      console.log("[validate-receipt] Creating new iOS subscription in database...");
       const { error: insertError } = await supabase
         .from("ios_subscriptions")
         .insert({
@@ -165,17 +200,19 @@ export async function POST(request: NextRequest) {
         });
 
       if (insertError) {
-        console.error("Error inserting iOS subscription:", insertError);
+        console.error("[validate-receipt] ERROR - Failed to insert iOS subscription:", insertError);
         return NextResponse.json(
           { error: "Failed to save subscription" },
           { status: 500 }
         );
       }
+      console.log("[validate-receipt] Successfully created iOS subscription in database");
     }
 
     // Update user's profile subscription status
     // Check if user has active iOS subscription
-    const { data: activeSubscription } = await supabase
+    console.log("[validate-receipt] Checking for active iOS subscriptions for user...");
+    const { data: activeSubscription, error: activeSubError } = await supabase
       .from("ios_subscriptions")
       .select("subscription_type, expires_date")
       .eq("user_id", resolvedUserId)
@@ -185,6 +222,14 @@ export async function POST(request: NextRequest) {
       .order("expires_date", { ascending: false })
       .limit(1)
       .single();
+    
+    if (activeSubError && activeSubError.code !== 'PGRST116') {
+      console.log("[validate-receipt] ERROR checking active subscriptions:", activeSubError);
+    } else if (activeSubscription) {
+      console.log("[validate-receipt] Found active iOS subscription:", activeSubscription);
+    } else {
+      console.log("[validate-receipt] No active iOS subscription found");
+    }
 
     // Also check Stripe subscription
     const { data: profileWithStripe } = await supabase
@@ -237,7 +282,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error validating iOS receipt:", error);
+    console.error("[validate-receipt] ========== EXCEPTION ==========");
+    console.error("[validate-receipt] Error validating iOS receipt:", error);
+    console.error("[validate-receipt] Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return NextResponse.json(
       {
         error: "Internal server error",
