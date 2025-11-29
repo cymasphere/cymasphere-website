@@ -332,22 +332,13 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     };
 
     // Try sandbox first (for testing)
-    // For sandbox, shared secret is optional, but error 21004 can also mean receipt is invalid
-    console.log("[validate-receipt] Trying sandbox validation URL first...");
-    console.log("[validate-receipt] Shared secret available:", !!sharedSecret, "Length:", sharedSecret?.length || 0);
+    // For sandbox, shared secret is NOT required - Apple says it's optional
+    // Error 21004 without a secret usually means receipt is invalid/expired/wrong app
+    console.log("[validate-receipt] Trying sandbox validation URL first (NO shared secret - not required for sandbox)...");
     
-    // Try WITHOUT shared secret first for sandbox (it's optional and often causes 21004 if wrong)
-    console.log("[validate-receipt] Attempting sandbox validation WITHOUT shared secret (recommended for sandbox)...");
+    // Sandbox validation WITHOUT shared secret (it's optional and not needed)
     let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
     console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
-    
-    // If we get 21004 without a secret, it likely means the receipt is invalid/expired/wrong app
-    // But let's try WITH secret if available, just in case
-    if (result.status === 21004 && sharedSecret) {
-      console.log("[validate-receipt] Got 21004 without secret, trying WITH shared secret as fallback...");
-      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", true);
-      console.log("[validate-receipt] Sandbox validation (with secret) result status:", result.status);
-    }
 
     // Status 0 = valid receipt
     if (result.status === 0) {
