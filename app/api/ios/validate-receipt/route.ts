@@ -332,37 +332,51 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     };
 
     // Try sandbox first (for testing)
-    // For sandbox, shared secret is NOT required - Apple says it's optional
-    // Error 21004 without a secret usually means receipt is invalid/expired/wrong app
-    console.log("[validate-receipt] Trying sandbox validation URL first (NO shared secret - not required for sandbox)...");
+    // For sandbox, shared secret is optional but some receipts may require it
+    console.log("[validate-receipt] Trying sandbox validation URL first (NO shared secret - optional for sandbox)...");
     
-    // Sandbox validation WITHOUT shared secret (it's optional and not needed)
+    // Sandbox validation WITHOUT shared secret first (it's optional)
     let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
     console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
 
     // Status 0 = valid receipt
     if (result.status === 0) {
-      console.log("[validate-receipt] Receipt validated successfully with sandbox");
+      console.log("[validate-receipt] Receipt validated successfully with sandbox (no secret)");
       console.log("[validate-receipt] Apple response keys:", Object.keys(result));
       return { valid: true, appleResponse: result };
+    }
+    
+    // If 21004 and we have a shared secret, try with the secret
+    // 21004 can mean shared secret mismatch, so retry with secret if available
+    if (result.status === 21004 && sharedSecret) {
+      console.log("[validate-receipt] Got 21004 without secret, retrying sandbox WITH shared secret...");
+      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", true);
+      console.log("[validate-receipt] Sandbox validation (with secret) result status:", result.status);
+      if (result.status === 0) {
+        console.log("[validate-receipt] Receipt validated successfully with sandbox (with secret)");
+        console.log("[validate-receipt] Apple response keys:", Object.keys(result));
+        return { valid: true, appleResponse: result };
+      }
     }
     
     // Status 21007 = receipt is from production but we tried sandbox
     // Status 21008 = receipt is from sandbox but we tried production
     if (result.status === 21007) {
       // Receipt is from production, try production URL
-      console.log("Receipt is from production, trying production URL...");
+      console.log("[validate-receipt] Receipt is from production (21007), trying production URL...");
       result = await validateWithURL("https://buy.itunes.apple.com/verifyReceipt", true);
+      console.log("[validate-receipt] Production validation result status:", result.status);
       if (result.status === 0) {
-        console.log("Receipt validated successfully with production");
+        console.log("[validate-receipt] Receipt validated successfully with production");
         return { valid: true, appleResponse: result };
       }
     } else if (result.status === 21008) {
       // Receipt is from sandbox but we tried production, try sandbox
-      console.log("Receipt is from sandbox, trying sandbox URL...");
+      console.log("[validate-receipt] Receipt is from sandbox (21008), trying sandbox URL...");
       result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+      console.log("[validate-receipt] Sandbox validation (after 21008) result status:", result.status);
       if (result.status === 0) {
-        console.log("Receipt validated successfully with sandbox");
+        console.log("[validate-receipt] Receipt validated successfully with sandbox");
         return { valid: true, appleResponse: result };
       }
     }
@@ -411,26 +425,131 @@ function extractSubscriptionInfo(appleResponse: any): {
   autoRenewStatus: boolean;
 } | null {
   try {
-    const receipt = appleResponse.receipt;
-    if (!receipt || !receipt.in_app || receipt.in_app.length === 0) {
-      return null;
-    }
-
-    // Get the latest transaction (most recent purchase)
-    const latestTransaction = receipt.in_app[receipt.in_app.length - 1];
-
-    // Get subscription info from latest_receipt_info if available (for subscriptions)
+    console.log("[validate-receipt] Extracting subscription info from Apple response...");
+    console.log("[validate-receipt] Apple response keys:", Object.keys(appleResponse));
+    
+    // For auto-renewable subscriptions, data is in latest_receipt_info
+    // Check this first as it's the primary source for subscription data
     const latestReceiptInfo = appleResponse.latest_receipt_info;
-    let subscriptionTransaction = latestTransaction;
-
-    if (latestReceiptInfo && latestReceiptInfo.length > 0) {
-      // Get the most recent subscription transaction
-      subscriptionTransaction = latestReceiptInfo.reduce((latest: any, current: any) => {
-        const latestTime = parseInt(latest.expires_date_ms || "0");
-        const currentTime = parseInt(current.expires_date_ms || "0");
-        return currentTime > latestTime ? current : latest;
+    
+    if (latestReceiptInfo && Array.isArray(latestReceiptInfo) && latestReceiptInfo.length > 0) {
+      console.log("[validate-receipt] Found latest_receipt_info with", latestReceiptInfo.length, "transactions");
+      
+      // Get the most recent active subscription transaction
+      // Filter for transactions with expires_date_ms (subscriptions) and sort by expiration date
+      const activeSubscriptions = latestReceiptInfo
+        .filter((item: any) => item.expires_date_ms)
+        .sort((a: any, b: any) => {
+          const aTime = parseInt(a.expires_date_ms || "0");
+          const bTime = parseInt(b.expires_date_ms || "0");
+          return bTime - aTime; // Most recent first
+        });
+      
+      if (activeSubscriptions.length === 0) {
+        console.log("[validate-receipt] No subscriptions with expiration dates found in latest_receipt_info");
+        return null;
+      }
+      
+      const subscriptionTransaction = activeSubscriptions[0];
+      console.log("[validate-receipt] Using subscription transaction:", {
+        product_id: subscriptionTransaction.product_id,
+        transaction_id: subscriptionTransaction.transaction_id,
+        expires_date_ms: subscriptionTransaction.expires_date_ms
       });
+      
+      const transactionId = subscriptionTransaction.transaction_id;
+      const originalTransactionId =
+        subscriptionTransaction.original_transaction_id || transactionId;
+      const productId = subscriptionTransaction.product_id;
+
+      // Parse dates (Apple provides timestamps in milliseconds)
+      const purchaseDateMs = parseInt(subscriptionTransaction.purchase_date_ms || "0");
+      const expiresDateMs = parseInt(subscriptionTransaction.expires_date_ms || "0");
+
+      if (!expiresDateMs || expiresDateMs === 0) {
+        console.log("[validate-receipt] No expiration date found for subscription");
+        return null;
+      }
+
+      const purchaseDate = new Date(purchaseDateMs);
+      const expiresDate = new Date(expiresDateMs);
+
+      // Check if subscription is active (not expired)
+      const now = Date.now();
+      const isActive = expiresDateMs > now;
+
+      // Get auto-renew status from pending_renewal_info
+      const pendingRenewal = appleResponse.pending_renewal_info?.find(
+        (info: any) => info.original_transaction_id === originalTransactionId
+      );
+      const autoRenewStatus = pendingRenewal?.auto_renew_status === "1";
+
+      console.log("[validate-receipt] Extracted subscription info:", {
+        productId,
+        transactionId,
+        isActive,
+        expiresDate: expiresDate.toISOString(),
+        autoRenewStatus
+      });
+
+      return {
+        transactionId,
+        originalTransactionId,
+        productId,
+        purchaseDate,
+        expiresDate,
+        isActive,
+        autoRenewStatus,
+      };
     }
+
+    // Fallback to receipt.in_app if latest_receipt_info is not available
+    const receipt = appleResponse.receipt;
+    if (receipt && receipt.in_app && receipt.in_app.length > 0) {
+      console.log("[validate-receipt] Falling back to receipt.in_app with", receipt.in_app.length, "transactions");
+      const latestTransaction = receipt.in_app[receipt.in_app.length - 1];
+      
+      const transactionId = latestTransaction.transaction_id;
+      const originalTransactionId =
+        latestTransaction.original_transaction_id || transactionId;
+      const productId = latestTransaction.product_id;
+
+      // Parse dates
+      const purchaseDateMs = parseInt(latestTransaction.purchase_date_ms || "0");
+      const expiresDateMs = parseInt(
+        latestTransaction.expires_date_ms || latestTransaction.purchase_date_ms || "0"
+      );
+
+      if (!expiresDateMs || expiresDateMs === 0) {
+        console.log("[validate-receipt] No expiration date found in receipt.in_app");
+        return null;
+      }
+
+      const purchaseDate = new Date(purchaseDateMs);
+      const expiresDate = new Date(expiresDateMs);
+
+      const now = Date.now();
+      const isActive = expiresDateMs > now;
+
+      const pendingRenewal = appleResponse.pending_renewal_info?.find(
+        (info: any) => info.original_transaction_id === originalTransactionId
+      );
+      const autoRenewStatus = pendingRenewal?.auto_renew_status === "1";
+
+      return {
+        transactionId,
+        originalTransactionId,
+        productId,
+        purchaseDate,
+        expiresDate,
+        isActive,
+        autoRenewStatus,
+      };
+    }
+
+    console.log("[validate-receipt] No subscription data found in Apple response");
+    console.log("[validate-receipt] Full Apple response structure:", JSON.stringify(appleResponse, null, 2));
+    return null;
 
     const transactionId = subscriptionTransaction.transaction_id;
     const originalTransactionId =
