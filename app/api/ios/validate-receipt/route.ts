@@ -332,30 +332,21 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     };
 
     // Try sandbox first (for testing)
-    // Try with shared secret first if available, then without
+    // For sandbox, shared secret is optional, but error 21004 can also mean receipt is invalid
     console.log("[validate-receipt] Trying sandbox validation URL first...");
-    let result;
+    console.log("[validate-receipt] Shared secret available:", !!sharedSecret, "Length:", sharedSecret?.length || 0);
     
-    if (sharedSecret) {
-      console.log("[validate-receipt] Attempting sandbox validation WITH shared secret...");
+    // Try WITHOUT shared secret first for sandbox (it's optional and often causes 21004 if wrong)
+    console.log("[validate-receipt] Attempting sandbox validation WITHOUT shared secret (recommended for sandbox)...");
+    let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+    console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
+    
+    // If we get 21004 without a secret, it likely means the receipt is invalid/expired/wrong app
+    // But let's try WITH secret if available, just in case
+    if (result.status === 21004 && sharedSecret) {
+      console.log("[validate-receipt] Got 21004 without secret, trying WITH shared secret as fallback...");
       result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", true);
       console.log("[validate-receipt] Sandbox validation (with secret) result status:", result.status);
-      
-      if (result.status === 0) {
-        console.log("[validate-receipt] Receipt validated successfully with sandbox (with shared secret)");
-        return { valid: true, appleResponse: result };
-      }
-      
-      // If 21004, try without secret
-      if (result.status === 21004) {
-        console.log("[validate-receipt] Got 21004 (shared secret mismatch), retrying sandbox WITHOUT secret...");
-        result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
-        console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
-      }
-    } else {
-      console.log("[validate-receipt] No shared secret available, trying sandbox WITHOUT secret...");
-      result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
-      console.log("[validate-receipt] Sandbox validation (without secret) result status:", result.status);
     }
 
     // Status 0 = valid receipt
@@ -387,9 +378,24 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
 
     console.log("[validate-receipt] Final validation failed with status:", result.status);
     console.log("[validate-receipt] Full Apple response:", JSON.stringify(result, null, 2));
+    
+    // Special handling for 21004 - might mean receipt is invalid/expired or wrong app
+    if (result.status === 21004) {
+      console.log("[validate-receipt] ERROR 21004 - Possible causes:");
+      console.log("[validate-receipt] 1. Receipt is invalid or expired (sandbox receipts expire quickly)");
+      console.log("[validate-receipt] 2. Receipt is from a different app/bundle ID");
+      console.log("[validate-receipt] 3. Receipt format is corrupted");
+      console.log("[validate-receipt] 4. Shared secret mismatch (but we tried without secret too)");
+      console.log("[validate-receipt] 5. Receipt might be empty (no active subscriptions)");
+      
+      // Check if receipt has any data that might help debug
+      console.log("[validate-receipt] Receipt data length:", receiptData.length);
+      console.log("[validate-receipt] Receipt data preview:", receiptData.substring(0, 100));
+    }
+    
     return {
       valid: false,
-      error: `Apple validation failed with status: ${result.status}`,
+      error: `Apple validation failed with status: ${result.status}. ${result.status === 21004 ? 'Receipt may be invalid, expired, or from a different app.' : ''}`,
       appleResponse: result,
     };
   } catch (error) {
