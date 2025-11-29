@@ -142,25 +142,87 @@ export async function POST(request: NextRequest) {
 
 /**
  * Finds or creates a customer in Stripe
+ * Note: This is a duplicate of the function in utils/stripe/actions.ts
+ * Consider importing from there instead to avoid code duplication
  */
 async function findOrCreateCustomer(email: string): Promise<string> {
   try {
-    // Search for existing customer
+    // Normalize email: lowercase and trim to prevent duplicates from case differences
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Search for existing customers with this email
     const existingCustomers = await stripe.customers.list({
-      email: email,
-      limit: 1,
+      email: normalizedEmail,
+      limit: 10, // Get more results to handle potential duplicates
     });
 
     if (existingCustomers.data.length > 0) {
+      // If there are multiple customers with the same email, log a warning
+      if (existingCustomers.data.length > 1) {
+        console.warn(
+          `Found ${existingCustomers.data.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`
+        );
+      }
       return existingCustomers.data[0].id;
     }
 
-    // Create new customer
-    const newCustomer = await stripe.customers.create({
-      email: email,
-    });
+    // Create new customer with hour-based idempotency key to prevent race conditions
+    // Key includes current hour so failed attempts can be retried after an hour
+    // All signups within the same hour use the same key, preventing duplicates from spam clicking
+    const now = new Date();
+    const hourKey = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}`;
+    const idempotencyKey = `cust_${normalizedEmail.replace(/[^a-z0-9]/g, '_')}_${hourKey}`;
+    
+    try {
+      const newCustomer = await stripe.customers.create(
+        {
+          email: normalizedEmail,
+        },
+        {
+          idempotencyKey: idempotencyKey.substring(0, 255), // Stripe has 255 char limit
+        }
+      );
 
-    return newCustomer.id;
+      return newCustomer.id;
+    } catch (createError: any) {
+      // If customer creation fails, it could be due to:
+      // 1. Idempotency key collision (another request is creating the same customer)
+      // 2. Network/API error
+      // 3. Customer was created between our check and create (race condition)
+      
+      // Always retry the lookup - another process may have created the customer
+      // Wait a brief moment to allow concurrent request to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const retryCustomers = await stripe.customers.list({
+        email: normalizedEmail,
+        limit: 1,
+      });
+
+      if (retryCustomers.data.length > 0) {
+        console.log(`Customer found on retry after creation error: ${retryCustomers.data[0].id}`);
+        return retryCustomers.data[0].id;
+      }
+
+      // If retry also fails, check for specific error codes
+      if (
+        createError?.code === 'idempotency_key_in_use' ||
+        createError?.type === 'StripeIdempotencyError'
+      ) {
+        // Idempotency key collision - wait a bit longer and retry lookup
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const finalRetry = await stripe.customers.list({
+          email: normalizedEmail,
+          limit: 1,
+        });
+        if (finalRetry.data.length > 0) {
+          return finalRetry.data[0].id;
+        }
+      }
+
+      // If all retries fail, throw the original error
+      throw createError;
+    }
   } catch (error) {
     console.error("Error finding/creating customer:", error);
     throw error;
