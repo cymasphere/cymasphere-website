@@ -113,8 +113,9 @@ export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn
             return { success: false, error: errorMsg };
           }
         } else if (result.error) {
-          const errorMsg = result.error || "Failed to create checkout session";
-          console.error("Checkout error:", errorMsg);
+          // Use the user-friendly message if available, otherwise use error code
+          const errorMsg = result.message || result.error || "Failed to create checkout session";
+          console.error("Checkout error:", errorMsg, result);
           setError(errorMsg);
           if (options.onError) {
             options.onError(errorMsg);

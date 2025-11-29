@@ -340,12 +340,19 @@ interface Promotion {
 }
 
 export default function PromotionBanner({ showCountdown = true, dismissible = true, variant = 'sticky' }: PromotionBannerProps) {
+  const { user } = useAuth();
+  
+  // CRITICAL: Check for lifetime FIRST before any other logic
+  // Hide banner immediately for lifetime users - they don't need promotions
+  if (user?.profile?.subscription === 'lifetime') {
+    return null;
+  }
+
   const { t } = useTranslation();
   const [sale, setSale] = React.useState<Promotion | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
-  const { user } = useAuth();
   const { initiateCheckout } = useCheckout();
   const router = useRouter();
 
@@ -364,8 +371,14 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
     }
   }, [dismissible]);
 
-  // Fetch active promotion
+  // Fetch active promotion - Skip for lifetime users
   React.useEffect(() => {
+    // Don't fetch promotions for lifetime users
+    if (user?.profile?.subscription === 'lifetime') {
+      setSale(null);
+      return;
+    }
+
     const fetchPromotion = async () => {
       try {
         const response = await fetch('/api/promotions/active');
@@ -406,7 +419,7 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
     };
 
     fetchPromotion();
-  }, [dismissible]);
+  }, [dismissible, user?.profile?.subscription]);
   const [timeLeft, setTimeLeft] = React.useState({
     days: 0,
     hours: 0,

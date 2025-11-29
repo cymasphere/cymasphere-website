@@ -1383,10 +1383,28 @@ const PricingSection = () => {
 
 
   // Check for active sale (fetched by banner component)
+  // Skip entirely for lifetime users - they don't need promotions
   const [hasActiveSale, setHasActiveSale] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
+  // Always hide promotions for lifetime users - separate effect to ensure it runs
+  // This runs whenever user or subscription changes
   useEffect(() => {
+    if (user?.profile?.subscription === "lifetime") {
+      console.log('🚫 User has lifetime - hiding all promotions');
+      setHasActiveSale(false);
+      setIsBannerDismissed(false);
+    }
+  }, [user?.profile?.subscription, user?.profile]);
+
+  useEffect(() => {
+    // Don't fetch promotions for lifetime users - always set to false
+    if (user?.profile?.subscription === "lifetime") {
+      setHasActiveSale(false);
+      setIsBannerDismissed(false);
+      return;
+    }
+
     const checkActiveSale = async () => {
       try {
         const response = await fetch('/api/promotions/active');
@@ -1426,11 +1444,23 @@ const PricingSection = () => {
     
     // Listen for storage changes to update when banner is dismissed (cross-tab)
     const handleStorageChange = () => {
+      // Don't check if user has lifetime
+      if (user?.profile?.subscription === "lifetime") {
+        setHasActiveSale(false);
+        setIsBannerDismissed(false);
+        return;
+      }
       checkActiveSale();
     };
     
     // Listen for custom event when banner is dismissed in same window
     const handleBannerDismissed = () => {
+      // Don't check if user has lifetime
+      if (user?.profile?.subscription === "lifetime") {
+        setHasActiveSale(false);
+        setIsBannerDismissed(false);
+        return;
+      }
       // Immediately check localStorage to update state
       const closedBanners = localStorage.getItem('closedPromotionBanners');
       if (closedBanners) {
@@ -1454,7 +1484,7 @@ const PricingSection = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('promotionBannerDismissed', handleBannerDismissed);
     };
-  }, []);
+  }, [user?.profile?.subscription]);
 
   return (
     <PricingContainer id="pricing">
@@ -1472,8 +1502,12 @@ const PricingSection = () => {
             {t("pricing.simpleTransparent", "Simple, Transparent Pricing")}
           </SectionTitle>
 
-          {/* Promotional Sale Banner - Only show if header banner has been dismissed (to avoid duplicate) */}
-          {hasActiveSale && isBannerDismissed && <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
+          {/* Promotional Sale Banner - Only show if header banner has been dismissed (to avoid duplicate) and user doesn't have lifetime */}
+          {/* CRITICAL: Check user subscription FIRST - never show for lifetime users */}
+          {!(user?.profile?.subscription === "lifetime") && 
+           hasActiveSale && 
+           isBannerDismissed && 
+           <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (

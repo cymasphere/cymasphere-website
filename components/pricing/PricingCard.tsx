@@ -448,8 +448,14 @@ export default function PricingCard({
     fetchPrices();
   }, []);
 
-  // Fetch active promotion
+  // Fetch active promotion - Skip if user has lifetime access
   useEffect(() => {
+    // Don't fetch promotions for lifetime users
+    if (user?.profile?.subscription === "lifetime") {
+      setActivePromotion(null);
+      return;
+    }
+
     const fetchPromotion = async () => {
       try {
         const response = await fetch(`/api/promotions/active?plan=${billingPeriod}`);
@@ -467,7 +473,7 @@ export default function PricingCard({
     };
 
     fetchPromotion();
-  }, [billingPeriod]);
+  }, [billingPeriod, user?.profile?.subscription]);
 
   // Fetch trial status when user is logged in
   useEffect(() => {
@@ -645,12 +651,20 @@ export default function PricingCard({
 
     setCheckoutLoading(collectPaymentMethod ? "long" : "short");
 
-    await initiateCheckout(billingPeriod, {
+    const result = await initiateCheckout(billingPeriod, {
       collectPaymentMethod,
       hasHadTrial: hasHadStripeTrial,
     });
 
     setCheckoutLoading(null);
+
+    // Show alert for critical errors (like duplicate lifetime purchase)
+    if (!result.success && result.error) {
+      // Show user-friendly alert for important errors
+      if (result.error.includes("lifetime license") || result.error.includes("LIFETIME_ALREADY_PURCHASED")) {
+        alert(result.error);
+      }
+    }
   };
 
   // Handle email submission

@@ -164,6 +164,34 @@ export async function POST(request: NextRequest) {
             .single();
 
           if (profile) {
+            // CRITICAL: Check if user already has lifetime to prevent duplicate processing
+            if (profile.subscription === "lifetime") {
+              console.warn(`⚠️ Duplicate lifetime purchase attempt for customer ${customerId}. Already has lifetime. Skipping webhook processing.`);
+              // Still track to Meta but don't update database
+              const paymentIntent = await stripe.paymentIntents.retrieve(
+                session.payment_intent as string
+              );
+              
+              await trackMetaConversionFromWebhook(
+                'Purchase',
+                {
+                  email: userEmail || profile.email,
+                  userId: userId || profile.id,
+                },
+                {
+                  content_name: planName || 'lifetime_duplicate',
+                  value: paymentIntent.amount / 100,
+                  currency: paymentIntent.currency.toUpperCase(),
+                  payment_method: paymentIntent.payment_method_types?.[0],
+                  duplicate_purchase: true,
+                },
+                `duplicate_${eventId}`
+              );
+              
+              // Don't process this as a new purchase since they already have lifetime
+              break;
+            }
+
             // Get payment intent to get amount
             const paymentIntent = await stripe.paymentIntents.retrieve(
               session.payment_intent as string

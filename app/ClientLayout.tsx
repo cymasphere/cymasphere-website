@@ -4,7 +4,7 @@ import React, { useEffect, Suspense, useState } from "react";
 import styled from "styled-components";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
@@ -179,17 +179,51 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     <ThemeProvider theme={theme}>
       <ToastProvider>
         <AuthProvider>
-          <LayoutWrapper>
-            {!shouldHideHeaderFooter && <NextHeader hasActiveBanner={hasActivePromotion} />}
-            {!shouldHideHeaderFooter && <PromotionBanner showCountdown={true} />}
-            <Main>
-              {children}
-            </Main>
-            {!shouldHideHeaderFooter && <Footer />}
-            {!shouldHideChat && <ChatWidget />}
-          </LayoutWrapper>
+          <LayoutContent
+            shouldHideHeaderFooter={shouldHideHeaderFooter}
+            shouldHideChat={shouldHideChat}
+            hasActivePromotion={hasActivePromotion}
+            pathname={pathname}
+          >
+            {children}
+          </LayoutContent>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
+  );
+}
+
+// Separate component to access AuthContext
+function LayoutContent({
+  children,
+  shouldHideHeaderFooter,
+  shouldHideChat,
+  hasActivePromotion,
+  pathname,
+}: {
+  children: React.ReactNode;
+  shouldHideHeaderFooter: boolean;
+  shouldHideChat: boolean;
+  hasActivePromotion: boolean;
+  pathname: string | null;
+}) {
+  const { user } = useAuth();
+  const isPricingRoute = pathname?.includes("/pricing") || pathname === "/";
+  const isGettingStartedRoute = pathname?.includes("/getting-started");
+  const shouldHideChatFinal = shouldHideChat;
+
+  // Hide promotion banner for lifetime users
+  const shouldShowPromotion = hasActivePromotion && user?.profile?.subscription !== "lifetime";
+
+  return (
+    <LayoutWrapper>
+      {!shouldHideHeaderFooter && <NextHeader hasActiveBanner={hasActivePromotion} />}
+      {!shouldHideHeaderFooter && shouldShowPromotion && <PromotionBanner showCountdown={true} />}
+      <Main>
+        {children}
+      </Main>
+      {!shouldHideHeaderFooter && <Footer />}
+      {!shouldHideChatFinal && <ChatWidget />}
+    </LayoutWrapper>
   );
 }

@@ -1108,20 +1108,21 @@ export default function BillingPage() {
                     ? t("dashboard.billing.monthly", "Monthly")
                     : t("dashboard.billing.yearly", "Yearly")}
                     </div>
-                    <span style={{ color: "var(--text-secondary)", fontSize: "2.5rem", fontWeight: 700 }}>—</span>
-                <PlanPrice>
-                  {isSubscriptionNone(userSubscription.subscription)
-                    ? "$0.00"
-                    : isSubscriptionLifetime(userSubscription.subscription)
-                    ? getCurrentPrice() === "--"
-                      ? "--"
-                      : "$" + getCurrentPrice()
-                    : `$${getCurrentPrice()} / ${
-                        subscriptionInterval === "month"
-                          ? t("dashboard.billing.month", "month")
-                          : t("dashboard.billing.year", "year")
-                      }`}
-                </PlanPrice>
+                    {/* Hide hyphen and price for lifetime and Elite access */}
+                    {!(hasNfr || isSubscriptionLifetime(userSubscription.subscription)) && (
+                      <>
+                        <span style={{ color: "var(--text-secondary)", fontSize: "2.5rem", fontWeight: 700 }}>—</span>
+                        <PlanPrice>
+                          {isSubscriptionNone(userSubscription.subscription)
+                            ? "$0.00"
+                            : `$${getCurrentPrice()} / ${
+                                subscriptionInterval === "month"
+                                  ? t("dashboard.billing.month", "month")
+                                  : t("dashboard.billing.year", "year")
+                              }`}
+                        </PlanPrice>
+                      </>
+                    )}
                   </div>
                 </PlanName>
                 <PlanDescription>
@@ -1210,8 +1211,10 @@ export default function BillingPage() {
                   </div>
                 )}
 
-                {/* Trial Status - show if we know the status */}
-                {hasHadTrial !== null && (
+                {/* Trial Status - show if we know the status, but not for lifetime or Elite access */}
+                {hasHadTrial !== null && 
+                 !hasNfr && 
+                 !isSubscriptionLifetime(userSubscription.subscription) && (
             <div
                     style={{
                       marginTop: "0.75rem",

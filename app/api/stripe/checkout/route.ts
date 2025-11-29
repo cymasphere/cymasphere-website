@@ -112,6 +112,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // CRITICAL: Check if customer already has a lifetime purchase
+    if (resolved_customer_id && planType === "lifetime") {
+      try {
+        const hasLifetime = await hasCustomerPurchasedLifetime(resolved_customer_id);
+        
+        if (hasLifetime) {
+          console.warn(`⚠️ Customer ${resolved_customer_id} already has lifetime access. Blocking duplicate purchase.`);
+          return NextResponse.json({
+            url: null,
+            error: "LIFETIME_ALREADY_PURCHASED",
+            message: "You already have a lifetime license! To purchase another license (for example, as a gift), please create a new account using a different email address.",
+            hasLifetime: true,
+          }, { status: 400 });
+        }
+      } catch (error) {
+        console.error("Error checking lifetime purchase history:", error);
+        // Continue with checkout even if check fails to avoid blocking legitimate purchases
+      }
+    }
+
     // Determine if user is signed up (has a customerId, meaning they're logged in)
     const isSignedUp = !!customerId;
 
@@ -250,6 +270,91 @@ async function hasCustomerHadTrial(customerId: string): Promise<boolean> {
   } catch (error) {
     console.error("Error checking customer trial history:", error);
     // If we can't check, assume they haven't had a trial to be safe
+    return false;
+  }
+}
+
+/**
+ * Checks if a customer has already purchased lifetime access
+ * This prevents duplicate lifetime purchases
+ */
+async function hasCustomerPurchasedLifetime(customerId: string): Promise<boolean> {
+  try {
+    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME!;
+    
+    // Check 1: Look for successful payments with lifetime price
+    const charges = await stripe.charges.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    // Check if any charge was for the lifetime price and was successful
+    const hasLifetimeCharge = charges.data.some(charge => {
+      // Check if charge has line items or invoice with lifetime price
+      return charge.paid && charge.amount > 0 && (
+        charge.metadata?.purchase_type === 'lifetime' ||
+        charge.description?.toLowerCase().includes('lifetime')
+      );
+    });
+
+    if (hasLifetimeCharge) {
+      console.log(`✅ Found lifetime charge for customer ${customerId}`);
+      return true;
+    }
+
+    // Check 2: Look for payment intents with lifetime metadata
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    const hasLifetimePayment = paymentIntents.data.some(pi => 
+      pi.status === 'succeeded' && 
+      pi.metadata?.purchase_type === 'lifetime'
+    );
+
+    if (hasLifetimePayment) {
+      console.log(`✅ Found lifetime payment intent for customer ${customerId}`);
+      return true;
+    }
+
+    // Check 3: Check database for lifetime subscription status
+    const supabase = await createSupabaseServiceRole();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription")
+      .eq("customer_id", customerId)
+      .single();
+
+    if (profile?.subscription === "lifetime") {
+      console.log(`✅ Customer ${customerId} has lifetime in database`);
+      return true;
+    }
+
+    // Check 4: Check invoices for lifetime price
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    const hasLifetimeInvoice = invoices.data.some(invoice => {
+      if (invoice.status !== 'paid') return false;
+      return invoice.lines.data.some(line => 
+        line.price?.id === lifetimePriceId
+      );
+    });
+
+    if (hasLifetimeInvoice) {
+      console.log(`✅ Found lifetime invoice for customer ${customerId}`);
+      return true;
+    }
+
+    console.log(`ℹ️ No lifetime purchase found for customer ${customerId}`);
+    return false;
+  } catch (error) {
+    console.error("Error checking lifetime purchase history:", error);
+    // If we can't check, assume they haven't purchased to avoid blocking legitimate purchases
+    // This errs on the side of allowing a potential duplicate rather than blocking a real purchase
     return false;
   }
 }
