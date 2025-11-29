@@ -15,10 +15,19 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log("[validate-receipt] Received receipt validation request");
     const body = await request.json();
     const { receiptData, userId, accessToken } = body;
 
+    console.log("[validate-receipt] Request body:", {
+      hasReceiptData: !!receiptData,
+      receiptDataLength: receiptData?.length || 0,
+      hasUserId: !!userId,
+      hasAccessToken: !!accessToken
+    });
+
     if (!receiptData) {
+      console.log("[validate-receipt] Error: No receipt data provided");
       return NextResponse.json(
         { error: "Receipt data is required" },
         { status: 400 }
@@ -277,12 +286,14 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
 
     // Try sandbox first (for testing)
     // For sandbox, try without shared secret first (it's optional)
-    console.log("Trying sandbox validation URL first...");
+    console.log("[validate-receipt] Trying sandbox validation URL first (without shared secret)...");
     let result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+    console.log("[validate-receipt] Initial sandbox validation result status:", result.status);
 
     // Status 0 = valid receipt
     if (result.status === 0) {
-      console.log("Receipt validated successfully with sandbox (no shared secret)");
+      console.log("[validate-receipt] Receipt validated successfully with sandbox (no shared secret)");
+      console.log("[validate-receipt] Apple response keys:", Object.keys(result));
       return { valid: true, appleResponse: result };
     }
 
@@ -320,6 +331,8 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
       }
     }
 
+    console.log("[validate-receipt] Final validation failed with status:", result.status);
+    console.log("[validate-receipt] Full Apple response:", JSON.stringify(result, null, 2));
     return {
       valid: false,
       error: `Apple validation failed with status: ${result.status}`,
