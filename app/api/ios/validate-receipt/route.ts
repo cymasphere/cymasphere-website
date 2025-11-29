@@ -61,14 +61,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract subscription information from Apple's response
+    console.log("Extracting subscription info from Apple response...");
     const subscriptionInfo = extractSubscriptionInfo(validationResult.appleResponse);
 
     if (!subscriptionInfo) {
+      console.log("No valid subscription found in receipt. Apple response:", JSON.stringify(validationResult.appleResponse, null, 2));
       return NextResponse.json(
         { error: "No valid subscription found in receipt" },
         { status: 400 }
       );
     }
+    
+    console.log("Subscription info extracted:", {
+      productId: subscriptionInfo.productId,
+      isActive: subscriptionInfo.isActive,
+      expiresDate: subscriptionInfo.expiresDate,
+      transactionId: subscriptionInfo.transactionId
+    });
 
     // Map iOS product ID to subscription type
     const subscriptionType = mapProductIdToSubscriptionType(subscriptionInfo.productId);
@@ -282,9 +291,12 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
     if (result.status === 21004) {
       console.log("Got 21004 (shared secret mismatch), retrying sandbox without secret...");
       result = await validateWithURL("https://sandbox.itunes.apple.com/verifyReceipt", false);
+      console.log("Retry result status:", result.status);
       if (result.status === 0) {
         console.log("Receipt validated successfully with sandbox (without shared secret)");
         return { valid: true, appleResponse: result };
+      } else {
+        console.log("Retry still failed with status:", result.status, "Error details:", JSON.stringify(result));
       }
     }
     
