@@ -18,7 +18,8 @@ const BannerContainer = styled(motion.div)<{ $background: string; $variant: 'sti
   overflow: hidden;
   width: 100%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: ${props => props.$variant === 'sticky' ? '3001' : '1'};
+  /* For sticky header banner, stay above nav; for card variant, stay above background canvas */
+  z-index: ${props => props.$variant === 'sticky' ? '3001' : '5'};
   display: flex;
   align-items: center;
   min-height: ${props => props.$variant === 'card' ? '120px' : '60px'};
@@ -599,6 +600,8 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
           isOpen={showEmailModal}
           onClose={() => setShowEmailModal(false)}
           onSubmit={handleEmailSubmit}
+          collectPaymentMethod={true}
+          trialDays={0}
         />
       )}
     </BannerContainer>

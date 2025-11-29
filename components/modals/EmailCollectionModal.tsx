@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styled from "styled-components";
 import { FaTimes, FaEnvelope, FaArrowRight, FaSignInAlt } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -206,6 +207,11 @@ export default function EmailCollectionModal({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -269,7 +275,12 @@ export default function EmailCollectionModal({
     onClose();
   };
 
-  return (
+  // Ensure we only render on the client and after mount so portals work correctly
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <ModalOverlay
@@ -361,6 +372,7 @@ export default function EmailCollectionModal({
           </ModalContent>
         </ModalOverlay>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
