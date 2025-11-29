@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     console.log("[validate-receipt] Request body:", {
       hasReceiptData: !!receiptData,
       receiptDataLength: receiptData?.length || 0,
+      receiptDataType: typeof receiptData,
+      receiptDataPreview: receiptData?.substring(0, 50) || "N/A",
       hasUserId: !!userId,
       hasAccessToken: !!accessToken
     });
@@ -30,6 +32,27 @@ export async function POST(request: NextRequest) {
       console.log("[validate-receipt] Error: No receipt data provided");
       return NextResponse.json(
         { error: "Receipt data is required" },
+        { status: 400 }
+      );
+    }
+
+    // Clean receipt data - remove any whitespace/newlines that might have been added
+    const cleanedReceiptData = receiptData.trim().replace(/\s/g, '');
+    console.log("[validate-receipt] Cleaned receipt data length:", cleanedReceiptData.length);
+    
+    // Validate that receipt data is valid base64
+    try {
+      const decoded = Buffer.from(cleanedReceiptData, 'base64');
+      console.log("[validate-receipt] Receipt data is valid base64, decoded size:", decoded.length, "bytes");
+      // Re-encode to ensure it's properly formatted
+      const reencoded = decoded.toString('base64');
+      if (reencoded !== cleanedReceiptData) {
+        console.log("[validate-receipt] WARNING - Receipt data re-encoding doesn't match original (may have padding issues)");
+      }
+    } catch (base64Error) {
+      console.error("[validate-receipt] ERROR - Receipt data is NOT valid base64:", base64Error);
+      return NextResponse.json(
+        { error: "Invalid receipt data format (not valid base64)" },
         { status: 400 }
       );
     }
@@ -66,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Validate receipt with Apple
     console.log("[validate-receipt] Starting Apple receipt validation...");
-    const validationResult = await validateReceiptWithApple(receiptData);
+    const validationResult = await validateReceiptWithApple(cleanedReceiptData);
     console.log("[validate-receipt] Apple validation result:", {
       valid: validationResult.valid,
       error: validationResult.error,
@@ -396,11 +419,43 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
       // Check if receipt has any data that might help debug
       console.log("[validate-receipt] Receipt data length:", receiptData.length);
       console.log("[validate-receipt] Receipt data preview:", receiptData.substring(0, 100));
+      console.log("[validate-receipt] Receipt data ends with:", receiptData.substring(Math.max(0, receiptData.length - 50)));
+      
+      // Try to decode and inspect receipt structure (if possible)
+      try {
+        // Base64 decode the receipt to check if it's valid
+        const decoded = Buffer.from(receiptData, 'base64');
+        console.log("[validate-receipt] Receipt decoded successfully, size:", decoded.length, "bytes");
+        console.log("[validate-receipt] Receipt is valid base64, but Apple rejected it with 21004");
+      console.log("[validate-receipt] This likely means:");
+      console.log("[validate-receipt] - The receipt is expired (sandbox receipts expire quickly)");
+      console.log("[validate-receipt] - The bundle ID doesn't match the app in App Store Connect");
+      console.log("[validate-receipt] - The receipt is from a different Apple Developer account");
+      console.log("[validate-receipt] - The in-app purchases are not created in App Store Connect");
+      console.log("[validate-receipt] - The in-app purchases are not associated with the app");
+      console.log("[validate-receipt] - The in-app purchases are not in a valid state for testing");
+      } catch (decodeError) {
+        console.log("[validate-receipt] Receipt is NOT valid base64:", decodeError);
+      }
+    }
+    
+    // Build a more helpful error message
+    let errorMessage = `Apple validation failed with status: ${result.status}`;
+    if (result.status === 21004) {
+      errorMessage += '. Receipt may be invalid, expired, or from a different app/bundle ID.';
+      errorMessage += ' For sandbox testing, verify in App Store Connect:';
+      errorMessage += ' 1. The app is created (even if not submitted) with bundle ID "com.NNAudio.Cymasphere"';
+      errorMessage += ' 2. The in-app purchases are created:';
+      errorMessage += '    - com.NNAudio.Cymasphere.annual.plan';
+      errorMessage += '    - com.NNAudio.Cymasphere.monthly.plan';
+      errorMessage += ' 3. The in-app purchases are associated with your app';
+      errorMessage += ' 4. You are signed in with a sandbox tester account on your device';
+      errorMessage += ' 5. Try restoring purchases if this is a fresh purchase (sandbox receipts may take a moment to propagate)';
     }
     
     return {
       valid: false,
-      error: `Apple validation failed with status: ${result.status}. ${result.status === 21004 ? 'Receipt may be invalid, expired, or from a different app.' : ''}`,
+      error: errorMessage,
       appleResponse: result,
     };
   } catch (error) {
@@ -550,40 +605,6 @@ function extractSubscriptionInfo(appleResponse: any): {
     console.log("[validate-receipt] No subscription data found in Apple response");
     console.log("[validate-receipt] Full Apple response structure:", JSON.stringify(appleResponse, null, 2));
     return null;
-
-    const transactionId = subscriptionTransaction.transaction_id;
-    const originalTransactionId =
-      subscriptionTransaction.original_transaction_id || transactionId;
-    const productId = subscriptionTransaction.product_id;
-
-    // Parse dates (Apple provides timestamps in milliseconds)
-    const purchaseDateMs = parseInt(subscriptionTransaction.purchase_date_ms || "0");
-    const expiresDateMs = parseInt(
-      subscriptionTransaction.expires_date_ms || subscriptionTransaction.purchase_date_ms || "0"
-    );
-
-    const purchaseDate = new Date(purchaseDateMs);
-    const expiresDate = new Date(expiresDateMs);
-
-    // Check if subscription is active (not expired)
-    const now = new Date();
-    const isActive = expiresDate > now;
-
-    // Get auto-renew status from pending_renewal_info
-    const pendingRenewal = appleResponse.pending_renewal_info?.find(
-      (info: any) => info.original_transaction_id === originalTransactionId
-    );
-    const autoRenewStatus = pendingRenewal?.auto_renew_status === "1";
-
-    return {
-      transactionId,
-      originalTransactionId,
-      productId,
-      purchaseDate,
-      expiresDate,
-      isActive,
-      autoRenewStatus,
-    };
   } catch (error) {
     console.error("Error extracting subscription info:", error);
     return null;
