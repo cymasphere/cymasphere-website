@@ -125,7 +125,7 @@ const BackButton = styled.button`
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   const isTrial = searchParams.get("isTrial") === "true";
   const isLifetime = searchParams.get("isLifetime") === "true";
@@ -142,6 +142,50 @@ function CheckoutSuccessContent() {
   
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
+  
+  // Refresh user subscription status after checkout (with retry for webhook delay)
+  useEffect(() => {
+    if (!isLoggedIn || !user?.id) return;
+    
+    const refreshSubscription = async (retryCount = 0) => {
+      try {
+        // Call the refresh endpoint to update subscription status
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile) {
+            // Refresh the user context with updated profile
+            if (refreshUser) {
+              await refreshUser();
+            }
+            console.log('[Checkout Success] Subscription status refreshed:', data.profile.subscription);
+          }
+        }
+      } catch (error) {
+        console.error('[Checkout Success] Error refreshing subscription:', error);
+        
+        // Retry up to 3 times with exponential backoff (webhook might be delayed)
+        if (retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          setTimeout(() => refreshSubscription(retryCount + 1), delay);
+        }
+      }
+    };
+    
+    // Initial refresh immediately
+    refreshSubscription();
+    
+    // Also refresh after a short delay to catch webhook processing
+    const delayedRefresh = setTimeout(() => {
+      refreshSubscription(1);
+    }, 2000); // 2 second delay
+    
+    return () => clearTimeout(delayedRefresh);
+  }, [isLoggedIn, user?.id, refreshUser]);
 
   // Track promotion conversion
   useEffect(() => {

@@ -84,6 +84,25 @@ export async function GET(request: NextRequest) {
       subscriptionCurrency = sessionResult.currency?.toUpperCase() || 'USD';
     }
 
+    // If this is a subscription with a trial, immediately refresh subscription status
+    // This helps avoid race conditions where the plugin checks before webhook processes
+    if (isTrial && sessionResult.subscription && typeof sessionResult.subscription !== 'string') {
+      try {
+        const subscription = sessionResult.subscription;
+        const userId = sessionResult.metadata?.user_id;
+        
+        if (userId) {
+          // Import and call subscription check to update profile immediately
+          const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
+          await checkUserSubscription(userId);
+          console.log(`[Checkout Result] Refreshed subscription status for user ${userId} after trial signup`);
+        }
+      } catch (error) {
+        console.error("[Checkout Result] Error refreshing subscription status:", error);
+        // Don't fail the redirect if this fails - webhook will handle it
+      }
+    }
+
     // Build redirect URL with all necessary parameters
     const params = new URLSearchParams({
       isSignedUp: isSignedUp.toString(),
