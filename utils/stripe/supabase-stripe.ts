@@ -78,6 +78,9 @@ export async function customerPurchasedProFromSupabase(
 
     // Check payment intents for lifetime purchase
     const safePaymentIntents = paymentIntents || [];
+    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
+    const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2; // Second lifetime price ID if exists
+    
     for (const paymentIntent of safePaymentIntents) {
       const attrs =
         ((paymentIntent as any).attrs as {
@@ -87,11 +90,60 @@ export async function customerPurchasedProFromSupabase(
           refunded?: boolean;
         }) || {};
 
-      if (attrs?.metadata?.purchase_type === "lifetime") {
+      // Primary check: metadata
+      const hasLifetimeMetadata = attrs?.metadata?.purchase_type === "lifetime";
+      
+      // Fallback: If metadata is missing, check via Stripe API using price ID
+      // This handles cases where payment intents were created before metadata was properly set
+      let hasLifetimePriceId = false;
+      if (!hasLifetimeMetadata && lifetimePriceId && attrs?.status === "succeeded") {
+        try {
+          const paymentIntentId = (paymentIntent as any).id;
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+          
+          // Retrieve payment intent with expanded invoice data
+          const fullPaymentIntent = await stripe.paymentIntents.retrieve(
+            paymentIntentId,
+            { expand: ["invoice", "invoice.lines"] }
+          );
+          
+          // Check if it's a one-time payment (not a subscription) with lifetime price ID
+          if (fullPaymentIntent.invoice && 
+              typeof fullPaymentIntent.invoice === "object" &&
+              !("subscription" in fullPaymentIntent.invoice && fullPaymentIntent.invoice.subscription)) {
+            const invoice = fullPaymentIntent.invoice as Stripe.Invoice;
+            const lineItems = invoice.lines?.data || [];
+            hasLifetimePriceId = lineItems.some(
+              (line) =>
+                (lifetimePriceId && line.price?.id === lifetimePriceId) ||
+                (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
+            );
+          }
+        } catch (error) {
+          // If Stripe API call fails, silently continue - we'll just rely on metadata
+          console.warn(
+            `Could not verify lifetime purchase via Stripe API for payment intent ${(paymentIntent as any).id}:`,
+            error instanceof Error ? error.message : String(error)
+          );
+        }
+      }
+      
+      const isLifetimePurchase = hasLifetimeMetadata || hasLifetimePriceId;
+      
+      if (isLifetimePurchase) {
         // If this is a lifetime purchase, check its status
         if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
           hasLifetime = true;
           subscriptionType = "lifetime";
+          
+          // If metadata is missing, log it for tracking
+          if (!hasLifetimeMetadata && hasLifetimePriceId) {
+            console.warn(
+              `⚠️ Lifetime purchase detected by price ID for customer ${customer_id} ` +
+              `(Payment Intent: ${(paymentIntent as any).id}). ` +
+              `Consider running tag-lifetime-transactions.js to add metadata.`
+            );
+          }
         } else {
           // If this lifetime purchase was refunded or disputed, they no longer have lifetime access
           hasLifetime = false;

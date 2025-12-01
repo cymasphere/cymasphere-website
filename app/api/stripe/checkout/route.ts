@@ -493,6 +493,15 @@ async function createCheckoutSession(
       sessionParams.subscription_data = subscriptionData;
     }
 
+    // Add payment_intent_data for lifetime purchases to ensure metadata is set
+    if (planType === "lifetime" && mode === "payment") {
+      sessionParams.payment_intent_data = {
+        metadata: {
+          purchase_type: "lifetime",
+        },
+      };
+    }
+
     // Set payment method collection based on collectPaymentMethod flag and trial history
     if (mode === "subscription") {
       // If customer has had a trial before, always require payment method
