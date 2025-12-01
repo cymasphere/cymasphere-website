@@ -1249,6 +1249,147 @@ export async function deleteSupportTicketAdmin(ticketId: string): Promise<{
 }
 
 /**
+ * Get recent support ticket messages from users (non-admin messages) for notifications (admin only)
+ * Groups messages by user and returns the most recent message from each user with message count
+ */
+export async function getRecentSupportTicketMessagesAdmin(limit: number = 10): Promise<{
+  messages: Array<{
+    id: string;
+    ticket_id: string;
+    ticket_number: string;
+    ticket_subject: string;
+    ticket_status: string;
+    content: string;
+    user_id: string;
+    user_email: string | null;
+    created_at: string;
+    message_count: number;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { messages: [], error: "Unauthorized" };
+    }
+
+    // Get recent non-admin messages (user messages only) - get more to allow grouping
+    const { data: messages, error: messagesError } = await supabase
+      .from("support_messages")
+      .select(`
+        id,
+        ticket_id,
+        content,
+        user_id,
+        created_at
+      `)
+      .eq("is_admin", false)
+      .order("created_at", { ascending: false })
+      .limit(limit * 5); // Get more messages to allow grouping
+
+    if (messagesError) {
+      console.error("Error fetching recent messages:", messagesError);
+      return { messages: [], error: messagesError.message };
+    }
+
+    if (!messages || messages.length === 0) {
+      return { messages: [] };
+    }
+
+    // Get ticket info for each message
+    const ticketIds = [...new Set(messages.map(m => m.ticket_id))];
+    const { data: tickets, error: ticketsError } = await supabase
+      .from("support_tickets")
+      .select("id, ticket_number, subject, status")
+      .in("id", ticketIds);
+
+    if (ticketsError) {
+      console.error("Error fetching tickets:", ticketsError);
+      return { messages: [], error: ticketsError.message };
+    }
+
+    const ticketsMap = new Map(
+      (tickets || []).map(t => [t.id, { ticket_number: t.ticket_number, subject: t.subject, status: t.status }])
+    );
+
+    // Get user emails using service role client
+    const serviceSupabase = await createSupabaseServiceRole();
+    const userIds = [...new Set(messages.map(m => m.user_id))];
+    const userEmailsMap = new Map<string, string | null>();
+
+    for (const userId of userIds) {
+      try {
+        const { data: { user } } = await serviceSupabase.auth.admin.getUserById(userId);
+        userEmailsMap.set(userId, user?.email || null);
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+        userEmailsMap.set(userId, null);
+      }
+    }
+
+    // Group messages by user_id
+    const messagesByUser = new Map<string, typeof messages>();
+    for (const message of messages) {
+      const userId = message.user_id;
+      if (!messagesByUser.has(userId)) {
+        messagesByUser.set(userId, []);
+      }
+      messagesByUser.get(userId)!.push(message);
+    }
+
+    // Get the most recent message from each user and count total messages
+    const groupedMessages: Array<{
+      id: string;
+      ticket_id: string;
+      ticket_number: string;
+      ticket_subject: string;
+      ticket_status: string;
+      content: string;
+      user_id: string;
+      user_email: string | null;
+      created_at: string;
+      message_count: number;
+    }> = [];
+
+    for (const [userId, userMessages] of messagesByUser.entries()) {
+      // Sort by created_at descending to get most recent
+      const sortedMessages = [...userMessages].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const mostRecentMessage = sortedMessages[0];
+      const ticket = ticketsMap.get(mostRecentMessage.ticket_id);
+      
+      groupedMessages.push({
+        id: mostRecentMessage.id,
+        ticket_id: mostRecentMessage.ticket_id,
+        ticket_number: ticket?.ticket_number || "Unknown",
+        ticket_subject: ticket?.subject || "Unknown",
+        ticket_status: ticket?.status || "unknown",
+        content: mostRecentMessage.content,
+        user_id: userId,
+        user_email: userEmailsMap.get(userId) || null,
+        created_at: mostRecentMessage.created_at,
+        message_count: userMessages.length,
+      });
+    }
+
+    // Sort grouped messages by most recent and limit
+    groupedMessages.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    return { messages: groupedMessages.slice(0, limit) };
+  } catch (error) {
+    console.error("Error in getRecentSupportTicketMessagesAdmin:", error);
+    return {
+      messages: [],
+      error: error instanceof Error ? error.message : "Failed to fetch recent messages",
+    };
+  }
+}
+
+/**
  * Add a message to a support ticket (admin only)
  */
 export async function addSupportTicketMessageAdmin(

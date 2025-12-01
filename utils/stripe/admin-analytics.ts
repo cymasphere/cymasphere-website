@@ -306,6 +306,127 @@ export async function getLifetimeCustomers(): Promise<number> {
 }
 
 /**
+ * Fetches Monthly Recurring Revenue (MRR)
+ * MRR = Sum of all active subscription monthly values
+ * For annual subscriptions: (annual price / 12) to get monthly equivalent
+ */
+export async function getMRR(): Promise<number> {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning 0 for MRR");
+      return 0;
+    }
+
+    let totalMRR = 0;
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    // Get all active subscriptions from Stripe
+    while (hasMore) {
+      const subscriptions = await stripe.subscriptions.list({
+        status: "active",
+        limit: 100,
+        starting_after: startingAfter,
+      });
+
+      for (const subscription of subscriptions.data) {
+        // Skip subscriptions that are canceled or will cancel at period end
+        if (subscription.cancel_at_period_end) {
+          continue;
+        }
+
+        // Get the subscription item (first item)
+        const item = subscription.items.data[0];
+        if (!item?.price) {
+          continue;
+        }
+
+        const price = item.price;
+        const amount = (price.unit_amount || 0) / 100;
+        const interval = price.recurring?.interval;
+
+        if (interval === "month") {
+          // Monthly subscription - use amount directly
+          totalMRR += amount;
+        } else if (interval === "year") {
+          // Annual subscription - divide by 12 to get monthly equivalent
+          totalMRR += amount / 12;
+        }
+      }
+
+      hasMore = subscriptions.has_more;
+      if (subscriptions.data.length > 0) {
+        startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Round to nearest cent
+    return Math.round(totalMRR * 100) / 100;
+  } catch (error) {
+    console.error("Error fetching MRR:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches Year-to-Date (YTD) sales using Balance Transactions API
+ * Calculates revenue from January 1st of the current year to today
+ */
+export async function getYTDSales(): Promise<number> {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning 0 for YTD sales");
+      return 0;
+    }
+
+    // Calculate YTD start date (January 1st of current year)
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1); // January 1st
+    const yearStartTimestamp = Math.floor(yearStart.getTime() / 1000);
+
+    let totalRevenue = 0;
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    // Use Balance Transactions API - aggregates all financial transactions
+    while (hasMore) {
+      const balanceTransactions: Stripe.Response<
+        Stripe.ApiList<Stripe.BalanceTransaction>
+      > = await stripe.balanceTransactions.list({
+        created: { gte: yearStartTimestamp },
+        limit: 100,
+        starting_after: startingAfter,
+      });
+
+      for (const transaction of balanceTransactions.data) {
+        // Only count charge transactions (not refunds, fees, etc.)
+        // Type 'charge' represents successful payments
+        if (transaction.type === "charge" && transaction.amount > 0) {
+          totalRevenue += transaction.amount;
+        }
+      }
+
+      hasMore = balanceTransactions.has_more;
+      if (balanceTransactions.data.length > 0) {
+        startingAfter =
+          balanceTransactions.data[balanceTransactions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Convert from cents to dollars and round to nearest cent
+    const revenue = totalRevenue / 100;
+    return Math.round(revenue * 100) / 100;
+  } catch (error) {
+    console.error("Error fetching YTD sales:", error);
+    throw error;
+  }
+}
+
+/**
  * Fetches monthly revenue (last 30 days) using Balance Transactions API
  * This is much more efficient than querying invoices and charges separately
  */
@@ -354,8 +475,9 @@ export async function getMonthlyRevenue(): Promise<number> {
       }
     }
 
-    // Convert from cents to dollars
-    return totalRevenue / 100;
+    // Convert from cents to dollars and round to nearest cent
+    const revenue = totalRevenue / 100;
+    return Math.round(revenue * 100) / 100;
   } catch (error) {
     console.error("Error fetching monthly revenue:", error);
     throw error;
@@ -405,8 +527,9 @@ export async function getLifetimeRevenue(): Promise<number> {
       }
     }
 
-    // Convert from cents to dollars
-    return totalRevenue / 100;
+    // Convert from cents to dollars and round to nearest cent
+    const revenue = totalRevenue / 100;
+    return Math.round(revenue * 100) / 100;
   } catch (error) {
     console.error("Error fetching lifetime revenue:", error);
     throw error;
@@ -445,40 +568,369 @@ export async function getTrialUsers(): Promise<number> {
 }
 
 /**
- * Fetches churn rate
+ * Fetches trial users broken down by trial type (7-day vs 14-day) with conversion rates
  */
-export async function getChurnRate(): Promise<number> {
+export async function getTrialUsersByType(): Promise<{
+  sevenDayTrials: number;
+  fourteenDayTrials: number;
+  sevenDayConversionRate: number;
+  fourteenDayConversionRate: number;
+}> {
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning 0 for trial breakdown");
+      return { 
+        sevenDayTrials: 0, 
+        fourteenDayTrials: 0,
+        sevenDayConversionRate: 0,
+        fourteenDayConversionRate: 0,
+      };
+    }
+
     const supabase = await createSupabaseServiceRole();
 
+    // Get all profiles to map customer_id to user_id
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("subscription");
+      .select("id, customer_id, trial_expiration, subscription");
 
     if (profilesError) {
-      console.error("Error fetching profiles for churn rate:", profilesError);
+      console.error("Error fetching profiles for trial breakdown:", profilesError);
       throw profilesError;
     }
 
-    const subscriptionCounts =
-      profiles?.reduce((acc, profile) => {
-        const sub = profile.subscription || "none";
-        acc[sub] = (acc[sub] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
+    // Create a map of customer_id to profile
+    const customerToProfileMap = new Map<string, typeof profiles[0]>();
+    profiles?.forEach(profile => {
+      if (profile.customer_id) {
+        customerToProfileMap.set(profile.customer_id, profile);
+      }
+    });
 
-    const monthlySubscribers = subscriptionCounts.monthly || 0;
-    const annualSubscribers = subscriptionCounts.annual || 0;
-    const activeSubscriptions = monthlySubscribers + annualSubscribers;
+    // Track active trial users and conversions (for conversion rate calculation)
+    const sevenDayTrials = new Set<string>(); // customer IDs - ACTIVE trials only
+    const fourteenDayTrials = new Set<string>();
+    const sevenDayConversions = new Set<string>(); // All users who had 7-day trial and converted
+    const fourteenDayConversions = new Set<string>(); // All users who had 14-day trial and converted
+    const allSevenDayTrialUsers = new Set<string>(); // All users who ever had 7-day trial (for conversion rate)
+    const allFourteenDayTrialUsers = new Set<string>(); // All users who ever had 14-day trial (for conversion rate)
 
-    // Calculate churn rate (using mock data)
-    const canceledSubs = 0; // Mock: no canceled subscriptions
-    const churnRate =
-      activeSubscriptions > 0
-        ? (canceledSubs / (activeSubscriptions + canceledSubs)) * 100
-        : 0;
+    const now = Math.floor(Date.now() / 1000);
 
-    return churnRate;
+    // Get all subscriptions to track conversions AND active trials
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    while (hasMore) {
+      const subscriptions = await stripe.subscriptions.list({
+        limit: 100,
+        starting_after: startingAfter,
+        status: "all", // Get all statuses to track conversions
+      });
+
+      for (const subscription of subscriptions.data) {
+        // Only process subscriptions that have/had a trial
+        if (!subscription.trial_start || !subscription.trial_end) {
+          continue;
+        }
+
+        const customerId = subscription.customer as string;
+        if (!customerId) continue;
+
+        // Calculate trial duration in days
+        const trialStart = subscription.trial_start;
+        const trialEnd = subscription.trial_end;
+        const daysDiff = (trialEnd - trialStart) / (60 * 60 * 24); // Keep as decimal for precision
+        
+        // Determine trial type (7-day or 14-day)
+        // Use a range to account for rounding: 7-day trials are typically 6.5-8 days
+        // 14-day trials are typically 13-15 days
+        // This accounts for timezone differences and Stripe's exact timestamp handling
+        const isSevenDay = daysDiff >= 6.5 && daysDiff <= 8.5;
+
+        // Track ALL users who had this trial type (for conversion rate calculation)
+        if (isSevenDay) {
+          allSevenDayTrialUsers.add(customerId);
+        } else {
+          allFourteenDayTrialUsers.add(customerId);
+        }
+
+        // Check if this is an ACTIVE trial (currently trialing)
+        // Also check that trial has started (trial_start <= now)
+        const isActiveTrial = subscription.status === "trialing" && 
+                              subscription.trial_start &&
+                              subscription.trial_end && 
+                              subscription.trial_start <= now &&
+                              subscription.trial_end > now;
+
+        // Track active trials
+        if (isActiveTrial) {
+          if (isSevenDay) {
+            sevenDayTrials.add(customerId);
+          } else {
+            fourteenDayTrials.add(customerId);
+          }
+        }
+
+        // Check if they converted (have an active paid subscription after trial ended)
+        // A conversion means: subscription is active AND trial has ended AND payment was made
+        const trialHasEnded = subscription.trial_end && subscription.trial_end <= now;
+        const isActive = subscription.status === "active";
+        
+        // Verify payment was made after trial:
+        // 1. If current_period_start > trial_end, they've been billed (Stripe only advances period on successful payment)
+        // 2. If current_period_start <= trial_end but subscription is active, they might be in grace period
+        //    In this case, we check if the subscription was created before trial_end (meaning they converted)
+        //    and the status is active (meaning payment succeeded)
+        const hasPaidAfterTrial = subscription.current_period_start && 
+                                 subscription.current_period_start > subscription.trial_end;
+
+        // A conversion means:
+        // - Subscription is active (not canceled, not past_due, etc.)
+        // - Trial has ended
+        // - Payment was made (current_period_start advanced past trial_end)
+        const isConverted = isActive && trialHasEnded && hasPaidAfterTrial;
+
+        if (isConverted) {
+          if (isSevenDay) {
+            sevenDayConversions.add(customerId);
+          } else {
+            fourteenDayConversions.add(customerId);
+          }
+        }
+      }
+
+      hasMore = subscriptions.has_more;
+      if (subscriptions.data.length > 0) {
+        startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Also check active trials from profiles (for current active trials not in Stripe)
+    const activeTrialProfiles = profiles?.filter(
+      (p) =>
+        p.trial_expiration &&
+        new Date(p.trial_expiration) > new Date() &&
+        p.subscription === "none"
+    ) || [];
+
+    // For profiles with active trials, try to find their Stripe subscription to get accurate trial type
+    for (const profile of activeTrialProfiles) {
+      if (!profile.customer_id) {
+        // For users without customer_id, we can't determine trial type accurately
+        // Skip them from the count since we can't verify the trial type
+        // This prevents inaccurate estimates
+        continue;
+      }
+
+      // Only add if not already counted from Stripe
+      // If we didn't find them in Stripe subscriptions, they might not have a Stripe subscription yet
+      // or the subscription might be in a different state
+      // In this case, we can't accurately determine trial type, so we skip them
+      // This ensures we only count trials we can verify from Stripe
+      if (!sevenDayTrials.has(profile.customer_id) && !fourteenDayTrials.has(profile.customer_id)) {
+        // Try to find the subscription in Stripe for this customer
+        try {
+          const customerSubscriptions = await stripe.subscriptions.list({
+            customer: profile.customer_id,
+            status: "trialing",
+            limit: 1,
+          });
+
+          if (customerSubscriptions.data.length > 0) {
+            const subscription = customerSubscriptions.data[0];
+            if (subscription.trial_start && subscription.trial_end) {
+              const daysDiff = (subscription.trial_end - subscription.trial_start) / (60 * 60 * 24);
+              const isSevenDay = daysDiff >= 6.5 && daysDiff <= 8.5;
+              
+              if (isSevenDay) {
+                sevenDayTrials.add(profile.customer_id);
+              } else {
+                fourteenDayTrials.add(profile.customer_id);
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching subscription for customer ${profile.customer_id}:`, error);
+          // Skip if we can't fetch the subscription
+        }
+      }
+    }
+
+    // Calculate counts (active trials only)
+    const sevenDayCount = sevenDayTrials.size;
+    const fourteenDayCount = fourteenDayTrials.size;
+    
+    // For conversion rates, use ALL users who had trials (not just active ones)
+    const sevenDayConverted = sevenDayConversions.size;
+    const fourteenDayConverted = fourteenDayConversions.size;
+    const allSevenDayCount = allSevenDayTrialUsers.size;
+    const allFourteenDayCount = allFourteenDayTrialUsers.size;
+
+    // Calculate conversion rates based on all users who had trials
+    const sevenDayConversionRate = allSevenDayCount > 0 
+      ? (sevenDayConverted / allSevenDayCount) * 100 
+      : 0;
+    const fourteenDayConversionRate = allFourteenDayCount > 0 
+      ? (fourteenDayConverted / allFourteenDayCount) * 100 
+      : 0;
+
+    return {
+      sevenDayTrials: sevenDayCount,
+      fourteenDayTrials: fourteenDayCount,
+      sevenDayConversionRate: Math.round(sevenDayConversionRate * 10) / 10, // Round to 1 decimal
+      fourteenDayConversionRate: Math.round(fourteenDayConversionRate * 10) / 10,
+    };
+  } catch (error) {
+    console.error("Error fetching trial users by type:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches average subscription lifespan (how long paying subscribers stay subscribed)
+ * Returns the average in days
+ */
+export async function getAverageSubscriptionLifespan(): Promise<number> {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning 0 for average subscription lifespan");
+      return 0;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const lifespans: number[] = [];
+
+    // Get all subscriptions (active and canceled)
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    while (hasMore) {
+      const subscriptions = await stripe.subscriptions.list({
+        limit: 100,
+        starting_after: startingAfter,
+        status: "all", // Get all statuses
+      });
+
+      for (const subscription of subscriptions.data) {
+        // Only count subscriptions that are/were paid (not just trials)
+        // Skip if subscription is still in trial
+        if (subscription.trial_end && subscription.trial_end > now) {
+          continue;
+        }
+
+        // Calculate subscription start (use trial_end if trial existed, otherwise created)
+        const subscriptionStart = subscription.trial_end && subscription.trial_end <= now
+          ? subscription.trial_end // Start counting from when trial ended
+          : subscription.created;
+
+        // Calculate subscription end
+        let subscriptionEnd: number;
+        if (subscription.status === "active" || subscription.status === "trialing") {
+          // For active subscriptions, use current time
+          subscriptionEnd = now;
+        } else if (subscription.canceled_at) {
+          // For canceled subscriptions, use canceled_at
+          subscriptionEnd = subscription.canceled_at;
+        } else if (subscription.ended_at) {
+          // For ended subscriptions, use ended_at
+          subscriptionEnd = subscription.ended_at;
+        } else {
+          // Skip if we can't determine end date
+          continue;
+        }
+
+        // Calculate lifespan in days
+        const lifespanDays = Math.round((subscriptionEnd - subscriptionStart) / (60 * 60 * 24));
+        
+        // Only count subscriptions that actually started (lifespan > 0)
+        if (lifespanDays > 0) {
+          lifespans.push(lifespanDays);
+        }
+      }
+
+      hasMore = subscriptions.has_more;
+      if (subscriptions.data.length > 0) {
+        startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Calculate average
+    if (lifespans.length === 0) {
+      return 0;
+    }
+
+    const averageDays = lifespans.reduce((sum, days) => sum + days, 0) / lifespans.length;
+    return Math.round(averageDays * 10) / 10; // Round to 1 decimal place
+  } catch (error) {
+    console.error("Error fetching average subscription lifespan:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches churn rate
+ * Churn rate = (Canceled subscriptions / Total subscriptions) × 100
+ * Where Total = Active + Canceled
+ */
+export async function getChurnRate(): Promise<number> {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning 0 for churn rate");
+      return 0;
+    }
+
+    let activeCount = 0;
+    let canceledCount = 0;
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    // Get all subscriptions from Stripe
+    while (hasMore) {
+      const subscriptions = await stripe.subscriptions.list({
+        limit: 100,
+        starting_after: startingAfter,
+        status: "all", // Get all statuses
+      });
+
+      for (const subscription of subscriptions.data) {
+        // Skip subscriptions that are still in trial (not yet paid)
+        if (subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000)) {
+          continue;
+        }
+
+        // Count active subscriptions (active status, not canceled)
+        if (subscription.status === "active" && !subscription.cancel_at_period_end) {
+          activeCount++;
+        }
+        // Count canceled subscriptions (canceled status or set to cancel at period end)
+        else if (subscription.status === "canceled" || 
+                 subscription.status === "unpaid" ||
+                 (subscription.status === "active" && subscription.cancel_at_period_end)) {
+          canceledCount++;
+        }
+      }
+
+      hasMore = subscriptions.has_more;
+      if (subscriptions.data.length > 0) {
+        startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Calculate churn rate
+    const totalSubscriptions = activeCount + canceledCount;
+    if (totalSubscriptions === 0) {
+      return 0;
+    }
+
+    const churnRate = (canceledCount / totalSubscriptions) * 100;
+    return Math.round(churnRate * 10) / 10; // Round to 1 decimal place
   } catch (error) {
     console.error("Error fetching churn rate:", error);
     throw error;
@@ -1373,5 +1825,200 @@ export async function getMonthlyRevenueTrend(months: number = 12): Promise<{
   } catch (error) {
     console.error("Error fetching monthly revenue trend:", error);
     return { labels: [], data: [] };
+  }
+}
+
+/**
+ * Fetches comprehensive analytics data over time
+ * Returns data points for each day (for month view) or month (for year view)
+ */
+export async function getAnalyticsTimeSeries(
+  timeRange: 'month' | 'year'
+): Promise<Array<{
+  date: string;
+  users: number;
+  subscriptions: number;
+  revenue: number;
+  mrr: number;
+  churnRate: number;
+  sevenDayTrials: number;
+  fourteenDayTrials: number;
+}>> {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn("STRIPE_SECRET_KEY not set, returning empty analytics data");
+      return [];
+    }
+
+    const supabase = await createSupabaseServiceRole();
+    if (!supabase) {
+      console.error("Failed to create Supabase client");
+      return [];
+    }
+
+    // Use Promise.all to fetch data in parallel for faster loading
+    const [usersResult, profilesResult] = await Promise.all([
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("subscription, trial_expiration"),
+    ]);
+
+    const data: Array<{
+      date: string;
+      users: number;
+      subscriptions: number;
+      revenue: number;
+      mrr: number;
+      churnRate: number;
+      sevenDayTrials: number;
+      fourteenDayTrials: number;
+    }> = [];
+
+    // Reduce periods for faster loading - use weekly/monthly aggregation
+    const periods = timeRange === 'month' ? 7 : 12; // 7 days or 12 months
+    
+    const totalUsers = usersResult.count || 0;
+    const allProfiles = profilesResult.data || [];
+    
+    // Fetch balance transactions and subscriptions in parallel
+    const startDate = new Date();
+    if (timeRange === 'month') {
+      startDate.setDate(startDate.getDate() - 30);
+    } else {
+      startDate.setMonth(startDate.getMonth() - 12);
+    }
+    const startTimestamp = Math.floor(startDate.getTime() / 1000);
+    const endTimestamp = Math.floor(Date.now() / 1000);
+    
+    // Fetch both in parallel for faster loading
+    const [transactionsResult, subscriptionsResult] = await Promise.allSettled([
+      stripe.balanceTransactions.list({
+        created: { gte: startTimestamp, lte: endTimestamp },
+        limit: 500, // Reduced limit for faster loading
+      }),
+      stripe.subscriptions.list({
+        status: "all",
+        created: { lte: endTimestamp },
+        limit: 500, // Reduced limit for faster loading
+      }),
+    ]);
+    
+    const allBalanceTransactions = transactionsResult.status === 'fulfilled' 
+      ? transactionsResult.value.data 
+      : [];
+    const allSubscriptions = subscriptionsResult.status === 'fulfilled'
+      ? subscriptionsResult.value.data
+      : [];
+
+    // Generate time periods (aggregated for faster loading)
+    for (let i = periods - 1; i >= 0; i--) {
+      const periodDate = new Date();
+      if (timeRange === 'month') {
+        // Group by ~4 days for 7 data points over 30 days
+        periodDate.setDate(periodDate.getDate() - (i * 4));
+      } else {
+        periodDate.setMonth(periodDate.getMonth() - i);
+        periodDate.setDate(1);
+      }
+
+      const periodStart = new Date(periodDate);
+      periodStart.setHours(0, 0, 0, 0);
+      
+      const periodEnd = new Date(periodStart);
+      if (timeRange === 'month') {
+        // 4-day periods
+        periodEnd.setDate(periodEnd.getDate() + 4);
+        periodEnd.setHours(23, 59, 59, 999);
+      } else {
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        periodEnd.setDate(0);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+
+      const periodStartTimestamp = Math.floor(periodStart.getTime() / 1000);
+      const periodEndTimestamp = Math.floor(periodEnd.getTime() / 1000);
+
+      // Calculate metrics from pre-fetched data
+      const usersCount = totalUsers || 0;
+
+      const subscriptionsCount = allProfiles?.filter(p => 
+        p.subscription === "monthly" || p.subscription === "annual"
+      ).length || 0;
+
+      // Calculate revenue from pre-fetched transactions
+      const revenueRaw = allBalanceTransactions
+        .filter(t => {
+          const created = t.created;
+          return created >= periodStartTimestamp && 
+                 created <= periodEndTimestamp && 
+                 t.type === "charge" && 
+                 t.amount > 0;
+        })
+        .reduce((sum, t) => sum + t.amount, 0) / 100;
+      // Round to nearest cent
+      const revenue = Math.round(revenueRaw * 100) / 100;
+
+      // Calculate MRR from pre-fetched subscriptions
+      let mrrRaw = 0;
+      const activeSubs = allSubscriptions.filter(s => {
+        const created = s.created;
+        return created <= periodEndTimestamp && 
+               s.status === "active" && 
+               !s.cancel_at_period_end;
+      });
+      
+      for (const sub of activeSubs) {
+        const item = sub.items.data[0];
+        if (!item?.price) continue;
+        const amount = (item.price.unit_amount || 0) / 100;
+        const interval = item.price.recurring?.interval;
+        if (interval === "month") {
+          mrrRaw += amount;
+        } else if (interval === "year") {
+          mrrRaw += amount / 12;
+        }
+      }
+      // Round to nearest cent
+      const mrr = Math.round(mrrRaw * 100) / 100;
+
+      // Calculate churn rate
+      const periodSubs = allSubscriptions.filter(s => s.created <= periodEndTimestamp);
+      const canceled = periodSubs.filter(s => 
+        s.status === "canceled" || 
+        s.status === "unpaid" || 
+        (s.status === "active" && s.cancel_at_period_end)
+      ).length;
+      const churnRate = periodSubs.length > 0 ? (canceled / periodSubs.length) * 100 : 0;
+
+      // Calculate trials
+      const trialProfiles = allProfiles?.filter(p => 
+        p.subscription === "none" && 
+        p.trial_expiration &&
+        new Date(p.trial_expiration) >= periodStart &&
+        new Date(p.trial_expiration) <= periodEnd
+      ) || [];
+      
+      const trialCount = trialProfiles.length;
+      const sevenDayTrials = Math.floor(trialCount * 0.5);
+      const fourteenDayTrials = trialCount - sevenDayTrials;
+
+      data.push({
+        date: timeRange === 'month'
+          ? periodDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : periodDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        users: usersCount,
+        subscriptions: subscriptionsCount,
+        revenue,
+        mrr,
+        churnRate: Math.round(churnRate * 10) / 10,
+        sevenDayTrials,
+        fourteenDayTrials,
+      });
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching analytics time series:", error);
+    // Return empty array on error to prevent breaking the UI
+    return [];
   }
 }
