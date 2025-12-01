@@ -197,6 +197,25 @@ export async function POST(request: NextRequest) {
               session.payment_intent as string
             );
 
+            // CRITICAL FIX: Ensure payment intent has purchase_type metadata for lifetime purchases
+            // Sometimes Stripe doesn't copy payment_intent_data.metadata to the actual payment intent
+            // Check if this is a lifetime purchase and ensure metadata is set
+            if (metadata.plan_type === "lifetime" && !paymentIntent.metadata?.purchase_type) {
+              console.log(`🔧 Fixing missing metadata on payment intent ${paymentIntent.id} for lifetime purchase`);
+              try {
+                await stripe.paymentIntents.update(paymentIntent.id, {
+                  metadata: {
+                    ...paymentIntent.metadata,
+                    purchase_type: "lifetime",
+                  },
+                });
+                console.log(`✅ Updated payment intent metadata for lifetime purchase`);
+              } catch (updateError) {
+                console.error(`❌ Failed to update payment intent metadata:`, updateError);
+                // Continue processing even if metadata update fails
+              }
+            }
+
             // Track purchase to Meta CAPI
             await trackMetaConversionFromWebhook(
               'Purchase', // Meta event for one-time purchase
