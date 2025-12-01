@@ -689,6 +689,162 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
 }
 
 /**
+ * Get Stripe payment intents (purchases) for a customer with admin check (admin only)
+ */
+export async function getCustomerPurchasesAdmin(
+  customerId: string
+): Promise<{
+  purchases: Array<{
+    id: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    description: string;
+    metadata?: Record<string, string>;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { purchases: [], error: "Unauthorized" };
+    }
+
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: customerId,
+      limit: 100,
+      expand: ['data.invoice'],
+    });
+
+    // Get all invoices to check which payment intents are linked to subscriptions
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    // Create a map of payment intent IDs to their invoices
+    const piToInvoiceMap = new Map<string, Stripe.Invoice>();
+    invoices.data.forEach((inv) => {
+      if (inv.payment_intent && typeof inv.payment_intent === 'string') {
+        piToInvoiceMap.set(inv.payment_intent, inv);
+      }
+    });
+
+    const purchases = paymentIntents.data.map((pi) => {
+      // Determine description from metadata, invoice, or amount
+      let description = "One-time purchase";
+      
+      // Check if this is a lifetime purchase
+      if (pi.metadata?.purchase_type === "lifetime") {
+        description = "Lifetime Access Purchase";
+      } 
+      // Check if this payment intent is linked to an invoice (subscription payment)
+      else if (piToInvoiceMap.has(pi.id)) {
+        const invoice = piToInvoiceMap.get(pi.id)!;
+        if (invoice.subscription) {
+          // It's a subscription payment
+          description = "Subscription payment";
+        } else {
+          description = "One-time purchase";
+        }
+      } 
+      // Check if payment intent has invoice in expanded data
+      else if (pi.invoice && typeof pi.invoice === 'object' && 'subscription' in pi.invoice) {
+        description = "Subscription payment";
+      }
+      else if (pi.amount === 0) {
+        description = "Free purchase";
+      }
+
+      return {
+        id: pi.id,
+        amount: pi.amount / 100, // Convert cents to dollars
+        status: pi.status,
+        createdAt: new Date(pi.created * 1000).toISOString(),
+        description,
+        metadata: pi.metadata || {},
+      };
+    });
+
+    return { purchases };
+  } catch (error) {
+    console.error("Error in getCustomerPurchasesAdmin:", error);
+    return {
+      purchases: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch purchases",
+    };
+  }
+}
+
+/**
+ * Get Stripe invoices for a customer with admin check (admin only)
+ */
+export async function getCustomerInvoicesAdmin(
+  customerId: string
+): Promise<{
+  invoices: Array<{
+    id: string;
+    number: string | null;
+    amount: number;
+    status: string;
+    createdAt: string;
+    paidAt: string | null;
+    dueDate: string | null;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { invoices: [], error: "Unauthorized" };
+    }
+
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 100,
+    });
+
+    const formattedInvoices = invoices.data.map((inv) => {
+      return {
+        id: inv.id,
+        number: inv.number,
+        amount: inv.amount_paid / 100, // Convert cents to dollars
+        status: inv.status || "unknown",
+        createdAt: new Date(inv.created * 1000).toISOString(),
+        paidAt: inv.status === "paid" && inv.status_transitions?.paid_at
+          ? new Date(inv.status_transitions.paid_at * 1000).toISOString()
+          : null,
+        dueDate: inv.due_date
+          ? new Date(inv.due_date * 1000).toISOString()
+          : null,
+      };
+    });
+
+    return { invoices: formattedInvoices };
+  } catch (error) {
+    console.error("Error in getCustomerInvoicesAdmin:", error);
+    return {
+      invoices: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch invoices",
+    };
+  }
+}
+
+/**
  * Get support ticket counts for multiple users with admin check (admin only)
  * Returns a map of userId -> ticket count
  */

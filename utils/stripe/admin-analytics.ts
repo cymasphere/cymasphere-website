@@ -1184,6 +1184,7 @@ export async function getAdditionalUserData(userIds: string[]): Promise<{
         });
 
         // Fetch payment intents directly from Stripe API for each customer
+        // We need to track which payment intents are linked to invoices to avoid double counting
         const paymentPromises = customerIds.map(async (customerId) => {
           try {
             const paymentIntents = await stripe.paymentIntents.list({
@@ -1191,12 +1192,31 @@ export async function getAdditionalUserData(userIds: string[]): Promise<{
               limit: 100,
             });
 
-            const succeededTotal = paymentIntents.data
-              .filter((pi) => pi.status === "succeeded" && !pi.refunded)
+            // Get invoice payment intent IDs to avoid double counting
+            // (invoices already include subscription payments)
+            const invoicePaymentIntentIds = new Set<string>();
+            const customerInvoices = await stripe.invoices.list({
+              customer: customerId,
+              limit: 100,
+            });
+            customerInvoices.data.forEach((inv) => {
+              if (inv.payment_intent && typeof inv.payment_intent === 'string') {
+                invoicePaymentIntentIds.add(inv.payment_intent);
+              }
+            });
+
+            // Only count payment intents that are NOT linked to invoices
+            // (standalone one-time payments like lifetime purchases)
+            const standaloneTotal = paymentIntents.data
+              .filter((pi) => 
+                pi.status === "succeeded" && 
+                !pi.refunded &&
+                !invoicePaymentIntentIds.has(pi.id)
+              )
               .reduce((sum, pi) => sum + (pi.amount || 0), 0);
 
-            if (succeededTotal > 0) {
-              paymentsMap.set(customerId, succeededTotal);
+            if (standaloneTotal > 0) {
+              paymentsMap.set(customerId, standaloneTotal);
             }
           } catch (err) {
             console.error(
@@ -1209,11 +1229,12 @@ export async function getAdditionalUserData(userIds: string[]): Promise<{
         await Promise.allSettled([...invoicePromises, ...paymentPromises]);
 
         // Map customer IDs to user IDs and calculate totalSpent
+        // Invoices cover subscription payments, standalone payment intents cover one-time purchases
         profiles?.forEach((profile) => {
           if (profile.customer_id) {
             const invoiceTotal = invoicesMap.get(profile.customer_id) || 0;
-            const paymentTotal = paymentsMap.get(profile.customer_id) || 0;
-            const total = (invoiceTotal + paymentTotal) / 100;
+            const standalonePaymentTotal = paymentsMap.get(profile.customer_id) || 0;
+            const total = (invoiceTotal + standalonePaymentTotal) / 100;
             if (total > 0) {
               totalSpentMap[profile.id] = total;
             }

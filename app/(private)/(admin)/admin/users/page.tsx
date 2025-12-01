@@ -40,6 +40,8 @@ import {
   getAdditionalUserDataAdmin,
   getUserSupportTicketsAdmin,
   getUserSupportTicketCountsAdmin,
+  getCustomerPurchasesAdmin,
+  getCustomerInvoicesAdmin,
 } from "@/app/actions/user-management";
 import type { UserData } from "@/utils/stripe/admin-analytics";
 import {
@@ -857,6 +859,18 @@ const DataTableCell = styled.td`
   color: var(--text);
 `;
 
+const StripeLink = styled.a`
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+`;
+
 const StatusBadge = styled.span<{ $status: string }>`
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -1275,6 +1289,29 @@ export default function AdminCRM() {
     }>
   >([]);
   const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
+  const [userPurchases, setUserPurchases] = useState<
+    Array<{
+      id: string;
+      amount: number;
+      status: string;
+      createdAt: string;
+      description: string;
+      metadata?: Record<string, string>;
+    }>
+  >([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [userInvoices, setUserInvoices] = useState<
+    Array<{
+      id: string;
+      number: string | null;
+      amount: number;
+      status: string;
+      createdAt: string;
+      paidAt: string | null;
+      dueDate: string | null;
+    }>
+  >([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [supportTicketCounts, setSupportTicketCounts] = useState<
     Record<string, number>
   >({});
@@ -1663,8 +1700,12 @@ export default function AdminCRM() {
     // Fetch real subscription data if user has a customer ID
     if (user.customerId) {
       await fetchUserSubscriptions(user.customerId);
+      await fetchUserPurchases(user.customerId);
+      await fetchUserInvoices(user.customerId);
     } else {
       setUserSubscriptions([]);
+      setUserPurchases([]);
+      setUserInvoices([]);
     }
 
     // Fetch support tickets for the user
@@ -1709,6 +1750,44 @@ export default function AdminCRM() {
     }
   };
 
+  const fetchUserPurchases = async (customerId: string) => {
+    try {
+      setLoadingPurchases(true);
+      const result = await getCustomerPurchasesAdmin(customerId);
+
+      if (result.error) {
+        console.error("Error fetching purchases:", result.error);
+        setUserPurchases([]);
+      } else {
+        setUserPurchases(result.purchases);
+      }
+    } catch (error) {
+      console.error("Error fetching purchases:", error);
+      setUserPurchases([]);
+    } finally {
+      setLoadingPurchases(false);
+    }
+  };
+
+  const fetchUserInvoices = async (customerId: string) => {
+    try {
+      setLoadingInvoices(true);
+      const result = await getCustomerInvoicesAdmin(customerId);
+
+      if (result.error) {
+        console.error("Error fetching invoices:", result.error);
+        setUserInvoices([]);
+      } else {
+        setUserInvoices(result.invoices);
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      setUserInvoices([]);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
   const closeModal = () => {
     setShowUserModal(false);
     setSelectedUser(null);
@@ -1716,6 +1795,8 @@ export default function AdminCRM() {
     setSubscriptionError(null);
     setSubscriptionSuccess(null);
     setSupportTickets([]);
+    setUserPurchases([]);
+    setUserInvoices([]);
   };
 
   // Mock detailed data for demonstration
@@ -2646,7 +2727,19 @@ export default function AdminCRM() {
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Customer ID</InfoLabel>
-                    <InfoValue>{selectedUser.customerId || "N/A"}</InfoValue>
+                    <InfoValue>
+                      {selectedUser.customerId ? (
+                        <StripeLink
+                          href={`https://dashboard.stripe.com/customers/${selectedUser.customerId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {selectedUser.customerId}
+                        </StripeLink>
+                      ) : (
+                        "N/A"
+                      )}
+                    </InfoValue>
                   </InfoItem>
                 </InfoGrid>
               </ModalSection>
@@ -2929,70 +3022,77 @@ export default function AdminCRM() {
                   <FaChartLine />
                   Purchases
                 </SectionTitle>
-                {(() => {
-                  const details = getMockUserDetails(selectedUser);
-                  return details.purchases.length > 0 ? (
-                    <DataTable>
-                      <DataTableHeader>
-                        <tr>
-                          <DataTableHeaderCell>ID</DataTableHeaderCell>
-                          <DataTableHeaderCell>Description</DataTableHeaderCell>
-                          <DataTableHeaderCell>Amount</DataTableHeaderCell>
-                          <DataTableHeaderCell>Status</DataTableHeaderCell>
-                          <DataTableHeaderCell>Date</DataTableHeaderCell>
-                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
-                        </tr>
-                      </DataTableHeader>
-                      <DataTableBody>
-                        {details.purchases.map((purchase) => (
-                          <DataTableRow key={purchase.id}>
-                            <DataTableCell>{purchase.id}</DataTableCell>
-                            <DataTableCell>
-                              {purchase.description}
-                            </DataTableCell>
-                            <DataTableCell>
-                              {formatCurrency(purchase.amount)}
-                            </DataTableCell>
-                            <DataTableCell>
-                              <StatusBadge $status={purchase.status}>
-                                {purchase.status}
-                              </StatusBadge>
-                            </DataTableCell>
-                            <DataTableCell>
-                              {formatDate(purchase.createdAt)}
-                            </DataTableCell>
-                            <DataTableCell>
-                              {purchase.status === "succeeded" && (
-                                <RefundButton
-                                  variant="danger"
-                                  disabled={refundLoading === purchase.id}
-                                  onClick={() =>
-                                    handleRefundPurchase(
-                                      purchase.id,
-                                      purchase.amount,
-                                      purchase.description
-                                    )
-                                  }
-                                >
-                                  {refundLoading === purchase.id ? (
-                                    <LoadingSpinner />
-                                  ) : (
-                                    <FaUndo />
-                                  )}
-                                  {refundSuccess === purchase.id
-                                    ? "Refunded"
-                                    : "Refund"}
-                                </RefundButton>
-                              )}
-                            </DataTableCell>
-                          </DataTableRow>
-                        ))}
-                      </DataTableBody>
-                    </DataTable>
-                  ) : (
-                    <EmptyState>No purchases found</EmptyState>
-                  );
-                })()}
+                {loadingPurchases ? (
+                  <EmptyState>Loading purchases...</EmptyState>
+                ) : userPurchases.length > 0 ? (
+                  <DataTable>
+                    <DataTableHeader>
+                      <tr>
+                        <DataTableHeaderCell>ID</DataTableHeaderCell>
+                        <DataTableHeaderCell>Description</DataTableHeaderCell>
+                        <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                        <DataTableHeaderCell>Status</DataTableHeaderCell>
+                        <DataTableHeaderCell>Date</DataTableHeaderCell>
+                        <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                      </tr>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {userPurchases.map((purchase) => (
+                        <DataTableRow key={purchase.id}>
+                          <DataTableCell>
+                            <StripeLink
+                              href={`https://dashboard.stripe.com/payments/${purchase.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {purchase.id}
+                            </StripeLink>
+                          </DataTableCell>
+                          <DataTableCell>
+                            {purchase.description}
+                          </DataTableCell>
+                          <DataTableCell>
+                            {formatCurrency(purchase.amount)}
+                          </DataTableCell>
+                          <DataTableCell>
+                            <StatusBadge $status={purchase.status}>
+                              {purchase.status}
+                            </StatusBadge>
+                          </DataTableCell>
+                          <DataTableCell>
+                            {formatDate(purchase.createdAt)}
+                          </DataTableCell>
+                          <DataTableCell>
+                            {purchase.status === "succeeded" && (
+                              <RefundButton
+                                variant="danger"
+                                disabled={refundLoading === purchase.id}
+                                onClick={() =>
+                                  handleRefundPurchase(
+                                    purchase.id,
+                                    purchase.amount,
+                                    purchase.description
+                                  )
+                                }
+                              >
+                                {refundLoading === purchase.id ? (
+                                  <LoadingSpinner />
+                                ) : (
+                                  <FaUndo />
+                                )}
+                                {refundSuccess === purchase.id
+                                  ? "Refunded"
+                                  : "Refund"}
+                              </RefundButton>
+                            )}
+                          </DataTableCell>
+                        </DataTableRow>
+                      ))}
+                    </DataTableBody>
+                  </DataTable>
+                ) : (
+                  <EmptyState>No purchases found</EmptyState>
+                )}
               </ModalSection>
 
               {/* Invoices */}
@@ -3001,54 +3101,62 @@ export default function AdminCRM() {
                   <FaTicketAlt />
                   Invoices
                 </SectionTitle>
-                {(() => {
-                  const details = getMockUserDetails(selectedUser);
-                  return details.invoices.length > 0 ? (
-                    <DataTable>
-                      <DataTableHeader>
-                        <tr>
-                          <DataTableHeaderCell>ID</DataTableHeaderCell>
-                          <DataTableHeaderCell>Number</DataTableHeaderCell>
-                          <DataTableHeaderCell>Amount</DataTableHeaderCell>
-                          <DataTableHeaderCell>Status</DataTableHeaderCell>
-                          <DataTableHeaderCell>Created</DataTableHeaderCell>
-                          <DataTableHeaderCell>Paid</DataTableHeaderCell>
-                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
-                        </tr>
-                      </DataTableHeader>
-                      <DataTableBody>
-                        {details.invoices.map((invoice) => (
-                          <DataTableRow key={invoice.id}>
-                            <DataTableCell>{invoice.id}</DataTableCell>
-                            <DataTableCell>{invoice.number}</DataTableCell>
-                            <DataTableCell>
-                              {formatCurrency(invoice.amount)}
-                            </DataTableCell>
-                            <DataTableCell>
-                              <StatusBadge $status={invoice.status}>
-                                {invoice.status}
-                              </StatusBadge>
-                            </DataTableCell>
-                            <DataTableCell>
-                              {formatDate(invoice.createdAt)}
-                            </DataTableCell>
-                            <DataTableCell>
-                              {invoice.paidAt
-                                ? formatDate(invoice.paidAt)
-                                : "N/A"}
-                            </DataTableCell>
-                            <DataTableCell>
-                              {invoice.status === "paid" && (
-                                <RefundButton
-                                  variant="danger"
-                                  disabled={refundLoading === invoice.id}
-                                  onClick={() =>
-                                    handleRefundInvoiceClick(
-                                      invoice.id,
-                                      invoice.amount,
-                                      invoice.number
-                                    )
-                                  }
+                {loadingInvoices ? (
+                  <EmptyState>Loading invoices...</EmptyState>
+                ) : userInvoices.length > 0 ? (
+                  <DataTable>
+                    <DataTableHeader>
+                      <tr>
+                        <DataTableHeaderCell>ID</DataTableHeaderCell>
+                        <DataTableHeaderCell>Number</DataTableHeaderCell>
+                        <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                        <DataTableHeaderCell>Status</DataTableHeaderCell>
+                        <DataTableHeaderCell>Created</DataTableHeaderCell>
+                        <DataTableHeaderCell>Paid</DataTableHeaderCell>
+                        <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                      </tr>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {userInvoices.map((invoice) => (
+                        <DataTableRow key={invoice.id}>
+                          <DataTableCell>
+                            <StripeLink
+                              href={`https://dashboard.stripe.com/invoices/${invoice.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {invoice.id}
+                            </StripeLink>
+                          </DataTableCell>
+                          <DataTableCell>{invoice.number || "N/A"}</DataTableCell>
+                          <DataTableCell>
+                            {formatCurrency(invoice.amount)}
+                          </DataTableCell>
+                          <DataTableCell>
+                            <StatusBadge $status={invoice.status}>
+                              {invoice.status}
+                            </StatusBadge>
+                          </DataTableCell>
+                          <DataTableCell>
+                            {formatDate(invoice.createdAt)}
+                          </DataTableCell>
+                          <DataTableCell>
+                            {invoice.paidAt
+                              ? formatDate(invoice.paidAt)
+                              : "N/A"}
+                          </DataTableCell>
+                          <DataTableCell>
+                            {invoice.status === "paid" && (
+                              <RefundButton
+                                variant="danger"
+                                disabled={refundLoading === invoice.id}
+                                onClick={() =>
+                                  handleRefundInvoiceClick(
+                                    invoice.id,
+                                    invoice.amount,
+                                    `Invoice ${invoice.number || invoice.id}`
+                                  )
+                                }
                                 >
                                   {refundLoading === invoice.id ? (
                                     <LoadingSpinner />
@@ -3067,8 +3175,7 @@ export default function AdminCRM() {
                     </DataTable>
                   ) : (
                     <EmptyState>No invoices found</EmptyState>
-                  );
-                })()}
+                  )}
               </ModalSection>
             </ModalContent>
           </ModalOverlay>
