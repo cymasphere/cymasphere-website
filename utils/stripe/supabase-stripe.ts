@@ -90,45 +90,10 @@ export async function customerPurchasedProFromSupabase(
           refunded?: boolean;
         }) || {};
 
-      // Primary check: metadata
+      // Check metadata - this should be set by checkout route
       const hasLifetimeMetadata = attrs?.metadata?.purchase_type === "lifetime";
       
-      // Fallback: If metadata is missing, check via Stripe API using price ID
-      // This handles cases where payment intents were created before metadata was properly set
-      let hasLifetimePriceId = false;
-      if (!hasLifetimeMetadata && lifetimePriceId && attrs?.status === "succeeded") {
-        try {
-          const paymentIntentId = (paymentIntent as any).id;
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-          
-          // Retrieve payment intent with expanded invoice data
-          const fullPaymentIntent = await stripe.paymentIntents.retrieve(
-            paymentIntentId,
-            { expand: ["invoice", "invoice.lines"] }
-          );
-          
-          // Check if it's a one-time payment (not a subscription) with lifetime price ID
-          if (fullPaymentIntent.invoice && 
-              typeof fullPaymentIntent.invoice === "object" &&
-              !("subscription" in fullPaymentIntent.invoice && fullPaymentIntent.invoice.subscription)) {
-            const invoice = fullPaymentIntent.invoice as Stripe.Invoice;
-            const lineItems = invoice.lines?.data || [];
-            hasLifetimePriceId = lineItems.some(
-              (line) =>
-                (lifetimePriceId && line.price?.id === lifetimePriceId) ||
-                (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
-            );
-          }
-        } catch (error) {
-          // If Stripe API call fails, silently continue - we'll just rely on metadata
-          console.warn(
-            `Could not verify lifetime purchase via Stripe API for payment intent ${(paymentIntent as any).id}:`,
-            error instanceof Error ? error.message : String(error)
-          );
-        }
-      }
-      
-      const isLifetimePurchase = hasLifetimeMetadata || hasLifetimePriceId;
+      const isLifetimePurchase = hasLifetimeMetadata;
       
       if (isLifetimePurchase) {
         // If this is a lifetime purchase, check its status
