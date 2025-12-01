@@ -1,0 +1,1063 @@
+"use client";
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import {
+  FaUser,
+  FaTimes,
+  FaCrown,
+  FaChartLine,
+  FaTicketAlt,
+  FaUserShield,
+  FaBan,
+  FaUndo,
+} from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import styled from "styled-components";
+import type { UserData } from "@/utils/stripe/admin-analytics";
+import {
+  getCustomerPurchasesAdmin,
+  getCustomerInvoicesAdmin,
+  getUserSupportTicketsAdmin,
+} from "@/app/actions/user-management";
+import {
+  getCustomerSubscriptions,
+} from "@/utils/stripe/actions";
+
+const ModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 1.5rem;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--text);
+  }
+`;
+
+const ModalSection = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1.2rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const InfoItem = styled.div`
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const InfoLabel = styled.div`
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+`;
+
+const InfoValue = styled.div`
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 500;
+`;
+
+const DataTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+`;
+
+const DataTableHeader = styled.thead`
+  background-color: rgba(255, 255, 255, 0.02);
+`;
+
+const DataTableHeaderCell = styled.th`
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const DataTableBody = styled.tbody``;
+
+const DataTableRow = styled.tr`
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+`;
+
+const DataTableCell = styled.td`
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text);
+`;
+
+const StripeLink = styled.a`
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+`;
+
+const StatusBadge = styled.span<{ $status: string }>`
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  background-color: ${({ $status }) => {
+    switch ($status) {
+      case "active":
+      case "succeeded":
+      case "paid":
+        return "rgba(46, 204, 113, 0.2)";
+      case "canceled":
+      case "failed":
+        return "rgba(231, 76, 60, 0.2)";
+      case "pending":
+      case "processing":
+        return "rgba(241, 196, 15, 0.2)";
+      default:
+        return "rgba(149, 165, 166, 0.2)";
+    }
+  }};
+  color: ${({ $status }) => {
+    switch ($status) {
+      case "active":
+      case "succeeded":
+      case "paid":
+        return "#2ecc71";
+      case "canceled":
+      case "failed":
+        return "#e74c3c";
+      case "pending":
+      case "processing":
+        return "#f1c40f";
+      default:
+        return "#95a5a6";
+    }
+  }};
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+`;
+
+const SubscriptionBadge = styled.span<{
+  $color: string;
+  $variant?: "default" | "premium";
+}>`
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  background-color: ${(props) => props.$color};
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  ${(props) =>
+    props.$variant === "premium" &&
+    `
+    background: linear-gradient(135deg, ${props.$color}, ${props.$color}dd);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  `}
+
+  svg {
+    font-size: 0.7rem;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  }
+`;
+
+const PlanSelect = styled.select<{ $disabled?: boolean }>`
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s ease;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background-color: var(--card-bg);
+    color: var(--text);
+    padding: 8px;
+  }
+`;
+
+const RefundButton = styled.button<{ variant?: "primary" | "danger" }>`
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  background-color: ${(props) =>
+    props.variant === "danger"
+      ? "rgba(231, 76, 60, 0.2)"
+      : "rgba(108, 99, 255, 0.2)"};
+  color: ${(props) =>
+    props.variant === "danger" ? "#e74c3c" : "var(--primary)"};
+
+  &:hover:not(:disabled) {
+    background-color: ${(props) =>
+      props.variant === "danger"
+        ? "rgba(231, 76, 60, 0.3)"
+        : "rgba(108, 99, 255, 0.3)"};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+interface UserProfileModalProps {
+  user: UserData | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onCancelSubscription?: (subscriptionId: string, customerId: string) => Promise<void>;
+  onReactivateSubscription?: (subscriptionId: string, customerId: string) => Promise<void>;
+  onChangePlan?: (subscriptionId: string, newPlan: "monthly" | "annual", customerId: string) => Promise<void>;
+  onRefundPurchase?: (purchaseId: string, amount: number, description: string) => Promise<void>;
+  onRefundInvoice?: (invoiceId: string, amount: number, description: string) => Promise<void>;
+  subscriptionLoading?: string | null;
+  refundLoading?: string | null;
+  refundSuccess?: string | null;
+  getSubscriptionBadgeColor?: (subscription: string) => string;
+  getSubscriptionIcon?: (subscription: string) => React.ReactNode;
+  isSubscriptionPremium?: (subscription: string) => boolean;
+  formatDate?: (dateString: string) => string;
+  formatDateTime?: (dateString: string) => string;
+  formatCurrency?: (amount: number) => string;
+  getDisplayName?: (user: UserData) => string;
+}
+
+export default function UserProfileModal({
+  user,
+  isOpen,
+  onClose,
+  onCancelSubscription,
+  onReactivateSubscription,
+  onChangePlan,
+  onRefundPurchase,
+  onRefundInvoice,
+  subscriptionLoading,
+  refundLoading,
+  refundSuccess,
+  getSubscriptionBadgeColor = (sub) => {
+    switch (sub) {
+      case "monthly": return "#4c46d6";
+      case "annual": return "#2d8a7a";
+      case "lifetime": return "#d4a017";
+      case "admin": return "#d63447";
+      case "nfr": return "#9b59b6";
+      default: return "#6c757d";
+    }
+  },
+  getSubscriptionIcon = (sub) => {
+    switch (sub) {
+      case "admin": return <FaUserShield />;
+      case "lifetime": return <FaCrown />;
+      case "nfr": return <FaCrown />;
+      default: return null;
+    }
+  },
+  isSubscriptionPremium = (sub) => ["lifetime", "admin"].includes(sub),
+  formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(),
+  formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  },
+  formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount / 100);
+  },
+  getDisplayName = (user: UserData) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.email) {
+      return user.email.split("@")[0];
+    }
+    return "Unknown User";
+  },
+}: UserProfileModalProps) {
+  const [userSubscriptions, setUserSubscriptions] = useState<any[]>([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [userPurchases, setUserPurchases] = useState<Array<{
+    id: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    description: string;
+  }>>([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [userInvoices, setUserInvoices] = useState<Array<{
+    id: string;
+    number: string | null;
+    amount: number;
+    status: string;
+    createdAt: string;
+    paidAt: string | null;
+  }>>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [supportTickets, setSupportTickets] = useState<Array<{
+    id: string;
+    ticket_number: string;
+    subject: string;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
+
+  const fetchUserSubscriptions = useCallback(async (customerId: string) => {
+    try {
+      setLoadingSubscriptions(true);
+      const result = await getCustomerSubscriptions(customerId);
+
+      if (result.success && result.subscriptions) {
+        setUserSubscriptions(result.subscriptions);
+      } else {
+        setUserSubscriptions([]);
+        console.error("Error fetching subscriptions:", result.error);
+      }
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      setUserSubscriptions([]);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  }, []);
+
+  const fetchUserPurchases = useCallback(async (customerId: string) => {
+    try {
+      setLoadingPurchases(true);
+      const result = await getCustomerPurchasesAdmin(customerId);
+
+      if (result.error) {
+        console.error("Error fetching purchases:", result.error);
+        setUserPurchases([]);
+      } else {
+        setUserPurchases(result.purchases);
+      }
+    } catch (error) {
+      console.error("Error fetching purchases:", error);
+      setUserPurchases([]);
+    } finally {
+      setLoadingPurchases(false);
+    }
+  }, []);
+
+  const fetchUserInvoices = useCallback(async (customerId: string) => {
+    try {
+      setLoadingInvoices(true);
+      const result = await getCustomerInvoicesAdmin(customerId);
+
+      if (result.error) {
+        console.error("Error fetching invoices:", result.error);
+        setUserInvoices([]);
+      } else {
+        setUserInvoices(result.invoices);
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      setUserInvoices([]);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  }, []);
+
+  const fetchUserSupportTickets = useCallback(async (userId: string) => {
+    try {
+      setLoadingSupportTickets(true);
+      const result = await getUserSupportTicketsAdmin(userId);
+
+      if (result.error) {
+        console.error("Error fetching support tickets:", result.error);
+        setSupportTickets([]);
+      } else {
+        setSupportTickets(result.tickets);
+      }
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      setSupportTickets([]);
+    } finally {
+      setLoadingSupportTickets(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      // Reset all data when modal opens with a new user
+      setUserSubscriptions([]);
+      setUserPurchases([]);
+      setUserInvoices([]);
+      setSupportTickets([]);
+      
+      if (user.customerId) {
+        fetchUserSubscriptions(user.customerId);
+        fetchUserPurchases(user.customerId);
+        fetchUserInvoices(user.customerId);
+      }
+      fetchUserSupportTickets(user.id);
+    } else if (!isOpen) {
+      // Clear data when modal closes
+      setUserSubscriptions([]);
+      setUserPurchases([]);
+      setUserInvoices([]);
+      setSupportTickets([]);
+    }
+  }, [isOpen, user?.id, user?.customerId, fetchUserSubscriptions, fetchUserPurchases, fetchUserInvoices, fetchUserSupportTickets]);
+
+  if (!user) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <ModalOverlay
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <ModalContent
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <FaUser />
+                {getDisplayName(user)}
+              </ModalTitle>
+              <CloseButton onClick={onClose}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+
+            {/* User Information */}
+            <ModalSection>
+              <SectionTitle>
+                <FaUser />
+                User Information
+              </SectionTitle>
+              <InfoGrid>
+                <InfoItem>
+                  <InfoLabel>Email</InfoLabel>
+                  <InfoValue>{user.email}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Subscription</InfoLabel>
+                  <InfoValue>
+                    <SubscriptionBadge
+                      $color={getSubscriptionBadgeColor(
+                        user.hasNfr ? "nfr" : user.subscription
+                      )}
+                      $variant={
+                        user.hasNfr || isSubscriptionPremium(user.subscription)
+                          ? "premium"
+                          : "default"
+                      }
+                    >
+                      {user.hasNfr ? <FaCrown /> : getSubscriptionIcon(user.subscription)}
+                      {user.hasNfr ? "NFR" : user.subscription}
+                    </SubscriptionBadge>
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Join Date</InfoLabel>
+                  <InfoValue>{formatDate(user.createdAt)}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Last Active</InfoLabel>
+                  <InfoValue>
+                    {formatDateTime(
+                      user.lastActive || user.createdAt
+                    )}
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Total Spent</InfoLabel>
+                  <InfoValue>
+                    {formatCurrency(user.totalSpent)}
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Customer ID</InfoLabel>
+                  <InfoValue>
+                    {user.customerId ? (
+                      <StripeLink
+                        href={`https://dashboard.stripe.com/customers/${user.customerId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {user.customerId}
+                      </StripeLink>
+                    ) : (
+                      "N/A"
+                    )}
+                  </InfoValue>
+                </InfoItem>
+              </InfoGrid>
+            </ModalSection>
+
+            {/* Subscriptions */}
+            <ModalSection>
+              <SectionTitle>
+                <FaCrown />
+                Subscriptions
+              </SectionTitle>
+              {loadingSubscriptions ? (
+                <EmptyState>Loading subscriptions...</EmptyState>
+              ) : userSubscriptions.length > 0 ? (
+                <>
+                  <DataTable>
+                    <DataTableHeader>
+                      <tr>
+                        <DataTableHeaderCell>ID</DataTableHeaderCell>
+                        <DataTableHeaderCell>Status</DataTableHeaderCell>
+                        <DataTableHeaderCell>Plan</DataTableHeaderCell>
+                        <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                        <DataTableHeaderCell>
+                          Current Period
+                        </DataTableHeaderCell>
+                        <DataTableHeaderCell>Auto Renew</DataTableHeaderCell>
+                        {onCancelSubscription || onReactivateSubscription || onChangePlan ? (
+                          <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                        ) : null}
+                      </tr>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {userSubscriptions.map((sub) => {
+                        const isActive =
+                          sub.status === "active" ||
+                          sub.status === "trialing";
+                        const isCanceled =
+                          sub.status === "canceled" ||
+                          sub.cancel_at_period_end;
+                        const price = sub.items?.[0]?.price;
+                        const priceId = price?.id || "";
+                        const interval = price?.recurring?.interval || "";
+                        const isMonthly = interval === "month";
+                        const isAnnual = interval === "year";
+                        const currentPlan = isMonthly
+                          ? "monthly"
+                          : isAnnual
+                          ? "annual"
+                          : "unknown";
+                        const amount = price?.unit_amount
+                          ? price.unit_amount / 100
+                          : 0;
+                        const customerId =
+                          typeof sub.customer === "string"
+                            ? sub.customer
+                            : sub.customer?.id ||
+                              user?.customerId ||
+                              "";
+
+                        return (
+                          <DataTableRow key={sub.id}>
+                            <DataTableCell
+                              style={{
+                                fontSize: "0.8rem",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {sub.id}
+                            </DataTableCell>
+                            <DataTableCell>
+                              <StatusBadge $status={sub.status}>
+                                {sub.status}
+                              </StatusBadge>
+                            </DataTableCell>
+                            <DataTableCell>
+                              {onChangePlan ? (
+                                <PlanSelect
+                                  value={currentPlan}
+                                  onChange={(e) => {
+                                    const newPlan = e.target.value as
+                                      | "monthly"
+                                      | "annual";
+                                    if (newPlan !== currentPlan && isActive && onChangePlan) {
+                                      onChangePlan(
+                                        sub.id,
+                                        newPlan,
+                                        customerId
+                                      );
+                                    }
+                                  }}
+                                  disabled={
+                                    !isActive || subscriptionLoading === sub.id
+                                  }
+                                  $disabled={
+                                    !isActive || subscriptionLoading === sub.id
+                                  }
+                                >
+                                  <option value="monthly">Monthly</option>
+                                  <option value="annual">Annual</option>
+                                </PlanSelect>
+                              ) : (
+                                currentPlan
+                              )}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {formatCurrency(amount * 100)}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {sub.current_period_start &&
+                              sub.current_period_end
+                                ? `${new Date(
+                                    sub.current_period_start * 1000
+                                  ).toLocaleDateString()} - ${new Date(
+                                    sub.current_period_end * 1000
+                                  ).toLocaleDateString()}`
+                                : "N/A"}
+                            </DataTableCell>
+                            <DataTableCell>
+                              {isCanceled ? "No" : "Yes"}
+                            </DataTableCell>
+                            {(onCancelSubscription || onReactivateSubscription) && (
+                              <DataTableCell>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: "0.5rem",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  {isActive && !isCanceled && onCancelSubscription && (
+                                    <RefundButton
+                                      variant="danger"
+                                      disabled={subscriptionLoading === sub.id}
+                                      onClick={() =>
+                                        onCancelSubscription(
+                                          sub.id,
+                                          customerId
+                                        )
+                                      }
+                                    >
+                                      {subscriptionLoading === sub.id ? (
+                                        <LoadingSpinner />
+                                      ) : (
+                                        <FaBan />
+                                      )}
+                                      Cancel
+                                    </RefundButton>
+                                  )}
+                                  {isCanceled && onReactivateSubscription && (
+                                    <RefundButton
+                                      variant="primary"
+                                      disabled={subscriptionLoading === sub.id}
+                                      onClick={() =>
+                                        onReactivateSubscription(
+                                          sub.id,
+                                          customerId
+                                        )
+                                      }
+                                    >
+                                      {subscriptionLoading === sub.id ? (
+                                        <LoadingSpinner />
+                                      ) : (
+                                        <FaUndo />
+                                      )}
+                                      Reactivate
+                                    </RefundButton>
+                                  )}
+                                </div>
+                              </DataTableCell>
+                            )}
+                          </DataTableRow>
+                        );
+                      })}
+                    </DataTableBody>
+                  </DataTable>
+                </>
+              ) : (
+                <EmptyState>No subscriptions found</EmptyState>
+              )}
+            </ModalSection>
+
+            {/* Support Tickets */}
+            <ModalSection>
+              <SectionTitle>
+                <FaTicketAlt />
+                Support Tickets
+              </SectionTitle>
+              {loadingSupportTickets ? (
+                <EmptyState>Loading support tickets...</EmptyState>
+              ) : supportTickets.length > 0 ? (
+                <>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <Link
+                      href="/admin/support-tickets"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <FaTicketAlt />
+                      View all tickets
+                    </Link>
+                  </div>
+                  <DataTable>
+                    <DataTableHeader>
+                      <tr>
+                        <DataTableHeaderCell>Ticket #</DataTableHeaderCell>
+                        <DataTableHeaderCell>Subject</DataTableHeaderCell>
+                        <DataTableHeaderCell>Status</DataTableHeaderCell>
+                        <DataTableHeaderCell>Created</DataTableHeaderCell>
+                      </tr>
+                    </DataTableHeader>
+                    <DataTableBody>
+                      {supportTickets.map((ticket) => (
+                        <DataTableRow key={ticket.id}>
+                          <DataTableCell>
+                            <Link
+                              href={`/admin/support-tickets?ticket=${ticket.id}`}
+                              style={{
+                                color: "var(--primary)",
+                                textDecoration: "none",
+                              }}
+                            >
+                              {ticket.ticket_number}
+                            </Link>
+                          </DataTableCell>
+                          <DataTableCell>{ticket.subject}</DataTableCell>
+                          <DataTableCell>
+                            <span
+                              style={{
+                                textTransform: "capitalize",
+                                padding: "0.25rem 0.5rem",
+                                borderRadius: "4px",
+                                backgroundColor:
+                                  ticket.status === "open"
+                                    ? "rgba(52, 152, 219, 0.2)"
+                                    : ticket.status === "in_progress"
+                                    ? "rgba(241, 196, 15, 0.2)"
+                                    : ticket.status === "resolved"
+                                    ? "rgba(46, 204, 113, 0.2)"
+                                    : "rgba(149, 165, 166, 0.2)",
+                                color: "var(--text)",
+                              }}
+                            >
+                              {ticket.status.replace("_", " ")}
+                            </span>
+                          </DataTableCell>
+                          <DataTableCell>
+                            {formatDate(ticket.created_at)}
+                          </DataTableCell>
+                        </DataTableRow>
+                      ))}
+                    </DataTableBody>
+                  </DataTable>
+                </>
+              ) : (
+                <EmptyState>No support tickets found</EmptyState>
+              )}
+            </ModalSection>
+
+            {/* Purchases */}
+            <ModalSection>
+              <SectionTitle>
+                <FaChartLine />
+                Purchases
+              </SectionTitle>
+              {loadingPurchases ? (
+                <EmptyState>Loading purchases...</EmptyState>
+              ) : userPurchases.length > 0 ? (
+                <DataTable>
+                  <DataTableHeader>
+                    <tr>
+                      <DataTableHeaderCell>ID</DataTableHeaderCell>
+                      <DataTableHeaderCell>Description</DataTableHeaderCell>
+                      <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                      <DataTableHeaderCell>Status</DataTableHeaderCell>
+                      <DataTableHeaderCell>Date</DataTableHeaderCell>
+                      {onRefundPurchase ? (
+                        <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                      ) : null}
+                    </tr>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {userPurchases.map((purchase) => (
+                      <DataTableRow key={purchase.id}>
+                        <DataTableCell>
+                          <StripeLink
+                            href={`https://dashboard.stripe.com/payments/${purchase.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {purchase.id}
+                          </StripeLink>
+                        </DataTableCell>
+                        <DataTableCell>{purchase.description}</DataTableCell>
+                        <DataTableCell>{formatCurrency(purchase.amount)}</DataTableCell>
+                        <DataTableCell>
+                          <StatusBadge $status={purchase.status}>
+                            {purchase.status}
+                          </StatusBadge>
+                        </DataTableCell>
+                        <DataTableCell>{formatDate(purchase.createdAt)}</DataTableCell>
+                        {onRefundPurchase && (
+                          <DataTableCell>
+                            {purchase.status === "succeeded" && (
+                              <RefundButton
+                                variant="danger"
+                                disabled={refundLoading === purchase.id}
+                                onClick={() =>
+                                  onRefundPurchase(
+                                    purchase.id,
+                                    purchase.amount,
+                                    purchase.description
+                                  )
+                                }
+                              >
+                                {refundLoading === purchase.id ? (
+                                  <LoadingSpinner />
+                                ) : (
+                                  <FaUndo />
+                                )}
+                                {refundSuccess === purchase.id
+                                  ? "Refunded"
+                                  : "Refund"}
+                              </RefundButton>
+                            )}
+                          </DataTableCell>
+                        )}
+                      </DataTableRow>
+                    ))}
+                  </DataTableBody>
+                </DataTable>
+              ) : (
+                <EmptyState>No purchases found</EmptyState>
+              )}
+            </ModalSection>
+
+            {/* Invoices */}
+            <ModalSection>
+              <SectionTitle>
+                <FaChartLine />
+                Invoices
+              </SectionTitle>
+              {loadingInvoices ? (
+                <EmptyState>Loading invoices...</EmptyState>
+              ) : userInvoices.length > 0 ? (
+                <DataTable>
+                  <DataTableHeader>
+                    <tr>
+                      <DataTableHeaderCell>ID</DataTableHeaderCell>
+                      <DataTableHeaderCell>Number</DataTableHeaderCell>
+                      <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                      <DataTableHeaderCell>Status</DataTableHeaderCell>
+                      <DataTableHeaderCell>Created</DataTableHeaderCell>
+                      <DataTableHeaderCell>Paid</DataTableHeaderCell>
+                      {onRefundInvoice ? (
+                        <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                      ) : null}
+                    </tr>
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {userInvoices.map((invoice) => (
+                      <DataTableRow key={invoice.id}>
+                        <DataTableCell>
+                          <StripeLink
+                            href={`https://dashboard.stripe.com/invoices/${invoice.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {invoice.id}
+                          </StripeLink>
+                        </DataTableCell>
+                        <DataTableCell>{invoice.number || "N/A"}</DataTableCell>
+                        <DataTableCell>
+                          {formatCurrency(invoice.amount)}
+                        </DataTableCell>
+                        <DataTableCell>
+                          <StatusBadge $status={invoice.status}>
+                            {invoice.status}
+                          </StatusBadge>
+                        </DataTableCell>
+                        <DataTableCell>{formatDate(invoice.createdAt)}</DataTableCell>
+                        <DataTableCell>
+                          {invoice.paidAt
+                            ? formatDate(invoice.paidAt)
+                            : "N/A"}
+                        </DataTableCell>
+                        {onRefundInvoice && (
+                          <DataTableCell>
+                            {invoice.status === "paid" && (
+                              <RefundButton
+                                variant="danger"
+                                disabled={refundLoading === invoice.id}
+                                onClick={() =>
+                                  onRefundInvoice(
+                                    invoice.id,
+                                    invoice.amount,
+                                    `Invoice ${invoice.number || invoice.id}`
+                                  )
+                                }
+                              >
+                                {refundLoading === invoice.id ? (
+                                  <LoadingSpinner />
+                                ) : (
+                                  <FaUndo />
+                                )}
+                                {refundSuccess === invoice.id
+                                  ? "Refunded"
+                                  : "Refund"}
+                              </RefundButton>
+                            )}
+                          </DataTableCell>
+                        )}
+                      </DataTableRow>
+                    ))}
+                  </DataTableBody>
+                </DataTable>
+              ) : (
+                <EmptyState>No invoices found</EmptyState>
+              )}
+            </ModalSection>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </AnimatePresence>
+  );
+}
+

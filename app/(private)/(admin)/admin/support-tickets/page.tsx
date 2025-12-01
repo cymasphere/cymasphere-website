@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -12,7 +12,6 @@ import {
   FaEdit,
   FaTimes,
   FaPlus,
-  FaDownload,
   FaSortUp,
   FaSortDown,
   FaSort,
@@ -31,11 +30,28 @@ import {
   FaVideo,
   FaFile,
   FaUser,
-  FaUserTie
+  FaUserTie,
+  FaCrown,
+  FaUserShield,
+  FaChartLine,
+  FaTrash
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+import { 
+  createSupportTicketAdmin, 
+  updateSupportTicketStatusAdmin,
+  getSupportTicketsAdmin,
+  getSupportTicketAdmin,
+  deleteSupportTicketAdmin,
+  addSupportTicketMessageAdmin,
+  deleteSupportTicketMessageAdmin,
+  uploadSupportTicketAttachment,
+  getUserByIdAdmin
+} from "@/app/actions/user-management";
+import type { UserData } from "@/utils/stripe/admin-analytics";
+import UserProfileModal from "@/components/admin/UserProfileModal";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 
@@ -232,6 +248,8 @@ const TableContainer = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: visible !important;
+  position: relative;
 
   @media (max-width: 768px) {
     overflow-x: auto;
@@ -244,18 +262,19 @@ const TableContainer = styled.div`
 
 const Table = styled.table`
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
+  overflow: visible !important;
 
   /* Define column widths */
   th:nth-child(1), td:nth-child(1) { width: 100px; } /* Ticket ID */
-  th:nth-child(2), td:nth-child(2) { width: 250px; } /* Subject */
-  th:nth-child(3), td:nth-child(3) { width: 180px; } /* User */
-  th:nth-child(4), td:nth-child(4) { width: 120px; } /* Status */
-  th:nth-child(5), td:nth-child(5) { width: 120px; } /* Priority */
+  th:nth-child(2), td:nth-child(2) { width: 300px; } /* Subject */
+  th:nth-child(3), td:nth-child(3) { width: 350px; } /* User */
+  th:nth-child(4), td:nth-child(4) { width: 150px; } /* Subscription */
+  th:nth-child(5), td:nth-child(5) { width: 120px; } /* Status */
   th:nth-child(6), td:nth-child(6) { width: 110px; } /* Created */
-  th:nth-child(7), td:nth-child(7) { width: 140px; } /* Assigned To */
-  th:nth-child(8), td:nth-child(8) { width: 160px; } /* Actions */
+  th:nth-child(7), td:nth-child(7) { width: 160px; } /* Actions */
 `;
 
 const TableHeader = styled.thead`
@@ -287,12 +306,20 @@ const TableHeaderCell = styled.th`
 
 const TableBody = styled.tbody`
   /* Ensure dropdowns can extend outside table body */
-  overflow: visible;
+  overflow: visible !important;
+  position: relative;
 `;
 
 const TableRow = styled.tr`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: background-color 0.2s ease;
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+  
+  &:hover {
+    z-index: 2;
+  }
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.02);
@@ -300,6 +327,11 @@ const TableRow = styled.tr`
 
   &:last-child {
     border-bottom: none;
+  }
+  
+  /* When status dropdown is open, bring row to front */
+  &[data-status-open="true"] {
+    z-index: 10010 !important;
   }
 `;
 
@@ -314,9 +346,36 @@ const TableCell = styled.td`
   position: relative;
 
   /* Allow wrapping and overflow for action buttons */
+`;
+
+const SubjectTableCell = styled(TableCell)`
+  min-width: 250px;
+  max-width: 400px;
+`;
+
+const UserTableCell = styled(TableCell)`
+  min-width: 300px;
+  max-width: 500px;
+`;
+
+const SubjectHeaderCell = styled(TableHeaderCell)`
+  min-width: 250px;
+  max-width: 400px;
+`;
+
+const UserHeaderCell = styled(TableHeaderCell)`
+  min-width: 300px;
+  max-width: 500px;
   &:last-child {
     white-space: normal;
     overflow: visible;
+  }
+
+  /* Allow overflow for cells with dropdowns (status, more menu) */
+  &[data-has-dropdown] {
+    overflow: visible !important;
+    position: relative;
+    z-index: 10010 !important;
   }
 `;
 
@@ -345,9 +404,19 @@ const TicketUser = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
 `;
 
-const StatusBadge = styled.span<{ status: string }>`
+const SubscriptionBadge = styled.span<{
+  $color: string;
+  $variant?: "default" | "premium";
+}>`
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -357,24 +426,72 @@ const StatusBadge = styled.span<{ status: string }>`
   align-items: center;
   gap: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  background-color: ${(props) => props.$color};
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  ${(props) =>
+    props.$variant === "premium" &&
+    `
+    background: linear-gradient(135deg, ${props.$color}, ${props.$color}dd);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  `}
+
+  svg {
+    font-size: 0.7rem;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  }
+`;
+
+const SubscriptionCell = styled(TableCell)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+`;
+
+const StatusBadge = styled.span<{ status: string; $clickable?: boolean }>`
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+  ${props => props.$clickable ? `
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    &:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+  ` : ''}
   
   ${(props) => {
     switch (props.status) {
       case 'open':
         return `
-          background-color: #28a745;
+          background-color: #ff6600;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
+      case 'in_progress':
       case 'inProgress':
         return `
-          background-color: #ffc107;
+          background-color: #3498db;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
       case 'resolved':
         return `
-          background-color: var(--primary);
+          background-color: #20c997;
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
         `;
@@ -399,63 +516,59 @@ const StatusBadge = styled.span<{ status: string }>`
   }
 `;
 
-const PriorityBadge = styled.span<{ priority: string }>`
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  display: inline-flex;
+const StatusDropdown = styled(motion.div)<{ $top?: number; $left?: number }>`
+  position: fixed;
+  top: ${props => props.$top ? `${props.$top}px` : 'auto'};
+  left: ${props => props.$left ? `${props.$left}px` : 'auto'};
+  background-color: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 99999 !important;
+  min-width: 160px;
+  overflow: visible !important;
+  backdrop-filter: blur(10px);
+`;
+
+const StatusDropdownItem = styled.button<{ $active?: boolean }>`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: ${props => props.$active ? 'rgba(255, 255, 255, 0.1)' : 'transparent'};
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
   align-items: center;
-  gap: 0.25rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  
-  ${(props) => {
-    switch (props.priority) {
-      case 'urgent':
-        return `
-          background-color: #dc3545;
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-      case 'high':
-        return `
-          background-color: #ff6600;
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-      case 'medium':
-        return `
-          background-color: #ffc107;
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-      case 'low':
-        return `
-          background-color: #28a745;
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-      default:
-        return `
-          background-color: #6c757d;
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        `;
-    }
-  }}
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+  text-transform: capitalize;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
 
   svg {
-    font-size: 0.7rem;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+    font-size: 0.8rem;
   }
 `;
 
-const AssignedTo = styled.div`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-style: italic;
-  opacity: 0.8;
+const StatusContainer = styled.div`
+  position: relative;
+  display: inline-block;
+  overflow: visible !important;
+  z-index: 10010 !important;
 `;
 
 const Pagination = styled.div`
@@ -505,10 +618,10 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
 `;
 
 // More Menu Components
-const MoreMenuContainer = styled.div`
+const MoreMenuContainer = styled.div<{ $isOpen?: boolean }>`
   position: relative;
   display: inline-block;
-  z-index: 10;
+  z-index: ${props => props.$isOpen ? 10005 : 1};
 `;
 
 const MoreMenuButton = styled.button`
@@ -523,7 +636,7 @@ const MoreMenuButton = styled.button`
   align-items: center;
   justify-content: center;
   position: relative;
-  z-index: 11;
+  z-index: 1;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
@@ -535,27 +648,24 @@ const MoreMenuButton = styled.button`
   }
 `;
 
-const MoreMenuDropdown = styled(motion.div)`
-  position: absolute;
-  top: 100%;
-  right: 0;
+const MoreMenuDropdown = styled(motion.div)<{ $top?: number; $right?: number }>`
+  position: fixed;
+  top: ${props => props.$top ? `${props.$top}px` : 'auto'};
+  right: ${props => props.$right ? `${props.$right}px` : 'auto'};
   background-color: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
+  z-index: 99999 !important;
   min-width: 160px;
-  overflow: visible;
+  overflow: visible !important;
   backdrop-filter: blur(10px);
   transform: translateZ(0);
-  
-  /* Ensure dropdown appears above table content */
-  margin-top: 4px;
   
   /* Handle edge cases where dropdown might go off-screen */
   @media (max-width: 768px) {
     right: auto;
-    left: 0;
+    left: ${props => props.$right ? `calc(100vw - ${props.$right}px - 160px)` : 'auto'};
     min-width: 140px;
   }
 `;
@@ -611,17 +721,26 @@ const ExpandButton = styled.button`
 
 const ExpandableRow = styled(motion.tr)`
   background-color: rgba(255, 255, 255, 0.02);
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
 `;
 
 const ExpandableCell = styled.td`
   padding: 0;
   border: none;
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
 `;
 
 const ConversationContainer = styled(motion.div)`
   padding: 1.5rem;
   background-color: rgba(255, 255, 255, 0.01);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
 `;
 
 const ConversationHeader = styled.div`
@@ -652,6 +771,9 @@ const MessagesContainer = styled.div`
   overflow-y: auto;
   margin-bottom: 1rem;
   padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
@@ -673,19 +795,28 @@ const MessagesContainer = styled.div`
   }
 `;
 
-const Message = styled.div<{ isAdmin?: boolean }>`
+const Message = styled.div<{ $isAdmin?: boolean }>`
   display: flex;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   align-items: flex-start;
   gap: 0.75rem;
-  flex-direction: ${props => props.isAdmin ? 'row-reverse' : 'row'};
+  flex-direction: ${props => props.$isAdmin ? 'row-reverse' : 'row'};
+  ${props => props.$isAdmin ? `
+    align-self: flex-end;
+    width: fit-content;
+    max-width: 75%;
+    margin-left: auto;
+  ` : `
+    width: fit-content;
+    max-width: 75%;
+  `}
 `;
 
-const MessageAvatar = styled.div<{ isAdmin?: boolean }>`
+const MessageAvatar = styled.div<{ $isAdmin?: boolean }>`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${props => props.isAdmin ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'linear-gradient(135deg, #6c757d, #495057)'};
+  background: ${props => props.$isAdmin ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'linear-gradient(135deg, #6c757d, #495057)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -694,12 +825,12 @@ const MessageAvatar = styled.div<{ isAdmin?: boolean }>`
   flex-shrink: 0;
 `;
 
-const MessageBubble = styled.div<{ isAdmin?: boolean }>`
-  max-width: 70%;
+const MessageBubble = styled.div<{ $isAdmin?: boolean }>`
+  max-width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 18px;
-  background-color: ${props => props.isAdmin ? 'var(--primary)' : 'rgba(255, 255, 255, 0.08)'};
-  color: ${props => props.isAdmin ? 'white' : 'var(--text)'};
+  background-color: ${props => props.$isAdmin ? 'var(--primary)' : 'rgba(255, 255, 255, 0.08)'};
+  color: ${props => props.$isAdmin ? 'white' : 'var(--text)'};
   position: relative;
   word-wrap: break-word;
 
@@ -711,7 +842,7 @@ const MessageBubble = styled.div<{ isAdmin?: boolean }>`
     width: 0;
     height: 0;
     border: 6px solid transparent;
-    ${props => props.isAdmin ? `
+    ${props => props.$isAdmin ? `
       right: -12px;
       border-left-color: var(--primary);
     ` : `
@@ -733,11 +864,13 @@ const MessageTime = styled.div`
 `;
 
 const MessageAttachment = styled.div`
-  margin-top: 0.5rem;
-  padding: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 600px;
 `;
 
 const AttachmentPreview = styled.div`
@@ -771,23 +904,58 @@ const AttachmentSize = styled.div`
   color: var(--text-secondary);
 `;
 
+const AttachmentContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const AttachmentLink = styled.a`
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background-color: rgba(108, 99, 255, 0.1);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(108, 99, 255, 0.2);
+    text-decoration: underline;
+  }
+`;
+
 const ImagePreview = styled.img`
-  max-width: 200px;
-  max-height: 150px;
+  max-width: 100%;
+  max-height: 400px;
+  width: auto;
+  height: auto;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease;
+  display: block;
+  margin-bottom: 0.5rem;
 
   &:hover {
     transform: scale(1.02);
+    opacity: 0.9;
   }
 `;
 
 const VideoPreview = styled.video`
-  max-width: 250px;
-  max-height: 180px;
+  max-width: 100%;
+  max-height: 400px;
+  width: auto;
+  height: auto;
   border-radius: 8px;
-  cursor: pointer;
+  display: block;
+  margin-bottom: 0.5rem;
 `;
 
 const MessageInput = styled.div`
@@ -885,215 +1053,501 @@ const FileInput = styled.input`
   display: none;
 `;
 
-// Mock data - in a real app, this would come from your API
-const mockTickets = [
-  {
-    id: "T-001",
-    subject: "Login issue with Chrome browser",
-    user: "john.doe@example.com",
-    status: "open",
-    priority: "high",
-    created: "2024-01-20",
-    lastUpdate: "2024-01-20",
-    assignedTo: "Support Team",
-    messages: [
-      {
-        id: "msg-1",
-        content: "I'm having trouble logging into my account when using Chrome browser. It keeps saying 'Invalid credentials' even though I'm sure my password is correct.",
-        timestamp: "2024-01-20T10:30:00Z",
-        isAdmin: false,
-        sender: "john.doe@example.com"
-      },
-      {
-        id: "msg-2",
-        content: "Hi John, thanks for reaching out. Can you please try clearing your browser cache and cookies? Also, please share a screenshot of the error message you're seeing.",
-        timestamp: "2024-01-20T11:15:00Z",
-        isAdmin: true,
-        sender: "Support Team"
-      },
-      {
-        id: "msg-3",
-        content: "I cleared the cache but still having the same issue. Here's the screenshot:",
-        timestamp: "2024-01-20T11:45:00Z",
-        isAdmin: false,
-        sender: "john.doe@example.com",
-        attachments: [
-          {
-            type: "image",
-            name: "login-error.png",
-            size: "245 KB",
-            url: "/images/mock-screenshot.jpg"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "T-002",
-    subject: "Billing question about subscription",
-    user: "jane.smith@example.com",
-    status: "inProgress",
-    priority: "medium",
-    created: "2024-01-19",
-    lastUpdate: "2024-01-20",
-    assignedTo: "John Admin",
-    messages: [
-      {
-        id: "msg-4",
-        content: "I was charged twice for my monthly subscription. Can you please check my billing history?",
-        timestamp: "2024-01-19T14:20:00Z",
-        isAdmin: false,
-        sender: "jane.smith@example.com"
-      },
-      {
-        id: "msg-5",
-        content: "I've reviewed your account and found the duplicate charge. I'm processing a refund now. You should see it in 3-5 business days.",
-        timestamp: "2024-01-20T09:30:00Z",
-        isAdmin: true,
-        sender: "John Admin"
-      },
-      {
-        id: "msg-6",
-        content: "Thank you! Here's my bank statement showing the duplicate charges:",
-        timestamp: "2024-01-20T10:00:00Z",
-        isAdmin: false,
-        sender: "jane.smith@example.com",
-        attachments: [
-          {
-            type: "file",
-            name: "bank-statement.pdf",
-            size: "1.2 MB",
-            url: "/documents/bank-statement.pdf"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "T-003",
-    subject: "Feature request: Dark mode",
-    user: "pro@example.com",
-    status: "resolved",
-    priority: "low",
-    created: "2024-01-18",
-    lastUpdate: "2024-01-19",
-    assignedTo: "Development Team",
-    messages: [
-      {
-        id: "msg-7",
-        content: "Would love to see a dark mode option in the app. The current bright theme strains my eyes during long sessions.",
-        timestamp: "2024-01-18T16:45:00Z",
-        isAdmin: false,
-        sender: "pro@example.com"
-      },
-      {
-        id: "msg-8",
-        content: "Great suggestion! Dark mode is actually already available. You can enable it in Settings > Appearance > Theme. Here's a quick video showing how:",
-        timestamp: "2024-01-19T10:20:00Z",
-        isAdmin: true,
-        sender: "Development Team",
-        attachments: [
-          {
-            type: "video",
-            name: "dark-mode-tutorial.mp4",
-            size: "5.8 MB",
-            url: "/videos/dark-mode-tutorial.mp4"
-          }
-        ]
-      },
-      {
-        id: "msg-9",
-        content: "Perfect! Found it and enabled. Thanks for the quick help!",
-        timestamp: "2024-01-19T10:35:00Z",
-        isAdmin: false,
-        sender: "pro@example.com"
-      }
-    ]
-  },
-  {
-    id: "T-004",
-    subject: "Critical bug in audio synthesis",
-    user: "musician@example.com",
-    status: "open",
-    priority: "urgent",
-    created: "2024-01-20",
-    lastUpdate: "2024-01-20",
-    assignedTo: "Tech Lead",
-    messages: [
-      {
-        id: "msg-10",
-        content: "The audio synthesis engine is producing distorted output when using certain filter combinations. This is blocking my work completely.",
-        timestamp: "2024-01-20T08:15:00Z",
-        isAdmin: false,
-        sender: "musician@example.com"
-      },
-      {
-        id: "msg-11",
-        content: "This is indeed critical. Can you share the specific filter settings and a sample of the distorted audio? Our engineering team needs to reproduce this immediately.",
-        timestamp: "2024-01-20T08:30:00Z",
-        isAdmin: true,
-        sender: "Tech Lead"
-      }
-    ]
-  },
-  {
-    id: "T-005",
-    subject: "How to export MIDI files?",
-    user: "newbie@example.com",
-    status: "closed",
-    priority: "low",
-    created: "2024-01-17",
-    lastUpdate: "2024-01-18",
-    assignedTo: "Support Team",
-    messages: [
-      {
-        id: "msg-12",
-        content: "I can't figure out how to export my compositions as MIDI files. Is this feature available?",
-        timestamp: "2024-01-17T13:20:00Z",
-        isAdmin: false,
-        sender: "newbie@example.com"
-      },
-      {
-        id: "msg-13",
-        content: "Yes! You can export MIDI files by going to File > Export > MIDI. Make sure your composition is selected first.",
-        timestamp: "2024-01-18T09:15:00Z",
-        isAdmin: true,
-        sender: "Support Team"
-      },
-      {
-        id: "msg-14",
-        content: "Got it! Thanks for the help.",
-        timestamp: "2024-01-18T09:30:00Z",
-        isAdmin: false,
-        sender: "newbie@example.com"
-      }
-    ]
-  },
-];
+// Create Ticket Modal Components
+const ModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+`;
+
+const CreateTicketModal = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 1.5rem;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  svg {
+    color: var(--primary);
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: var(--text);
+  }
+`;
+
+// Delete Confirmation Modal Components
+const DeleteModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+`;
+
+const DeleteModalTitle = styled.h3`
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  svg {
+    color: #e74c3c;
+  }
+`;
+
+const DeleteModalMessage = styled.p`
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+`;
+
+const DeleteModalDetails = styled.div`
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: left;
+`;
+
+const DeleteModalDetailItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const DeleteModalDetailLabel = styled.span`
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+`;
+
+const DeleteModalDetailValue = styled.span`
+  color: var(--text);
+  font-size: 0.9rem;
+`;
+
+const DeleteModalActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+`;
+
+const DeleteModalButton = styled(motion.button)<{ $variant?: 'danger' | 'secondary' }>`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  
+  ${props => props.$variant === 'danger' ? `
+    background-color: #e74c3c;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: #c0392b;
+    }
+  ` : `
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    
+    &:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+  `}
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  svg {
+    font-size: 0.9rem;
+  }
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const FormSelect = styled.select`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  option {
+    background-color: var(--card-bg);
+    color: var(--text);
+  }
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CancelButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const SubmitButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+`;
+
+const SuccessMessage = styled.div`
+  color: #10b981;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #10b981;
+`;
+
+interface TicketMessage {
+  id: string;
+  content: string;
+  is_admin: boolean;
+  user_id: string;
+  user_email: string | null;
+  created_at: string;
+  updated_at: string;
+  edited_at: string | null;
+  attachments: Array<{
+    id: string;
+    file_name: string;
+    file_size: number;
+    file_type: string;
+    attachment_type: string;
+    url: string | null;
+    created_at: string;
+  }>;
+}
+
+interface Ticket {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  description: string | null;
+  status: string;
+  user_id: string;
+  user_email: string | null;
+  user_subscription?: string;
+  user_has_nfr?: boolean;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  closed_at: string | null;
+  messages?: TicketMessage[];
+}
 
 function SupportTicketsPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(null);
+  const [statusDropdownPosition, setStatusDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [moreMenuPosition, setMoreMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
   const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
+  const [pendingAttachments, setPendingAttachments] = useState<{[key: string]: File[]}>({});
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createTicketForm, setCreateTicketForm] = useState({
+    subject: "",
+    description: "",
+  });
+  const [createTicketLoading, setCreateTicketLoading] = useState(false);
+  const [createTicketError, setCreateTicketError] = useState<string | null>(null);
+  const [createTicketSuccess, setCreateTicketSuccess] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+  const [ticketDetails, setTicketDetails] = useState<Map<string, Ticket>>(new Map());
+  const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount / 100);
+  };
+
+  const getDisplayName = (user: UserData) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.email) {
+      return user.email.split("@")[0];
+    }
+    return "Unknown User";
+  };
+
   useEffect(() => {
     if (!languageLoading) {
       setTranslationsLoaded(true);
     }
   }, [languageLoading]);
+
+  // Show page immediately - no early returns
+  const showContent = !languageLoading && translationsLoaded && user;
+
+  // Fetch tickets from database
+  useEffect(() => {
+    if (showContent) {
+      fetchTickets();
+    }
+  }, [showContent]);
+
+  const fetchTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const result = await getSupportTicketsAdmin();
+      if (result.tickets) {
+        setTickets(result.tickets);
+      } else {
+        console.error("Error fetching tickets:", result.error);
+      }
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const fetchTicketDetails = async (ticketId: string, forceRefresh: boolean = false) => {
+    // If already loading and not forcing refresh, skip
+    if (!forceRefresh && loadingDetails.has(ticketId)) {
+      return;
+    }
+
+    // If already loaded and not forcing refresh, skip
+    if (!forceRefresh && ticketDetails.has(ticketId)) {
+      return;
+    }
+
+    setLoadingDetails(prev => new Set(prev).add(ticketId));
+
+    try {
+      const result = await getSupportTicketAdmin(ticketId);
+      if (result.ticket) {
+        setTicketDetails(prev => new Map(prev).set(ticketId, result.ticket!));
+      }
+    } catch (error) {
+      console.error("Error fetching ticket details:", error);
+    } finally {
+      setLoadingDetails(prev => {
+        const next = new Set(prev);
+        next.delete(ticketId);
+        return next;
+      });
+    }
+  };
 
   // Close more menu when clicking outside
   useEffect(() => {
@@ -1109,9 +1563,6 @@ function SupportTicketsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Show page immediately - no early returns
-  const showContent = !languageLoading && translationsLoaded && user;
-
   // Temporarily disabled admin check for testing
   // if (user.profile?.subscription !== "admin") {
   //   return null;
@@ -1126,6 +1577,59 @@ function SupportTicketsPage() {
     }
   };
 
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateTicketError(null);
+    setCreateTicketSuccess(null);
+
+    if (!createTicketForm.subject.trim() || !createTicketForm.description.trim() || !user?.id) {
+      setCreateTicketError("Please fill in all required fields");
+      return;
+    }
+
+    setCreateTicketLoading(true);
+
+    try {
+      const result = await createSupportTicketAdmin({
+        subject: createTicketForm.subject.trim(),
+        description: createTicketForm.description.trim(),
+        userId: user.id,
+      });
+
+      if (result.success && result.ticket) {
+        setCreateTicketSuccess(`Ticket ${result.ticket.ticket_number} created successfully!`);
+        setCreateTicketForm({
+          subject: "",
+          description: "",
+        });
+        // Refresh tickets
+        await fetchTickets();
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          setShowCreateModal(false);
+          setCreateTicketSuccess(null);
+        }, 2000);
+      } else {
+        setCreateTicketError(result.error || "Failed to create ticket");
+      }
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      setCreateTicketError("An unexpected error occurred");
+    } finally {
+      setCreateTicketLoading(false);
+    }
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateTicketForm({
+      subject: "",
+      description: "",
+    });
+    setCreateTicketError(null);
+    setCreateTicketSuccess(null);
+  };
+
   const getSortIcon = (field: string) => {
     if (sortField !== field) return <FaSort />;
     return sortDirection === 'asc' ? <FaSortUp /> : <FaSortDown />;
@@ -1136,6 +1640,7 @@ function SupportTicketsPage() {
       case 'open':
         return <FaCheckCircle />;
       case 'inProgress':
+      case 'in_progress':
         return <FaClock />;
       case 'resolved':
         return <FaCheckCircle />;
@@ -1146,28 +1651,19 @@ function SupportTicketsPage() {
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return <FaExclamationTriangle />;
-      case 'high':
-        return <FaExclamationCircle />;
-      case 'medium':
-        return <FaExclamationCircle />;
-      case 'low':
-        return <FaCheckCircle />;
-      default:
-        return <FaCheckCircle />;
-    }
-  };
-
-  const filteredTickets = mockTickets.filter(ticket => {
+  const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = 
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.user.toLowerCase().includes(searchTerm.toLowerCase());
+      (ticket.user_email || "").toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterStatus === "all" || ticket.status === filterStatus;
+    // Normalize status for comparison (in_progress vs inProgress)
+    let normalizedStatus = ticket.status;
+    if (normalizedStatus === "in_progress") {
+      normalizedStatus = "inProgress";
+    }
+    
+    const matchesFilter = filterStatus === "all" || normalizedStatus === filterStatus;
     
     return matchesSearch && matchesFilter;
   });
@@ -1199,67 +1695,285 @@ function SupportTicketsPage() {
     }),
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const toggleRowExpansion = (ticketId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) {
+        next.delete(ticketId);
+      } else {
+        next.add(ticketId);
+      }
+      return next;
+    });
+  };
+
+  // Fetch ticket details when a row is expanded
+  useEffect(() => {
+    const ticketsToFetch: string[] = [];
+    expandedRows.forEach(ticketId => {
+      if (!ticketDetails.has(ticketId) && !loadingDetails.has(ticketId)) {
+        ticketsToFetch.push(ticketId);
+      }
+    });
+    
+    // Fetch all tickets that need to be loaded
+    ticketsToFetch.forEach(ticketId => {
+      fetchTicketDetails(ticketId, false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedRows]);
+
+  // Close status dropdown when clicking outside
+  useEffect(() => {
+    if (!openStatusDropdown) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-status-dropdown]')) {
+        setOpenStatusDropdown(null);
+        setStatusDropdownPosition(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openStatusDropdown]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    if (!openMoreMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-more-menu]')) {
+        setOpenMoreMenu(null);
+        setMoreMenuPosition(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMoreMenu]);
+
+  const handleStatusChange = async (ticketId: string, newStatus: "open" | "in_progress" | "resolved" | "closed") => {
+    setUpdatingStatus(ticketId);
+    setOpenStatusDropdown(null);
+    setStatusDropdownPosition(null);
+    
+    try {
+      const result = await updateSupportTicketStatusAdmin(ticketId, newStatus);
+      if (result.success) {
+        // Update ticket in state
+        setTickets(prev => prev.map(t => 
+          t.id === ticketId ? { ...t, status: newStatus } : t
+        ));
+      } else {
+        alert(result.error || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("An error occurred while updating the status");
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleSendMessage = async (ticketId: string) => {
+    const messageContent = newMessages[ticketId]?.trim();
+    const attachments = pendingAttachments[ticketId] || [];
+    
+    if (!messageContent && attachments.length === 0) {
+      return;
+    }
+
+    // If no message content but there are attachments, add a default message
+    const finalMessage = messageContent || "Sent an attachment";
+
+    try {
+      // Create the message first
+      const result = await addSupportTicketMessageAdmin(ticketId, finalMessage, true);
+      if (!result.success || !result.messageId) {
+        alert(result.error || "Failed to send message");
+        return;
+      }
+
+      // Upload attachments if any
+      if (attachments.length > 0) {
+        for (const file of attachments) {
+          const uploadResult = await uploadSupportTicketAttachment(
+            ticketId,
+            result.messageId,
+            file
+          );
+          if (!uploadResult.success) {
+            console.error("Error uploading attachment:", uploadResult.error);
+            // Continue with other attachments even if one fails
+          }
+        }
+      }
+
+      // Clear message input and pending attachments
+      setNewMessages(prev => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
+      setPendingAttachments(prev => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
+      
+      // Clear file input
+      if (fileInputRefs.current[ticketId]) {
+        fileInputRefs.current[ticketId].value = '';
+      }
+
+      // Refresh ticket details (force refresh to get new message and attachments)
+      await fetchTicketDetails(ticketId, true);
+      // Refresh tickets list to update updated_at
+      await fetchTickets();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("An error occurred while sending the message");
+    }
   };
 
   // More menu handlers
   const handleMoreMenuClick = (ticketId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setOpenMoreMenu(openMoreMenu === ticketId ? null : ticketId);
+    if (openMoreMenu === ticketId) {
+      setOpenMoreMenu(null);
+      setMoreMenuPosition(null);
+    } else {
+      const button = e.currentTarget as HTMLElement;
+      const rect = button.getBoundingClientRect();
+      setMoreMenuPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right
+      });
+      setOpenMoreMenu(ticketId);
+    }
   };
 
-  const handleMoreMenuAction = (action: string, ticket: any) => {
+  const handleMoreMenuAction = async (action: string, ticket: Ticket) => {
     setOpenMoreMenu(null);
+    setMoreMenuPosition(null);
     
     switch (action) {
       case 'view':
-        console.log('View ticket:', ticket);
-        break;
-      case 'edit':
-        console.log('Edit ticket:', ticket);
-        break;
-      case 'reply':
-        console.log('Reply to ticket:', ticket);
-        break;
-      case 'assign':
-        console.log('Assign ticket:', ticket);
-        break;
-      case 'close':
-        console.log('Close ticket:', ticket);
+        toggleRowExpansion(ticket.id);
         break;
       case 'delete':
-        console.log('Delete ticket:', ticket);
+        setTicketToDelete(ticket);
+        setShowDeleteModal(true);
         break;
       default:
         break;
     }
   };
 
-  // Expandable row handlers
-  const toggleRowExpansion = (ticketId: string) => {
-    const newExpandedRows = new Set(expandedRows);
-    if (newExpandedRows.has(ticketId)) {
-      newExpandedRows.delete(ticketId);
-    } else {
-      newExpandedRows.add(ticketId);
+  const handleConfirmDelete = async () => {
+    if (!ticketToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteSupportTicketAdmin(ticketToDelete.id);
+      if (result.success) {
+        // Remove from state
+        setTickets(prev => prev.filter(t => t.id !== ticketToDelete.id));
+        setTicketDetails(prev => {
+          const next = new Map(prev);
+          next.delete(ticketToDelete.id);
+          return next;
+        });
+        setShowDeleteModal(false);
+        setTicketToDelete(null);
+      } else {
+        alert(result.error || "Failed to delete ticket");
+      }
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+      alert("An error occurred while deleting the ticket");
+    } finally {
+      setIsDeleting(false);
     }
-    setExpandedRows(newExpandedRows);
   };
 
-  // Message handlers
-  const handleSendMessage = (ticketId: string) => {
-    const message = newMessages[ticketId]?.trim();
-    if (!message) return;
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setTicketToDelete(null);
+  };
 
-    // In a real app, this would send to your API
-    console.log('Sending message for ticket:', ticketId, 'Message:', message);
-    
-    // Clear the input
-    setNewMessages(prev => ({
-      ...prev,
-      [ticketId]: ''
-    }));
+  const handleStatusClick = (ticketId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (openStatusDropdown === ticketId) {
+      setOpenStatusDropdown(null);
+      setStatusDropdownPosition(null);
+    } else {
+      const button = e.currentTarget as HTMLElement;
+      const rect = button.getBoundingClientRect();
+      setStatusDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left
+      });
+      setOpenStatusDropdown(ticketId);
+    }
+  };
+
+  const getSubscriptionBadgeColor = (subscription: string) => {
+    switch (subscription) {
+      case "monthly":
+        return "#4c46d6"; // Darker purple
+      case "annual":
+        return "#2d8a7a"; // Darker teal
+      case "lifetime":
+        return "#d4a017"; // Darker gold
+      case "admin":
+        return "#d63447"; // Darker red
+      case "nfr":
+        return "#9b59b6"; // Purple for NFR
+      default:
+        return "#6c757d"; // Darker gray
+    }
+  };
+
+  const getSubscriptionIcon = (subscription: string) => {
+    switch (subscription) {
+      case "admin":
+        return <FaUserShield />;
+      case "lifetime":
+        return <FaCrown />;
+      case "nfr":
+        return <FaCrown />;
+      default:
+        return null;
+    }
+  };
+
+  const isSubscriptionPremium = (subscription: string) => {
+    return ["lifetime", "admin"].includes(subscription);
+  };
+
+  const handleViewUser = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const result = await getUserByIdAdmin(userId);
+      if (result.user) {
+        setSelectedUser(result.user);
+        setShowUserModal(true);
+      } else {
+        alert(result.error || "Failed to fetch user data");
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      alert("Failed to fetch user data");
+    }
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setSelectedUser(null);
   };
 
   const handleFileUpload = (ticketId: string, files: FileList | null) => {
@@ -1335,16 +2049,16 @@ function SupportTicketsPage() {
 
   const stats = [
     {
-      value: mockTickets.length.toString(),
+      value: tickets.length.toString(),
       label: t("admin.supportTickets.totalTickets", "Total Tickets"),
     },
     {
-      value: mockTickets.filter(t => t.status === "open" || t.status === "inProgress").length.toString(),
+      value: tickets.filter(t => t.status === "open" || t.status === "in_progress").length.toString(),
       label: t("admin.supportTickets.openTickets", "Open Tickets"),
     },
     {
-      value: "2.5h",
-      label: t("admin.supportTickets.avgResponseTime", "Avg Response Time"),
+      value: tickets.filter(t => t.status === "resolved").length.toString(),
+      label: t("admin.supportTickets.resolvedTickets", "Resolved Tickets"),
     },
   ];
 
@@ -1402,19 +2116,14 @@ function SupportTicketsPage() {
             >
               <option value="all">{t("admin.supportTickets.filters.all", "All Tickets")}</option>
               <option value="open">{t("admin.supportTickets.filters.open", "Open")}</option>
-              <option value="inProgress">{t("admin.supportTickets.filters.inProgress", "In Progress")}</option>
+              <option value="in_progress">{t("admin.supportTickets.filters.inProgress", "In Progress")}</option>
               <option value="resolved">{t("admin.supportTickets.filters.resolved", "Resolved")}</option>
               <option value="closed">{t("admin.supportTickets.filters.closed", "Closed")}</option>
             </FilterSelect>
 
-            <ActionButton variant="success">
+            <ActionButton variant="success" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
               {t("admin.supportTickets.createTicket", "Create Ticket")}
-            </ActionButton>
-
-            <ActionButton>
-              <FaDownload />
-              {t("common.export", "Export")}
             </ActionButton>
           </FiltersRow>
         </FiltersSection>
@@ -1427,29 +2136,24 @@ function SupportTicketsPage() {
                   {t("admin.supportTickets.ticketTable.id", "Ticket ID")}
                   {getSortIcon('id')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('subject')}>
+                <SubjectHeaderCell onClick={() => handleSort('subject')}>
                   {t("admin.supportTickets.ticketTable.subject", "Subject")}
                   {getSortIcon('subject')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('user')}>
+                </SubjectHeaderCell>
+                <UserHeaderCell onClick={() => handleSort('user')}>
                   {t("admin.supportTickets.ticketTable.user", "User")}
                   {getSortIcon('user')}
+                </UserHeaderCell>
+                <TableHeaderCell>
+                  {t("admin.supportTickets.ticketTable.subscription", "Subscription")}
                 </TableHeaderCell>
                 <TableHeaderCell onClick={() => handleSort('status')}>
                   {t("admin.supportTickets.ticketTable.status", "Status")}
                   {getSortIcon('status')}
                 </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('priority')}>
-                  {t("admin.supportTickets.ticketTable.priority", "Priority")}
-                  {getSortIcon('priority')}
-                </TableHeaderCell>
                 <TableHeaderCell onClick={() => handleSort('created')}>
                   {t("admin.supportTickets.ticketTable.created", "Created")}
                   {getSortIcon('created')}
-                </TableHeaderCell>
-                <TableHeaderCell onClick={() => handleSort('assignedTo')}>
-                  {t("admin.supportTickets.ticketTable.assignedTo", "Assigned To")}
-                  {getSortIcon('assignedTo')}
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {t("admin.supportTickets.ticketTable.actions", "Actions")}
@@ -1459,54 +2163,132 @@ function SupportTicketsPage() {
             <TableBody>
               {paginatedTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     No support tickets found
                   </td>
                 </tr>
               ) : paginatedTickets.map((ticket) => (
                 <React.Fragment key={ticket.id}>
-                  <TableRow>
+                  <TableRow data-status-open={openStatusDropdown === ticket.id ? "true" : "false"}>
                   <TableCell>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
                           {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
                         </ExpandButton>
-                    <TicketId>{ticket.id}</TicketId>
+                    <TicketId>{ticket.ticket_number}</TicketId>
                       </div>
                   </TableCell>
-                  <TableCell>
+                  <SubjectTableCell>
                     <TicketSubject>{ticket.subject}</TicketSubject>
-                    <TicketUser>by {ticket.user}</TicketUser>
+                  </SubjectTableCell>
+                  <UserTableCell>
+                    {ticket.user_id ? (
+                      <TicketUser onClick={(e) => handleViewUser(ticket.user_id, e)}>
+                        {ticket.user_email || "Unknown"}
+                      </TicketUser>
+                    ) : (
+                      <TicketUser>{ticket.user_email || "Unknown"}</TicketUser>
+                    )}
+                  </UserTableCell>
+                  <SubscriptionCell>
+                    <SubscriptionBadge
+                      $color={getSubscriptionBadgeColor(
+                        ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
+                      )}
+                      $variant={
+                        ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
+                          ? "premium"
+                          : "default"
+                      }
+                    >
+                      {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
+                      {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
+                    </SubscriptionBadge>
+                  </SubscriptionCell>
+                  <TableCell data-has-dropdown>
+                    <StatusContainer data-status-dropdown>
+                      <StatusBadge 
+                        status={ticket.status} 
+                        $clickable
+                        onClick={(e) => handleStatusClick(ticket.id, e)}
+                      >
+                        {getStatusIcon(ticket.status)}
+                        {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                        {updatingStatus === ticket.id && (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              border: "2px solid rgba(255,255,255,0.3)",
+                              borderTop: "2px solid white",
+                              borderRadius: "50%",
+                            }}
+                          />
+                        )}
+                      </StatusBadge>
+                      <AnimatePresence>
+                        {openStatusDropdown === ticket.id && statusDropdownPosition && (
+                          <StatusDropdown
+                            $top={statusDropdownPosition.top}
+                            $left={statusDropdownPosition.left}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <StatusDropdownItem
+                              $active={ticket.status === 'open'}
+                              onClick={() => handleStatusChange(ticket.id, 'open')}
+                            >
+                              {getStatusIcon('open')}
+                              Open
+                            </StatusDropdownItem>
+                            <StatusDropdownItem
+                              $active={ticket.status === 'in_progress' || ticket.status === 'inProgress'}
+                              onClick={() => handleStatusChange(ticket.id, 'in_progress')}
+                            >
+                              {getStatusIcon('inProgress')}
+                              In Progress
+                            </StatusDropdownItem>
+                            <StatusDropdownItem
+                              $active={ticket.status === 'resolved'}
+                              onClick={() => handleStatusChange(ticket.id, 'resolved')}
+                            >
+                              {getStatusIcon('resolved')}
+                              Resolved
+                            </StatusDropdownItem>
+                            <StatusDropdownItem
+                              $active={ticket.status === 'closed'}
+                              onClick={() => handleStatusChange(ticket.id, 'closed')}
+                            >
+                              {getStatusIcon('closed')}
+                              Closed
+                            </StatusDropdownItem>
+                          </StatusDropdown>
+                        )}
+                      </AnimatePresence>
+                    </StatusContainer>
                   </TableCell>
-                  <TableCell>
-                    <TicketUser>{ticket.user}</TicketUser>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={ticket.status}>
-                      {getStatusIcon(ticket.status)}
-                      {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>
-                    <PriorityBadge priority={ticket.priority}>
-                      {getPriorityIcon(ticket.priority)}
-                      {t(`admin.supportTickets.priority.${ticket.priority}`, ticket.priority)}
-                    </PriorityBadge>
-                  </TableCell>
-                  <TableCell>{formatDate(ticket.created)}</TableCell>
-                  <TableCell>
-                    <AssignedTo>{ticket.assignedTo}</AssignedTo>
-                  </TableCell>
-                  <TableCell>
-                    <MoreMenuContainer data-more-menu onClick={(e) => e.stopPropagation()}>
+                  <TableCell>{formatDate(ticket.created_at)}</TableCell>
+                  <TableCell data-has-dropdown>
+                    <MoreMenuContainer 
+                      data-more-menu 
+                      onClick={(e) => e.stopPropagation()}
+                      $isOpen={openMoreMenu === ticket.id}
+                    >
                       <MoreMenuButton
                         onClick={(e) => handleMoreMenuClick(ticket.id, e)}
                       >
                         <FaEllipsisV />
                       </MoreMenuButton>
 
-                      {openMoreMenu === ticket.id && (
+                      {openMoreMenu === ticket.id && moreMenuPosition && (
                         <MoreMenuDropdown
+                          $top={moreMenuPosition.top}
+                          $right={moreMenuPosition.right}
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
@@ -1514,23 +2296,9 @@ function SupportTicketsPage() {
                         >
                           <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
                             <FaEye />
-                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('reply', ticket)}>
-                            <FaReply />
-                            {t("admin.supportTickets.ticketActions.reply", "Reply")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('edit', ticket)}>
-                            <FaEdit />
-                            {t("admin.supportTickets.ticketActions.edit", "Edit")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('assign', ticket)}>
-                            <FaUserCog />
-                            {t("admin.supportTickets.ticketActions.assign", "Assign")}
-                          </MoreMenuItem>
-                          <MoreMenuItem onClick={() => handleMoreMenuAction('close', ticket)}>
-                            <FaTimes />
-                            {t("admin.supportTickets.ticketActions.close", "Close Ticket")}
+                            {expandedRows.has(ticket.id) 
+                              ? t("admin.supportTickets.ticketActions.hide", "Hide Ticket")
+                              : t("admin.supportTickets.ticketActions.view", "View Ticket")}
                           </MoreMenuItem>
                           <MoreMenuItem 
                             variant="danger"
@@ -1553,42 +2321,150 @@ function SupportTicketsPage() {
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
-                        <ExpandableCell colSpan={8}>
+                        <ExpandableCell colSpan={7}>
                           <ConversationContainer
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1, duration: 0.3 }}
                           >
-                            <ConversationHeader>
-                              <ConversationTitle>
-                                Conversation: {ticket.subject}
-                              </ConversationTitle>
-                              <ConversationMeta>
-                                <span>Messages: {ticket.messages?.length || 0}</span>
-                                <span>Last updated: {formatDate(ticket.lastUpdate)}</span>
-                              </ConversationMeta>
-                            </ConversationHeader>
+                            {loadingDetails.has(ticket.id) ? (
+                              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  style={{ 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    border: '3px solid rgba(108, 99, 255, 0.3)', 
+                                    borderTop: '3px solid var(--primary)', 
+                                    borderRadius: '50%',
+                                    margin: '0 auto 1rem'
+                                  }}
+                                />
+                                Loading conversation...
+                              </div>
+                            ) : (
+                              <>
+                                <ConversationHeader>
+                                  <ConversationTitle>
+                                    Conversation: {ticket.subject}
+                                  </ConversationTitle>
+                                  <ConversationMeta>
+                                    <span>Messages: {ticketDetails.get(ticket.id)?.messages?.length || 0}</span>
+                                    <span>Last updated: {formatDate(ticket.updated_at)}</span>
+                                  </ConversationMeta>
+                                </ConversationHeader>
 
-                            <MessagesContainer>
-                              {ticket.messages?.map((message) => (
-                                <Message key={message.id} isAdmin={message.isAdmin}>
-                                  <MessageAvatar isAdmin={message.isAdmin}>
-                                    {message.isAdmin ? <FaUserTie /> : <FaUser />}
-                                  </MessageAvatar>
-                                  <div style={{ flex: 1 }}>
-                                    <MessageBubble isAdmin={message.isAdmin}>
-                                      <MessageContent>{message.content}</MessageContent>
-                                      <MessageTime>
-                                        {message.sender} • {formatMessageTime(message.timestamp)}
-                                      </MessageTime>
-                                    </MessageBubble>
-                                    {message.attachments?.map(renderAttachment)}
-                                  </div>
-                                </Message>
-                              ))}
-                            </MessagesContainer>
+                                <MessagesContainer>
+                                  {ticketDetails.get(ticket.id)?.messages?.map((message) => (
+                                    <Message key={message.id} $isAdmin={message.is_admin}>
+                                      <MessageAvatar $isAdmin={message.is_admin}>
+                                        {message.is_admin ? <FaUserTie /> : <FaUser />}
+                                      </MessageAvatar>
+                                      <div style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: message.is_admin ? 'flex-end' : 'flex-start'
+                                      }}>
+                                        <MessageBubble $isAdmin={message.is_admin}>
+                                          <MessageContent>{message.content}</MessageContent>
+                                          <MessageTime>
+                                            {message.is_admin ? "Support Team" : (message.user_email || "Unknown")} • {formatDateTime(message.created_at)}
+                                            {message.edited_at && ` (edited ${formatDateTime(message.edited_at)})`}
+                                          </MessageTime>
+                                        </MessageBubble>
+                                        {message.attachments?.map((att) => (
+                                          <MessageAttachment key={att.id}>
+                                            {att.attachment_type === 'image' && att.url ? (
+                                              <>
+                                                <ImagePreview 
+                                                  src={att.url} 
+                                                  alt={att.file_name}
+                                                  onClick={() => window.open(att.url || '', '_blank')}
+                                                />
+                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                                  <AttachmentName>{att.file_name}</AttachmentName>
+                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                                </AttachmentInfo>
+                                              </>
+                                            ) : att.attachment_type === 'video' && att.url ? (
+                                              <>
+                                                <VideoPreview controls>
+                                                  <source src={att.url} type={att.file_type || 'video/mp4'} />
+                                                  Your browser does not support the video tag.
+                                                </VideoPreview>
+                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                                  <AttachmentName>{att.file_name}</AttachmentName>
+                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                                </AttachmentInfo>
+                                              </>
+                                            ) : (
+                                              <AttachmentContainer>
+                                                <AttachmentIcon>
+                                                  <FaFile />
+                                                </AttachmentIcon>
+                                                <AttachmentInfo>
+                                                  <AttachmentName>{att.file_name}</AttachmentName>
+                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                                </AttachmentInfo>
+                                                {att.url && (
+                                                  <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
+                                                    View
+                                                  </AttachmentLink>
+                                                )}
+                                              </AttachmentContainer>
+                                            )}
+                                          </MessageAttachment>
+                                        ))}
+                                      </div>
+                                    </Message>
+                                  ))}
+                                  {(!ticketDetails.get(ticket.id)?.messages || ticketDetails.get(ticket.id)!.messages.length === 0) && (
+                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                      No messages yet. Start the conversation below.
+                                    </div>
+                                  )}
+                                </MessagesContainer>
+                              </>
+                            )}
 
                             <MessageInput>
+                              {pendingAttachments[ticket.id] && pendingAttachments[ticket.id].length > 0 && (
+                                <div style={{ 
+                                  marginBottom: '0.5rem', 
+                                  padding: '0.5rem', 
+                                  background: 'rgba(255, 255, 255, 0.05)', 
+                                  borderRadius: '8px',
+                                  fontSize: '0.85rem',
+                                  color: 'var(--text-secondary)',
+                                  width: '100%'
+                                }}>
+                                  {pendingAttachments[ticket.id].map((file, idx) => (
+                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                      <FaFile />
+                                      <span>{file.name}</span>
+                                      <button
+                                        onClick={() => {
+                                          setPendingAttachments(prev => ({
+                                            ...prev,
+                                            [ticket.id]: prev[ticket.id]?.filter((_, i) => i !== idx) || []
+                                          }));
+                                        }}
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          color: 'var(--text-secondary)',
+                                          cursor: 'pointer',
+                                          padding: '0.25rem',
+                                          marginLeft: 'auto'
+                                        }}
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               <MessageTextArea
                                 placeholder={t("admin.supportTickets.conversation.placeholder", "Type your message...")}
                                 value={newMessages[ticket.id] || ''}
@@ -1596,7 +2472,12 @@ function SupportTicketsPage() {
                                   ...prev,
                                   [ticket.id]: e.target.value
                                 }))}
-                                onKeyPress={(e) => handleKeyPress(e, ticket.id)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage(ticket.id);
+                                  }
+                                }}
                                 rows={1}
                               />
                               <MessageActions>
@@ -1608,7 +2489,7 @@ function SupportTicketsPage() {
                                 </AttachButton>
                                 <SendButton
                                   onClick={() => handleSendMessage(ticket.id)}
-                                  disabled={!newMessages[ticket.id]?.trim() || uploadingFiles[ticket.id]}
+                                  disabled={(!newMessages[ticket.id]?.trim() && (!pendingAttachments[ticket.id] || pendingAttachments[ticket.id].length === 0)) || uploadingFiles[ticket.id]}
                                 >
                                   <FaPaperPlane />
                                 </SendButton>
@@ -1621,7 +2502,7 @@ function SupportTicketsPage() {
                                 }}
                                 type="file"
                                 multiple
-                                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                                accept="image/*,video/*"
                                 onChange={(e) => handleFileUpload(ticket.id, e.target.files)}
                               />
                             </MessageInput>
@@ -1676,6 +2557,181 @@ function SupportTicketsPage() {
         </TableContainer>
         </>
         )}
+
+        {/* Create Ticket Modal */}
+        <AnimatePresence>
+          {showCreateModal && (
+            <ModalOverlay
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleCloseCreateModal}
+            >
+              <CreateTicketModal
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ModalHeader>
+                  <ModalTitle>
+                    <FaTicketAlt />
+                    Create Support Ticket
+                  </ModalTitle>
+                  <CloseButton onClick={handleCloseCreateModal}>
+                    <FaTimes />
+                  </CloseButton>
+                </ModalHeader>
+
+                <form onSubmit={handleCreateTicket}>
+                  <FormGroup>
+                    <FormLabel htmlFor="subject">Subject *</FormLabel>
+                    <FormInput
+                      id="subject"
+                      type="text"
+                      placeholder="Brief description of the issue"
+                      value={createTicketForm.subject}
+                      onChange={(e) =>
+                        setCreateTicketForm({ ...createTicketForm, subject: e.target.value })
+                      }
+                      required
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel htmlFor="description">Description *</FormLabel>
+                    <FormTextarea
+                      id="description"
+                      placeholder="Detailed description of the issue..."
+                      value={createTicketForm.description}
+                      onChange={(e) =>
+                        setCreateTicketForm({ ...createTicketForm, description: e.target.value })
+                      }
+                      required
+                    />
+                  </FormGroup>
+
+                  {createTicketError && (
+                    <ErrorMessage>{createTicketError}</ErrorMessage>
+                  )}
+
+                  {createTicketSuccess && (
+                    <SuccessMessage>{createTicketSuccess}</SuccessMessage>
+                  )}
+
+                  <FormActions>
+                    <CancelButton type="button" onClick={handleCloseCreateModal}>
+                      Cancel
+                    </CancelButton>
+                    <SubmitButton type="submit" disabled={createTicketLoading}>
+                      {createTicketLoading ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              border: "2px solid rgba(255,255,255,0.3)",
+                              borderTop: "2px solid white",
+                              borderRadius: "50%",
+                            }}
+                          />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <FaPlus />
+                          Create Ticket
+                        </>
+                      )}
+                    </SubmitButton>
+                  </FormActions>
+                </form>
+              </CreateTicketModal>
+            </ModalOverlay>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && ticketToDelete && (
+            <ModalOverlay
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleCancelDelete}
+            >
+              <DeleteModalContent
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DeleteModalTitle>
+                  <FaExclamationTriangle />
+                  Delete Ticket Confirmation
+                </DeleteModalTitle>
+                <DeleteModalMessage>
+                  Are you sure you want to delete this ticket? This action cannot be undone. All messages and attachments will be permanently deleted.
+                </DeleteModalMessage>
+                <DeleteModalDetails>
+                  <DeleteModalDetailItem>
+                    <DeleteModalDetailLabel>Ticket Number</DeleteModalDetailLabel>
+                    <DeleteModalDetailValue>{ticketToDelete.ticket_number}</DeleteModalDetailValue>
+                  </DeleteModalDetailItem>
+                  <DeleteModalDetailItem>
+                    <DeleteModalDetailLabel>Subject</DeleteModalDetailLabel>
+                    <DeleteModalDetailValue>{ticketToDelete.subject}</DeleteModalDetailValue>
+                  </DeleteModalDetailItem>
+                  <DeleteModalDetailItem>
+                    <DeleteModalDetailLabel>User</DeleteModalDetailLabel>
+                    <DeleteModalDetailValue>{ticketToDelete.user_email || 'N/A'}</DeleteModalDetailValue>
+                  </DeleteModalDetailItem>
+                  <DeleteModalDetailItem>
+                    <DeleteModalDetailLabel>Status</DeleteModalDetailLabel>
+                    <DeleteModalDetailValue>{ticketToDelete.status}</DeleteModalDetailValue>
+                  </DeleteModalDetailItem>
+                </DeleteModalDetails>
+                <DeleteModalActions>
+                  <DeleteModalButton
+                    $variant="secondary"
+                    onClick={handleCancelDelete}
+                    disabled={isDeleting}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Cancel
+                  </DeleteModalButton>
+                  <DeleteModalButton
+                    $variant="danger"
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FaTrash />
+                    {isDeleting ? 'Deleting...' : 'Delete Ticket'}
+                  </DeleteModalButton>
+                </DeleteModalActions>
+              </DeleteModalContent>
+            </ModalOverlay>
+          )}
+        </AnimatePresence>
+
+        {/* User Profile Modal */}
+        <UserProfileModal
+          user={selectedUser}
+          isOpen={showUserModal}
+          onClose={closeUserModal}
+          getSubscriptionBadgeColor={getSubscriptionBadgeColor}
+          getSubscriptionIcon={getSubscriptionIcon}
+          isSubscriptionPremium={isSubscriptionPremium}
+          formatDate={formatDate}
+          formatDateTime={formatDateTime}
+          formatCurrency={formatCurrency}
+          getDisplayName={getDisplayName}
+        />
       </TicketsContainer>
     </>
   );

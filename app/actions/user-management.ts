@@ -473,6 +473,103 @@ export async function getAllUsersForCRMAdmin(
 }
 
 /**
+ * Get a single user by ID for CRM (admin only)
+ */
+export async function getUserByIdAdmin(userId: string): Promise<{
+  user: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    subscription: string;
+    customerId?: string;
+    subscriptionExpiration?: string;
+    trialExpiration?: string;
+    createdAt: string;
+    lastActive?: string;
+    totalSpent: number;
+    hasNfr?: boolean;
+  } | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { user: null, error: "Unauthorized" };
+    }
+
+    const serviceSupabase = await createSupabaseServiceRole();
+
+    // Get user from auth
+    const { data: { user: authUser }, error: authError } = await serviceSupabase.auth.admin.getUserById(userId);
+    if (authError || !authUser) {
+      return { user: null, error: "User not found" };
+    }
+
+    // Get profile
+    const { data: profile, error: profileError } = await serviceSupabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      return { user: null, error: "Profile not found" };
+    }
+
+    // Check for NFR
+    let hasNfr = false;
+    if (authUser.email) {
+      const normalizedEmail = authUser.email.toLowerCase().trim();
+      const { data: nfrRecord } = await serviceSupabase
+        .from("user_management")
+        .select("pro")
+        .eq("user_email", normalizedEmail)
+        .maybeSingle();
+      hasNfr = nfrRecord?.pro ?? false;
+    }
+
+    // Get last active from user_sessions
+    const { data: lastSession } = await serviceSupabase
+      .from("user_sessions")
+      .select("refreshed_at, updated_at, created_at")
+      .eq("user_id", userId)
+      .order("refreshed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const lastActive = lastSession?.refreshed_at || lastSession?.updated_at || lastSession?.created_at || null;
+
+    // Get total spent (simplified - just get from additional data function)
+    const { totalSpent } = await getAdditionalUserDataAdmin([userId]);
+
+    const userData = {
+      id: userId,
+      email: authUser.email || "",
+      firstName: profile.first_name || undefined,
+      lastName: profile.last_name || undefined,
+      subscription: profile.subscription || "none",
+      customerId: profile.customer_id || undefined,
+      subscriptionExpiration: profile.subscription_expiration || undefined,
+      trialExpiration: profile.trial_expiration || undefined,
+      createdAt: profile.created_at || new Date().toISOString(),
+      lastActive: lastActive || undefined,
+      totalSpent: totalSpent[userId] || 0,
+      hasNfr,
+    };
+
+    return { user: userData };
+  } catch (error) {
+    console.error("Error in getUserByIdAdmin:", error);
+    return {
+      user: null,
+      error: error instanceof Error ? error.message : "Failed to fetch user",
+    };
+  }
+}
+
+/**
  * Get user count for CRM with admin check (admin only)
  * Wrapper around getUsersForCRMCount that adds admin authorization
  */
@@ -641,7 +738,6 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
     ticket_number: string;
     subject: string;
     status: string;
-    priority: string;
     created_at: string;
     updated_at: string;
   }>;
@@ -657,7 +753,7 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
     const { data: tickets, error: ticketsError } = await supabase
       .from("support_tickets")
       .select(
-        "id, ticket_number, subject, status, priority, created_at, updated_at"
+        "id, ticket_number, subject, status, created_at, updated_at"
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -684,6 +780,1043 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
         error instanceof Error
           ? error.message
           : "Failed to fetch support tickets",
+    };
+  }
+}
+
+export async function createSupportTicketAdmin(data: {
+  subject: string;
+  description: string;
+  userId: string;
+}): Promise<{
+  success: boolean;
+  ticket?: {
+    id: string;
+    ticket_number: string;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Validate required fields
+    if (!data.subject || !data.description || !data.userId) {
+      return {
+        success: false,
+        error: "All fields are required",
+      };
+    }
+
+    // Create the ticket
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .insert({
+        subject: data.subject,
+        description: data.description,
+        user_id: data.userId,
+        status: "open",
+      })
+      .select("id, ticket_number")
+      .single();
+
+    if (ticketError) {
+      // If table doesn't exist (42P01), return error
+      if (ticketError.code === "42P01") {
+        return {
+          success: false,
+          error: "Support tickets table does not exist. Please run the migration.",
+        };
+      }
+      console.error("Error creating support ticket:", ticketError);
+      return {
+        success: false,
+        error: ticketError.message || "Failed to create support ticket",
+      };
+    }
+
+    // Create the initial message
+    if (ticket) {
+      const { error: messageError } = await supabase
+        .from("support_messages")
+        .insert({
+          ticket_id: ticket.id,
+          user_id: data.userId,
+          content: data.description,
+          is_admin: true, // Admin creates it
+        });
+
+      if (messageError) {
+        console.error("Error creating initial message:", messageError);
+        // Ticket was created but message failed - still return success
+        // as the ticket exists
+      }
+    }
+
+    return {
+      success: true,
+      ticket: ticket
+        ? {
+            id: ticket.id,
+            ticket_number: ticket.ticket_number,
+          }
+        : undefined,
+    };
+  } catch (error) {
+    console.error("Error in createSupportTicketAdmin:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create support ticket",
+    };
+  }
+}
+
+export async function updateSupportTicketStatusAdmin(
+  ticketId: string,
+  status: "open" | "in_progress" | "resolved" | "closed"
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Validate status
+    const validStatuses = ["open", "in_progress", "resolved", "closed"];
+    if (!validStatuses.includes(status)) {
+      return {
+        success: false,
+        error: "Invalid status",
+      };
+    }
+
+    // Update the ticket status
+    const { error: updateError } = await supabase
+      .from("support_tickets")
+      .update({ status })
+      .eq("id", ticketId);
+
+    if (updateError) {
+      // If table doesn't exist (42P01), return error
+      if (updateError.code === "42P01") {
+        return {
+          success: false,
+          error: "Support tickets table does not exist. Please run the migration.",
+        };
+      }
+      console.error("Error updating support ticket status:", updateError);
+      return {
+        success: false,
+        error: updateError.message || "Failed to update ticket status",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateSupportTicketStatusAdmin:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update ticket status",
+    };
+  }
+}
+
+/**
+ * Get all support tickets with user info (admin only)
+ */
+export async function getSupportTicketsAdmin(): Promise<{
+  tickets: Array<{
+    id: string;
+    ticket_number: string;
+    subject: string;
+    description: string | null;
+    status: string;
+    user_id: string;
+    user_email: string | null;
+    user_subscription?: string;
+    user_has_nfr?: boolean;
+    created_at: string;
+    updated_at: string;
+    resolved_at: string | null;
+    closed_at: string | null;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { tickets: [], error: "Unauthorized" };
+    }
+
+    // Get tickets with user email from auth.users
+    const { data: tickets, error: ticketsError } = await supabase
+      .from("support_tickets")
+      .select(`
+        id,
+        ticket_number,
+        subject,
+        description,
+        status,
+        user_id,
+        created_at,
+        updated_at,
+        resolved_at,
+        closed_at
+      `)
+      .order("created_at", { ascending: false });
+
+    if (ticketsError) {
+      console.error("Error fetching support tickets:", ticketsError);
+      return { tickets: [], error: ticketsError.message };
+    }
+
+    // Get user emails and subscription data for all tickets using service role client
+    const serviceSupabase = await createSupabaseServiceRole();
+    const userIds = [...new Set(tickets?.map(t => t.user_id) || [])];
+    const userEmailsMap = new Map<string, string | null>();
+    const userSubscriptionMap = new Map<string, { subscription: string; hasNfr: boolean }>();
+
+    for (const userId of userIds) {
+      try {
+        const { data: { user } } = await serviceSupabase.auth.admin.getUserById(userId);
+        const email = user?.email || null;
+        userEmailsMap.set(userId, email);
+
+        // Get subscription from profiles table
+        const { data: profile } = await serviceSupabase
+          .from("profiles")
+          .select("subscription")
+          .eq("id", userId)
+          .single();
+
+        // Check NFR status if email exists
+        let hasNfr = false;
+        if (email) {
+          const normalizedEmail = email.toLowerCase().trim();
+          const { data: nfrRecord } = await serviceSupabase
+            .from("user_management")
+            .select("pro")
+            .eq("user_email", normalizedEmail)
+            .maybeSingle();
+          hasNfr = nfrRecord?.pro ?? false;
+        }
+
+        userSubscriptionMap.set(userId, {
+          subscription: profile?.subscription || "none",
+          hasNfr,
+        });
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+        userEmailsMap.set(userId, null);
+        userSubscriptionMap.set(userId, { subscription: "none", hasNfr: false });
+      }
+    }
+
+    const ticketsWithUsers = (tickets || []).map(ticket => {
+      const subscriptionData = userSubscriptionMap.get(ticket.user_id) || { subscription: "none", hasNfr: false };
+      return {
+        ...ticket,
+        user_email: userEmailsMap.get(ticket.user_id) || null,
+        user_subscription: subscriptionData.subscription,
+        user_has_nfr: subscriptionData.hasNfr,
+      };
+    });
+
+    return { tickets: ticketsWithUsers };
+  } catch (error) {
+    console.error("Error in getSupportTicketsAdmin:", error);
+    return {
+      tickets: [],
+      error: error instanceof Error ? error.message : "Failed to fetch tickets",
+    };
+  }
+}
+
+/**
+ * Get a single support ticket with messages and attachments (admin only)
+ */
+export async function getSupportTicketAdmin(ticketId: string): Promise<{
+  ticket: {
+    id: string;
+    ticket_number: string;
+    subject: string;
+    description: string | null;
+    status: string;
+    user_id: string;
+    user_email: string | null;
+    created_at: string;
+    updated_at: string;
+    resolved_at: string | null;
+    closed_at: string | null;
+    messages: Array<{
+      id: string;
+      content: string;
+      is_admin: boolean;
+      user_id: string;
+      user_email: string | null;
+      created_at: string;
+      updated_at: string;
+      edited_at: string | null;
+      attachments: Array<{
+        id: string;
+        file_name: string;
+        file_size: number;
+        file_type: string;
+        attachment_type: string;
+        url: string | null;
+        created_at: string;
+      }>;
+    }>;
+  } | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { ticket: null, error: "Unauthorized" };
+    }
+
+    // Get ticket
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .eq("id", ticketId)
+      .single();
+
+    if (ticketError || !ticket) {
+      return { ticket: null, error: ticketError?.message || "Ticket not found" };
+    }
+
+    // Get user email using service role client
+    const serviceSupabase = await createSupabaseServiceRole();
+    let userEmail = null;
+    try {
+      const { data: { user } } = await serviceSupabase.auth.admin.getUserById(ticket.user_id);
+      userEmail = user?.email || null;
+    } catch (error) {
+      console.error(`Error fetching user ${ticket.user_id}:`, error);
+    }
+
+    // Get messages with attachments
+    const { data: messages, error: messagesError } = await supabase
+      .from("support_messages")
+      .select(`
+        id,
+        content,
+        is_admin,
+        user_id,
+        created_at,
+        updated_at,
+        edited_at
+      `)
+      .eq("ticket_id", ticketId)
+      .order("created_at", { ascending: true });
+
+    if (messagesError) {
+      console.error("Error fetching messages:", messagesError);
+    }
+
+    // Get attachments for all messages
+    const messageIds = messages?.map(m => m.id) || [];
+    const { data: attachments, error: attachmentsError } = await supabase
+      .from("support_attachments")
+      .select("*")
+      .in("message_id", messageIds);
+
+    if (attachmentsError) {
+      console.error("Error fetching attachments:", attachmentsError);
+    }
+
+    // Get user emails for messages using service role client
+    const messageUserIds = [...new Set(messages?.map(m => m.user_id) || [])];
+    const messageUserEmailsMap = new Map<string, string | null>();
+
+    for (const userId of messageUserIds) {
+      try {
+        const { data: { user } } = await serviceSupabase.auth.admin.getUserById(userId);
+        messageUserEmailsMap.set(userId, user?.email || null);
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+        messageUserEmailsMap.set(userId, null);
+      }
+    }
+
+    // Combine messages with attachments
+    const messagesWithAttachments = (messages || []).map(message => ({
+      ...message,
+      user_email: messageUserEmailsMap.get(message.user_id) || null,
+      attachments: (attachments || []).filter(att => att.message_id === message.id).map(att => ({
+        id: att.id,
+        file_name: att.file_name,
+        file_size: att.file_size,
+        file_type: att.file_type,
+        attachment_type: att.attachment_type,
+        url: att.url,
+        created_at: att.created_at,
+      })),
+    }));
+
+    return {
+      ticket: {
+        ...ticket,
+        user_email: userEmail,
+        messages: messagesWithAttachments,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getSupportTicketAdmin:", error);
+    return {
+      ticket: null,
+      error: error instanceof Error ? error.message : "Failed to fetch ticket",
+    };
+  }
+}
+
+/**
+ * Delete a support ticket (admin only)
+ */
+export async function deleteSupportTicketAdmin(ticketId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Delete the ticket (cascade will delete messages and attachments)
+    const { error: deleteError } = await supabase
+      .from("support_tickets")
+      .delete()
+      .eq("id", ticketId);
+
+    if (deleteError) {
+      console.error("Error deleting support ticket:", deleteError);
+      return {
+        success: false,
+        error: deleteError.message || "Failed to delete ticket",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteSupportTicketAdmin:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete ticket",
+    };
+  }
+}
+
+/**
+ * Add a message to a support ticket (admin only)
+ */
+export async function addSupportTicketMessageAdmin(
+  ticketId: string,
+  content: string,
+  isAdmin: boolean = true
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Create the message
+    const { data: message, error: messageError } = await supabase
+      .from("support_messages")
+      .insert({
+        ticket_id: ticketId,
+        user_id: user.id,
+        content: content.trim(),
+        is_admin: isAdmin,
+      })
+      .select("id")
+      .single();
+
+    if (messageError) {
+      console.error("Error adding message:", messageError);
+      return {
+        success: false,
+        error: messageError.message || "Failed to add message",
+      };
+    }
+
+    return { success: true, messageId: message.id };
+  } catch (error) {
+    console.error("Error in addSupportTicketMessageAdmin:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to add message",
+    };
+  }
+}
+
+/**
+ * Delete a support ticket message (admin only)
+ */
+export async function deleteSupportTicketMessageAdmin(messageId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    if (!(await checkAdmin(supabase))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Delete the message (cascade will delete attachments)
+    const { error: deleteError } = await supabase
+      .from("support_messages")
+      .delete()
+      .eq("id", messageId);
+
+    if (deleteError) {
+      console.error("Error deleting message:", deleteError);
+      return {
+        success: false,
+        error: deleteError.message || "Failed to delete message",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteSupportTicketMessageAdmin:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete message",
+    };
+  }
+}
+
+// ==================== CUSTOMER-FACING SUPPORT TICKET FUNCTIONS ====================
+
+/**
+ * Get all support tickets for the current user
+ */
+export async function getUserSupportTickets(): Promise<{
+  tickets: Array<{
+    id: string;
+    ticket_number: string;
+    subject: string;
+    description: string | null;
+    status: string;
+    user_id: string;
+    created_at: string;
+    updated_at: string;
+    resolved_at: string | null;
+    closed_at: string | null;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { tickets: [], error: "Not authenticated" };
+    }
+
+    // Get tickets for this user
+    const { data: tickets, error: ticketsError } = await supabase
+      .from("support_tickets")
+      .select(`
+        id,
+        ticket_number,
+        subject,
+        description,
+        status,
+        user_id,
+        created_at,
+        updated_at,
+        resolved_at,
+        closed_at
+      `)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (ticketsError) {
+      console.error("Error fetching support tickets:", ticketsError);
+      return { tickets: [], error: ticketsError.message };
+    }
+
+    return { tickets: tickets || [] };
+  } catch (error) {
+    console.error("Error in getUserSupportTickets:", error);
+    return {
+      tickets: [],
+      error: error instanceof Error ? error.message : "Failed to fetch tickets",
+    };
+  }
+}
+
+/**
+ * Get a single support ticket with messages and attachments (user's own tickets only)
+ */
+export async function getUserSupportTicket(ticketId: string): Promise<{
+  ticket: {
+    id: string;
+    ticket_number: string;
+    subject: string;
+    description: string | null;
+    status: string;
+    user_id: string;
+    created_at: string;
+    updated_at: string;
+    resolved_at: string | null;
+    closed_at: string | null;
+    messages: Array<{
+      id: string;
+      content: string;
+      is_admin: boolean;
+      user_id: string;
+      user_email: string | null;
+      created_at: string;
+      updated_at: string;
+      edited_at: string | null;
+      attachments: Array<{
+        id: string;
+        file_name: string;
+        file_size: number;
+        file_type: string;
+        attachment_type: string;
+        url: string | null;
+        created_at: string;
+      }>;
+    }>;
+  } | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { ticket: null, error: "Not authenticated" };
+    }
+
+    // Get ticket (RLS will ensure user can only see their own tickets)
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .eq("id", ticketId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (ticketError || !ticket) {
+      return { ticket: null, error: ticketError?.message || "Ticket not found" };
+    }
+
+    // Get messages with attachments
+    const { data: messages, error: messagesError } = await supabase
+      .from("support_messages")
+      .select(`
+        id,
+        content,
+        is_admin,
+        user_id,
+        created_at,
+        updated_at,
+        edited_at
+      `)
+      .eq("ticket_id", ticketId)
+      .order("created_at", { ascending: true });
+
+    if (messagesError) {
+      console.error("Error fetching messages:", messagesError);
+    }
+
+    // Get attachments for all messages
+    const messageIds = messages?.map(m => m.id) || [];
+    const { data: attachments, error: attachmentsError } = await supabase
+      .from("support_attachments")
+      .select("*")
+      .in("message_id", messageIds);
+
+    if (attachmentsError) {
+      console.error("Error fetching attachments:", attachmentsError);
+    }
+
+    // Get user emails for messages using service role client
+    const serviceSupabase = await createSupabaseServiceRole();
+    const messageUserIds = [...new Set(messages?.map(m => m.user_id) || [])];
+    const messageUserEmailsMap = new Map<string, string | null>();
+
+    for (const userId of messageUserIds) {
+      try {
+        const { data: { user } } = await serviceSupabase.auth.admin.getUserById(userId);
+        messageUserEmailsMap.set(userId, user?.email || null);
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+        messageUserEmailsMap.set(userId, null);
+      }
+    }
+
+    // Combine messages with attachments
+    const messagesWithAttachments = (messages || []).map(message => ({
+      ...message,
+      user_email: messageUserEmailsMap.get(message.user_id) || null,
+      attachments: (attachments || []).filter(att => att.message_id === message.id).map(att => ({
+        id: att.id,
+        file_name: att.file_name,
+        file_size: att.file_size,
+        file_type: att.file_type,
+        attachment_type: att.attachment_type,
+        url: att.url,
+        created_at: att.created_at,
+      })),
+    }));
+
+    return {
+      ticket: {
+        ...ticket,
+        messages: messagesWithAttachments,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getUserSupportTicket:", error);
+    return {
+      ticket: null,
+      error: error instanceof Error ? error.message : "Failed to fetch ticket",
+    };
+  }
+}
+
+/**
+ * Create a support ticket (for current user)
+ */
+export async function createSupportTicket(data: {
+  subject: string;
+  description: string;
+}): Promise<{
+  success: boolean;
+  ticket?: {
+    id: string;
+    ticket_number: string;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Validate required fields
+    if (!data.subject || !data.description) {
+      return {
+        success: false,
+        error: "All fields are required",
+      };
+    }
+
+    // Create the ticket
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .insert({
+        subject: data.subject,
+        description: data.description,
+        user_id: user.id,
+        status: "open",
+      })
+      .select("id, ticket_number")
+      .single();
+
+    if (ticketError) {
+      if (ticketError.code === "42P01") {
+        return {
+          success: false,
+          error: "Support tickets table does not exist. Please run the migration.",
+        };
+      }
+      console.error("Error creating support ticket:", ticketError);
+      return {
+        success: false,
+        error: ticketError.message || "Failed to create support ticket",
+      };
+    }
+
+    // Create the initial message
+    if (ticket) {
+      const { error: messageError } = await supabase
+        .from("support_messages")
+        .insert({
+          ticket_id: ticket.id,
+          user_id: user.id,
+          content: data.description,
+          is_admin: false, // User creates it
+        });
+
+      if (messageError) {
+        console.error("Error creating initial message:", messageError);
+        // Ticket was created but message failed - still return success
+        // as the ticket exists
+      }
+    }
+
+    return {
+      success: true,
+      ticket: ticket
+        ? {
+            id: ticket.id,
+            ticket_number: ticket.ticket_number,
+          }
+        : undefined,
+    };
+  } catch (error) {
+    console.error("Error in createSupportTicket:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create support ticket",
+    };
+  }
+}
+
+/**
+ * Add a message to a support ticket (user's own tickets only)
+ */
+export async function addSupportTicketMessage(
+  ticketId: string,
+  content: string
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Verify the ticket belongs to the user
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .select("id, user_id")
+      .eq("id", ticketId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (ticketError || !ticket) {
+      return { success: false, error: "Ticket not found or unauthorized" };
+    }
+
+    // Create the message
+    const { data: message, error: messageError } = await supabase
+      .from("support_messages")
+      .insert({
+        ticket_id: ticketId,
+        user_id: user.id,
+        content: content.trim(),
+        is_admin: false, // User messages are not admin
+      })
+      .select("id")
+      .single();
+
+    if (messageError) {
+      console.error("Error adding message:", messageError);
+      return {
+        success: false,
+        error: messageError.message || "Failed to add message",
+      };
+    }
+
+    return { success: true, messageId: message.id };
+  } catch (error) {
+    console.error("Error in addSupportTicketMessage:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to add message",
+    };
+  }
+}
+
+/**
+ * Upload attachment for a support ticket message
+ */
+export async function uploadSupportTicketAttachment(
+  ticketId: string,
+  messageId: string,
+  file: File
+): Promise<{
+  success: boolean;
+  attachmentId?: string;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Verify the ticket belongs to the user (for customer) or user is admin
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .select("id, user_id")
+      .eq("id", ticketId)
+      .single();
+
+    if (ticketError || !ticket) {
+      return { success: false, error: "Ticket not found" };
+    }
+
+    // Check if user owns ticket or is admin
+    const isAdmin = await checkAdmin(supabase);
+    if (ticket.user_id !== user.id && !isAdmin) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return { success: false, error: "File too large. Maximum size is 10MB" };
+    }
+
+    // Determine attachment type
+    let attachmentType: 'image' | 'video' | 'document' | 'audio' | 'other' = 'other';
+    if (file.type.startsWith('image/')) {
+      attachmentType = 'image';
+    } else if (file.type.startsWith('video/')) {
+      attachmentType = 'video';
+    } else if (file.type.startsWith('audio/')) {
+      attachmentType = 'audio';
+    } else if (file.type.includes('pdf') || file.type.includes('document') || file.type.includes('text') || 
+               file.name.endsWith('.pdf') || file.name.endsWith('.doc') || file.name.endsWith('.docx') || 
+               file.name.endsWith('.txt')) {
+      attachmentType = 'document';
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split('.').pop() || 'bin';
+    const fileName = `support-${ticketId}-${messageId}-${timestamp}-${randomString}.${fileExtension}`;
+    const storagePath = `support-attachments/${fileName}`;
+
+    // Convert file to buffer
+    const fileBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(fileBuffer);
+
+    // Upload to Supabase storage (ensure bucket exists)
+    const bucketName = 'support-attachments';
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      // If bucket doesn't exist, try to create it
+      if (uploadError.message.includes('Bucket not found')) {
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: false,
+          fileSizeLimit: `${maxSize}`
+        });
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          return { success: false, error: "Failed to create storage bucket" };
+        }
+        // Retry upload
+        const { data: retryData, error: retryError } = await supabase.storage
+          .from(bucketName)
+          .upload(storagePath, buffer, {
+            contentType: file.type,
+            cacheControl: '3600',
+            upsert: false
+          });
+        if (retryError) {
+          console.error("Error uploading file:", retryError);
+          return { success: false, error: retryError.message || "Failed to upload file" };
+        }
+      } else {
+        console.error("Error uploading file:", uploadError);
+        return { success: false, error: uploadError.message || "Failed to upload file" };
+      }
+    }
+
+    // Get public URL (if bucket is public) or signed URL
+    const { data: urlData } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    
+    const publicUrl = urlData?.publicUrl || null;
+
+    // Create attachment record
+    const { data: attachment, error: attachmentError } = await supabase
+      .from("support_attachments")
+      .insert({
+        message_id: messageId,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        attachment_type: attachmentType,
+        storage_path: storagePath,
+        url: publicUrl,
+      })
+      .select("id")
+      .single();
+
+    if (attachmentError) {
+      console.error("Error creating attachment record:", attachmentError);
+      // Try to delete uploaded file
+      await supabase.storage.from(bucketName).remove([storagePath]);
+      return {
+        success: false,
+        error: attachmentError.message || "Failed to create attachment record",
+      };
+    }
+
+    return { success: true, attachmentId: attachment.id };
+  } catch (error) {
+    console.error("Error in uploadSupportTicketAttachment:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to upload attachment",
     };
   }
 }

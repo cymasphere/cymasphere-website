@@ -15,6 +15,7 @@ import {
   FaArrowLeft,
   FaShieldAlt,
   FaRocket,
+  FaTicketAlt,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -623,6 +624,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={(e) => handleNavigation(e, "/getting-started")}
             >
               <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
+            </NavItem>
+          </Link>
+          <Link href="/support" passHref legacyBehavior>
+            <NavItem
+              $active={pathname === "/support" ? "true" : "false"}
+              onClick={(e) => handleNavigation(e, "/support")}
+            >
+              <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
             </NavItem>
           </Link>
           <Link href="/settings" passHref legacyBehavior>

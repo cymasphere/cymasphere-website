@@ -13,7 +13,6 @@ import {
   FaEnvelope,
   FaTrash,
   FaCrown,
-  FaDownload,
   FaSortUp,
   FaSortDown,
   FaSort,
@@ -270,29 +269,6 @@ const FilterSelect = styled.select`
   option {
     background-color: var(--card-bg);
     color: var(--text);
-  }
-`;
-
-const ExportButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 12px 20px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
-  }
-
-  svg {
-    font-size: 0.9rem;
   }
 `;
 
@@ -2356,11 +2332,6 @@ export default function AdminCRM() {
                     {t("admin.crmPage.filters.admin", "Admin Users")}
                   </option>
                 </FilterSelect>
-
-                <ExportButton>
-                  <FaDownload />
-                  {t("common.export", "Export")}
-                </ExportButton>
               </FiltersRow>
             </FiltersSection>
 
@@ -2944,7 +2915,6 @@ export default function AdminCRM() {
                           <DataTableHeaderCell>Ticket #</DataTableHeaderCell>
                           <DataTableHeaderCell>Subject</DataTableHeaderCell>
                           <DataTableHeaderCell>Status</DataTableHeaderCell>
-                          <DataTableHeaderCell>Priority</DataTableHeaderCell>
                           <DataTableHeaderCell>Created</DataTableHeaderCell>
                         </tr>
                       </DataTableHeader>
@@ -2981,26 +2951,6 @@ export default function AdminCRM() {
                                 }}
                               >
                                 {ticket.status.replace("_", " ")}
-                              </span>
-                            </DataTableCell>
-                            <DataTableCell>
-                              <span
-                                style={{
-                                  textTransform: "capitalize",
-                                  padding: "0.25rem 0.5rem",
-                                  borderRadius: "4px",
-                                  backgroundColor:
-                                    ticket.priority === "urgent"
-                                      ? "rgba(231, 76, 60, 0.2)"
-                                      : ticket.priority === "high"
-                                      ? "rgba(230, 126, 34, 0.2)"
-                                      : ticket.priority === "medium"
-                                      ? "rgba(241, 196, 15, 0.2)"
-                                      : "rgba(149, 165, 166, 0.2)",
-                                  color: "var(--text)",
-                                }}
-                              >
-                                {ticket.priority}
                               </span>
                             </DataTableCell>
                             <DataTableCell>
