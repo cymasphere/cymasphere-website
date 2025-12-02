@@ -1206,12 +1206,6 @@ function SupportPage() {
                             </JumpToCurrentButton>
                           )}
                           <MessageInput>
-                          {showSecurityWarning[selectedTicketId] && (
-                            <SecurityWarning>
-                              <FaFile style={{ marginRight: '0.5rem', fontSize: '0.85rem' }} />
-                              <span>Please do not upload sensitive information such as credit card numbers, payment methods, passwords, or social security numbers.</span>
-                            </SecurityWarning>
-                          )}
                           <MessageTextArea
                             placeholder={t("dashboard.support.conversation.placeholder", "Type your message...")}
                             value={newMessages[selectedTicketId] || ''}
@@ -1298,6 +1292,12 @@ function SupportPage() {
                           />
                         </MessageInput>
                         </MessageInputWrapper>
+                        {showSecurityWarning[selectedTicketId] && (
+                          <SecurityWarning style={{ marginTop: '0.5rem' }}>
+                            <FaFile style={{ marginRight: '0.5rem', fontSize: '0.85rem' }} />
+                            <span>Please do not upload sensitive information such as credit card numbers, payment methods, or passwords.</span>
+                          </SecurityWarning>
+                        )}
                       </>
                     )}
                   </div>
