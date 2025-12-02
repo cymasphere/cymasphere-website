@@ -61,18 +61,10 @@ const StepIndicator = styled.div`
 
   @media (max-width: 768px) {
     flex-wrap: nowrap;
-    gap: 0.5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 10px;
+    gap: 0.25rem;
     margin-bottom: 2rem;
-    
-    /* Hide scrollbar but keep functionality */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    padding: 0;
+    width: 100%;
   }
 `;
 
@@ -109,9 +101,9 @@ const StepDot = styled.div<{ $active: boolean; $completed: boolean }>`
   }}
 
   @media (max-width: 768px) {
-    width: 32px;
-    height: 32px;
-    font-size: 0.85rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
     
     ${(props) => {
       if (props.$active) {
@@ -135,7 +127,9 @@ const StepLine = styled.div<{ $completed: boolean }>`
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 20px;
+    flex: 1;
+    min-width: 8px;
+    max-width: 20px;
   }
 `;
 

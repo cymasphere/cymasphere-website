@@ -691,6 +691,12 @@ export const MessageInput = styled.div`
   background-color: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 `;
 
 export const MessageTextArea = styled.textarea`
@@ -715,12 +721,23 @@ export const MessageTextArea = styled.textarea`
   &::placeholder {
     color: var(--text-secondary);
   }
+
+  @media (max-width: 768px) {
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 44px; /* Better touch target */
+    padding: 0.625rem;
+  }
 `;
 
 export const MessageActions = styled.div`
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+  }
 `;
 
 export const AttachButton = styled.button`
@@ -734,6 +751,8 @@ export const AttachButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 
   &:hover:not(:disabled) {
     background-color: rgba(255, 255, 255, 0.05);
@@ -743,6 +762,12 @@ export const AttachButton = styled.button`
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.625rem;
+    min-width: 48px;
+    min-height: 48px;
   }
 `;
 
@@ -757,6 +782,8 @@ export const SendButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 
   &:hover:not(:disabled) {
     transform: scale(1.05);
@@ -772,6 +799,13 @@ export const SendButton = styled.button`
 
   svg {
     font-size: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.625rem 1.25rem;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 0.9rem;
   }
 `;
 
@@ -793,6 +827,11 @@ export const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    align-items: flex-end;
+  }
 `;
 
 export const CreateTicketModal = styled(motion.div)`
@@ -805,6 +844,12 @@ export const CreateTicketModal = styled(motion.div)`
   overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
 `;
 
 export const ModalHeader = styled.div`
@@ -826,6 +871,10 @@ export const ModalTitle = styled.h2`
 
   svg {
     color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
   }
 `;
 

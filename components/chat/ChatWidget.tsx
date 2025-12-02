@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
@@ -48,7 +49,7 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 9998;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -83,6 +84,8 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
   box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
   transition: all 0.3s ease;
   transform: ${props => props.$isOpen ? 'scale(0.9)' : 'scale(1)'};
+  position: relative;
+  z-index: 9999;
 
   &:hover {
     transform: ${props => props.$isOpen ? 'scale(0.85)' : 'scale(1.1)'};
@@ -101,6 +104,8 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   overflow: hidden;
   margin-bottom: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 9998;
   
   /* Mobile responsiveness */
   @media (max-width: 480px) {
@@ -374,10 +379,12 @@ interface ChatWidgetProps {
 
 export default function ChatWidget({ className }: ChatWidgetProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [wasEmailModalOpen, setWasEmailModalOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -452,25 +459,42 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   useEffect(() => {
     const checkEmailModal = () => {
       // Check for modal overlay - EmailCollectionModal uses z-index 9999
+      // Exclude chat widget elements
       const allElements = document.querySelectorAll('*');
       let hasEmailModal = false;
       
       for (const el of allElements) {
+        // Skip chat widget elements
+        if (el.hasAttribute('data-chat-widget') || 
+            el.closest('[data-chat-widget]') ||
+            el.closest('[class*="ChatContainer"], [class*="ChatWidget"]')) {
+          continue;
+        }
+        
         const styles = window.getComputedStyle(el);
+        // Check for email modal overlay - it should have z-index 9999, be fixed, and have backdrop blur
+        // Also check for specific modal classes or data attributes
         if (styles.zIndex === '9999' && styles.position === 'fixed') {
           // Check if it's a modal overlay (has backdrop blur or specific styling)
-          if (styles.backdropFilter || styles.backgroundColor === 'rgba(0, 0, 0, 0.7)') {
+          // EmailCollectionModal typically has backdrop-filter blur
+          if ((styles.backdropFilter && styles.backdropFilter !== 'none') || 
+              (styles.backgroundColor === 'rgba(0, 0, 0, 0.7)' && el.classList.toString().includes('Modal'))) {
             hasEmailModal = true;
             break;
           }
         }
       }
       
+      const emailModalJustOpened = hasEmailModal && !wasEmailModalOpen;
       setIsEmailModalOpen(hasEmailModal);
+      setWasEmailModalOpen(hasEmailModal);
       
-      // If modal just opened, close chat widget
-      if (hasEmailModal && isOpen) {
-        setIsOpen(false);
+      // If email modal just opened (not already open), close chat widget
+      // Add a small delay to prevent immediate closing when chat opens
+      if (emailModalJustOpened && isOpen) {
+        setTimeout(() => {
+          setIsOpen(false);
+        }, 100);
       }
     };
 
@@ -498,12 +522,18 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     };
   }, [isOpen]);
 
-  // Auto-open chat widget after 15 seconds if not on dashboard pages
+  // Auto-open chat widget after 15 seconds if not on dashboard pages and user is not logged in
   useEffect(() => {
     const isDashboardPage = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    const isLoggedIn = !!user;
     
-    // Don't auto-open if email modal is open
-    if (!isDashboardPage && !hasAutoOpened && !isOpen && !isEmailModalOpen) {
+    // Don't auto-open if:
+    // - On dashboard/admin pages
+    // - User is logged in
+    // - Email modal is open
+    // - Already auto-opened
+    // - Chat is already open
+    if (!isDashboardPage && !isLoggedIn && !hasAutoOpened && !isOpen && !isEmailModalOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
         setHasAutoOpened(true);
@@ -519,7 +549,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [pathname, hasAutoOpened, isOpen, audioInitialized, isEmailModalOpen]);
+  }, [pathname, hasAutoOpened, isOpen, audioInitialized, isEmailModalOpen, user]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -590,7 +620,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   };
 
   return (
-    <ChatContainer className={className} $isOpen={isOpen}>
+    <ChatContainer className={className} $isOpen={isOpen} data-chat-widget="true">
       <ChatWindow $isOpen={isOpen}>
         <ChatHeader>
           <ChatTitle>

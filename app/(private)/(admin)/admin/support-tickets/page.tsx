@@ -1110,6 +1110,11 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    align-items: flex-end;
+  }
 `;
 
 const CreateTicketModal = styled(motion.div)`
@@ -1122,6 +1127,58 @@ const CreateTicketModal = styled(motion.div)`
   overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+`;
+
+const TicketModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  max-width: 1400px;
+  width: 95%;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 95vh;
+    max-height: 95vh;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+`;
+
+const ConversationHeaderGrid = styled.div`
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto auto;
+  gap: 1rem;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    
+    > div:nth-child(3),
+    > div:nth-child(4),
+    > div:nth-child(5),
+    > div:nth-child(6) {
+      grid-column: span 1;
+    }
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -1143,6 +1200,10 @@ const ModalTitle = styled.h2`
 
   svg {
     color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
   }
 `;
 
@@ -2783,13 +2844,12 @@ function SupportTicketsPage() {
                   if (e.target === e.currentTarget) closeTicketModal();
                 }}
               >
-                <CreateTicketModal
+                <TicketModalContent
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ type: "spring", damping: 20 }}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ maxWidth: '1400px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}
                 >
                   <ModalHeader>
                     <ModalTitle>
@@ -2821,12 +2881,7 @@ function SupportTicketsPage() {
                     ) : (
                       <>
                         <ConversationHeader style={{ padding: '0 1rem 1rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'auto 1fr auto auto auto auto',
-                            gap: '1rem',
-                            width: '100%'
-                          }}>
+                          <ConversationHeaderGrid>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
                                 {t("admin.supportTickets.ticketTable.id", "Ticket ID")}
@@ -2904,7 +2959,7 @@ function SupportTicketsPage() {
                                 {formatDate(ticket.created_at)}
                               </div>
                             </div>
-                          </div>
+                          </ConversationHeaderGrid>
                         </ConversationHeader>
 
                         <div
@@ -3091,7 +3146,7 @@ function SupportTicketsPage() {
                       </>
                     )}
                   </div>
-                </CreateTicketModal>
+                </TicketModalContent>
               </ModalOverlay>
             );
           })()}

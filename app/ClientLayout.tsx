@@ -171,10 +171,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const shouldHideHeaderFooter =
     isAuthRoute || isDashboardRoute || isAdminRoute;
 
-  // Hide chat assistant on auth routes, pricing pages, and getting-started page
-  const isPricingRoute = pathname?.includes("/pricing") || pathname === "/";
-  const isGettingStartedRoute = pathname?.includes("/getting-started");
-  const shouldHideChat = isAuthRoute || isPricingRoute || isGettingStartedRoute;
+  // Hide chat assistant only on auth routes (but allow it on dashboard/admin routes)
+  // The chat widget will handle preventing auto-open on dashboard/admin routes
+  const shouldHideChat = isAuthRoute;
 
   return (
     <ThemeProvider theme={theme}>
