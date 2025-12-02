@@ -998,22 +998,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </SubNavItems>
             )}
           </NavSection>
-          <Link href="/admin/analytics" passHref legacyBehavior>
-            <NavItem
-              $active={pathname === "/admin/analytics" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/analytics")}
-            >
-              <FaChartBar /> Analytics
-            </NavItem>
-          </Link>
-          <Link href="/admin/settings" passHref legacyBehavior>
-            <NavItem
-              $active={pathname === "/admin/settings" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/settings")}
-            >
-              <FaCog /> Admin Settings
-            </NavItem>
-          </Link>
         </nav>
 
         <UserInfo>
@@ -1359,32 +1343,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               onClick={(e) => handleNavigation(e, "/admin/ad-manager/settings")}
             >
               <FaCog /> Ad Settings
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/admin/analytics" passHref legacyBehavior>
-            <MobileNavItem
-              $active={pathname === "/admin/analytics" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={17}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/analytics")}
-            >
-              <FaChartBar /> Analytics
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/admin/settings" passHref legacyBehavior>
-            <MobileNavItem
-              $active={pathname === "/admin/settings" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={18}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/settings")}
-            >
-              <FaCog /> Admin Settings
             </MobileNavItem>
           </Link>
 
