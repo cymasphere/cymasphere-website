@@ -135,8 +135,8 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   
   @media (max-width: 480px) {
     width: 100vw;
-    height: 100dvh; /* Dynamic viewport height - adjusts for keyboard */
-    max-height: 100dvh;
+    height: 100vh;
+    max-height: 100vh;
     border-radius: 0;
     margin-bottom: 0;
     position: fixed;
@@ -146,6 +146,7 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
     top: 0;
     display: ${props => props.$isOpen ? 'flex' : 'none'};
     flex-direction: column;
+    align-items: stretch;
   }
 `;
 
@@ -211,10 +212,12 @@ const MessagesContainer = styled.div`
   @media (max-width: 480px) {
     padding: 12px;
     gap: 10px;
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
-    max-height: 100%;
+    max-height: none;
     overflow-y: auto;
+    overflow-x: hidden;
+    /* Messages container takes available space, doesn't shrink */
   }
 `;
 
@@ -337,9 +340,10 @@ const InputContainer = styled.div`
     padding: 12px;
     gap: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
+    flex-shrink: 0;
+    background-color: var(--card-bg);
+    /* Input container stays at bottom, moves up naturally when keyboard appears */
+    position: relative;
   }
 `;
 
@@ -486,16 +490,10 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     }
   }, [isOpen]);
 
-  // On mobile, scroll to top when input is focused (keyboard appears)
+  // On mobile, when input is focused, don't scroll messages - let input move up naturally
   const handleInputFocus = () => {
-    if (window.innerWidth <= 480 && messagesContainerRef.current) {
-      // Small delay to ensure keyboard animation starts
-      setTimeout(() => {
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop = 0;
-        }
-      }, 100);
-    }
+    // Don't scroll messages - the input will move up with keyboard
+    // Messages stay in place at the top
   };
 
   // Refocus input after messages update (when assistant responds)
