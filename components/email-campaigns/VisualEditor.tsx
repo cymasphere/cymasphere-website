@@ -919,6 +919,15 @@ export default function VisualEditor({
         fontWeight: element.fontWeight || 'bold',
         textAlign: element.textAlign || 'center',
         fontFamily: element.fontFamily || 'Arial, sans-serif'
+      }),
+      ...(element.type === 'footer' && {
+        unsubscribeUrl: element.unsubscribeUrl || 'https://cymasphere.com/unsubscribe?email={{email}}',
+        unsubscribeText: element.unsubscribeText || 'Unsubscribe',
+        privacyUrl: element.privacyUrl || 'https://cymasphere.com/privacy-policy',
+        privacyText: element.privacyText || 'Privacy Policy',
+        termsUrl: element.termsUrl || 'https://cymasphere.com/terms-of-service',
+        termsText: element.termsText || 'Terms of Service',
+        footerText: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
       })
     }));
   }, []);
@@ -1756,7 +1765,7 @@ export default function VisualEditor({
           ],
           footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
           unsubscribeText: 'Unsubscribe',
-          unsubscribeUrl: '/unsubscribe?email={{email}}',
+          unsubscribeUrl: 'https://cymasphere.com/unsubscribe?email={{email}}',
           privacyText: 'Privacy Policy',
           privacyUrl: 'https://cymasphere.com/privacy-policy',
           termsText: 'Terms of Service',
@@ -3136,7 +3145,7 @@ export default function VisualEditor({
           }}>
             {/* Social Links */}
             {element.socialLinks && element.socialLinks.length > 0 && (
-              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <div style={{ marginTop: '1.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                 {element.socialLinks.map((social: any, idx: number) => (
                   <a key={idx} href={social.url} style={{ 
                     textDecoration: 'none',
@@ -3190,27 +3199,94 @@ export default function VisualEditor({
             )}
             
             {/* Footer Links */}
-            <div>
+            <div style={{ marginBottom: '1.5rem' }}>
               <a 
-                href={element.unsubscribeUrl || `/unsubscribe?email={{email}}`} 
-                onClick={(e) => e.preventDefault()}
-                style={{ color: '#ffffff', textDecoration: 'none' }}
+                href={(() => {
+                  const url = element.unsubscribeUrl;
+                  const finalUrl = (url && typeof url === 'string' && url.trim()) 
+                    ? url.trim() 
+                    : 'https://cymasphere.com/unsubscribe?email={{email}}';
+                  // Ensure URL is always valid
+                  if (!finalUrl || finalUrl === '#' || finalUrl.trim() === '') {
+                    return 'https://cymasphere.com/unsubscribe?email={{email}}';
+                  }
+                  return finalUrl;
+                })()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                style={{ 
+                  color: '#ffffff', 
+                  textDecoration: 'underline !important',
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                  display: 'inline-block',
+                  textDecorationColor: '#ffffff',
+                  textUnderlineOffset: '2px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.8';
+                  e.currentTarget.style.textDecoration = 'underline';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.textDecoration = 'underline';
+                }}
               >
                 {element.unsubscribeText || 'Unsubscribe'}
               </a>
               {' | '}
               <a 
-                href={element.privacyUrl || 'https://cymasphere.com/privacy-policy'} 
+                href={(() => {
+                  const url = element.privacyUrl;
+                  if (url && typeof url === 'string' && url.trim()) {
+                    return url.trim();
+                  }
+                  return 'https://cymasphere.com/privacy-policy';
+                })()}
                 onClick={(e) => e.preventDefault()}
-                style={{ color: '#ffffff', textDecoration: 'none' }}
+                style={{ 
+                  color: '#ffffff', 
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  display: 'inline-block'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
               >
                 {element.privacyText || 'Privacy Policy'}
               </a>
               {' | '}
               <a 
-                href={element.termsUrl || 'https://cymasphere.com/terms-of-service'} 
+                href={(() => {
+                  const url = element.termsUrl;
+                  if (url && typeof url === 'string' && url.trim()) {
+                    return url.trim();
+                  }
+                  return 'https://cymasphere.com/terms-of-service';
+                })()}
                 onClick={(e) => e.preventDefault()}
-                style={{ color: '#ffffff', textDecoration: 'none' }}
+                style={{ 
+                  color: '#ffffff', 
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  display: 'inline-block'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
               >
                 {element.termsText || 'Terms of Service'}
               </a>
@@ -4768,6 +4844,83 @@ export default function VisualEditor({
                             type="color" 
                             value={emailElements.find(el => el.id === selectedElementId)?.textColor || '#ffffff'}
                             onChange={(e) => updateElement(selectedElementId, { textColor: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaLink size={14} />
+                            Unsubscribe URL
+                          </ControlLabel>
+                          <UrlInput
+                            type="url"
+                            placeholder="https://cymasphere.com/unsubscribe?email={{email}}"
+                            value={emailElements.find(el => el.id === selectedElementId)?.unsubscribeUrl || ''}
+                            onChange={(e) => updateElement(selectedElementId, { unsubscribeUrl: e.target.value })}
+                          />
+                          <div style={{ 
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-secondary)', 
+                            opacity: 0.8,
+                            marginTop: '0.25rem'
+                          }}>
+                            Use {{email}} placeholder for dynamic email
+                          </div>
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Unsubscribe Text</ControlLabel>
+                          <UrlInput
+                            type="text"
+                            placeholder="Unsubscribe"
+                            value={emailElements.find(el => el.id === selectedElementId)?.unsubscribeText || ''}
+                            onChange={(e) => updateElement(selectedElementId, { unsubscribeText: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaLink size={14} />
+                            Privacy Policy URL
+                          </ControlLabel>
+                          <UrlInput
+                            type="url"
+                            placeholder="https://cymasphere.com/privacy-policy"
+                            value={emailElements.find(el => el.id === selectedElementId)?.privacyUrl || ''}
+                            onChange={(e) => updateElement(selectedElementId, { privacyUrl: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Privacy Policy Text</ControlLabel>
+                          <UrlInput
+                            type="text"
+                            placeholder="Privacy Policy"
+                            value={emailElements.find(el => el.id === selectedElementId)?.privacyText || ''}
+                            onChange={(e) => updateElement(selectedElementId, { privacyText: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaLink size={14} />
+                            Terms of Service URL
+                          </ControlLabel>
+                          <UrlInput
+                            type="url"
+                            placeholder="https://cymasphere.com/terms-of-service"
+                            value={emailElements.find(el => el.id === selectedElementId)?.termsUrl || ''}
+                            onChange={(e) => updateElement(selectedElementId, { termsUrl: e.target.value })}
+                          />
+                        </ControlGroup>
+
+                        <ControlGroup>
+                          <ControlLabel>Terms of Service Text</ControlLabel>
+                          <UrlInput
+                            type="text"
+                            placeholder="Terms of Service"
+                            value={emailElements.find(el => el.id === selectedElementId)?.termsText || ''}
+                            onChange={(e) => updateElement(selectedElementId, { termsText: e.target.value })}
                           />
                         </ControlGroup>
                       </>

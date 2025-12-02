@@ -2241,7 +2241,7 @@ function CreateCampaignPage() {
         ],
         footerText: `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`,
         unsubscribeText: 'Unsubscribe',
-        unsubscribeUrl: '/unsubscribe?email={{email}}',
+        unsubscribeUrl: 'https://cymasphere.com/unsubscribe?email={{email}}',
         privacyText: 'Privacy Policy',
         privacyUrl: 'https://cymasphere.com/privacy-policy',
         termsText: 'Terms of Service',
@@ -3608,17 +3608,11 @@ function CreateCampaignPage() {
                 ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
               </div>
               <div>
-                <a href="${element.unsubscribeUrl || '/unsubscribe?email={{email}}'}" style="color: #ffffff; text-decoration: none;">
-                  ${element.unsubscribeText || "Unsubscribe"}
-                </a>
-                | 
-                <a href="${element.privacyUrl || 'https://cymasphere.com/privacy-policy'}" style="color: #ffffff; text-decoration: none;">
-                  ${element.privacyText || "Privacy Policy"}
-                </a>
-                | 
-                <a href="${element.termsUrl || 'https://cymasphere.com/terms-of-service'}" style="color: #ffffff; text-decoration: none;">
-                  ${element.termsText || "Terms of Service"}
-                </a>
+                <a href="${(element.unsubscribeUrl && element.unsubscribeUrl.trim()) ? element.unsubscribeUrl : 'https://cymasphere.com/unsubscribe?email={{email}}'}" style="color: #ffffff; text-decoration: underline; cursor: pointer;">${element.unsubscribeText || "Unsubscribe"}</a>
+                &nbsp;|&nbsp;
+                <a href="${(element.privacyUrl && element.privacyUrl.trim()) ? element.privacyUrl : 'https://cymasphere.com/privacy-policy'}" style="color: #ffffff; text-decoration: underline; cursor: pointer;">${element.privacyText || "Privacy Policy"}</a>
+                &nbsp;|&nbsp;
+                <a href="${(element.termsUrl && element.termsUrl.trim()) ? element.termsUrl : 'https://cymasphere.com/terms-of-service'}" style="color: #ffffff; text-decoration: underline; cursor: pointer;">${element.termsText || "Terms of Service"}</a>
               </div>
             </div>
           </div>`;

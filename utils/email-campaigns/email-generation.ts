@@ -196,7 +196,7 @@ export function generateHtmlFromElements(
         return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; background: ${element.backgroundColor || '#363636'}; border-top: ${element.fullWidth ? 'none' : '1px solid #dee2e6'};">
           <tr>
             <td style="font-size: ${footerFontSize}; color: ${element.textColor || '#ffffff'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; ${cellPaddingStyle}">
-              ${socialLinksHtml ? `<div style="margin-bottom: 16px; text-align: center; font-size: ${footerFontSize};">${socialLinksHtml}</div>` : ""}
+              ${socialLinksHtml ? `<div style="margin-top: 24px; margin-bottom: 16px; text-align: center; font-size: ${footerFontSize};">${socialLinksHtml}</div>` : ""}
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
                 <tr>
                   <td align="center" style="padding: 0 0 8px 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</td>
@@ -204,12 +204,12 @@ export function generateHtmlFromElements(
               </table>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
                 <tr>
-                  <td align="center" style="padding: 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">
-                    <a href="${element.unsubscribeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.unsubscribeText || "Unsubscribe"}</a>
+                  <td align="center" style="padding: 0 0 24px 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">
+                    <a href="${(element.unsubscribeUrl && element.unsubscribeUrl.trim()) ? element.unsubscribeUrl : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.unsubscribeText || "Unsubscribe"}</a>
                     &nbsp;|&nbsp;
-                    <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.privacyText || "Privacy Policy"}</a>
+                    <a href="${(element.privacyUrl && element.privacyUrl.trim()) ? element.privacyUrl : "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.privacyText || "Privacy Policy"}</a>
                     &nbsp;|&nbsp;
-                    <a href="${element.termsUrl || "https://cymasphere.com/terms-of-service"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.termsText || "Terms of Service"}</a>
+                    <a href="${(element.termsUrl && element.termsUrl.trim()) ? element.termsUrl : "https://cymasphere.com/terms-of-service"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.termsText || "Terms of Service"}</a>
                   </td>
                 </tr>
               </table>
