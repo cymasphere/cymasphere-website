@@ -135,8 +135,8 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   
   @media (max-width: 480px) {
     width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh; /* Dynamic viewport height - adjusts for keyboard */
+    max-height: 100dvh;
     border-radius: 0;
     margin-bottom: 0;
     position: fixed;
@@ -144,6 +144,8 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
     right: 0;
     left: 0;
     top: 0;
+    display: ${props => props.$isOpen ? 'flex' : 'none'};
+    flex-direction: column;
   }
 `;
 
@@ -196,11 +198,23 @@ const MessagesContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  overflow-anchor: none;
   
   /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    padding: 14px;
+    gap: 12px;
+  }
+  
   @media (max-width: 480px) {
     padding: 12px;
     gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
   }
 `;
 
@@ -311,6 +325,7 @@ const InputContainer = styled.div`
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  background-color: var(--card-bg);
   
   /* Mobile responsiveness */
   @media (max-width: 768px) {
@@ -322,6 +337,9 @@ const InputContainer = styled.div`
     padding: 12px;
     gap: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
   }
 `;
 
