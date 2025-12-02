@@ -1760,36 +1760,70 @@ export default function AdminCRM() {
     // Fetch support tickets for the user
     await fetchUserSupportTickets(user.id);
 
-    // Recalculate totalSpent from the fetched purchases and invoices
-    // This ensures we have the most accurate data after all async operations complete
-    // and avoids race conditions by using the same data that's displayed in the modal
+    // Recalculate totalSpent using server-side API endpoint
+    // This ensures Stripe secret key is only used on the server
     if (user.customerId) {
-      // Calculate from purchases (only standalone one-time payments, not subscription payments)
-      // Purchases linked to invoices are subscription payments and are already counted in invoices
-      const purchasesTotal = purchases
-        .filter((p) => 
-          p.status === "succeeded" && 
-          p.description !== "Subscription payment"
-        )
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      try {
+        const response = await fetch(`/api/admin/customer-total-spent?customerId=${user.customerId}`);
+        const data = await response.json();
 
-      // Calculate from invoices (all paid invoices, including subscription payments)
-      const invoicesTotal = invoices
-        .filter((inv) => inv.status === "paid")
-        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+        if (data.success && typeof data.totalSpent === 'number') {
+          // Update selectedUser with recalculated totalSpent
+          setSelectedUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              totalSpent: data.totalSpent >= 0 ? data.totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+            };
+          });
+        } else {
+          console.error("Error recalculating totalSpent:", data.error);
+          // Fall back to calculation from fetched data if API fails
+          const purchasesTotal = purchases
+            .filter((p) => 
+              p.status === "succeeded" && 
+              p.description !== "Subscription payment"
+            )
+            .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-      // Amounts are already in dollars (converted in the fetch functions)
-      const totalSpent = purchasesTotal + invoicesTotal;
+          const invoicesTotal = invoices
+            .filter((inv) => inv.status === "paid")
+            .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
-      // Update selectedUser with recalculated totalSpent
-      // Only update if we have a valid total (>= 0), otherwise keep loading state (-1)
-      setSelectedUser((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
-        };
-      });
+          const totalSpent = purchasesTotal + invoicesTotal;
+
+          setSelectedUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+            };
+          });
+        }
+      } catch (error) {
+        console.error("Error recalculating totalSpent from API:", error);
+        // Fall back to calculation from fetched data if API fails
+        const purchasesTotal = purchases
+          .filter((p) => 
+            p.status === "succeeded" && 
+            p.description !== "Subscription payment"
+          )
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        const invoicesTotal = invoices
+          .filter((inv) => inv.status === "paid")
+          .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+        const totalSpent = purchasesTotal + invoicesTotal;
+
+        setSelectedUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+          };
+        });
+      }
     }
   };
 
@@ -2647,7 +2681,7 @@ export default function AdminCRM() {
                                 style={{ display: "inline-block" }}
                               />
                             ) : (
-                              formatCurrency(userData.totalSpent * 100)
+                              formatCurrency(userData.totalSpent)
                             )}
                           </TableCell>
                           <TableCell>
@@ -2869,7 +2903,7 @@ export default function AdminCRM() {
                       {selectedUser.totalSpent === -1 ? (
                         <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                       ) : (
-                        formatCurrency(selectedUser.totalSpent * 100)
+                        formatCurrency(selectedUser.totalSpent)
                       )}
                     </InfoValue>
                   </InfoItem>

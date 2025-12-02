@@ -450,6 +450,12 @@ export default function UserProfileModal({
       currency: "USD",
     }).format(amount / 100);
   },
+  formatCurrencyFromDollars = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  },
   getDisplayName = (user: UserData) => {
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`;
@@ -717,7 +723,7 @@ export default function UserProfileModal({
                     {user.totalSpent === -1 ? (
                       <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                     ) : (
-                      formatCurrency(user.totalSpent * 100)
+                      formatCurrencyFromDollars(user.totalSpent)
                     )}
                   </InfoValue>
                 </InfoItem>

@@ -17,7 +17,7 @@ export interface UserManagementRecord {
 }
 
 // Helper to check if user is admin
-async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+export async function checkAdmin(supabase: ReturnType<typeof createClient>) {
   const {
     data: { user },
   } = await supabase.auth.getUser();

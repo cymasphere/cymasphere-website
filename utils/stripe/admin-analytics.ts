@@ -1606,94 +1606,70 @@ export async function getAdditionalUserData(userIds: string[]): Promise<{
       profiles?.map((p) => p.customer_id).filter((id): id is string => !!id) ||
       [];
 
-    // Fetch Stripe data for totalSpent
+    // Fetch Stripe data for totalSpent using Charges API - most accurate method
+    // Charges represent actual money that was successfully charged to the customer
     if (customerIds.length > 0) {
       try {
-        const invoicesMap = new Map<string, number>();
-        const paymentsMap = new Map<string, number>();
+        const chargesMap = new Map<string, number>();
 
-        // Fetch invoices directly from Stripe API for each customer
-        const invoicePromises = customerIds.map(async (customerId) => {
+        // Fetch charges directly from Stripe API for each customer
+        const chargePromises = customerIds.map(async (customerId) => {
           try {
-            const invoices = await stripe.invoices.list({
+            const charges = await stripe.charges.list({
               customer: customerId,
               limit: 100,
             });
 
-            const paidTotal = invoices.data
-              .filter((inv) => inv.status === "paid")
-              .reduce((sum, inv) => sum + (inv.amount_paid || 0), 0);
+            // Use a Set to track charge IDs to prevent double counting
+            // (in case there are any duplicates in the response)
+            const seenChargeIds = new Set<string>();
+            
+            // Sum all successful, paid charges that haven't been fully refunded
+            // amount_refunded is the amount that was refunded, so we subtract it
+            const totalSpentCents = charges.data
+              .filter((charge) => {
+                // Only count each charge once (deduplicate by ID)
+                if (seenChargeIds.has(charge.id)) {
+                  return false;
+                }
+                seenChargeIds.add(charge.id);
+                
+                // Only count paid, non-refunded charges
+                return charge.paid && !charge.refunded;
+              })
+              .reduce((sum, charge) => {
+                // amount is the original charge amount, amount_refunded is what was refunded
+                // So net amount = amount - amount_refunded
+                const netAmount = charge.amount - (charge.amount_refunded || 0);
+                return sum + netAmount;
+              }, 0);
 
-            if (paidTotal > 0) {
-              invoicesMap.set(customerId, paidTotal);
+            if (totalSpentCents > 0) {
+              chargesMap.set(customerId, totalSpentCents);
             }
           } catch (err) {
             console.error(
-              `Error fetching invoices for customer ${customerId}:`,
+              `Error fetching charges for customer ${customerId}:`,
               err
             );
           }
         });
 
-        // Fetch payment intents directly from Stripe API for each customer
-        // We need to track which payment intents are linked to invoices to avoid double counting
-        const paymentPromises = customerIds.map(async (customerId) => {
-          try {
-            const paymentIntents = await stripe.paymentIntents.list({
-              customer: customerId,
-              limit: 100,
-            });
-
-            // Get invoice payment intent IDs to avoid double counting
-            // (invoices already include subscription payments)
-            const invoicePaymentIntentIds = new Set<string>();
-            const customerInvoices = await stripe.invoices.list({
-              customer: customerId,
-              limit: 100,
-            });
-            customerInvoices.data.forEach((inv) => {
-              if (inv.payment_intent && typeof inv.payment_intent === 'string') {
-                invoicePaymentIntentIds.add(inv.payment_intent);
-              }
-            });
-
-            // Only count payment intents that are NOT linked to invoices
-            // (standalone one-time payments like lifetime purchases)
-            const standaloneTotal = paymentIntents.data
-              .filter((pi) => 
-                pi.status === "succeeded" && 
-                !pi.refunded &&
-                !invoicePaymentIntentIds.has(pi.id)
-              )
-              .reduce((sum, pi) => sum + (pi.amount || 0), 0);
-
-            if (standaloneTotal > 0) {
-              paymentsMap.set(customerId, standaloneTotal);
-            }
-          } catch (err) {
-            console.error(
-              `Error fetching payment intents for customer ${customerId}:`,
-              err
-            );
-          }
-        });
-
-        await Promise.allSettled([...invoicePromises, ...paymentPromises]);
+        await Promise.allSettled(chargePromises);
 
         // Map customer IDs to user IDs and calculate totalSpent
-        // Invoices cover subscription payments, standalone payment intents cover one-time purchases
+        // Convert from cents to dollars
         profiles?.forEach((profile) => {
           if (profile.customer_id) {
-            const invoiceTotal = invoicesMap.get(profile.customer_id) || 0;
-            const standalonePaymentTotal = paymentsMap.get(profile.customer_id) || 0;
-            const total = (invoiceTotal + standalonePaymentTotal) / 100;
+            const totalCents = chargesMap.get(profile.customer_id) || 0;
+            const total = totalCents / 100;
             if (total > 0) {
               totalSpentMap[profile.id] = total;
             }
           }
         });
       } catch (stripeErr) {
-        console.error("Error batch fetching Stripe data:", stripeErr);
+        console.error("Error batch fetching Stripe charges:", stripeErr);
       }
     }
 
