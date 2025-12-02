@@ -210,11 +210,7 @@ export const TableContainer = styled.div`
   position: relative;
 
   @media (max-width: 768px) {
-    overflow-x: auto;
-    
-    table {
-      min-width: 800px;
-    }
+    display: none;
   }
 `;
 

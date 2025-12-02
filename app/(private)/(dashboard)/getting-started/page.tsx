@@ -24,7 +24,7 @@ const WizardContainer = styled.div`
   padding: 40px 20px;
 
   @media (max-width: 768px) {
-    padding: 20px 15px;
+    padding: 20px 5px;
   }
 `;
 
@@ -141,7 +141,7 @@ const StepContent = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   @media (max-width: 768px) {
-    padding: 1.5rem;
+    padding: 1rem 0.75rem;
   }
 `;
 
@@ -149,12 +149,22 @@ const StepTitle = styled.h2`
   font-size: 1.75rem;
   margin-bottom: 1rem;
   color: var(--text);
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const StepDescription = styled.p`
   font-size: 1rem;
   color: var(--text-secondary);
   margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const OptionsGrid = styled.div`
@@ -184,6 +194,10 @@ const OptionCard = styled(motion.div)<{ $selected: boolean }>`
     transform: translateY(-5px);
     border-color: var(--primary);
     box-shadow: 0 8px 20px rgba(108, 99, 255, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.25rem 0.75rem;
   }
 `;
 
@@ -241,6 +255,10 @@ const DAWCard = styled(motion.div)<{ $selected: boolean; $disabled?: boolean }>`
     transform: ${(props) => (props.$disabled ? "none" : "translateY(-3px)")};
     border-color: ${(props) =>
       props.$disabled ? "rgba(255, 255, 255, 0.05)" : "var(--primary)"};
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem 0.5rem;
   }
 `;
 

@@ -117,8 +117,19 @@ const FiltersRow = styled.div`
   align-items: end;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     gap: 1rem;
+  }
+`;
+
+const CreateButtonWrapper = styled.div`
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
   }
 `;
 
@@ -212,6 +223,91 @@ const JumpToCurrentButton = styled.button<{ $visible: boolean }>`
 const MessageInputWrapper = styled.div`
   position: relative;
   width: 100%;
+`;
+
+// Mobile card layout
+const TicketsCardContainer = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+`;
+
+const TicketCard = styled.div`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+`;
+
+const CardRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const CardLabel = styled.div`
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+`;
+
+const CardValue = styled.div`
+  font-size: 0.9rem;
+  color: var(--text);
+  word-break: break-word;
+`;
+
+const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CardTitle = styled.div`
+  flex: 1;
+`;
+
+const CardSubject = styled.div`
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  word-break: break-word;
+`;
+
+const CardId = styled.div`
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+`;
+
+const CardActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 const ConversationHeaderGrid = styled.div`
@@ -889,13 +985,16 @@ function SupportPage() {
               </FilterSelect>
             </FilterSelectWrapper>
 
-            <ActionButton variant="success" onClick={() => setShowCreateModal(true)}>
-              <FaPlus />
-              {t("dashboard.support.createTicket", "Create Ticket")}
-            </ActionButton>
+            <CreateButtonWrapper>
+              <ActionButton variant="success" onClick={() => setShowCreateModal(true)}>
+                <FaPlus />
+                {t("dashboard.support.createTicket", "Create Ticket")}
+              </ActionButton>
+            </CreateButtonWrapper>
           </FiltersRow>
         </FiltersSection>
 
+        {/* Desktop Table View */}
         <TableContainer>
           <Table>
             <TableHeader>
@@ -971,8 +1070,58 @@ function SupportPage() {
               ))}
             </TableBody>
           </Table>
+        </TableContainer>
+
+        {/* Mobile Card View */}
+        <TicketsCardContainer>
+          {loadingTickets ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+              {t("dashboard.support.loading", "Loading tickets...")}
+            </div>
+          ) : filteredTickets.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+              {searchTerm || filterStatus !== "all" 
+                ? t("dashboard.support.noTicketsFound", "No tickets found matching your filters")
+                : t("dashboard.support.noTickets", "No support tickets yet. Create your first ticket to get started!")}
+            </div>
+          ) : paginatedTickets.map((ticket) => (
+            <TicketCard key={ticket.id} onClick={() => openTicketModal(ticket.id)}>
+              <CardHeader>
+                <CardTitle>
+                  <CardSubject>{ticket.subject}</CardSubject>
+                  <CardId>{ticket.ticket_number}</CardId>
+                </CardTitle>
+                <StatusBadge $status={ticket.status}>
+                  {getStatusIcon(ticket.status)}
+                  {t(`dashboard.support.filters.${ticket.status}`, ticket.status)}
+                </StatusBadge>
+              </CardHeader>
+              
+              <CardRow>
+                <div style={{ flex: 1 }}>
+                  <CardLabel>{t("dashboard.support.ticketTable.created", "Created")}</CardLabel>
+                  <CardValue>{formatDate(ticket.created_at)}</CardValue>
+                </div>
+              </CardRow>
+
+              <CardActions>
+                <ActionButton 
+                  variant="secondary" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openTicketModal(ticket.id);
+                  }}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  <FaEye />
+                  {t("dashboard.support.viewTicket", "View Ticket")}
+                </ActionButton>
+              </CardActions>
+            </TicketCard>
+          ))}
+        </TicketsCardContainer>
           
-          <Pagination>
+        <Pagination>
             <PaginationInfo>
               Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedTickets.length)} of {sortedTickets.length} tickets
             </PaginationInfo>
@@ -1013,7 +1162,6 @@ function SupportPage() {
               </PaginationButton>
             </PaginationButtons>
           </Pagination>
-        </TableContainer>
 
         {/* Create Ticket Modal */}
         <AnimatePresence>
