@@ -113,42 +113,66 @@ export async function getSubscribers(
       subscribersQuery = subscribersQuery.eq('status', status as any);
     }
 
-    // For search, we need to handle it differently since we need to search across profiles too
+    // For search, we need to handle it differently since we need to search across users and profiles
     if (search && search.length >= 2) {
-      // First get all subscribers that match email
-      const emailMatches = await supabase
-        .from('subscribers')
-        .select('id')
-        .ilike('email', `%${search}%`);
+      try {
+        // First get all subscribers that match email directly
+        const { data: emailMatches, error: emailError } = await supabase
+          .from('subscribers')
+          .select('id')
+          .ilike('email', `%${search}%`);
 
-      // Then get subscribers whose profiles match first/last name
-      const profileMatches = await supabase
-        .from('profiles')
-        .select('id')
-        .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+        if (emailError) {
+          console.error('Error searching subscribers by email:', emailError);
+        }
 
-      const profileUserIds = profileMatches.data?.map((p) => p.id) || [];
+        // Get subscribers whose profiles match first/last name or email
+        // Profiles table has email synced from auth.users
+        const { data: profileMatches, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
 
-      // Get subscriber IDs that match profile user_ids
-      const profileSubscriberMatches =
-        profileUserIds.length > 0
-          ? await supabase
-              .from('subscribers')
-              .select('id')
-              .in('user_id', profileUserIds)
-          : { data: [] };
+        if (profileError) {
+          console.error('Error searching profiles:', profileError);
+        }
 
-      // Combine all matching IDs
-      const allMatchingIds = [
-        ...(emailMatches.data?.map((s) => s.id) || []),
-        ...(profileSubscriberMatches.data?.map((s) => s.id) || []),
-      ];
+        const profileUserIds = profileMatches?.map((p) => p.id) || [];
 
-      if (allMatchingIds.length > 0) {
-        subscribersQuery = subscribersQuery.in('id', allMatchingIds);
-      } else {
-        // No matches found, return empty result
-        subscribersQuery = subscribersQuery.eq('id', 'no-match-placeholder');
+        // Get subscriber IDs that match profile user_ids (which reference auth.users)
+        let profileSubscriberMatches = { data: [] };
+        if (profileUserIds.length > 0) {
+          const { data, error: subscriberError } = await supabase
+            .from('subscribers')
+            .select('id')
+            .in('user_id', profileUserIds);
+          
+          if (subscriberError) {
+            console.error('Error searching subscribers by user_id:', subscriberError);
+          } else {
+            profileSubscriberMatches = { data: data || [] };
+          }
+        }
+
+        // Combine all matching IDs
+        const allMatchingIds = [
+          ...(emailMatches?.map((s) => s.id) || []),
+          ...(profileSubscriberMatches.data?.map((s) => s.id) || []),
+        ];
+
+        // Remove duplicates
+        const uniqueMatchingIds = [...new Set(allMatchingIds)];
+
+        if (uniqueMatchingIds.length > 0) {
+          subscribersQuery = subscribersQuery.in('id', uniqueMatchingIds);
+        } else {
+          // No matches found, return empty result
+          subscribersQuery = subscribersQuery.eq('id', 'no-match-placeholder');
+        }
+      } catch (searchError) {
+        console.error('Error in search logic:', searchError);
+        // If search fails, just continue without search filter
+        // Don't throw - let the query proceed without search
       }
     }
 
@@ -188,6 +212,7 @@ export async function getSubscribers(
     };
 
     // Get profile data for subscribers to include names
+    // Profiles table references auth.users(id), so this gives us user data
     const userIds =
       subscribers
         ?.filter((s) => s.user_id)
@@ -196,9 +221,10 @@ export async function getSubscribers(
     const profilesMap = new Map();
 
     if (userIds.length > 0) {
+      // Get profiles which reference auth.users(id) - this is the correct way to get user data
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, email')
         .in('id', userIds);
 
       profiles?.forEach((profile) => {

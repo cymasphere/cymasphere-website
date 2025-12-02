@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -140,6 +140,10 @@ const SearchContainer = styled.div`
 
   @media (max-width: 768px) {
     max-width: none;
+  }
+
+  form {
+    width: 100%;
   }
 `;
 
@@ -483,13 +487,16 @@ function SubscribersPage() {
   const { user } = useAuth();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [subscriberStats, setSubscriberStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -512,25 +519,59 @@ function SubscribersPage() {
     }
   }, [languageLoading]);
 
+  // Debounce search term to prevent excessive API calls
+  useEffect(() => {
+    // Clear any existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer - only update debouncedSearchTerm after user stops typing
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Always reset to page 1 when search changes
+    }, 1000); // 1000ms (1 second) debounce delay - allows free typing
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm]);
+
   // Fetch data when component mounts or filters change
   useEffect(() => {
-    if (!translationsLoaded || !isClient || !user) return;
+    if (!translationsLoaded || !isClient) {
+      // If we're still waiting for translations or client, don't load yet
+      return;
+    }
+
+    // If user is not available, still try to load (might be a public page or admin override)
+    // But set loading to false if we can't proceed
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const loadSubscribers = async () => {
-      setLoading(true);
+      // Only show loading spinner if we don't have any subscribers yet (initial load)
+      // Otherwise, just update the data silently
+      if (subscribers.length === 0) {
+        setLoading(true);
+      }
       setError(null);
       try {
         const data = await getSubscribers({
-          search: searchTerm || undefined,
+          search: debouncedSearchTerm || undefined,
           status: statusFilter !== 'all' ? statusFilter : undefined,
-          page: pagination?.page || 1,
-          limit: pagination?.limit || 50,
+          page: currentPage,
+          limit: 50,
         });
         
-        setSubscribers(data.subscribers);
+        setSubscribers(data.subscribers || []);
         setSubscriberStats(data.stats || {});
         setPagination(data.pagination || {
-          page: 1,
+          page: currentPage,
           limit: 50,
           total: 0,
           totalPages: 0
@@ -538,13 +579,15 @@ function SubscribersPage() {
       } catch (error) {
         console.error('Error fetching subscribers:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch subscribers');
+        setSubscribers([]);
+        setSubscriberStats({});
       } finally {
         setLoading(false);
       }
     };
 
     loadSubscribers();
-  }, [translationsLoaded, isClient, user, searchTerm, statusFilter, pagination?.page]);
+  }, [translationsLoaded, isClient, user, debouncedSearchTerm, statusFilter, currentPage]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -571,7 +614,9 @@ function SubscribersPage() {
     return <LoadingComponent />;
   }
 
-  if (loading) {
+  // Only show full page loading on initial load (when we have no subscribers yet)
+  // After that, show loading state in the table itself
+  if (loading && subscribers.length === 0) {
     return <LoadingComponent />;
   }
 
@@ -683,7 +728,18 @@ function SubscribersPage() {
                 type="text"
                 placeholder="Search subscribers..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
               />
             </SearchContainer>
             
