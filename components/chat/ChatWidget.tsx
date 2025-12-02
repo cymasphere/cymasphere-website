@@ -55,17 +55,17 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   align-items: flex-end;
   
   /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    bottom: 15px;
+    right: 15px;
+    left: auto;
+    align-items: flex-end;
+  }
+  
   @media (max-width: 480px) {
     bottom: 10px;
     right: 10px;
-    left: 10px;
-    align-items: center;
-  }
-  
-  @media (max-width: 360px) {
-    bottom: 5px;
-    right: 5px;
-    left: 5px;
+    left: auto;
   }
 `;
 
@@ -86,10 +86,24 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
   transform: ${props => props.$isOpen ? 'scale(0.9)' : 'scale(1)'};
   position: relative;
   z-index: 9999;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 
   &:hover {
     transform: ${props => props.$isOpen ? 'scale(0.85)' : 'scale(1.1)'};
     box-shadow: 0 6px 25px rgba(108, 99, 255, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  @media (max-width: 480px) {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
   }
 `;
 
@@ -108,16 +122,25 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   z-index: 9998;
   
   /* Mobile responsiveness */
-  @media (max-width: 480px) {
-    width: calc(100vw - 40px);
-    max-width: 420px;
-    height: calc(100vh - 120px);
-    max-height: 500px;
+  @media (max-width: 768px) {
+    width: calc(100vw - 30px);
+    height: calc(100vh - 100px);
+    max-height: 600px;
+    border-radius: 16px;
+    margin-bottom: 15px;
   }
   
-  @media (max-width: 360px) {
-    width: calc(100vw - 20px);
-    height: calc(100vh - 100px);
+  @media (max-width: 480px) {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin-bottom: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    top: 0;
+    position: fixed;
   }
 `;
 
@@ -128,6 +151,16 @@ const ChatHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 0;
+  }
 `;
 
 const ChatTitle = styled.div`
@@ -274,11 +307,18 @@ const InputContainer = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
   
   /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    padding: 14px;
+    gap: 8px;
+  }
+  
   @media (max-width: 480px) {
     padding: 12px;
     gap: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 `;
 
@@ -292,17 +332,20 @@ const MessageInput = styled.input`
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
   
   /* Mobile responsiveness */
-  @media (max-width: 480px) {
-    padding: 10px 14px;
-    font-size: 13px;
-    border-radius: 18px;
+  @media (max-width: 768px) {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 14px 16px;
+    min-height: 48px; /* Better touch target */
   }
   
-  @media (max-width: 360px) {
-    padding: 8px 12px;
-    font-size: 12px;
+  @media (max-width: 480px) {
+    padding: 12px 14px;
+    font-size: 16px;
+    min-height: 48px;
   }
 
   &:focus {
@@ -328,14 +371,18 @@ const SendButton = styled.button`
   transition: transform 0.2s;
   
   /* Mobile responsiveness */
-  @media (max-width: 480px) {
-    width: 36px;
-    height: 36px;
+  @media (max-width: 768px) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
   
-  @media (max-width: 360px) {
-    width: 32px;
-    height: 32px;
+  @media (max-width: 480px) {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
   }
 
   &:hover {
@@ -426,6 +473,32 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       }, 100);
     }
   }, [messages, isOpen, isTyping]);
+
+  // Track if mouse is over chat widget
+  const [isHoveringChat, setIsHoveringChat] = useState(false);
+
+  // Prevent body scroll only when hovering over chat
+  useEffect(() => {
+    if (isOpen && isHoveringChat) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      // Prevent body scroll
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore body scroll
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen, isHoveringChat]);
 
   // Initialize audio on first user interaction
   useEffect(() => {
@@ -621,7 +694,24 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
 
   return (
     <ChatContainer className={className} $isOpen={isOpen} data-chat-widget="true">
-      <ChatWindow $isOpen={isOpen}>
+      <ChatWindow 
+        $isOpen={isOpen}
+        onMouseEnter={() => setIsHoveringChat(true)}
+        onMouseLeave={() => setIsHoveringChat(false)}
+        onTouchStart={() => setIsHoveringChat(true)}
+        onTouchEnd={() => {
+          // Delay to allow for scrolling within chat
+          setTimeout(() => setIsHoveringChat(false), 100);
+        }}
+        onWheel={(e) => {
+          // Prevent scroll propagation to body when scrolling inside chat
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          // Prevent touch scroll propagation to body
+          e.stopPropagation();
+        }}
+      >
         <ChatHeader>
           <ChatTitle>
             <FaRobot />
@@ -632,7 +722,16 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
           </CloseButton>
         </ChatHeader>
         
-        <MessagesContainer>
+        <MessagesContainer
+          onWheel={(e) => {
+            // Prevent scroll propagation to body
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            // Prevent touch scroll propagation to body
+            e.stopPropagation();
+          }}
+        >
           {messages.map((message) => (
             <MessageBubble key={message.id} $isUser={message.isUser}>
               {message.isUser ? (
