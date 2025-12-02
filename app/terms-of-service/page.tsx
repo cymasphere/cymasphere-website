@@ -117,7 +117,7 @@ export default function TermsOfServicePage() {
           <Section>
             <SectionTitle>{t("legal.terms.subscription.title", "6. Subscription and Payments")}</SectionTitle>
             <SectionContent>
-              {t("legal.terms.subscription.content", "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees. Subscription fees are non-refundable except as required by law.")}
+              {t("legal.terms.subscription.content", "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees.")}
             </SectionContent>
           </Section>
 

@@ -559,6 +559,9 @@ const Footer = () => {
           <Link href="/terms-of-service" passHref legacyBehavior>
             <FooterLink>{getTranslation("footer.termsConditions", "Terms & Conditions")}</FooterLink>
           </Link>
+          <Link href="/refund-policy" passHref legacyBehavior>
+            <FooterLink>Refund Policy</FooterLink>
+          </Link>
         </FooterColumn>
       </FooterContent>
 

@@ -345,6 +345,9 @@ const NextFooter = () => {
           <Link href="/privacy-policy" passHref legacyBehavior>
             <FooterLink>Privacy Policy</FooterLink>
           </Link>
+          <Link href="/refund-policy" passHref legacyBehavior>
+            <FooterLink>Refund Policy</FooterLink>
+          </Link>
         </FooterColumn>
       </FooterContent>
 

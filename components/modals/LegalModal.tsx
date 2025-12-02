@@ -285,7 +285,7 @@ const LegalModal: React.FC<LegalModalProps> = ({
           <section>
             <h3>{t("legal.terms.subscription.title", "6. Subscription and Payments")}</h3>
             <p>
-              {t("legal.terms.subscription.content", "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees. Subscription fees are non-refundable except as required by law.")}
+              {t("legal.terms.subscription.content", "Various subscription plans are available for Cymasphere. By subscribing, you agree to pay the applicable fees.")}
             </p>
           </section>
 
