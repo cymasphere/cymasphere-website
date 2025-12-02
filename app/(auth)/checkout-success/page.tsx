@@ -286,18 +286,38 @@ function CheckoutSuccessContent() {
       });
     } else if (isLifetime && subscriptionValue !== null) {
       // Track lifetime purchase with Purchase event
+      const purchaseItems = [{
+        item_id: 'lifetime',
+        item_name: 'Cymasphere Lifetime',
+        category: 'software',
+        quantity: 1,
+        price: subscriptionValue
+      }];
+      
+      // Push to dataLayer (for GTM/GA) with user data
       trackEventWithUserData('purchase', {
         value: subscriptionValue,
         currency: subscriptionCurrency,
         transaction_id: sessionId,
-        items: [{
-          item_id: 'lifetime',
-          item_name: 'Cymasphere Lifetime',
-          category: 'software',
-          quantity: 1,
-          price: subscriptionValue
-        }]
+        items: purchaseItems
       });
+      
+      // Also fire Meta Pixel directly to ensure parameters are sent
+      // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Purchase', {
+          value: subscriptionValue,
+          currency: subscriptionCurrency,
+          content_ids: purchaseItems.map(item => item.item_id),
+          contents: purchaseItems.map(item => ({
+            id: item.item_id,
+            quantity: item.quantity || 1,
+            item_price: item.price,
+          })),
+        }, {
+          eventID: sessionId || `purchase_${Date.now()}` // For deduplication with server events
+        });
+      }
     } else if (subscriptionValue !== null) {
       // Track paid subscription with value and currency
       trackEventWithUserData('subscription_success', {
@@ -318,18 +338,38 @@ function CheckoutSuccessContent() {
             // Check if it's a lifetime purchase based on mode
             if (data.mode === 'payment') {
               // Track as Purchase event for lifetime
+              const purchaseItems = [{
+                item_id: 'lifetime',
+                item_name: 'Cymasphere Lifetime',
+                category: 'software',
+                quantity: 1,
+                price: data.value
+              }];
+              
+              // Push to dataLayer (for GTM/GA) with user data
               trackEventWithUserData('purchase', {
                 value: data.value,
                 currency: data.currency || 'USD',
                 transaction_id: sessionId,
-                items: [{
-                  item_id: 'lifetime',
-                  item_name: 'Cymasphere Lifetime',
-                  category: 'software',
-                  quantity: 1,
-                  price: data.value
-                }]
+                items: purchaseItems
               });
+              
+              // Also fire Meta Pixel directly to ensure parameters are sent
+              // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
+              if (typeof window !== 'undefined' && window.fbq) {
+                window.fbq('track', 'Purchase', {
+                  value: data.value,
+                  currency: data.currency || 'USD',
+                  content_ids: purchaseItems.map(item => item.item_id),
+                  contents: purchaseItems.map(item => ({
+                    id: item.item_id,
+                    quantity: item.quantity || 1,
+                    item_price: item.price,
+                  })),
+                }, {
+                  eventID: sessionId || `purchase_${Date.now()}` // For deduplication with server events
+                });
+              }
             } else {
               // Track as subscription_success for recurring
               trackEventWithUserData('subscription_success', {
