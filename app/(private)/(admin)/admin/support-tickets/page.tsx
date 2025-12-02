@@ -1406,6 +1406,8 @@ interface Ticket {
   status: string;
   user_id: string;
   user_email: string | null;
+  user_first_name: string | null;
+  user_last_name: string | null;
   user_subscription?: string;
   user_has_nfr?: boolean;
   created_at: string;
@@ -2184,10 +2186,34 @@ function SupportTicketsPage() {
                   <UserTableCell>
                     {ticket.user_id ? (
                       <TicketUser onClick={(e) => handleViewUser(ticket.user_id, e)}>
-                        {ticket.user_email || "Unknown"}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span>{ticket.user_email || "Unknown"}</span>
+                          {(ticket.user_first_name || ticket.user_last_name) && (
+                            <span style={{ 
+                              color: 'var(--text-secondary)', 
+                              fontSize: '0.9em',
+                              fontWeight: 'normal'
+                            }}>
+                              ({[ticket.user_first_name, ticket.user_last_name].filter(Boolean).join(' ')})
+                            </span>
+                          )}
+                        </div>
                       </TicketUser>
                     ) : (
-                      <TicketUser>{ticket.user_email || "Unknown"}</TicketUser>
+                      <TicketUser>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span>{ticket.user_email || "Unknown"}</span>
+                          {(ticket.user_first_name || ticket.user_last_name) && (
+                            <span style={{ 
+                              color: 'var(--text-secondary)', 
+                              fontSize: '0.9em',
+                              fontWeight: 'normal'
+                            }}>
+                              ({[ticket.user_first_name, ticket.user_last_name].filter(Boolean).join(' ')})
+                            </span>
+                          )}
+                        </div>
+                      </TicketUser>
                     )}
                   </UserTableCell>
                   <SubscriptionCell>

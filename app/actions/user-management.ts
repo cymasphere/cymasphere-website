@@ -8,6 +8,7 @@ import {
   getAdditionalUserData,
 } from "@/utils/stripe/admin-analytics";
 import { fetchProfile } from "@/utils/supabase/actions";
+import { sendEmail } from "@/utils/email";
 
 export interface UserManagementRecord {
   user_email: string;
@@ -946,6 +947,8 @@ export async function getSupportTicketsAdmin(): Promise<{
     status: string;
     user_id: string;
     user_email: string | null;
+    user_first_name: string | null;
+    user_last_name: string | null;
     user_subscription?: string;
     user_has_nfr?: boolean;
     created_at: string;
@@ -984,10 +987,11 @@ export async function getSupportTicketsAdmin(): Promise<{
       return { tickets: [], error: ticketsError.message };
     }
 
-    // Get user emails and subscription data for all tickets using service role client
+    // Get user emails, names, and subscription data for all tickets using service role client
     const serviceSupabase = await createSupabaseServiceRole();
     const userIds = [...new Set(tickets?.map(t => t.user_id) || [])];
     const userEmailsMap = new Map<string, string | null>();
+    const userNamesMap = new Map<string, { firstName: string | null; lastName: string | null }>();
     const userSubscriptionMap = new Map<string, { subscription: string; hasNfr: boolean }>();
 
     for (const userId of userIds) {
@@ -996,12 +1000,18 @@ export async function getSupportTicketsAdmin(): Promise<{
         const email = user?.email || null;
         userEmailsMap.set(userId, email);
 
-        // Get subscription from profiles table
+        // Get subscription and name from profiles table
         const { data: profile } = await serviceSupabase
           .from("profiles")
-          .select("subscription")
+          .select("subscription, first_name, last_name")
           .eq("id", userId)
           .single();
+
+        // Store user name
+        userNamesMap.set(userId, {
+          firstName: profile?.first_name || null,
+          lastName: profile?.last_name || null,
+        });
 
         // Check NFR status if email exists
         let hasNfr = false;
@@ -1022,15 +1032,19 @@ export async function getSupportTicketsAdmin(): Promise<{
       } catch (error) {
         console.error(`Error fetching user ${userId}:`, error);
         userEmailsMap.set(userId, null);
+        userNamesMap.set(userId, { firstName: null, lastName: null });
         userSubscriptionMap.set(userId, { subscription: "none", hasNfr: false });
       }
     }
 
     const ticketsWithUsers = (tickets || []).map(ticket => {
       const subscriptionData = userSubscriptionMap.get(ticket.user_id) || { subscription: "none", hasNfr: false };
+      const userNameData = userNamesMap.get(ticket.user_id) || { firstName: null, lastName: null };
       return {
         ...ticket,
         user_email: userEmailsMap.get(ticket.user_id) || null,
+        user_first_name: userNameData.firstName,
+        user_last_name: userNameData.lastName,
         user_subscription: subscriptionData.subscription,
         user_has_nfr: subscriptionData.hasNfr,
       };
@@ -1434,6 +1448,16 @@ export async function addSupportTicketMessageAdmin(
       };
     }
 
+    // If this is an admin message, send email notification to the ticket owner
+    if (isAdmin && message) {
+      try {
+        await sendSupportTicketEmailNotification(ticketId, message.id);
+      } catch (emailError) {
+        // Don't fail the message creation if email fails
+        console.error("Error sending support ticket email notification:", emailError);
+      }
+    }
+
     return { success: true, messageId: message.id };
   } catch (error) {
     console.error("Error in addSupportTicketMessageAdmin:", error);
@@ -1441,6 +1465,246 @@ export async function addSupportTicketMessageAdmin(
       success: false,
       error: error instanceof Error ? error.message : "Failed to add message",
     };
+  }
+}
+
+/**
+ * Send email notification to ticket owner when admin sends a message
+ */
+async function sendSupportTicketEmailNotification(
+  ticketId: string,
+  messageId: string
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+    const serviceSupabase = await createSupabaseServiceRole();
+
+    // Get ticket details
+    const { data: ticket, error: ticketError } = await supabase
+      .from("support_tickets")
+      .select("id, ticket_number, subject, user_id, status")
+      .eq("id", ticketId)
+      .single();
+
+    if (ticketError || !ticket) {
+      console.error("Error fetching ticket for email:", ticketError);
+      return;
+    }
+
+    // Get user email
+    let userEmail: string | null = null;
+    let userName: string | null = null;
+    try {
+      const { data: { user } } = await serviceSupabase.auth.admin.getUserById(ticket.user_id);
+      userEmail = user?.email || null;
+
+      // Get user name from profile
+      const { data: profile } = await serviceSupabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", ticket.user_id)
+        .single();
+      
+      if (profile?.first_name || profile?.last_name) {
+        userName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
+      }
+    } catch (error) {
+      console.error("Error fetching user for email:", error);
+      return;
+    }
+
+    if (!userEmail) {
+      console.error("No email found for ticket owner");
+      return;
+    }
+
+    // Get all messages for the ticket
+    const { data: messages, error: messagesError } = await supabase
+      .from("support_messages")
+      .select(`
+        id,
+        content,
+        is_admin,
+        created_at,
+        user_id
+      `)
+      .eq("ticket_id", ticketId)
+      .order("created_at", { ascending: true });
+
+    if (messagesError) {
+      console.error("Error fetching messages for email:", messagesError);
+      return;
+    }
+
+    // Get user emails for all messages
+    const userIds = [...new Set(messages?.map(m => m.user_id) || [])];
+    const userEmailsMap = new Map<string, string | null>();
+    
+    for (const userId of userIds) {
+      try {
+        const { data: { user } } = await serviceSupabase.auth.admin.getUserById(userId);
+        userEmailsMap.set(userId, user?.email || null);
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+        userEmailsMap.set(userId, null);
+      }
+    }
+
+    // Build message chain HTML
+    const messageChainHtml = messages?.map((msg, index) => {
+      const senderEmail = userEmailsMap.get(msg.user_id) || "Unknown";
+      const isAdmin = msg.is_admin;
+      const senderName = isAdmin ? "Support Team" : (userName || senderEmail);
+      const messageDate = new Date(msg.created_at).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+
+      return `
+        <div style="margin-bottom: 20px; padding: 15px; background-color: ${isAdmin ? '#f0f7ff' : '#f9f9f9'}; border-left: 3px solid ${isAdmin ? '#4a90e2' : '#ccc'}; border-radius: 4px;">
+          <div style="font-weight: 600; color: #333; margin-bottom: 8px;">
+            ${senderName} ${isAdmin ? '<span style="color: #4a90e2; font-size: 0.85em;">(Support)</span>' : ''}
+          </div>
+          <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+            ${messageDate}
+          </div>
+          <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">
+            ${msg.content.replace(/\n/g, '<br>')}
+          </div>
+        </div>
+      `;
+    }).join('') || '';
+
+    // Generate ticket view URL - always use production URL for emails
+    const baseUrl = 'https://www.cymasphere.com';
+    const ticketUrl = `${baseUrl}/dashboard/support?ticket=${ticketId}`;
+
+    // Create email HTML
+    const emailHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Response to Your Support Ticket</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%); padding: 30px 24px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+                                <span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: inline-block;">CYMA</span><span style="color: #ffffff;">SPHERE</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 30px 24px;">
+                            <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
+                                New Response to Your Support Ticket
+                            </h1>
+                            <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
+                                Hi ${userName || 'there'},
+                            </p>
+                            <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
+                                You have received a new response to your support ticket <strong>${ticket.ticket_number}</strong>: "${ticket.subject}".
+                            </p>
+                            
+                            <!-- Message Chain -->
+                            <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+                                <h2 style="font-size: 1.1rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
+                                    Conversation History
+                                </h2>
+                                ${messageChainHtml}
+                            </div>
+                            
+                            <!-- CTA Button -->
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="${ticketUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                                    View & Respond to Ticket
+                                </a>
+                            </div>
+                            
+                            <p style="color: #666; line-height: 1.6; margin: 20px 0 0 0; font-size: 0.9em;">
+                                You can also copy and paste this link into your browser:<br>
+                                <a href="${ticketUrl}" style="color: #6c63ff; word-break: break-all;">${ticketUrl}</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 24px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; font-size: 0.85em; color: #666;">
+                            <p style="margin: 0 0 10px 0;">
+                                This is an automated notification from Cymasphere Support.
+                            </p>
+                            <p style="margin: 0;">
+                                <a href="${baseUrl}" style="color: #6c63ff; text-decoration: none;">Visit our website</a> | 
+                                <a href="${baseUrl}/dashboard/support" style="color: #6c63ff; text-decoration: none;">View all tickets</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+
+    // Create plain text version
+    const emailText = `
+New Response to Your Support Ticket
+
+Hi ${userName || 'there'},
+
+You have received a new response to your support ticket ${ticket.ticket_number}: "${ticket.subject}".
+
+Conversation History:
+${messages?.map((msg, index) => {
+  const senderEmail = userEmailsMap.get(msg.user_id) || "Unknown";
+  const isAdmin = msg.is_admin;
+      const senderName = isAdmin ? "Support Team" : (userName || senderEmail);
+      const messageDate = new Date(msg.created_at).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+      return `\n${senderName}${isAdmin ? ' (Support)' : ''} - ${messageDate}\n${msg.content}\n`;
+    }).join('\n---\n') || ''}
+
+View and respond to your ticket:
+${ticketUrl}
+
+This is an automated notification from Cymasphere Support.
+    `;
+
+    // Send email
+    const emailResult = await sendEmail({
+      to: userEmail,
+      subject: `New Response: ${ticket.ticket_number} - ${ticket.subject}`,
+      html: emailHtml,
+      text: emailText,
+      from: "Cymasphere Support <support@cymasphere.com>",
+      replyTo: "support@cymasphere.com",
+    });
+
+    if (emailResult.success) {
+      console.log(`✅ Support ticket email notification sent to ${userEmail} for ticket ${ticket.ticket_number}`);
+    } else {
+      console.error(`❌ Failed to send support ticket email notification: ${emailResult.error}`);
+    }
+  } catch (error) {
+    console.error("Error in sendSupportTicketEmailNotification:", error);
+    // Don't throw - email failure shouldn't break message creation
   }
 }
 

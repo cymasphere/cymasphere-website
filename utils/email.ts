@@ -1,5 +1,9 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
+// AWS Account Configuration
+// CORRECT AWS ACCOUNT: 375240177147
+// Region: us-east-1
+
 interface SendEmailParams {
   to: string | string[];
   subject: string;
@@ -19,7 +23,7 @@ export async function sendEmail({
   subject,
   text,
   html,
-  from = "support@cymasphere.com", // Default sender
+  from = "Cymasphere Support <support@cymasphere.com>", // Default sender
   replyTo,
 }: SendEmailParams) {
   // Use us-east-1 as the default region (this needs to match your AWS CLI config)
@@ -41,8 +45,11 @@ export async function sendEmail({
     // Format reply to addresses if provided
     const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : undefined;
 
+    // Generate Message-ID for better deliverability
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(7)}@cymasphere.com>`;
+
     // Prepare email sending parameters
-    const params = {
+    const params: any = {
       Source: from,
       Destination: {
         ToAddresses: toAddresses,
@@ -70,6 +77,11 @@ export async function sendEmail({
       ...(replyToAddresses && { ReplyToAddresses: replyToAddresses }),
       ConfigurationSetName: 'cymasphere-email-events', // Enable event tracking
     };
+
+    // Add custom headers for better deliverability
+    // Note: SES doesn't directly support custom headers in SendEmailCommand
+    // But we can inject them into the HTML if needed
+    // The main thing is ensuring SPF/DKIM/DMARC are set up via DNS
 
     // Send the email
     const command = new SendEmailCommand(params);

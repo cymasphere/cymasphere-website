@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -198,6 +199,7 @@ function SupportPage() {
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
   const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!languageLoading) {
@@ -214,6 +216,33 @@ function SupportPage() {
       fetchTickets();
     }
   }, [showContent]);
+
+  // Auto-expand ticket if ticket query parameter is present
+  useEffect(() => {
+    if (showContent && tickets.length > 0) {
+      const ticketIdFromUrl = searchParams.get('ticket');
+      if (ticketIdFromUrl && !expandedRows.has(ticketIdFromUrl)) {
+        // Find the ticket in the list
+        const ticket = tickets.find(t => t.id === ticketIdFromUrl);
+        if (ticket) {
+          // Expand the ticket
+          setExpandedRows(prev => new Set(prev).add(ticketIdFromUrl));
+          // Fetch ticket details if not already loaded
+          if (!ticketDetails.has(ticketIdFromUrl)) {
+            fetchTicketDetails(ticketIdFromUrl, true);
+          }
+          // Scroll to the ticket (after a short delay to allow rendering)
+          setTimeout(() => {
+            const element = document.querySelector(`[data-ticket-id="${ticketIdFromUrl}"]`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 500);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showContent, tickets, searchParams]);
 
   const fetchTickets = async () => {
     setLoadingTickets(true);
@@ -584,7 +613,7 @@ function SupportPage() {
                 </tr>
               ) : paginatedTickets.map((ticket) => (
                 <React.Fragment key={ticket.id}>
-                  <TableRow>
+                  <TableRow data-ticket-id={ticket.id}>
                     <TableCell>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
