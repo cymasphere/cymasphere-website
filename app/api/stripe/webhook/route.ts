@@ -194,13 +194,45 @@ export async function POST(request: NextRequest) {
 
             // Get payment intent to get amount
             const paymentIntent = await stripe.paymentIntents.retrieve(
-              session.payment_intent as string
+              session.payment_intent as string,
+              { expand: ['invoice'] }
             );
 
             // CRITICAL FIX: Ensure payment intent has purchase_type metadata for lifetime purchases
             // Sometimes Stripe doesn't copy payment_intent_data.metadata to the actual payment intent
-            // Check if this is a lifetime purchase and ensure metadata is set
-            if (metadata.plan_type === "lifetime" && !paymentIntent.metadata?.purchase_type) {
+            // Check if this is a lifetime purchase by:
+            // 1. Checkout session metadata (plan_type === "lifetime")
+            // 2. Invoice line items containing lifetime price ID
+            const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
+            const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
+            
+            let isLifetimePurchase = false;
+            
+            // Check 1: Checkout session metadata
+            if (metadata.plan_type === "lifetime") {
+              isLifetimePurchase = true;
+            }
+            
+            // Check 2: Invoice line items for lifetime price ID (more reliable)
+            if (!isLifetimePurchase && paymentIntent.invoice) {
+              const invoice = typeof paymentIntent.invoice === 'string' 
+                ? await stripe.invoices.retrieve(paymentIntent.invoice)
+                : paymentIntent.invoice;
+              
+              // Lifetime purchases are one-time payments, not subscriptions
+              if (!invoice.subscription && invoice.lines?.data) {
+                const hasLifetimePrice = invoice.lines.data.some(line => 
+                  line.price?.id === lifetimePriceId || line.price?.id === lifetimePriceId2
+                );
+                if (hasLifetimePrice) {
+                  isLifetimePurchase = true;
+                  console.log(`🔍 Detected lifetime purchase via invoice line items for payment intent ${paymentIntent.id}`);
+                }
+              }
+            }
+            
+            // Update metadata if it's a lifetime purchase and metadata is missing
+            if (isLifetimePurchase && !paymentIntent.metadata?.purchase_type) {
               console.log(`🔧 Fixing missing metadata on payment intent ${paymentIntent.id} for lifetime purchase`);
               try {
                 await stripe.paymentIntents.update(paymentIntent.id, {
@@ -349,7 +381,42 @@ export async function POST(request: NextRequest) {
                   purchase_date: new Date().toISOString()
                 },
                 p_source: 'stripe_webhook'
-              });
+              }              );
+            }
+          } else {
+            // This is a one-time payment (could be lifetime)
+            // Check if invoice has lifetime price ID
+            const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
+            const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
+            
+            if (invoice.lines?.data) {
+              const hasLifetimePrice = invoice.lines.data.some(line => 
+                line.price?.id === lifetimePriceId || line.price?.id === lifetimePriceId2
+              );
+              
+              if (hasLifetimePrice && charge.payment_intent) {
+                // This is a lifetime purchase - ensure payment intent has metadata
+                const paymentIntentId = typeof charge.payment_intent === 'string' 
+                  ? charge.payment_intent 
+                  : charge.payment_intent.id;
+                
+                try {
+                  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+                  
+                  if (!paymentIntent.metadata?.purchase_type) {
+                    console.log(`🔧 Fixing missing metadata on payment intent ${paymentIntentId} for lifetime purchase (from charge.succeeded)`);
+                    await stripe.paymentIntents.update(paymentIntentId, {
+                      metadata: {
+                        ...paymentIntent.metadata,
+                        purchase_type: "lifetime",
+                      },
+                    });
+                    console.log(`✅ Updated payment intent metadata for lifetime purchase`);
+                  }
+                } catch (updateError) {
+                  console.error(`❌ Failed to update payment intent metadata from charge.succeeded:`, updateError);
+                }
+              }
             }
           }
         }

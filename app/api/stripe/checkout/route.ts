@@ -493,11 +493,21 @@ async function createCheckoutSession(
       sessionParams.subscription_data = subscriptionData;
     }
 
-    // Add payment_intent_data for lifetime purchases to ensure metadata is set
+    // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set
+    // This ensures metadata is on both payment intent AND invoice for all lifetime purchases
     if (planType === "lifetime" && mode === "payment") {
       sessionParams.payment_intent_data = {
         metadata: {
           purchase_type: "lifetime",
+        },
+      };
+      // Also set metadata on invoice when it's created
+      sessionParams.invoice_creation = {
+        enabled: true,
+        invoice_data: {
+          metadata: {
+            purchase_type: "lifetime",
+          },
         },
       };
     }
