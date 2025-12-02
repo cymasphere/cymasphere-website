@@ -513,7 +513,7 @@ export async function sendCampaign(
         subject: subjectWithTest,
         html: baseHtmlContentForTest,
         text: textContentForTest,
-        from: "support@cymasphere.com",
+        from: "Cymasphere Support <support@cymasphere.com>",
       });
 
       if (result.success) {
@@ -905,7 +905,7 @@ export async function sendCampaign(
           subject: personalizedSubject,
           html: personalizedHtml,
           text: personalizedText,
-          from: "support@cymasphere.com",
+          from: "Cymasphere Support <support@cymasphere.com>",
         });
 
         console.log(`📬 sendEmail result:`, JSON.stringify(result, null, 2));

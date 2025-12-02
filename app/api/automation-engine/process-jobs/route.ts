@@ -605,7 +605,7 @@ async function sendAutomationEmail(subscriber: any, content: any, automationId: 
       subject: emailSubject,
       html: emailHtml,
       text: personalizedContent.text_content,
-      from: 'support@cymasphere.com',
+      from: 'Cymasphere Support <support@cymasphere.com>',
       replyTo: 'support@cymasphere.com'
     });
 
