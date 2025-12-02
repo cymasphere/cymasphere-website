@@ -1782,11 +1782,12 @@ export default function AdminCRM() {
       const totalSpent = purchasesTotal + invoicesTotal;
 
       // Update selectedUser with recalculated totalSpent
+      // Only update if we have a valid total (>= 0), otherwise keep loading state (-1)
       setSelectedUser((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          totalSpent: totalSpent > 0 ? totalSpent : prev.totalSpent,
+          totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
         };
       });
     }
@@ -2865,7 +2866,11 @@ export default function AdminCRM() {
                   <InfoItem>
                     <InfoLabel>Total Spent</InfoLabel>
                     <InfoValue>
-                      {formatCurrency(selectedUser.totalSpent)}
+                      {selectedUser.totalSpent === -1 ? (
+                        <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                      ) : (
+                        formatCurrency(selectedUser.totalSpent)
+                      )}
                     </InfoValue>
                   </InfoItem>
                   <InfoItem>

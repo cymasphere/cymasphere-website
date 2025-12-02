@@ -714,7 +714,11 @@ export default function UserProfileModal({
                 <InfoItem>
                   <InfoLabel>Total Spent</InfoLabel>
                   <InfoValue>
-                    {formatCurrency(user.totalSpent)}
+                    {user.totalSpent === -1 ? (
+                      <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                    ) : (
+                      formatCurrency(user.totalSpent)
+                    )}
                   </InfoValue>
                 </InfoItem>
                 <InfoItem>
