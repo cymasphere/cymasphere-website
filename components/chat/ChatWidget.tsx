@@ -458,6 +458,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize greeting message based on language
@@ -484,6 +485,18 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  // On mobile, scroll to top when input is focused (keyboard appears)
+  const handleInputFocus = () => {
+    if (window.innerWidth <= 480 && messagesContainerRef.current) {
+      // Small delay to ensure keyboard animation starts
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = 0;
+        }
+      }, 100);
+    }
+  };
 
   // Refocus input after messages update (when assistant responds)
   useEffect(() => {
@@ -744,6 +757,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         </ChatHeader>
         
         <MessagesContainer
+          ref={messagesContainerRef}
           onWheel={(e) => {
             // Prevent scroll propagation to body
             e.stopPropagation();
@@ -793,6 +807,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
+            onFocus={handleInputFocus}
             placeholder={t('chat.placeholder') || 'Ask me anything about Cymasphere...'}
             disabled={isTyping}
           />

@@ -339,6 +339,16 @@ function DashboardPage() {
   const { user: userAuth } = useAuth();
   const user = userAuth!;
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [hasNfr, setHasNfr] = useState<boolean | null>(null);
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -656,9 +666,24 @@ function DashboardPage() {
     <DashboardContainer>
       <WelcomeSection>
         <WelcomeTitle>
-          {t("dashboard.main.welcome", "Welcome back, {{name}}!", {
-            name: formatName(user.profile.first_name, user.profile.last_name),
-          })}
+          {(() => {
+            const welcomeText = t("dashboard.main.welcome", "Welcome back, {{name}}!", {
+              name: formatName(user.profile.first_name, user.profile.last_name),
+            });
+            // On mobile, add line break after "Welcome back,"
+            if (isMobile) {
+              const parts = welcomeText.split(', ');
+              if (parts.length === 2) {
+                return (
+                  <>
+                    {parts[0]},<br />
+                    {parts[1]}
+                  </>
+                );
+              }
+            }
+            return welcomeText;
+          })()}
         </WelcomeTitle>
         <WelcomeSubtitle>
           {user
