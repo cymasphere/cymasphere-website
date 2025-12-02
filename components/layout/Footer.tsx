@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaXTwitter,
   FaInstagram,
@@ -8,6 +9,10 @@ import {
   FaYoutube,
   FaDiscord,
 } from "react-icons/fa6";
+import {
+  FaTimes,
+  FaPaperPlane,
+} from "react-icons/fa";
 import LegalModal from "@/components/modals/LegalModal";
 import AboutUsModal from "@/components/modals/AboutUsModal";
 import EnergyBall from "@/components/common/EnergyBall";
@@ -217,6 +222,142 @@ const CopyrightLink = styled.a`
   }
 `;
 
+const ModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  width: 100%;
+  overflow: hidden;
+  max-width: 600px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text);
+`;
+
+const ModalBody = styled.div`
+  padding: 20px 25px;
+  max-height: 70vh;
+  overflow-y: auto;
+`;
+
+const ModalFooter = styled.div`
+  padding: 15px 25px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--text);
+  }
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.2s;
+  resize: vertical;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const SubmitButton = styled.button`
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
 // Simple i18n wrapper functions to avoid hook ordering issues
 function getTranslation(key: string, defaultValue: string, options?: Record<string, any>): string {
   return i18next.t(key, { defaultValue, ...options }) as string;
@@ -227,6 +368,13 @@ const Footer = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [isContactSubmitting, setIsContactSubmitting] = useState(false);
   const [language, setLanguage] = useState(() => 
     typeof window !== 'undefined' ? i18next.language : 'en'
   );
@@ -250,6 +398,48 @@ const Footer = () => {
   // using the _ variable to ensure ESLint doesn't complain about unused vars
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _ = language;
+
+  const handleContactInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setContactForm({
+      ...contactForm,
+      [name]: value,
+    });
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      alert(getTranslation("dashboard.main.fillAllFields", "Please fill in all fields"));
+      return;
+    }
+
+    setIsContactSubmitting(true);
+
+    try {
+      // TODO: Implement actual contact form submission
+      // Simulate an API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Show success message
+      setContactForm({
+        name: "",
+        email: "",
+        message: "",
+      });
+      setShowContactModal(false);
+      alert(getTranslation("dashboard.main.messageReceived", "We've received your message and will respond shortly."));
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      alert(getTranslation("dashboard.main.messageError", "Failed to send your message. Please try again later."));
+    } finally {
+      setIsContactSubmitting(false);
+    }
+  };
 
   return (
     <FooterContainer>
@@ -360,6 +550,9 @@ const Footer = () => {
           <Link href="/about" passHref legacyBehavior>
             <FooterLink>{getTranslation("footer.aboutUs", "About Us")}</FooterLink>
           </Link>
+          <FooterButton onClick={() => setShowContactModal(true)}>
+            {getTranslation("footer.contactUs", "Contact Us")}
+          </FooterButton>
           <Link href="/privacy-policy" passHref legacyBehavior>
             <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
           </Link>
@@ -395,6 +588,122 @@ const Footer = () => {
         onClose={() => setShowPrivacyModal(false)}
         modalType="privacy"
       />
+
+      <AnimatePresence>
+        {showContactModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowContactModal(false)}
+          >
+            <ModalContent
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalHeader>
+                <ModalTitle>
+                  {getTranslation("dashboard.main.contactSupport", "Contact Support")}
+                </ModalTitle>
+                <CloseButton onClick={() => setShowContactModal(false)}>
+                  <FaTimes />
+                </CloseButton>
+              </ModalHeader>
+              <ModalBody>
+                <form onSubmit={handleContactSubmit}>
+                  <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)" }}>
+                    {getTranslation(
+                      "dashboard.main.supportHelpText",
+                      "Our support team is here to assist you with any questions or issues you might have."
+                    )}
+                  </p>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      htmlFor="contact-name"
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {getTranslation("dashboard.main.yourName", "Your Name")}
+                    </label>
+                    <FormInput
+                      id="contact-name"
+                      name="name"
+                      type="text"
+                      value={contactForm.name}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      htmlFor="contact-email"
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {getTranslation("dashboard.main.yourEmail", "Your Email")}
+                    </label>
+                    <FormInput
+                      id="contact-email"
+                      name="email"
+                      type="email"
+                      value={contactForm.email}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      htmlFor="contact-message"
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {getTranslation("dashboard.main.message", "Your Message")}
+                    </label>
+                    <FormTextarea
+                      id="contact-message"
+                      name="message"
+                      value={contactForm.message}
+                      onChange={handleContactInputChange}
+                      rows={5}
+                      required
+                    />
+                  </div>
+                  <ModalFooter>
+                    <SubmitButton
+                      type="submit"
+                      disabled={isContactSubmitting}
+                    >
+                      {isContactSubmitting ? (
+                        <>
+                          <span>{getTranslation("dashboard.main.sending", "Sending...")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaPaperPlane />
+                          <span>
+                            {getTranslation("dashboard.main.sendMessage", "Send Message")}
+                          </span>
+                        </>
+                      )}
+                    </SubmitButton>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
     </FooterContainer>
   );
 };
