@@ -58,6 +58,22 @@ const StepIndicator = styled.div`
   gap: 1rem;
   margin-bottom: 3rem;
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 10px;
+    margin-bottom: 2rem;
+    
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 `;
 
 const StepDot = styled.div<{ $active: boolean; $completed: boolean }>`
@@ -70,6 +86,7 @@ const StepDot = styled.div<{ $active: boolean; $completed: boolean }>`
   font-weight: 600;
   transition: all 0.3s ease;
   position: relative;
+  flex-shrink: 0;
 
   ${(props) => {
     if (props.$completed) {
@@ -90,6 +107,21 @@ const StepDot = styled.div<{ $active: boolean; $completed: boolean }>`
       color: var(--text-secondary);
     `;
   }}
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    
+    ${(props) => {
+      if (props.$active) {
+        return `
+          transform: scale(1.05);
+        `;
+      }
+      return '';
+    }}
+  }
 `;
 
 const StepLine = styled.div<{ $completed: boolean }>`
@@ -100,9 +132,10 @@ const StepLine = styled.div<{ $completed: boolean }>`
       ? "linear-gradient(90deg, var(--primary), var(--accent))"
       : "rgba(255, 255, 255, 0.1)"};
   transition: all 0.3s ease;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 30px;
+    width: 20px;
   }
 `;
 
