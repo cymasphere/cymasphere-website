@@ -320,7 +320,7 @@ const Table = styled.table`
   } /* Last Active */
   th:nth-child(6),
   td:nth-child(6) {
-    width: 120px;
+    width: 100px;
   } /* Support Tickets */
   th:nth-child(7),
   td:nth-child(7) {
@@ -410,6 +410,12 @@ const TableCell = styled.td`
     white-space: normal;
     overflow: visible;
   }
+`;
+
+const JoinDateTableCell = styled(TableCell)`
+  white-space: normal;
+  overflow: visible;
+  word-wrap: break-word;
 `;
 
 const LastActiveTableCell = styled(TableCell)`
@@ -1657,6 +1663,23 @@ export default function AdminCRM() {
     });
   };
 
+  const formatDateTimeNoLeadingZero = (dateString: string) => {
+    // Convert UTC to local time and format with date and time, removing leading zero from hour
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    // Use "numeric" for hour to avoid leading zeros (e.g., "8:30 AM" instead of "08:30 AM")
+    const timeStr = date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${dateStr}, ${timeStr}`;
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -2659,11 +2682,11 @@ export default function AdminCRM() {
                               {userData.hasNfr ? "NFR" : userData.subscription}
                             </SubscriptionBadge>
                           </SubscriptionCell>
-                          <TableCell>
-                            {formatDate(userData.createdAt)}
-                          </TableCell>
+                          <JoinDateTableCell>
+                            {formatDateTimeNoLeadingZero(userData.createdAt)}
+                          </JoinDateTableCell>
                           <LastActiveTableCell>
-                            {formatDateTime(
+                            {formatDateTimeNoLeadingZero(
                               userData.lastActive || userData.createdAt
                             )}
                           </LastActiveTableCell>
@@ -2887,12 +2910,12 @@ export default function AdminCRM() {
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Join Date</InfoLabel>
-                    <InfoValue>{formatDate(selectedUser.createdAt)}</InfoValue>
+                    <InfoValue>{formatDateTimeNoLeadingZero(selectedUser.createdAt)}</InfoValue>
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Last Active</InfoLabel>
                     <InfoValue>
-                      {formatDateTime(
+                      {formatDateTimeNoLeadingZero(
                         selectedUser.lastActive || selectedUser.createdAt
                       )}
                     </InfoValue>
