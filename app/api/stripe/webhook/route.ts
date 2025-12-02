@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
+import { sendEmail } from "@/utils/email";
+import { generateWelcomeEmailHtml, generateWelcomeEmailText } from "@/utils/email-campaigns/welcome-email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -128,6 +130,9 @@ export async function POST(request: NextRequest) {
 
             // Check if this is a free trial
             const hasTrial = subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000);
+            const trialDays = subscription.trial_end 
+              ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
+              : undefined;
             
             if (hasTrial) {
               // Track free trial to Meta CAPI
@@ -140,9 +145,7 @@ export async function POST(request: NextRequest) {
                 {
                   content_name: planName || subscriptionType,
                   subscription_type: subscriptionType,
-                  trial_days: subscription.trial_end 
-                    ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
-                    : undefined,
+                  trial_days: trialDays,
                   subscription_id: subscription.id,
                   price_id: subscription.items.data[0]?.price.id,
                   currency: subscription.currency,
@@ -150,6 +153,84 @@ export async function POST(request: NextRequest) {
                 },
                 eventId
               );
+
+              // Send welcome email for trial
+              try {
+                const customer = await stripe.customers.retrieve(customerId);
+                const customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email : profile.email;
+                const customerName = typeof customer === 'object' && !customer.deleted ? customer.name : undefined;
+                
+                const welcomeEmailHtml = generateWelcomeEmailHtml({
+                  customerName: customerName || undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                  isTrial: true,
+                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
+                  trialDays: trialDays,
+                });
+                
+                const welcomeEmailText = generateWelcomeEmailText({
+                  customerName: customerName || undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                  isTrial: true,
+                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
+                  trialDays: trialDays,
+                });
+
+                await sendEmail({
+                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                  subject: `Welcome to Cymasphere - Start Your Free Trial`,
+                  html: welcomeEmailHtml,
+                  text: welcomeEmailText,
+                  from: 'Cymasphere <support@cymasphere.com>',
+                });
+                
+                console.log(`✅ Sent welcome email for ${subscriptionType} trial to ryan@cymasphere.com (customer: ${customerEmail})`);
+              } catch (emailError) {
+                console.error('❌ Failed to send welcome email:', emailError);
+                // Don't throw - email failure shouldn't break webhook processing
+              }
+            } else {
+              // Send welcome email for new subscription (not in trial)
+              try {
+                const customer = await stripe.customers.retrieve(customerId);
+                const customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email : profile.email;
+                const customerName = typeof customer === 'object' && !customer.deleted ? customer.name : undefined;
+                
+                const welcomeEmailHtml = generateWelcomeEmailHtml({
+                  customerName: customerName || undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                });
+                
+                const welcomeEmailText = generateWelcomeEmailText({
+                  customerName: customerName || undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                });
+
+                await sendEmail({
+                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                  subject: `Welcome to Cymasphere - ${subscriptionType === 'monthly' ? 'Monthly' : 'Annual'} Subscription`,
+                  html: welcomeEmailHtml,
+                  text: welcomeEmailText,
+                  from: 'Cymasphere <support@cymasphere.com>',
+                });
+                
+                console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ryan@cymasphere.com (customer: ${customerEmail})`);
+              } catch (emailError) {
+                console.error('❌ Failed to send welcome email:', emailError);
+                // Don't throw - email failure shouldn't break webhook processing
+              }
             }
           }
         } else if (session.mode === "payment") {
@@ -263,6 +344,40 @@ export async function POST(request: NextRequest) {
               },
               eventId
             );
+
+            // Send welcome email for lifetime purchase
+            try {
+              const customer = await stripe.customers.retrieve(customerId);
+              const customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email : profile.email;
+              const customerName = typeof customer === 'object' && !customer.deleted ? customer.name : undefined;
+              
+              const welcomeEmailHtml = generateWelcomeEmailHtml({
+                customerName: customerName || undefined,
+                customerEmail: customerEmail || profile.email,
+                purchaseType: 'lifetime',
+                planName: 'lifetime',
+              });
+              
+              const welcomeEmailText = generateWelcomeEmailText({
+                customerName: customerName || undefined,
+                customerEmail: customerEmail || profile.email,
+                purchaseType: 'lifetime',
+                planName: 'lifetime',
+              });
+
+              await sendEmail({
+                to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                subject: 'Welcome to Cymasphere - Lifetime License',
+                html: welcomeEmailHtml,
+                text: welcomeEmailText,
+                from: 'Cymasphere <support@cymasphere.com>',
+              });
+              
+              console.log(`✅ Sent welcome email for lifetime purchase to ryan@cymasphere.com (customer: ${customerEmail})`);
+            } catch (emailError) {
+              console.error('❌ Failed to send welcome email:', emailError);
+              // Don't throw - email failure shouldn't break webhook processing
+            }
           }
         }
         break;
@@ -560,6 +675,9 @@ export async function POST(request: NextRequest) {
 
           // Check if this is a trial initiation
           const hasTrial = subscription.trial_end && subscription.trial_end > Math.floor(Date.now() / 1000);
+          const trialDays = subscription.trial_end 
+            ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
+            : undefined;
           
           if (hasTrial) {
             // Track trial initiation - all trials as one event (as per marketing requirements)
@@ -572,9 +690,7 @@ export async function POST(request: NextRequest) {
               {
                 content_name: planName,
                 subscription_type: subscriptionType,
-                trial_days: subscription.trial_end 
-                  ? Math.ceil((subscription.trial_end - Math.floor(Date.now() / 1000)) / 86400)
-                  : undefined,
+                trial_days: trialDays,
                 subscription_id: subscription.id,
                 price_id: priceId,
                 currency: subscription.currency,
@@ -582,6 +698,78 @@ export async function POST(request: NextRequest) {
               },
               `trial_${subscription.id}`
             );
+
+            // Send welcome email for trial
+            if (profile) {
+              try {
+                const welcomeEmailHtml = generateWelcomeEmailHtml({
+                  customerName: undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                  isTrial: true,
+                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
+                  trialDays: trialDays,
+                });
+                
+                const welcomeEmailText = generateWelcomeEmailText({
+                  customerName: undefined,
+                  customerEmail: customerEmail || profile.email,
+                  purchaseType: 'subscription',
+                  subscriptionType: subscriptionType as 'monthly' | 'annual',
+                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+                  isTrial: true,
+                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
+                  trialDays: trialDays,
+                });
+
+                await sendEmail({
+                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                  subject: `Welcome to Cymasphere - Start Your Free Trial`,
+                  html: welcomeEmailHtml,
+                  text: welcomeEmailText,
+                  from: 'Cymasphere <support@cymasphere.com>',
+                });
+                
+                console.log(`✅ Sent welcome email for ${subscriptionType} trial to ryan@cymasphere.com (customer: ${customerEmail || profile.email})`);
+              } catch (emailError) {
+                console.error('❌ Failed to send welcome email:', emailError);
+                // Don't throw - email failure shouldn't break webhook processing
+              }
+            }
+          } else if (profile) {
+            // Send welcome email for new subscription (not in trial)
+            try {
+              const welcomeEmailHtml = generateWelcomeEmailHtml({
+                customerName: undefined,
+                customerEmail: customerEmail || profile.email,
+                purchaseType: 'subscription',
+                subscriptionType: subscriptionType as 'monthly' | 'annual',
+                planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+              });
+              
+              const welcomeEmailText = generateWelcomeEmailText({
+                customerName: undefined,
+                customerEmail: customerEmail || profile.email,
+                purchaseType: 'subscription',
+                subscriptionType: subscriptionType as 'monthly' | 'annual',
+                planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
+              });
+
+              await sendEmail({
+                to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                subject: `Welcome to Cymasphere - ${subscriptionType === 'monthly' ? 'Monthly' : 'Annual'} Subscription`,
+                html: welcomeEmailHtml,
+                text: welcomeEmailText,
+                from: 'Cymasphere <support@cymasphere.com>',
+              });
+              
+              console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ryan@cymasphere.com (customer: ${customerEmail || profile.email})`);
+            } catch (emailError) {
+              console.error('❌ Failed to send welcome email:', emailError);
+              // Don't throw - email failure shouldn't break webhook processing
+            }
           }
 
           // Create automation event for new subscription
