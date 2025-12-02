@@ -284,6 +284,10 @@ const ComingSoonBadge = styled.div`
 
 const InstructionsContainer = styled.div`
   margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    margin-top: 1.5rem;
+  }
 `;
 
 const InstructionStep = styled.div`
@@ -292,6 +296,11 @@ const InstructionStep = styled.div`
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border-left: 4px solid var(--primary);
+
+  @media (max-width: 768px) {
+    padding: 1rem 0.75rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const InstructionStepNumber = styled.div`
@@ -306,6 +315,14 @@ const InstructionStepNumber = styled.div`
   font-weight: 600;
   margin-right: 1rem;
   font-size: 0.9rem;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+    margin-right: 0.75rem;
+  }
 `;
 
 const InstructionTitle = styled.h3`
@@ -314,6 +331,12 @@ const InstructionTitle = styled.h3`
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
 `;
 
 const InstructionContent = styled.div`
@@ -338,6 +361,15 @@ const InstructionContent = styled.div`
   li {
     margin: 0.5rem 0;
     padding-left: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    margin-top: 0.75rem;
+    
+    ol, ul {
+      padding-left: 1.25rem;
+    }
   }
 
   code {
