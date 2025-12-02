@@ -2458,7 +2458,9 @@ function SupportTicketsPage() {
               </tr>
             </TableHeader>
             <TableBody>
-              {paginatedTickets.length === 0 ? (
+              {loadingTickets ? (
+                <TableLoadingRow colSpan={7} message="Loading tickets..." />
+              ) : paginatedTickets.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     No support tickets found
