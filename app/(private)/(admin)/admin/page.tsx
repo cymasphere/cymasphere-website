@@ -918,11 +918,11 @@ export default function AdminDashboard() {
 
         {activeTab === 'summaries' && (
           <>
-            <Header>
-              <Title>
-                <FaCrown />
-                Admin Dashboard
-              </Title>
+        <Header>
+          <Title>
+            <FaCrown />
+            Admin Dashboard
+          </Title>
           <Subtitle>
             Cymasphere Analytics & Management
           </Subtitle>
@@ -2067,78 +2067,78 @@ function NotificationsTab({
         )}
       </NotificationsSection>
 
-      <RecentActivitySection variants={fadeIn}>
-        <ActivityHeader>
-          <SectionTitle>Recent Activity</SectionTitle>
-          <ActivityFilters>
-            <ActivityFilterButton
-              $active={activityFilter === 'all'}
-              onClick={() => setActivityFilter('all')}
-            >
-              All ({getActivityTypeCount('all')})
-            </ActivityFilterButton>
-            <ActivityFilterButton
-              $active={activityFilter === 'subscription'}
-              onClick={() => setActivityFilter('subscription')}
-            >
-              <FaMoneyBillWave />
-              Subscriptions ({getActivityTypeCount('subscription')})
-            </ActivityFilterButton>
-            <ActivityFilterButton
-              $active={activityFilter === 'payment'}
-              onClick={() => setActivityFilter('payment')}
-            >
-              <FaChartLine />
-              Payments ({getActivityTypeCount('payment')})
-            </ActivityFilterButton>
-            <ActivityFilterButton
-              $active={activityFilter === 'user_signup'}
-              onClick={() => setActivityFilter('user_signup')}
-            >
-              <FaUsers />
-              Signups ({getActivityTypeCount('user_signup')})
-            </ActivityFilterButton>
-            <ActivityFilterButton
-              $active={activityFilter === 'cancellation'}
-              onClick={() => setActivityFilter('cancellation')}
-            >
-              <FaArrowDown />
-              Cancellations ({getActivityTypeCount('cancellation')})
-            </ActivityFilterButton>
-          </ActivityFilters>
-        </ActivityHeader>
-        <ActivityList>
-          {loadingRecentActivity ? (
-            <EmptyState>
-              <StatLoadingSpinner size={20} />
-            </EmptyState>
-          ) : (
-            <>
-              {getFilteredActivities().map((activity, index) => (
-                <ActivityItem key={activity.id} variants={fadeIn} custom={index}>
-                  <ActivityIcon>
-                    {getActivityIcon(activity.type)}
-                  </ActivityIcon>
-                  <ActivityContent>
-                    <ActivityDescription>{activity.description}</ActivityDescription>
-                    <ActivityTime>{formatDate(activity.timestamp)}</ActivityTime>
-                  </ActivityContent>
-                  {activity.amount && (
-                    <ActivityAmount>
-                      {formatCurrency(activity.amount)}
-                    </ActivityAmount>
-                  )}
-                </ActivityItem>
-              ))}
-              {getFilteredActivities().length === 0 && (
+          <RecentActivitySection variants={fadeIn}>
+            <ActivityHeader>
+              <SectionTitle>Recent Activity</SectionTitle>
+              <ActivityFilters>
+                <ActivityFilterButton
+                  $active={activityFilter === 'all'}
+                  onClick={() => setActivityFilter('all')}
+                >
+                  All ({getActivityTypeCount('all')})
+                </ActivityFilterButton>
+                <ActivityFilterButton
+                  $active={activityFilter === 'subscription'}
+                  onClick={() => setActivityFilter('subscription')}
+                >
+                  <FaMoneyBillWave />
+                  Subscriptions ({getActivityTypeCount('subscription')})
+                </ActivityFilterButton>
+                <ActivityFilterButton
+                  $active={activityFilter === 'payment'}
+                  onClick={() => setActivityFilter('payment')}
+                >
+                  <FaChartLine />
+                  Payments ({getActivityTypeCount('payment')})
+                </ActivityFilterButton>
+                <ActivityFilterButton
+                  $active={activityFilter === 'user_signup'}
+                  onClick={() => setActivityFilter('user_signup')}
+                >
+                  <FaUsers />
+                  Signups ({getActivityTypeCount('user_signup')})
+                </ActivityFilterButton>
+                <ActivityFilterButton
+                  $active={activityFilter === 'cancellation'}
+                  onClick={() => setActivityFilter('cancellation')}
+                >
+                  <FaArrowDown />
+                  Cancellations ({getActivityTypeCount('cancellation')})
+                </ActivityFilterButton>
+              </ActivityFilters>
+            </ActivityHeader>
+            <ActivityList>
+              {loadingRecentActivity ? (
                 <EmptyState>
-                  No {getActivityTypeLabel(activityFilter).toLowerCase()} to display
+                  <StatLoadingSpinner size={20} />
                 </EmptyState>
+              ) : (
+                <>
+                  {getFilteredActivities().map((activity, index) => (
+                    <ActivityItem key={activity.id} variants={fadeIn} custom={index}>
+                      <ActivityIcon>
+                        {getActivityIcon(activity.type)}
+                      </ActivityIcon>
+                      <ActivityContent>
+                        <ActivityDescription>{activity.description}</ActivityDescription>
+                        <ActivityTime>{formatDate(activity.timestamp)}</ActivityTime>
+                      </ActivityContent>
+                      {activity.amount && (
+                        <ActivityAmount>
+                          {formatCurrency(activity.amount)}
+                        </ActivityAmount>
+                      )}
+                    </ActivityItem>
+                  ))}
+                  {getFilteredActivities().length === 0 && (
+                    <EmptyState>
+                      No {getActivityTypeLabel(activityFilter).toLowerCase()} to display
+                    </EmptyState>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </ActivityList>
-      </RecentActivitySection>
+            </ActivityList>
+          </RecentActivitySection>
     </>
   );
 } 

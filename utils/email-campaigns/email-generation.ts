@@ -105,34 +105,67 @@ export function generateHtmlFromElements(
       const paddingBottom = (element.paddingBottom ?? defaultBottom) as number;
       const paddingLeft = (element.paddingLeft ?? lrDefault) as number;
       const paddingRight = (element.paddingRight ?? lrDefault) as number;
-      const paddingStyle = `padding: ${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px;`;
+      // Use both inline style and table cell padding for maximum email client compatibility
+      // Gmail often strips !important, so we use table cells as a fallback
+      const paddingStyle = `padding: ${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px !important;`;
+      const cellPaddingStyle = `padding: ${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px;`;
 
       switch (element.type) {
         case "header":
-          return `<div class="${wrapperClass}" style="${paddingStyle}"><h1 style="font-size: ${element.fontSize || '2.5rem'}; color: ${element.textColor || '#333'}; margin-bottom: 1rem; text-align: ${element.textAlign || 'center'}; font-weight: ${element.fontWeight || '800'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; margin: 0 0 1rem 0;">${element.content}</h1></div>`;
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="${cellPaddingStyle}">
+                <h1 style="font-size: ${element.fontSize || '2.5rem'}; color: ${element.textColor || '#333'}; margin: 0; text-align: ${element.textAlign || 'center'}; font-weight: ${element.fontWeight || '800'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; padding: 0;">${element.content}</h1>
+              </td>
+            </tr>
+          </table>`;
 
         case "text":
-          return `<div class="${wrapperClass}" style="${paddingStyle}"><p style="font-size: ${element.fontSize || '1rem'}; color: ${element.textColor || '#555'}; line-height: ${element.lineHeight || '1.6'}; margin: 0 0 1rem 0; text-align: ${element.textAlign || 'left'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'};">${element.content}</p></div>`;
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="${cellPaddingStyle}">
+                <p style="font-size: ${element.fontSize || '1rem'}; color: ${element.textColor || '#555'}; line-height: ${element.lineHeight || '1.6'}; margin: 0; text-align: ${element.textAlign || 'left'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; padding: 0;">${element.content}</p>
+              </td>
+            </tr>
+          </table>`;
 
         case "button":
-          return `<div class="${wrapperClass}" style="text-align: ${element.fullWidth ? 'left' : (element.textAlign || 'center')}; margin: 2rem 0; ${paddingStyle}"><a href="${
-            element.url || "#"
-          }" style="display: ${element.fullWidth ? 'block' : 'inline-block'}; padding: ${element.fullWidth ? '1.25rem 2.5rem' : '1.25rem 2.5rem'}; background: ${element.gradient || element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; color: ${element.textColor || 'white'}; text-decoration: none; border-radius: ${element.fullWidth ? '0' : '50px'}; font-weight: ${element.fontWeight || '700'}; font-size: ${element.fontSize || '1rem'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'}; min-height: 1em; width: ${element.fullWidth ? '100%' : 'auto'}; text-align: ${element.textAlign || 'center'};">${
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="text-align: ${element.fullWidth ? 'left' : (element.textAlign || 'center')}; ${cellPaddingStyle}">
+                <a href="${element.url || "#"}" style="display: ${element.fullWidth ? 'block' : 'inline-block'}; padding: ${element.fullWidth ? '1.25rem 2.5rem' : '1.25rem 2.5rem'}; background: ${element.gradient || element.backgroundColor || 'linear-gradient(135deg, #6c63ff 0%, #4ecdc4 100%)'}; color: ${element.textColor || 'white'}; text-decoration: none; border-radius: ${element.fullWidth ? '0' : '50px'}; font-weight: ${element.fontWeight || '700'}; font-size: ${element.fontSize || '1rem'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.2'}; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'}; min-height: 1em; width: ${element.fullWidth ? '100%' : 'auto'}; text-align: ${element.textAlign || 'center'}; margin: 0;">${
             element.content
-          }</a></div>`;
+          }</a>
+              </td>
+            </tr>
+          </table>`;
 
         case "image":
-          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; margin: 1.5rem 0; ${paddingStyle}"><img src="${
-            element.src
-          }" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: ${
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; ${cellPaddingStyle}">
+                <img src="${element.src}" alt="Campaign Image" style="max-width: 100%; height: auto; border-radius: ${
             element.fullWidth ? "0" : "8px"
-          };" /></div>`;
+          }; display: block; margin: 0;" />
+              </td>
+            </tr>
+          </table>`;
 
         case "divider":
-          return `<div class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; ${paddingStyle}"><hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 2rem 0;" /></div>`;
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="text-align: ${element.textAlign || 'center'}; ${cellPaddingStyle}">
+                <hr style="border: none; height: 2px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); margin: 0;" />
+              </td>
+            </tr>
+          </table>`;
 
         case "spacer":
-          return `<div class="${wrapperClass}" style="height: ${element.height || "20px"}; ${paddingStyle}"></div>`;
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="height: ${element.height || "20px"}; ${cellPaddingStyle} line-height: ${element.height || "20px"}; font-size: 1px;">&nbsp;</td>
+            </tr>
+          </table>`;
 
         case "footer":
           // Use inline SVG icons for email compatibility and professional appearance
@@ -158,26 +191,31 @@ export function generateHtmlFromElements(
                </table>`
             : "";
 
-        return `
-        <div style="font-size: ${element.fontSize || '0.8rem'}; color: ${element.textColor || '#ffffff'}; background: ${element.backgroundColor || '#363636'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; border-top: ${element.fullWidth ? 'none' : '1px solid #dee2e6'}; margin-top: 0; ${paddingStyle}">
-          ${socialLinksHtml ? `<div style="margin-bottom: 16px; text-align: center;">${socialLinksHtml}</div>` : ""}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
-            <tr>
-              <td align="center" style="padding: 0 0 8px 0; text-align: center; color: ${element.textColor || '#ffffff'};">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</td>
-            </tr>
-          </table>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
-            <tr>
-              <td align="center" style="padding: 0; text-align: center; color: ${element.textColor || '#ffffff'};">
-                <a href="${element.unsubscribeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
-                &nbsp;|&nbsp;
-                <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
-                &nbsp;|&nbsp;
-                <a href="${element.termsUrl || "https://cymasphere.com/terms-of-service"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.termsText || "Terms of Service"}</a>
-              </td>
-            </tr>
-          </table>
-        </div>`;
+        // Footer font size should default to 0.8rem to match editor, but allow override
+        const footerFontSize = element.fontSize || '0.8rem';
+        return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; background: ${element.backgroundColor || '#363636'}; border-top: ${element.fullWidth ? 'none' : '1px solid #dee2e6'};">
+          <tr>
+            <td style="font-size: ${footerFontSize}; color: ${element.textColor || '#ffffff'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.4'}; ${cellPaddingStyle}">
+              ${socialLinksHtml ? `<div style="margin-bottom: 16px; text-align: center; font-size: ${footerFontSize};">${socialLinksHtml}</div>` : ""}
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="padding: 0 0 8px 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}</td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="padding: 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">
+                    <a href="${element.unsubscribeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.unsubscribeText || "Unsubscribe"}</a>
+                    &nbsp;|&nbsp;
+                    <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.privacyText || "Privacy Policy"}</a>
+                    &nbsp;|&nbsp;
+                    <a href="${element.termsUrl || "https://cymasphere.com/terms-of-service"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none; font-size: ${footerFontSize};">${element.termsText || "Terms of Service"}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>`;
 
         case "brand-header":
           // Use a more reliable image source and Gmail-compatible structure
@@ -185,23 +223,31 @@ export function generateHtmlFromElements(
           // Force brand header to align with content width
           const headerWrapperClass = "constrained-width";
 
-          return `<div class="${headerWrapperClass} brand-header" style="background: ${
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; background: ${
             element.backgroundColor ||
             "linear-gradient(135deg, #1a1a1a 0%, #121212 100%)"
-          }; ${paddingStyle} text-align: center; display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 0; box-shadow: none; margin: 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-              <tr>
-                <td align="center" style="padding: 0;">
-                  <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0; border: 0; outline: none;" />
-                </td>
-              </tr>
-            </table>
-          </div>`;
+          };">
+            <tr>
+              <td class="${headerWrapperClass} brand-header" style="${cellPaddingStyle} text-align: center; min-height: 60px; vertical-align: middle;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                  <tr>
+                    <td align="center" style="padding: 0;">
+                      <img src="${logoUrl}" alt="Cymasphere Logo" style="max-width: 300px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; padding: 0; border: 0; outline: none;" />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>`;
 
         default:
-          return `<div class="${wrapperClass}" style="color: #555; margin: 1rem 0; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'}; ${paddingStyle}">${
-            element.content || ""
-          }</div>`;
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tr>
+              <td class="${wrapperClass}" style="color: #555; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'}; ${cellPaddingStyle}">
+                ${element.content || ""}
+              </td>
+            </tr>
+          </table>`;
       }
     })
     .join("");
@@ -330,16 +376,13 @@ export function generateHtmlFromElements(
         .full-width {
             width: 100%;
             margin: 0;
-            padding: 0;
             border-radius: 0;
         }
         
-        /* Override parent padding for full-width elements */
+        /* Override parent padding for full-width elements - but don't override top/bottom padding */
         .full-width {
             margin-left: -30px;
             margin-right: -30px;
-            padding-left: 30px;
-            padding-right: 30px;
             width: calc(100% + 60px);
         }
         
@@ -355,7 +398,6 @@ export function generateHtmlFromElements(
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            padding: 0 20px;
             box-sizing: border-box;
         }
     </style>

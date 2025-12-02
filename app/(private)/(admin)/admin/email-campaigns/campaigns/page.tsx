@@ -31,7 +31,8 @@ import {
   FaDesktop,
   FaMobileAlt,
   FaTabletAlt,
-  FaCheck
+  FaCheck,
+  FaImage
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -282,8 +283,9 @@ const TableCell = styled.td`
   color: var(--text);
   font-size: 0.9rem;
   vertical-align: middle;
+  text-align: left;
 
-  &:nth-child(2), &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6) {
+  &:nth-child(3), &:nth-child(4), &:nth-child(5), &:nth-child(6), &:nth-child(7) {
     text-align: center;
   }
 
@@ -296,12 +298,72 @@ const CampaignTitle = styled.div`
   font-weight: 600;
   color: var(--text);
   margin-bottom: 0.25rem;
+  text-align: left;
 `;
 
 const CampaignDescription = styled.div`
   color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.4;
+  text-align: left;
+`;
+
+const PreviewIconButton = styled.button`
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: auto;
+
+  &:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+
+const EmailPreviewFrame = styled.div`
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  position: relative;
+  height: 500px;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+`;
+
+const EmailPreviewIframe = styled.iframe`
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: block;
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
@@ -946,6 +1008,9 @@ function CampaignsPage() {
     excludedCount: number;
     isLoading: boolean;
   }>>({});
+  
+  // Preview click state
+  const [clickedPreviewId, setClickedPreviewId] = useState<string | null>(null);
   
   // Sorting state
   const [sortField, setSortField] = useState<string>('date');
@@ -1637,7 +1702,7 @@ function CampaignsPage() {
         </div>
         
         <div class="footer">
-            <p>© {new Date().getFullYear()} Cymasphere Inc. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.</p>
             <p>
                 <a href="#">Unsubscribe</a> | 
                 <a href="#">Privacy Policy</a> | 
@@ -1718,6 +1783,7 @@ function CampaignsPage() {
           <Table>
             <TableHeader>
               <tr>
+                <TableHeaderCell style={{ width: '30px', textAlign: 'center', padding: '0.5rem' }}></TableHeaderCell>
                 <TableHeaderCell onClick={() => handleSort('name')}>
                   {renderSortableHeader('Campaign', 'name')}
                 </TableHeaderCell>
@@ -1761,12 +1827,12 @@ function CampaignsPage() {
             <TableBody>
               {loading ? (
                 <TableLoadingRow 
-                  colSpan={activeTab === 'scheduled' ? 6 : 7} 
+                  colSpan={activeTab === 'scheduled' ? 7 : 8} 
                   message="Loading campaigns..." 
                 />
               ) : filteredCampaigns.length === 0 ? (
                 <tr>
-                  <TableCell colSpan={activeTab === 'scheduled' ? 6 : 7}>
+                  <TableCell colSpan={activeTab === 'scheduled' ? 7 : 8}>
                     <EmptyState>
                       <FaEnvelopeOpen />
                       <h3>No campaigns found</h3>
@@ -1776,8 +1842,8 @@ function CampaignsPage() {
                 </tr>
               ) : (
                 filteredCampaigns.map((campaign: any, index: number) => (
-                  <TableRow
-                    key={campaign.id}
+                  <React.Fragment key={campaign.id}>
+                    <TableRow
                     variants={cardVariants}
                     initial="hidden"
                     animate="visible"
@@ -1791,6 +1857,19 @@ function CampaignsPage() {
                       handleCampaignAction('edit', campaign.id);
                     }}
                   >
+                    <TableCell style={{ textAlign: 'center', width: '30px', padding: '0.5rem' }}>
+                      {campaign.html_content && (
+                        <PreviewIconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setClickedPreviewId(clickedPreviewId === campaign.id ? null : campaign.id);
+                          }}
+                          style={{ padding: '4px 6px', minWidth: 'auto' }}
+                        >
+                          <FaImage style={{ fontSize: '0.75rem' }} />
+                        </PreviewIconButton>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <CampaignTitle>{campaign.name || 'Untitled'}</CampaignTitle>
                       <CampaignDescription>{campaign.subject || campaign.description || 'No description'}</CampaignDescription>
@@ -2101,7 +2180,21 @@ function CampaignsPage() {
                         </AnimatePresence>
                       </ActionsContainer>
                     </TableCell>
-                  </TableRow>
+                    </TableRow>
+                    {/* Email Preview Row */}
+                    {campaign.html_content && clickedPreviewId === campaign.id && (
+                      <tr>
+                        <TableCell colSpan={activeTab === 'scheduled' ? 7 : 8} style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <EmailPreviewFrame>
+                            <EmailPreviewIframe
+                              srcDoc={campaign.html_content}
+                              title={`Email preview for ${campaign.name || 'campaign'}`}
+                            />
+                          </EmailPreviewFrame>
+                        </TableCell>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </TableBody>

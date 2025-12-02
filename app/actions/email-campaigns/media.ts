@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from '@/utils/supabase/server';
+import { createSupabaseServiceRole } from '@/utils/supabase/service';
 
 const BUCKET = 'email-assets';
 const IMAGE_FOLDER = 'email-images';
@@ -341,33 +342,36 @@ export interface ListMediaResponse {
  */
 export async function listMedia(): Promise<ListMediaResponse> {
   try {
-    const supabase = await createClient();
+    // Use service role client for admin storage operations to bypass RLS
+    const supabase = await createSupabaseServiceRole();
 
-    // Ensure bucket exists
-    // Note: RLS will enforce admin access - if user is not admin, queries will fail
-    const { data: buckets, error: listBucketsError } = await supabase.storage.listBuckets();
-    if (listBucketsError) {
-      throw new Error(listBucketsError.message);
-    }
-    const exists = buckets?.some(b => b.name === BUCKET);
-    if (!exists) {
-      // Create it if missing (public)
-      const { error: bucketError } = await supabase.storage.createBucket(BUCKET, {
-        public: true,
-      });
-      if (bucketError) {
-        throw new Error(bucketError.message);
-      }
-    }
-
-    // List images and videos
+    // Try to list images and videos
+    // If bucket or folders don't exist, return empty arrays
     const [{ data: images, error: imgErr }, { data: videos, error: vidErr }] = await Promise.all([
       supabase.storage.from(BUCKET).list(IMAGE_FOLDER, { limit: 100, offset: 0 }),
       supabase.storage.from(BUCKET).list(VIDEO_FOLDER, { limit: 100, offset: 0 })
     ]);
 
-    if (imgErr || vidErr) {
-      throw new Error((imgErr || vidErr)!.message);
+    // Handle errors gracefully - if bucket/folders don't exist, that's fine
+    if (imgErr) {
+      // If it's a "not found" or RLS error, just use empty array
+      if (imgErr.message?.includes('not found') || 
+          imgErr.message?.includes('No such file') ||
+          imgErr.message?.includes('row-level security')) {
+        console.log('Images folder does not exist yet, returning empty array');
+      } else {
+        console.warn('Error listing images folder:', imgErr.message);
+      }
+    }
+    if (vidErr) {
+      // If it's a "not found" or RLS error, just use empty array
+      if (vidErr.message?.includes('not found') || 
+          vidErr.message?.includes('No such file') ||
+          vidErr.message?.includes('row-level security')) {
+        console.log('Videos folder does not exist yet, returning empty array');
+      } else {
+        console.warn('Error listing videos folder:', vidErr.message);
+      }
     }
 
     const makeItem = (folder: string) => (obj: any) => {

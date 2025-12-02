@@ -60,7 +60,7 @@ export async function getCampaigns(
     const resp = await supabase
       .from("email_campaigns")
       .select(
-        "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id"
+        "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id,html_content"
       )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -73,7 +73,7 @@ export async function getCampaigns(
       const fallback = await supabase
         .from("email_campaigns")
         .select(
-          "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id"
+          "id,name,subject,status,scheduled_at,sent_at,created_at,updated_at,template_id,html_content"
         )
         .order("created_at", { ascending: false })
         .limit(limit);

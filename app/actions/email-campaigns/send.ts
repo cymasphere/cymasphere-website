@@ -508,6 +508,10 @@ export async function sendCampaign(
         preheader
       );
 
+      console.log(`📧 Sending test email to: ${emailTrimmed}`);
+      console.log(`📧 Test email subject: ${subjectWithTest}`);
+      console.log(`📧 HTML content length: ${baseHtmlContentForTest.length}`);
+      
       const result = await sendEmail({
         to: emailTrimmed,
         subject: subjectWithTest,
@@ -516,7 +520,10 @@ export async function sendCampaign(
         from: "Cymasphere Support <support@cymasphere.com>",
       });
 
+      console.log(`📧 Test email send result:`, JSON.stringify(result, null, 2));
+
       if (result.success) {
+        console.log(`✅ Test email sent successfully to ${emailTrimmed}, MessageId: ${result.messageId}`);
         // Test email sent successfully - don't overwrite the original campaign HTML
         // The original campaign data with embedded elements JSON should be preserved
         return {
@@ -528,6 +535,7 @@ export async function sendCampaign(
         };
       }
 
+      console.error(`❌ Test email failed to send:`, result.error);
       throw new Error(result.error || 'Failed to send test email');
     }
 
