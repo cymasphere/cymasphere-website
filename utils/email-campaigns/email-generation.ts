@@ -3,6 +3,8 @@
  * Extracted from app/api/email-campaigns/send/route.ts
  */
 
+import { generateUnsubscribeUrl } from './unsubscribe-tokens';
+
 /**
  * Generate HTML from email elements with tracking
  */
@@ -519,6 +521,9 @@ export function generateTextFromElements(elements: any[]): string {
  */
 export function personalizeContent(content: string, subscriber: any): string {
   const metadata = subscriber.metadata || {};
+  
+  // Generate unsubscribe URL with token
+  const unsubscribeUrl = generateUnsubscribeUrl(subscriber.email);
   const firstName =
     metadata.first_name ||
     subscriber.first_name ||
@@ -546,8 +551,18 @@ export function personalizeContent(content: string, subscriber: any): string {
     .replace(/%7B%7Bemail%7D%7D/g, encodedEmail)
     .replace(/\{\{subscription\}\}/g, metadata.subscription || "none");
   
-  // Also replace {{email}} in href attributes (even if URL-encoded)
-  // This handles cases where the placeholder is in a URL that gets encoded
+  // Replace unsubscribe URLs with tokenized version (handle both {{email}} and URL-encoded)
+  personalized = personalized.replace(
+    /href=["']([^"']*\/unsubscribe[^"']*)\{\{email\}\}([^"']*)["']/g,
+    () => `href="${unsubscribeUrl}"`
+  );
+  
+  personalized = personalized.replace(
+    /href=["']([^"']*\/unsubscribe[^"']*)%7B%7Bemail%7D%7D([^"']*)["']/g,
+    () => `href="${unsubscribeUrl}"`
+  );
+  
+  // Replace other {{email}} in href attributes (non-unsubscribe URLs)
   personalized = personalized.replace(
     /href=["']([^"']*)\{\{email\}\}([^"']*)["']/g,
     (match, before, after) => {
@@ -555,7 +570,7 @@ export function personalizeContent(content: string, subscriber: any): string {
     }
   );
   
-  // Replace URL-encoded version in href attributes
+  // Replace URL-encoded version in other href attributes
   personalized = personalized.replace(
     /href=["']([^"']*)%7B%7Bemail%7D%7D([^"']*)["']/g,
     (match, before, after) => {
@@ -574,9 +589,7 @@ export function personalizeContent(content: string, subscriber: any): string {
     )
     .replace(
       /\{\{unsubscribeUrl\}\}/g,
-      `${
-        process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com"
-      }/unsubscribe?email=${encodeURIComponent(subscriber.email)}`
+      unsubscribeUrl
     )
     .replace(
       /\{\{currentDate\}\}/g,

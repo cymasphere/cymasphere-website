@@ -14,6 +14,7 @@ interface UnsubscribeResponse {
 export default function UnsubscribePage() {
   const searchParams = useSearchParams();
   const rawEmail = searchParams.get('email');
+  const token = searchParams.get('token');
   // Decode URL-encoded email
   const email = rawEmail ? decodeURIComponent(rawEmail) : null;
   const [response, setResponse] = useState<UnsubscribeResponse | null>(null);
@@ -74,7 +75,7 @@ export default function UnsubscribePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, token }),
       });
 
       const data = await response.json();
@@ -97,36 +98,6 @@ export default function UnsubscribePage() {
     }
   };
 
-  const handleResubscribe = async () => {
-    if (!email) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/unsubscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, action: 'resubscribe' }),
-      });
-
-      const data = await response.json();
-      setResponse(data);
-
-      if (!response.ok) {
-        const errorMsg = data.error || 'Failed to resubscribe';
-        const details = data.details ? ` (${data.details})` : '';
-        throw new Error(`${errorMsg}${details}`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('[Unsubscribe Page] Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Check if email is a placeholder (from preview)
   const isPlaceholder = email && (email.includes('{{') || email.includes('%7B%7B') || email === '{{email}}' || rawEmail?.includes('%7B%7B'));
@@ -276,37 +247,7 @@ export default function UnsubscribePage() {
 
           {/* Action Buttons */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            {response?.success && response.status === 'unsubscribed' ? (
-              <button
-                onClick={handleResubscribe}
-                disabled={loading}
-                style={{ 
-                  padding: '14px 32px',
-                  background: 'linear-gradient(90deg, #6c63ff, #4ecdc4)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                  transition: 'opacity 0.2s, transform 0.2s',
-                  boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.opacity = '0.9';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = loading ? 0.6 : '1';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                Resubscribe to Emails
-              </button>
-            ) : !response ? (
+            {!response ? (
               <button
                 onClick={handleUnsubscribe}
                 disabled={loading || isPlaceholder}
@@ -362,7 +303,7 @@ export default function UnsubscribePage() {
               </li>
               <li style={{ marginBottom: '8px', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '0', color: '#4ecdc4' }}>•</span>
-                You can resubscribe at any time
+                To resubscribe, please contact support or an administrator
               </li>
               <li style={{ marginBottom: '0', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '0', color: '#4ecdc4' }}>•</span>

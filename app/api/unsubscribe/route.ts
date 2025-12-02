@@ -1,9 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceRole } from '@/utils/supabase/service';
+import { createClient } from '@/utils/supabase/server';
+import { verifyUnsubscribeToken } from '@/utils/email-campaigns/unsubscribe-tokens';
+
+// Rate limiting in-memory store (in production, use Redis)
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+/**
+ * Check rate limiting
+ */
+function checkRateLimit(ip: string, maxRequests: number = 10, windowSecs: number = 60): boolean {
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + windowSecs * 1000 });
+    return true;
+  }
+
+  if (entry.count >= maxRequests) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, action = 'unsubscribe' } = await request.json();
+    // Get client IP for rate limiting
+    const clientIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0] ||
+      request.headers.get('x-real-ip') ||
+      '127.0.0.1';
+
+    // Rate limiting check (10 requests per minute per IP)
+    if (!checkRateLimit(clientIp, 10, 60)) {
+      console.warn(`[Unsubscribe API] Rate limit exceeded for IP: ${clientIp}`);
+      return NextResponse.json(
+        { success: false, error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    const { email, action = 'unsubscribe', token } = await request.json();
 
     if (!email) {
       return NextResponse.json(
@@ -45,6 +85,37 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'unsubscribe') {
+      // Verify token if provided (required for security)
+      let verifiedEmail: string | null = null;
+      if (token) {
+        verifiedEmail = verifyUnsubscribeToken(token);
+        if (!verifiedEmail) {
+          console.warn(`[Unsubscribe API] Invalid or expired token for email: ${email}`);
+          // Return generic success to prevent email enumeration
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully unsubscribed from emails',
+            email: email.toLowerCase(),
+            status: 'unsubscribed'
+          });
+        }
+        
+        // Verify token email matches request email
+        if (verifiedEmail !== email.toLowerCase()) {
+          console.warn(`[Unsubscribe API] Token email mismatch: ${verifiedEmail} vs ${email}`);
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully unsubscribed from emails',
+            email: email.toLowerCase(),
+            status: 'unsubscribed'
+          });
+        }
+      } else {
+        // Token is recommended but not strictly required for backward compatibility
+        // Log missing token for security monitoring
+        console.warn(`[Unsubscribe API] Unsubscribe request without token for email: ${email} from IP: ${clientIp}`);
+      }
+
       // Handle unsubscribe
       const { data: subscriber, error: fetchError } = await supabase
         .from('subscribers')
@@ -52,12 +123,18 @@ export async function POST(request: NextRequest) {
         .eq('email', email.toLowerCase())
         .single();
 
+      // Prevent email enumeration - always return success, but only actually unsubscribe if subscriber exists
+      const successResponse = {
+        success: true,
+        message: 'Successfully unsubscribed from emails',
+        email: email.toLowerCase(),
+        status: 'unsubscribed' as const
+      };
+
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching subscriber:', fetchError);
-        return NextResponse.json(
-          { success: false, error: 'Failed to fetch subscriber', details: fetchError.message },
-          { status: 500 }
-        );
+        console.error('[Unsubscribe API] Error fetching subscriber:', fetchError);
+        // Return success to prevent enumeration, but log the error
+        return NextResponse.json(successResponse);
       }
 
       if (!subscriber) {
@@ -73,19 +150,11 @@ export async function POST(request: NextRequest) {
           });
 
         if (insertError) {
-          console.error('Error creating unsubscribed subscriber:', insertError);
-          return NextResponse.json(
-            { success: false, error: 'Failed to unsubscribe', details: insertError.message },
-            { status: 500 }
-          );
+          console.error('[Unsubscribe API] Error creating unsubscribed subscriber:', insertError);
+          // Still return success to prevent enumeration
         }
 
-        return NextResponse.json({
-          success: true,
-          message: 'Successfully unsubscribed from emails',
-          email: email.toLowerCase(),
-          status: 'unsubscribed'
-        });
+        return NextResponse.json(successResponse);
       }
 
       // Update existing subscriber
@@ -100,21 +169,43 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error('[Unsubscribe API] Error updating subscriber:', updateError);
-        return NextResponse.json(
-          { success: false, error: 'Failed to unsubscribe', details: updateError.message },
-          { status: 500 }
-        );
+        // Still return success to prevent enumeration
       }
 
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully unsubscribed from emails',
-        email: email.toLowerCase(),
-        status: 'unsubscribed'
-      });
+      return NextResponse.json(successResponse);
 
     } else if (action === 'resubscribe') {
-      // Handle resubscribe
+      // Resubscribe is admin-only - verify admin authentication
+      const supabaseClient = await createClient();
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      
+      if (authError || !user) {
+        console.warn(`[Unsubscribe API] Unauthorized resubscribe attempt for: ${email} from IP: ${clientIp}`);
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized. Admin access required.' },
+          { status: 401 }
+        );
+      }
+      
+      // Check if user is admin
+      const { data: adminCheck, error: adminError } = await supabaseClient
+        .from('admins')
+        .select('*')
+        .eq('user', user.id)
+        .maybeSingle();
+      
+      const isAdmin = adminError?.code !== 'PGRST116' && !!adminCheck;
+      
+      if (!isAdmin) {
+        console.warn(`[Unsubscribe API] Non-admin resubscribe attempt for: ${email} by user: ${user.id} from IP: ${clientIp}`);
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized. Admin access required.' },
+          { status: 403 }
+        );
+      }
+      
+      console.log(`[Unsubscribe API] Admin resubscribe request for: ${email} by admin: ${user.id}`);
+      
       const { data: subscriber, error: fetchError } = await supabase
         .from('subscribers')
         .select('id, email, status')
