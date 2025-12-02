@@ -182,7 +182,18 @@ export async function previewEmail(campaignId: string): Promise<PreviewResponse>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
                 <tr>
                   <td align="center" style="padding: 0; text-align: center; color: ${element.textColor || '#ffffff'};">
-                    <a href="${element.unsubscribeUrl || "/unsubscribe?email={{email}}"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
+                    <a href="${(() => {
+                      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+                      const url = element.unsubscribeUrl && element.unsubscribeUrl.trim() ? element.unsubscribeUrl : `${baseUrl}/unsubscribe?email={{email}}`;
+                      // Ensure URL is absolute
+                      if (url.startsWith('/')) {
+                        return `${baseUrl}${url}`;
+                      }
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        return `${baseUrl}/${url}`;
+                      }
+                      return url;
+                    })()}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.unsubscribeText || "Unsubscribe"}</a>
                     &nbsp;|&nbsp;
                     <a href="${element.privacyUrl || "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: none;">${element.privacyText || "Privacy Policy"}</a>
                     &nbsp;|&nbsp;

@@ -205,11 +205,34 @@ export function generateHtmlFromElements(
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
                 <tr>
                   <td align="center" style="padding: 0 0 24px 0; text-align: center; color: ${element.textColor || '#ffffff'}; font-size: ${footerFontSize};">
-                    <a href="${(element.unsubscribeUrl && element.unsubscribeUrl.trim()) ? element.unsubscribeUrl : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/unsubscribe?email={{email}}`}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.unsubscribeText || "Unsubscribe"}</a>
+                    <a href="${(() => {
+                      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+                      const url = element.unsubscribeUrl && element.unsubscribeUrl.trim() ? element.unsubscribeUrl : `${baseUrl}/unsubscribe?email={{email}}`;
+                      // Ensure URL is absolute
+                      if (url.startsWith('/')) {
+                        return `${baseUrl}${url}`;
+                      }
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        return `${baseUrl}/${url}`;
+                      }
+                      return url;
+                    })()}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.unsubscribeText || "Unsubscribe"}</a>
                     &nbsp;|&nbsp;
-                    <a href="${(element.privacyUrl && element.privacyUrl.trim()) ? element.privacyUrl : "https://cymasphere.com/privacy-policy"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.privacyText || "Privacy Policy"}</a>
+                    <a href="${(() => {
+                      const url = element.privacyUrl && element.privacyUrl.trim() ? element.privacyUrl : "https://cymasphere.com/privacy-policy";
+                      if (url.startsWith('/')) {
+                        return `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}${url}`;
+                      }
+                      return url;
+                    })()}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.privacyText || "Privacy Policy"}</a>
                     &nbsp;|&nbsp;
-                    <a href="${(element.termsUrl && element.termsUrl.trim()) ? element.termsUrl : "https://cymasphere.com/terms-of-service"}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.termsText || "Terms of Service"}</a>
+                    <a href="${(() => {
+                      const url = element.termsUrl && element.termsUrl.trim() ? element.termsUrl : "https://cymasphere.com/terms-of-service";
+                      if (url.startsWith('/')) {
+                        return `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}${url}`;
+                      }
+                      return url;
+                    })()}" style="color: ${element.textColor || '#ffffff'}; text-decoration: underline; font-size: ${footerFontSize}; cursor: pointer;">${element.termsText || "Terms of Service"}</a>
                   </td>
                 </tr>
               </table>
@@ -511,12 +534,36 @@ export function personalizeContent(content: string, subscriber: any): string {
     subscriber.name ||
     "there";
 
-  return content
+  // Encode email for URL usage
+  const encodedEmail = encodeURIComponent(subscriber.email);
+  
+  let personalized = content
     .replace(/\{\{firstName\}\}/g, firstName)
     .replace(/\{\{lastName\}\}/g, lastName)
     .replace(/\{\{fullName\}\}/g, fullName)
+    // Replace both unencoded and URL-encoded versions of {{email}}
     .replace(/\{\{email\}\}/g, subscriber.email)
-    .replace(/\{\{subscription\}\}/g, metadata.subscription || "none")
+    .replace(/%7B%7Bemail%7D%7D/g, encodedEmail)
+    .replace(/\{\{subscription\}\}/g, metadata.subscription || "none");
+  
+  // Also replace {{email}} in href attributes (even if URL-encoded)
+  // This handles cases where the placeholder is in a URL that gets encoded
+  personalized = personalized.replace(
+    /href=["']([^"']*)\{\{email\}\}([^"']*)["']/g,
+    (match, before, after) => {
+      return `href="${before}${encodedEmail}${after}"`;
+    }
+  );
+  
+  // Replace URL-encoded version in href attributes
+  personalized = personalized.replace(
+    /href=["']([^"']*)%7B%7Bemail%7D%7D([^"']*)["']/g,
+    (match, before, after) => {
+      return `href="${before}${encodedEmail}${after}"`;
+    }
+  );
+  
+  return personalized
     .replace(
       /\{\{lifetimePurchase\}\}/g,
       metadata.lifetime_purchase || metadata.lifetimePurchase || "false"

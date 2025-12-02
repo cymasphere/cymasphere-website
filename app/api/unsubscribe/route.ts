@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createSupabaseServiceRole } from '@/utils/supabase/service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +21,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get service role client
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY' },
+        { status: 500 }
+      );
+    }
+
+    let supabase;
+    try {
+      supabase = await createSupabaseServiceRole();
+    } catch (error) {
+      console.error('Error creating Supabase service role client:', error);
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     if (action === 'unsubscribe') {
       // Handle unsubscribe
       const { data: subscriber, error: fetchError } = await supabase
@@ -35,8 +50,9 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching subscriber:', fetchError);
         return NextResponse.json(
-          { success: false, error: 'Failed to fetch subscriber' },
+          { success: false, error: 'Failed to fetch subscriber', details: fetchError.message },
           { status: 500 }
         );
       }
@@ -150,8 +166,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Unsubscribe API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error details:', { errorMessage, errorStack });
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }
