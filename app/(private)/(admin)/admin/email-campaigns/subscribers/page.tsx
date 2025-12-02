@@ -557,7 +557,7 @@ function SubscribersPage() {
       // Only show loading spinner if we don't have any subscribers yet (initial load)
       // Otherwise, just update the data silently
       if (subscribers.length === 0) {
-        setLoading(true);
+      setLoading(true);
       }
       setError(null);
       try {

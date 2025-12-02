@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
-      
+
       console.log(`[Unsubscribe API] Admin resubscribe request for: ${email} by admin: ${user.id}`);
       
       const { data: subscriber, error: fetchError } = await supabase

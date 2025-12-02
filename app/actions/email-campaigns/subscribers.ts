@@ -118,9 +118,9 @@ export async function getSubscribers(
       try {
         // First get all subscribers that match email directly
         const { data: emailMatches, error: emailError } = await supabase
-          .from('subscribers')
-          .select('id')
-          .ilike('email', `%${search}%`);
+        .from('subscribers')
+        .select('id')
+        .ilike('email', `%${search}%`);
 
         if (emailError) {
           console.error('Error searching subscribers by email:', emailError);
@@ -129,8 +129,8 @@ export async function getSubscribers(
         // Get subscribers whose profiles match first/last name or email
         // Profiles table has email synced from auth.users
         const { data: profileMatches, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
+        .from('profiles')
+        .select('id')
           .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
 
         if (profileError) {
@@ -143,8 +143,8 @@ export async function getSubscribers(
         let profileSubscriberMatches = { data: [] };
         if (profileUserIds.length > 0) {
           const { data, error: subscriberError } = await supabase
-            .from('subscribers')
-            .select('id')
+              .from('subscribers')
+              .select('id')
             .in('user_id', profileUserIds);
           
           if (subscriberError) {
@@ -154,20 +154,20 @@ export async function getSubscribers(
           }
         }
 
-        // Combine all matching IDs
-        const allMatchingIds = [
+      // Combine all matching IDs
+      const allMatchingIds = [
           ...(emailMatches?.map((s) => s.id) || []),
-          ...(profileSubscriberMatches.data?.map((s) => s.id) || []),
-        ];
+        ...(profileSubscriberMatches.data?.map((s) => s.id) || []),
+      ];
 
         // Remove duplicates
         const uniqueMatchingIds = [...new Set(allMatchingIds)];
 
         if (uniqueMatchingIds.length > 0) {
           subscribersQuery = subscribersQuery.in('id', uniqueMatchingIds);
-        } else {
-          // No matches found, return empty result
-          subscribersQuery = subscribersQuery.eq('id', 'no-match-placeholder');
+      } else {
+        // No matches found, return empty result
+        subscribersQuery = subscribersQuery.eq('id', 'no-match-placeholder');
         }
       } catch (searchError) {
         console.error('Error in search logic:', searchError);
