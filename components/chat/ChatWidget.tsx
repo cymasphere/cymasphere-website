@@ -124,7 +124,7 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
   position: relative;
   z-index: 9998;
   
-  /* Mobile responsiveness */
+  /* Tablet responsiveness */
   @media (max-width: 768px) {
     width: calc(100vw - 30px);
     height: calc(100vh - 100px);
@@ -133,20 +133,18 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
     margin-bottom: 15px;
   }
   
+  /* Mobile - Full screen overlay */
   @media (max-width: 480px) {
     width: 100vw;
     height: 100vh;
-    max-height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     border-radius: 0;
     margin-bottom: 0;
     position: fixed;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    top: 0;
+    inset: 0;
     display: ${props => props.$isOpen ? 'flex' : 'none'};
     flex-direction: column;
-    align-items: stretch;
+    box-shadow: none;
   }
 `;
 
@@ -158,14 +156,19 @@ const ChatHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  min-height: 56px;
 
   @media (max-width: 768px) {
     padding: 14px 16px;
+    min-height: 54px;
   }
 
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: 14px 16px;
     border-radius: 0;
+    min-height: 56px;
+    position: relative;
+    z-index: 10;
   }
 `;
 
@@ -210,14 +213,15 @@ const MessagesContainer = styled.div`
   }
   
   @media (max-width: 480px) {
-    padding: 12px;
-    gap: 10px;
-    flex: 1 1 0;
+    padding: 16px 12px;
+    gap: 12px;
+    flex: 1;
     min-height: 0;
-    max-height: none;
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
-    /* Messages container takes available space, doesn't shrink */
+    -webkit-overflow-scrolling: touch;
+    /* Ensure proper scrolling on mobile */
+    overscroll-behavior: contain;
   }
 `;
 
@@ -338,12 +342,13 @@ const InputContainer = styled.div`
   
   @media (max-width: 480px) {
     padding: 12px;
-    gap: 6px;
+    gap: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
     background-color: var(--card-bg);
-    /* Input container stays at bottom, moves up naturally when keyboard appears */
+    /* Input stays at bottom, keyboard will push it up naturally */
     position: relative;
+    z-index: 10;
   }
 `;
 
@@ -368,9 +373,12 @@ const MessageInput = styled.input`
   }
   
   @media (max-width: 480px) {
-    padding: 12px 14px;
-    font-size: 16px;
+    padding: 12px 16px;
+    font-size: 16px; /* Prevents iOS zoom */
     min-height: 48px;
+    border-radius: 24px;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   &:focus {
@@ -490,10 +498,18 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     }
   }, [isOpen]);
 
-  // On mobile, when input is focused, don't scroll messages - let input move up naturally
+  // Handle input focus on mobile
   const handleInputFocus = () => {
-    // Don't scroll messages - the input will move up with keyboard
-    // Messages stay in place at the top
+    // On mobile, ensure messages container is scrollable
+    if (typeof window !== 'undefined' && window.innerWidth <= 480) {
+      // Small delay to let keyboard appear
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          // Ensure container can scroll
+          messagesContainerRef.current.style.overflowY = 'scroll';
+        }
+      }, 300);
+    }
   };
 
   // Refocus input after messages update (when assistant responds)
@@ -506,12 +522,12 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     }
   }, [messages, isOpen, isTyping]);
 
-  // Track if mouse is over chat widget
-  const [isHoveringChat, setIsHoveringChat] = useState(false);
-
-  // Prevent body scroll only when hovering over chat
+  // Prevent body scroll on mobile when chat is open
   useEffect(() => {
-    if (isOpen && isHoveringChat) {
+    if (typeof window === 'undefined') return;
+    const isMobile = window.innerWidth <= 480;
+    
+    if (isOpen && isMobile) {
       // Save current scroll position
       const scrollY = window.scrollY;
       // Prevent body scroll
@@ -530,7 +546,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isOpen, isHoveringChat]);
+  }, [isOpen]);
 
   // Initialize audio on first user interaction
   useEffect(() => {
@@ -728,21 +744,6 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     <ChatContainer className={className} $isOpen={isOpen} data-chat-widget="true">
       <ChatWindow 
         $isOpen={isOpen}
-        onMouseEnter={() => setIsHoveringChat(true)}
-        onMouseLeave={() => setIsHoveringChat(false)}
-        onTouchStart={() => setIsHoveringChat(true)}
-        onTouchEnd={() => {
-          // Delay to allow for scrolling within chat
-          setTimeout(() => setIsHoveringChat(false), 100);
-        }}
-        onWheel={(e) => {
-          // Prevent scroll propagation to body when scrolling inside chat
-          e.stopPropagation();
-        }}
-        onTouchMove={(e) => {
-          // Prevent touch scroll propagation to body
-          e.stopPropagation();
-        }}
       >
         <ChatHeader>
           <ChatTitle>
@@ -756,14 +757,6 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         
         <MessagesContainer
           ref={messagesContainerRef}
-          onWheel={(e) => {
-            // Prevent scroll propagation to body
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            // Prevent touch scroll propagation to body
-            e.stopPropagation();
-          }}
         >
           {messages.map((message) => (
             <MessageBubble key={message.id} $isUser={message.isUser}>
