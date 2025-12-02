@@ -972,7 +972,7 @@ function DashboardPage() {
               )}
             </p>
           </CardContent>
-          <Button onClick={() => setShowContactModal(true)}>
+          <Button onClick={() => router.push('/support')}>
             {t("dashboard.main.contactSupport", "Contact Support")}
           </Button>
         </Card>
