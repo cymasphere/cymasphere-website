@@ -2647,7 +2647,7 @@ export default function AdminCRM() {
                                 style={{ display: "inline-block" }}
                               />
                             ) : (
-                              formatCurrency(userData.totalSpent)
+                              formatCurrency(userData.totalSpent * 100)
                             )}
                           </TableCell>
                           <TableCell>
@@ -2869,7 +2869,7 @@ export default function AdminCRM() {
                       {selectedUser.totalSpent === -1 ? (
                         <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                       ) : (
-                        formatCurrency(selectedUser.totalSpent)
+                        formatCurrency(selectedUser.totalSpent * 100)
                       )}
                     </InfoValue>
                   </InfoItem>

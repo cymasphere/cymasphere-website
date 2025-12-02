@@ -717,7 +717,7 @@ export default function UserProfileModal({
                     {user.totalSpent === -1 ? (
                       <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                     ) : (
-                      formatCurrency(user.totalSpent)
+                      formatCurrency(user.totalSpent * 100)
                     )}
                   </InfoValue>
                 </InfoItem>
@@ -1040,7 +1040,7 @@ export default function UserProfileModal({
                           </StripeLink>
                         </DataTableCell>
                         <DataTableCell>{purchase.description}</DataTableCell>
-                        <DataTableCell>{formatCurrency(purchase.amount)}</DataTableCell>
+                        <DataTableCell>{formatCurrency(purchase.amount * 100)}</DataTableCell>
                         <DataTableCell>
                           <StatusBadge $status={purchase.status}>
                             {purchase.status}
@@ -1119,7 +1119,7 @@ export default function UserProfileModal({
                         </DataTableCell>
                         <DataTableCell>{invoice.number || "N/A"}</DataTableCell>
                         <DataTableCell>
-                          {formatCurrency(invoice.amount)}
+                          {formatCurrency(invoice.amount * 100)}
                         </DataTableCell>
                         <DataTableCell>
                           <StatusBadge $status={invoice.status}>
