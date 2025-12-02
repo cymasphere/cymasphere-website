@@ -459,6 +459,121 @@ const CompletionMessage = styled.p`
   margin-bottom: 2rem;
 `;
 
+// Download step styled components (moved outside render function to fix hooks order)
+const DownloadItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(30, 30, 46, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const DownloadHeader = styled.div`
+  background: linear-gradient(
+    135deg,
+    rgba(108, 99, 255, 0.2),
+    rgba(78, 205, 196, 0.2)
+  );
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+`;
+
+const DownloadIcon = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+
+  svg {
+    font-size: 1.8rem;
+    color: var(--primary);
+  }
+`;
+
+const DownloadInfo = styled.div`
+  flex: 1;
+`;
+
+const DownloadName = styled.div`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+`;
+
+const DownloadVersion = styled.div`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+`;
+
+const DownloadDetails = styled.div`
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const DownloadDescription = styled.p`
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
+const DownloadMeta = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+`;
+
+const DownloadSize = styled.span``;
+
+const DownloadDate = styled.span``;
+
+const DownloadButtonStyled = styled.a`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  width: 100%;
+
+  svg {
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+    text-decoration: none;
+    color: white;
+  }
+`;
+
 type OS = "macos" | "windows" | null;
 type InstallationType = "standalone" | "plugin" | null;
 type DAW =
@@ -486,8 +601,8 @@ const getInstructions = (
 
   const instructions: InstructionData[] = [];
 
-  // Virtual MIDI setup (required for both standalone and plugin)
-  if (type === "standalone" || type === "plugin") {
+  // Virtual MIDI setup (required for standalone only, not for plugin versions)
+  if (type === "standalone") {
     if (os === "macos") {
       instructions.push({
         title: "Set Up Virtual MIDI Device (IAC Driver)",
@@ -616,6 +731,63 @@ const getInstructions = (
           "Repeat for other transport controls you want to map",
           "Click the MIDI button again (or press Cmd/Ctrl + M) to exit MIDI Map Mode",
           "Now Cymasphere's transport controls will control Ableton Live's transport!",
+        ],
+      });
+    }
+  } else if (daw === "studioone") {
+    if (type === "standalone") {
+      instructions.push({
+        title: "Configure Studio One for Standalone",
+        steps: [
+          "Create a MIDI track",
+          `Set the MIDI input to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          "Create an instrument track with any virtual instrument",
+          "Arm both tracks for recording",
+          "Cymasphere will send MIDI to Studio One through the virtual MIDI device",
+        ],
+      });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Studio One's transport",
+          `Go to Studio One > ${os === "macos" ? "Preferences" : "Options"} > External Devices`,
+          "Click the 'Add' button to add a new device",
+          "Select 'New Control Surface' or choose your virtual MIDI device from the list",
+          `Set 'Receive From' to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          "Click 'MIDI Learn' button in the device settings",
+          "In Cymasphere, click the transport control you want to map (e.g., Play, Stop, Record)",
+          "Right-click the corresponding control in Studio One and assign the command (e.g., Start, Stop, Record)",
+          "Repeat for other transport controls you want to map",
+          "Click 'OK' to save the device settings",
+          "Now Cymasphere's transport controls will control Studio One's transport!",
+        ],
+      });
+    } else {
+      instructions.push({
+        title: "Set Up Cymasphere Plugin in Studio One",
+        steps: [
+          "Create a new instrument track",
+          "Add Cymasphere as an instrument plugin on this track",
+          "For each instrument you want to use, create a new instrument track with your desired virtual instrument",
+          "On each instrument track, set the MIDI input to the Cymasphere instrument track",
+          "Select the appropriate MIDI channel (1, 2, 3, etc.) for each instrument track",
+          "Record-enable the instrument tracks (not the Cymasphere track)",
+          "Open Cymasphere and press voicing buttons in Palette view—you'll see MIDI flow from Cymasphere → instrument tracks",
+        ],
+      });
+      instructions.push({
+        title: "MIDI Map Transport Controls (Optional but Recommended)",
+        steps: [
+          "This allows you to use Cymasphere's transport control to sync with Studio One's transport",
+          `Go to Studio One > ${os === "macos" ? "Preferences" : "Options"} > External Devices`,
+          "Click the 'Add' button to add a new device",
+          "Select 'New Control Surface'",
+          "In the device settings, click 'MIDI Learn'",
+          "In Cymasphere, click the transport control you want to map (e.g., Play, Stop, Record)",
+          "Right-click the corresponding control in Studio One and assign the command (e.g., Start, Stop, Record)",
+          "Repeat for other transport controls you want to map",
+          "Click 'OK' to save the device settings",
+          "Now Cymasphere's transport controls will control Studio One's transport!",
         ],
       });
     }
@@ -828,120 +1000,6 @@ export default function GettingStartedWizard() {
         );
 
       case 2:
-        const DownloadItem = styled.div`
-          display: flex;
-          flex-direction: column;
-          background-color: rgba(30, 30, 46, 0.5);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          overflow: hidden;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          max-width: 600px;
-          margin: 0 auto 2rem;
-
-          &:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-          }
-        `;
-
-        const DownloadHeader = styled.div`
-          background: linear-gradient(
-            135deg,
-            rgba(108, 99, 255, 0.2),
-            rgba(78, 205, 196, 0.2)
-          );
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-        `;
-
-        const DownloadIcon = styled.div`
-          width: 60px;
-          height: 60px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(5px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 1rem;
-
-          svg {
-            font-size: 1.8rem;
-            color: var(--primary);
-          }
-        `;
-
-        const DownloadInfo = styled.div`
-          flex: 1;
-        `;
-
-        const DownloadName = styled.div`
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: var(--text);
-          margin-bottom: 0.25rem;
-        `;
-
-        const DownloadVersion = styled.div`
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-        `;
-
-        const DownloadDetails = styled.div`
-          padding: 1rem 1.5rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-        `;
-
-        const DownloadDescription = styled.p`
-          color: var(--text-secondary);
-          margin-bottom: 1rem;
-          font-size: 0.95rem;
-          line-height: 1.5;
-        `;
-
-        const DownloadMeta = styled.div`
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1rem;
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-        `;
-
-        const DownloadSize = styled.span``;
-
-        const DownloadDate = styled.span``;
-
-        const DownloadButtonStyled = styled.a`
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, var(--primary), var(--accent));
-          color: white;
-          border: none;
-          border-radius: 6px;
-          padding: 0.75rem 1.5rem;
-          font-size: 0.95rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          text-decoration: none;
-          width: 100%;
-
-          svg {
-            margin-right: 0.5rem;
-          }
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
-            text-decoration: none;
-            color: white;
-          }
-        `;
-
         return (
           <>
             <StepTitle>Download & Install Cymasphere</StepTitle>
@@ -1066,7 +1124,7 @@ export default function GettingStartedWizard() {
                 { id: "protools", name: "Pro Tools", os: "both", comingSoon: true },
                 { id: "cubase", name: "Cubase", os: "both", comingSoon: true },
                 { id: "reaper", name: "Reaper", os: "both", comingSoon: true },
-                { id: "studioone", name: "Studio One", os: "both", comingSoon: true },
+                { id: "studioone", name: "Studio One", os: "both", comingSoon: false },
                 { id: "other", name: "Other", os: "both", comingSoon: true },
               ].map((dawOption) => {
                 const isDisabled =
