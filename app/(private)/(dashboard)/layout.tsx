@@ -785,11 +785,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
+          <Link href="/support" passHref legacyBehavior>
+            <MobileNavItem
+              $active={pathname === "/support" ? "true" : "false"}
+              variants={menuItemVariants}
+              custom={5}
+              initial="hidden"
+              animate="visible"
+              onClick={(e) => handleNavigation(e, "/support")}
+            >
+              <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
+            </MobileNavItem>
+          </Link>
+
           <Link href="/settings" passHref legacyBehavior>
             <MobileNavItem
               $active={pathname === "/settings" ? "true" : "false"}
               variants={menuItemVariants}
-              custom={5}
+              custom={6}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/settings")}
@@ -803,7 +816,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <MobileNavItem
                 $active={pathname.startsWith("/admin") ? "true" : "false"}
                 variants={menuItemVariants}
-                custom={5}
+                custom={7}
                 initial="hidden"
                 animate="visible"
                 onClick={(e) => handleNavigation(e, "/admin")}
@@ -818,7 +831,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
-              custom={6}
+              custom={8}
               initial="hidden"
               animate="visible"
               onClick={(e) => handleNavigation(e, "/")}
