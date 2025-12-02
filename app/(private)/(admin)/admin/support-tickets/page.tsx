@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import NextSEO from "@/components/NextSEO";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
@@ -387,6 +388,13 @@ const TicketId = styled.span`
   font-size: 0.8rem;
   color: var(--text-secondary);
   font-weight: 600;
+`;
+
+const ReplyIcon = styled(FaReply)`
+  font-size: 0.9rem !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.7;
+  flex-shrink: 0;
 `;
 
 const TicketSubject = styled.div`
@@ -1514,6 +1522,7 @@ interface Ticket {
   user_last_name: string | null;
   user_subscription?: string;
   user_has_nfr?: boolean;
+  last_reply_is_admin?: boolean;
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
@@ -1523,6 +1532,8 @@ interface Ticket {
 
 function SupportTicketsPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -1611,6 +1622,24 @@ function SupportTicketsPage() {
       fetchTickets();
     }
   }, [showContent]);
+
+  // Handle ticket query parameter to open ticket modal
+  useEffect(() => {
+    if (showContent) {
+      const ticketId = searchParams.get('ticket');
+      if (ticketId && ticketId !== selectedTicketId) {
+        openTicketModal(ticketId);
+        // Remove query parameter from URL after opening modal
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('ticket');
+        const newUrl = newSearchParams.toString() 
+          ? `${window.location.pathname}?${newSearchParams.toString()}`
+          : window.location.pathname;
+        router.replace(newUrl, { scroll: false });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showContent, searchParams]);
 
   const fetchTickets = async () => {
     setLoadingTickets(true);
@@ -2439,12 +2468,19 @@ function SupportTicketsPage() {
                 <React.Fragment key={ticket.id}>
                   <TableRow data-status-open={openStatusDropdown === ticket.id ? "true" : "false"}>
                   <TableCell>
-                    <TicketId 
-                      onClick={() => openTicketModal(ticket.id)}
-                      style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                    >
-                      {ticket.ticket_number}
-                    </TicketId>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <TicketId 
+                        onClick={() => openTicketModal(ticket.id)}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        {ticket.ticket_number}
+                      </TicketId>
+                      {ticket.last_reply_is_admin && (
+                        <ReplyIcon 
+                          title="Replied to user"
+                        />
+                      )}
+                    </div>
                   </TableCell>
                   <SubjectTableCell>
                     <TicketSubject 
