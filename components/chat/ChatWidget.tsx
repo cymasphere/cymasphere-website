@@ -110,7 +110,7 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
   }
 `;
 
-const ChatWindow = styled.div<{ $isOpen: boolean }>`
+const ChatWindow = styled.div<{ $isOpen: boolean; $height?: string }>`
   width: 420px;
   height: 500px;
   background: var(--card-bg);
@@ -133,18 +133,21 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
     margin-bottom: 15px;
   }
   
-  /* Mobile - Full screen overlay */
+  /* Mobile - Full screen overlay with dynamic height */
   @media (max-width: 480px) {
     width: 100vw;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for mobile */
+    height: ${props => props.$height || '100vh'};
     border-radius: 0;
     margin-bottom: 0;
     position: fixed;
-    inset: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
     display: ${props => props.$isOpen ? 'flex' : 'none'};
     flex-direction: column;
     box-shadow: none;
+    transition: height 0.2s ease-out;
   }
 `;
 
@@ -469,9 +472,11 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [chatHeight, setChatHeight] = useState<string>('100vh');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatWindowRef = useRef<HTMLDivElement>(null);
 
   // Initialize greeting message based on language
   useEffect(() => {
@@ -521,6 +526,61 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       }, 100);
     }
   }, [messages, isOpen, isTyping]);
+
+  // Track keyboard height and adjust chat window height on mobile
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth > 480) {
+      setChatHeight('100vh');
+      return;
+    }
+
+    if (!isOpen) {
+      setChatHeight('100vh');
+      return;
+    }
+
+    const updateChatHeight = () => {
+      if (window.visualViewport) {
+        // Use visual viewport height (excludes keyboard)
+        const viewportHeight = window.visualViewport.height;
+        setChatHeight(`${viewportHeight}px`);
+        
+        // Also update the chat window directly for immediate effect
+        if (chatWindowRef.current) {
+          chatWindowRef.current.style.height = `${viewportHeight}px`;
+        }
+      } else {
+        // Fallback for browsers without visual viewport API
+        const windowHeight = window.innerHeight;
+        setChatHeight(`${windowHeight}px`);
+        
+        if (chatWindowRef.current) {
+          chatWindowRef.current.style.height = `${windowHeight}px`;
+        }
+      }
+    };
+
+    // Initial height
+    updateChatHeight();
+
+    // Listen for viewport changes (keyboard show/hide)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateChatHeight);
+      window.visualViewport.addEventListener('scroll', updateChatHeight);
+    } else {
+      // Fallback: listen to window resize
+      window.addEventListener('resize', updateChatHeight);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateChatHeight);
+        window.visualViewport.removeEventListener('scroll', updateChatHeight);
+      } else {
+        window.removeEventListener('resize', updateChatHeight);
+      }
+    };
+  }, [isOpen]);
 
   // Prevent body scroll on mobile when chat is open
   useEffect(() => {
@@ -743,7 +803,9 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   return (
     <ChatContainer className={className} $isOpen={isOpen} data-chat-widget="true">
       <ChatWindow 
+        ref={chatWindowRef}
         $isOpen={isOpen}
+        $height={chatHeight}
       >
         <ChatHeader>
           <ChatTitle>
