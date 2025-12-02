@@ -1079,26 +1079,45 @@ function SupportPage() {
                       </div>
                     ) : (
                       <>
-                        <ConversationHeader style={{ padding: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                        <ConversationHeader style={{ padding: '0 1rem 1rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
                           <div style={{ 
                             display: 'grid', 
                             gridTemplateColumns: 'auto 1fr auto auto',
                             gap: '1rem',
-                            alignItems: 'center',
                             width: '100%'
                           }}>
-                            <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
-                              {ticket.ticket_number}
-                            </TicketId>
-                            <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
-                              {ticket.subject}
-                            </TicketSubject>
-                            <StatusBadge $status={ticket.status}>
-                              {getStatusIcon(ticket.status)}
-                              {t(`dashboard.support.filters.${ticket.status}`, ticket.status)}
-                            </StatusBadge>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                              {formatDate(ticket.created_at)}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("dashboard.support.ticketTable.id", "Ticket ID")}
+                              </div>
+                              <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
+                                {ticket.ticket_number}
+                              </TicketId>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("dashboard.support.ticketTable.subject", "Subject")}
+                              </div>
+                              <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
+                                {ticket.subject}
+                              </TicketSubject>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("dashboard.support.ticketTable.status", "Status")}
+                              </div>
+                              <StatusBadge $status={ticket.status}>
+                                {getStatusIcon(ticket.status)}
+                                {t(`dashboard.support.filters.${ticket.status}`, ticket.status)}
+                              </StatusBadge>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("dashboard.support.ticketTable.created", "Created")}
+                              </div>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                {formatDate(ticket.created_at)}
+                              </div>
                             </div>
                           </div>
                         </ConversationHeader>

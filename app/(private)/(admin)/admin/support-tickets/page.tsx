@@ -2820,60 +2820,89 @@ function SupportTicketsPage() {
                       </div>
                     ) : (
                       <>
-                        <ConversationHeader style={{ padding: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                        <ConversationHeader style={{ padding: '0 1rem 1rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
                           <div style={{ 
                             display: 'grid', 
                             gridTemplateColumns: 'auto 1fr auto auto auto auto',
                             gap: '1rem',
-                            alignItems: 'center',
                             width: '100%'
                           }}>
-                            <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
-                              {ticket.ticket_number}
-                            </TicketId>
-                            <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
-                              {ticket.subject}
-                            </TicketSubject>
-                            <div 
-                              onClick={(e) => {
-                                if (ticket.user_id) {
-                                  e.stopPropagation();
-                                  handleViewUser(ticket.user_id, e);
-                                }
-                              }}
-                              style={{ 
-                                color: 'var(--text-secondary)', 
-                                fontSize: '0.9rem',
-                                cursor: ticket.user_id ? 'pointer' : 'default',
-                                textDecoration: ticket.user_id ? 'underline' : 'none'
-                              }}
-                            >
-                              {ticket.user_email || "Unknown"}
-                              {(ticket.user_first_name || ticket.user_last_name) && (
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85em' }}>
-                                  {' '}({[ticket.user_first_name, ticket.user_last_name].filter(Boolean).join(' ')})
-                                </span>
-                              )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.id", "Ticket ID")}
+                              </div>
+                              <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
+                                {ticket.ticket_number}
+                              </TicketId>
                             </div>
-                            <SubscriptionBadge
-                              $color={getSubscriptionBadgeColor(
-                                ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
-                              )}
-                              $variant={
-                                ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
-                                  ? "premium"
-                                  : "default"
-                              }
-                            >
-                              {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
-                              {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
-                            </SubscriptionBadge>
-                            <StatusBadge $status={ticket.status}>
-                              {getStatusIcon(ticket.status)}
-                              {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
-                            </StatusBadge>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                              {formatDate(ticket.created_at)}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.subject", "Subject")}
+                              </div>
+                              <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
+                                {ticket.subject}
+                              </TicketSubject>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.user", "User")}
+                              </div>
+                              <div 
+                                onClick={(e) => {
+                                  if (ticket.user_id) {
+                                    e.stopPropagation();
+                                    handleViewUser(ticket.user_id, e);
+                                  }
+                                }}
+                                style={{ 
+                                  color: 'var(--text-secondary)', 
+                                  fontSize: '0.9rem',
+                                  cursor: ticket.user_id ? 'pointer' : 'default',
+                                  textDecoration: ticket.user_id ? 'underline' : 'none'
+                                }}
+                              >
+                                {ticket.user_email || "Unknown"}
+                                {(ticket.user_first_name || ticket.user_last_name) && (
+                                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85em' }}>
+                                    {' '}({[ticket.user_first_name, ticket.user_last_name].filter(Boolean).join(' ')})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.subscription", "Subscription")}
+                              </div>
+                              <SubscriptionBadge
+                                $color={getSubscriptionBadgeColor(
+                                  ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
+                                )}
+                                $variant={
+                                  ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
+                                    ? "premium"
+                                    : "default"
+                                }
+                              >
+                                {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
+                                {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
+                              </SubscriptionBadge>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.status", "Status")}
+                              </div>
+                              <StatusBadge $status={ticket.status}>
+                                {getStatusIcon(ticket.status)}
+                                {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                              </StatusBadge>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t("admin.supportTickets.ticketTable.created", "Created")}
+                              </div>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                {formatDate(ticket.created_at)}
+                              </div>
                             </div>
                           </div>
                         </ConversationHeader>
