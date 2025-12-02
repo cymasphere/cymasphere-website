@@ -78,13 +78,20 @@ export default function UnsubscribePage() {
       });
 
       const data = await response.json();
+      console.log('[Unsubscribe Page] API Response:', data);
       setResponse(data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to unsubscribe');
+        const errorMsg = data.error || 'Failed to unsubscribe';
+        const details = data.details ? ` (${data.details})` : '';
+        const fullError = `${errorMsg}${details}`;
+        console.error('[Unsubscribe Page] API Error:', { status: response.status, data });
+        throw new Error(fullError);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      console.error('[Unsubscribe Page] Error:', err);
     } finally {
       setLoading(false);
     }
@@ -109,10 +116,13 @@ export default function UnsubscribePage() {
       setResponse(data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to resubscribe');
+        const errorMsg = data.error || 'Failed to resubscribe';
+        const details = data.details ? ` (${data.details})` : '';
+        throw new Error(`${errorMsg}${details}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('[Unsubscribe Page] Error:', err);
     } finally {
       setLoading(false);
     }
@@ -229,7 +239,10 @@ export default function UnsubscribePage() {
               marginBottom: '24px'
             }}>
               <div style={{ fontSize: '24px', marginBottom: '16px' }}>❌</div>
-              <div style={{ fontSize: '16px', color: '#ff5e62' }}>{error}</div>
+              <div style={{ fontSize: '16px', color: '#ff5e62', marginBottom: '8px' }}>{error}</div>
+              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginTop: '8px' }}>
+                Check the browser console and server logs for more details.
+              </div>
             </div>
           )}
 
@@ -263,7 +276,7 @@ export default function UnsubscribePage() {
 
           {/* Action Buttons */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            {response?.success && response.status === 'INACTIVE' ? (
+            {response?.success && response.status === 'unsubscribed' ? (
               <button
                 onClick={handleResubscribe}
                 disabled={loading}
@@ -345,7 +358,7 @@ export default function UnsubscribePage() {
               </li>
               <li style={{ marginBottom: '8px', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '0', color: '#4ecdc4' }}>•</span>
-                Your email will be marked as INACTIVE in our system
+                Your email will be marked as unsubscribed in our system
               </li>
               <li style={{ marginBottom: '8px', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '0', color: '#4ecdc4' }}>•</span>

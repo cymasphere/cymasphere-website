@@ -22,9 +22,11 @@ import {
   FaTimes,
   FaCog,
   FaHistory,
-  FaSave
+  FaSave,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -536,8 +538,114 @@ const BulkButton = styled.button.withConfig({
   `}
 `;
 
+// Confirmation Modal Styled Components
+const ModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  backdrop-filter: blur(8px);
+`;
+
+const ModalContent = styled(motion.div)`
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+`;
+
+const ModalTitle = styled.h3`
+  color: var(--text);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  svg {
+    color: #28a745;
+    font-size: 1.25rem;
+  }
+`;
+
+const ModalMessage = styled.p`
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const ModalButton = styled.button<{ variant?: 'primary' | 'danger' | 'secondary' }>`
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  ${props => {
+    if (props.variant === 'primary') {
+      return `
+        background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+        color: white;
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+        }
+      `;
+    } else if (props.variant === 'danger') {
+      return `
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        &:hover {
+          background-color: rgba(220, 53, 69, 0.2);
+        }
+      `;
+    } else {
+      return `
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+      `;
+    }
+  }}
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+`;
+
 function SubscriberDetailPage() {
   const { user } = useAuth();
+  const { success, error: showError } = useToast();
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -548,6 +656,8 @@ function SubscriberDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [showResubscribeModal, setShowResubscribeModal] = useState(false);
+  const [isResubscribing, setIsResubscribing] = useState(false);
   
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
@@ -771,10 +881,68 @@ function SubscriberDetailPage() {
         setLoading(false);
       }
       setEditMode(false);
+      success('Subscriber updated successfully!', 3000);
     } catch (err) {
       console.error('Error saving subscriber:', err);
-      alert('Failed to save changes. Please try again.');
+      showError('Failed to save changes. Please try again.', 4000);
     }
+  };
+
+  const handleResubscribe = () => {
+    if (!subscriber?.email) {
+      showError('Subscriber email not found', 3000);
+      return;
+    }
+    setShowResubscribeModal(true);
+  };
+
+  const handleResubscribeConfirm = async () => {
+    if (!subscriber?.email) {
+      return;
+    }
+
+    try {
+      setIsResubscribing(true);
+      const response = await fetch('/api/unsubscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: subscriber.email,
+          action: 'resubscribe'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to resubscribe');
+      }
+
+      // Refresh subscriber data
+      const subscriberData = await getSubscriber(subscriberId);
+      setSubscriber(subscriberData.subscriber);
+      setFormData({
+        name: subscriberData.subscriber.name,
+        email: subscriberData.subscriber.email,
+        status: subscriberData.subscriber.status,
+        location: subscriberData.subscriber.location || "Unknown",
+        engagement: subscriberData.subscriber.engagement || "Medium"
+      });
+
+      setShowResubscribeModal(false);
+      success('Subscriber successfully resubscribed!', 3000);
+    } catch (err) {
+      console.error('Error resubscribing subscriber:', err);
+      showError(`Failed to resubscribe: ${err instanceof Error ? err.message : 'Unknown error'}`, 4000);
+    } finally {
+      setIsResubscribing(false);
+    }
+  };
+
+  const handleResubscribeCancel = () => {
+    setShowResubscribeModal(false);
   };
 
   const handleDelete = () => {
@@ -895,6 +1063,16 @@ function SubscriberDetailPage() {
               </>
             ) : (
               <>
+                {subscriber?.status === 'unsubscribed' && (
+                  <ActionButton 
+                    variant="primary" 
+                    onClick={handleResubscribe}
+                    disabled={loading}
+                  >
+                    <FaCheck />
+                    Resubscribe
+                  </ActionButton>
+                )}
                 <ActionButton variant="danger" onClick={handleDelete}>
                   <FaTrash />
                   Delete
@@ -1097,6 +1275,51 @@ function SubscriberDetailPage() {
           </Section>
         </ContentGrid>
       </SubscriberContainer>
+
+      {/* Resubscribe Confirmation Modal */}
+      <AnimatePresence>
+        {showResubscribeModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleResubscribeCancel}
+          >
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalTitle>
+                <FaCheck />
+                Resubscribe Subscriber
+              </ModalTitle>
+              <ModalMessage>
+                Are you sure you want to resubscribe <strong>{subscriber?.email}</strong>? 
+                This will change their status from "unsubscribed" to "active" and they will 
+                start receiving emails again.
+              </ModalMessage>
+              <ModalActions>
+                <ModalButton 
+                  onClick={handleResubscribeCancel}
+                  disabled={isResubscribing}
+                >
+                  Cancel
+                </ModalButton>
+                <ModalButton 
+                  variant="primary" 
+                  onClick={handleResubscribeConfirm}
+                  disabled={isResubscribing}
+                >
+                  <FaCheck />
+                  {isResubscribing ? 'Resubscribing...' : 'Yes, Resubscribe'}
+                </ModalButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
     </>
   );
 }

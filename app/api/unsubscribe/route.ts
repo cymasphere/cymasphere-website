@@ -23,9 +23,10 @@ export async function POST(request: NextRequest) {
 
     // Get service role client
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+      console.error('[Unsubscribe API] SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+      console.error('[Unsubscribe API] Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', '));
       return NextResponse.json(
-        { success: false, error: 'Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY' },
+        { success: false, error: 'Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY. Please restart your dev server.' },
         { status: 500 }
       );
     }
@@ -34,9 +35,11 @@ export async function POST(request: NextRequest) {
     try {
       supabase = await createSupabaseServiceRole();
     } catch (error) {
-      console.error('Error creating Supabase service role client:', error);
+      console.error('[Unsubscribe API] Error creating Supabase service role client:', error);
+      const errorDetails = error instanceof Error ? error.message : String(error);
+      console.error('[Unsubscribe API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return NextResponse.json(
-        { success: false, error: 'Server configuration error' },
+        { success: false, error: 'Server configuration error', details: errorDetails },
         { status: 500 }
       );
     }
@@ -58,21 +61,21 @@ export async function POST(request: NextRequest) {
       }
 
       if (!subscriber) {
-        // Create a new inactive subscriber record
+        // Create a new unsubscribed subscriber record
         const { error: insertError } = await supabase
           .from('subscribers')
           .insert({
             email: email.toLowerCase(),
-            status: 'INACTIVE',
+            status: 'unsubscribed',
             unsubscribe_date: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
 
         if (insertError) {
-          console.error('Error creating inactive subscriber:', insertError);
+          console.error('Error creating unsubscribed subscriber:', insertError);
           return NextResponse.json(
-            { success: false, error: 'Failed to unsubscribe' },
+            { success: false, error: 'Failed to unsubscribe', details: insertError.message },
             { status: 500 }
           );
         }
@@ -81,7 +84,7 @@ export async function POST(request: NextRequest) {
           success: true,
           message: 'Successfully unsubscribed from emails',
           email: email.toLowerCase(),
-          status: 'INACTIVE'
+          status: 'unsubscribed'
         });
       }
 
@@ -89,16 +92,16 @@ export async function POST(request: NextRequest) {
       const { error: updateError } = await supabase
         .from('subscribers')
         .update({
-          status: 'INACTIVE',
+          status: 'unsubscribed',
           unsubscribe_date: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', subscriber.id);
 
       if (updateError) {
-        console.error('Error updating subscriber:', updateError);
+        console.error('[Unsubscribe API] Error updating subscriber:', updateError);
         return NextResponse.json(
-          { success: false, error: 'Failed to unsubscribe' },
+          { success: false, error: 'Failed to unsubscribe', details: updateError.message },
           { status: 500 }
         );
       }
@@ -107,7 +110,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Successfully unsubscribed from emails',
         email: email.toLowerCase(),
-        status: 'INACTIVE'
+        status: 'unsubscribed'
       });
 
     } else if (action === 'resubscribe') {
@@ -136,16 +139,16 @@ export async function POST(request: NextRequest) {
       const { error: updateError } = await supabase
         .from('subscribers')
         .update({
-          status: 'ACTIVE',
+          status: 'active',
           unsubscribe_date: null,
           updated_at: new Date().toISOString()
         })
         .eq('id', subscriber.id);
 
       if (updateError) {
-        console.error('Error updating subscriber:', updateError);
+        console.error('[Unsubscribe API] Error updating subscriber:', updateError);
         return NextResponse.json(
-          { success: false, error: 'Failed to resubscribe' },
+          { success: false, error: 'Failed to resubscribe', details: updateError.message },
           { status: 500 }
         );
       }
@@ -154,7 +157,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Successfully resubscribed to emails',
         email: email.toLowerCase(),
-        status: 'ACTIVE'
+        status: 'active'
       });
 
     } else {
@@ -165,12 +168,20 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Unsubscribe API error:', error);
+    console.error('[Unsubscribe API] Unhandled error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('Error details:', { errorMessage, errorStack });
+    console.error('[Unsubscribe API] Error details:', { errorMessage, errorStack });
+    
+    // Return more detailed error in development
+    const isDevelopment = process.env.NODE_ENV === 'development';
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: errorMessage },
+      { 
+        success: false, 
+        error: 'Internal server error', 
+        details: isDevelopment ? errorMessage : undefined,
+        ...(isDevelopment && errorStack ? { stack: errorStack } : {})
+      },
       { status: 500 }
     );
   }

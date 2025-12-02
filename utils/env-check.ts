@@ -26,15 +26,25 @@ export const checkEnvironmentVariables = () => {
 };
 
 export const logEnvironmentStatus = () => {
+  const isServer = typeof window === 'undefined';
   console.log('Environment check:');
   console.log('- NODE_ENV:', process.env.NODE_ENV);
   console.log('- NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL ? 'SET' : 'MISSING');
   console.log('- NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING');
   console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'MISSING');
-  console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING');
+  // Server-only variables - will show MISSING on client (this is expected)
+  if (isServer) {
+    console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING');
+    console.log('- STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'MISSING');
+    console.log('- AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'SET' : 'MISSING');
+    console.log('- AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? 'SET' : 'MISSING');
+    console.log('- AWS_REGION:', process.env.AWS_REGION ? 'SET' : 'MISSING');
+  } else {
+    console.log('- SUPABASE_SERVICE_ROLE_KEY: N/A (server-only)');
+    console.log('- STRIPE_SECRET_KEY: N/A (server-only)');
+    console.log('- AWS_ACCESS_KEY_ID: N/A (server-only)');
+    console.log('- AWS_SECRET_ACCESS_KEY: N/A (server-only)');
+    console.log('- AWS_REGION: N/A (server-only)');
+  }
   console.log('- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'MISSING');
-  console.log('- STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'MISSING');
-  console.log('- AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'SET' : 'MISSING');
-  console.log('- AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? 'SET' : 'MISSING');
-  console.log('- AWS_REGION:', process.env.AWS_REGION ? 'SET' : 'MISSING');
 };
