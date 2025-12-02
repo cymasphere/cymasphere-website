@@ -1674,6 +1674,7 @@ export async function getCustomerSubscriptions(
   try {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
+      status: "all", // Include all subscriptions including cancelled ones
       expand: ["data.items.data.price"],
     });
 

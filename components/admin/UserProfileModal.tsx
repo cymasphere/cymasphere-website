@@ -10,6 +10,7 @@ import {
   FaUserShield,
   FaBan,
   FaUndo,
+  FaSyncAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
@@ -22,6 +23,7 @@ import {
 import {
   getCustomerSubscriptions,
 } from "@/utils/stripe/actions";
+import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -334,6 +336,48 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const RefreshButton = styled.button`
+  background: rgba(108, 99, 255, 0.2) !important;
+  border: 2px solid rgba(108, 99, 255, 0.6) !important;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #6c63ff !important;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  min-width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  margin-left: 8px;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  &:hover:not(:disabled) {
+    background: rgba(108, 99, 255, 0.35) !important;
+    border-color: rgba(108, 99, 255, 0.8) !important;
+    transform: rotate(180deg);
+  }
+
+  &:active:not(:disabled) {
+    transform: rotate(180deg) scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: #6c63ff !important;
+    display: block !important;
+  }
+`;
+
 interface UserProfileModalProps {
   user: UserData | null;
   isOpen: boolean;
@@ -343,6 +387,7 @@ interface UserProfileModalProps {
   onChangePlan?: (subscriptionId: string, newPlan: "monthly" | "annual", customerId: string) => Promise<void>;
   onRefundPurchase?: (purchaseId: string, amount: number, description: string) => Promise<void>;
   onRefundInvoice?: (invoiceId: string, amount: number, description: string) => Promise<void>;
+  onRefreshUser?: () => Promise<void> | void;
   subscriptionLoading?: string | null;
   refundLoading?: string | null;
   refundSuccess?: string | null;
@@ -364,6 +409,7 @@ export default function UserProfileModal({
   onChangePlan,
   onRefundPurchase,
   onRefundInvoice,
+  onRefreshUser,
   subscriptionLoading,
   refundLoading,
   refundSuccess,
@@ -416,6 +462,8 @@ export default function UserProfileModal({
 }: UserProfileModalProps) {
   const [userSubscriptions, setUserSubscriptions] = useState<any[]>([]);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<string | null>(null);
   const [userPurchases, setUserPurchases] = useState<Array<{
     id: string;
     amount: number;
@@ -518,6 +566,41 @@ export default function UserProfileModal({
     }
   }, []);
 
+  const handleRefreshSubscription = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setRefreshingSubscription(true);
+      setSubscriptionRefreshMessage(null);
+      
+      const result = await checkUserSubscription(user.id);
+      
+      if (result) {
+        setSubscriptionRefreshMessage(
+          `Subscription updated: ${result.subscription} (${result.source})`
+        );
+        
+        // Call onRefreshUser if provided to refresh the user data in parent
+        if (onRefreshUser) {
+          await onRefreshUser();
+        }
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setSubscriptionRefreshMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Error refreshing subscription:", error);
+      setSubscriptionRefreshMessage("Failed to refresh subscription");
+      setTimeout(() => {
+        setSubscriptionRefreshMessage(null);
+      }, 3000);
+    } finally {
+      setRefreshingSubscription(false);
+    }
+  }, [user?.id, onRefreshUser]);
+
   useEffect(() => {
     if (isOpen && user) {
       // Reset all data when modal opens with a new user
@@ -582,19 +665,38 @@ export default function UserProfileModal({
                 <InfoItem>
                   <InfoLabel>Subscription</InfoLabel>
                   <InfoValue>
-                    <SubscriptionBadge
-                      $color={getSubscriptionBadgeColor(
-                        user.hasNfr ? "nfr" : user.subscription
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+                      <SubscriptionBadge
+                        $color={getSubscriptionBadgeColor(
+                          user.hasNfr ? "nfr" : user.subscription
+                        )}
+                        $variant={
+                          user.hasNfr || isSubscriptionPremium(user.subscription)
+                            ? "premium"
+                            : "default"
+                        }
+                      >
+                        {user.hasNfr ? <FaCrown /> : getSubscriptionIcon(user.subscription)}
+                        {user.hasNfr ? "NFR" : user.subscription}
+                      </SubscriptionBadge>
+                      <RefreshButton
+                        onClick={handleRefreshSubscription}
+                        disabled={refreshingSubscription}
+                        title="Refresh subscription status"
+                        type="button"
+                      >
+                        {refreshingSubscription ? (
+                          <LoadingSpinner />
+                        ) : (
+                          <FaSyncAlt style={{ display: 'block' }} />
+                        )}
+                      </RefreshButton>
+                      {subscriptionRefreshMessage && (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', marginLeft: '8px' }}>
+                          {subscriptionRefreshMessage}
+                        </span>
                       )}
-                      $variant={
-                        user.hasNfr || isSubscriptionPremium(user.subscription)
-                          ? "premium"
-                          : "default"
-                      }
-                    >
-                      {user.hasNfr ? <FaCrown /> : getSubscriptionIcon(user.subscription)}
-                      {user.hasNfr ? "NFR" : user.subscription}
-                    </SubscriptionBadge>
+                    </div>
                   </InfoValue>
                 </InfoItem>
                 <InfoItem>
@@ -696,7 +798,13 @@ export default function UserProfileModal({
                                 wordBreak: "break-all",
                               }}
                             >
-                              {sub.id}
+                              <StripeLink
+                                href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {sub.id}
+                              </StripeLink>
                             </DataTableCell>
                             <DataTableCell>
                               <StatusBadge $status={sub.status}>

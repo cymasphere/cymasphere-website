@@ -28,6 +28,7 @@ import {
   FaUndo,
   FaCheck,
   FaExclamationTriangle,
+  FaSyncAlt,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -41,6 +42,7 @@ import {
   getUserSupportTicketCountsAdmin,
   getCustomerPurchasesAdmin,
   getCustomerInvoicesAdmin,
+  getUserByIdAdmin,
 } from "@/app/actions/user-management";
 import type { UserData } from "@/utils/stripe/admin-analytics";
 import {
@@ -54,6 +56,7 @@ import {
 } from "@/utils/stripe/actions";
 import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 import { updateUserProfileFromStripe } from "@/app/actions/user-management";
+import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
 
 const Container = styled.div`
   width: 100%;
@@ -1110,6 +1113,46 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const RefreshButton = styled.button`
+  background: rgba(108, 99, 255, 0.2) !important;
+  border: 2px solid rgba(108, 99, 255, 0.6) !important;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #6c63ff !important;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  min-width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  margin-left: 8px;
+
+  &:hover:not(:disabled) {
+    background: rgba(108, 99, 255, 0.3) !important;
+    border-color: rgba(108, 99, 255, 0.8) !important;
+    transform: rotate(180deg);
+  }
+
+  &:active:not(:disabled) {
+    transform: rotate(180deg) scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: #6c63ff;
+    display: block;
+  }
+`;
+
 // Confirmation Modal Components
 const ConfirmationModalOverlay = styled(motion.div)`
   position: fixed;
@@ -1339,6 +1382,10 @@ export default function AdminCRM() {
     userName: string;
     userEmail: string;
   } | null>(null);
+
+  // Subscription refresh state
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<string | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -1670,14 +1717,40 @@ export default function AdminCRM() {
   };
 
   const handleViewUser = async (user: UserData) => {
+    // Set initial user data immediately for quick display
     setSelectedUser(user);
     setShowUserModal(true);
 
+    // Fetch all data
+    let purchases: Array<{
+      id: string;
+      amount: number;
+      status: string;
+      createdAt: string;
+      description: string;
+      metadata?: Record<string, string>;
+    }> = [];
+    let invoices: Array<{
+      id: string;
+      number: string | null;
+      amount: number;
+      status: string;
+      createdAt: string;
+      paidAt: string | null;
+      dueDate: string | null;
+    }> = [];
+
     // Fetch real subscription data if user has a customer ID
     if (user.customerId) {
-      await fetchUserSubscriptions(user.customerId);
-      await fetchUserPurchases(user.customerId);
-      await fetchUserInvoices(user.customerId);
+      await Promise.all([
+        fetchUserSubscriptions(user.customerId),
+        fetchUserPurchases(user.customerId).then((p) => {
+          purchases = p;
+        }),
+        fetchUserInvoices(user.customerId).then((i) => {
+          invoices = i;
+        }),
+      ]);
     } else {
       setUserSubscriptions([]);
       setUserPurchases([]);
@@ -1686,6 +1759,37 @@ export default function AdminCRM() {
 
     // Fetch support tickets for the user
     await fetchUserSupportTickets(user.id);
+
+    // Recalculate totalSpent from the fetched purchases and invoices
+    // This ensures we have the most accurate data after all async operations complete
+    // and avoids race conditions by using the same data that's displayed in the modal
+    if (user.customerId) {
+      // Calculate from purchases (only standalone one-time payments, not subscription payments)
+      // Purchases linked to invoices are subscription payments and are already counted in invoices
+      const purchasesTotal = purchases
+        .filter((p) => 
+          p.status === "succeeded" && 
+          p.description !== "Subscription payment"
+        )
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      // Calculate from invoices (all paid invoices, including subscription payments)
+      const invoicesTotal = invoices
+        .filter((inv) => inv.status === "paid")
+        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+      // Amounts are already in dollars (converted in the fetch functions)
+      const totalSpent = purchasesTotal + invoicesTotal;
+
+      // Update selectedUser with recalculated totalSpent
+      setSelectedUser((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          totalSpent: totalSpent > 0 ? totalSpent : prev.totalSpent,
+        };
+      });
+    }
   };
 
   const fetchUserSubscriptions = async (customerId: string) => {
@@ -1734,12 +1838,15 @@ export default function AdminCRM() {
       if (result.error) {
         console.error("Error fetching purchases:", result.error);
         setUserPurchases([]);
+        return [];
       } else {
         setUserPurchases(result.purchases);
+        return result.purchases;
       }
     } catch (error) {
       console.error("Error fetching purchases:", error);
       setUserPurchases([]);
+      return [];
     } finally {
       setLoadingPurchases(false);
     }
@@ -1753,12 +1860,15 @@ export default function AdminCRM() {
       if (result.error) {
         console.error("Error fetching invoices:", result.error);
         setUserInvoices([]);
+        return [];
       } else {
         setUserInvoices(result.invoices);
+        return result.invoices;
       }
     } catch (error) {
       console.error("Error fetching invoices:", error);
       setUserInvoices([]);
+      return [];
     } finally {
       setLoadingInvoices(false);
     }
@@ -2165,6 +2275,49 @@ export default function AdminCRM() {
   const clearSubscriptionMessages = () => {
     setSubscriptionSuccess(null);
     setSubscriptionError(null);
+  };
+
+  const handleRefreshSubscription = async () => {
+    if (!selectedUser?.id) return;
+    
+    try {
+      setRefreshingSubscription(true);
+      setSubscriptionRefreshMessage(null);
+      
+      const result = await checkUserSubscription(selectedUser.id);
+      
+      setSubscriptionRefreshMessage(
+        `Subscription updated: ${result.subscription} (${result.source})`
+      );
+      
+      // Refresh user data
+      await fetchUsers();
+      
+      // Update selected user if modal is still open
+      const updatedUsersResult = await getAllUsersForCRMAdmin(
+        currentPage,
+        usersPerPage,
+        debouncedSearchTerm,
+        subscriptionFilter,
+        sortField,
+        sortDirection
+      );
+      if (updatedUsersResult && updatedUsersResult.users) {
+        const updatedUser = updatedUsersResult.users.find(u => u.id === selectedUser.id);
+        if (updatedUser) {
+          setSelectedUser(updatedUser);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing subscription:", error);
+      setSubscriptionRefreshMessage("Error: Failed to refresh subscription");
+    } finally {
+      setRefreshingSubscription(false);
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setSubscriptionRefreshMessage(null);
+      }, 3000);
+    }
   };
 
   // Auto-dismiss refund notifications
@@ -2663,19 +2816,38 @@ export default function AdminCRM() {
                   <InfoItem>
                     <InfoLabel>Subscription</InfoLabel>
                     <InfoValue>
-                      <SubscriptionBadge
-                        $color={getSubscriptionBadgeColor(
-                          selectedUser.hasNfr ? "nfr" : selectedUser.subscription
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+                        <SubscriptionBadge
+                          $color={getSubscriptionBadgeColor(
+                            selectedUser.hasNfr ? "nfr" : selectedUser.subscription
+                          )}
+                          $variant={
+                            selectedUser.hasNfr || isSubscriptionPremium(selectedUser.subscription)
+                              ? "premium"
+                              : "default"
+                          }
+                        >
+                          {selectedUser.hasNfr ? <FaCrown /> : getSubscriptionIcon(selectedUser.subscription)}
+                          {selectedUser.hasNfr ? "NFR" : selectedUser.subscription}
+                        </SubscriptionBadge>
+                        <RefreshButton
+                          onClick={handleRefreshSubscription}
+                          disabled={refreshingSubscription}
+                          title="Refresh subscription status"
+                          type="button"
+                        >
+                          {refreshingSubscription ? (
+                            <LoadingSpinner />
+                          ) : (
+                            <FaSyncAlt style={{ display: 'block' }} />
+                          )}
+                        </RefreshButton>
+                        {subscriptionRefreshMessage && (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--success)', marginLeft: '8px' }}>
+                            {subscriptionRefreshMessage}
+                          </span>
                         )}
-                        $variant={
-                          selectedUser.hasNfr || isSubscriptionPremium(selectedUser.subscription)
-                            ? "premium"
-                            : "default"
-                        }
-                      >
-                        {selectedUser.hasNfr ? <FaCrown /> : getSubscriptionIcon(selectedUser.subscription)}
-                        {selectedUser.hasNfr ? "NFR" : selectedUser.subscription}
-                      </SubscriptionBadge>
+                      </div>
                     </InfoValue>
                   </InfoItem>
                   <InfoItem>
@@ -2775,7 +2947,13 @@ export default function AdminCRM() {
                                   wordBreak: "break-all",
                                 }}
                               >
-                                {sub.id}
+                                <StripeLink
+                                  href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {sub.id}
+                                </StripeLink>
                               </DataTableCell>
                               <DataTableCell>
                                 <StatusBadge $status={sub.status}>
