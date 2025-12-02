@@ -63,9 +63,10 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   }
   
   @media (max-width: 480px) {
-    bottom: 10px;
-    right: 10px;
+    bottom: 15px;
+    right: 15px;
     left: auto;
+    align-items: flex-end;
   }
 `;
 
@@ -88,6 +89,7 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
   z-index: 9999;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  flex-shrink: 0;
 
   &:hover {
     transform: ${props => props.$isOpen ? 'scale(0.85)' : 'scale(1.1)'};
@@ -104,6 +106,7 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
     width: 52px;
     height: 52px;
     font-size: 20px;
+    position: relative;
   }
 `;
 
@@ -136,11 +139,11 @@ const ChatWindow = styled.div<{ $isOpen: boolean }>`
     max-height: 100vh;
     border-radius: 0;
     margin-bottom: 0;
+    position: fixed;
     bottom: 0;
     right: 0;
     left: 0;
     top: 0;
-    position: fixed;
   }
 `;
 
