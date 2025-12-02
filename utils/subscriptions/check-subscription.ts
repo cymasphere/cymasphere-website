@@ -92,6 +92,17 @@ export async function checkUserSubscription(
     if (stripeResult.success && stripeResult.subscription !== "none") {
       stripeSubscription = stripeResult.subscription;
       stripeExpiration = stripeResult.subscription_expiration || null;
+    } else if (profile.subscription === "lifetime") {
+      // CRITICAL: If profile already has "lifetime" (set by webhook) but Stripe query didn't find it,
+      // preserve the lifetime status. This prevents downgrading users when stripe_tables schema
+      // hasn't synced yet or metadata is missing. Only downgrade if Stripe explicitly says they don't have it.
+      // If stripeResult.success is false, it means there was an error querying, so we should preserve lifetime.
+      // If stripeResult.subscription is "none" but profile has "lifetime", preserve it as a safety measure.
+      if (!stripeResult.success || stripeResult.subscription === "none") {
+        console.log(`[checkUserSubscription] Preserving lifetime subscription for user ${userId} - Stripe query didn't find it but profile has it`);
+        stripeSubscription = "lifetime";
+        stripeExpiration = null;
+      }
     }
   }
 
@@ -140,9 +151,18 @@ export async function checkUserSubscription(
       source = "stripe";
     }
   } else {
-    finalSubscription = "none";
-    finalExpiration = null;
-    source = "none";
+    // CRITICAL: Before setting to "none", check if profile already has "lifetime"
+    // This is a final safety net to prevent downgrading lifetime users
+    if (profile.subscription === "lifetime") {
+      console.log(`[checkUserSubscription] Final safety check: Preserving lifetime for user ${userId} - profile has lifetime but all queries returned none`);
+      finalSubscription = "lifetime";
+      finalExpiration = null;
+      source = "stripe"; // Assume Stripe source if we're preserving it
+    } else {
+      finalSubscription = "none";
+      finalExpiration = null;
+      source = "none";
+    }
   }
 
   // Update profile with final subscription status (NFR already updated above and returned early)

@@ -329,6 +329,20 @@ export async function POST(request: NextRequest) {
               }
             }
 
+            // Update user profile to lifetime subscription
+            if (isLifetimePurchase) {
+              await supabase
+                .from("profiles")
+                .update({
+                  subscription: "lifetime",
+                  subscription_expiration: null, // Lifetime subscriptions don't expire
+                  subscription_source: "stripe",
+                })
+                .eq("id", profile.id);
+              
+              console.log(`✅ Updated profile ${profile.id} to lifetime subscription`);
+            }
+
             // Track purchase to Meta CAPI
             await trackMetaConversionFromWebhook(
               'Purchase', // Meta event for one-time purchase
