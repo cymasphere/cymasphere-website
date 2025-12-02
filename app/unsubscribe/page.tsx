@@ -310,28 +310,28 @@ export default function UnsubscribePage() {
                 You may still receive important account-related emails
               </li>
             </ul>
-          </div>
+        </div>
 
-          {/* Footer */}
-          <div style={{ 
+        {/* Footer */}
+        <div style={{ 
             marginTop: '40px',
             paddingTop: '30px',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            textAlign: 'center'
-          }}>
+          textAlign: 'center'
+        }}>
             <Link 
-              href="/" 
-              style={{ 
-                color: '#6c63ff', 
-                textDecoration: 'none',
+            href="/" 
+            style={{ 
+              color: '#6c63ff', 
+              textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: '500',
                 transition: 'color 0.2s'
-              }}
+            }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#4ecdc4'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#6c63ff'}
-            >
-              ← Return to Cymasphere
+          >
+            ← Return to Cymasphere
             </Link>
           </div>
         </div>
