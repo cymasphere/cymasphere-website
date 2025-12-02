@@ -1536,6 +1536,24 @@ async function sendSupportTicketEmailNotification(
       return;
     }
 
+    // Get attachments for all messages
+    const messageIds = messages?.map(m => m.id) || [];
+    const { data: attachments, error: attachmentsError } = await supabase
+      .from("support_attachments")
+      .select("*")
+      .in("message_id", messageIds);
+
+    if (attachmentsError) {
+      console.error("Error fetching attachments for email:", attachmentsError);
+    } else {
+      console.log(`[Email] Fetched ${attachments?.length || 0} attachments for ${messageIds.length} messages`);
+      if (attachments && attachments.length > 0) {
+        attachments.forEach(att => {
+          console.log(`[Email] Attachment: ${att.file_name}, type: ${att.attachment_type}, storage_path: ${att.storage_path}`);
+        });
+      }
+    }
+
     // Get user emails for all messages
     const userIds = [...new Set(messages?.map(m => m.user_id) || [])];
     const userEmailsMap = new Map<string, string | null>();
@@ -1550,33 +1568,97 @@ async function sendSupportTicketEmailNotification(
       }
     }
 
-    // Build message chain HTML
-    const messageChainHtml = messages?.map((msg, index) => {
-      const senderEmail = userEmailsMap.get(msg.user_id) || "Unknown";
-      const isAdmin = msg.is_admin;
-      const senderName = isAdmin ? "Support Team" : (userName || senderEmail);
-      const messageDate = new Date(msg.created_at).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      });
+    // Helper function to download and convert image to base64
+    const getImageBase64 = async (storagePath: string, fileType: string): Promise<string | null> => {
+      try {
+        const bucketName = 'support-attachments';
+        
+        // Remove bucket prefix if present in storage_path
+        let downloadPath = storagePath;
+        if (storagePath.startsWith('support-attachments/')) {
+          downloadPath = storagePath.replace('support-attachments/', '');
+        }
+        
+        console.log(`[Email] Downloading image from path: ${downloadPath}`);
+        
+        const { data, error } = await serviceSupabase.storage
+          .from(bucketName)
+          .download(downloadPath);
+        
+        if (error || !data) {
+          console.error(`Error downloading image ${downloadPath}:`, error);
+          return null;
+        }
 
-      return `
-        <div style="margin-bottom: 20px; padding: 15px; background-color: ${isAdmin ? '#f0f7ff' : '#f9f9f9'}; border-left: 3px solid ${isAdmin ? '#4a90e2' : '#ccc'}; border-radius: 4px;">
-          <div style="font-weight: 600; color: #333; margin-bottom: 8px;">
-            ${senderName} ${isAdmin ? '<span style="color: #4a90e2; font-size: 0.85em;">(Support)</span>' : ''}
+        const arrayBuffer = await data.arrayBuffer();
+        // Convert ArrayBuffer to base64 using Buffer (available in Node.js)
+        const buffer = Buffer.from(arrayBuffer);
+        const base64 = buffer.toString('base64');
+        const contentType = fileType || 'image/png';
+        const dataUri = `data:${contentType};base64,${base64}`;
+        
+        console.log(`[Email] Successfully converted image to base64 (${base64.length} chars)`);
+        return dataUri;
+      } catch (error) {
+        console.error(`Error converting image to base64 ${storagePath}:`, error);
+        return null;
+      }
+    };
+
+    // Build message chain HTML with embedded images
+    const messageChainHtml = await Promise.all(
+      (messages || []).map(async (msg, index) => {
+        const senderEmail = userEmailsMap.get(msg.user_id) || "Unknown";
+        const isAdmin = msg.is_admin;
+        const senderName = isAdmin ? "Support Team" : (userName || senderEmail);
+        const messageDate = new Date(msg.created_at).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        });
+
+        // Get attachments for this message
+        const messageAttachments = (attachments || []).filter(att => att.message_id === msg.id);
+        
+        // Build image HTML for embedded images
+        let imagesHtml = '';
+        for (const att of messageAttachments) {
+          if (att.attachment_type === 'image' && att.storage_path) {
+            console.log(`[Email] Processing image attachment: ${att.file_name}, storage_path: ${att.storage_path}`);
+            const base64Image = await getImageBase64(att.storage_path, att.file_type || 'image/png');
+            if (base64Image) {
+              imagesHtml += `
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <img src="${base64Image}" alt="${att.file_name}" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block;" />
+                </div>
+              `;
+              console.log(`[Email] Successfully embedded image: ${att.file_name}`);
+            } else {
+              console.error(`[Email] Failed to embed image: ${att.file_name}`);
+            }
+          }
+        }
+
+        return `
+          <div style="margin-bottom: 20px; padding: 15px; background-color: ${isAdmin ? '#f0f7ff' : '#f9f9f9'}; border-left: 3px solid ${isAdmin ? '#4a90e2' : '#ccc'}; border-radius: 4px;">
+            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">
+              ${senderName} ${isAdmin ? '<span style="color: #4a90e2; font-size: 0.85em;">(Support)</span>' : ''}
+            </div>
+            <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+              ${messageDate}
+            </div>
+            <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">
+              ${msg.content.replace(/\n/g, '<br>')}
+            </div>
+            ${imagesHtml}
           </div>
-          <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
-            ${messageDate}
-          </div>
-          <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">
-            ${msg.content.replace(/\n/g, '<br>')}
-          </div>
-        </div>
-      `;
-    }).join('') || '';
+        `;
+      })
+    );
+    
+    const messageChainHtmlString = messageChainHtml.join('');
 
     // Generate ticket view URL - always use production URL for emails
     const baseUrl = 'https://www.cymasphere.com';
@@ -1622,7 +1704,7 @@ async function sendSupportTicketEmailNotification(
                                 <h2 style="font-size: 1.1rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
                                     Conversation History
                                 </h2>
-                                ${messageChainHtml}
+                                ${messageChainHtmlString}
                             </div>
                             
                             <!-- CTA Button -->

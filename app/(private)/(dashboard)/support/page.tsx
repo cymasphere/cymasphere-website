@@ -60,12 +60,9 @@ const {
   TableBody,
   TableRow,
   TableCell,
-  ExpandButton,
   TicketId,
   TicketSubject,
   StatusBadge,
-  ExpandableRow,
-  ExpandableCell,
   ConversationContainer,
   ConversationHeader,
   ConversationTitle,
@@ -136,6 +133,70 @@ const SubjectHeaderCell = styled(TableHeaderCell)`
   max-width: 400px;
 `;
 
+const SecurityWarning = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 193, 7, 0.9);
+  line-height: 1.4;
+  width: 100%;
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+`;
+
+const JumpToCurrentButton = styled.button<{ $visible: boolean }>`
+  display: ${props => props.$visible ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 100;
+  pointer-events: ${props => props.$visible ? 'auto' : 'none'};
+  opacity: ${props => props.$visible ? 1 : 0};
+
+  &:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+const MessageInputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
 interface TicketMessage {
   id: string;
   content: string;
@@ -178,10 +239,117 @@ function SupportPage() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [isScrolledUp, setIsScrolledUp] = useState<Map<string, boolean>>(new Map());
+  const messagesContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Handle scroll to detect if user is scrolled up
+  const handleScroll = useCallback((ticketId: string, element: HTMLDivElement) => {
+    if (!element || !ticketId) return;
+    const threshold = 50; // Show button if more than 50px from bottom
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
+    
+    // Only show button if container is actually scrollable
+    if (scrollHeight <= clientHeight) {
+      setIsScrolledUp(prev => {
+        const currentValue = prev.get(ticketId);
+        if (currentValue === false) return prev; // No change needed
+        const newMap = new Map(prev);
+        newMap.set(ticketId, false);
+        return newMap;
+      });
+      return;
+    }
+    
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const isNearBottom = distanceFromBottom < threshold;
+    const shouldShow = !isNearBottom;
+    
+    setIsScrolledUp(prev => {
+      const currentValue = prev.get(ticketId);
+      if (currentValue === shouldShow) return prev; // No change needed
+      const newMap = new Map(prev);
+      newMap.set(ticketId, shouldShow);
+      return newMap;
+    });
+  }, []);
+
+  // Scroll to bottom of messages
+  const scrollToBottom = useCallback((ticketId: string) => {
+    const container = messagesContainerRefs.current.get(ticketId);
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Set ref callback for messages container
+  const setMessagesContainerRef = useCallback((ticketId: string, element: HTMLDivElement | null) => {
+    if (!ticketId) return;
+    
+    const previousElement = messagesContainerRefs.current.get(ticketId);
+    
+    // If element hasn't changed, don't do anything
+    if (previousElement === element) {
+      return;
+    }
+    
+    // Clean up previous listener if element changed
+    if (previousElement) {
+      const oldHandler = (previousElement as any)._scrollHandler;
+      if (oldHandler) {
+        previousElement.removeEventListener('scroll', oldHandler);
+      }
+    }
+    
+    if (element && ticketId) {
+      messagesContainerRefs.current.set(ticketId, element);
+      // Add scroll listener
+      const scrollHandler = () => {
+        if (ticketId && element && messagesContainerRefs.current.get(ticketId) === element) {
+          handleScroll(ticketId, element);
+        }
+      };
+      element.addEventListener('scroll', scrollHandler, { passive: true });
+      
+      // Store handler for cleanup
+      (element as any)._scrollHandler = scrollHandler;
+      
+      // Check initial scroll position after a short delay to ensure content is rendered
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (ticketId && element && messagesContainerRefs.current.get(ticketId) === element) {
+            handleScroll(ticketId, element);
+          }
+        }, 100);
+      });
+    } else if (element === null && previousElement) {
+      // Only clean up if we had a previous element and now it's null (unmounting)
+      messagesContainerRefs.current.delete(ticketId);
+      // Don't delete the scroll state - preserve it in case the element is recreated
+    }
+  }, [handleScroll]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      messagesContainerRefs.current.forEach((element, ticketId) => {
+        if ((element as any)._scrollHandler) {
+          element.removeEventListener('scroll', (element as any)._scrollHandler);
+        }
+      });
+      messagesContainerRefs.current.clear();
+    };
+  }, []);
+
   const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
   const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
   const [pendingAttachments, setPendingAttachments] = useState<{[key: string]: File[]}>({});
+  const [showSecurityWarning, setShowSecurityWarning] = useState<{[key: string]: boolean}>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createTicketForm, setCreateTicketForm] = useState({
     subject: "",
@@ -200,6 +368,20 @@ function SupportPage() {
   const { isLoading: languageLoading } = useLanguage();
   const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
   const searchParams = useSearchParams();
+
+  // Check scroll position when ticket details change
+  useEffect(() => {
+    ticketDetails.forEach((ticket, ticketId) => {
+      if (ticket.messages && ticket.messages.length > 0) {
+        setTimeout(() => {
+          const container = messagesContainerRefs.current.get(ticketId);
+          if (container) {
+            handleScroll(ticketId, container);
+          }
+        }, 300);
+      }
+    });
+  }, [ticketDetails, handleScroll]);
 
   useEffect(() => {
     if (!languageLoading) {
@@ -221,23 +403,16 @@ function SupportPage() {
   useEffect(() => {
     if (showContent && tickets.length > 0) {
       const ticketIdFromUrl = searchParams.get('ticket');
-      if (ticketIdFromUrl && !expandedRows.has(ticketIdFromUrl)) {
+      if (ticketIdFromUrl && selectedTicketId !== ticketIdFromUrl) {
         // Find the ticket in the list
         const ticket = tickets.find(t => t.id === ticketIdFromUrl);
         if (ticket) {
-          // Expand the ticket
-          setExpandedRows(prev => new Set(prev).add(ticketIdFromUrl));
+          // Open the ticket modal
+          openTicketModal(ticketIdFromUrl);
           // Fetch ticket details if not already loaded
           if (!ticketDetails.has(ticketIdFromUrl)) {
             fetchTicketDetails(ticketIdFromUrl, true);
           }
-          // Scroll to the ticket (after a short delay to allow rendering)
-          setTimeout(() => {
-            const element = document.querySelector(`[data-ticket-id="${ticketIdFromUrl}"]`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 500);
         }
       }
     }
@@ -277,6 +452,14 @@ function SupportPage() {
       const result = await getUserSupportTicket(ticketId);
       if (result.ticket) {
         setTicketDetails(prev => new Map(prev).set(ticketId, result.ticket!));
+        
+        // Check scroll position after messages are loaded
+        setTimeout(() => {
+          const container = messagesContainerRefs.current.get(ticketId);
+          if (container) {
+            handleScroll(ticketId, container);
+          }
+        }, 200);
       }
     } catch (error) {
       console.error("Error fetching ticket details:", error);
@@ -291,19 +474,28 @@ function SupportPage() {
 
   // Fetch ticket details when a row is expanded
   useEffect(() => {
-    const ticketsToFetch: string[] = [];
-    expandedRows.forEach(ticketId => {
-      if (!ticketDetails.has(ticketId) && !loadingDetails.has(ticketId)) {
-        ticketsToFetch.push(ticketId);
-      }
-    });
-    
-    // Fetch all tickets that need to be loaded
-    ticketsToFetch.forEach(ticketId => {
-      fetchTicketDetails(ticketId, false);
-    });
+    // Fetch ticket details if a ticket is selected
+    if (selectedTicketId && !ticketDetails.has(selectedTicketId) && !loadingDetails.has(selectedTicketId)) {
+      fetchTicketDetails(selectedTicketId, false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expandedRows]);
+  }, [selectedTicketId]);
+
+  // Re-evaluate scroll position when ticket details change
+  useEffect(() => {
+    if (selectedTicketId) {
+      const container = messagesContainerRefs.current.get(selectedTicketId);
+      if (container) {
+        // Use requestAnimationFrame to avoid rapid updates
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            handleScroll(selectedTicketId, container);
+          }, 100);
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketDetails, selectedTicketId]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,9 +612,12 @@ function SupportPage() {
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedTickets.length / itemsPerPage);
+  // When a ticket is expanded, show only that ticket at the top
+  const ticketsToDisplay = sortedTickets;
+
+  const totalPages = Math.ceil(ticketsToDisplay.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTickets = sortedTickets.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedTickets = ticketsToDisplay.slice(startIndex, startIndex + itemsPerPage);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -438,16 +633,32 @@ function SupportPage() {
     });
   };
 
-  const toggleRowExpansion = (ticketId: string) => {
-    setExpandedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(ticketId)) {
-        next.delete(ticketId);
-      } else {
-        next.add(ticketId);
+  const openTicketModal = (ticketId: string) => {
+    setSelectedTicketId(ticketId);
+    // Load ticket details if not already loaded
+    if (!ticketDetails.has(ticketId)) {
+      fetchTicketDetails(ticketId, false);
+    }
+  };
+
+  const closeTicketModal = () => {
+    // Clean up refs and scroll state when closing modal
+    if (selectedTicketId) {
+      const container = messagesContainerRefs.current.get(selectedTicketId);
+      if (container) {
+        const oldHandler = (container as any)._scrollHandler;
+        if (oldHandler) {
+          container.removeEventListener('scroll', oldHandler);
+        }
       }
-      return next;
-    });
+      messagesContainerRefs.current.delete(selectedTicketId);
+      setIsScrolledUp(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(selectedTicketId);
+        return newMap;
+      });
+    }
+    setSelectedTicketId(null);
   };
 
   const handleSendMessage = async (ticketId: string) => {
@@ -461,26 +672,56 @@ function SupportPage() {
     // If no message content but there are attachments, add a default message
     const finalMessage = messageContent || "Sent an attachment";
 
+    // Set uploading state
+    setUploadingFiles(prev => ({ ...prev, [ticketId]: true }));
+
     try {
+      // Validate file sizes before attempting upload
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const oversizedFiles = attachments.filter(file => file.size > maxSize);
+      if (oversizedFiles.length > 0) {
+        alert(`One or more files exceed the 10MB size limit. Please reduce file size and try again.`);
+        setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
+        return;
+      }
+
       // Create the message first
       const result = await addSupportTicketMessage(ticketId, finalMessage);
       if (!result.success || !result.messageId) {
         alert(result.error || "Failed to send message");
+        setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
         return;
       }
 
       // Upload attachments if any
       if (attachments.length > 0) {
+        const uploadErrors: string[] = [];
         for (const file of attachments) {
-          const uploadResult = await uploadSupportTicketAttachment(
-            ticketId,
-            result.messageId,
-            file
-          );
-          if (!uploadResult.success) {
-            console.error("Error uploading attachment:", uploadResult.error);
-            // Continue with other attachments even if one fails
+          try {
+            const uploadResult = await uploadSupportTicketAttachment(
+              ticketId,
+              result.messageId,
+              file
+            );
+            if (!uploadResult.success) {
+              uploadErrors.push(`${file.name}: ${uploadResult.error || 'Upload failed'}`);
+              console.error("Error uploading attachment:", uploadResult.error);
+            }
+          } catch (uploadError) {
+            const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
+            uploadErrors.push(`${file.name}: ${errorMessage}`);
+            console.error("Error uploading attachment:", uploadError);
           }
+        }
+        
+        if (uploadErrors.length > 0 && uploadErrors.length === attachments.length) {
+          // All uploads failed
+          alert(`Failed to upload attachments:\n${uploadErrors.join('\n')}`);
+          setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
+          return;
+        } else if (uploadErrors.length > 0) {
+          // Some uploads failed
+          alert(`Some attachments failed to upload:\n${uploadErrors.join('\n')}`);
         }
       }
 
@@ -495,6 +736,11 @@ function SupportPage() {
         delete next[ticketId];
         return next;
       });
+
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        scrollToBottom(ticketId);
+      }, 100);
       
       // Clear file input
       if (fileInputRefs.current[ticketId]) {
@@ -507,7 +753,18 @@ function SupportPage() {
       await fetchTickets();
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("An error occurred while sending the message");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Provide more specific error messages
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('network')) {
+        alert("Network error: Please check your connection and try again. If the file is large, it may take longer to upload.");
+      } else if (errorMessage.includes('body') || errorMessage.includes('size')) {
+        alert("File too large: Please ensure each file is under 10MB.");
+      } else {
+        alert(`An error occurred while sending the message: ${errorMessage}`);
+      }
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
     }
   };
 
@@ -615,18 +872,23 @@ function SupportPage() {
                 <React.Fragment key={ticket.id}>
                   <TableRow data-ticket-id={ticket.id}>
                     <TableCell>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
-                          {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
-                        </ExpandButton>
-                        <TicketId>{ticket.ticket_number}</TicketId>
-                      </div>
+                      <TicketId 
+                        onClick={() => openTicketModal(ticket.id)}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        {ticket.ticket_number}
+                      </TicketId>
                     </TableCell>
                     <SubjectTableCell>
-                      <TicketSubject>{ticket.subject}</TicketSubject>
+                      <TicketSubject 
+                        onClick={() => openTicketModal(ticket.id)}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        {ticket.subject}
+                      </TicketSubject>
                     </SubjectTableCell>
                     <TableCell>
-                      <StatusBadge status={ticket.status}>
+                      <StatusBadge $status={ticket.status}>
                         {getStatusIcon(ticket.status)}
                         {t(`dashboard.support.filters.${ticket.status}`, ticket.status)}
                       </StatusBadge>
@@ -635,217 +897,13 @@ function SupportPage() {
                     <TableCell>
                       <ActionButton 
                         variant="secondary" 
-                        onClick={() => toggleRowExpansion(ticket.id)}
+                        onClick={() => openTicketModal(ticket.id)}
                       >
                         <FaEye />
-                        {expandedRows.has(ticket.id) 
-                          ? t("dashboard.support.hideTicket", "Hide")
-                          : t("dashboard.support.viewTicket", "View")}
+                        {t("dashboard.support.viewTicket", "View")}
                       </ActionButton>
                     </TableCell>
                   </TableRow>
-
-                  <AnimatePresence>
-                    {expandedRows.has(ticket.id) && (
-                      <ExpandableRow
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                      >
-                        <ExpandableCell colSpan={5}>
-                          <ConversationContainer
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1, duration: 0.3 }}
-                          >
-                            {loadingDetails.has(ticket.id) ? (
-                              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                  style={{ 
-                                    width: '20px', 
-                                    height: '20px', 
-                                    border: '3px solid rgba(108, 99, 255, 0.3)', 
-                                    borderTop: '3px solid var(--primary)', 
-                                    borderRadius: '50%',
-                                    margin: '0 auto 1rem'
-                                  }}
-                                />
-                                Loading conversation...
-                              </div>
-                            ) : (
-                              <>
-                                <ConversationHeader>
-                                  <ConversationTitle>
-                                    Conversation: {ticket.subject}
-                                  </ConversationTitle>
-                                  <ConversationMeta>
-                                    <span>Messages: {ticketDetails.get(ticket.id)?.messages?.length || 0}</span>
-                                    <span>Last updated: {formatDate(ticket.updated_at)}</span>
-                                  </ConversationMeta>
-                                </ConversationHeader>
-
-                                <MessagesContainer>
-                                  {ticketDetails.get(ticket.id)?.messages?.map((message) => {
-                                    const isCurrentUser = message.user_id === user?.id;
-                                    return (
-                                    <Message key={message.id} $isAdmin={isCurrentUser}>
-                                      <MessageAvatar $isAdmin={isCurrentUser}>
-                                        {isCurrentUser ? <FaUser /> : <FaUserTie />}
-                                      </MessageAvatar>
-                                      <div style={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: isCurrentUser ? 'flex-end' : 'flex-start'
-                                      }}>
-                                        <MessageBubble $isAdmin={isCurrentUser}>
-                                          <MessageContent>{message.content}</MessageContent>
-                                          <MessageTime>
-                                            {message.is_admin ? "Support Team" : (message.user_email || "You")} • {formatDateTime(message.created_at)}
-                                            {message.edited_at && ` (edited ${formatDateTime(message.edited_at)})`}
-                                          </MessageTime>
-                                        </MessageBubble>
-                                        {message.attachments?.map((att) => (
-                                          <MessageAttachment key={att.id}>
-                                            {att.attachment_type === 'image' && att.url ? (
-                                              <>
-                                                <ImagePreview 
-                                                  src={att.url} 
-                                                  alt={att.file_name}
-                                                  onClick={() => window.open(att.url || '', '_blank')}
-                                                />
-                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                              </>
-                                            ) : att.attachment_type === 'video' && att.url ? (
-                                              <>
-                                                <VideoPreview controls>
-                                                  <source src={att.url} type={att.file_type || 'video/mp4'} />
-                                                  Your browser does not support the video tag.
-                                                </VideoPreview>
-                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                              </>
-                                            ) : (
-                                              <AttachmentContainer>
-                                                <AttachmentIcon>
-                                                  <FaFile />
-                                                </AttachmentIcon>
-                                                <AttachmentInfo>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                                {att.url && (
-                                                  <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
-                                                    View
-                                                  </AttachmentLink>
-                                                )}
-                                              </AttachmentContainer>
-                                            )}
-                                          </MessageAttachment>
-                                        ))}
-                                      </div>
-                                    </Message>
-                                    );
-                                  })}
-                                  {(!ticketDetails.get(ticket.id)?.messages || ticketDetails.get(ticket.id)!.messages.length === 0) && (
-                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                      No messages yet. Start the conversation below.
-                                    </div>
-                                  )}
-                                </MessagesContainer>
-                              </>
-                            )}
-
-                            <MessageInput>
-                              {pendingAttachments[ticket.id] && pendingAttachments[ticket.id].length > 0 && (
-                                <div style={{ 
-                                  marginBottom: '0.5rem', 
-                                  padding: '0.5rem', 
-                                  background: 'rgba(255, 255, 255, 0.05)', 
-                                  borderRadius: '8px',
-                                  fontSize: '0.85rem',
-                                  color: 'var(--text-secondary)',
-                                  width: '100%'
-                                }}>
-                                  {pendingAttachments[ticket.id].map((file, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                      <FaFile />
-                                      <span>{file.name}</span>
-                                      <button
-                                        onClick={() => {
-                                          setPendingAttachments(prev => ({
-                                            ...prev,
-                                            [ticket.id]: prev[ticket.id]?.filter((_, i) => i !== idx) || []
-                                          }));
-                                        }}
-                                        style={{
-                                          background: 'none',
-                                          border: 'none',
-                                          color: 'var(--text-secondary)',
-                                          cursor: 'pointer',
-                                          padding: '0.25rem',
-                                          marginLeft: 'auto'
-                                        }}
-                                      >
-                                        <FaTimes />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              <MessageTextArea
-                                placeholder={t("dashboard.support.conversation.placeholder", "Type your message...")}
-                                value={newMessages[ticket.id] || ''}
-                                onChange={(e) => setNewMessages(prev => ({
-                                  ...prev,
-                                  [ticket.id]: e.target.value
-                                }))}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage(ticket.id);
-                                  }
-                                }}
-                                rows={1}
-                              />
-                              <MessageActions>
-                                <AttachButton
-                                  onClick={() => fileInputRefs.current[ticket.id]?.click()}
-                                  disabled={uploadingFiles[ticket.id]}
-                                >
-                                  <FaPaperclip />
-                                </AttachButton>
-                                <SendButton
-                                  onClick={() => handleSendMessage(ticket.id)}
-                                  disabled={(!newMessages[ticket.id]?.trim() && (!pendingAttachments[ticket.id] || pendingAttachments[ticket.id].length === 0)) || uploadingFiles[ticket.id]}
-                                >
-                                  <FaPaperPlane />
-                                </SendButton>
-                              </MessageActions>
-                              <FileInput
-                                ref={(el) => {
-                                  if (el) {
-                                    fileInputRefs.current[ticket.id] = el;
-                                  }
-                                }}
-                                type="file"
-                                multiple
-                                accept="image/*,video/*"
-                                onChange={(e) => handleFileUpload(ticket.id, e.target.files)}
-                              />
-                            </MessageInput>
-                          </ConversationContainer>
-                        </ExpandableCell>
-                      </ExpandableRow>
-                    )}
-                  </AnimatePresence>
                 </React.Fragment>
               ))}
             </TableBody>
@@ -967,6 +1025,286 @@ function SupportPage() {
               </CreateTicketModal>
             </ModalOverlay>
           )}
+        </AnimatePresence>
+
+        {/* Ticket Conversation Modal */}
+        <AnimatePresence>
+          {selectedTicketId && (() => {
+            const ticket = tickets.find(t => t.id === selectedTicketId);
+            if (!ticket) return null;
+            
+            return (
+              <ModalOverlay
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) closeTicketModal();
+                }}
+              >
+                <CreateTicketModal
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  transition={{ type: "spring", damping: 20 }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ maxWidth: '1400px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}
+                >
+                  <ModalHeader>
+                    <ModalTitle>
+                      <FaTicketAlt />
+                      {ticket.subject}
+                    </ModalTitle>
+                    <CloseButton onClick={closeTicketModal}>
+                      <FaTimes />
+                    </CloseButton>
+                  </ModalHeader>
+
+                  <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {loadingDetails.has(selectedTicketId) ? (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          style={{ 
+                            width: '20px', 
+                            height: '20px', 
+                            border: '3px solid rgba(108, 99, 255, 0.3)', 
+                            borderTop: '3px solid var(--primary)', 
+                            borderRadius: '50%',
+                            margin: '0 auto 1rem'
+                          }}
+                        />
+                        Loading conversation...
+                      </div>
+                    ) : (
+                      <>
+                        <ConversationHeader style={{ padding: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                          <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'auto 1fr auto auto',
+                            gap: '1rem',
+                            alignItems: 'center',
+                            width: '100%'
+                          }}>
+                            <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
+                              {ticket.ticket_number}
+                            </TicketId>
+                            <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
+                              {ticket.subject}
+                            </TicketSubject>
+                            <StatusBadge $status={ticket.status}>
+                              {getStatusIcon(ticket.status)}
+                              {t(`dashboard.support.filters.${ticket.status}`, ticket.status)}
+                            </StatusBadge>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                              {formatDate(ticket.created_at)}
+                            </div>
+                          </div>
+                        </ConversationHeader>
+
+                        <div
+                          ref={(el) => {
+                            if (selectedTicketId) {
+                              setMessagesContainerRef(selectedTicketId, el);
+                            }
+                          }}
+                          style={{ 
+                            flex: '1 1 auto',
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            padding: '1rem',
+                            minHeight: 0,
+                            height: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                          }}
+                        >
+                          {ticketDetails.get(selectedTicketId)?.messages?.map((message) => {
+                            const isCurrentUser = message.user_id === user?.id;
+                            return (
+                            <Message key={message.id} $isAdmin={isCurrentUser}>
+                              <MessageAvatar $isAdmin={isCurrentUser}>
+                                {isCurrentUser ? <FaUser /> : <FaUserTie />}
+                              </MessageAvatar>
+                              <div style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: isCurrentUser ? 'flex-end' : 'flex-start'
+                              }}>
+                                <MessageBubble $isAdmin={isCurrentUser}>
+                                  <MessageContent>{message.content}</MessageContent>
+                                  <MessageTime>
+                                    {message.is_admin ? "Support Team" : (message.user_email || "You")} • {formatDateTime(message.created_at)}
+                                    {message.edited_at && ` (edited ${formatDateTime(message.edited_at)})`}
+                                  </MessageTime>
+                                </MessageBubble>
+                                {message.attachments?.map((att) => (
+                                  <MessageAttachment key={att.id}>
+                                    {att.attachment_type === 'image' && att.url ? (
+                                      <>
+                                        <ImagePreview 
+                                          src={att.url} 
+                                          alt={att.file_name}
+                                          onClick={() => window.open(att.url || '', '_blank')}
+                                        />
+                                        <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                      </>
+                                    ) : att.attachment_type === 'video' && att.url ? (
+                                      <>
+                                        <VideoPreview controls>
+                                          <source src={att.url} type={att.file_type || 'video/mp4'} />
+                                          Your browser does not support the video tag.
+                                        </VideoPreview>
+                                        <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                      </>
+                                    ) : (
+                                      <AttachmentContainer>
+                                        <AttachmentIcon>
+                                          <FaFile />
+                                        </AttachmentIcon>
+                                        <AttachmentInfo>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                        {att.url && (
+                                          <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
+                                            View
+                                          </AttachmentLink>
+                                        )}
+                                      </AttachmentContainer>
+                                    )}
+                                  </MessageAttachment>
+                                ))}
+                              </div>
+                            </Message>
+                            );
+                          })}
+                          {(!ticketDetails.get(selectedTicketId)?.messages || ticketDetails.get(selectedTicketId)!.messages.length === 0) && (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                              No messages yet. Start the conversation below.
+                            </div>
+                          )}
+                        </div>
+
+                        <MessageInputWrapper style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                          {ticketDetails.get(selectedTicketId)?.messages && ticketDetails.get(selectedTicketId)!.messages!.length > 0 && (
+                            <JumpToCurrentButton
+                              $visible={isScrolledUp.get(selectedTicketId) || false}
+                              onClick={() => scrollToBottom(selectedTicketId)}
+                              type="button"
+                            >
+                              <FaChevronDown />
+                              See Recent
+                            </JumpToCurrentButton>
+                          )}
+                          <MessageInput>
+                          {showSecurityWarning[selectedTicketId] && (
+                            <SecurityWarning>
+                              <FaFile style={{ marginRight: '0.5rem', fontSize: '0.85rem' }} />
+                              <span>Please do not upload sensitive information such as credit card numbers, payment methods, passwords, or social security numbers.</span>
+                            </SecurityWarning>
+                          )}
+                          <MessageTextArea
+                            placeholder={t("dashboard.support.conversation.placeholder", "Type your message...")}
+                            value={newMessages[selectedTicketId] || ''}
+                            onChange={(e) => setNewMessages(prev => ({
+                              ...prev,
+                              [selectedTicketId]: e.target.value
+                            }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage(selectedTicketId);
+                              }
+                            }}
+                            rows={1}
+                          />
+                          {pendingAttachments[selectedTicketId] && pendingAttachments[selectedTicketId].length > 0 && (
+                            <div style={{ 
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '8px',
+                              fontSize: '0.85rem',
+                              color: 'var(--text-secondary)',
+                              marginRight: '0.5rem'
+                            }}>
+                              <FaFile />
+                              <span style={{ flex: 1 }}>{pendingAttachments[selectedTicketId].map(f => f.name).join(', ')}</span>
+                              <button
+                                onClick={() => {
+                                  pendingAttachments[selectedTicketId].forEach((file) => {
+                                    if (file.type.startsWith('image/')) {
+                                      const imageUrl = URL.createObjectURL(file);
+                                      URL.revokeObjectURL(imageUrl);
+                                    }
+                                  });
+                                  setPendingAttachments(prev => ({
+                                    ...prev,
+                                    [selectedTicketId]: []
+                                  }));
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--text-secondary)',
+                                  cursor: 'pointer',
+                                  padding: '0.25rem',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
+                          )}
+                          <MessageActions>
+                            <AttachButton
+                              onClick={() => {
+                                setShowSecurityWarning(prev => ({ ...prev, [selectedTicketId]: true }));
+                                fileInputRefs.current[selectedTicketId]?.click();
+                              }}
+                              disabled={uploadingFiles[selectedTicketId]}
+                            >
+                              <FaPaperclip />
+                            </AttachButton>
+                            <SendButton
+                              onClick={() => handleSendMessage(selectedTicketId)}
+                              disabled={(!newMessages[selectedTicketId]?.trim() && (!pendingAttachments[selectedTicketId] || pendingAttachments[selectedTicketId].length === 0)) || uploadingFiles[selectedTicketId]}
+                            >
+                              <FaPaperPlane />
+                            </SendButton>
+                          </MessageActions>
+                          <FileInput
+                            ref={(el) => {
+                              if (el) {
+                                fileInputRefs.current[selectedTicketId] = el;
+                              }
+                            }}
+                            type="file"
+                            multiple
+                            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                            onChange={(e) => handleFileUpload(selectedTicketId, e.target.files)}
+                          />
+                        </MessageInput>
+                        </MessageInputWrapper>
+                      </>
+                    )}
+                  </div>
+                </CreateTicketModal>
+              </ModalOverlay>
+            );
+          })()}
         </AnimatePresence>
       </TicketsContainer>
     </>

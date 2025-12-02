@@ -302,7 +302,7 @@ export const TicketUser = styled.div`
   color: var(--text-secondary);
 `;
 
-export const StatusBadge = styled.span<{ status: string; $clickable?: boolean }>`
+export const StatusBadge = styled.span<{ $status: string; $clickable?: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -312,7 +312,7 @@ export const StatusBadge = styled.span<{ status: string; $clickable?: boolean }>
   font-weight: 600;
   text-transform: capitalize;
   ${props => {
-    switch (props.status) {
+    switch (props.$status) {
       case 'open':
         return `
           background-color: rgba(255, 165, 0, 0.2);
@@ -501,11 +501,15 @@ export const ConversationMeta = styled.div`
 export const MessagesContainer = styled.div`
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: hidden;
   margin-bottom: 1rem;
   padding-right: 8px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  scrollbar-gutter: stable;
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
@@ -520,6 +524,7 @@ export const MessagesContainer = styled.div`
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
+    transition: background 0.2s ease;
   }
 
   &::-webkit-scrollbar-thumb:hover {

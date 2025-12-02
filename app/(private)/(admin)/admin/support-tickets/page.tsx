@@ -203,7 +203,7 @@ const FilterSelect = styled.select`
   }
 `;
 
-const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'success' }>`
+const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'success' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -216,7 +216,7 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'succes
   font-size: 0.9rem;
 
   ${(props) => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'success':
         return `
           background: linear-gradient(90deg, #28a745, #20c997);
@@ -453,7 +453,7 @@ const SubscriptionCell = styled(TableCell)`
   flex-wrap: wrap;
 `;
 
-const StatusBadge = styled.span<{ status: string; $clickable?: boolean }>`
+const StatusBadge = styled.span<{ $status: string; $clickable?: boolean }>`
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -475,7 +475,7 @@ const StatusBadge = styled.span<{ status: string; $clickable?: boolean }>`
   ` : ''}
   
   ${(props) => {
-    switch (props.status) {
+    switch (props.$status) {
       case 'open':
         return `
           background-color: #ff6600;
@@ -670,12 +670,12 @@ const MoreMenuDropdown = styled(motion.div)<{ $top?: number; $right?: number }>`
   }
 `;
 
-const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
+const MoreMenuItem = styled.button<{ $variant?: 'danger' }>`
   width: 100%;
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${props => props.variant === 'danger' ? '#e74c3c' : 'var(--text)'};
+  color: ${props => props.$variant === 'danger' ? '#e74c3c' : 'var(--text)'};
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -685,7 +685,7 @@ const MoreMenuItem = styled.button<{ variant?: 'danger' }>`
   font-size: 0.9rem;
 
   &:hover {
-    background-color: ${props => props.variant === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+    background-color: ${props => props.$variant === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
   }
 
   svg {
@@ -793,6 +793,49 @@ const MessagesContainer = styled.div`
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
+`;
+
+const JumpToCurrentButton = styled.button<{ $visible: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  z-index: 100;
+  pointer-events: ${props => props.$visible ? 'auto' : 'none'};
+  opacity: ${props => props.$visible ? 1 : 0};
+  visibility: ${props => props.$visible ? 'visible' : 'hidden'};
+
+  &:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+const MessageInputWrapper = styled.div`
+  position: relative;
+  width: 100%;
 `;
 
 const Message = styled.div<{ $isAdmin?: boolean }>`
@@ -1431,8 +1474,10 @@ function SupportTicketsPage() {
   const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(null);
   const [statusDropdownPosition, setStatusDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const [moreMenuPosition, setMoreMenuPosition] = useState<{ top: number; right: number } | null>(null);
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [isScrolledUp, setIsScrolledUp] = useState<Map<string, boolean>>(new Map());
+  const messagesContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1684,9 +1729,12 @@ function SupportTicketsPage() {
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedTickets.length / itemsPerPage);
+  // When a ticket is expanded, show only that ticket at the top
+  const ticketsToDisplay = sortedTickets;
+
+  const totalPages = Math.ceil(ticketsToDisplay.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTickets = sortedTickets.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedTickets = ticketsToDisplay.slice(startIndex, startIndex + itemsPerPage);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -1697,33 +1745,201 @@ function SupportTicketsPage() {
     }),
   };
 
-  const toggleRowExpansion = (ticketId: string) => {
-    setExpandedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(ticketId)) {
-        next.delete(ticketId);
-      } else {
-        next.add(ticketId);
+  const openTicketModal = (ticketId: string) => {
+    setSelectedTicketId(ticketId);
+    // Load ticket details if not already loaded
+    if (!ticketDetails.has(ticketId)) {
+      fetchTicketDetails(ticketId, false);
+    }
+    // Force scroll check after modal opens
+    setTimeout(() => {
+      const container = messagesContainerRefs.current.get(ticketId);
+      if (container) {
+        handleScroll(ticketId, container);
       }
-      return next;
-    });
+    }, 300);
   };
 
-  // Fetch ticket details when a row is expanded
-  useEffect(() => {
-    const ticketsToFetch: string[] = [];
-    expandedRows.forEach(ticketId => {
-      if (!ticketDetails.has(ticketId) && !loadingDetails.has(ticketId)) {
-        ticketsToFetch.push(ticketId);
+  const closeTicketModal = () => {
+    // Clean up refs and scroll state when closing modal
+    if (selectedTicketId) {
+      const container = messagesContainerRefs.current.get(selectedTicketId);
+      if (container) {
+        const oldHandler = (container as any)._scrollHandler;
+        if (oldHandler) {
+          container.removeEventListener('scroll', oldHandler);
+        }
       }
-    });
+      messagesContainerRefs.current.delete(selectedTicketId);
+      setIsScrolledUp(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(selectedTicketId);
+        return newMap;
+      });
+    }
+    setSelectedTicketId(null);
+  };
+
+  // Handle scroll to detect if user is scrolled up
+  const handleScroll = useCallback((ticketId: string, element: HTMLDivElement) => {
+    if (!element || !ticketId) return;
+    const threshold = 50; // Show button if more than 50px from bottom
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
     
-    // Fetch all tickets that need to be loaded
-    ticketsToFetch.forEach(ticketId => {
-      fetchTicketDetails(ticketId, false);
+    // Only show button if container is actually scrollable
+    if (scrollHeight <= clientHeight) {
+      setIsScrolledUp(prev => {
+        const currentValue = prev.get(ticketId);
+        if (currentValue === false) return prev; // No change needed
+        const newMap = new Map(prev);
+        newMap.set(ticketId, false);
+        return newMap;
+      });
+      return;
+    }
+    
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const isNearBottom = distanceFromBottom < threshold;
+    const shouldShow = !isNearBottom;
+    
+    setIsScrolledUp(prev => {
+      const currentValue = prev.get(ticketId);
+      if (currentValue === shouldShow) return prev; // No change needed
+      const newMap = new Map(prev);
+      newMap.set(ticketId, shouldShow);
+      return newMap;
     });
+  }, []);
+
+  // Scroll to bottom of messages
+  const scrollToBottom = useCallback((ticketId: string) => {
+    const container = messagesContainerRefs.current.get(ticketId);
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Set ref callback for messages container
+  const setMessagesContainerRef = useCallback((ticketId: string, element: HTMLDivElement | null) => {
+    if (!ticketId) return;
+    
+    const previousElement = messagesContainerRefs.current.get(ticketId);
+    
+    // If element hasn't changed, don't do anything
+    if (previousElement === element) {
+      return;
+    }
+    
+    // Clean up previous listener if element changed
+    if (previousElement) {
+      const oldHandler = (previousElement as any)._scrollHandler;
+      if (oldHandler) {
+        previousElement.removeEventListener('scroll', oldHandler);
+      }
+    }
+    
+    if (element && ticketId) {
+      messagesContainerRefs.current.set(ticketId, element);
+      // Add scroll listener
+      const scrollHandler = () => {
+        if (ticketId && element && messagesContainerRefs.current.get(ticketId) === element) {
+          handleScroll(ticketId, element);
+        }
+      };
+      element.addEventListener('scroll', scrollHandler, { passive: true });
+      
+      // Store handler for cleanup
+      (element as any)._scrollHandler = scrollHandler;
+      
+      // Check initial scroll position after a short delay to ensure content is rendered
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (ticketId && element && messagesContainerRefs.current.get(ticketId) === element) {
+            handleScroll(ticketId, element);
+          }
+        }, 100);
+      });
+    } else if (element === null && previousElement) {
+      // Only clean up if we had a previous element and now it's null (unmounting)
+      messagesContainerRefs.current.delete(ticketId);
+      // Don't delete the scroll state - preserve it in case the element is recreated
+    }
+  }, [handleScroll]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      messagesContainerRefs.current.forEach((element, ticketId) => {
+        if ((element as any)._scrollHandler) {
+          element.removeEventListener('scroll', (element as any)._scrollHandler);
+        }
+      });
+      messagesContainerRefs.current.clear();
+    };
+  }, []);
+
+  // Fetch ticket details when a ticket is selected
+  useEffect(() => {
+    // Fetch ticket details if a ticket is selected
+    if (selectedTicketId && !ticketDetails.has(selectedTicketId) && !loadingDetails.has(selectedTicketId)) {
+      fetchTicketDetails(selectedTicketId, false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expandedRows]);
+  }, [selectedTicketId]);
+
+  // Re-evaluate scroll position when ticket details change
+  useEffect(() => {
+    if (selectedTicketId) {
+      // Use multiple timeouts to catch content loading at different stages
+      const checkScroll = () => {
+        const container = messagesContainerRefs.current.get(selectedTicketId);
+        if (container) {
+          // Don't auto-scroll, just check current position
+          handleScroll(selectedTicketId, container);
+        }
+      };
+      
+      // Check immediately and at intervals
+      requestAnimationFrame(() => {
+        setTimeout(checkScroll, 50);
+        setTimeout(checkScroll, 200);
+        setTimeout(checkScroll, 500);
+        setTimeout(checkScroll, 1000);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketDetails, selectedTicketId]);
+  
+  // Auto-scroll to bottom when messages first load (but don't interfere with scroll detection)
+  useEffect(() => {
+    if (selectedTicketId && ticketDetails.get(selectedTicketId)?.messages) {
+      const container = messagesContainerRefs.current.get(selectedTicketId);
+      if (container) {
+        // Only auto-scroll if we're already at or near the bottom
+        const scrollTop = container.scrollTop;
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+        
+        // If we're within 100px of bottom, auto-scroll to bottom
+        if (distanceFromBottom < 100) {
+          setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+            // Re-check scroll position after auto-scroll
+            setTimeout(() => {
+              handleScroll(selectedTicketId, container);
+            }, 100);
+          }, 100);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketDetails.get(selectedTicketId)?.messages?.length, selectedTicketId]);
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -1864,7 +2080,7 @@ function SupportTicketsPage() {
     
     switch (action) {
       case 'view':
-        toggleRowExpansion(ticket.id);
+        openTicketModal(ticket.id);
         break;
       case 'delete':
         setTicketToDelete(ticket);
@@ -1981,13 +2197,33 @@ function SupportTicketsPage() {
   const handleFileUpload = (ticketId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    setUploadingFiles(prev => ({ ...prev, [ticketId]: true }));
+    // Convert FileList to Array
+    const fileArray = Array.from(files);
+    
+    // Validate file sizes (max 10MB per file)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
 
-    // Simulate file upload
-    setTimeout(() => {
-      console.log('Files uploaded for ticket:', ticketId, files);
-      setUploadingFiles(prev => ({ ...prev, [ticketId]: false }));
-    }, 2000);
+    fileArray.forEach((file) => {
+      if (file.size > maxSize) {
+        invalidFiles.push(`${file.name} (exceeds 10MB limit)`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      alert(`Some files were too large and were not added:\n${invalidFiles.join('\n')}`);
+    }
+
+    if (validFiles.length > 0) {
+      // Add files to pending attachments
+      setPendingAttachments(prev => ({
+        ...prev,
+        [ticketId]: [...(prev[ticketId] || []), ...validFiles]
+      }));
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent, ticketId: string) => {
@@ -2049,21 +2285,6 @@ function SupportTicketsPage() {
     }
   };
 
-  const stats = [
-    {
-      value: tickets.length.toString(),
-      label: t("admin.supportTickets.totalTickets", "Total Tickets"),
-    },
-    {
-      value: tickets.filter(t => t.status === "open" || t.status === "in_progress").length.toString(),
-      label: t("admin.supportTickets.openTickets", "Open Tickets"),
-    },
-    {
-      value: tickets.filter(t => t.status === "resolved").length.toString(),
-      label: t("admin.supportTickets.resolvedTickets", "Resolved Tickets"),
-    },
-  ];
-
   return (
     <>
       <NextSEO
@@ -2082,22 +2303,6 @@ function SupportTicketsPage() {
 
         {showContent && (
           <>
-
-        <StatsRow>
-          {stats.map((stat, index) => (
-            <StatCard
-              key={stat.label}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-            >
-              <StatValue>{stat.value}</StatValue>
-              <StatLabel>{stat.label}</StatLabel>
-            </StatCard>
-          ))}
-        </StatsRow>
-
         <FiltersSection>
           <FiltersRow>
             <SearchContainer>
@@ -2123,7 +2328,7 @@ function SupportTicketsPage() {
               <option value="closed">{t("admin.supportTickets.filters.closed", "Closed")}</option>
             </FilterSelect>
 
-            <ActionButton variant="success" onClick={() => setShowCreateModal(true)}>
+            <ActionButton $variant="success" onClick={() => setShowCreateModal(true)}>
               <FaPlus />
               {t("admin.supportTickets.createTicket", "Create Ticket")}
             </ActionButton>
@@ -2173,15 +2378,20 @@ function SupportTicketsPage() {
                 <React.Fragment key={ticket.id}>
                   <TableRow data-status-open={openStatusDropdown === ticket.id ? "true" : "false"}>
                   <TableCell>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <ExpandButton onClick={() => toggleRowExpansion(ticket.id)}>
-                          {expandedRows.has(ticket.id) ? <FaChevronUp /> : <FaChevronDown />}
-                        </ExpandButton>
-                    <TicketId>{ticket.ticket_number}</TicketId>
-                      </div>
+                    <TicketId 
+                      onClick={() => openTicketModal(ticket.id)}
+                      style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      {ticket.ticket_number}
+                    </TicketId>
                   </TableCell>
                   <SubjectTableCell>
-                    <TicketSubject>{ticket.subject}</TicketSubject>
+                    <TicketSubject 
+                      onClick={() => openTicketModal(ticket.id)}
+                      style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      {ticket.subject}
+                    </TicketSubject>
                   </SubjectTableCell>
                   <UserTableCell>
                     {ticket.user_id ? (
@@ -2234,7 +2444,7 @@ function SupportTicketsPage() {
                   <TableCell data-has-dropdown>
                     <StatusContainer data-status-dropdown>
                       <StatusBadge 
-                        status={ticket.status} 
+                        $status={ticket.status} 
                         $clickable
                         onClick={(e) => handleStatusClick(ticket.id, e)}
                       >
@@ -2322,12 +2532,10 @@ function SupportTicketsPage() {
                         >
                           <MoreMenuItem onClick={() => handleMoreMenuAction('view', ticket)}>
                             <FaEye />
-                            {expandedRows.has(ticket.id) 
-                              ? t("admin.supportTickets.ticketActions.hide", "Hide Ticket")
-                              : t("admin.supportTickets.ticketActions.view", "View Ticket")}
+                            {t("admin.supportTickets.ticketActions.view", "View Ticket")}
                           </MoreMenuItem>
                           <MoreMenuItem 
-                            variant="danger"
+                            $variant="danger"
                             onClick={() => handleMoreMenuAction('delete', ticket)}
                           >
                             <FaTimes />
@@ -2338,205 +2546,6 @@ function SupportTicketsPage() {
                     </MoreMenuContainer>
                   </TableCell>
                 </TableRow>
-
-                  <AnimatePresence>
-                    {expandedRows.has(ticket.id) && (
-                      <ExpandableRow
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                      >
-                        <ExpandableCell colSpan={7}>
-                          <ConversationContainer
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1, duration: 0.3 }}
-                          >
-                            {loadingDetails.has(ticket.id) ? (
-                              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                  style={{ 
-                                    width: '20px', 
-                                    height: '20px', 
-                                    border: '3px solid rgba(108, 99, 255, 0.3)', 
-                                    borderTop: '3px solid var(--primary)', 
-                                    borderRadius: '50%',
-                                    margin: '0 auto 1rem'
-                                  }}
-                                />
-                                Loading conversation...
-                              </div>
-                            ) : (
-                              <>
-                                <ConversationHeader>
-                                  <ConversationTitle>
-                                    Conversation: {ticket.subject}
-                                  </ConversationTitle>
-                                  <ConversationMeta>
-                                    <span>Messages: {ticketDetails.get(ticket.id)?.messages?.length || 0}</span>
-                                    <span>Last updated: {formatDate(ticket.updated_at)}</span>
-                                  </ConversationMeta>
-                                </ConversationHeader>
-
-                                <MessagesContainer>
-                                  {ticketDetails.get(ticket.id)?.messages?.map((message) => (
-                                    <Message key={message.id} $isAdmin={message.is_admin}>
-                                      <MessageAvatar $isAdmin={message.is_admin}>
-                                        {message.is_admin ? <FaUserTie /> : <FaUser />}
-                                      </MessageAvatar>
-                                      <div style={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: message.is_admin ? 'flex-end' : 'flex-start'
-                                      }}>
-                                        <MessageBubble $isAdmin={message.is_admin}>
-                                          <MessageContent>{message.content}</MessageContent>
-                                          <MessageTime>
-                                            {message.is_admin ? "Support Team" : (message.user_email || "Unknown")} • {formatDateTime(message.created_at)}
-                                            {message.edited_at && ` (edited ${formatDateTime(message.edited_at)})`}
-                                          </MessageTime>
-                                        </MessageBubble>
-                                        {message.attachments?.map((att) => (
-                                          <MessageAttachment key={att.id}>
-                                            {att.attachment_type === 'image' && att.url ? (
-                                              <>
-                                                <ImagePreview 
-                                                  src={att.url} 
-                                                  alt={att.file_name}
-                                                  onClick={() => window.open(att.url || '', '_blank')}
-                                                />
-                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                              </>
-                                            ) : att.attachment_type === 'video' && att.url ? (
-                                              <>
-                                                <VideoPreview controls>
-                                                  <source src={att.url} type={att.file_type || 'video/mp4'} />
-                                                  Your browser does not support the video tag.
-                                                </VideoPreview>
-                                                <AttachmentInfo style={{ marginTop: '0.5rem' }}>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                              </>
-                                            ) : (
-                                              <AttachmentContainer>
-                                                <AttachmentIcon>
-                                                  <FaFile />
-                                                </AttachmentIcon>
-                                                <AttachmentInfo>
-                                                  <AttachmentName>{att.file_name}</AttachmentName>
-                                                  <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
-                                                </AttachmentInfo>
-                                                {att.url && (
-                                                  <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
-                                                    View
-                                                  </AttachmentLink>
-                                                )}
-                                              </AttachmentContainer>
-                                            )}
-                                          </MessageAttachment>
-                                        ))}
-                                      </div>
-                                    </Message>
-                                  ))}
-                                  {(!ticketDetails.get(ticket.id)?.messages || ticketDetails.get(ticket.id)!.messages.length === 0) && (
-                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                      No messages yet. Start the conversation below.
-                                    </div>
-                                  )}
-                                </MessagesContainer>
-                              </>
-                            )}
-
-                            <MessageInput>
-                              {pendingAttachments[ticket.id] && pendingAttachments[ticket.id].length > 0 && (
-                                <div style={{ 
-                                  marginBottom: '0.5rem', 
-                                  padding: '0.5rem', 
-                                  background: 'rgba(255, 255, 255, 0.05)', 
-                                  borderRadius: '8px',
-                                  fontSize: '0.85rem',
-                                  color: 'var(--text-secondary)',
-                                  width: '100%'
-                                }}>
-                                  {pendingAttachments[ticket.id].map((file, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                      <FaFile />
-                                      <span>{file.name}</span>
-                                      <button
-                                        onClick={() => {
-                                          setPendingAttachments(prev => ({
-                                            ...prev,
-                                            [ticket.id]: prev[ticket.id]?.filter((_, i) => i !== idx) || []
-                                          }));
-                                        }}
-                                        style={{
-                                          background: 'none',
-                                          border: 'none',
-                                          color: 'var(--text-secondary)',
-                                          cursor: 'pointer',
-                                          padding: '0.25rem',
-                                          marginLeft: 'auto'
-                                        }}
-                                      >
-                                        <FaTimes />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              <MessageTextArea
-                                placeholder={t("admin.supportTickets.conversation.placeholder", "Type your message...")}
-                                value={newMessages[ticket.id] || ''}
-                                onChange={(e) => setNewMessages(prev => ({
-                                  ...prev,
-                                  [ticket.id]: e.target.value
-                                }))}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage(ticket.id);
-                                  }
-                                }}
-                                rows={1}
-                              />
-                              <MessageActions>
-                                <AttachButton
-                                  onClick={() => fileInputRefs.current[ticket.id]?.click()}
-                                  disabled={uploadingFiles[ticket.id]}
-                                >
-                                  <FaPaperclip />
-                                </AttachButton>
-                                <SendButton
-                                  onClick={() => handleSendMessage(ticket.id)}
-                                  disabled={(!newMessages[ticket.id]?.trim() && (!pendingAttachments[ticket.id] || pendingAttachments[ticket.id].length === 0)) || uploadingFiles[ticket.id]}
-                                >
-                                  <FaPaperPlane />
-                                </SendButton>
-                              </MessageActions>
-                              <FileInput
-                                ref={(el) => {
-                                  if (el) {
-                                    fileInputRefs.current[ticket.id] = el;
-                                  }
-                                }}
-                                type="file"
-                                multiple
-                                accept="image/*,video/*"
-                                onChange={(e) => handleFileUpload(ticket.id, e.target.files)}
-                              />
-                            </MessageInput>
-                          </ConversationContainer>
-                        </ExpandableCell>
-                      </ExpandableRow>
-                    )}
-                  </AnimatePresence>
                 </React.Fragment>
               ))}
             </TableBody>
@@ -2758,6 +2767,306 @@ function SupportTicketsPage() {
           formatCurrency={formatCurrency}
           getDisplayName={getDisplayName}
         />
+
+        {/* Ticket Conversation Modal */}
+        <AnimatePresence>
+          {selectedTicketId && (() => {
+            const ticket = tickets.find(t => t.id === selectedTicketId);
+            if (!ticket) return null;
+            
+            return (
+              <ModalOverlay
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) closeTicketModal();
+                }}
+              >
+                <CreateTicketModal
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  transition={{ type: "spring", damping: 20 }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ maxWidth: '1400px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}
+                >
+                  <ModalHeader>
+                    <ModalTitle>
+                      <FaTicketAlt />
+                      {ticket.subject}
+                    </ModalTitle>
+                    <CloseButton onClick={closeTicketModal}>
+                      <FaTimes />
+                    </CloseButton>
+                  </ModalHeader>
+
+                  <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {loadingDetails.has(selectedTicketId) ? (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          style={{ 
+                            width: '20px', 
+                            height: '20px', 
+                            border: '3px solid rgba(108, 99, 255, 0.3)', 
+                            borderTop: '3px solid var(--primary)', 
+                            borderRadius: '50%',
+                            margin: '0 auto 1rem'
+                          }}
+                        />
+                        Loading conversation...
+                      </div>
+                    ) : (
+                      <>
+                        <ConversationHeader style={{ padding: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                          <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'auto 1fr auto auto auto auto',
+                            gap: '1rem',
+                            alignItems: 'center',
+                            width: '100%'
+                          }}>
+                            <TicketId style={{ cursor: 'default', textDecoration: 'none' }}>
+                              {ticket.ticket_number}
+                            </TicketId>
+                            <TicketSubject style={{ cursor: 'default', textDecoration: 'none' }}>
+                              {ticket.subject}
+                            </TicketSubject>
+                            <div 
+                              onClick={(e) => {
+                                if (ticket.user_id) {
+                                  e.stopPropagation();
+                                  handleViewUser(ticket.user_id, e);
+                                }
+                              }}
+                              style={{ 
+                                color: 'var(--text-secondary)', 
+                                fontSize: '0.9rem',
+                                cursor: ticket.user_id ? 'pointer' : 'default',
+                                textDecoration: ticket.user_id ? 'underline' : 'none'
+                              }}
+                            >
+                              {ticket.user_email || "Unknown"}
+                              {(ticket.user_first_name || ticket.user_last_name) && (
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85em' }}>
+                                  {' '}({[ticket.user_first_name, ticket.user_last_name].filter(Boolean).join(' ')})
+                                </span>
+                              )}
+                            </div>
+                            <SubscriptionBadge
+                              $color={getSubscriptionBadgeColor(
+                                ticket.user_has_nfr ? "nfr" : (ticket.user_subscription || "none")
+                              )}
+                              $variant={
+                                ticket.user_has_nfr || isSubscriptionPremium(ticket.user_subscription || "none")
+                                  ? "premium"
+                                  : "default"
+                              }
+                            >
+                              {ticket.user_has_nfr ? <FaCrown /> : getSubscriptionIcon(ticket.user_subscription || "none")}
+                              {ticket.user_has_nfr ? "NFR" : (ticket.user_subscription || "none")}
+                            </SubscriptionBadge>
+                            <StatusBadge $status={ticket.status}>
+                              {getStatusIcon(ticket.status)}
+                              {t(`admin.supportTickets.filters.${ticket.status}`, ticket.status)}
+                            </StatusBadge>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                              {formatDate(ticket.created_at)}
+                            </div>
+                          </div>
+                        </ConversationHeader>
+
+                        <div
+                          ref={(el) => {
+                            if (selectedTicketId) {
+                              setMessagesContainerRef(selectedTicketId, el);
+                            }
+                          }}
+                          style={{ 
+                            flex: '1 1 auto',
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            padding: '1rem',
+                            minHeight: 0,
+                            height: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                          }}
+                        >
+                          {ticketDetails.get(selectedTicketId)?.messages?.map((message) => (
+                            <Message key={message.id} $isAdmin={message.is_admin}>
+                              <MessageAvatar $isAdmin={message.is_admin}>
+                                {message.is_admin ? <FaUserTie /> : <FaUser />}
+                              </MessageAvatar>
+                              <div style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: message.is_admin ? 'flex-end' : 'flex-start'
+                              }}>
+                                <MessageBubble $isAdmin={message.is_admin}>
+                                  <MessageContent>{message.content}</MessageContent>
+                                  <MessageTime>
+                                    {message.is_admin ? "Support Team" : (message.user_email || "Unknown")} • {formatDateTime(message.created_at)}
+                                    {message.edited_at && ` (edited ${formatDateTime(message.edited_at)})`}
+                                  </MessageTime>
+                                </MessageBubble>
+                                {message.attachments?.map((att) => (
+                                  <MessageAttachment key={att.id}>
+                                    {att.attachment_type === 'image' && att.url ? (
+                                      <>
+                                        <ImagePreview 
+                                          src={att.url} 
+                                          alt={att.file_name}
+                                          onClick={() => window.open(att.url || '', '_blank')}
+                                        />
+                                        <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                      </>
+                                    ) : att.attachment_type === 'video' && att.url ? (
+                                      <>
+                                        <VideoPreview controls>
+                                          <source src={att.url} type={att.file_type || 'video/mp4'} />
+                                          Your browser does not support the video tag.
+                                        </VideoPreview>
+                                        <AttachmentInfo style={{ marginTop: '0.5rem' }}>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                      </>
+                                    ) : (
+                                      <AttachmentContainer>
+                                        <AttachmentIcon>
+                                          <FaFile />
+                                        </AttachmentIcon>
+                                        <AttachmentInfo>
+                                          <AttachmentName>{att.file_name}</AttachmentName>
+                                          <AttachmentSize>{(att.file_size / 1024).toFixed(2)} KB</AttachmentSize>
+                                        </AttachmentInfo>
+                                        {att.url && (
+                                          <AttachmentLink href={att.url} target="_blank" rel="noopener noreferrer">
+                                            View
+                                          </AttachmentLink>
+                                        )}
+                                      </AttachmentContainer>
+                                    )}
+                                  </MessageAttachment>
+                                ))}
+                              </div>
+                            </Message>
+                          ))}
+                          {(!ticketDetails.get(selectedTicketId)?.messages || ticketDetails.get(selectedTicketId)!.messages.length === 0) && (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                              No messages yet. Start the conversation below.
+                            </div>
+                          )}
+                        </div>
+
+                        <MessageInputWrapper style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+                          {selectedTicketId && ticketDetails.get(selectedTicketId)?.messages && ticketDetails.get(selectedTicketId)!.messages!.length > 0 && (
+                            <JumpToCurrentButton
+                              $visible={!!isScrolledUp.get(selectedTicketId)}
+                              onClick={() => {
+                                if (selectedTicketId) {
+                                  scrollToBottom(selectedTicketId);
+                                }
+                              }}
+                              type="button"
+                            >
+                              <FaChevronDown />
+                              See Recent
+                            </JumpToCurrentButton>
+                          )}
+                          <MessageInput>
+                          <MessageTextArea
+                            placeholder={t("admin.supportTickets.conversation.placeholder", "Type your message...")}
+                            value={newMessages[selectedTicketId] || ''}
+                            onChange={(e) => setNewMessages(prev => ({
+                              ...prev,
+                              [selectedTicketId]: e.target.value
+                            }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage(selectedTicketId);
+                              }
+                            }}
+                            rows={1}
+                          />
+                          {pendingAttachments[selectedTicketId] && pendingAttachments[selectedTicketId].length > 0 && (
+                            <div style={{ 
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '8px',
+                              fontSize: '0.85rem',
+                              color: 'var(--text-secondary)',
+                              marginRight: '0.5rem'
+                            }}>
+                              <FaFile />
+                              <span style={{ flex: 1 }}>{pendingAttachments[selectedTicketId].map(f => f.name).join(', ')}</span>
+                              <button
+                                onClick={() => {
+                                  setPendingAttachments(prev => ({
+                                    ...prev,
+                                    [selectedTicketId]: []
+                                  }));
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--text-secondary)',
+                                  cursor: 'pointer',
+                                  padding: '0.25rem',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
+                          )}
+                          <MessageActions>
+                            <AttachButton
+                              onClick={() => fileInputRefs.current[selectedTicketId]?.click()}
+                              disabled={uploadingFiles[selectedTicketId]}
+                            >
+                              <FaPaperclip />
+                            </AttachButton>
+                            <SendButton
+                              onClick={() => handleSendMessage(selectedTicketId)}
+                              disabled={(!newMessages[selectedTicketId]?.trim() && (!pendingAttachments[selectedTicketId] || pendingAttachments[selectedTicketId].length === 0)) || uploadingFiles[selectedTicketId]}
+                            >
+                              <FaPaperPlane />
+                            </SendButton>
+                          </MessageActions>
+                          <FileInput
+                            ref={(el) => {
+                              if (el) {
+                                fileInputRefs.current[selectedTicketId] = el;
+                              }
+                            }}
+                            type="file"
+                            multiple
+                            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                            onChange={(e) => handleFileUpload(selectedTicketId, e.target.files)}
+                          />
+                        </MessageInput>
+                        </MessageInputWrapper>
+                      </>
+                    )}
+                  </div>
+                </CreateTicketModal>
+              </ModalOverlay>
+            );
+          })()}
+        </AnimatePresence>
       </TicketsContainer>
     </>
   );
