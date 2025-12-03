@@ -172,6 +172,8 @@ const ChatHeader = styled.div`
     min-height: 56px;
     position: relative;
     z-index: 10;
+    justify-content: flex-start;
+    gap: 12px;
   }
 `;
 
@@ -192,9 +194,15 @@ const CloseButton = styled.button`
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s;
+  flex-shrink: 0;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    order: -1;
+    margin-right: auto;
   }
 `;
 

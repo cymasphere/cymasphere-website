@@ -2060,26 +2060,26 @@ export default function AdminCRM() {
         } else {
           console.error("Error recalculating totalSpent:", totalSpentData.error);
           // Fall back to calculation from fetched data if API fails
-          const purchasesTotal = purchases
-            .filter((p) => 
-              p.status === "succeeded" && 
-              p.description !== "Subscription payment"
-            )
-            .reduce((sum, p) => sum + (p.amount || 0), 0);
+      const purchasesTotal = purchases
+        .filter((p) => 
+          p.status === "succeeded" && 
+          p.description !== "Subscription payment"
+        )
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-          const invoicesTotal = invoices
-            .filter((inv) => inv.status === "paid")
-            .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+      const invoicesTotal = invoices
+        .filter((inv) => inv.status === "paid")
+        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
-          const totalSpent = purchasesTotal + invoicesTotal;
+      const totalSpent = purchasesTotal + invoicesTotal;
 
-          setSelectedUser((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
-            };
-          });
+      setSelectedUser((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+        };
+      });
         }
       } catch (error) {
         console.error("Error recalculating totalSpent from API:", error);

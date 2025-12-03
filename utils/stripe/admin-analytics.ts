@@ -1624,7 +1624,7 @@ export async function getAdditionalUserData(userIds: string[]): Promise<{
             // Use a Set to track charge IDs to prevent double counting
             // (in case there are any duplicates in the response)
             const seenChargeIds = new Set<string>();
-            
+
             // Sum all successful, paid charges that haven't been fully refunded
             // amount_refunded is the amount that was refunded, so we subtract it
             const totalSpentCents = charges.data
