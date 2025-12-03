@@ -35,7 +35,8 @@ import {
   FaCrown,
   FaUserShield,
   FaChartLine,
-  FaTrash
+  FaTrash,
+  FaMagic
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -1301,6 +1302,128 @@ const DeleteModalActions = styled.div`
   justify-content: center;
 `;
 
+const AIModalContent = styled(motion.div)`
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+`;
+
+const AIModalSection = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const AIModalLabel = styled.label`
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+`;
+
+const AIModalTextArea = styled.textarea`
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const AIModalActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+`;
+
+const AIModalButton = styled(motion.button)<{ $variant?: 'primary' | 'secondary' }>`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  ${props => props.$variant === 'primary' ? `
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+    }
+  ` : `
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  `}
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const AIButton = styled.button`
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.8;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 1.2rem;
+    color: white;
+  }
+`;
+
 const DeleteModalButton = styled(motion.button)<{ $variant?: 'danger' | 'secondary' }>`
   padding: 0.75rem 1.5rem;
   border: none;
@@ -1568,6 +1691,10 @@ function SupportTicketsPage() {
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [ticketDetails, setTicketDetails] = useState<Map<string, Ticket>>(new Map());
   const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const itemsPerPage = 10;
   
   const { t } = useTranslation();
@@ -2083,6 +2210,74 @@ function SupportTicketsPage() {
       alert("An error occurred while updating the status");
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleGenerateAIResponse = async () => {
+    if (!aiPrompt.trim() || !selectedTicketId) {
+      return;
+    }
+
+    setAiLoading(true);
+    setAiResponse("");
+
+    try {
+      const response = await fetch('/api/admin/support-tickets/ai-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          ticketId: selectedTicketId,
+          allTickets: tickets.map(t => ({
+            ticket_number: t.ticket_number,
+            subject: t.subject,
+            description: t.description,
+            status: t.status,
+            user_email: t.user_email,
+            created_at: t.created_at,
+            updated_at: t.updated_at,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Check if it's a fallback response
+        if (data.isFallback) {
+          setAiResponse(`⚠️ ${data.error || 'Using template response'}\n\n${data.response}`);
+        } else {
+          setAiResponse(data.response);
+        }
+      } else {
+        // Handle specific error cases
+        if (response.status === 429 || data.errorCode === 'QUOTA_EXCEEDED') {
+          setAiResponse(`⚠️ OpenAI API quota exceeded. Please check your OpenAI billing and plan details.\n\nYou can still write your response manually below.`);
+        } else if (response.status === 401 || data.errorCode === 'INVALID_API_KEY') {
+          setAiResponse(`⚠️ OpenAI API key is invalid or expired. Please check your API configuration.\n\nYou can still write your response manually below.`);
+        } else {
+          setAiResponse(`Error: ${data.error || 'Failed to generate response'}\n\nYou can still write your response manually below.`);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      setAiResponse('Error: Failed to generate response. Please try again.\n\nYou can still write your response manually below.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleInsertAIResponse = () => {
+    if (aiResponse && selectedTicketId) {
+      setNewMessages(prev => ({
+        ...prev,
+        [selectedTicketId]: (prev[selectedTicketId] || '') + (prev[selectedTicketId] ? '\n\n' : '') + aiResponse,
+      }));
+      setShowAIModal(false);
+      setAiPrompt("");
+      setAiResponse("");
     }
   };
 
@@ -3155,6 +3350,12 @@ function SupportTicketsPage() {
                             </div>
                           )}
                           <MessageActions>
+                            <AIButton
+                              onClick={() => setShowAIModal(true)}
+                              title="AI Response Assistant"
+                            >
+                              <FaMagic />
+                            </AIButton>
                             <AttachButton
                               onClick={() => fileInputRefs.current[selectedTicketId]?.click()}
                               disabled={uploadingFiles[selectedTicketId]}
@@ -3188,6 +3389,83 @@ function SupportTicketsPage() {
               </ModalOverlay>
             );
           })()}
+        </AnimatePresence>
+
+        {/* AI Response Modal */}
+        <AnimatePresence>
+          {showAIModal && (
+            <ModalOverlay
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAIModal(false)}
+            >
+              <AIModalContent
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ModalHeader>
+                  <ModalTitle>
+                    <FaMagic />
+                    AI Response Assistant
+                  </ModalTitle>
+                  <CloseButton onClick={() => setShowAIModal(false)}>
+                    <FaTimes />
+                  </CloseButton>
+                </ModalHeader>
+
+                <AIModalSection>
+                  <AIModalLabel>Prompt</AIModalLabel>
+                  <AIModalTextArea
+                    placeholder="Describe what kind of response you need help writing..."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    rows={3}
+                  />
+                </AIModalSection>
+
+                <AIModalSection>
+                  <AIModalLabel>Generated Response</AIModalLabel>
+                  <AIModalTextArea
+                    placeholder={aiLoading ? "Generating response..." : "Response will appear here..."}
+                    value={aiResponse}
+                    onChange={(e) => setAiResponse(e.target.value)}
+                    rows={10}
+                    disabled={aiLoading}
+                  />
+                </AIModalSection>
+
+                <AIModalActions>
+                  <AIModalButton
+                    $variant="secondary"
+                    onClick={() => {
+                      setShowAIModal(false);
+                      setAiPrompt("");
+                      setAiResponse("");
+                    }}
+                  >
+                    Close
+                  </AIModalButton>
+                  <AIModalButton
+                    $variant="primary"
+                    onClick={handleGenerateAIResponse}
+                    disabled={!aiPrompt.trim() || aiLoading}
+                  >
+                    {aiLoading ? "Generating..." : "Generate Response"}
+                  </AIModalButton>
+                  <AIModalButton
+                    $variant="primary"
+                    onClick={handleInsertAIResponse}
+                    disabled={!aiResponse.trim()}
+                  >
+                    Insert into Message
+                  </AIModalButton>
+                </AIModalActions>
+              </AIModalContent>
+            </ModalOverlay>
+          )}
         </AnimatePresence>
       </TicketsContainer>
     </>
