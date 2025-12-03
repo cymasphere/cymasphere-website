@@ -1716,9 +1716,7 @@ async function sendSupportTicketEmailNotification(
                     <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%); padding: 30px 24px; text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-                                <span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: inline-block;">CYMA</span><span style="color: #ffffff;">SPHERE</span>
-                            </div>
+                            <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png" alt="Cymasphere" style="max-width: 220px; height: auto; display: block; margin: 0 auto;" />
                         </td>
                     </tr>
                     <!-- Content -->
@@ -2023,9 +2021,7 @@ async function sendSupportTicketEmailNotificationToAdmin(
                     <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%); padding: 30px 24px; text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-                                <span style="background: linear-gradient(90deg, #6c63ff, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: inline-block;">CYMA</span><span style="color: #ffffff;">SPHERE</span>
-                            </div>
+                            <img src="https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png" alt="Cymasphere" style="max-width: 220px; height: auto; display: block; margin: 0 auto;" />
                         </td>
                     </tr>
                     <!-- Content -->

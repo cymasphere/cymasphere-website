@@ -45,6 +45,9 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
     });
   }
 
+  // Use the same logo URL as contact form
+  const logoUrlSupabase = 'https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -53,35 +56,33 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Welcome to Cymasphere</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0a0a0a; color: #ffffff;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0a0a0a;">
+<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; padding: 20px 0;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background-color: #1a1a1a; border-radius: 12px; overflow: hidden;">
-          
-          <!-- Header with Logo -->
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
           <tr>
-            <td align="center" style="padding: 40px 20px 30px 20px; background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(78, 205, 196, 0.1) 100%);">
-              <img src="${logoUrl}" alt="Cymasphere" style="max-width: 200px; height: auto; display: block;" />
+            <td style="background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%); padding: 30px 24px; text-align: center;">
+              <img src="${logoUrlSupabase}" alt="Cymasphere" style="max-width: 220px; height: auto; display: block; margin: 0 auto;" />
             </td>
           </tr>
-          
-          <!-- Main Content -->
+          <!-- Content -->
           <tr>
-            <td style="padding: 40px 30px;">
-              <h1 style="margin: 0 0 20px 0; font-size: 28px; font-weight: 700; color: #ffffff; line-height: 1.3;">
+            <td style="padding: 30px 24px;">
+              <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
                 Welcome to Cymasphere, ${firstName}!
               </h1>
               
-              <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #e0e0e0;">
+              <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
                 Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
               </p>
               
-              <div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.15) 0%, rgba(78, 205, 196, 0.15) 100%); border-left: 4px solid #6c63ff; padding: 20px; border-radius: 8px; margin: 30px 0;">
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #6c63ff; text-transform: uppercase; letter-spacing: 0.5px;">
                   ${data.isTrial ? 'Your Free Trial' : 'Your Purchase'}
                 </p>
-                <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+                <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #333;">
                   ${planDisplayName}
                 </p>
                 ${data.isTrial ? `
@@ -92,49 +93,44 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
               </div>
               
               ${data.isTrial ? `
-                <div style="background: rgba(78, 205, 196, 0.1); border: 1px solid rgba(78, 205, 196, 0.3); padding: 16px; border-radius: 8px; margin: 20px 0;">
+                <div style="background-color: #f0f9ff; border: 1px solid #4eccd4; padding: 16px; border-radius: 8px; margin: 20px 0;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #4eccd4;">
                     ⏰ Trial Information
                   </p>
-                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #e0e0e0;">
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
                     Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.
                   </p>
                 </div>
               ` : ''}
               
-              <p style="margin: 20px 0; font-size: 16px; line-height: 1.6; color: #e0e0e0;">
+              <p style="color: #666; line-height: 1.6; margin: 20px 0;">
                 You now have full access to all premium features of Cymasphere. Whether you're composing, learning music theory, or exploring new harmonic possibilities, we're here to support your creative journey.
               </p>
               
               <!-- CTA Button -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 30px 0;">
-                <tr>
-                  <td align="center">
-                    <a href="${siteUrl}/getting-started" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #6c63ff 0%, #4eccd4 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
-                      Get Started
-                    </a>
-                  </td>
-                </tr>
-              </table>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${siteUrl}/getting-started" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                  Get Started
+                </a>
+              </div>
               
-              <p style="margin: 30px 0 0 0; font-size: 14px; line-height: 1.6; color: #b0b0b0;">
+              <p style="color: #666; line-height: 1.6; margin: 30px 0 0 0; font-size: 0.9em;">
                 If you have any questions or need assistance, our support team is here to help. Simply reply to this email or visit our support center.
               </p>
               
-              <p style="margin: 20px 0 0 0; font-size: 14px; line-height: 1.6; color: #b0b0b0;">
+              <p style="color: #666; line-height: 1.6; margin: 20px 0 0 0; font-size: 0.9em;">
                 Happy creating!<br>
-                <strong style="color: #ffffff;">The Cymasphere Team</strong>
+                <strong style="color: #333;">The Cymasphere Team</strong>
               </p>
             </td>
           </tr>
-          
           <!-- Footer -->
           <tr>
-            <td style="padding: 30px; background-color: #0f0f0f; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-              <p style="margin: 0 0 10px 0; font-size: 12px; color: #888888; text-align: center;">
+            <td style="padding: 20px 24px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; font-size: 0.85em; color: #666;">
+              <p style="margin: 0 0 10px 0;">
                 © ${new Date().getFullYear()} Cymasphere. All rights reserved.
               </p>
-              <p style="margin: 0; font-size: 12px; color: #888888; text-align: center;">
+              <p style="margin: 0;">
                 <a href="${siteUrl}/support" style="color: #6c63ff; text-decoration: none;">Support</a> | 
                 <a href="${siteUrl}/terms-of-service" style="color: #6c63ff; text-decoration: none;">Terms</a> | 
                 <a href="${siteUrl}/privacy-policy" style="color: #6c63ff; text-decoration: none;">Privacy</a>

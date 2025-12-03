@@ -217,15 +217,19 @@ export async function POST(request: NextRequest) {
                   trialDays: trialDays,
                 });
 
-                await sendEmail({
-                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                const emailResult = await sendEmail({
+                  to: customerEmail || profile.email,
                   subject: `Welcome to Cymasphere - Start Your Free Trial`,
                   html: welcomeEmailHtml,
                   text: welcomeEmailText,
                   from: 'Cymasphere <support@cymasphere.com>',
                 });
                 
-                console.log(`✅ Sent welcome email for ${subscriptionType} trial to ryan@cymasphere.com (customer: ${customerEmail})`);
+                if (emailResult.success) {
+                  console.log(`✅ Sent welcome email for ${subscriptionType} trial to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
+                } else {
+                  console.error(`❌ Failed to send welcome email for ${subscriptionType} trial:`, emailResult.error);
+                }
               } catch (emailError) {
                 console.error('❌ Failed to send welcome email:', emailError);
                 // Don't throw - email failure shouldn't break webhook processing
@@ -253,15 +257,19 @@ export async function POST(request: NextRequest) {
                   planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
                 });
 
-                await sendEmail({
-                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                const emailResult = await sendEmail({
+                  to: customerEmail || profile.email,
                   subject: `Welcome to Cymasphere - ${subscriptionType === 'monthly' ? 'Monthly' : 'Annual'} Subscription`,
                   html: welcomeEmailHtml,
                   text: welcomeEmailText,
                   from: 'Cymasphere <support@cymasphere.com>',
                 });
                 
-                console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ryan@cymasphere.com (customer: ${customerEmail})`);
+                if (emailResult.success) {
+                  console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
+                } else {
+                  console.error(`❌ Failed to send welcome email for ${subscriptionType} subscription:`, emailResult.error);
+                }
               } catch (emailError) {
                 console.error('❌ Failed to send welcome email:', emailError);
                 // Don't throw - email failure shouldn't break webhook processing
@@ -448,15 +456,19 @@ export async function POST(request: NextRequest) {
                 planName: 'lifetime',
               });
 
-              await sendEmail({
-                to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+              const emailResult = await sendEmail({
+                to: customerEmail || profile.email,
                 subject: 'Welcome to Cymasphere - Lifetime License',
                 html: welcomeEmailHtml,
                 text: welcomeEmailText,
                 from: 'Cymasphere <support@cymasphere.com>',
               });
               
-              console.log(`✅ Sent welcome email for lifetime purchase to ryan@cymasphere.com (customer: ${customerEmail})`);
+              if (emailResult.success) {
+                console.log(`✅ Sent welcome email for lifetime purchase to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
+              } else {
+                console.error(`❌ Failed to send welcome email for lifetime purchase:`, emailResult.error);
+              }
             } catch (emailError) {
               console.error('❌ Failed to send welcome email:', emailError);
               // Don't throw - email failure shouldn't break webhook processing
@@ -864,15 +876,19 @@ export async function POST(request: NextRequest) {
                   trialDays: trialDays,
                 });
 
-                await sendEmail({
-                  to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+                const emailResult = await sendEmail({
+                  to: customerEmail || profile.email,
                   subject: `Welcome to Cymasphere - Start Your Free Trial`,
                   html: welcomeEmailHtml,
                   text: welcomeEmailText,
                   from: 'Cymasphere <support@cymasphere.com>',
                 });
                 
-                console.log(`✅ Sent welcome email for ${subscriptionType} trial to ryan@cymasphere.com (customer: ${customerEmail || profile.email})`);
+                if (emailResult.success) {
+                  console.log(`✅ Sent welcome email for ${subscriptionType} trial to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
+                } else {
+                  console.error(`❌ Failed to send welcome email for ${subscriptionType} trial:`, emailResult.error);
+                }
               } catch (emailError) {
                 console.error('❌ Failed to send welcome email:', emailError);
                 // Don't throw - email failure shouldn't break webhook processing
@@ -897,15 +913,19 @@ export async function POST(request: NextRequest) {
                 planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
               });
 
-              await sendEmail({
-                to: 'ryan@cymasphere.com', // For monitoring - will change to customerEmail later
+              const emailResult = await sendEmail({
+                to: customerEmail || profile.email,
                 subject: `Welcome to Cymasphere - ${subscriptionType === 'monthly' ? 'Monthly' : 'Annual'} Subscription`,
                 html: welcomeEmailHtml,
                 text: welcomeEmailText,
                 from: 'Cymasphere <support@cymasphere.com>',
               });
               
-              console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ryan@cymasphere.com (customer: ${customerEmail || profile.email})`);
+              if (emailResult.success) {
+                console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
+              } else {
+                console.error(`❌ Failed to send welcome email for ${subscriptionType} subscription:`, emailResult.error);
+              }
             } catch (emailError) {
               console.error('❌ Failed to send welcome email:', emailError);
               // Don't throw - email failure shouldn't break webhook processing
