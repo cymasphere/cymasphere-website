@@ -29,6 +29,7 @@ import {
   FaCheck,
   FaExclamationTriangle,
   FaSyncAlt,
+  FaCreditCard,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
@@ -1385,6 +1386,9 @@ export default function AdminCRM() {
   const [supportTicketCounts, setSupportTicketCounts] = useState<
     Record<string, number>
   >({});
+  const [hasPaymentMethod, setHasPaymentMethod] = useState<
+    Record<string, boolean>
+  >({});
 
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
@@ -1503,11 +1507,43 @@ export default function AdminCRM() {
       setUsers(result.users);
       // Clear support ticket counts when users change (will be repopulated)
       setSupportTicketCounts({});
+      // Clear payment method status when users change (will be repopulated)
+      setHasPaymentMethod({});
 
       // Fetch additional data (lastActive, totalSpent) separately
       // This allows users to be displayed immediately while additional data loads
       if (result.users.length > 0) {
         const userIds = result.users.map((u) => u.id);
+        
+        // Fetch payment method status for users with customer IDs
+        const usersWithCustomerIds = result.users
+          .filter((u) => u.customerId)
+          .map((u) => ({ userId: u.id, customerId: u.customerId! }));
+        
+        if (usersWithCustomerIds.length > 0) {
+          // Check payment methods for all customers in parallel
+          const paymentMethodChecks = usersWithCustomerIds.map(async ({ userId, customerId }) => {
+            try {
+              const response = await fetch(`/api/admin/customer-has-payment-method?customerId=${customerId}`);
+              const data = await response.json();
+              return { userId, hasPaymentMethod: data.success && data.hasPaymentMethod };
+            } catch (error) {
+              console.error(`Error checking payment method for ${customerId}:`, error);
+              return { userId, hasPaymentMethod: false };
+            }
+          });
+
+          Promise.allSettled(paymentMethodChecks).then((results) => {
+            const paymentMethodMap: Record<string, boolean> = {};
+            results.forEach((result) => {
+              if (result.status === 'fulfilled') {
+                paymentMethodMap[result.value.userId] = result.value.hasPaymentMethod;
+              }
+            });
+            setHasPaymentMethod((prev) => ({ ...prev, ...paymentMethodMap }));
+          });
+        }
+
         getAdditionalUserDataAdmin(userIds)
           .then((additionalData) => {
             if (additionalData.error) {
@@ -2904,6 +2940,16 @@ export default function AdminCRM() {
                               {userData.hasNfr ? <FaCrown /> : getSubscriptionIcon(userData.subscription)}
                               {userData.hasNfr ? "NFR" : userData.subscription}
                             </SubscriptionBadge>
+                            {userData.customerId && hasPaymentMethod[userData.id] && (
+                              <FaCreditCard 
+                                style={{ 
+                                  fontSize: '0.9rem', 
+                                  color: 'var(--text-secondary)',
+                                  marginLeft: '0.25rem'
+                                }} 
+                                title="Credit card on file"
+                              />
+                            )}
                           </SubscriptionCell>
                           <TrialCell>
                             {(() => {

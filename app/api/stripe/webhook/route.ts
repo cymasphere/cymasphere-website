@@ -640,6 +640,41 @@ export async function POST(request: NextRequest) {
               subscriber_id = subscriber.id;
             }
           }
+
+          // CRITICAL: When a new subscription is created, cancel any other active subscriptions
+          // Users should only have one subscription at a time
+          if (event.type === "customer.subscription.created" && subscription.status !== 'canceled') {
+            try {
+              // Get all active subscriptions for this customer
+              const allSubscriptions = await stripe.subscriptions.list({
+                customer: customerId,
+                status: 'all', // Get all statuses to catch active, trialing, etc.
+                limit: 100,
+              });
+
+              // Cancel all other active subscriptions (excluding the one we just created)
+              const subscriptionsToCancel = allSubscriptions.data.filter(
+                (sub) => sub.id !== subscription.id && 
+                (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due')
+              );
+
+              if (subscriptionsToCancel.length > 0) {
+                console.log(`⚠️ Found ${subscriptionsToCancel.length} other active subscription(s) for customer ${customerId}. Canceling them...`);
+                
+                for (const subToCancel of subscriptionsToCancel) {
+                  try {
+                    await stripe.subscriptions.cancel(subToCancel.id);
+                    console.log(`✅ Canceled duplicate subscription ${subToCancel.id} (status: ${subToCancel.status})`);
+                  } catch (cancelError) {
+                    console.error(`❌ Failed to cancel subscription ${subToCancel.id}:`, cancelError);
+                  }
+                }
+              }
+            } catch (listError) {
+              console.error('❌ Error checking for duplicate subscriptions:', listError);
+              // Don't throw - continue processing the new subscription even if we can't cancel old ones
+            }
+          }
         }
 
         // Get the product ID from the subscription items
