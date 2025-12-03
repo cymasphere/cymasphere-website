@@ -1389,6 +1389,7 @@ export default function AdminCRM() {
   const [hasPaymentMethod, setHasPaymentMethod] = useState<
     Record<string, boolean>
   >({});
+  const [selectedUserHasPaymentMethod, setSelectedUserHasPaymentMethod] = useState<boolean | null>(null);
 
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
@@ -2022,6 +2023,7 @@ export default function AdminCRM() {
       setUserSubscriptions([]);
       setUserPurchases([]);
       setUserInvoices([]);
+      setSelectedUserHasPaymentMethod(false);
     }
 
     // Fetch support tickets for the user
@@ -2031,20 +2033,32 @@ export default function AdminCRM() {
     // This ensures Stripe secret key is only used on the server
     if (user.customerId) {
       try {
-        const response = await fetch(`/api/admin/customer-total-spent?customerId=${user.customerId}`);
-        const data = await response.json();
+        const [totalSpentResponse, paymentMethodResponse] = await Promise.all([
+          fetch(`/api/admin/customer-total-spent?customerId=${user.customerId}`),
+          fetch(`/api/admin/customer-has-payment-method?customerId=${user.customerId}`)
+        ]);
 
-        if (data.success && typeof data.totalSpent === 'number') {
+        const totalSpentData = await totalSpentResponse.json();
+        const paymentMethodData = await paymentMethodResponse.json();
+
+        // Update payment method status
+        if (paymentMethodData.success) {
+          setSelectedUserHasPaymentMethod(paymentMethodData.hasPaymentMethod);
+        } else {
+          setSelectedUserHasPaymentMethod(null);
+        }
+
+        if (totalSpentData.success && typeof totalSpentData.totalSpent === 'number') {
           // Update selectedUser with recalculated totalSpent
           setSelectedUser((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              totalSpent: data.totalSpent >= 0 ? data.totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+              totalSpent: totalSpentData.totalSpent >= 0 ? totalSpentData.totalSpent : (prev.totalSpent === -1 ? -1 : 0),
             };
           });
         } else {
-          console.error("Error recalculating totalSpent:", data.error);
+          console.error("Error recalculating totalSpent:", totalSpentData.error);
           // Fall back to calculation from fetched data if API fails
           const purchasesTotal = purchases
             .filter((p) => 
@@ -3193,14 +3207,26 @@ export default function AdminCRM() {
                     </InfoValue>
                   </InfoItem>
                   <InfoItem>
-                    <InfoLabel>Join Date</InfoLabel>
-                    <InfoValue>{formatDateTimeNoLeadingZero(selectedUser.createdAt)}</InfoValue>
+                    <InfoLabel>Trial Days Left</InfoLabel>
+                    <InfoValue>
+                      {(() => {
+                        const daysLeft = getRemainingTrialDays(selectedUser.trialExpiration);
+                        if (daysLeft === null) {
+                          return "N/A";
+                        }
+                        return `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+                      })()}
+                    </InfoValue>
                   </InfoItem>
                   <InfoItem>
-                    <InfoLabel>Last Active</InfoLabel>
+                    <InfoLabel>Has Payment Method</InfoLabel>
                     <InfoValue>
-                      {formatDateTimeNoLeadingZero(
-                        selectedUser.lastActive || selectedUser.createdAt
+                      {selectedUserHasPaymentMethod === null ? (
+                        <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                      ) : selectedUserHasPaymentMethod ? (
+                        "Yes"
+                      ) : (
+                        "No"
                       )}
                     </InfoValue>
                   </InfoItem>
@@ -3211,6 +3237,18 @@ export default function AdminCRM() {
                         <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                       ) : (
                         formatCurrency(selectedUser.totalSpent)
+                      )}
+                    </InfoValue>
+                  </InfoItem>
+                  <InfoItem>
+                    <InfoLabel>Join Date</InfoLabel>
+                    <InfoValue>{formatDateTimeNoLeadingZero(selectedUser.createdAt)}</InfoValue>
+                  </InfoItem>
+                  <InfoItem>
+                    <InfoLabel>Last Active</InfoLabel>
+                    <InfoValue>
+                      {formatDateTimeNoLeadingZero(
+                        selectedUser.lastActive || selectedUser.createdAt
                       )}
                     </InfoValue>
                   </InfoItem>

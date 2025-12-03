@@ -495,6 +495,7 @@ export default function UserProfileModal({
     created_at: string;
   }>>([]);
   const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState<boolean | null>(null);
 
   const fetchUserSubscriptions = useCallback(async (customerId: string) => {
     try {
@@ -614,11 +615,29 @@ export default function UserProfileModal({
       setUserPurchases([]);
       setUserInvoices([]);
       setSupportTickets([]);
+      setHasPaymentMethod(null);
       
       if (user.customerId) {
         fetchUserSubscriptions(user.customerId);
         fetchUserPurchases(user.customerId);
         fetchUserInvoices(user.customerId);
+        
+        // Fetch payment method status
+        fetch(`/api/admin/customer-has-payment-method?customerId=${user.customerId}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              setHasPaymentMethod(data.hasPaymentMethod);
+            } else {
+              setHasPaymentMethod(false);
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking payment method:", error);
+            setHasPaymentMethod(false);
+          });
+      } else {
+        setHasPaymentMethod(false);
       }
       fetchUserSupportTickets(user.id);
     } else if (!isOpen) {
@@ -627,6 +646,7 @@ export default function UserProfileModal({
       setUserPurchases([]);
       setUserInvoices([]);
       setSupportTickets([]);
+      setHasPaymentMethod(null);
     }
   }, [isOpen, user?.id, user?.customerId, fetchUserSubscriptions, fetchUserPurchases, fetchUserInvoices, fetchUserSupportTickets]);
 
@@ -706,14 +726,28 @@ export default function UserProfileModal({
                   </InfoValue>
                 </InfoItem>
                 <InfoItem>
-                  <InfoLabel>Join Date</InfoLabel>
-                  <InfoValue>{formatDate(user.createdAt)}</InfoValue>
+                  <InfoLabel>Trial Days Left</InfoLabel>
+                  <InfoValue>
+                    {(() => {
+                      if (!user.trialExpiration) return "N/A";
+                      const trialEnd = new Date(user.trialExpiration);
+                      const now = new Date();
+                      if (trialEnd <= now) return "N/A";
+                      const diffTime = trialEnd.getTime() - now.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return diffDays > 0 ? `${diffDays} day${diffDays !== 1 ? 's' : ''}` : "N/A";
+                    })()}
+                  </InfoValue>
                 </InfoItem>
                 <InfoItem>
-                  <InfoLabel>Last Active</InfoLabel>
+                  <InfoLabel>Has Payment Method</InfoLabel>
                   <InfoValue>
-                    {formatDateTime(
-                      user.lastActive || user.createdAt
+                    {hasPaymentMethod === null ? (
+                      <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                    ) : hasPaymentMethod ? (
+                      "Yes"
+                    ) : (
+                      "No"
                     )}
                   </InfoValue>
                 </InfoItem>
@@ -724,6 +758,18 @@ export default function UserProfileModal({
                       <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
                     ) : (
                       formatCurrencyFromDollars(user.totalSpent)
+                    )}
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Join Date</InfoLabel>
+                  <InfoValue>{formatDate(user.createdAt)}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>Last Active</InfoLabel>
+                  <InfoValue>
+                    {formatDateTime(
+                      user.lastActive || user.createdAt
                     )}
                   </InfoValue>
                 </InfoItem>
