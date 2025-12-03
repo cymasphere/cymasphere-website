@@ -1768,18 +1768,22 @@ export default function AdminCRM() {
   };
 
   const getSortIcon = (field: keyof UserData) => {
-    // Only show sort indicator for sortable fields
-    const sortableFields = [
+    // All fields are sortable - show sort indicator for all
+    const allSortableFields = [
       "firstName",
       "lastName",
       "subscription",
       "createdAt",
       "email",
+      "trialExpiration",
+      "lastActive",
+      "totalSpent",
+      "supportTickets",
     ];
-    const isSortable = sortableFields.includes(field as string);
+    const isSortable = allSortableFields.includes(field as string);
 
     if (!isSortable) {
-      return null; // Don't show sort icon for non-sortable fields
+      return null; // Don't show sort icon for non-sortable fields (like Actions)
     }
 
     if (sortField !== field) return <FaSort />;
