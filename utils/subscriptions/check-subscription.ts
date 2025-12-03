@@ -21,7 +21,7 @@ export async function checkUserSubscription(
   // Get user's profile and email
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("customer_id, email, subscription, subscription_expiration")
+    .select("customer_id, email, subscription, subscription_expiration, subscription_source, first_name, last_name")
     .eq("id", userId)
     .single();
 
@@ -44,6 +44,9 @@ export async function checkUserSubscription(
     if (!nfrCheck.error && nfrCheck.hasPro) {
       console.log(`[checkUserSubscription] NFR access granted for ${profile.email}`);
       
+      // Check if this is a new NFR grant (subscription_source wasn't already "nfr")
+      const isNewNfrGrant = profile.subscription_source !== "nfr";
+      
       // NFR grants lifetime access - update subscription field so app recognizes it
       await supabase
         .from("profiles")
@@ -53,6 +56,49 @@ export async function checkUserSubscription(
           subscription_source: "nfr",
         })
         .eq("id", userId);
+      
+      // Send welcome email for new NFR grants
+      if (isNewNfrGrant) {
+        try {
+          const { generateWelcomeEmailHtml, generateWelcomeEmailText } = await import("@/utils/email-campaigns/welcome-email");
+          const { sendEmail } = await import("@/utils/email");
+          
+          const customerName = profile.first_name && profile.last_name 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : undefined;
+          
+          const welcomeEmailHtml = generateWelcomeEmailHtml({
+            customerName,
+            customerEmail: profile.email,
+            purchaseType: 'elite',
+            planName: 'elite',
+          });
+          
+          const welcomeEmailText = generateWelcomeEmailText({
+            customerName,
+            customerEmail: profile.email,
+            purchaseType: 'elite',
+            planName: 'elite',
+          });
+
+          const emailResult = await sendEmail({
+            to: profile.email,
+            subject: 'Welcome to Cymasphere - Elite Access',
+            html: welcomeEmailHtml,
+            text: welcomeEmailText,
+            from: 'Cymasphere <support@cymasphere.com>',
+          });
+          
+          if (emailResult.success) {
+            console.log(`✅ Sent welcome email for elite access to ${profile.email} (Message ID: ${emailResult.messageId})`);
+          } else {
+            console.error(`❌ Failed to send welcome email for elite access:`, emailResult.error);
+          }
+        } catch (emailError) {
+          console.error('❌ Failed to send welcome email for elite access:', emailError);
+          // Don't throw - email failure shouldn't break subscription check
+        }
+      }
       
       return {
         subscription: "lifetime",

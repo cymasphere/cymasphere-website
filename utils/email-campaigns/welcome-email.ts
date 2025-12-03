@@ -5,7 +5,7 @@
 export interface WelcomeEmailData {
   customerName?: string;
   customerEmail: string;
-  purchaseType: 'subscription' | 'lifetime';
+  purchaseType: 'subscription' | 'lifetime' | 'elite';
   subscriptionType?: 'monthly' | 'annual';
   planName: string;
   isTrial?: boolean;
@@ -24,7 +24,9 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
   
   // Format plan name for display
   let planDisplayName = '';
-  if (purchaseType === 'lifetime') {
+  if (purchaseType === 'elite') {
+    planDisplayName = 'Elite Access';
+  } else if (purchaseType === 'lifetime') {
     planDisplayName = 'Lifetime License';
   } else if (subscriptionType === 'monthly') {
     planDisplayName = 'Monthly Subscription';
@@ -78,14 +80,18 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                 Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
               </p>
               
-              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #6c63ff; text-transform: uppercase; letter-spacing: 0.5px;">
-                  ${data.isTrial ? 'Your Free Trial' : 'Your Purchase'}
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid ${purchaseType === 'elite' ? '#9b59b6' : '#6c63ff'};">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: ${purchaseType === 'elite' ? '#9b59b6' : '#6c63ff'}; text-transform: uppercase; letter-spacing: 0.5px;">
+                  ${data.isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}
                 </p>
                 <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #333;">
                   ${planDisplayName}
                 </p>
-                ${data.isTrial ? `
+                ${purchaseType === 'elite' ? `
+                  <p style="margin: 8px 0 0 0; font-size: 14px; color: #9b59b6; font-weight: 500;">
+                    ✨ You've been granted Elite Access! Enjoy lifetime premium features.
+                  </p>
+                ` : data.isTrial ? `
                   <p style="margin: 8px 0 0 0; font-size: 14px; color: #4eccd4; font-weight: 500;">
                     🎉 You're starting a free trial! No charges will be made until ${trialEndDateFormatted}.
                   </p>
@@ -155,7 +161,9 @@ export function generateWelcomeEmailText(data: WelcomeEmailData): string {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
   
   let planDisplayName = '';
-  if (purchaseType === 'lifetime') {
+  if (purchaseType === 'elite') {
+    planDisplayName = 'Elite Access';
+  } else if (purchaseType === 'lifetime') {
     planDisplayName = 'Lifetime License';
   } else if (subscriptionType === 'monthly') {
     planDisplayName = 'Monthly Subscription';
@@ -180,8 +188,10 @@ Welcome to Cymasphere, ${firstName}!
 
 Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
 
-${isTrial ? 'Your Free Trial' : 'Your Purchase'}: ${planDisplayName}
-${isTrial ? `
+${isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}: ${planDisplayName}
+${purchaseType === 'elite' ? `
+✨ You've been granted Elite Access! Enjoy lifetime premium features.
+` : isTrial ? `
 🎉 You're starting a free trial! No charges will be made until ${trialEndDateFormatted}.
 
 ⏰ Trial Information:
