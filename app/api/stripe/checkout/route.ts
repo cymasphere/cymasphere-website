@@ -441,6 +441,18 @@ async function createCheckoutSession(
         // Continue without user data
       }
     }
+    
+    // CRITICAL: Always include email in metadata for webhook fallback lookup
+    // If we don't have email from profile, get it from Stripe customer
+    // This ensures webhook can always find the user even if customer_id isn't set in profile yet
+    if (!userEmail && customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        userEmail = typeof customer === 'object' && !customer.deleted ? customer.email : undefined;
+      } catch (error) {
+        console.error("Error retrieving customer email:", error);
+      }
+    }
 
     // Get plan name for Meta tracking with trial period
     let planName = await getPlanName(priceId, planType);
@@ -473,7 +485,7 @@ async function createCheckoutSession(
         collect_payment_method: collectPaymentMethod.toString(),
         is_signed_up: isSignedUp.toString(),
         ...(userId && { user_id: userId }),
-        ...(userEmail && { email: userEmail }),
+        ...(userEmail && { email: userEmail }), // Always include email if available for webhook fallback
         event_id: eventId,
       },
     };

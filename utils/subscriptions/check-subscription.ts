@@ -86,12 +86,14 @@ export async function checkUserSubscription(
   // Check Stripe subscriptions
   let stripeSubscription: SubscriptionType = "none";
   let stripeExpiration: Date | null = null;
+  let stripeTrialExpiration: Date | null = null;
 
   if (profile.customer_id) {
     const stripeResult = await customerPurchasedProFromSupabase(profile.customer_id);
     if (stripeResult.success && stripeResult.subscription !== "none") {
       stripeSubscription = stripeResult.subscription;
       stripeExpiration = stripeResult.subscription_expiration || null;
+      stripeTrialExpiration = stripeResult.trial_end_date || null;
     } else if (profile.subscription === "lifetime") {
       // CRITICAL: If profile already has "lifetime" (set by webhook) but Stripe query didn't find it,
       // preserve the lifetime status. This prevents downgrading users when stripe_tables schema
@@ -165,12 +167,20 @@ export async function checkUserSubscription(
     }
   }
 
+  // Determine trial expiration based on source
+  let finalTrialExpiration: Date | null = null;
+  if (source === "stripe" && stripeTrialExpiration) {
+    finalTrialExpiration = stripeTrialExpiration;
+  }
+  // For iOS and NFR, no trial expiration (they're either active subscriptions or lifetime)
+
   // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
     .from("profiles")
     .update({
       subscription: finalSubscription,
       subscription_expiration: finalExpiration?.toISOString() || null,
+      trial_expiration: finalTrialExpiration?.toISOString() || null,
       subscription_source: source,
     })
     .eq("id", userId);

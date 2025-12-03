@@ -103,12 +103,45 @@ export async function POST(request: NextRequest) {
             session.subscription as string
           );
           
-          // Find user by customer ID
-          const { data: profile } = await supabase
+          // Find user by customer ID first
+          let { data: profile } = await supabase
             .from("profiles")
             .select("*")
             .eq("customer_id", customerId)
             .single();
+
+          // If not found by customer_id, try finding by email (from metadata or Stripe customer)
+          if (!profile) {
+            let lookupEmail = userEmail;
+            if (!lookupEmail) {
+              try {
+                const customer = await stripe.customers.retrieve(customerId);
+                lookupEmail = typeof customer === 'object' && !customer.deleted ? customer.email : undefined;
+              } catch (error) {
+                console.error("Error retrieving customer:", error);
+              }
+            }
+            
+            if (lookupEmail) {
+              const { data: profileByEmail } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("email", lookupEmail)
+                .single();
+              
+              if (profileByEmail) {
+                profile = profileByEmail;
+                // Update customer_id if it wasn't set
+                if (!profile.customer_id) {
+                  await supabase
+                    .from("profiles")
+                    .update({ customer_id: customerId })
+                    .eq("id", profile.id);
+                  profile.customer_id = customerId;
+                }
+              }
+            }
+          }
 
           if (profile) {
             // Update subscription status
@@ -125,6 +158,8 @@ export async function POST(request: NextRequest) {
                 subscription: subscriptionType,
                 subscription_expiration: new Date(subscription.current_period_end * 1000).toISOString(),
                 trial_expiration: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+                subscription_source: "stripe",
+                customer_id: customerId, // Ensure customer_id is set
               })
               .eq("id", profile.id);
 
@@ -237,12 +272,45 @@ export async function POST(request: NextRequest) {
           // Handle one-time payment (lifetime)
           const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
           
-          // Find user by customer ID
-          const { data: profile } = await supabase
+          // Find user by customer ID first
+          let { data: profile } = await supabase
             .from("profiles")
             .select("*")
             .eq("customer_id", customerId)
             .single();
+
+          // If not found by customer_id, try finding by email (from metadata or Stripe customer)
+          if (!profile) {
+            let lookupEmail = userEmail;
+            if (!lookupEmail) {
+              try {
+                const customer = await stripe.customers.retrieve(customerId);
+                lookupEmail = typeof customer === 'object' && !customer.deleted ? customer.email : undefined;
+              } catch (error) {
+                console.error("Error retrieving customer:", error);
+              }
+            }
+            
+            if (lookupEmail) {
+              const { data: profileByEmail } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("email", lookupEmail)
+                .single();
+              
+              if (profileByEmail) {
+                profile = profileByEmail;
+                // Update customer_id if it wasn't set
+                if (!profile.customer_id) {
+                  await supabase
+                    .from("profiles")
+                    .update({ customer_id: customerId })
+                    .eq("id", profile.id);
+                  profile.customer_id = customerId;
+                }
+              }
+            }
+          }
 
           if (profile) {
             // CRITICAL: Check if user already has lifetime to prevent duplicate processing
@@ -337,6 +405,7 @@ export async function POST(request: NextRequest) {
                   subscription: "lifetime",
                   subscription_expiration: null, // Lifetime subscriptions don't expire
                   subscription_source: "stripe",
+                  customer_id: customerId, // Ensure customer_id is set
                 })
                 .eq("id", profile.id);
               
@@ -621,11 +690,30 @@ export async function POST(request: NextRequest) {
           const customer = await stripe.customers.retrieve(customerId);
           customerEmail = typeof customer === 'object' && !customer.deleted ? customer.email || undefined : undefined;
           
-          const { data: profileData } = await supabase
+          // Find user by customer ID first
+          let { data: profileData } = await supabase
             .from("profiles")
             .select("id, email")
             .eq("customer_id", customerId)
             .single();
+
+          // If not found by customer_id, try finding by email
+          if (!profileData && customerEmail) {
+            const { data: profileByEmail } = await supabase
+              .from("profiles")
+              .select("id, email")
+              .eq("email", customerEmail)
+              .single();
+            
+            if (profileByEmail) {
+              profileData = profileByEmail;
+              // Update customer_id if it wasn't set
+              await supabase
+                .from("profiles")
+                .update({ customer_id: customerId })
+                .eq("id", profileData.id);
+            }
+          }
 
           profile = profileData;
 
@@ -691,12 +779,15 @@ export async function POST(request: NextRequest) {
               : "none";
 
           // Update the profile in the database
+          const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
           await supabase
             .from("profiles")
             .update({
               subscription: subscriptionType,
               subscription_expiration: new Date(subscription.current_period_end * 1000).toISOString(),
               trial_expiration: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+              subscription_source: "stripe",
+              customer_id: customerId, // Ensure customer_id is set
             })
             .eq("id", profile.id);
 
