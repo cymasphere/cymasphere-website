@@ -276,6 +276,28 @@ const FilterSelect = styled.select`
   }
 `;
 
+const PageSizeSelect = styled.select`
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.85rem;
+  min-width: 80px;
+  cursor: pointer;
+  margin-left: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  option {
+    background-color: var(--card-bg);
+    color: var(--text);
+  }
+`;
+
 const TableContainer = styled.div`
   background-color: var(--card-bg);
   border-radius: 12px;
@@ -1350,7 +1372,7 @@ export default function AdminCRM() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const usersPerPage = 10;
+  const [usersPerPage, setUsersPerPage] = useState(10);
 
   // Modal state
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -1462,6 +1484,12 @@ export default function AdminCRM() {
 
     return () => clearTimeout(timer);
   }, [searchTerm, debouncedSearchTerm]);
+
+  // Reset to page 1 and recalculate total pages when page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setTotalPages(Math.ceil(totalCount / usersPerPage));
+  }, [usersPerPage, totalCount]);
 
   // Fetch count separately (only when search/filter changes)
   const fetchCount = async () => {
@@ -1673,6 +1701,7 @@ export default function AdminCRM() {
     subscriptionFilter,
     sortField,
     sortDirection,
+    usersPerPage,
     user,
     languageLoading,
   ]);
@@ -3096,12 +3125,25 @@ export default function AdminCRM() {
                       <SearchLoadingSpinner />
                     </>
                   ) : (
-                    `Showing ${
-                      (currentPage - 1) * usersPerPage + 1
-                    } to ${Math.min(
-                      currentPage * usersPerPage,
-                      totalCount
-                    )} of ${totalCount} users`
+                    <>
+                      Showing{" "}
+                      {(currentPage - 1) * usersPerPage + 1} to{" "}
+                      {Math.min(
+                        currentPage * usersPerPage,
+                        totalCount
+                      )}{" "}
+                      of {totalCount} users
+                      <PageSizeSelect
+                        value={usersPerPage}
+                        onChange={(e) => setUsersPerPage(Number(e.target.value))}
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </PageSizeSelect>
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem' }}>per page</span>
+                    </>
                   )}
                 </PaginationInfo>
                 <PaginationButtons>
