@@ -107,6 +107,8 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
     height: 52px;
     font-size: 20px;
     position: relative;
+    /* Hide the button when chat is open on mobile (close button is in header) */
+    display: ${props => props.$isOpen ? 'none' : 'flex'};
   }
 `;
 
