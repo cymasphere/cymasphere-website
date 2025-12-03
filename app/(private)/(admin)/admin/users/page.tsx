@@ -574,8 +574,15 @@ const SupportTicketsCount = styled.div`
   font-weight: 500;
 `;
 
-const TicketBadge = styled.span<{ $count: number }>`
-  background-color: ${(props) => (props.$count > 0 ? "#e74c3c" : "#95a5a6")};
+const TicketBadge = styled.span<{ $openCount: number; $closedCount: number; $totalCount: number }>`
+  background-color: ${(props) => {
+    // Red if there are open tickets
+    if (props.$openCount > 0) return "#e74c3c";
+    // Green if there are closed tickets but no open tickets
+    if (props.$closedCount > 0) return "#16a34a";
+    // Grey if there are no tickets
+    return "#95a5a6";
+  }};
   color: white;
   border-radius: 12px;
   padding: 2px 8px;
@@ -1384,7 +1391,7 @@ export default function AdminCRM() {
   >([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [supportTicketCounts, setSupportTicketCounts] = useState<
-    Record<string, number>
+    Record<string, { open: number; closed: number; total: number }>
   >({});
   const [hasPaymentMethod, setHasPaymentMethod] = useState<
     Record<string, boolean>
@@ -1580,8 +1587,8 @@ export default function AdminCRM() {
                     aValue = a.totalSpent;
                     bValue = b.totalSpent;
                   } else if (sortField === "supportTickets") {
-                    aValue = supportTicketCounts[a.id] || 0;
-                    bValue = supportTicketCounts[b.id] || 0;
+                    aValue = supportTicketCounts[a.id]?.total || 0;
+                    bValue = supportTicketCounts[b.id]?.total || 0;
                   }
 
                   // Handle null/undefined values
@@ -1695,8 +1702,8 @@ export default function AdminCRM() {
             aValue = a.totalSpent;
             bValue = b.totalSpent;
           } else if (sortField === "supportTickets") {
-            aValue = supportTicketCounts[a.id] || 0;
-            bValue = supportTicketCounts[b.id] || 0;
+            aValue = supportTicketCounts[a.id]?.total || 0;
+            bValue = supportTicketCounts[b.id]?.total || 0;
           }
 
           // Handle null/undefined values
@@ -1828,7 +1835,7 @@ export default function AdminCRM() {
   // Get support ticket count for a user from fetched data
   const getSupportTicketCount = (userId: string) => {
     // Get real count from fetched data, default to 0 if not loaded yet
-    return supportTicketCounts[userId] || 0;
+    return supportTicketCounts[userId] || { open: 0, closed: 0, total: 0 };
   };
 
   const formatDate = (dateString: string) => {
@@ -2991,8 +2998,12 @@ export default function AdminCRM() {
                           <TableCell>
                             <SupportTicketsCount>
                               <FaTicketAlt />
-                              <TicketBadge $count={supportTicketCount}>
-                                {supportTicketCount}
+                              <TicketBadge 
+                                $openCount={supportTicketCount.open} 
+                                $closedCount={supportTicketCount.closed}
+                                $totalCount={supportTicketCount.total}
+                              >
+                                {supportTicketCount.total}
                               </TicketBadge>
                             </SupportTicketsCount>
                           </TableCell>

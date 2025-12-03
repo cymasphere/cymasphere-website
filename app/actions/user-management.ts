@@ -2967,12 +2967,12 @@ export async function getCustomerInvoicesAdmin(
 
 /**
  * Get support ticket counts for multiple users with admin check (admin only)
- * Returns a map of userId -> ticket count
+ * Returns a map of userId -> ticket count info (open, closed, total)
  */
 export async function getUserSupportTicketCountsAdmin(
   userIds: string[]
 ): Promise<{
-  counts: Record<string, number>;
+  counts: Record<string, { open: number; closed: number; total: number }>;
   error?: string;
 }> {
   try {
@@ -2991,16 +2991,16 @@ export async function getUserSupportTicketCountsAdmin(
 
     const { data: tickets, error: ticketsError } = await serviceSupabase
       .from("support_tickets")
-      .select("user_id")
+      .select("user_id, status")
       .in("user_id", userIds);
 
     if (ticketsError) {
       // If table doesn't exist (42P01), return empty counts silently
       // This allows the UI to work even if the migration hasn't been run yet
       if (ticketsError.code === "42P01") {
-        const counts: Record<string, number> = {};
+        const counts: Record<string, { open: number; closed: number; total: number }> = {};
         userIds.forEach((userId) => {
-          counts[userId] = 0;
+          counts[userId] = { open: 0, closed: 0, total: 0 };
         });
         return { counts };
       }
@@ -3011,17 +3011,26 @@ export async function getUserSupportTicketCountsAdmin(
       };
     }
 
-    // Count tickets per user
-    const counts: Record<string, number> = {};
+    // Count tickets per user by status
+    const counts: Record<string, { open: number; closed: number; total: number }> = {};
     userIds.forEach((userId) => {
-      counts[userId] = 0;
+      counts[userId] = { open: 0, closed: 0, total: 0 };
     });
 
     if (tickets) {
       tickets.forEach((ticket) => {
         const userId = ticket.user_id;
         if (userId && counts[userId] !== undefined) {
-          counts[userId] = (counts[userId] || 0) + 1;
+          counts[userId].total += 1;
+          
+          // Open tickets: 'open' or 'in_progress'
+          if (ticket.status === 'open' || ticket.status === 'in_progress') {
+            counts[userId].open += 1;
+          }
+          // Closed tickets: 'resolved' or 'closed'
+          else if (ticket.status === 'resolved' || ticket.status === 'closed') {
+            counts[userId].closed += 1;
+          }
         }
       });
     }
