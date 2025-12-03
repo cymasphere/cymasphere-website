@@ -2979,7 +2979,7 @@ export default function AdminCRM() {
                           <TrialCell>
                             {(() => {
                               const trialInfo = getTrialInfo(userData.trialExpiration, userData.createdAt, userData.subscriptionExpiration);
-                              if (!trialInfo) return "-";
+                              if (!trialInfo) return null;
                               return (
                                 <TrialBadgeBox $isActive={trialInfo.isActive}>
                                   {trialInfo.days}
