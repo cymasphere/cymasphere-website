@@ -1352,6 +1352,7 @@ export async function getAllUsersForCRM(
       subscription: "subscription",
       createdAt: "updated_at", // Using updated_at as created_at equivalent
       email: "email", // Email is now available in profiles table (synced from auth.users)
+      trialExpiration: "trial_expiration",
     };
 
     // Apply sorting to the query if the field can be sorted in the database

@@ -312,22 +312,26 @@ const Table = styled.table`
   } /* Subscription */
   th:nth-child(4),
   td:nth-child(4) {
-    width: 110px;
-  } /* Join Date */
+    width: 50px;
+  } /* Trial */
   th:nth-child(5),
   td:nth-child(5) {
     width: 110px;
-  } /* Last Active */
+  } /* Join Date */
   th:nth-child(6),
   td:nth-child(6) {
-    width: 100px;
-  } /* Support Tickets */
+    width: 110px;
+  } /* Last Active */
   th:nth-child(7),
   td:nth-child(7) {
-    width: 120px;
-  } /* Total Spent */
+    width: 100px;
+  } /* Support Tickets */
   th:nth-child(8),
   td:nth-child(8) {
+    width: 100px;
+  } /* Total Spent */
+  th:nth-child(9),
+  td:nth-child(9) {
     width: 80px;
   } /* Actions */
 `;
@@ -519,6 +523,47 @@ const SubscriptionCell = styled(TableCell)`
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+`;
+
+const TrialBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+`;
+
+const TrialCell = styled(TableCell)`
+  padding: 0.5rem;
+`;
+
+const TrialBadgeBox = styled.span<{ $isActive?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: ${(props) => 
+    props.$isActive 
+      ? "rgba(34, 197, 94, 0.2)" 
+      : "rgba(156, 163, 175, 0.2)"};
+  color: ${(props) => 
+    props.$isActive 
+      ? "#22c55e" 
+      : "#9ca3af"};
+  border: 1px solid ${(props) => 
+    props.$isActive 
+      ? "rgba(34, 197, 94, 0.4)" 
+      : "rgba(156, 163, 175, 0.4)"};
 `;
 
 const SupportTicketsCount = styled.div`
@@ -1474,8 +1519,8 @@ export default function AdminCRM() {
             }
 
             // Update users with additional data
-            setUsers((prevUsers) =>
-              prevUsers.map((user) => ({
+            setUsers((prevUsers) => {
+              let updatedUsers = prevUsers.map((user) => ({
                 ...user,
                 lastActive:
                   additionalData.lastActive[user.id] || user.createdAt, // Fallback to join date if no session data
@@ -1483,8 +1528,49 @@ export default function AdminCRM() {
                   additionalData.totalSpent[user.id] !== undefined
                     ? additionalData.totalSpent[user.id]
                     : 0, // Default to 0 if no data found
-              }))
-            );
+              }));
+
+              // Apply client-side sorting for fields that can't be sorted server-side
+              if (sortField === "lastActive" || sortField === "totalSpent" || sortField === "supportTickets") {
+                updatedUsers = [...updatedUsers].sort((a, b) => {
+                  let aValue: any;
+                  let bValue: any;
+
+                  if (sortField === "lastActive") {
+                    aValue = a.lastActive || a.createdAt;
+                    bValue = b.lastActive || b.createdAt;
+                  } else if (sortField === "totalSpent") {
+                    aValue = a.totalSpent;
+                    bValue = b.totalSpent;
+                  } else if (sortField === "supportTickets") {
+                    aValue = supportTicketCounts[a.id] || 0;
+                    bValue = supportTicketCounts[b.id] || 0;
+                  }
+
+                  // Handle null/undefined values
+                  if (aValue == null && bValue == null) return 0;
+                  if (aValue == null) return 1; // null values go to end
+                  if (bValue == null) return -1;
+
+                  // Compare values
+                  if (sortField === "lastActive") {
+                    // Compare dates
+                    const aDate = new Date(aValue).getTime();
+                    const bDate = new Date(bValue).getTime();
+                    return sortDirection === "asc" 
+                      ? aDate - bDate 
+                      : bDate - aDate;
+                  } else {
+                    // Compare numbers
+                    return sortDirection === "asc"
+                      ? aValue - bValue
+                      : bValue - aValue;
+                  }
+                });
+              }
+
+              return updatedUsers;
+            });
           })
           .catch((err) => {
             console.error("Error fetching additional user data:", err);
@@ -1547,6 +1633,55 @@ export default function AdminCRM() {
     languageLoading,
   ]);
 
+  // Apply client-side sorting when sortField changes to a client-sortable field
+  useEffect(() => {
+    if (sortField === "lastActive" || sortField === "totalSpent" || sortField === "supportTickets") {
+      setUsers((prevUsers) => {
+        // Only sort if we have the data
+        const hasData = prevUsers.every(
+          (u) =>
+            (sortField === "lastActive" && u.lastActive) ||
+            (sortField === "totalSpent" && u.totalSpent !== -1) ||
+            (sortField === "supportTickets" && supportTicketCounts[u.id] !== undefined)
+        );
+
+        if (!hasData) return prevUsers; // Wait for data to load
+
+        return [...prevUsers].sort((a, b) => {
+          let aValue: any;
+          let bValue: any;
+
+          if (sortField === "lastActive") {
+            aValue = a.lastActive || a.createdAt;
+            bValue = b.lastActive || b.createdAt;
+          } else if (sortField === "totalSpent") {
+            aValue = a.totalSpent;
+            bValue = b.totalSpent;
+          } else if (sortField === "supportTickets") {
+            aValue = supportTicketCounts[a.id] || 0;
+            bValue = supportTicketCounts[b.id] || 0;
+          }
+
+          // Handle null/undefined values
+          if (aValue == null && bValue == null) return 0;
+          if (aValue == null) return 1; // null values go to end
+          if (bValue == null) return -1;
+
+          // Compare values
+          if (sortField === "lastActive") {
+            // Compare dates
+            const aDate = new Date(aValue).getTime();
+            const bDate = new Date(bValue).getTime();
+            return sortDirection === "asc" ? aDate - bDate : bDate - aDate;
+          } else {
+            // Compare numbers
+            return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+          }
+        });
+      });
+    }
+  }, [sortField, sortDirection, supportTicketCounts]);
+
   // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1562,19 +1697,29 @@ export default function AdminCRM() {
   }, []);
 
   const handleSort = (field: keyof UserData) => {
-    // Only allow sorting on fields that can be sorted in the database
-    // Email is now sortable because we fetch it with the service role
-    // Fields like 'lastActive' and 'totalSpent' come from external sources and cannot be sorted
-    const sortableFields = [
+    // All fields are now sortable
+    // Some are sorted server-side (database fields), others are sorted client-side
+    const serverSortableFields = [
       "firstName",
       "lastName",
       "subscription",
       "createdAt",
       "email",
+      "trialExpiration",
     ];
-    if (!sortableFields.includes(field as string)) {
-      console.log(`Field "${field}" is not sortable at database level`);
-      return; // Don't allow sorting on this field
+    
+    // Fields that need client-side sorting (from external sources)
+    const clientSortableFields = [
+      "lastActive",
+      "totalSpent",
+      "supportTickets",
+    ];
+
+    const allSortableFields = [...serverSortableFields, ...clientSortableFields];
+    
+    if (!allSortableFields.includes(field as string)) {
+      console.log(`Field "${field}" is not sortable`);
+      return;
     }
 
     if (sortField === field) {
@@ -1685,6 +1830,65 @@ export default function AdminCRM() {
       style: "currency",
       currency: "USD",
     }).format(amount);
+  };
+
+  const getRemainingTrialDays = (trialExpiration?: string): number | null => {
+    if (!trialExpiration) return null;
+    
+    const trialEnd = new Date(trialExpiration);
+    const now = new Date();
+    
+    // Check if trial is still active (not expired)
+    if (trialEnd <= now) return null;
+    
+    // Calculate days remaining
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : null;
+  };
+
+  const getTrialInfo = (trialExpiration?: string, createdAt?: string, subscriptionExpiration?: string): { days: number | string; isActive: boolean } | null => {
+    if (!trialExpiration) return null;
+    
+    const trialEnd = new Date(trialExpiration);
+    const now = new Date();
+    
+    // Check if trial is still active
+    if (trialEnd > now) {
+      // Active trial - return remaining days
+      const diffTime = trialEnd.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return { days: diffDays > 0 ? diffDays : 0, isActive: true };
+    }
+    
+    // Trial has expired - calculate duration
+    // Try to determine if it was 7 or 14 days
+    let estimatedDuration = 7; // Default to 7 days (most common)
+    
+    if (createdAt) {
+      const accountCreated = new Date(createdAt);
+      const daysFromCreationToTrialEnd = Math.floor((trialEnd.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Heuristic: 
+      // - 7-day trials typically end 6-9 days after account creation
+      // - 14-day trials typically end 13-16 days after account creation
+      if (daysFromCreationToTrialEnd >= 13 && daysFromCreationToTrialEnd <= 16) {
+        estimatedDuration = 14;
+      } else if (daysFromCreationToTrialEnd >= 6 && daysFromCreationToTrialEnd <= 9) {
+        estimatedDuration = 7;
+      }
+    }
+    
+    // If we have subscription expiration, we can also check when subscription started
+    // Subscription typically starts right after trial ends
+    if (subscriptionExpiration) {
+      const subStart = new Date(subscriptionExpiration);
+      // If subscription started very close to trial end, we can infer trial duration
+      // But this is less reliable, so we'll stick with the creation-based heuristic
+    }
+    
+    return { days: estimatedDuration, isActive: false };
   };
 
   const getDisplayName = (user: UserData) => {
@@ -2596,19 +2800,38 @@ export default function AdminCRM() {
                     </TableHeaderCell>
                     <TableHeaderCell
                       $sortable={true}
+                      onClick={() => handleSort("trialExpiration")}
+                    >
+                      Trial
+                      {getSortIcon("trialExpiration")}
+                    </TableHeaderCell>
+                    <TableHeaderCell
+                      $sortable={true}
                       onClick={() => handleSort("createdAt")}
                     >
                       {t("admin.crmPage.userTable.joinDate", "Join Date")}
                       {getSortIcon("createdAt")}
                     </TableHeaderCell>
-                    <LastActiveHeaderCell $sortable={false}>
+                    <LastActiveHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("lastActive")}
+                    >
                       Last Active
+                      {getSortIcon("lastActive")}
                     </LastActiveHeaderCell>
-                    <TableHeaderCell $sortable={false}>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("supportTickets" as keyof UserData)}
+                    >
                       Support Tickets
+                      {getSortIcon("supportTickets" as keyof UserData)}
                     </TableHeaderCell>
-                    <TableHeaderCell $sortable={false}>
+                    <TableHeaderCell
+                      $sortable={true}
+                      onClick={() => handleSort("totalSpent")}
+                    >
                       {t("admin.crmPage.userTable.totalSpent", "Total Spent")}
+                      {getSortIcon("totalSpent")}
                     </TableHeaderCell>
                     <TableHeaderCell $sortable={false}>Actions</TableHeaderCell>
                   </tr>
@@ -2682,6 +2905,17 @@ export default function AdminCRM() {
                               {userData.hasNfr ? "NFR" : userData.subscription}
                             </SubscriptionBadge>
                           </SubscriptionCell>
+                          <TrialCell>
+                            {(() => {
+                              const trialInfo = getTrialInfo(userData.trialExpiration, userData.createdAt, userData.subscriptionExpiration);
+                              if (!trialInfo) return "-";
+                              return (
+                                <TrialBadgeBox $isActive={trialInfo.isActive}>
+                                  {trialInfo.days}
+                                </TrialBadgeBox>
+                              );
+                            })()}
+                          </TrialCell>
                           <JoinDateTableCell>
                             {formatDateTimeNoLeadingZero(userData.createdAt)}
                           </JoinDateTableCell>
