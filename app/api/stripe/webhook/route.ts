@@ -851,85 +851,13 @@ export async function POST(request: NextRequest) {
               `trial_${subscription.id}`
             );
 
-            // Send welcome email for trial
-            if (profile) {
-              try {
-                const welcomeEmailHtml = generateWelcomeEmailHtml({
-                  customerName: undefined,
-                  customerEmail: customerEmail || profile.email,
-                  purchaseType: 'subscription',
-                  subscriptionType: subscriptionType as 'monthly' | 'annual',
-                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
-                  isTrial: true,
-                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
-                  trialDays: trialDays,
-                });
-                
-                const welcomeEmailText = generateWelcomeEmailText({
-                  customerName: undefined,
-                  customerEmail: customerEmail || profile.email,
-                  purchaseType: 'subscription',
-                  subscriptionType: subscriptionType as 'monthly' | 'annual',
-                  planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
-                  isTrial: true,
-                  trialEndDate: new Date(subscription.trial_end * 1000).toISOString(),
-                  trialDays: trialDays,
-                });
-
-                const emailResult = await sendEmail({
-                  to: customerEmail || profile.email,
-                  subject: `Welcome to Cymasphere - Start Your Free Trial`,
-                  html: welcomeEmailHtml,
-                  text: welcomeEmailText,
-                  from: 'Cymasphere <support@cymasphere.com>',
-                });
-                
-                if (emailResult.success) {
-                  console.log(`✅ Sent welcome email for ${subscriptionType} trial to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
-                } else {
-                  console.error(`❌ Failed to send welcome email for ${subscriptionType} trial:`, emailResult.error);
-                }
-              } catch (emailError) {
-                console.error('❌ Failed to send welcome email:', emailError);
-                // Don't throw - email failure shouldn't break webhook processing
-              }
-            }
-          } else if (profile) {
-            // Send welcome email for new subscription (not in trial)
-            try {
-              const welcomeEmailHtml = generateWelcomeEmailHtml({
-                customerName: undefined,
-                customerEmail: customerEmail || profile.email,
-                purchaseType: 'subscription',
-                subscriptionType: subscriptionType as 'monthly' | 'annual',
-                planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
-              });
-              
-              const welcomeEmailText = generateWelcomeEmailText({
-                customerName: undefined,
-                customerEmail: customerEmail || profile.email,
-                purchaseType: 'subscription',
-                subscriptionType: subscriptionType as 'monthly' | 'annual',
-                planName: subscriptionType === 'monthly' ? 'monthly' : 'annual',
-              });
-
-              const emailResult = await sendEmail({
-                to: customerEmail || profile.email,
-                subject: `Welcome to Cymasphere - ${subscriptionType === 'monthly' ? 'Monthly' : 'Annual'} Subscription`,
-                html: welcomeEmailHtml,
-                text: welcomeEmailText,
-                from: 'Cymasphere <support@cymasphere.com>',
-              });
-              
-              if (emailResult.success) {
-                console.log(`✅ Sent welcome email for ${subscriptionType} subscription to ${customerEmail || profile.email} (Message ID: ${emailResult.messageId})`);
-              } else {
-                console.error(`❌ Failed to send welcome email for ${subscriptionType} subscription:`, emailResult.error);
-              }
-            } catch (emailError) {
-              console.error('❌ Failed to send welcome email:', emailError);
-              // Don't throw - email failure shouldn't break webhook processing
-            }
+            // NOTE: Welcome emails are sent from checkout.session.completed handler
+            // to avoid duplicates. This handler only tracks conversions.
+            console.log(`📧 Skipping welcome email for ${subscriptionType} trial - already sent from checkout.session.completed`);
+          } else {
+            // NOTE: Welcome emails are sent from checkout.session.completed handler
+            // to avoid duplicates. This handler only tracks conversions.
+            console.log(`📧 Skipping welcome email for ${subscriptionType} subscription - already sent from checkout.session.completed`);
           }
 
           // Create automation event for new subscription
