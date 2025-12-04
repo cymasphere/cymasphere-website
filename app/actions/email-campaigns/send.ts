@@ -211,12 +211,69 @@ async function getSubscribersForAudiences(
             JSON.stringify(subscribers, null, 2)
           );
         } else {
-          // For dynamic audiences, we'd need to implement filter logic here
-          // For now, skip dynamic audiences in development mode for safety
+          // For dynamic audiences, query subscribers based on filters
           console.log(
-            `⚠️ Dynamic audience skipped in development mode for safety`
+            `📋 Dynamic audience - querying subscribers based on filters`
           );
-          continue;
+
+          try {
+            // Extract filter rules
+            const rules = filters.rules || [];
+            let statusValue: string | null = null;
+            let subscriptionValue: string | null = null;
+            let additionalRules: any[] = [];
+
+            for (const rule of rules) {
+              if (rule.field === 'status') {
+                statusValue = rule.value;
+              } else if (rule.field === 'subscription') {
+                subscriptionValue = rule.value;
+              } else {
+                additionalRules.push(rule);
+              }
+            }
+
+            // Default to active status if not specified
+            const effectiveStatus = statusValue || 'active';
+
+            // Build query for subscribers
+            let subscribersQuery = supabase
+              .from('subscribers')
+              .select('id, email, status, created_at, metadata, user_id')
+              .eq('status', effectiveStatus);
+
+            // If subscription filter is needed, join with profiles
+            if (subscriptionValue) {
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('subscription', subscriptionValue);
+
+              const profileIds = (profilesData || []).map((p: any) => p.id);
+              if (profileIds.length === 0) {
+                console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
+                subscribers = [];
+              } else {
+                subscribersQuery = subscribersQuery.in('user_id', profileIds);
+              }
+            }
+
+            // Execute query
+            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
+
+            if (dynamicError) {
+              console.error(`❌ Error querying dynamic subscribers:`, dynamicError);
+              continue;
+            }
+
+            subscribers = dynamicSubscribers || [];
+            console.log(
+              `📊 Dynamic audience query returned ${subscribers.length} subscribers`
+            );
+          } catch (error) {
+            console.error(`❌ Error processing dynamic audience:`, error);
+            continue;
+          }
         }
 
         console.log(
@@ -340,12 +397,69 @@ async function getSubscribersForAudiences(
               .map((rel: any) => rel.subscribers)
               .filter(Boolean);
           } else {
-            // For dynamic excluded audiences, skip in development mode for safety
-            // (same pattern as included audiences)
+            // For dynamic excluded audiences, query subscribers based on filters
             console.log(
-              `⚠️ Dynamic excluded audience skipped in development mode for safety`
+              `📋 Dynamic excluded audience - querying subscribers based on filters`
             );
-            continue;
+
+            try {
+              // Extract filter rules
+              const rules = excludedFilters.rules || [];
+              let statusValue: string | null = null;
+              let subscriptionValue: string | null = null;
+              let additionalRules: any[] = [];
+
+              for (const rule of rules) {
+                if (rule.field === 'status') {
+                  statusValue = rule.value;
+                } else if (rule.field === 'subscription') {
+                  subscriptionValue = rule.value;
+                } else {
+                  additionalRules.push(rule);
+                }
+              }
+
+              // Default to active status if not specified
+              const effectiveStatus = statusValue || 'active';
+
+              // Build query for subscribers
+              let subscribersQuery = supabase
+                .from('subscribers')
+                .select('id, email, status, created_at, metadata, user_id')
+                .eq('status', effectiveStatus);
+
+              // If subscription filter is needed, join with profiles
+              if (subscriptionValue) {
+                const { data: profilesData } = await supabase
+                  .from('profiles')
+                  .select('id')
+                  .eq('subscription', subscriptionValue);
+
+                const profileIds = (profilesData || []).map((p: any) => p.id);
+                if (profileIds.length === 0) {
+                  console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
+                  excludedSubscribers = [];
+                } else {
+                  subscribersQuery = subscribersQuery.in('user_id', profileIds);
+                }
+              }
+
+              // Execute query
+              const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
+
+              if (dynamicError) {
+                console.error(`❌ Error querying dynamic excluded subscribers:`, dynamicError);
+                continue;
+              }
+
+              excludedSubscribers = dynamicSubscribers || [];
+              console.log(
+                `📊 Dynamic excluded audience query returned ${excludedSubscribers.length} subscribers`
+              );
+            } catch (error) {
+              console.error(`❌ Error processing dynamic excluded audience:`, error);
+              continue;
+            }
           }
 
           console.log(

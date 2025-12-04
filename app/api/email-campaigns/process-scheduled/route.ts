@@ -567,62 +567,215 @@ async function getSubscribersForAudiences(
   try {
     // Get all unique subscribers from included audiences
     let includedSubscribers: any[] = [];
+    const subscriberMap = new Map();
 
     if (audienceIds.length > 0) {
-      const { data: audienceSubscribers, error: audienceError } = await supabase
-        .from("email_audience_subscribers")
-        .select(
-          `
-          subscriber_id,
-          subscribers (
-            id,
-            email,
-            status,
-            user_id
-          )
-        `
-        )
-        .in("audience_id", audienceIds);
+      // Process each audience individually to handle static vs dynamic
+      for (const audienceId of audienceIds) {
+        // Get audience to check if it's static or dynamic
+        const { data: audience } = await supabase
+          .from("email_audiences")
+          .select("id, name, filters")
+          .eq("id", audienceId)
+          .single();
 
-      if (audienceError) {
-        console.error("❌ Error fetching audience subscribers:", audienceError);
-        throw audienceError;
-      }
-
-      // Flatten and deduplicate subscribers
-      const subscriberMap = new Map();
-      audienceSubscribers?.forEach((rel: any) => {
-        if (rel.subscribers && 
-            rel.subscribers.status === "active" && 
-            rel.subscribers.status !== "INACTIVE" && 
-            rel.subscribers.status !== "unsubscribed") {
-          subscriberMap.set(rel.subscribers.id, rel.subscribers);
+        if (!audience) {
+          console.error(`❌ Audience ${audienceId} not found`);
+          continue;
         }
-      });
+
+        const filters = (audience.filters as any) || {};
+        const isStatic = filters.audience_type === "static";
+
+        if (isStatic) {
+          // For static audiences, get subscribers from junction table
+          const { data: audienceSubscribers, error: audienceError } = await supabase
+            .from("email_audience_subscribers")
+            .select(
+              `
+              subscriber_id,
+              subscribers (
+                id,
+                email,
+                status,
+                user_id
+              )
+            `
+            )
+            .eq("audience_id", audienceId);
+
+          if (audienceError) {
+            console.error(`❌ Error fetching static audience subscribers:`, audienceError);
+            continue;
+          }
+
+          audienceSubscribers?.forEach((rel: any) => {
+            if (rel.subscribers && 
+                rel.subscribers.status === "active" && 
+                rel.subscribers.status !== "INACTIVE" && 
+                rel.subscribers.status !== "unsubscribed") {
+              subscriberMap.set(rel.subscribers.id, rel.subscribers);
+            }
+          });
+        } else {
+          // For dynamic audiences, query subscribers based on filters
+          console.log(`📋 Processing dynamic audience: ${audience.name}`);
+          
+          try {
+            const rules = filters.rules || [];
+            let statusValue: string | null = null;
+            let subscriptionValue: string | null = null;
+
+            for (const rule of rules) {
+              if (rule.field === 'status') {
+                statusValue = rule.value;
+              } else if (rule.field === 'subscription') {
+                subscriptionValue = rule.value;
+              }
+            }
+
+            const effectiveStatus = statusValue || 'active';
+
+            let subscribersQuery = supabase
+              .from('subscribers')
+              .select('id, email, status, user_id')
+              .eq('status', effectiveStatus);
+
+            if (subscriptionValue) {
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('subscription', subscriptionValue);
+
+              const profileIds = (profilesData || []).map((p: any) => p.id);
+              if (profileIds.length === 0) {
+                console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
+                continue;
+              }
+              subscribersQuery = subscribersQuery.in('user_id', profileIds);
+            }
+
+            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
+
+            if (dynamicError) {
+              console.error(`❌ Error querying dynamic subscribers:`, dynamicError);
+              continue;
+            }
+
+            dynamicSubscribers?.forEach((sub: any) => {
+              if (sub.status === "active" && 
+                  sub.status !== "INACTIVE" && 
+                  sub.status !== "unsubscribed") {
+                subscriberMap.set(sub.id, sub);
+              }
+            });
+
+            console.log(`✅ Dynamic audience "${audience.name}" returned ${dynamicSubscribers?.length || 0} subscribers`);
+          } catch (error) {
+            console.error(`❌ Error processing dynamic audience:`, error);
+            continue;
+          }
+        }
+      }
 
       includedSubscribers = Array.from(subscriberMap.values());
     }
 
     // Get excluded subscribers if any
     let excludedSubscriberIds: string[] = [];
+    const excludedSubscriberSet = new Set<string>();
 
     if (excludedAudienceIds.length > 0) {
-      const { data: excludedAudienceSubscribers, error: excludedError } =
-        await supabase
-          .from("email_audience_subscribers")
-          .select("subscriber_id")
-          .in("audience_id", excludedAudienceIds);
+      // Process each excluded audience individually
+      for (const excludedAudienceId of excludedAudienceIds) {
+        const { data: excludedAudience } = await supabase
+          .from("email_audiences")
+          .select("id, name, filters")
+          .eq("id", excludedAudienceId)
+          .single();
 
-      if (excludedError) {
-        console.error(
-          "❌ Error fetching excluded audience subscribers:",
-          excludedError
-        );
-        throw excludedError;
+        if (!excludedAudience) {
+          console.error(`❌ Excluded audience ${excludedAudienceId} not found`);
+          continue;
+        }
+
+        const excludedFilters = (excludedAudience.filters as any) || {};
+        const isStatic = excludedFilters.audience_type === "static";
+
+        if (isStatic) {
+          const { data: excludedAudienceSubscribers, error: excludedError } =
+            await supabase
+              .from("email_audience_subscribers")
+              .select("subscriber_id")
+              .eq("audience_id", excludedAudienceId);
+
+          if (excludedError) {
+            console.error(
+              `❌ Error fetching excluded static audience subscribers:`,
+              excludedError
+            );
+            continue;
+          }
+
+          excludedAudienceSubscribers?.forEach((rel: any) => {
+            excludedSubscriberSet.add(rel.subscriber_id);
+          });
+        } else {
+          // For dynamic excluded audiences, query subscribers based on filters
+          console.log(`📋 Processing dynamic excluded audience: ${excludedAudience.name}`);
+          
+          try {
+            const rules = excludedFilters.rules || [];
+            let statusValue: string | null = null;
+            let subscriptionValue: string | null = null;
+
+            for (const rule of rules) {
+              if (rule.field === 'status') {
+                statusValue = rule.value;
+              } else if (rule.field === 'subscription') {
+                subscriptionValue = rule.value;
+              }
+            }
+
+            const effectiveStatus = statusValue || 'active';
+
+            let subscribersQuery = supabase
+              .from('subscribers')
+              .select('id')
+              .eq('status', effectiveStatus);
+
+            if (subscriptionValue) {
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('subscription', subscriptionValue);
+
+              const profileIds = (profilesData || []).map((p: any) => p.id);
+              if (profileIds.length > 0) {
+                subscribersQuery = subscribersQuery.in('user_id', profileIds);
+              }
+            }
+
+            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
+
+            if (dynamicError) {
+              console.error(`❌ Error querying dynamic excluded subscribers:`, dynamicError);
+              continue;
+            }
+
+            dynamicSubscribers?.forEach((sub: any) => {
+              excludedSubscriberSet.add(sub.id);
+            });
+
+            console.log(`✅ Dynamic excluded audience "${excludedAudience.name}" returned ${dynamicSubscribers?.length || 0} subscribers`);
+          } catch (error) {
+            console.error(`❌ Error processing dynamic excluded audience:`, error);
+            continue;
+          }
+        }
       }
 
-      excludedSubscriberIds =
-        excludedAudienceSubscribers?.map((rel: any) => rel.subscriber_id) || [];
+      excludedSubscriberIds = Array.from(excludedSubscriberSet);
     }
 
     // Filter out excluded subscribers
