@@ -294,7 +294,7 @@ interface NavItemProps {
   $active: string;
 }
 
-const NavItem = styled.a<NavItemProps>`
+const NavItem = styled.div<NavItemProps>`
   display: flex;
   align-items: center;
   padding: 0.875rem 1.5rem;
@@ -346,7 +346,7 @@ interface MobileNavItemProps {
   $active: string;
 }
 
-const MobileNavItem = styled(motion.a)<MobileNavItemProps>`
+const MobileNavItem = styled(motion.div)<MobileNavItemProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -569,11 +569,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <LayoutContainer>
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/dashboard">
             <CymasphereLogo
               size="32px"
               fontSize="1.4rem"
-              href="/dashboard"
               onClick={(e: React.MouseEvent<HTMLElement>) =>
                 handleNavigation(
                   e as React.MouseEvent<HTMLAnchorElement>,
@@ -586,7 +585,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </LogoContainer>
 
         <nav>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/dashboard">
             <NavItem
               $active={pathname === "/dashboard" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/dashboard")}
@@ -594,7 +593,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
             </NavItem>
           </Link>
-          <Link href="/profile" passHref legacyBehavior>
+          <Link href="/profile">
             <NavItem
               $active={pathname === "/profile" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/profile")}
@@ -602,7 +601,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaUser /> {t("dashboard.layout.profile", "Profile")}
             </NavItem>
           </Link>
-          <Link href="/billing" passHref legacyBehavior>
+          <Link href="/billing">
             <NavItem
               $active={pathname === "/billing" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/billing")}
@@ -610,7 +609,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
             </NavItem>
           </Link>
-          <Link href="/downloads" passHref legacyBehavior>
+          <Link href="/downloads">
             <NavItem
               $active={pathname === "/downloads" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/downloads")}
@@ -618,7 +617,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
             </NavItem>
           </Link>
-          <Link href="/getting-started" passHref legacyBehavior>
+          <Link href="/getting-started">
             <NavItem
               $active={pathname === "/getting-started" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/getting-started")}
@@ -626,7 +625,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
             </NavItem>
           </Link>
-          <Link href="/support" passHref legacyBehavior>
+          <Link href="/support">
             <NavItem
               $active={pathname === "/support" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/support")}
@@ -634,7 +633,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
             </NavItem>
           </Link>
-          <Link href="/settings" passHref legacyBehavior>
+          <Link href="/settings">
             <NavItem
               $active={pathname === "/settings" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/settings")}
@@ -643,7 +642,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </NavItem>
           </Link>
           {user.is_admin && (
-            <Link href="/admin" passHref legacyBehavior>
+            <Link href="/admin">
               <NavItem
                 $active={pathname.startsWith("/admin") ? "true" : "false"}
                 onClick={(e) => handleNavigation(e, "/admin")}
@@ -673,9 +672,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </LogoutButton>
         </UserInfo>
       </Sidebar>
-
       <MobileOverlay $isOpen={sidebarOpen} />
-
       <MobileHeader>
         <MobileLogoContent onClick={() => router.push("/dashboard")}>
           <div
@@ -713,14 +710,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {sidebarOpen ? <FaTimes /> : <FaBars />}
         </MenuButton>
       </MobileHeader>
-
       {sidebarOpen && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
           <MobileNavTitle>
             {t("dashboard.layout.account", "Account")}
           </MobileNavTitle>
 
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/dashboard">
             <MobileNavItem
               $active={pathname === "/dashboard" ? "true" : "false"}
               variants={menuItemVariants}
@@ -733,7 +729,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/profile" passHref legacyBehavior>
+          <Link href="/profile">
             <MobileNavItem
               $active={pathname === "/profile" ? "true" : "false"}
               variants={menuItemVariants}
@@ -746,7 +742,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/billing" passHref legacyBehavior>
+          <Link href="/billing">
             <MobileNavItem
               $active={pathname === "/billing" ? "true" : "false"}
               variants={menuItemVariants}
@@ -759,7 +755,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/downloads" passHref legacyBehavior>
+          <Link href="/downloads">
             <MobileNavItem
               $active={pathname === "/downloads" ? "true" : "false"}
               variants={menuItemVariants}
@@ -772,7 +768,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/getting-started" passHref legacyBehavior>
+          <Link href="/getting-started">
             <MobileNavItem
               $active={pathname === "/getting-started" ? "true" : "false"}
               variants={menuItemVariants}
@@ -785,7 +781,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/support" passHref legacyBehavior>
+          <Link href="/support">
             <MobileNavItem
               $active={pathname === "/support" ? "true" : "false"}
               variants={menuItemVariants}
@@ -798,7 +794,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/settings" passHref legacyBehavior>
+          <Link href="/settings">
             <MobileNavItem
               $active={pathname === "/settings" ? "true" : "false"}
               variants={menuItemVariants}
@@ -812,7 +808,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
 
           {user.is_admin && (
-            <Link href="/admin" passHref legacyBehavior>
+            <Link href="/admin">
               <MobileNavItem
                 $active={pathname.startsWith("/admin") ? "true" : "false"}
                 variants={menuItemVariants}
@@ -827,7 +823,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           )}
 
-          <Link href="/" passHref legacyBehavior>
+          <Link href="/">
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
@@ -864,7 +860,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </MobileFooterSection>
         </MobileMenu>
       )}
-
       <BackButtonContainer>
         <NextLanguageSelector />
         <BackButton
@@ -876,7 +871,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
         </BackButton>
       </BackButtonContainer>
-
       <Content>
         <PageTransition
           key={pathname}

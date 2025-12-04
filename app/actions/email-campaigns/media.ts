@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createSupabaseServiceRole } from '@/utils/supabase/service';
+import sharp from 'sharp';
 
 const BUCKET = 'email-assets';
 const IMAGE_FOLDER = 'email-images';
@@ -620,11 +621,54 @@ export async function uploadMedia(
 
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 10);
-    const ext = file.name.split('.').pop() || (isImage ? 'jpg' : 'mp4');
     const folder = isImage ? 'email-images' : 'email-videos';
-    const fileName = `${folder}/email-${timestamp}-${randomString}.${ext}`;
-
-    const buffer = new Uint8Array(await file.arrayBuffer());
+    
+    let buffer: Uint8Array;
+    let finalFileName: string;
+    let finalContentType: string;
+    
+    if (isImage) {
+      // Optimize image with Sharp: convert to WebP, resize if needed
+      const originalBuffer = Buffer.from(await file.arrayBuffer());
+      
+      // Get original image metadata
+      const metadata = await sharp(originalBuffer).metadata();
+      const maxWidth = 1920; // Max width for email images
+      const quality = 85; // WebP quality (good balance)
+      
+      // Resize if image is larger than max width, convert to WebP
+      let sharpInstance = sharp(originalBuffer);
+      
+      if (metadata.width && metadata.width > maxWidth) {
+        sharpInstance = sharpInstance.resize(maxWidth, null, {
+          withoutEnlargement: true,
+          fit: 'inside'
+        });
+      }
+      
+      // Convert to WebP format
+      buffer = new Uint8Array(await sharpInstance
+        .webp({ quality })
+        .toBuffer());
+      
+      finalFileName = `${folder}/email-${timestamp}-${randomString}.webp`;
+      finalContentType = 'image/webp';
+      
+      // Log optimization results
+      const optimizedMetadata = await sharp(buffer).metadata();
+      const originalSize = originalBuffer.length;
+      const optimizedSize = buffer.length;
+      const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1);
+      
+      console.log(`📸 Image optimized: ${metadata.width}x${metadata.height} → ${optimizedMetadata.width}x${optimizedMetadata.height}`);
+      console.log(`   Size: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (${savings}% reduction)`);
+    } else {
+      // For videos, use original format
+      const ext = file.name.split('.').pop() || 'mp4';
+      finalFileName = `${folder}/email-${timestamp}-${randomString}.${ext}`;
+      finalContentType = file.type;
+      buffer = new Uint8Array(await file.arrayBuffer());
+    }
 
     // Ensure bucket exists and is public with proper mime types
     // Use admin client for bucket operations
@@ -657,13 +701,13 @@ export async function uploadMedia(
     // Use regular client for upload (RLS will enforce permissions)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(fileName, buffer, { contentType: file.type, upsert: true, cacheControl: '3600' });
+      .upload(finalFileName, buffer, { contentType: finalContentType, upsert: true, cacheControl: '3600' });
     if (uploadError) {
       console.error('Upload error:', uploadError);
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(fileName);
+    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(finalFileName);
     const publicUrl = pub?.publicUrl;
     if (!publicUrl) {
       throw new Error('Failed to fetch public URL');
@@ -672,11 +716,11 @@ export async function uploadMedia(
     return {
       success: true,
       data: {
-        path: fileName,
+        path: finalFileName,
         bucket,
         publicUrl,
-        fileType: file.type,
-        size: file.size
+        fileType: finalContentType,
+        size: buffer.length
       }
     };
   } catch (error) {

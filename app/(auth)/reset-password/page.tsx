@@ -47,7 +47,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.div`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -511,12 +511,11 @@ function ResetPasswordClient() {
   return (
     <AuthContainer>
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-      <Link href="/login" legacyBehavior>
+      <Link href="/login">
         <BackButton>
           <FaArrowLeft /> {t("resetPassword.backToLogin", "Back to Login")}
         </BackButton>
       </Link>
-
       <FormCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

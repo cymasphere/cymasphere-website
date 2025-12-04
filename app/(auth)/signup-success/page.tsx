@@ -191,7 +191,6 @@ export default function SignupSuccess() {
           />
         </HeaderContent>
       </HeaderNav>
-
       <ContentContainer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -215,7 +214,7 @@ export default function SignupSuccess() {
           </p>
         </Message>
 
-        <Link href="/login" passHref>
+        <Link href="/login">
           <Button>Go to Login</Button>
         </Link>
       </ContentContainer>

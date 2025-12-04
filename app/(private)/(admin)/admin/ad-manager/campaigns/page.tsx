@@ -839,7 +839,7 @@ export default function CampaignsPage() {
           </Title>
         </HeaderLeft>
         <HeaderActions>
-          <Link href="/admin/ad-manager/campaigns/create" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/campaigns/create">
             <ActionButton
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -1053,7 +1053,7 @@ export default function CampaignsPage() {
           </EmptyStateIcon>
           <h3>No campaigns yet</h3>
           <p>Create your first advertising campaign to get started</p>
-          <Link href="/admin/ad-manager/campaigns/create" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/campaigns/create">
             <ActionButton
               style={{ marginTop: '1rem' }}
               whileHover={{ scale: 1.05 }}
@@ -1066,14 +1066,13 @@ export default function CampaignsPage() {
         </EmptyState>
       )}
     </Container>
-
-    <DeleteConfirmationModal
-      campaign={deleteModal.campaign}
-      isOpen={deleteModal.isOpen}
-      onClose={closeDeleteModal}
-      onConfirm={confirmDeleteCampaign}
-      isDeleting={deleteModal.isDeleting}
-    />
-  </>
+      <DeleteConfirmationModal
+        campaign={deleteModal.campaign}
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteCampaign}
+        isDeleting={deleteModal.isDeleting}
+      />
+    </>
   );
 } 

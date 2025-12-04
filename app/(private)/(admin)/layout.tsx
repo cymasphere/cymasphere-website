@@ -247,7 +247,7 @@ const BackButtonContainer = styled.div`
   }
 `;
 
-const BackButton = styled.a`
+const BackButton = styled.div`
   display: flex;
   align-items: center;
   color: var(--text-secondary);
@@ -324,7 +324,7 @@ interface NavItemProps {
   $active: string;
 }
 
-const NavItem = styled.a<NavItemProps>`
+const NavItem = styled.div<NavItemProps>`
   display: flex;
   align-items: center;
   padding: 0.875rem 1.5rem;
@@ -419,7 +419,7 @@ const SubNavItems = styled(motion.div)`
   margin-left: 1rem;
 `;
 
-const SubNavItem = styled.a<NavItemProps>`
+const SubNavItem = styled.div<NavItemProps>`
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem 0.75rem 2.5rem;
@@ -472,7 +472,7 @@ interface MobileNavItemProps {
   $active: string;
 }
 
-const MobileNavItem = styled(motion.a)<MobileNavItemProps>`
+const MobileNavItem = styled(motion.div)<MobileNavItemProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,11 +688,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {!isTutorialCenter() && (
         <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
-          <Link href="/admin" passHref legacyBehavior>
+          <Link href="/admin">
             <CymasphereLogo
               size="32px"
               fontSize="1.4rem"
-              href="/admin"
               onClick={(e: React.MouseEvent<HTMLElement>) =>
                 handleNavigation(
                   e as React.MouseEvent<HTMLAnchorElement>,
@@ -705,7 +704,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </LogoContainer>
 
         <nav>
-          <Link href="/admin" passHref legacyBehavior>
+          <Link href="/admin">
             <NavItem
               $active={pathname === "/admin" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin")}
@@ -713,7 +712,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <FaShieldAlt /> Admin Dashboard
             </NavItem>
           </Link>
-          <Link href="/admin/users" passHref legacyBehavior>
+          <Link href="/admin/users">
             <NavItem
               $active={pathname === "/admin/users" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/users")}
@@ -722,7 +721,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Users
             </NavItem>
           </Link>
-          <Link href="/admin/nfr" passHref legacyBehavior>
+          <Link href="/admin/nfr">
             <NavItem
               $active={pathname === "/admin/nfr" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/nfr")}
@@ -731,7 +730,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               NFR Licenses
             </NavItem>
           </Link>
-          <Link href="/admin/coupons" passHref legacyBehavior>
+          <Link href="/admin/coupons">
             <NavItem
               $active={pathname === "/admin/coupons" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/coupons")}
@@ -740,7 +739,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Coupons
             </NavItem>
           </Link>
-          <Link href="/admin/promotions" passHref legacyBehavior>
+          <Link href="/admin/promotions">
             <NavItem
               $active={pathname === "/admin/promotions" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/promotions")}
@@ -749,7 +748,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               Promotions
             </NavItem>
           </Link>
-          <Link href="/admin/support-tickets" passHref legacyBehavior>
+          <Link href="/admin/support-tickets">
             <NavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
@@ -757,7 +756,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <FaTicketAlt /> Support Tickets
             </NavItem>
           </Link>
-          <Link href="/admin/tutorial-center" passHref legacyBehavior>
+          <Link href="/admin/tutorial-center">
             <NavItem
               $active={pathname === "/admin/tutorial-center" || pathname.startsWith("/admin/tutorial-center/") ? "true" : "false"}
               onClick={(e) => handleNavigation(e, "/admin/tutorial-center")}
@@ -791,11 +790,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                <Link
-                  href="/admin/email-campaigns/subscribers"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/subscribers">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/subscribers"
@@ -809,11 +804,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaUser /> Subscribers
                   </SubNavItem>
                 </Link>
-                <Link
-                  href="/admin/email-campaigns/audiences"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/audiences">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/audiences"
@@ -827,11 +818,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaUsers /> Audiences
                   </SubNavItem>
                 </Link>
-                <Link
-                  href="/admin/email-campaigns/campaigns"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/campaigns">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/campaigns"
@@ -845,11 +832,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaEnvelopeOpen /> Campaigns
                   </SubNavItem>
                 </Link>
-                <Link
-                  href="/admin/email-campaigns/templates"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/templates">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/templates"
@@ -863,11 +846,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaFileAlt /> Templates
                   </SubNavItem>
                 </Link>
-                <Link
-                  href="/admin/email-campaigns/automations"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/automations">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/automations"
@@ -881,11 +860,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaCogs /> Automations
                   </SubNavItem>
                 </Link>
-                <Link
-                  href="/admin/email-campaigns/deliverability"
-                  passHref
-                  legacyBehavior
-                >
+                <Link href="/admin/email-campaigns/deliverability">
                   <SubNavItem
                     $active={
                       pathname === "/admin/email-campaigns/deliverability"
@@ -931,7 +906,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                <Link href="/admin/ad-manager" passHref legacyBehavior>
+                <Link href="/admin/ad-manager">
                   <SubNavItem
                     $active={pathname === "/admin/ad-manager" ? "true" : "false"}
                     onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
@@ -939,7 +914,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaChartBar /> Dashboard
                   </SubNavItem>
                 </Link>
-                <Link href="/admin/ad-manager/campaigns" passHref legacyBehavior>
+                <Link href="/admin/ad-manager/campaigns">
                   <SubNavItem
                     $active={
                       pathname === "/admin/ad-manager/campaigns" ||
@@ -952,7 +927,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaBullhorn /> Campaigns
                   </SubNavItem>
                 </Link>
-                <Link href="/admin/ad-manager/ads/create" passHref legacyBehavior>
+                <Link href="/admin/ad-manager/ads/create">
                   <SubNavItem
                     $active={
                       pathname === "/admin/ad-manager/ads/create" ||
@@ -965,7 +940,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaImage /> Create Ad
                   </SubNavItem>
                 </Link>
-                <Link href="/admin/ad-manager/audiences" passHref legacyBehavior>
+                <Link href="/admin/ad-manager/audiences">
                   <SubNavItem
                     $active={
                       pathname === "/admin/ad-manager/audiences" ? "true" : "false"
@@ -975,7 +950,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaBullseye /> Audiences
                   </SubNavItem>
                 </Link>
-                <Link href="/admin/ad-manager/analytics" passHref legacyBehavior>
+                <Link href="/admin/ad-manager/analytics">
                   <SubNavItem
                     $active={
                       pathname === "/admin/ad-manager/analytics" ? "true" : "false"
@@ -985,7 +960,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <FaChartLine /> Analytics
                   </SubNavItem>
                 </Link>
-                <Link href="/admin/ad-manager/settings" passHref legacyBehavior>
+                <Link href="/admin/ad-manager/settings">
                   <SubNavItem
                     $active={
                       pathname === "/admin/ad-manager/settings" ? "true" : "false"
@@ -1011,7 +986,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </UserInfo>
       </Sidebar>
       )}
-
       {!isTutorialCenter() && (
         <>
           <MobileOverlay $isOpen={sidebarOpen} />
@@ -1040,12 +1014,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </MobileHeader>
         </>
       )}
-
       {sidebarOpen && !isTutorialCenter() && (
         <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
           <MobileNavTitle>Admin Console</MobileNavTitle>
 
-          <Link href="/admin" passHref legacyBehavior>
+          <Link href="/admin">
             <MobileNavItem
               $active={pathname === "/admin" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1058,7 +1031,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/users" passHref legacyBehavior>
+          <Link href="/admin/users">
             <MobileNavItem
               $active={pathname === "/admin/users" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1072,7 +1045,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/coupons" passHref legacyBehavior>
+          <Link href="/admin/coupons">
             <MobileNavItem
               $active={pathname === "/admin/coupons" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1086,7 +1059,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/promotions" passHref legacyBehavior>
+          <Link href="/admin/promotions">
             <MobileNavItem
               $active={pathname === "/admin/promotions" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1100,7 +1073,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/support-tickets" passHref legacyBehavior>
+          <Link href="/admin/support-tickets">
             <MobileNavItem
               $active={pathname === "/admin/support-tickets" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1113,7 +1086,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/tutorial-center" passHref legacyBehavior>
+          <Link href="/admin/tutorial-center">
             <MobileNavItem
               $active={pathname === "/admin/tutorial-center" || pathname.startsWith("/admin/tutorial-center/") ? "true" : "false"}
               variants={menuItemVariants}
@@ -1126,11 +1099,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link
-            href="/admin/email-campaigns/subscribers"
-            passHref
-            legacyBehavior
-          >
+          <Link href="/admin/email-campaigns/subscribers">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/subscribers"
@@ -1149,7 +1118,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/email-campaigns/audiences" passHref legacyBehavior>
+          <Link href="/admin/email-campaigns/audiences">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/audiences"
@@ -1168,7 +1137,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/email-campaigns/campaigns" passHref legacyBehavior>
+          <Link href="/admin/email-campaigns/campaigns">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/campaigns"
@@ -1187,7 +1156,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/email-campaigns/templates" passHref legacyBehavior>
+          <Link href="/admin/email-campaigns/templates">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/templates"
@@ -1206,11 +1175,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link
-            href="/admin/email-campaigns/automations"
-            passHref
-            legacyBehavior
-          >
+          <Link href="/admin/email-campaigns/automations">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/automations"
@@ -1229,11 +1194,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link
-            href="/admin/email-campaigns/deliverability"
-            passHref
-            legacyBehavior
-          >
+          <Link href="/admin/email-campaigns/deliverability">
             <MobileNavItem
               $active={
                 pathname === "/admin/email-campaigns/deliverability"
@@ -1252,7 +1213,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager" passHref legacyBehavior>
+          <Link href="/admin/ad-manager">
             <MobileNavItem
               $active={pathname === "/admin/ad-manager" ? "true" : "false"}
               variants={menuItemVariants}
@@ -1265,7 +1226,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager/campaigns" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/campaigns">
             <MobileNavItem
               $active={
                 pathname === "/admin/ad-manager/campaigns" ||
@@ -1283,7 +1244,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager/ads/create" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/ads/create">
             <MobileNavItem
               $active={
                 pathname === "/admin/ad-manager/ads/create" ||
@@ -1301,7 +1262,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager/audiences" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/audiences">
             <MobileNavItem
               $active={
                 pathname === "/admin/ad-manager/audiences" ? "true" : "false"
@@ -1316,7 +1277,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager/analytics" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/analytics">
             <MobileNavItem
               $active={
                 pathname === "/admin/ad-manager/analytics" ? "true" : "false"
@@ -1331,7 +1292,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/admin/ad-manager/settings" passHref legacyBehavior>
+          <Link href="/admin/ad-manager/settings">
             <MobileNavItem
               $active={
                 pathname === "/admin/ad-manager/settings" ? "true" : "false"
@@ -1346,7 +1307,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </MobileNavItem>
           </Link>
 
-          <Link href="/" passHref legacyBehavior>
+          <Link href="/">
             <MobileNavItem
               $active="false"
               variants={menuItemVariants}
@@ -1375,11 +1336,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </MobileFooterSection>
         </MobileMenu>
       )}
-
       <Content $sidebarVisible={!isTutorialCenter()}>
         {!isTutorialCenter() && (
           <BackButtonContainer>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/dashboard">
             <BackButton>
               Back to Dashboard <FaArrowLeft />
             </BackButton>

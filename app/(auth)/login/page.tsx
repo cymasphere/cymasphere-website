@@ -369,12 +369,11 @@ function Login() {
 
   return (
     <AuthContainer>
-      <Link href={`/`} legacyBehavior>
+      <Link href={`/`}>
         <BackButton>
           <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
         </BackButton>
       </Link>
-
       <FormCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

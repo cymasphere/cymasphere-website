@@ -183,7 +183,6 @@ export default function AccountExists() {
           />
         </HeaderContent>
       </HeaderNav>
-
       <ContentContainer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -204,15 +203,15 @@ export default function AccountExists() {
         </Message>
 
         <ButtonContainer>
-          <Link href="/login" passHref>
+          <Link href="/login">
             <PrimaryButton as="a">Sign In</PrimaryButton>
           </Link>
           
-          <Link href="/reset-password" passHref>
+          <Link href="/reset-password">
             <SecondaryButton as="a">Reset Password</SecondaryButton>
           </Link>
           
-          <Link href="/signup" passHref>
+          <Link href="/signup">
             <SecondaryButton as="a">Try Another Email</SecondaryButton>
           </Link>
         </ButtonContainer>

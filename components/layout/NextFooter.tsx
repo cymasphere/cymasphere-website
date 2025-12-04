@@ -198,7 +198,7 @@ const NextFooter = () => {
     <FooterContainer>
       <FooterContent>
         <FooterColumn>
-          <Link href="/" passHref>
+          <Link href="/">
             <FooterLogoLink
               onClick={handleLogoClick}
               title="Click to hear a beautiful Lydian Maj7(9, #11, 13) chord"
@@ -260,7 +260,7 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Navigation</FooterHeading>
-          <Link href="/" passHref legacyBehavior>
+          <Link href="/">
             <FooterLink>Home</FooterLink>
           </Link>
           <FooterLink as="a" href="#features">
@@ -333,31 +333,29 @@ const NextFooter = () => {
 
         <FooterColumn>
           <FooterHeading>Information</FooterHeading>
-          <Link href="/about" passHref legacyBehavior>
+          <Link href="/about">
             <FooterLink>About Us</FooterLink>
           </Link>
-          <Link href="/contact" passHref legacyBehavior>
+          <Link href="/contact">
             <FooterLink>Contact</FooterLink>
           </Link>
-          <Link href="/terms-of-service" passHref legacyBehavior>
+          <Link href="/terms-of-service">
             <FooterLink>Terms of Service</FooterLink>
           </Link>
-          <Link href="/privacy-policy" passHref legacyBehavior>
+          <Link href="/privacy-policy">
             <FooterLink>Privacy Policy</FooterLink>
           </Link>
-          <Link href="/refund-policy" passHref legacyBehavior>
+          <Link href="/refund-policy">
             <FooterLink>Refund Policy</FooterLink>
           </Link>
         </FooterColumn>
       </FooterContent>
-
       <Copyright>
         <p>
           &copy; {new Date().getFullYear()} CYMASPHERE{" "}
           <span>All rights reserved</span>
         </p>
       </Copyright>
-
       {showTermsModal && (
         <LegalModal
           isOpen={showTermsModal}
@@ -365,7 +363,6 @@ const NextFooter = () => {
           modalType="terms"
         />
       )}
-
       {showPrivacyModal && (
         <LegalModal
           isOpen={showPrivacyModal}

@@ -606,7 +606,6 @@ export default function AdManagerPage() {
           Create, manage, and optimize your Facebook and Instagram advertising campaigns
         </Subtitle>
       </Header>
-
       {isDevelopmentMode && (
         <DevelopmentBanner
           initial={{ opacity: 0, y: -20 }}
@@ -622,7 +621,6 @@ export default function AdManagerPage() {
           </div>
         </DevelopmentBanner>
       )}
-
       <ConnectionStatus
         $connected={isConnected}
         initial={{ opacity: 0, y: 20 }}
@@ -663,7 +661,6 @@ export default function AdManagerPage() {
           </>
         )}
       </ConnectionStatus>
-
       {isConnected && (
         <>
           <StatsGrid>
@@ -753,7 +750,7 @@ export default function AdManagerPage() {
           </StatsGrid>
 
           <ActionsGrid>
-            <Link href="/admin/ad-manager/campaigns/create" passHref legacyBehavior>
+            <Link href="/admin/ad-manager/campaigns/create">
               <ActionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -770,7 +767,7 @@ export default function AdManagerPage() {
               </ActionCard>
             </Link>
 
-            <Link href="/admin/ad-manager/audiences" passHref legacyBehavior>
+            <Link href="/admin/ad-manager/audiences">
               <ActionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -787,7 +784,7 @@ export default function AdManagerPage() {
               </ActionCard>
             </Link>
 
-            <Link href="/admin/ad-manager/analytics" passHref legacyBehavior>
+            <Link href="/admin/ad-manager/analytics">
               <ActionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -804,7 +801,7 @@ export default function AdManagerPage() {
               </ActionCard>
             </Link>
 
-            <Link href="/admin/ad-manager/ads/create" passHref legacyBehavior>
+            <Link href="/admin/ad-manager/ads/create">
               <ActionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -821,7 +818,7 @@ export default function AdManagerPage() {
               </ActionCard>
             </Link>
 
-            <Link href="/admin/ad-manager/settings" passHref legacyBehavior>
+            <Link href="/admin/ad-manager/settings">
               <ActionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

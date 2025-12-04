@@ -445,7 +445,7 @@ const Footer = () => {
     <FooterContainer>
       <FooterContent>
         <FooterColumn>
-          <Link href="/" passHref legacyBehavior>
+          <Link href="/">
             <FooterLogo
               onClick={(e) => {
                 if (window.location.pathname === "/") {
@@ -515,7 +515,7 @@ const Footer = () => {
 
         <FooterColumn>
           <FooterHeading>{getTranslation("footer.navigation", "Navigation")}</FooterHeading>
-          <Link href="/" passHref legacyBehavior>
+          <Link href="/">
             <FooterLink>{getTranslation("header.home", "Home")}</FooterLink>
           </Link>
           <FooterAnchor as="a" href="#features">
@@ -534,37 +534,36 @@ const Footer = () => {
 
         <FooterColumn>
           <FooterHeading>{getTranslation("footer.account", "Account")}</FooterHeading>
-          <Link href="/login" passHref legacyBehavior>
+          <Link href="/login">
             <FooterLink>{getTranslation("common.login", "Login")}</FooterLink>
           </Link>
-          <Link href="/signup" passHref legacyBehavior>
+          <Link href="/signup">
             <FooterLink>{getTranslation("common.signUp", "Sign Up")}</FooterLink>
           </Link>
-          <Link href="/dashboard" passHref legacyBehavior>
+          <Link href="/dashboard">
             <FooterLink>{getTranslation("footer.accountDashboard", "Account Dashboard")}</FooterLink>
           </Link>
         </FooterColumn>
 
         <FooterColumn>
           <FooterHeading>{getTranslation("footer.company", "Company")}</FooterHeading>
-          <Link href="/about" passHref legacyBehavior>
+          <Link href="/about">
             <FooterLink>{getTranslation("footer.aboutUs", "About Us")}</FooterLink>
           </Link>
           <FooterButton onClick={() => setShowContactModal(true)}>
             {getTranslation("footer.contactUs", "Contact Us")}
           </FooterButton>
-          <Link href="/privacy-policy" passHref legacyBehavior>
+          <Link href="/privacy-policy">
             <FooterLink>{getTranslation("footer.privacyPolicy", "Privacy Policy")}</FooterLink>
           </Link>
-          <Link href="/terms-of-service" passHref legacyBehavior>
+          <Link href="/terms-of-service">
             <FooterLink>{getTranslation("footer.termsConditions", "Terms & Conditions")}</FooterLink>
           </Link>
-          <Link href="/refund-policy" passHref legacyBehavior>
+          <Link href="/refund-policy">
             <FooterLink>Refund Policy</FooterLink>
           </Link>
         </FooterColumn>
       </FooterContent>
-
       <Copyright>
         <p>
           {getTranslation("footer.copyright", `© ${new Date().getFullYear()} Cymasphere. All rights reserved.`, { year: new Date().getFullYear() })}
@@ -579,19 +578,16 @@ const Footer = () => {
           </span>
         </p>
       </Copyright>
-
       <LegalModal
         isOpen={showTermsModal}
         onClose={() => setShowTermsModal(false)}
         modalType="terms"
       />
-
       <LegalModal
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
         modalType="privacy"
       />
-
       <AnimatePresence>
         {showContactModal && (
           <ModalOverlay

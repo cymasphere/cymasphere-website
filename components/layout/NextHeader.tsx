@@ -183,7 +183,7 @@ const Nav = styled.nav`
   }
 `;
 
-const NavLink = styled.a<{ $isActive: boolean }>`
+const NavLink = styled.div<{ $isActive: boolean }>`
   color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.7)")};
   font-weight: ${(props) => (props.$isActive ? "600" : "500")};
   letter-spacing: 0.3px;
@@ -342,7 +342,7 @@ const MobileNavLinks = styled.div`
   z-index: 1;
 `;
 
-const MobileNavLink = styled(motion.a)<{ $isActive?: boolean }>`
+const MobileNavLink = styled(motion.div)<{ $isActive?: boolean }>`
   color: var(--text);
   text-decoration: none;
   font-size: 1.1rem;
@@ -706,16 +706,15 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
           <UserButton onClick={() => setUserMenuOpen(!userMenuOpen)}>
             <FaUserCircle />
           </UserButton>
-
           <UserDropdown $isOpen={userMenuOpen}>
-            <Link href="/dashboard" passHref legacyBehavior>
+            <Link href="/dashboard">
               <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                 <FaUser />
                 {getTranslation("common.myAccount")}
               </UserMenuItem>
             </Link>
             {user.is_admin && (
-              <Link href="/admin" passHref legacyBehavior>
+              <Link href="/admin">
                 <UserMenuItem onClick={() => setUserMenuOpen(false)}>
                   <FaShieldAlt />
                   {getTranslation("common.adminConsole")}
@@ -795,7 +794,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
 
           <Nav>
             {navItems.map((item) => (
-              <Link key={item.name} href={item.path} passHref legacyBehavior>
+              <Link key={item.name} href={item.path}>
                 <NavLink
                   $isActive={
                     pathname === item.path ||
@@ -819,7 +818,6 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
           </MobileActions>
         </HeaderContent>
       </HeaderContainer>
-
       <AnimatePresence mode="wait">
         {menuOpen && (
           <MobileMenu
@@ -835,12 +833,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
               </MobileNavTitle>
               <MobileNavLinks>
                 {navItems.map((item, index) => (
-                  <Link
-                    key={item.name}
-                    href={item.path}
-                    passHref
-                    legacyBehavior
-                  >
+                  <Link key={item.name} href={item.path}>
                     <MobileNavLink
                       $isActive={pathname === item.path}
                       onClick={() => setMenuOpen(false)}
@@ -860,7 +853,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
 
                 {user && (
                   <MobileUserSection>
-                    <Link href="/dashboard" passHref legacyBehavior>
+                    <Link href="/dashboard">
                       <MobileNavLink
                         onClick={(e) => {
                           e.preventDefault();
@@ -877,7 +870,7 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
                       </MobileNavLink>
                     </Link>
                     {user.is_admin && (
-                      <Link href="/admin" passHref legacyBehavior>
+                      <Link href="/admin">
                         <MobileNavLink
                           onClick={(e) => {
                             e.preventDefault();
@@ -947,7 +940,6 @@ const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
           </MobileMenu>
         )}
       </AnimatePresence>
-
       <Overlay $isVisible={menuOpen} onClick={() => setMenuOpen(false)} />
     </>
   );

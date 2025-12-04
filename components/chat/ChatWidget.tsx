@@ -830,7 +830,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
                 <>
                   <ReactMarkdown>{message.text}</ReactMarkdown>
                   {message.cta && (
-                    <Link href={message.cta.href} passHref>
+                    <Link href={message.cta.href}>
                       <CTAButton>{message.cta.label}</CTAButton>
                     </Link>
                   )}
@@ -874,7 +874,6 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
           </SendButton>
         </InputContainer>
       </ChatWindow>
-      
       <ChatButton 
         $isOpen={isOpen}
         onClick={() => {

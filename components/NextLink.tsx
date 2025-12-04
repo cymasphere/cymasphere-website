@@ -13,7 +13,6 @@ interface NextLinkProps {
   children: React.ReactNode;
   className?: string;
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
-  passHref?: boolean;
   scroll?: boolean;
   target?: string;
   rel?: string;
@@ -29,7 +28,6 @@ const NextLink: React.FC<NextLinkProps> = ({
   children,
   className,
   onClick,
-  passHref = true,
   scroll = true,
   ...props
 }) => {
@@ -85,14 +83,13 @@ const NextLink: React.FC<NextLinkProps> = ({
   return (
     <Link
       href={href}
-      passHref={passHref}
       scroll={scroll}
-      legacyBehavior
       {...props}
-    >
-      <a className={className} onClick={handleClick}>
-        {children}
-      </a>
+      className={className}
+      onClick={handleClick}>
+
+      {children}
+
     </Link>
   );
 };

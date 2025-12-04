@@ -941,7 +941,10 @@ export default function VisualEditor({
         privacyText: element.privacyText || 'Privacy Policy',
         termsUrl: element.termsUrl || 'https://cymasphere.com/terms-of-service',
         termsText: element.termsText || 'Terms of Service',
-        footerText: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
+        footerText: (() => {
+          const year = new Date().getFullYear();
+          return element.footerText || ('© ' + year + ' Cymasphere Inc. All rights reserved.');
+        })()
       })
       };
       
@@ -1916,7 +1919,8 @@ export default function VisualEditor({
       if (domElement && element) {
         let content = '';
         if (element.type === 'footer') {
-          content = element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`;
+          const year = new Date().getFullYear();
+          content = element.footerText || ('© ' + year + ' Cymasphere Inc. All rights reserved.');
         } else {
           content = element.content || (element.type === 'header' ? 'Enter header text...' : 'Enter your text...');
         }
@@ -3176,7 +3180,10 @@ export default function VisualEditor({
             {isEditing ? (
               <textarea
                 data-element-id={element.id}
-                value={element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+                value={(() => {
+                  const year = new Date().getFullYear();
+                  return element.footerText || ('© ' + year + ' Cymasphere Inc. All rights reserved.');
+                })()}
                 onChange={(e) => {
                   const newVal = e.target.value;
                   setEmailElements(emailElements.map(el => 
@@ -3199,7 +3206,13 @@ export default function VisualEditor({
               />
             ) : (
               <div
-                dangerouslySetInnerHTML={{ __html: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.` }}
+                dangerouslySetInnerHTML={{ 
+                  __html: (() => {
+                    const year = new Date().getFullYear();
+                    const footerText = element.footerText || ('© ' + year + ' Cymasphere Inc. All rights reserved.');
+                    return String(footerText).replace(/\$\{/g, '&#36;{');
+                  })()
+                }}
                 data-element-id={element.id}
                 style={{ marginBottom: '1rem' }}
               />
@@ -3831,7 +3844,7 @@ export default function VisualEditor({
                                     text-align: ${element.textAlign || 'center'};
                                     font-weight: ${element.fontWeight || '800'};
                                     line-height: ${element.lineHeight || '1.2'};
-                                    ">${element.content || ''}</${element.headerType || 'h1'}>`;
+                                    ">` + String(element.content || '').replace(/\$\{/g, '&#36;{') + '</' + (element.headerType || 'h1') + '>';
                                 case 'text':
                                   return `<div style="
                                     font-family: ${element.fontFamily || 'Arial, sans-serif'};
@@ -3841,7 +3854,7 @@ export default function VisualEditor({
                                     margin: 0 0 16px 0;
                                     text-align: ${element.textAlign || 'left'};
                                     font-weight: ${element.fontWeight || 'normal'};
-                                    ">${element.content || ''}</div>`;
+                                    ">` + String(element.content || '').replace(/\$\{/g, '&#36;{') + '</div>';
                                 case 'button':
                                   return `<a href="${element.url || '#'}" style="
                                     display: ${element.fullWidth ? 'block' : 'inline-block'};
@@ -3861,7 +3874,7 @@ export default function VisualEditor({
                                     box-shadow: ${element.fullWidth ? 'none' : '0 8px 25px rgba(108, 99, 255, 0.3)'};
                                     min-height: 1em;
                                     width: ${element.fullWidth ? '100%' : 'auto'};
-                                    ">${element.content || ''}</a>`;
+                                    ">` + String(element.content || '').replace(/\$\{/g, '&#36;{') + '</a>';
                                 case 'brand-header':
                                   return `<div style="
                                     text-align: center;
@@ -3937,7 +3950,11 @@ export default function VisualEditor({
                                     border-top: 1px solid #dee2e6; 
                                     margin-top: 2rem;
                                   ">
-                                    ${element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`}
+                                    ' + (() => {
+                                    const year = new Date().getFullYear();
+                                    const footerText = element.footerText || ('© ' + year + ' Cymasphere Inc. All rights reserved.');
+                                    return String(footerText).replace(/\$\{/g, '&#36;{');
+                                  })() + '
                                   </div>`;
                                 default:
                                   return '';
