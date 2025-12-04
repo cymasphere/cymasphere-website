@@ -4071,24 +4071,22 @@ export default function VisualEditor({
                         {renderEmailElement(element, index)}
                         
                         {/* Element reordering drop zone after each element */}
-                        {!(element.paddingBottom === 0 && index < emailElements.length - 1 && emailElements[index + 1].paddingTop === 0) && (
-                          <div
-                            onDragOver={(e) => handleElementDragOver(e, index + 1)}
-                            onDrop={(e) => {
-                              console.log('🎯 Drop zone drop at index:', index + 1);
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleElementDrop(e, index + 1);
-                            }}
-                            style={{
-                              height: elementDragOverIndex === index + 1 ? '6px' : '0px',
-                              background: elementDragOverIndex === index + 1 ? 'var(--primary)' : 'transparent',
-                              transition: 'all 0.2s ease',
-                              margin: '0',
-                              borderRadius: '2px'
-                            }}
-                          />
-                        )}
+                        <div
+                          onDragOver={(e) => handleElementDragOver(e, index + 1)}
+                          onDrop={(e) => {
+                            console.log('🎯 Drop zone drop at index:', index + 1);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleElementDrop(e, index + 1);
+                          }}
+                          style={{
+                            height: elementDragOverIndex === index + 1 ? '6px' : (index === emailElements.length - 1 ? '12px' : '0px'),
+                            background: elementDragOverIndex === index + 1 ? 'var(--primary)' : (index === emailElements.length - 1 ? 'rgba(108, 99, 255, 0.05)' : 'transparent'),
+                            transition: 'all 0.2s ease',
+                            margin: '0',
+                            borderRadius: '2px'
+                          }}
+                        />
                       </React.Fragment>
                     ))}
                     
