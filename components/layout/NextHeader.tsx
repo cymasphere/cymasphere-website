@@ -524,7 +524,7 @@ const UserDropdown = styled.div<{ $isOpen: boolean }>`
   border: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
-const UserMenuItem = styled.a`
+const UserMenuItem = styled.div`
   display: flex;
   align-items: center;
   padding: 10px 15px;
