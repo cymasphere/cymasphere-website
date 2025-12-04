@@ -628,40 +628,50 @@ export async function uploadMedia(
     let finalContentType: string;
     
     if (isImage) {
-      // Optimize image with Sharp: convert to WebP, resize if needed
-      const originalBuffer = Buffer.from(await file.arrayBuffer());
-      
-      // Get original image metadata
-      const metadata = await sharp(originalBuffer).metadata();
-      const maxWidth = 1920; // Max width for email images
-      const quality = 85; // WebP quality (good balance)
-      
-      // Resize if image is larger than max width, convert to WebP
-      let sharpInstance = sharp(originalBuffer);
-      
-      if (metadata.width && metadata.width > maxWidth) {
-        sharpInstance = sharpInstance.resize(maxWidth, null, {
-          withoutEnlargement: true,
-          fit: 'inside'
-        });
+      try {
+        // Optimize image with Sharp: convert to WebP, resize if needed
+        const originalBuffer = Buffer.from(await file.arrayBuffer());
+        
+        // Get original image metadata
+        const metadata = await sharp(originalBuffer).metadata();
+        const maxWidth = 1920; // Max width for email images
+        const quality = 85; // WebP quality (good balance)
+        
+        // Resize if image is larger than max width, convert to WebP
+        let sharpInstance = sharp(originalBuffer);
+        
+        if (metadata.width && metadata.width > maxWidth) {
+          sharpInstance = sharpInstance.resize(maxWidth, null, {
+            withoutEnlargement: true,
+            fit: 'inside'
+          });
+        }
+        
+        // Convert to WebP format
+        const webpBuffer = await sharpInstance
+          .webp({ quality })
+          .toBuffer();
+        
+        buffer = new Uint8Array(webpBuffer);
+        finalFileName = `${folder}/email-${timestamp}-${randomString}.webp`;
+        finalContentType = 'image/webp';
+        
+        // Log optimization results
+        const optimizedMetadata = await sharp(webpBuffer).metadata();
+        const originalSize = originalBuffer.length;
+        const optimizedSize = webpBuffer.length;
+        const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1);
+        
+        console.log(`📸 Image optimized: ${metadata.width}x${metadata.height} → ${optimizedMetadata.width}x${optimizedMetadata.height}`);
+        console.log(`   Size: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (${savings}% reduction)`);
+        console.log(`   Format: ${metadata.format} → webp`);
+        console.log(`   ✅ Uploading as: ${finalFileName} with content-type: ${finalContentType}`);
+      } catch (sharpError) {
+        // If Sharp conversion fails, log error and throw
+        console.error('❌ Sharp conversion failed:', sharpError);
+        console.error('   Error details:', sharpError instanceof Error ? sharpError.message : String(sharpError));
+        throw new Error(`Failed to convert image to WebP: ${sharpError instanceof Error ? sharpError.message : 'Unknown error'}`);
       }
-      
-      // Convert to WebP format
-      buffer = new Uint8Array(await sharpInstance
-        .webp({ quality })
-        .toBuffer());
-      
-      finalFileName = `${folder}/email-${timestamp}-${randomString}.webp`;
-      finalContentType = 'image/webp';
-      
-      // Log optimization results
-      const optimizedMetadata = await sharp(buffer).metadata();
-      const originalSize = originalBuffer.length;
-      const optimizedSize = buffer.length;
-      const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1);
-      
-      console.log(`📸 Image optimized: ${metadata.width}x${metadata.height} → ${optimizedMetadata.width}x${optimizedMetadata.height}`);
-      console.log(`   Size: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (${savings}% reduction)`);
     } else {
       // For videos, use original format
       const ext = file.name.split('.').pop() || 'mp4';
