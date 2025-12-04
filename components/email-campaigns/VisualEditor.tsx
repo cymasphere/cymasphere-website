@@ -884,24 +884,38 @@ export default function VisualEditor({
 
 
   
+  // Helper function to normalize short hex color codes to full 6-digit format
+  const normalizeHexColor = useCallback((color: string | undefined): string | undefined => {
+    if (!color || typeof color !== 'string') return color;
+    // Match 3-digit hex codes like #333, #555, #fff
+    const shortHexMatch = color.match(/^#([0-9a-fA-F]{3})$/);
+    if (shortHexMatch) {
+      // Expand to 6 digits: #333 -> #333333
+      const hex = shortHexMatch[1];
+      return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+    }
+    return color;
+  }, []);
+
   // ✨ NEW: Normalize elements to ensure they have all required properties
   const normalizeElements = useCallback((elements: any[]) => {
-    return elements.map(element => ({
-      // Base properties that all elements should have
-      paddingTop: 16,
-      paddingBottom: 16,
-      fullWidth: false,
-      fontSize: '16px',
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      textDecoration: 'none',
-      textAlign: 'left',
-      fontFamily: 'Arial, sans-serif',
-      textColor: '#333333',
-      backgroundColor: 'transparent',
-      lineHeight: '1.6',
-      // Spread existing element properties (these will override defaults)
-      ...element,
+    return elements.map(element => {
+      const normalized = {
+        // Base properties that all elements should have
+        paddingTop: 16,
+        paddingBottom: 16,
+        fullWidth: false,
+        fontSize: '16px',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        textAlign: 'left',
+        fontFamily: 'Arial, sans-serif',
+        textColor: '#333333',
+        backgroundColor: 'transparent',
+        lineHeight: '1.6',
+        // Spread existing element properties (these will override defaults)
+        ...element,
       // Ensure specific element types have appropriate defaults
       ...(element.type === 'header' && {
         fontSize: element.fontSize || '32px',
@@ -929,8 +943,19 @@ export default function VisualEditor({
         termsText: element.termsText || 'Terms of Service',
         footerText: element.footerText || `© ${new Date().getFullYear()} Cymasphere Inc. All rights reserved.`
       })
-    }));
-  }, []);
+      };
+      
+      // Normalize color values (convert short hex to full hex)
+      if (normalized.textColor) {
+        normalized.textColor = normalizeHexColor(normalized.textColor);
+      }
+      if (normalized.backgroundColor) {
+        normalized.backgroundColor = normalizeHexColor(normalized.backgroundColor);
+      }
+      
+      return normalized;
+    });
+  }, [normalizeHexColor]);
   
   // ✨ NEW: Normalize elements when they're loaded
   useEffect(() => {
@@ -939,23 +964,11 @@ export default function VisualEditor({
       // Only update if normalization actually changed something
       const hasChanges = JSON.stringify(normalizedElements) !== JSON.stringify(emailElements);
       if (hasChanges) {
-        console.log('🔄 Normalizing elements with missing properties');
         setEmailElements(normalizedElements);
       }
     }
   }, [emailElements, normalizeElements, setEmailElements]);
   
-  // ✨ NEW: Debug emailElements changes
-  useEffect(() => {
-    console.log('🔄 emailElements state changed:', emailElements);
-    console.log('🔄 emailElements length:', emailElements.length);
-    console.log('🔄 emailElements details:', emailElements.map(el => ({
-      id: el.id,
-      type: el.type,
-      fontSize: el.fontSize,
-      fontFamily: el.fontFamily
-    })));
-  }, [emailElements]);
   const [currentView, setCurrentView] = useState<'desktop' | 'mobile' | 'text' | 'html'>('desktop');
   
   // Element reordering state
@@ -1025,8 +1038,6 @@ export default function VisualEditor({
 
   // ✨ NEW: Modern rich text formatting functions
   const applyFormat = (command: string, value?: string) => {
-    console.log(`🎨 Applying format: ${command}${value ? ` with value: ${value}` : ''}`);
-    
     if (!editingElement) {
       console.warn('❌ No editing element found');
       return;
@@ -1433,8 +1444,6 @@ export default function VisualEditor({
   const pagedMediaItems = filteredMediaItems.slice((currentMediaPage - 1) * mediaPageSize, currentMediaPage * mediaPageSize);
 
   const applyColor = () => {
-    console.log('🎨 Applying color:', { selectedColor, colorPickerType, editingElement });
-    
     if (!selectedColor || !editingElement) {
       console.log('❌ Missing color or editing element');
       closeColorPicker();
@@ -1526,17 +1535,46 @@ export default function VisualEditor({
     try {
       setImageUploading(elementId);
       setUploadError(null);
-      console.log('📤 Uploading image to Supabase storage:', file.name);
+      
+      // Validate file
+      if (!file || !(file instanceof File)) {
+        throw new Error('Invalid file object');
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        throw new Error('File must be an image');
+      }
+      
+      if (file.size === 0) {
+        throw new Error('File is empty');
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File too large. Maximum size is 10MB');
+      }
+      
+      console.log('📤 Uploading image to Supabase storage:', file.name, 'Size:', file.size, 'Type:', file.type);
       const { uploadMedia } = await import('@/app/actions/email-campaigns');
       const result = await uploadMedia({ file });
+      console.log('📤 Upload result:', result);
+      
       if (result.success && result.data?.publicUrl) {
         updateElement(elementId, { src: result.data.publicUrl, alt: file.name });
         setUploadError(null);
+        console.log('✅ Image uploaded successfully:', result.data.publicUrl);
       } else {
-        setUploadError(result.error || 'Failed to upload image');
+        const errorMsg = result.error || 'Failed to upload image';
+        setUploadError(errorMsg);
+        console.error('❌ Upload failed:', errorMsg, result);
+        // Show alert for critical errors
+        alert(`Upload failed: ${errorMsg}`);
       }
     } catch (error) {
-      setUploadError('Network error occurred while uploading image');
+      const errorMsg = error instanceof Error ? error.message : 'Network error occurred while uploading image';
+      setUploadError(errorMsg);
+      console.error('❌ Upload error:', error);
+      // Show alert for critical errors
+      alert(`Upload error: ${errorMsg}`);
     } finally {
       setImageUploading(null);
     }
@@ -1549,9 +1587,36 @@ export default function VisualEditor({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && imageUploadElement) {
-      await uploadImageToSupabase(file, imageUploadElement);
-        setImageUploadElement(null);
+    const elementId = imageUploadElement;
+    
+    if (!file) {
+      console.warn('⚠️ No file selected');
+      setImageUploadElement(null);
+      return;
+    }
+    
+    if (!elementId) {
+      console.warn('⚠️ No element ID for upload');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+    
+    console.log('📁 File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+    
+    try {
+      await uploadImageToSupabase(file, elementId);
+    } catch (error) {
+      console.error('❌ Error in handleFileChange:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to process file');
+    } finally {
+      // Reset file input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      // Reset upload element state after processing
+      setImageUploadElement(null);
     }
   };
 
@@ -1584,23 +1649,18 @@ export default function VisualEditor({
   const handleElementDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔄 Element drag over at index:', index, 'draggedElementId:', draggedElementId);
     
     // Always allow drop and set visual feedback
     e.dataTransfer.dropEffect = draggedElementId ? 'move' : 'copy';
-    console.log('📍 Setting drag over index to:', index);
     setElementDragOverIndex(index);
   };
 
   const handleElementDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
-    console.log('💧 Drop attempted at index:', dropIndex);
     
     // Check if we're dropping a new element from the palette
     const elementType = e.dataTransfer.getData('text/element-type') || e.dataTransfer.getData('text/plain');
-    console.log('📦 Received drag data:', elementType);
     if (elementType) {
-      console.log('🆕 Creating new element:', elementType, 'at index:', dropIndex);
       const newElement = createNewElement(elementType);
       
       // Handle multiple elements (like header-text combo)
@@ -1608,12 +1668,10 @@ export default function VisualEditor({
         const newElements = [...emailElements];
         newElements.splice(dropIndex, 0, ...newElement);
         setEmailElements(newElements);
-        console.log('🎉 Multiple elements added successfully!', newElement.length);
       } else {
         const newElements = [...emailElements];
         newElements.splice(dropIndex, 0, newElement);
         setEmailElements(newElements);
-        console.log('🎉 New element added successfully!');
       }
       
       setElementDragOverIndex(null);
@@ -1621,7 +1679,6 @@ export default function VisualEditor({
     }
     
     // Otherwise, handle reordering existing elements
-    console.log('📦 Checking for reordering - draggedElementId:', draggedElementId, 'draggedElementIndex:', draggedElementIndex);
     
     if (draggedElementId && draggedElementIndex !== null && draggedElementIndex !== dropIndex) {
       console.log('✅ Valid drop: moving from', draggedElementIndex, 'to', dropIndex);
@@ -1639,7 +1696,6 @@ export default function VisualEditor({
       newElements.splice(adjustedDropIndex, 0, draggedElement);
       
       setEmailElements(newElements);
-      console.log('🎉 Elements reordered successfully!');
       
       // Reset drag state
       setDraggedElementId(null);
@@ -2033,20 +2089,6 @@ export default function VisualEditor({
   };
 
   const updateElement = (elementId: string, updates: any) => {
-    console.log('🔄 updateElement called:', { elementId, updates });
-    console.log('🔄 Current emailElements before update:', emailElements);
-    
-    // Debug: Log padding-related updates
-    if (updates.paddingTop !== undefined || updates.paddingBottom !== undefined || updates.paddingLeft !== undefined || updates.paddingRight !== undefined) {
-      console.log('🎯 PADDING UPDATE:', {
-        elementId,
-        paddingTop: updates.paddingTop,
-        paddingBottom: updates.paddingBottom,
-        paddingLeft: updates.paddingLeft,
-        paddingRight: updates.paddingRight
-      });
-    }
-    
     // Capture any unsaved text content from the DOM before updating
     const currentTextContent = (() => {
       try {
@@ -2097,15 +2139,11 @@ export default function VisualEditor({
       return el;
     });
     
-    console.log('🔄 New elements array:', newElements);
-    console.log('🔄 Setting new emailElements state...');
-    
     setEmailElements(newElements);
   };
 
   // ✨ NEW: Update element padding
   const updateElementPadding = (elementId: string, paddingType: 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight', value: number) => {
-    console.log('🎯 PADDING UPDATE:', { elementId, paddingType, value });
     setEmailElements(emailElements.map(el => 
       el.id === elementId ? { ...el, [paddingType]: value } : el
     ));
@@ -2155,26 +2193,6 @@ export default function VisualEditor({
     
     // For non-fullWidth elements, check if they should have tight spacing
     const hasTightSpacing = !element.fullWidth && (shouldRemoveTopMargin || shouldRemoveBottomMargin);
-    
-    // Debug logging for element properties
-    if (element.type === 'text' || element.type === 'header') {
-      console.log('🎨 Rendering element:', {
-        id: element.id,
-        type: element.type,
-        fontFamily: element.fontFamily,
-        fontSize: element.fontSize,
-        textColor: element.textColor,
-        backgroundColor: element.backgroundColor,
-        paddingTop: element.paddingTop,
-        paddingBottom: element.paddingBottom,
-        paddingLeft: element.paddingLeft,
-        paddingRight: element.paddingRight,
-        fullWidth: element.fullWidth,
-        isSelected: selectedElementId === element.id,
-        selectedElementId: selectedElementId,
-        hasTightSpacing: hasTightSpacing
-      });
-    }
     
     const isSelected = selectedElementId === element.id;
     const isEditing = isElementEditing(element.id);
@@ -2318,7 +2336,6 @@ export default function VisualEditor({
         onDoubleClick={() => handleElementDoubleClick(element.id)}
         onDragOver={(e) => handleElementDragOver(e, index)}
         onDrop={(e) => {
-          console.log('🎯 Element drop at index:', index);
           e.preventDefault();
           e.stopPropagation();
           handleElementDrop(e, index);
@@ -2419,7 +2436,7 @@ export default function VisualEditor({
                   padding: '0.5rem',
                   fontFamily: 'monospace',
                   fontSize: '0.9em',
-                  color: '#333',
+                  color: '#333333',
                   resize: 'vertical'
                 }}
               />
@@ -2451,7 +2468,7 @@ export default function VisualEditor({
                   fontStyle: element.fontStyle || 'normal',
                   textDecoration: element.textDecoration || 'none',
                   lineHeight: '1.2',
-                  color: element.textColor || '#333',
+                  color: element.textColor || '#333333',
                   margin: 0,
                   position: 'relative',
                   cursor: isEditing ? 'text' : 'default',
@@ -2520,16 +2537,6 @@ export default function VisualEditor({
             position: 'relative',
             padding: `${element.paddingTop ?? 16}px ${element.paddingRight ?? (element.fullWidth ? 24 : 32)}px ${element.paddingBottom ?? 16}px ${element.paddingLeft ?? (element.fullWidth ? 24 : 32)}px`
           }}>
-            {(() => {
-              console.log('🎨 Rendering text element:', { 
-                id: element.id, 
-                fontSize: element.fontSize, 
-                fontFamily: element.fontFamily,
-                textColor: element.textColor,
-                backgroundColor: element.backgroundColor 
-              });
-              return null;
-            })()}
             {isShowingRawHtml(element.id) ? (
               <textarea
                 value={element.content}
@@ -2543,7 +2550,7 @@ export default function VisualEditor({
                   padding: '0.5rem',
                   fontFamily: 'monospace',
                   fontSize: '0.9em',
-                  color: '#333',
+                  color: '#333333',
                   resize: 'vertical'
                 }}
               />
@@ -2878,8 +2885,8 @@ export default function VisualEditor({
               </div>
             )}
             
-            {/* Error message */}
-            {uploadError && isSelected && (
+            {/* Error message - always show if there's an error */}
+            {uploadError && (
               <div style={{
                 position: 'absolute',
                 top: '-60px',
@@ -3000,7 +3007,7 @@ export default function VisualEditor({
                     <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                       Uploading to Storage...
                     </div>
-                    <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                    <div style={{ fontSize: '0.9rem', color: '#666666' }}>
                       Please wait while we save your image
                     </div>
                   </>
@@ -3008,10 +3015,10 @@ export default function VisualEditor({
                   <>
                 <FaCloudUploadAlt size={48} style={{ color: '#6c63ff', marginBottom: '1rem' }} />
                 <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Upload Image or Video</div>
-                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.9rem', color: '#666666', marginBottom: '1rem' }}>
                   Click to browse or drag and drop
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#999' }}>Supports JPG, PNG, GIF (max 10MB), MP4/WebM/Ogg (max 100MB)</div>
+                <div style={{ fontSize: '0.8rem', color: '#999999' }}>Supports JPG, PNG, GIF (max 10MB), MP4/WebM/Ogg (max 100MB)</div>
                   </>
                 )}
               </ImageUploadArea>)
@@ -3922,7 +3929,7 @@ export default function VisualEditor({
                                     text-align: ${element.textAlign || 'center'}; 
                                     padding: 2rem; 
                                     font-size: ${element.fontSize || '0.8rem'}; 
-                                    color: ${element.textColor || '#666'}; 
+                                    color: ${element.textColor || '#666666'}; 
                                     background: ${element.backgroundColor || 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}; 
                                     font-weight: ${element.fontWeight || 'normal'}; 
                                     font-family: ${element.fontFamily || 'Arial, sans-serif'}; 
@@ -3977,7 +3984,7 @@ export default function VisualEditor({
                       {element.type === 'divider' && <div>{'─'.repeat(50)}</div>}
                       {element.type === 'spacer' && <div style={{ height: element.height || '20px' }}></div>}
                       {element.type === 'footer' && (
-                  <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #ddd', fontSize: '0.8rem', color: '#666' }}>
+                  <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #dddddd', fontSize: '0.8rem', color: '#666666' }}>
                           {/* Social Links */}
                           {element.socialLinks && element.socialLinks.length > 0 && (
                             <div style={{ marginBottom: '1rem' }}>
@@ -4095,7 +4102,7 @@ export default function VisualEditor({
                       <div style={{
                         textAlign: 'center',
                         padding: '4rem 2rem',
-                        color: '#666',
+                        color: '#666666',
                         fontSize: '1.1rem',
                         border: elementDragOverIndex === 0 ? '2px dashed var(--primary)' : '2px dashed transparent',
                         borderRadius: '12px',

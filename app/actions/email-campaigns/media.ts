@@ -590,6 +590,9 @@ export async function uploadMedia(
   params: UploadMediaParams
 ): Promise<UploadMediaResponse> {
   try {
+    // Use service role client for bucket operations (requires admin permissions)
+    const adminSupabase = await createSupabaseServiceRole();
+    // Use regular client for uploads (RLS will enforce admin access)
     const supabase = await createClient();
 
     // Note: RLS will enforce admin access - if user is not admin, queries will fail
@@ -624,27 +627,39 @@ export async function uploadMedia(
     const buffer = new Uint8Array(await file.arrayBuffer());
 
     // Ensure bucket exists and is public with proper mime types
+    // Use admin client for bucket operations
     const bucket = 'email-assets';
-    const { data: listBuckets } = await supabase.storage.listBuckets();
+    const { data: listBuckets, error: listError } = await adminSupabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error('Error listing buckets:', listError);
+      throw new Error(`Failed to check bucket existence: ${listError.message}`);
+    }
+    
     const exists = listBuckets?.some(b => b.name === bucket);
     if (!exists) {
-      const { error: bucketError } = await supabase.storage.createBucket(bucket, {
+      console.log(`Bucket ${bucket} does not exist, creating it...`);
+      const { error: bucketError } = await adminSupabase.storage.createBucket(bucket, {
         public: true,
         allowedMimeTypes: [
           'image/jpeg', 'image/png', 'image/gif', 'image/webp',
           'video/mp4', 'video/webm', 'video/ogg'
         ],
-        fileSizeLimit: `${maxVideo}`
+        fileSizeLimit: maxVideo
       });
       if (bucketError) {
-        throw new Error('Failed creating bucket');
+        console.error('Bucket creation error:', bucketError);
+        throw new Error(`Failed creating bucket: ${bucketError.message}`);
       }
+      console.log(`Bucket ${bucket} created successfully`);
     }
 
+    // Use regular client for upload (RLS will enforce permissions)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(fileName, buffer, { contentType: file.type, upsert: true, cacheControl: '3600' });
     if (uploadError) {
+      console.error('Upload error:', uploadError);
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 

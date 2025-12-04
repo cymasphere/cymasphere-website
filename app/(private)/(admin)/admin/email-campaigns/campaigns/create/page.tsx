@@ -2050,6 +2050,32 @@ const LoadingSpinner = styled(motion.div)`
   margin-right: 0.5rem;
 `;
 
+// Helper function to normalize short hex color codes to full 6-digit format
+const normalizeHexColor = (color: string | undefined): string | undefined => {
+  if (!color || typeof color !== 'string') return color;
+  // Match 3-digit hex codes like #333, #555, #fff
+  const shortHexMatch = color.match(/^#([0-9a-fA-F]{3})$/);
+  if (shortHexMatch) {
+    // Expand to 6 digits: #333 -> #333333
+    const hex = shortHexMatch[1];
+    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+  }
+  return color;
+};
+
+// Helper function to normalize color values in an element
+const normalizeElementColors = (element: any): any => {
+  if (!element) return element;
+  const normalized = { ...element };
+  if (normalized.textColor) {
+    normalized.textColor = normalizeHexColor(normalized.textColor);
+  }
+  if (normalized.backgroundColor) {
+    normalized.backgroundColor = normalizeHexColor(normalized.backgroundColor);
+  }
+  return normalized;
+};
+
 function CreateCampaignPage() {
   // Current year variable for use throughout the component
   const currentYear = new Date().getFullYear();
@@ -2604,8 +2630,10 @@ function CreateCampaignPage() {
               }
 
               if (restoredElements && restoredElements.length > 0) {
-                console.log('✅ Setting emailElements from restored elements:', restoredElements.length);
-                setEmailElements(restoredElements);
+                // Normalize color values (convert short hex to full hex)
+                const normalizedElements = restoredElements.map(normalizeElementColors);
+                console.log('✅ Setting emailElements from restored elements:', normalizedElements.length);
+                setEmailElements(normalizedElements);
               } else {
                 // Fallback: naive parse to at least show content
                 const parser = new DOMParser();
