@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
       audienceIds,
       excludedAudienceIds,
       status = "draft",
+      scheduled_at,
     } = body;
 
     // Validate required fields
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
         html_content: htmlContent || null,
         text_content: textContent || null,
         status: status || "draft",
+        scheduled_at: scheduled_at || null,
       })
       .select("id")
       .single();

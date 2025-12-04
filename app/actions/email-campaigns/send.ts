@@ -441,6 +441,9 @@ export async function sendCampaign(
       audienceIds,
       excludedAudienceIds,
       scheduleType,
+      scheduleDate,
+      scheduleTime,
+      campaignId,
       emailElementsCount: emailElements?.length || 0,
       emailElementsPreview: emailElements?.slice(0, 2) || "undefined",
       developmentMode: DEVELOPMENT_MODE,
@@ -577,7 +580,12 @@ export async function sendCampaign(
     }
 
     // If scheduled for later, save schedule and return
-    if (scheduleType === "scheduled" && scheduleDate && scheduleTime) {
+    if (scheduleType === "scheduled") {
+      // Validate required fields for scheduled campaigns
+      if (!scheduleDate || !scheduleTime) {
+        console.error("❌ Scheduled campaign missing date or time:", { scheduleDate, scheduleTime });
+        throw new Error("Scheduled campaigns require both a date and time");
+      }
       // If we have a campaignId, get the scheduled_at time from the already-saved campaign
       let scheduledDateTime;
 
@@ -645,17 +653,45 @@ export async function sendCampaign(
         } excluded`
       );
 
+      // Format time in a way that will be consistent on the client
+      // Store ISO string and let client format it with their timezone
+      const scheduledISO = scheduledDateTime.toISOString();
+      
+      // CRITICAL: Update the campaign record with scheduled_at if we have a campaignId
+      if (campaignId && /^[0-9a-f-]{36}$/i.test(campaignId)) {
+        const { error: updateError, data: updateData } = await supabase
+          .from("email_campaigns")
+          .update({
+            scheduled_at: scheduledISO,
+            status: "scheduled",
+          })
+          .eq("id", campaignId)
+          .select("id, scheduled_at, status");
+        
+        if (updateError) {
+          console.error("❌ Failed to update campaign scheduled_at:", updateError);
+          throw new Error(`Failed to schedule campaign: ${updateError.message}`);
+        } else {
+          console.log(`✅ Updated campaign ${campaignId} with scheduled_at: ${scheduledISO}`, {
+            updatedRecord: updateData?.[0]
+          });
+        }
+      } else {
+        console.warn("⚠️ No valid campaignId provided, cannot update scheduled_at:", campaignId);
+        throw new Error("Campaign ID is required to schedule a campaign");
+      }
+      
       return {
         success: true,
-        message: `Campaign scheduled for ${scheduledDateTime.toLocaleString()}`,
+        message: `Campaign scheduled for ${scheduledISO}`, // Client will format this
         campaignId: campaignId || `campaign_${Date.now()}`,
         status: "scheduled",
-        scheduledFor: scheduledDateTime.toISOString(),
+        scheduledFor: scheduledISO,
         stats: {
           audienceCount: audienceIds.length,
           excludedAudienceCount: excludedAudienceIds?.length || 0,
           scheduleType: "scheduled",
-          scheduledDateTime: scheduledDateTime.toLocaleString(),
+          scheduledDateTime: scheduledISO, // Store ISO, client will format
         },
       };
     }

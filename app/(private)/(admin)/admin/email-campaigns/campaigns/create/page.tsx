@@ -2080,6 +2080,35 @@ function CreateCampaignPage() {
   // Current year variable for use throughout the component
   const currentYear = new Date().getFullYear();
   
+  // Helper function to format scheduled time consistently
+  const formatScheduledTime = (isoString: string | null | undefined): string => {
+    if (!isoString) return 'Not scheduled';
+    const scheduledDate = new Date(isoString);
+    return scheduledDate.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+  
+  // Helper to get the scheduled time from campaign result (single source of truth)
+  const getScheduledTime = (result: any): string | null => {
+    const time = result?.scheduledFor || result?.stats?.scheduledDateTime || null;
+    if (result?.status === 'scheduled' && time) {
+      console.log('🕐 getScheduledTime:', {
+        scheduledFor: result?.scheduledFor,
+        statsScheduledDateTime: result?.stats?.scheduledDateTime,
+        selectedTime: time,
+        formatted: formatScheduledTime(time)
+      });
+    }
+    return time;
+  };
+  
   // Add audience state
   const [audiences, setAudiences] = useState<Audience[]>([]);
   const [audiencesLoading, setAudiencesLoading] = useState(true);
@@ -2793,6 +2822,20 @@ function CreateCampaignPage() {
       return;
     }
 
+    // Validate scheduled campaign has date and time
+    if (campaignData.scheduleType === 'scheduled') {
+      if (!campaignData.scheduleDate || !campaignData.scheduleTime) {
+        setSendingMessage('Please select both a date and time for scheduled campaigns');
+        setTimeout(() => setSendingMessage(''), 5000);
+        return;
+      }
+      console.log('📅 Scheduling campaign with:', {
+        scheduleDate: campaignData.scheduleDate,
+        scheduleTime: campaignData.scheduleTime,
+        scheduleType: campaignData.scheduleType
+      });
+    }
+
     setIsSending(true);
     setSendingMessage('Preparing to send campaign...');
     setCampaignResult(null);
@@ -2917,7 +2960,7 @@ function CreateCampaignPage() {
             setSendingMessage(
               sendResult.scheduleType === 'timezone' 
                 ? `Campaign scheduled for timezone-based delivery at ${sendResult.stats?.sendTime}!`
-                : `Campaign scheduled for ${new Date(sendResult.scheduledFor).toLocaleString()}!`
+                : `Campaign scheduled for ${formatScheduledTime(sendResult.scheduledFor)}!`
             );
           } else if (sendResult.status === 'draft') {
             setSendingMessage('Campaign saved as draft!');
@@ -4848,7 +4891,9 @@ function CreateCampaignPage() {
                 </ModalTitle>
                 
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                  {campaignResult.message}
+                  {campaignResult.status === 'scheduled' 
+                    ? `Campaign scheduled for ${formatScheduledTime(getScheduledTime(campaignResult))}`
+                    : campaignResult.message}
                 </p>
 
                 {campaignResult.stats && (
@@ -4931,8 +4976,7 @@ function CreateCampaignPage() {
                     ) : (
                       <p style={{ color: 'var(--primary)', fontWeight: '600', margin: 0 }}>
                         <FaClock style={{ marginRight: '0.5rem' }} />
-                        Scheduled for: {campaignResult.scheduledFor ? 
-                          new Date(campaignResult.scheduledFor).toLocaleString() : 'Unknown'}
+                        Scheduled for: {formatScheduledTime(getScheduledTime(campaignResult))}
                       </p>
                     )}
                   </div>

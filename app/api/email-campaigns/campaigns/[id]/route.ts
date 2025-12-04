@@ -101,6 +101,7 @@ export async function PUT(
       audienceIds,
       excludedAudienceIds,
       status,
+      scheduled_at,
     } = body;
 
     // Validate required fields
@@ -126,6 +127,7 @@ export async function PUT(
     if (htmlContent !== undefined) updateData.html_content = htmlContent;
     if (textContent !== undefined) updateData.text_content = textContent;
     if (status !== undefined) updateData.status = status;
+    if (scheduled_at !== undefined) updateData.scheduled_at = scheduled_at;
 
     const { data: campaign, error: campaignError } = await supabase
       .from("email_campaigns")
