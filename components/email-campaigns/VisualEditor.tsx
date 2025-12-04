@@ -4886,7 +4886,7 @@ export default function VisualEditor({
                             opacity: 0.8,
                             marginTop: '0.25rem'
                           }}>
-                            Use {{email}} placeholder for dynamic email
+                            Use {'{{email}}'} placeholder for dynamic email
                           </div>
                         </ControlGroup>
 
