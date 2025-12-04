@@ -359,7 +359,9 @@ export async function POST(request: NextRequest) {
             // Sometimes Stripe doesn't copy payment_intent_data.metadata to the actual payment intent
             // Check if this is a lifetime purchase by:
             // 1. Checkout session metadata (plan_type === "lifetime")
-            // 2. Invoice line items containing lifetime price ID
+            // 2. Checkout session line items (most reliable for one-time payments)
+            // 3. Payment intent line items
+            // 4. Invoice line items containing lifetime price ID
             const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
             const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
             
@@ -368,9 +370,58 @@ export async function POST(request: NextRequest) {
             // Check 1: Checkout session metadata
             if (metadata.plan_type === "lifetime") {
               isLifetimePurchase = true;
+              console.log(`🔍 Detected lifetime purchase via checkout session metadata`);
             }
             
-            // Check 2: Invoice line items for lifetime price ID (more reliable)
+            // Check 2: Checkout session line items (most reliable for one-time payments)
+            if (!isLifetimePurchase && session.mode === "payment") {
+              try {
+                const sessionWithLineItems = await stripe.checkout.sessions.retrieve(session.id, {
+                  expand: ['line_items']
+                });
+                
+                if (sessionWithLineItems.line_items?.data) {
+                  const hasLifetimePrice = sessionWithLineItems.line_items.data.some(item => 
+                    item.price?.id === lifetimePriceId || item.price?.id === lifetimePriceId2
+                  );
+                  if (hasLifetimePrice) {
+                    isLifetimePurchase = true;
+                    console.log(`🔍 Detected lifetime purchase via checkout session line items`);
+                  }
+                }
+              } catch (error) {
+                console.error(`❌ Error checking checkout session line items:`, error);
+              }
+            }
+            
+            // Check 3: Payment intent line items (if available)
+            if (!isLifetimePurchase && paymentIntent.latest_charge) {
+              try {
+                const charge = typeof paymentIntent.latest_charge === 'string'
+                  ? await stripe.charges.retrieve(paymentIntent.latest_charge, { expand: ['invoice'] })
+                  : paymentIntent.latest_charge;
+                
+                if (charge.invoice) {
+                  const invoice = typeof charge.invoice === 'string'
+                    ? await stripe.invoices.retrieve(charge.invoice)
+                    : charge.invoice;
+                  
+                  if (!invoice.subscription && invoice.lines?.data) {
+                    const hasLifetimePrice = invoice.lines.data.some(line => 
+                      line.price?.id === lifetimePriceId || line.price?.id === lifetimePriceId2
+                    );
+                    if (hasLifetimePrice) {
+                      isLifetimePurchase = true;
+                      console.log(`🔍 Detected lifetime purchase via charge invoice line items`);
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error(`❌ Error checking payment intent charge invoice:`, error);
+              }
+            }
+            
+            // Check 4: Invoice line items for lifetime price ID (fallback)
             if (!isLifetimePurchase && paymentIntent.invoice) {
               const invoice = typeof paymentIntent.invoice === 'string' 
                 ? await stripe.invoices.retrieve(paymentIntent.invoice)
@@ -383,9 +434,16 @@ export async function POST(request: NextRequest) {
                 );
                 if (hasLifetimePrice) {
                   isLifetimePurchase = true;
-                  console.log(`🔍 Detected lifetime purchase via invoice line items for payment intent ${paymentIntent.id}`);
+                  console.log(`🔍 Detected lifetime purchase via payment intent invoice line items`);
                 }
               }
+            }
+            
+            // Check 5: If mode is "payment" and we still haven't detected it, assume it's lifetime
+            // This is a safety net - all one-time payments should be lifetime purchases
+            if (!isLifetimePurchase && session.mode === "payment") {
+              console.warn(`⚠️ Payment mode detected but lifetime price not found. Assuming lifetime purchase for safety.`);
+              isLifetimePurchase = true;
             }
             
             // Update metadata if it's a lifetime purchase and metadata is missing
@@ -407,7 +465,7 @@ export async function POST(request: NextRequest) {
 
             // Update user profile to lifetime subscription
             if (isLifetimePurchase) {
-              await supabase
+              const { data: updatedProfile, error: updateError } = await supabase
                 .from("profiles")
                 .update({
                   subscription: "lifetime",
@@ -415,9 +473,26 @@ export async function POST(request: NextRequest) {
                   subscription_source: "stripe",
                   customer_id: customerId, // Ensure customer_id is set
                 })
-                .eq("id", profile.id);
+                .eq("id", profile.id)
+                .select()
+                .single();
               
-              console.log(`✅ Updated profile ${profile.id} to lifetime subscription`);
+              if (updateError) {
+                console.error(`❌ Failed to update profile ${profile.id} to lifetime subscription:`, updateError);
+              } else {
+                console.log(`✅ Updated profile ${profile.id} to lifetime subscription`);
+                console.log(`   - Email: ${profile.email}`);
+                console.log(`   - Customer ID: ${customerId}`);
+                console.log(`   - Previous subscription: ${profile.subscription}`);
+                console.log(`   - New subscription: lifetime`);
+              }
+            } else {
+              console.error(`❌ Lifetime purchase detection failed for checkout session ${session.id}`);
+              console.error(`   - Session mode: ${session.mode}`);
+              console.error(`   - Metadata plan_type: ${metadata.plan_type}`);
+              console.error(`   - Customer ID: ${customerId}`);
+              console.error(`   - Profile ID: ${profile.id}`);
+              console.error(`   - Payment Intent ID: ${paymentIntent.id}`);
             }
 
             // Track purchase to Meta CAPI
@@ -517,9 +592,10 @@ export async function POST(request: NextRequest) {
         // Check if this charge is for a subscription by looking at the invoice
         let subscriptionId: string | undefined;
         let subscriptionType: string | undefined;
+        let invoice: Stripe.Invoice | null = null;
         
         if (charge.invoice) {
-          const invoice = await stripe.invoices.retrieve(charge.invoice as string);
+          invoice = await stripe.invoices.retrieve(charge.invoice as string);
           if (invoice.subscription) {
             subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
             
@@ -599,13 +675,18 @@ export async function POST(request: NextRequest) {
             const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
             const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
             
-            if (invoice.lines?.data) {
+            // Retrieve invoice if we don't have it yet
+            if (!invoice && charge.invoice) {
+              invoice = await stripe.invoices.retrieve(charge.invoice as string);
+            }
+            
+            if (invoice && invoice.lines?.data) {
               const hasLifetimePrice = invoice.lines.data.some(line => 
                 line.price?.id === lifetimePriceId || line.price?.id === lifetimePriceId2
               );
               
               if (hasLifetimePrice && charge.payment_intent) {
-                // This is a lifetime purchase - ensure payment intent has metadata
+                // This is a lifetime purchase - ensure payment intent has metadata AND update profile
                 const paymentIntentId = typeof charge.payment_intent === 'string' 
                   ? charge.payment_intent 
                   : charge.payment_intent.id;
@@ -622,6 +703,31 @@ export async function POST(request: NextRequest) {
                       },
                     });
                     console.log(`✅ Updated payment intent metadata for lifetime purchase`);
+                  }
+                  
+                  // CRITICAL: Update profile to lifetime subscription
+                  if (profile) {
+                    const { data: updatedProfile, error: updateError } = await supabase
+                      .from("profiles")
+                      .update({
+                        subscription: "lifetime",
+                        subscription_expiration: null,
+                        subscription_source: "stripe",
+                        customer_id: typeof charge.customer === 'string' ? charge.customer : charge.customer?.id,
+                      })
+                      .eq("id", profile.id)
+                      .select()
+                      .single();
+                    
+                    if (updateError) {
+                      console.error(`❌ Failed to update profile ${profile.id} to lifetime subscription (from charge.succeeded):`, updateError);
+                    } else {
+                      console.log(`✅ Updated profile ${profile.id} to lifetime subscription (from charge.succeeded)`);
+                      console.log(`   - Email: ${profile.email}`);
+                      console.log(`   - Previous subscription: ${updatedProfile?.subscription || 'unknown'}`);
+                    }
+                  } else {
+                    console.warn(`⚠️ Lifetime purchase detected but profile not found for customer ${charge.customer}`);
                   }
                 } catch (updateError) {
                   console.error(`❌ Failed to update payment intent metadata from charge.succeeded:`, updateError);
