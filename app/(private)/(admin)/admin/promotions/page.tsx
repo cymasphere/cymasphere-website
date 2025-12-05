@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
+import { utcToPSTDate, formatPSTDate } from "@/utils/timezoneUtils";
 
 // Types
 interface Promotion {
@@ -566,11 +567,10 @@ export default function PromotionsPage() {
   const handleEdit = (promotion: Promotion) => {
     setEditingPromotion(promotion);
     
-    // Convert UTC dates to local date format for input (YYYY-MM-DD)
+    // Convert UTC dates to PST date format for input (YYYY-MM-DD)
     const formatDateForInput = (dateString: string | null) => {
       if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      return utcToPSTDate(dateString) || '';
     };
     
     // If coupon code exists but coupon wasn't created, allow creating it
@@ -681,10 +681,10 @@ export default function PromotionsPage() {
 
   const handleToggle = async (promotion: Promotion) => {
     try {
-      // Convert ISO dates back to YYYY-MM-DD format for the API
+      // Convert UTC dates back to PST date format (YYYY-MM-DD) for the API
       const formatDateForAPI = (isoString: string | null) => {
         if (!isoString) return '';
-        return isoString.split('T')[0];
+        return utcToPSTDate(isoString) || '';
       };
 
       // Only send the fields needed for toggle - preserve all other data
@@ -733,14 +733,8 @@ export default function PromotionsPage() {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No limit';
-    // Parse as UTC and display in local timezone
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC', // Display in UTC to match database
-    });
+    // Display dates in PST timezone
+    return formatPSTDate(dateString);
   };
 
   if (!user || !user.is_admin) {

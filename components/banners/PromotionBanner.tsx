@@ -567,14 +567,12 @@ export default function PromotionBanner({ showCountdown = true, dismissible = tr
       )}
       
       <BannerContent $textColor={theme.textColor} $variant={variant}>
-        {showCountdown && sale.end_date && (timeLeft.days > 0 || timeLeft.hours > 0) && (
+        {showCountdown && sale.end_date && (
           <CountdownContainer $variant={variant}>
-            {timeLeft.days > 0 && (
-              <CountdownBox $accentColor={theme.accentColor} $variant={variant}>
-                <CountdownNumber $variant={variant}>{timeLeft.days}</CountdownNumber>
-                <CountdownLabel $variant={variant}>D</CountdownLabel>
-              </CountdownBox>
-            )}
+            <CountdownBox $accentColor={theme.accentColor} $variant={variant}>
+              <CountdownNumber $variant={variant}>{String(timeLeft.days).padStart(2, '0')}</CountdownNumber>
+              <CountdownLabel $variant={variant}>D</CountdownLabel>
+            </CountdownBox>
             <CountdownBox $accentColor={theme.accentColor} $variant={variant}>
               <CountdownNumber $variant={variant}>{String(timeLeft.hours).padStart(2, '0')}</CountdownNumber>
               <CountdownLabel $variant={variant}>H</CountdownLabel>

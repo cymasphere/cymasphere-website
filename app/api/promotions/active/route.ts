@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { isPSTDateAfterNow, isPSTDateBeforeNow } from '@/utils/timezoneUtils';
 
 /**
  * GET - Fetch active promotions
@@ -30,13 +31,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by date and plan in JavaScript (more complex filtering)
+    // All date comparisons are done in PST timezone
     const filtered = promotions?.filter(promo => {
-      // Check date range
-      if (promo.start_date && new Date(promo.start_date) > new Date()) {
-        return false; // Not started yet
+      // Check date range in PST
+      if (promo.start_date && isPSTDateAfterNow(promo.start_date)) {
+        return false; // Not started yet (in PST)
       }
-      if (promo.end_date && new Date(promo.end_date) < new Date()) {
-        return false; // Already ended
+      if (promo.end_date && isPSTDateBeforeNow(promo.end_date)) {
+        return false; // Already ended (in PST)
       }
 
       // Check plan if specified

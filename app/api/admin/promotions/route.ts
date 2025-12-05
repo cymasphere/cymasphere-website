@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
+import { pstDateToUTC } from '@/utils/timezoneUtils';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -163,6 +164,16 @@ export async function POST(request: NextRequest) {
               duration: 'once',
             };
 
+            // Set redeem_by date if promotion has an end_date
+            // This automatically disables the coupon in Stripe after the sale ends
+            if (end_date) {
+              const endDateObj = new Date(end_date);
+              // Add 1 day buffer to allow for timezone differences and ensure it works until end of day PST
+              endDateObj.setDate(endDateObj.getDate() + 1);
+              couponParams.redeem_by = Math.floor(endDateObj.getTime() / 1000); // Stripe expects Unix timestamp
+              console.log(`📅 Setting coupon expiration to: ${endDateObj.toISOString()}`);
+            }
+
             if (discount_type === 'percentage') {
               couponParams.percent_off = Math.round(discount_value);
               console.log(`💰 Creating ${discount_value}% OFF coupon`);
@@ -215,34 +226,16 @@ export async function POST(request: NextRequest) {
       console.log('⏭️ Skipping Stripe coupon creation (checkbox not checked or code missing)');
     }
 
-    // Convert date inputs to UTC timestamps
-    const formatDateToUTC = (dateString: string | null | undefined) => {
-      if (!dateString) return null;
-      
-      // If already an ISO string, return as is
-      if (dateString.includes('T') && dateString.includes('Z')) {
-        return dateString;
-      }
-      
-      // Parse as local date and convert to UTC timestamp for storage
-      const date = new Date(dateString + 'T00:00:00.000Z');
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
-        return null;
-      }
-      
-      return date.toISOString();
-    };
+    // Convert PST date inputs to UTC timestamps for database storage
+    // Dates entered in the admin UI are treated as PST dates
 
     const promotionData = {
       name,
       title,
       description,
       active,
-      start_date: formatDateToUTC(start_date),
-      end_date: formatDateToUTC(end_date),
+      start_date: pstDateToUTC(start_date, false), // Start of day (00:00:00 PST)
+      end_date: pstDateToUTC(end_date, true), // End of day (23:59:59 PST)
       applicable_plans,
       discount_type,
       discount_value,
