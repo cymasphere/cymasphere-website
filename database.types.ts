@@ -1519,6 +1519,74 @@ export type Database = {
           },
         ]
       }
+      ios_subscriptions: {
+        Row: {
+          apple_validation_response: Json | null
+          auto_renew_status: boolean | null
+          created_at: string
+          expires_date: string
+          id: string
+          is_active: boolean
+          original_transaction_id: string | null
+          product_id: string
+          profile_id: string | null
+          purchase_date: string
+          receipt_data: string
+          receipt_validated_at: string
+          subscription_type: Database["public"]["Enums"]["subscription_type"]
+          transaction_id: string
+          updated_at: string
+          user_id: string
+          validation_status: string
+        }
+        Insert: {
+          apple_validation_response?: Json | null
+          auto_renew_status?: boolean | null
+          created_at?: string
+          expires_date: string
+          id?: string
+          is_active?: boolean
+          original_transaction_id?: string | null
+          product_id: string
+          profile_id?: string | null
+          purchase_date: string
+          receipt_data: string
+          receipt_validated_at?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+          validation_status?: string
+        }
+        Update: {
+          apple_validation_response?: Json | null
+          auto_renew_status?: boolean | null
+          created_at?: string
+          expires_date?: string
+          id?: string
+          is_active?: boolean
+          original_transaction_id?: string | null
+          product_id?: string
+          profile_id?: string | null
+          purchase_date?: string
+          receipt_data?: string
+          receipt_validated_at?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ios_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_conversion_events: {
         Row: {
           client_ip: unknown
@@ -1632,6 +1700,7 @@ export type Database = {
           last_stripe_api_check: string | null
           subscription: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration: string | null
+          subscription_source: string | null
           trial_expiration: string | null
           updated_at: string | null
         }
@@ -1645,6 +1714,7 @@ export type Database = {
           last_stripe_api_check?: string | null
           subscription?: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration?: string | null
+          subscription_source?: string | null
           trial_expiration?: string | null
           updated_at?: string | null
         }
@@ -1658,8 +1728,87 @@ export type Database = {
           last_stripe_api_check?: string | null
           subscription?: Database["public"]["Enums"]["subscription_type"]
           subscription_expiration?: string | null
+          subscription_source?: string | null
           trial_expiration?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          active: boolean
+          applicable_plans: string[] | null
+          banner_theme: Json | null
+          conversions: number | null
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          end_date: string | null
+          id: string
+          name: string
+          priority: number | null
+          revenue: number | null
+          sale_price_annual: number | null
+          sale_price_lifetime: number | null
+          sale_price_monthly: number | null
+          start_date: string | null
+          stripe_coupon_code: string | null
+          stripe_coupon_created: boolean | null
+          stripe_coupon_id: string | null
+          title: string
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          active?: boolean
+          applicable_plans?: string[] | null
+          banner_theme?: Json | null
+          conversions?: number | null
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          end_date?: string | null
+          id?: string
+          name: string
+          priority?: number | null
+          revenue?: number | null
+          sale_price_annual?: number | null
+          sale_price_lifetime?: number | null
+          sale_price_monthly?: number | null
+          start_date?: string | null
+          stripe_coupon_code?: string | null
+          stripe_coupon_created?: boolean | null
+          stripe_coupon_id?: string | null
+          title: string
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          active?: boolean
+          applicable_plans?: string[] | null
+          banner_theme?: Json | null
+          conversions?: number | null
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          name?: string
+          priority?: number | null
+          revenue?: number | null
+          sale_price_annual?: number | null
+          sale_price_lifetime?: number | null
+          sale_price_monthly?: number | null
+          start_date?: string | null
+          stripe_coupon_code?: string | null
+          stripe_coupon_created?: boolean | null
+          stripe_coupon_id?: string | null
+          title?: string
+          updated_at?: string
+          views?: number | null
         }
         Relationships: []
       }
@@ -1774,6 +1923,133 @@ export type Database = {
           unsubscribe_date?: string | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      support_attachments: {
+        Row: {
+          attachment_type: Database["public"]["Enums"]["attachment_type"]
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          message_id: string
+          storage_path: string
+          url: string | null
+        }
+        Insert: {
+          attachment_type: Database["public"]["Enums"]["attachment_type"]
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          message_id: string
+          storage_path: string
+          url?: string | null
+        }
+        Update: {
+          attachment_type?: Database["public"]["Enums"]["attachment_type"]
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          message_id?: string
+          storage_path?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          content: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          is_admin: boolean
+          message_type: Database["public"]["Enums"]["message_type"]
+          ticket_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_admin?: boolean
+          message_type?: Database["public"]["Enums"]["message_type"]
+          ticket_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_admin?: boolean
+          message_type?: Database["public"]["Enums"]["message_type"]
+          ticket_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2150,6 +2426,10 @@ export type Database = {
         Args: { p_audience_id: string; p_subscriber_id: string }
         Returns: boolean
       }
+      can_attach_to_message: {
+        Args: { p_message_id: string }
+        Returns: boolean
+      }
       complete_automation_job: {
         Args: {
           p_error_message?: string
@@ -2190,6 +2470,29 @@ export type Database = {
         Args: { p_enrollment_id: string; p_step_config: Json }
         Returns: Json
       }
+      generate_ticket_number: { Args: never; Returns: string }
+      get_active_ios_subscription: {
+        Args: { p_user_id: string }
+        Returns: {
+          expires_date: string
+          subscription_type: Database["public"]["Enums"]["subscription_type"]
+          transaction_id: string
+        }[]
+      }
+      get_active_promotion: {
+        Args: { plan_type: string }
+        Returns: {
+          banner_theme: Json
+          description: string
+          discount_type: string
+          discount_value: number
+          id: string
+          name: string
+          sale_price: number
+          stripe_coupon_code: string
+          title: string
+        }[]
+      }
       get_lifetime_revenue: { Args: never; Returns: number }
       get_monthly_revenue: { Args: never; Returns: number }
       get_next_automation_job: {
@@ -2223,6 +2526,14 @@ export type Database = {
         Args: { campaign_id: string }
         Returns: undefined
       }
+      increment_promotion_conversion: {
+        Args: { conversion_value?: number; promotion_id: string }
+        Returns: undefined
+      }
+      increment_promotion_view: {
+        Args: { promotion_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { user_id: string }; Returns: boolean }
       remove_subscriber_from_audience: {
         Args: { p_audience_id: string; p_subscriber_id: string }
@@ -2243,6 +2554,7 @@ export type Database = {
       }
     }
     Enums: {
+      attachment_type: "image" | "video" | "document" | "audio" | "other"
       automation_job_type:
         | "trigger_check"
         | "enrollment_process"
@@ -2313,6 +2625,7 @@ export type Database = {
         | "completed"
         | "failed"
         | "cancelled"
+      message_type: "text" | "system"
       subscriber_status:
         | "active"
         | "unsubscribed"
@@ -2328,6 +2641,7 @@ export type Database = {
         | "promotional"
         | "transactional"
         | "custom"
+      ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2918,6 +3232,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attachment_type: ["image", "video", "document", "audio", "other"],
       automation_job_type: [
         "trigger_check",
         "enrollment_process",
@@ -2989,6 +3304,7 @@ export const Constants = {
       ],
       job_priority: ["low", "medium", "high", "urgent"],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
+      message_type: ["text", "system"],
       subscriber_status: [
         "active",
         "unsubscribed",
@@ -3006,6 +3322,7 @@ export const Constants = {
         "transactional",
         "custom",
       ],
+      ticket_status: ["open", "in_progress", "resolved", "closed"],
     },
   },
   stripe_tables: {
