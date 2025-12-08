@@ -336,18 +336,23 @@ const formatName = (
 
 function DashboardPage() {
   const { t } = useTranslation();
-  const { user: userAuth } = useAuth();
+  const { user: userAuth, refreshUser } = useAuth();
   const user = userAuth!;
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
   const [hasNfr, setHasNfr] = useState<boolean | null>(null);
 
@@ -667,12 +672,19 @@ function DashboardPage() {
       <WelcomeSection>
         <WelcomeTitle>
           {(() => {
-            const welcomeText = t("dashboard.main.welcome", "Welcome back, {{name}}!", {
-              name: formatName(user.profile.first_name, user.profile.last_name),
-            });
+            const welcomeText = t(
+              "dashboard.main.welcome",
+              "Welcome back, {{name}}!",
+              {
+                name: formatName(
+                  user.profile.first_name,
+                  user.profile.last_name
+                ),
+              }
+            );
             // On mobile, add line break after "Welcome back,"
             if (isMobile) {
-              const parts = welcomeText.split(', ');
+              const parts = welcomeText.split(", ");
               if (parts.length === 2) {
                 return (
                   <>
@@ -997,7 +1009,7 @@ function DashboardPage() {
               )}
             </p>
           </CardContent>
-          <Button onClick={() => router.push('/support')}>
+          <Button onClick={() => router.push("/support")}>
             {t("dashboard.main.contactSupport", "Contact Support")}
           </Button>
         </Card>

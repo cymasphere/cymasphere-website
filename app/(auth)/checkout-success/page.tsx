@@ -7,7 +7,12 @@ import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import { trackUserData, hashEmail, trackEventOnce, shouldFireEvent } from "@/utils/analytics";
+import {
+  trackUserData,
+  hashEmail,
+  trackEventOnce,
+  shouldFireEvent,
+} from "@/utils/analytics";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -139,53 +144,14 @@ function CheckoutSuccessContent() {
   const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
     currencyParam || "USD"
   );
-  
+
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
-  
-  // Refresh user subscription status after checkout (with retry for webhook delay)
+
+  // Refresh pro status on mount (same as login and dashboard pages)
   useEffect(() => {
-    if (!isLoggedIn || !user?.id) return;
-    
-    const refreshSubscription = async (retryCount = 0) => {
-      try {
-        // Call the refresh endpoint to update subscription status
-        const response = await fetch('/api/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.profile) {
-            // Refresh the user context with updated profile
-            if (refreshUser) {
-              await refreshUser();
-            }
-            console.log('[Checkout Success] Subscription status refreshed:', data.profile.subscription);
-          }
-        }
-      } catch (error) {
-        console.error('[Checkout Success] Error refreshing subscription:', error);
-        
-        // Retry up to 3 times with exponential backoff (webhook might be delayed)
-        if (retryCount < 3) {
-          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-          setTimeout(() => refreshSubscription(retryCount + 1), delay);
-        }
-      }
-    };
-    
-    // Initial refresh immediately
-    refreshSubscription();
-    
-    // Also refresh after a short delay to catch webhook processing
-    const delayedRefresh = setTimeout(() => {
-      refreshSubscription(1);
-    }, 2000); // 2 second delay
-    
-    return () => clearTimeout(delayedRefresh);
-  }, [isLoggedIn, user?.id, refreshUser]);
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
 
   // Track promotion conversion
   useEffect(() => {
@@ -194,23 +160,23 @@ function CheckoutSuccessContent() {
       if (!isTrial && subscriptionValue && subscriptionValue > 0) {
         try {
           // Get active promotion
-          const response = await fetch('/api/promotions/active?plan=lifetime');
+          const response = await fetch("/api/promotions/active?plan=lifetime");
           const data = await response.json();
-          
+
           if (data.success && data.promotion) {
             // Track conversion
-            await fetch('/api/promotions/track', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            await fetch("/api/promotions/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 promotion_id: data.promotion.id,
-                type: 'conversion',
+                type: "conversion",
                 value: subscriptionValue,
               }),
             });
           }
         } catch (error) {
-          console.error('Error tracking promotion conversion:', error);
+          console.error("Error tracking promotion conversion:", error);
         }
       }
     };
@@ -220,8 +186,8 @@ function CheckoutSuccessContent() {
 
   // Track dataLayer events with user data (with deduplication)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+
     // Only track once
     if (hasTrackedEvent.current) return;
     hasTrackedEvent.current = true;
@@ -237,7 +203,7 @@ function CheckoutSuccessContent() {
     ) => {
       // Use session_id as event ID for deduplication, or generate one
       const eventId = sessionId || `${eventName}_${Date.now()}`;
-      
+
       // Check if event should fire (deduplication check)
       if (!shouldFireEvent(eventName, eventId)) {
         return; // Event already fired, skip
@@ -252,10 +218,10 @@ function CheckoutSuccessContent() {
           user_id: userId,
           email: userEmail,
         });
-        
+
         // Get email hash for the event
         const emailHash = await hashEmail(userEmail);
-        
+
         // Push the event with user data and event ID
         window.dataLayer.push({
           event: eventName,
@@ -278,124 +244,138 @@ function CheckoutSuccessContent() {
 
     if (isTrial) {
       // Track free trial as subscription_success with value 0
-      trackEventWithUserData('subscription_success', {
+      trackEventWithUserData("subscription_success", {
         subscription: {
           value: 0,
-          currency: subscriptionCurrency || 'USD'
-        }
+          currency: subscriptionCurrency || "USD",
+        },
       });
     } else if (isLifetime && subscriptionValue !== null) {
       // Track lifetime purchase with Purchase event
-      const purchaseItems = [{
-        item_id: 'lifetime',
-        item_name: 'Cymasphere Lifetime',
-        category: 'software',
-        quantity: 1,
-        price: subscriptionValue
-      }];
-      
+      const purchaseItems = [
+        {
+          item_id: "lifetime",
+          item_name: "Cymasphere Lifetime",
+          category: "software",
+          quantity: 1,
+          price: subscriptionValue,
+        },
+      ];
+
       // Push to dataLayer (for GTM/GA) with user data
-      trackEventWithUserData('purchase', {
+      trackEventWithUserData("purchase", {
         value: subscriptionValue,
         currency: subscriptionCurrency,
         transaction_id: sessionId,
-        items: purchaseItems
+        items: purchaseItems,
       });
-      
+
       // Also fire Meta Pixel directly to ensure parameters are sent
       // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Purchase', {
-          value: subscriptionValue,
-          currency: subscriptionCurrency,
-          content_ids: purchaseItems.map(item => item.item_id),
-          contents: purchaseItems.map(item => ({
-            id: item.item_id,
-            quantity: item.quantity || 1,
-            item_price: item.price,
-          })),
-        }, {
-          eventID: sessionId || `purchase_${Date.now()}` // For deduplication with server events
-        });
+      if (typeof window !== "undefined" && window.fbq) {
+        window.fbq(
+          "track",
+          "Purchase",
+          {
+            value: subscriptionValue,
+            currency: subscriptionCurrency,
+            content_ids: purchaseItems.map((item) => item.item_id),
+            contents: purchaseItems.map((item) => ({
+              id: item.item_id,
+              quantity: item.quantity || 1,
+              item_price: item.price,
+            })),
+          },
+          {
+            eventID: sessionId || `purchase_${Date.now()}`, // For deduplication with server events
+          }
+        );
       }
     } else if (subscriptionValue !== null) {
       // Track paid subscription with value and currency
-      trackEventWithUserData('subscription_success', {
+      trackEventWithUserData("subscription_success", {
         subscription: {
           value: subscriptionValue,
-          currency: subscriptionCurrency
-        }
+          currency: subscriptionCurrency,
+        },
       });
     } else if (sessionId && !isTrial) {
       // If we have session_id but no value, fetch it from API
       fetch(`/api/checkout-session-details?session_id=${sessionId}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success && data.value !== null) {
             setSubscriptionValue(data.value);
-            setSubscriptionCurrency(data.currency || 'USD');
-            
+            setSubscriptionCurrency(data.currency || "USD");
+
             // Check if it's a lifetime purchase based on mode
-            if (data.mode === 'payment') {
+            if (data.mode === "payment") {
               // Track as Purchase event for lifetime
-              const purchaseItems = [{
-                item_id: 'lifetime',
-                item_name: 'Cymasphere Lifetime',
-                category: 'software',
-                quantity: 1,
-                price: data.value
-              }];
-              
+              const purchaseItems = [
+                {
+                  item_id: "lifetime",
+                  item_name: "Cymasphere Lifetime",
+                  category: "software",
+                  quantity: 1,
+                  price: data.value,
+                },
+              ];
+
               // Push to dataLayer (for GTM/GA) with user data
-              trackEventWithUserData('purchase', {
+              trackEventWithUserData("purchase", {
                 value: data.value,
-                currency: data.currency || 'USD',
+                currency: data.currency || "USD",
                 transaction_id: sessionId,
-                items: purchaseItems
+                items: purchaseItems,
               });
-              
+
               // Also fire Meta Pixel directly to ensure parameters are sent
               // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
-              if (typeof window !== 'undefined' && window.fbq) {
-                window.fbq('track', 'Purchase', {
-                  value: data.value,
-                  currency: data.currency || 'USD',
-                  content_ids: purchaseItems.map(item => item.item_id),
-                  contents: purchaseItems.map(item => ({
-                    id: item.item_id,
-                    quantity: item.quantity || 1,
-                    item_price: item.price,
-                  })),
-                }, {
-                  eventID: sessionId || `purchase_${Date.now()}` // For deduplication with server events
-                });
+              if (typeof window !== "undefined" && window.fbq) {
+                window.fbq(
+                  "track",
+                  "Purchase",
+                  {
+                    value: data.value,
+                    currency: data.currency || "USD",
+                    content_ids: purchaseItems.map((item) => item.item_id),
+                    contents: purchaseItems.map((item) => ({
+                      id: item.item_id,
+                      quantity: item.quantity || 1,
+                      item_price: item.price,
+                    })),
+                  },
+                  {
+                    eventID: sessionId || `purchase_${Date.now()}`, // For deduplication with server events
+                  }
+                );
               }
             } else {
               // Track as subscription_success for recurring
-              trackEventWithUserData('subscription_success', {
-              subscription: {
-                value: data.value,
-                currency: data.currency || 'USD'
-              }
-            });
+              trackEventWithUserData("subscription_success", {
+                subscription: {
+                  value: data.value,
+                  currency: data.currency || "USD",
+                },
+              });
             }
           } else {
             // Fallback: track without value (assume subscription)
-            trackEventWithUserData('subscription_success', {
+            trackEventWithUserData("subscription_success", {
               subscription: {
                 value: 0,
-                currency: 'USD'
-              }
+                currency: "USD",
+              },
             });
           }
         })
         .catch(() => {
           // If we can't fetch, still track the event without value (assume subscription)
-          trackEventWithUserData('subscription_success', {
+          trackEventWithUserData("subscription_success", {
             subscription: {
               value: 0,
-              currency: 'USD'
-            }
+              currency: "USD",
+            },
           });
         });
     }
@@ -432,7 +412,7 @@ function CheckoutSuccessContent() {
         transition={{ duration: 0.5 }}
       >
         <SuccessIcon />
-        
+
         {isTrial ? (
           <>
             <Title>Trial Started!</Title>
@@ -456,7 +436,9 @@ function CheckoutSuccessContent() {
         )}
 
         <BackButton onClick={handleContinue}>
-          {isLoggedIn || isSignedUp ? "Download Cymasphere" : "Create Your Account"}
+          {isLoggedIn || isSignedUp
+            ? "Download Cymasphere"
+            : "Create Your Account"}
         </BackButton>
       </ContentContainer>
     </PageContainer>

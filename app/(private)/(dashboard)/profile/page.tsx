@@ -111,7 +111,7 @@ const ReadOnlyInput = styled(Input)`
   background-color: rgba(30, 30, 46, 0.3);
   color: var(--text-secondary);
   cursor: not-allowed;
-  
+
   &:focus {
     border-color: rgba(255, 255, 255, 0.1);
   }
@@ -238,18 +238,24 @@ interface MessageData {
 }
 
 function Profile() {
-  const { user, updateProfile, resetPassword } = useAuth();
+  const { user, updateProfile, resetPassword, refreshUser } = useAuth();
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
+
   const [message, setMessage] = useState<MessageData>({ text: "", type: "" });
   const [profileData, setProfileData] = useState({
     first_name: user?.profile?.first_name || "",
     last_name: user?.profile?.last_name || "",
   });
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
-  
+
   // Initialize translations
   const { t } = useTranslation();
   const { isLoading: languageLoading } = useLanguage();
-  
+
   // Wait for translations to load
   useEffect(() => {
     if (!languageLoading) {
@@ -289,20 +295,31 @@ function Profile() {
       const { error } = await updateProfile(updatedProfile);
       if (error) {
         setMessage({
-          text: t("dashboard.profile.errorUpdating", "Error updating profile: {{error}}", { error: error.toString() }),
+          text: t(
+            "dashboard.profile.errorUpdating",
+            "Error updating profile: {{error}}",
+            { error: error.toString() }
+          ),
           type: "error",
         });
       } else {
         setMessage({
-          text: t("dashboard.profile.profileUpdated", "Profile information updated successfully!"),
+          text: t(
+            "dashboard.profile.profileUpdated",
+            "Profile information updated successfully!"
+          ),
           type: "success",
         });
       }
     } catch (error) {
       setMessage({
-        text: t("dashboard.profile.unexpectedError", "An unexpected error occurred: {{error}}", { 
-          error: error instanceof Error ? error.message : "Unknown error" 
-        }),
+        text: t(
+          "dashboard.profile.unexpectedError",
+          "An unexpected error occurred: {{error}}",
+          {
+            error: error instanceof Error ? error.message : "Unknown error",
+          }
+        ),
         type: "error",
       });
     }
@@ -316,7 +333,10 @@ function Profile() {
   const handleResetPassword = async () => {
     if (!user?.email) {
       setMessage({
-        text: t("dashboard.profile.noEmailFound", "No email address found for password reset"),
+        text: t(
+          "dashboard.profile.noEmailFound",
+          "No email address found for password reset"
+        ),
         type: "error",
       });
       return;
@@ -325,29 +345,45 @@ function Profile() {
     try {
       const { error } = await resetPassword(user.email);
       if (error) {
-        if (error.message.includes("email rate limit exceeded") || 
-            error.message.includes("rate limit")) {
+        if (
+          error.message.includes("email rate limit exceeded") ||
+          error.message.includes("rate limit")
+        ) {
           setMessage({
-            text: t("dashboard.profile.tooManyAttempts", "Too many password reset attempts. Please wait a few minutes before trying again."),
+            text: t(
+              "dashboard.profile.tooManyAttempts",
+              "Too many password reset attempts. Please wait a few minutes before trying again."
+            ),
             type: "error",
           });
         } else {
           setMessage({
-            text: t("dashboard.profile.errorSendingReset", "Error sending reset email: {{error}}", { error: error.message }),
+            text: t(
+              "dashboard.profile.errorSendingReset",
+              "Error sending reset email: {{error}}",
+              { error: error.message }
+            ),
             type: "error",
           });
         }
       } else {
         setMessage({
-          text: t("dashboard.profile.passwordResetSent", "Password reset email sent! Please check your inbox."),
+          text: t(
+            "dashboard.profile.passwordResetSent",
+            "Password reset email sent! Please check your inbox."
+          ),
           type: "success",
         });
       }
     } catch (error) {
       setMessage({
-        text: t("dashboard.profile.unexpectedError", "An unexpected error occurred: {{error}}", { 
-          error: error instanceof Error ? error.message : "Unknown error" 
-        }),
+        text: t(
+          "dashboard.profile.unexpectedError",
+          "An unexpected error occurred: {{error}}",
+          {
+            error: error instanceof Error ? error.message : "Unknown error",
+          }
+        ),
         type: "error",
       });
     }
@@ -362,7 +398,14 @@ function Profile() {
   if (!translationsLoaded) {
     return (
       <ProfileContainer>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "70vh",
+          }}
+        >
           <LoadingComponent text={t("common.loading", "Loading...")} />
         </div>
       </ProfileContainer>
@@ -389,7 +432,8 @@ function Profile() {
         custom={0}
       >
         <CardTitle>
-          <FaUser /> {t("dashboard.profile.personalInfo", "Personal Information")}
+          <FaUser />{" "}
+          {t("dashboard.profile.personalInfo", "Personal Information")}
         </CardTitle>
         <CardContent>
           <Form onSubmit={handleSaveProfile}>
@@ -455,7 +499,8 @@ function Profile() {
             whileTap="tap"
             variants={buttonVariants}
           >
-            <FaLock /> {t("dashboard.profile.sendResetEmail", "Send Password Reset Email")}
+            <FaLock />{" "}
+            {t("dashboard.profile.sendResetEmail", "Send Password Reset Email")}
           </Button>
         </CardContent>
       </ProfileCard>

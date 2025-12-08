@@ -315,7 +315,12 @@ function Settings() {
     deleteConfirmation: "",
   });
 
-  const { user, session, signOut } = useAuth();
+  const { user, session, signOut, refreshUser } = useAuth();
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
 
   // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -399,18 +404,26 @@ function Settings() {
     if (diffMins < 5) {
       return t("dashboard.settings.timeNow", "Now");
     } else if (diffMins < 60) {
-      return t("dashboard.settings.timeMinutes", "{{count}} min ago", { count: diffMins });
+      return t("dashboard.settings.timeMinutes", "{{count}} min ago", {
+        count: diffMins,
+      });
     } else if (diffMins < 24 * 60) {
       const diffHours = Math.floor(diffMins / 60);
-      return t("dashboard.settings.timeHours", "{{count}} hr ago", { 
+      return t("dashboard.settings.timeHours", "{{count}} hr ago", {
         count: diffHours,
-        hr: diffHours === 1 ? t("dashboard.settings.hour", "hr") : t("dashboard.settings.hours", "hrs") 
+        hr:
+          diffHours === 1
+            ? t("dashboard.settings.hour", "hr")
+            : t("dashboard.settings.hours", "hrs"),
       });
     } else {
       const diffDays = Math.floor(diffMins / (60 * 24));
-      return t("dashboard.settings.timeDays", "{{count}} day ago", { 
+      return t("dashboard.settings.timeDays", "{{count}} day ago", {
         count: diffDays,
-        day: diffDays === 1 ? t("dashboard.settings.day", "day") : t("dashboard.settings.days", "days") 
+        day:
+          diffDays === 1
+            ? t("dashboard.settings.day", "day")
+            : t("dashboard.settings.days", "days"),
       });
     }
   };
@@ -445,8 +458,15 @@ function Settings() {
       await signOut("others");
 
       setShowLogoutModal(false);
-      setConfirmationTitle(t("dashboard.settings.logoutSuccess", "Logged Out Successfully"));
-      setConfirmationMessage(t("dashboard.settings.logoutMessage", "You have been logged out from all devices."));
+      setConfirmationTitle(
+        t("dashboard.settings.logoutSuccess", "Logged Out Successfully")
+      );
+      setConfirmationMessage(
+        t(
+          "dashboard.settings.logoutMessage",
+          "You have been logged out from all devices."
+        )
+      );
       setConfirmationIcon("success");
       setShowConfirmationModal(true);
 
@@ -454,9 +474,14 @@ function Settings() {
     } catch (error) {
       console.error("Error logging out:", error);
       setShowLogoutModal(false);
-      setConfirmationTitle(t("dashboard.settings.logoutFailed", "Logout Failed"));
+      setConfirmationTitle(
+        t("dashboard.settings.logoutFailed", "Logout Failed")
+      );
       setConfirmationMessage(
-        t("dashboard.settings.logoutError", "There was an error logging out from all devices. Please try again.")
+        t(
+          "dashboard.settings.logoutError",
+          "There was an error logging out from all devices. Please try again."
+        )
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -468,9 +493,14 @@ function Settings() {
     // Handle account deletion logic
 
     if (profile.deleteConfirmation !== "DELETE") {
-      setConfirmationTitle(t("dashboard.settings.confirmationRequired", "Confirmation Required"));
+      setConfirmationTitle(
+        t("dashboard.settings.confirmationRequired", "Confirmation Required")
+      );
       setConfirmationMessage(
-        t("dashboard.settings.confirmationMessage", 'Please type "DELETE" to confirm account deletion.')
+        t(
+          "dashboard.settings.confirmationMessage",
+          'Please type "DELETE" to confirm account deletion.'
+        )
       );
       setConfirmationIcon("warning");
       setShowConfirmationModal(true);
@@ -478,9 +508,14 @@ function Settings() {
     }
 
     // Show loading confirmation
-    setConfirmationTitle(t("dashboard.settings.processingDeletion", "Processing Deletion Request"));
+    setConfirmationTitle(
+      t("dashboard.settings.processingDeletion", "Processing Deletion Request")
+    );
     setConfirmationMessage(
-      t("dashboard.settings.processingMessage", "Please wait while we process your account deletion request...")
+      t(
+        "dashboard.settings.processingMessage",
+        "Please wait while we process your account deletion request..."
+      )
     );
     setConfirmationIcon("info");
     setShowConfirmationModal(true);
@@ -494,9 +529,14 @@ function Settings() {
 
       if (result.success) {
         // Show success message
-        setConfirmationTitle(t("dashboard.settings.accountDeleted", "Account Deleted"));
+        setConfirmationTitle(
+          t("dashboard.settings.accountDeleted", "Account Deleted")
+        );
         setConfirmationMessage(
-          t("dashboard.settings.accountDeletedMessage", "Your account has been successfully deleted. You will be redirected to the homepage.")
+          t(
+            "dashboard.settings.accountDeletedMessage",
+            "Your account has been successfully deleted. You will be redirected to the homepage."
+          )
         );
         setConfirmationIcon("success");
 
@@ -506,15 +546,28 @@ function Settings() {
         }, 3000);
       } else {
         // Show error message
-        setConfirmationTitle(t("dashboard.settings.deletionFailed", "Deletion Failed"));
-        setConfirmationMessage(t("dashboard.settings.deletionFailedError", "Account deletion failed: {{error}}", { error: result.error }));
+        setConfirmationTitle(
+          t("dashboard.settings.deletionFailed", "Deletion Failed")
+        );
+        setConfirmationMessage(
+          t(
+            "dashboard.settings.deletionFailedError",
+            "Account deletion failed: {{error}}",
+            { error: result.error }
+          )
+        );
         setConfirmationIcon("warning");
       }
     } catch (error) {
       console.error("Error deleting account:", error);
-      setConfirmationTitle(t("dashboard.settings.deletionFailed", "Deletion Failed"));
+      setConfirmationTitle(
+        t("dashboard.settings.deletionFailed", "Deletion Failed")
+      );
       setConfirmationMessage(
-        t("dashboard.settings.deletionProcessingError", "There was an error processing your account deletion. Please try again later.")
+        t(
+          "dashboard.settings.deletionProcessingError",
+          "There was an error processing your account deletion. Please try again later."
+        )
       );
       setConfirmationIcon("warning");
     }
@@ -596,7 +649,8 @@ function Settings() {
                 <DeviceItem
                   key={index}
                   $isActive={
-                    device.location === "current" /* For current session highlighting */
+                    device.location ===
+                    "current" /* For current session highlighting */
                   }
                 >
                   <DeviceInfo>
@@ -607,7 +661,10 @@ function Settings() {
                       </DeviceName>
                       <DeviceDetails>
                         {device.location === "current"
-                          ? t("dashboard.settings.currentDevice", "Current Device")
+                          ? t(
+                              "dashboard.settings.currentDevice",
+                              "Current Device"
+                            )
                           : device.location}{" "}
                         · {device.lastActive}
                       </DeviceDetails>
@@ -620,10 +677,14 @@ function Settings() {
 
           <DeviceCount>
             <DeviceLimit>
-              {t("dashboard.settings.devicesInfo", "You're using {{current}} of {{max}} allowed devices", {
-                current: activeDevices.length,
-                max: 3
-              })}
+              {t(
+                "dashboard.settings.devicesInfo",
+                "You're using {{current}} of {{max}} allowed devices",
+                {
+                  current: activeDevices.length,
+                  max: 3,
+                }
+              )}
             </DeviceLimit>
             <DeviceCounter warning={activeDevices.length >= 3}>
               {activeDevices.length} / 3
@@ -665,11 +726,17 @@ function Settings() {
             >
               <FaExclamationTriangle style={{ marginRight: "0.5rem" }} />
               <div style={{ fontWeight: 600 }}>
-                {t("dashboard.settings.deleteWarning", "Delete Account Permanently")}
+                {t(
+                  "dashboard.settings.deleteWarning",
+                  "Delete Account Permanently"
+                )}
               </div>
             </div>
             <p style={{ fontSize: "0.9rem", marginBottom: "1rem" }}>
-              {t("dashboard.settings.deleteDesc", "This action cannot be undone. All of your data will be permanently deleted.")}
+              {t(
+                "dashboard.settings.deleteDesc",
+                "This action cannot be undone. All of your data will be permanently deleted."
+              )}
             </p>
 
             <form onSubmit={handleDeleteAccount}>
@@ -686,7 +753,10 @@ function Settings() {
                     fontSize: "0.9rem",
                   }}
                 >
-                  {t("dashboard.settings.typeDelete", 'Type "DELETE" to confirm:')}
+                  {t(
+                    "dashboard.settings.typeDelete",
+                    'Type "DELETE" to confirm:'
+                  )}
                 </label>
                 <input
                   type="text"
@@ -733,14 +803,19 @@ function Settings() {
               onClick={(e) => e.stopPropagation()}
             >
               <ModalHeader>
-                <ModalTitle>{t("dashboard.settings.confirmLogout", "Confirm Logout")}</ModalTitle>
+                <ModalTitle>
+                  {t("dashboard.settings.confirmLogout", "Confirm Logout")}
+                </ModalTitle>
                 <CloseButton onClick={() => setShowLogoutModal(false)}>
                   <FaTimes />
                 </CloseButton>
               </ModalHeader>
               <ModalBody>
                 <p>
-                  {t("dashboard.settings.logoutConfirmation", "Are you sure you want to sign out from all devices? This will end all your active sessions.")}
+                  {t(
+                    "dashboard.settings.logoutConfirmation",
+                    "Are you sure you want to sign out from all devices? This will end all your active sessions."
+                  )}
                 </p>
               </ModalBody>
               <ModalFooter>
@@ -753,7 +828,9 @@ function Settings() {
                 >
                   {t("common.cancel", "Cancel")}
                 </Button>
-                <Button onClick={confirmLogout}>{t("dashboard.settings.signOut", "Sign Out")}</Button>
+                <Button onClick={confirmLogout}>
+                  {t("dashboard.settings.signOut", "Sign Out")}
+                </Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>
@@ -805,7 +882,9 @@ function Settings() {
                 </p>
               </ModalBody>
               <ModalFooter style={{ justifyContent: "center" }}>
-                <Button onClick={handleModalClose}>{t("dashboard.main.gotIt", "Got It")}</Button>
+                <Button onClick={handleModalClose}>
+                  {t("dashboard.main.gotIt", "Got It")}
+                </Button>
               </ModalFooter>
             </ModalContent>
           </ModalOverlay>

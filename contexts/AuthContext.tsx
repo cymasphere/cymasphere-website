@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   SupabaseClient,
   AuthError,
@@ -59,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logEnvironmentStatus();
   }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (session?.user) {
       try {
         const { profile, error } = await fetchProfile(session.user.id);
@@ -77,7 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (profile) {
-          // Check Stripe and NFR subscription status
+          // Check Stripe and NFR subscription status (updates database)
+          // This matches the same pattern used in updateUserFromSession
           const { success, profile: updatedProfile } = await updateStripe(
             profile
           );
@@ -96,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("[refreshUser] Error refreshing user:", error);
       }
     }
-  };
+  }, [session]);
 
   // Simple session update effect - based on working project
   useEffect(() => {
@@ -119,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Create a minimal profile object with required fields
             const defaultProfile: Profile = {
               id: logged_in_user.id,
-              email: logged_in_user.email || '',
+              email: logged_in_user.email || "",
               first_name: null,
               last_name: null,
               subscription: "none",
@@ -148,7 +155,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 : String(adminError)
             );
           } else {
-            console.log(`[AuthContext] Admin status for ${logged_in_user.email}:`, is_admin);
+            console.log(
+              `[AuthContext] Admin status for ${logged_in_user.email}:`,
+              is_admin
+            );
           }
 
           if (profile) {
@@ -162,7 +172,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Update Stripe subscription status asynchronously (non-blocking)
             try {
               const { success, profile: updatedProfile } = await updateStripe(
-                logged_in_user.email!,
                 profile
               );
               if (success && updatedProfile) {

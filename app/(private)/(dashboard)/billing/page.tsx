@@ -43,9 +43,12 @@ interface CymasphereLogoProps {
 }
 
 // Use dynamic import to handle JavaScript component in TypeScript
-const CymasphereLogo = dynamic(() => import("@/components/common/CymasphereLogo"), {
-  ssr: false,
-}) as React.ComponentType<CymasphereLogoProps>;
+const CymasphereLogo = dynamic(
+  () => import("@/components/common/CymasphereLogo"),
+  {
+    ssr: false,
+  }
+) as React.ComponentType<CymasphereLogoProps>;
 
 // Extended profile interface with additional fields we need
 interface ProfileWithSubscriptionDetails {
@@ -403,7 +406,12 @@ export default function BillingPage() {
   const router = useRouter();
   const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
-  
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUserFromAuth();
+  }, [refreshUserFromAuth]); // Run on mount and when refreshUserFromAuth changes
+
   // Use centralized checkout hook
   const { initiateCheckout: initiateCheckoutHook } = useCheckout({
     onError: (error) => {
@@ -434,10 +442,10 @@ export default function BillingPage() {
 
   // State for trial status checking
   const [hasHadTrial, setHasHadTrial] = useState<boolean | null>(null);
-  
+
   // State for NFR status
   const [hasNfr, setHasNfr] = useState<boolean | null>(null);
-  
+
   // State for billing period selection (for pricing card)
   const [selectedBillingPeriodForPricing, setSelectedBillingPeriodForPricing] =
     useState<PlanType>("monthly");
@@ -511,7 +519,7 @@ export default function BillingPage() {
   }, [isInTrialPeriod, hasCompletedTrial]);
 
   // Function to refresh user data from AuthContext
-  const refreshUser = async () => {
+  const refreshUserData = async () => {
     // Refresh user data from AuthContext which will fetch the latest profile
     await refreshUserFromAuth();
     // Also update lastUserUpdate to trigger data refetching in useEffect
@@ -523,7 +531,9 @@ export default function BillingPage() {
     if (!user?.email) return;
 
     try {
-      const { checkCustomerTrialStatus } = await import("@/utils/stripe/actions");
+      const { checkCustomerTrialStatus } = await import(
+        "@/utils/stripe/actions"
+      );
       const result = await checkCustomerTrialStatus(user.email);
 
       if (result.error) {
@@ -690,7 +700,7 @@ export default function BillingPage() {
   // Function to refresh all data
   const refreshAllData = async () => {
     // Refresh user data from auth context
-    await refreshUser();
+    await refreshUserData();
     // Update lastUserUpdate to trigger data refetching in the useEffect
     setLastUserUpdate(new Date());
   };
@@ -722,7 +732,7 @@ export default function BillingPage() {
     if (selectedBillingPeriod === "lifetime") {
       setShowPlanModal(false);
       setIsPlanChangeLoading(false);
-      
+
       await initiateCheckoutHook("lifetime", {
         hasHadTrial: hasHadTrial === true,
       });
@@ -733,7 +743,7 @@ export default function BillingPage() {
     if (userSubscription.subscription === "none") {
       setShowPlanModal(false);
       setIsPlanChangeLoading(false);
-      
+
       // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
       let validPlanType: "monthly" | "annual" | "lifetime";
       if (
@@ -768,7 +778,7 @@ export default function BillingPage() {
       } else {
         // Default to monthly for any other invalid types
         validPlanType = "monthly";
-        }
+      }
 
       // Keep modal open and show loading spinner while creating checkout session
       // Redirect to Stripe Checkout for plan change
@@ -776,7 +786,7 @@ export default function BillingPage() {
         hasHadTrial: hasHadTrial === true,
         isPlanChange: true,
       });
-        
+
       // If checkout was successful, the redirect will happen automatically
       // If there was an error, close modal and reset loading
       if (!result.success) {
@@ -996,14 +1006,18 @@ export default function BillingPage() {
             transition={{ duration: 0.4 }}
           >
             <CardTitle>
-              <FaInfoCircle /> {t("dashboard.billing.subscriptionStatus", "Subscription Status")}
+              <FaInfoCircle />{" "}
+              {t("dashboard.billing.subscriptionStatus", "Subscription Status")}
             </CardTitle>
             <CardContent>
               <PlanDetails>
                 {/* Left Column */}
                 <div>
                   <PlanName>
-                    {t("dashboard.billing.noActivePlan", "No Active Subscription")}
+                    {t(
+                      "dashboard.billing.noActivePlan",
+                      "No Active Subscription"
+                    )}
                   </PlanName>
                   <PlanDescription>
                     {t(
@@ -1021,19 +1035,23 @@ export default function BillingPage() {
                       style={{
                         marginTop: "0",
                         padding: "0.75rem",
-                        background: hasHadTrial 
-                          ? "rgba(255, 87, 51, 0.1)" 
+                        background: hasHadTrial
+                          ? "rgba(255, 87, 51, 0.1)"
                           : "rgba(16, 185, 129, 0.1)",
                         borderRadius: "6px",
                         fontSize: "0.9rem",
                         display: "flex",
                         alignItems: "center",
-                        color: hasHadTrial ? "var(--warning)" : "var(--success)",
+                        color: hasHadTrial
+                          ? "var(--warning)"
+                          : "var(--success)",
                       }}
                     >
                       {hasHadTrial ? (
                         <>
-                          <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                          <FaCheck
+                            style={{ marginRight: "0.5rem", flexShrink: 0 }}
+                          />
                           {t(
                             "dashboard.billing.trialCompleted",
                             "Free trial completed"
@@ -1041,7 +1059,9 @@ export default function BillingPage() {
                         </>
                       ) : (
                         <>
-                          <FaGift style={{ marginRight: "0.5rem", flexShrink: 0 }} />
+                          <FaGift
+                            style={{ marginRight: "0.5rem", flexShrink: 0 }}
+                          />
                           {t(
                             "dashboard.billing.trialAvailable",
                             "Free trial available - choose a plan below to start"
@@ -1098,20 +1118,37 @@ export default function BillingPage() {
                     />
                     <span className="pro-label">PRO</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "1rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "1rem",
+                    }}
+                  >
                     <div className="plan-type">
-                  {hasNfr
-                    ? "Elite Access"
-                    : isSubscriptionLifetime(userSubscription.subscription)
-                    ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                    : subscriptionInterval === "month"
-                    ? t("dashboard.billing.monthly", "Monthly")
-                    : t("dashboard.billing.yearly", "Yearly")}
+                      {hasNfr
+                        ? "Elite Access"
+                        : isSubscriptionLifetime(userSubscription.subscription)
+                        ? t("dashboard.billing.lifetimePlan", "Lifetime")
+                        : subscriptionInterval === "month"
+                        ? t("dashboard.billing.monthly", "Monthly")
+                        : t("dashboard.billing.yearly", "Yearly")}
                     </div>
                     {/* Hide hyphen and price for lifetime and Elite access */}
-                    {!(hasNfr || isSubscriptionLifetime(userSubscription.subscription)) && (
+                    {!(
+                      hasNfr ||
+                      isSubscriptionLifetime(userSubscription.subscription)
+                    ) && (
                       <>
-                        <span style={{ color: "var(--text-secondary)", fontSize: "2.5rem", fontWeight: 700 }}>—</span>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "2.5rem",
+                            fontWeight: 700,
+                          }}
+                        >
+                          —
+                        </span>
                         <PlanPrice>
                           {isSubscriptionNone(userSubscription.subscription)
                             ? "$0.00"
@@ -1143,16 +1180,23 @@ export default function BillingPage() {
                         "Full access to all premium features and content"
                       )}
                   {userSubscription.subscription_source === "ios" && (
-                    <div style={{ 
-                      marginTop: "0.5rem", 
-                      fontSize: "0.85rem", 
-                      color: "var(--text-secondary)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.25rem"
-                    }}>
+                    <div
+                      style={{
+                        marginTop: "0.5rem",
+                        fontSize: "0.85rem",
+                        color: "var(--text-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                      }}
+                    >
                       <FaApple style={{ fontSize: "0.9rem" }} />
-                      <span>{t("dashboard.billing.appStoreSubscription", "Subscription managed through App Store")}</span>
+                      <span>
+                        {t(
+                          "dashboard.billing.appStoreSubscription",
+                          "Subscription managed through App Store"
+                        )}
+                      </span>
                     </div>
                   )}
                 </PlanDescription>
@@ -1175,7 +1219,8 @@ export default function BillingPage() {
                         {t(
                           "dashboard.billing.nextBilling",
                           "Next billing date"
-                        )}:
+                        )}
+                        :
                       </div>
                       <div>
                         {formatDate(userSubscription.subscription_expiration)}
@@ -1212,28 +1257,30 @@ export default function BillingPage() {
                 )}
 
                 {/* Trial Status - show if we know the status, but not for lifetime or Elite access */}
-                {hasHadTrial !== null && 
-                 !hasNfr && 
-                 !isSubscriptionLifetime(userSubscription.subscription) && (
-            <div
-                    style={{
-                      marginTop: "0.75rem",
-                      padding: "0.75rem",
-                      background: "rgba(16, 185, 129, 0.1)",
-                      borderRadius: "6px",
-                      fontSize: "0.9rem",
-                      display: "flex",
-                      alignItems: "center",
-                      color: "var(--success)",
-                    }}
-                  >
-                    <FaCheck style={{ marginRight: "0.5rem", flexShrink: 0 }} />
-                    {t(
-                      "dashboard.billing.usedFreeTrial",
-                      "You used your free trial to start this subscription"
-                    )}
-                  </div>
-                )}
+                {hasHadTrial !== null &&
+                  !hasNfr &&
+                  !isSubscriptionLifetime(userSubscription.subscription) && (
+                    <div
+                      style={{
+                        marginTop: "0.75rem",
+                        padding: "0.75rem",
+                        background: "rgba(16, 185, 129, 0.1)",
+                        borderRadius: "6px",
+                        fontSize: "0.9rem",
+                        display: "flex",
+                        alignItems: "center",
+                        color: "var(--success)",
+                      }}
+                    >
+                      <FaCheck
+                        style={{ marginRight: "0.5rem", flexShrink: 0 }}
+                      />
+                      {t(
+                        "dashboard.billing.usedFreeTrial",
+                        "You used your free trial to start this subscription"
+                      )}
+                    </div>
+                  )}
               </div>
             </PlanDetails>
 
@@ -1258,7 +1305,8 @@ export default function BillingPage() {
       )}
 
       {/* Only show billing history for paid subscribers */}
-      {(!isSubscriptionNone(userSubscription.subscription) || hasNfr === true) && (
+      {(!isSubscriptionNone(userSubscription.subscription) ||
+        hasNfr === true) && (
         <BillingCard>
           <CardTitle>
             <FaHistory />{" "}

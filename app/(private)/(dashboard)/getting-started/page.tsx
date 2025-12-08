@@ -104,14 +104,14 @@ const StepDot = styled.div<{ $active: boolean; $completed: boolean }>`
     width: 28px;
     height: 28px;
     font-size: 0.75rem;
-    
+
     ${(props) => {
       if (props.$active) {
         return `
           transform: scale(1.05);
         `;
       }
-      return '';
+      return "";
     }}
   }
 `;
@@ -181,9 +181,7 @@ const OptionCard = styled(motion.div)<{ $selected: boolean }>`
       : "rgba(30, 30, 46, 0.5)"};
   border: 2px solid
     ${(props) =>
-      props.$selected
-        ? "var(--primary)"
-        : "rgba(255, 255, 255, 0.1)"};
+      props.$selected ? "var(--primary)" : "rgba(255, 255, 255, 0.1)"};
   border-radius: 12px;
   padding: 2rem 1.5rem;
   cursor: pointer;
@@ -366,8 +364,9 @@ const InstructionContent = styled.div`
   @media (max-width: 768px) {
     margin-left: 0;
     margin-top: 0.75rem;
-    
-    ol, ul {
+
+    ol,
+    ul {
       padding-left: 1.25rem;
     }
   }
@@ -635,7 +634,9 @@ const getInstructions = (
         steps: [
           "Create a software instrument track",
           "Add an External Instrument track",
-          `Set the MIDI destination to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          `Set the MIDI destination to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          }`,
           "Add an instrument track with any virtual instrument",
           "Record-enable the instrument track",
           "Cymasphere will output MIDI to the virtual MIDI device, which will come back into Logic Pro like an external keyboard",
@@ -660,7 +661,9 @@ const getInstructions = (
           "Create a new software instrument track",
           "Add Cymasphere as a MIDI FX",
           "In the instrument slot, under Utility, add External Instrument to the same track",
-          `Open External Instrument and set MIDI Destination to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          `Open External Instrument and set MIDI Destination to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          }`,
           "Create a new software instrument track with any virtual instrument",
           "Set the MIDI input channel of the instrument track to 1, 2, 3, or the appropriate channel",
           "Record-enable the instrument track",
@@ -686,7 +689,9 @@ const getInstructions = (
         title: "Configure Ableton Live for Standalone",
         steps: [
           "Create a MIDI track",
-          `Set the MIDI input to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          `Set the MIDI input to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          }`,
           "Create an instrument track with any virtual instrument",
           "Arm both tracks for recording",
           "Cymasphere will send MIDI to Ableton through the virtual MIDI device",
@@ -696,7 +701,9 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
-          `Go to Preferences > MIDI and enable ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"} as a Remote input`,
+          `Go to Preferences > MIDI and enable ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          } as a Remote input`,
           "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
           "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
           "In Cymasphere, click the corresponding transport button",
@@ -713,7 +720,9 @@ const getInstructions = (
           "Open the plugin menu on the side, navigate to NNAudio > Cymasphere, and drag it to create a new track",
           "For each instrument you want to use, create a MIDI track and set its input to the Cymasphere track",
           `Change the input dropdown from "Post FX" to "Cymasphere"`,
-          `Set the MIDI Out to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"} and select the appropriate MIDI channel (1, 2, 3, etc.)`,
+          `Set the MIDI Out to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          } and select the appropriate MIDI channel (1, 2, 3, etc.)`,
           "Create an instrument track with any virtual instrument",
           "Record-enable both the MIDI track and instrument track (not the Cymasphere track)",
           "Open Cymasphere and press voicing buttons in Palette view—you'll see MIDI flow from Cymasphere → MIDI track → instrument track",
@@ -723,7 +732,9 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
-          `Go to Preferences > MIDI and enable ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"} as a Remote input`,
+          `Go to Preferences > MIDI and enable ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          } as a Remote input`,
           "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
           "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
           "In Cymasphere, click the corresponding transport button",
@@ -740,7 +751,9 @@ const getInstructions = (
         title: "Configure Studio One for Standalone",
         steps: [
           "Create a MIDI track",
-          `Set the MIDI input to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          `Set the MIDI input to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          }`,
           "Create an instrument track with any virtual instrument",
           "Arm both tracks for recording",
           "Cymasphere will send MIDI to Studio One through the virtual MIDI device",
@@ -750,10 +763,14 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Studio One's transport",
-          `Go to Studio One > ${os === "macos" ? "Preferences" : "Options"} > External Devices`,
+          `Go to Studio One > ${
+            os === "macos" ? "Preferences" : "Options"
+          } > External Devices`,
           "Click the 'Add' button to add a new device",
           "Select 'New Control Surface' or choose your virtual MIDI device from the list",
-          `Set 'Receive From' to ${os === "macos" ? "IAC Driver" : "your LoopMIDI port"}`,
+          `Set 'Receive From' to ${
+            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
+          }`,
           "Click 'MIDI Learn' button in the device settings",
           "In Cymasphere, click the transport control you want to map (e.g., Play, Stop, Record)",
           "Right-click the corresponding control in Studio One and assign the command (e.g., Start, Stop, Record)",
@@ -779,7 +796,9 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Studio One's transport",
-          `Go to Studio One > ${os === "macos" ? "Preferences" : "Options"} > External Devices`,
+          `Go to Studio One > ${
+            os === "macos" ? "Preferences" : "Options"
+          } > External Devices`,
           "Click the 'Add' button to add a new device",
           "Select 'New Control Surface'",
           "In the device settings, click 'MIDI Learn'",
@@ -795,7 +814,9 @@ const getInstructions = (
     instructions.push({
       title: "General Setup Instructions",
       steps: [
-        `Set up your virtual MIDI device (${os === "macos" ? "IAC Driver on macOS" : "LoopMIDI on Windows"})`,
+        `Set up your virtual MIDI device (${
+          os === "macos" ? "IAC Driver on macOS" : "LoopMIDI on Windows"
+        })`,
         type === "plugin"
           ? "Add Cymasphere as a MIDI Effect (VST3 or AU)"
           : "Configure your DAW to receive MIDI from the virtual device",
@@ -813,7 +834,13 @@ const getInstructions = (
 
 export default function GettingStartedWizard() {
   const { t } = useTranslation();
-  const { supabase } = useAuth();
+  const { supabase, user, refreshUser } = useAuth();
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
+
   const [currentStep, setCurrentStep] = useState(1);
   const [os, setOS] = useState<OS>(null);
   const [installationType, setInstallationType] =
@@ -1004,7 +1031,8 @@ export default function GettingStartedWizard() {
           <>
             <StepTitle>Download & Install Cymasphere</StepTitle>
             <StepDescription>
-              Download the installer for your operating system if you haven't already.
+              Download the installer for your operating system if you haven't
+              already.
             </StepDescription>
             <DownloadItem>
               <DownloadHeader>
@@ -1015,7 +1043,9 @@ export default function GettingStartedWizard() {
                   <DownloadName>
                     Cymasphere for {os === "macos" ? "macOS" : "Windows"}
                   </DownloadName>
-                  <DownloadVersion>Version {versionInfo.version}</DownloadVersion>
+                  <DownloadVersion>
+                    Version {versionInfo.version}
+                  </DownloadVersion>
                 </DownloadInfo>
               </DownloadHeader>
               <DownloadDetails>
@@ -1026,10 +1056,15 @@ export default function GettingStartedWizard() {
                 </DownloadDescription>
                 <DownloadMeta>
                   <DownloadSize>
-                    {os === "macos" ? fileInfo.macos.size : fileInfo.windows.size}
+                    {os === "macos"
+                      ? fileInfo.macos.size
+                      : fileInfo.windows.size}
                   </DownloadSize>
                   <DownloadDate>
-                    Updated: {os === "macos" ? fileInfo.macos.lastModified : fileInfo.windows.lastModified}
+                    Updated:{" "}
+                    {os === "macos"
+                      ? fileInfo.macos.lastModified
+                      : fileInfo.windows.lastModified}
                   </DownloadDate>
                 </DownloadMeta>
                 <DownloadButtonStyled
@@ -1039,7 +1074,8 @@ export default function GettingStartedWizard() {
                       : "https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/builds//Cymasphere_Installer.exe"
                   }
                 >
-                  <FaDownload /> Download for {os === "macos" ? "macOS" : "Windows"}
+                  <FaDownload /> Download for{" "}
+                  {os === "macos" ? "macOS" : "Windows"}
                 </DownloadButtonStyled>
               </DownloadDetails>
             </DownloadItem>
@@ -1060,7 +1096,9 @@ export default function GettingStartedWizard() {
                         ? "The installer will place Cymasphere in your Applications folder and plugins in /Library/Audio/Plug-Ins/"
                         : "The installer will place Cymasphere in C:\\Program Files\\Cymasphere\\ and plugins in C:\\Program Files\\Common Files\\VST3\\"}
                     </li>
-                    <li>Once complete, click Next to configure your workflow!</li>
+                    <li>
+                      Once complete, click Next to configure your workflow!
+                    </li>
                   </ol>
                 </InstructionContent>
               </InstructionStep>
@@ -1118,13 +1156,38 @@ export default function GettingStartedWizard() {
             </StepDescription>
             <DAWGrid>
               {[
-                { id: "logic", name: "Logic Pro", os: "macos", comingSoon: false },
-                { id: "ableton", name: "Ableton Live", os: "both", comingSoon: false },
-                { id: "flstudio", name: "FL Studio", os: "both", comingSoon: true },
-                { id: "protools", name: "Pro Tools", os: "both", comingSoon: true },
+                {
+                  id: "logic",
+                  name: "Logic Pro",
+                  os: "macos",
+                  comingSoon: false,
+                },
+                {
+                  id: "ableton",
+                  name: "Ableton Live",
+                  os: "both",
+                  comingSoon: false,
+                },
+                {
+                  id: "flstudio",
+                  name: "FL Studio",
+                  os: "both",
+                  comingSoon: true,
+                },
+                {
+                  id: "protools",
+                  name: "Pro Tools",
+                  os: "both",
+                  comingSoon: true,
+                },
                 { id: "cubase", name: "Cubase", os: "both", comingSoon: true },
                 { id: "reaper", name: "Reaper", os: "both", comingSoon: true },
-                { id: "studioone", name: "Studio One", os: "both", comingSoon: false },
+                {
+                  id: "studioone",
+                  name: "Studio One",
+                  os: "both",
+                  comingSoon: false,
+                },
                 { id: "other", name: "Other", os: "both", comingSoon: true },
               ].map((dawOption) => {
                 const isDisabled =
@@ -1204,9 +1267,7 @@ export default function GettingStartedWizard() {
             >
               {currentStep > step ? <FaCheckCircle /> : step}
             </StepDot>
-            {step < totalSteps && (
-              <StepLine $completed={currentStep > step} />
-            )}
+            {step < totalSteps && <StepLine $completed={currentStep > step} />}
           </React.Fragment>
         ))}
       </StepIndicator>
@@ -1252,7 +1313,9 @@ export default function GettingStartedWizard() {
                   onClick={handleNext}
                   $disabled={!canProceed() || currentStep === totalSteps}
                 >
-                  {currentStep === totalSteps - 1 ? "View Instructions" : "Next"}{" "}
+                  {currentStep === totalSteps - 1
+                    ? "View Instructions"
+                    : "Next"}{" "}
                   <FaArrowRight />
                 </NavButton>
               </NavigationButtons>
@@ -1263,4 +1326,3 @@ export default function GettingStartedWizard() {
     </WizardContainer>
   );
 }
-

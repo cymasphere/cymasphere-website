@@ -311,8 +311,14 @@ const ResourceLink = styled.a`
 
 function Downloads() {
   const { t } = useTranslation();
-  const { supabase } = useAuth();
+  const { supabase, user, refreshUser } = useAuth();
   const router = useRouter();
+
+  // Refresh pro status on mount (same as login)
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]); // Run on mount and when refreshUser changes
+
   const [fileInfo, setFileInfo] = useState({
     windows: { size: "Loading...", lastModified: "Loading..." },
     macos: { size: "Loading...", lastModified: "Loading..." },
@@ -570,10 +576,7 @@ function Downloads() {
                 </DownloadIcon>
                 <DownloadInfo>
                   <DownloadName>
-                    {t(
-                      "dashboard.downloads.ipadTitle",
-                      "Cymasphere for iPad"
-                    )}
+                    {t("dashboard.downloads.ipadTitle", "Cymasphere for iPad")}
                   </DownloadName>
                   <DownloadVersion>
                     {t("dashboard.downloads.version", "Version")}{" "}
@@ -630,7 +633,10 @@ function Downloads() {
                 </ResourceIcon>
                 <ResourceInfo>
                   <ResourceTitle>
-                    {t("dashboard.downloads.gettingStarted", "Getting Started Wizard")}
+                    {t(
+                      "dashboard.downloads.gettingStarted",
+                      "Getting Started Wizard"
+                    )}
                   </ResourceTitle>
                   <ResourceDescription>
                     {t(
