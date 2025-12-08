@@ -13,6 +13,7 @@ import {
   trackEventOnce,
   shouldFireEvent,
 } from "@/utils/analytics";
+import { refreshSubscriptionByCustomerId } from "@/app/actions/checkout";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -152,6 +153,52 @@ function CheckoutSuccessContent() {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]); // Run on mount and when refreshUser changes
+
+  // Refresh subscription status by customer ID (works even if not logged in)
+  useEffect(() => {
+    const refreshByCustomerId = async () => {
+      if (!sessionId) return;
+
+      try {
+        // Fetch session details to get customer ID
+        const response = await fetch(
+          `/api/checkout-session-details?session_id=${sessionId}`
+        );
+        const data = await response.json();
+
+        if (data.success && data.customerId) {
+          // Call server action to refresh subscription status
+          const result = await refreshSubscriptionByCustomerId(data.customerId);
+
+          if (result.success) {
+            console.log(
+              "[Checkout Success] Refreshed subscription status for customer:",
+              data.customerId,
+              "subscription:",
+              result.subscription
+            );
+
+            // If user is logged in, also refresh their context
+            if (isLoggedIn && refreshUser) {
+              await refreshUser();
+            }
+          } else {
+            console.error(
+              "[Checkout Success] Failed to refresh subscription:",
+              result.error
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "[Checkout Success] Error refreshing subscription by customer ID:",
+          error
+        );
+      }
+    };
+
+    refreshByCustomerId();
+  }, [sessionId, isLoggedIn, refreshUser]);
 
   // Track promotion conversion
   useEffect(() => {

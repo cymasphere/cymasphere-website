@@ -23,8 +23,17 @@ export async function GET(request: NextRequest) {
   try {
     // Retrieve the session directly to get amount_total for one-time payments
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription", "payment_intent"],
+      expand: ["subscription", "payment_intent", "customer"],
     });
+
+    // Extract customer ID
+    let customerId: string | null = null;
+    if (session.customer) {
+      customerId =
+        typeof session.customer === "string"
+          ? session.customer
+          : session.customer.id;
+    }
 
     // Extract value and currency
     let value: number | null = null;
@@ -32,20 +41,21 @@ export async function GET(request: NextRequest) {
     let isTrial = false;
 
     if (session.mode === "subscription" && session.subscription) {
-      const subscription = typeof session.subscription === "string"
-        ? await stripe.subscriptions.retrieve(session.subscription)
-        : session.subscription;
-      
+      const subscription =
+        typeof session.subscription === "string"
+          ? await stripe.subscriptions.retrieve(session.subscription)
+          : session.subscription;
+
       isTrial = !!subscription.trial_end;
-      
+
       if (!isTrial && subscription.items?.data?.[0]?.price) {
         value = (subscription.items.data[0].price.unit_amount || 0) / 100;
-        currency = subscription.currency?.toUpperCase() || 'USD';
+        currency = subscription.currency?.toUpperCase() || "USD";
       }
     } else if (session.mode === "payment" && session.amount_total) {
       // For one-time payments (lifetime), use amount_total
       value = session.amount_total / 100; // Convert cents to dollars
-      currency = session.currency?.toUpperCase() || 'USD';
+      currency = session.currency?.toUpperCase() || "USD";
     }
 
     return NextResponse.json({
@@ -54,6 +64,7 @@ export async function GET(request: NextRequest) {
       currency,
       isTrial,
       mode: session.mode, // 'payment' for lifetime, 'subscription' for recurring
+      customerId, // Customer ID from the checkout session
     });
   } catch (error) {
     console.error("Error fetching checkout session details:", error);
@@ -63,4 +74,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
