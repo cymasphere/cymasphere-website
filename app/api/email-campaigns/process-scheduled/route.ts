@@ -1,7 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendEmail } from "@/utils/email";
+import { sendEmail, sendBatchEmail } from "@/utils/email";
 import { injectEmailTracking, createSendRecord } from "@/utils/email-tracking";
+import { personalizeContent } from "@/utils/email-campaigns/email-generation";
+
+// Feature flag: Enable parallel batch sending (sends multiple personalized emails concurrently)
+// Set ENABLE_BATCH_EMAIL_SENDING=true to enable (much faster for large campaigns)
+// Uses parallel sending: sends multiple personalized emails at once instead of one-by-one
+const ENABLE_BATCH_SENDING = process.env.ENABLE_BATCH_EMAIL_SENDING === 'true';
+const PARALLEL_BATCH_SIZE = parseInt(process.env.EMAIL_PARALLEL_BATCH_SIZE || '50'); // Emails to send concurrently
+const DELAY_BETWEEN_BATCHES_MS = parseInt(process.env.EMAIL_BATCH_DELAY_MS || '200'); // Delay between batches to avoid rate limits
+
+// Check if content contains personalization variables
+function hasPersonalizationVariables(content: string): boolean {
+  const personalizationPatterns = [
+    /\{\{firstName\}\}/,
+    /\{\{lastName\}\}/,
+    /\{\{fullName\}\}/,
+    /\{\{email\}\}/,
+    /\{\{subscription\}\}/,
+    /\{\{lifetimePurchase\}\}/,
+    /\{\{companyName\}\}/,
+    /\{\{unsubscribeUrl\}\}/,
+    /\{\{currentDate\}\}/,
+  ];
+  
+  return personalizationPatterns.some(pattern => pattern.test(content));
+}
 
 // Store the last execution time in memory
 let lastCronExecution: string | null = null;
@@ -355,12 +380,148 @@ export async function POST(request: NextRequest) {
         );
         console.log("  AWS_REGION:", process.env.AWS_REGION || "NOT_SET");
 
-        // Send emails
+        // Send emails - Use parallel batch sending if enabled (sends multiple personalized emails concurrently)
         let sentCount = 0;
         let failedCount = 0;
         const sendResults = [];
 
-        for (const subscriber of subscribersResult) {
+        // Check if email content has personalization variables
+        const htmlContent = campaign.html_content || '';
+        const subjectContent = campaign.subject || '';
+        const textContent = campaign.text_content || '';
+        const hasPersonalization = hasPersonalizationVariables(htmlContent) || 
+                                   hasPersonalizationVariables(subjectContent) || 
+                                   hasPersonalizationVariables(textContent);
+
+        if (ENABLE_BATCH_SENDING) {
+          // PARALLEL BATCH SENDING: Send multiple personalized emails concurrently
+          console.log(`🚀 Using PARALLEL batch sending mode (${PARALLEL_BATCH_SIZE} emails sent concurrently)`);
+          console.log(`   Personalization: ${hasPersonalization ? 'ENABLED (each email personalized)' : 'DISABLED (same content for all)'}`);
+          
+          // Split subscribers into parallel batches
+          const batches: typeof subscribersResult[][] = [];
+          for (let i = 0; i < subscribersResult.length; i += PARALLEL_BATCH_SIZE) {
+            batches.push(subscribersResult.slice(i, i + PARALLEL_BATCH_SIZE));
+          }
+
+          console.log(`📦 Split ${subscribersResult.length} subscribers into ${batches.length} parallel batches`);
+
+          // Process each batch (sending all emails in batch concurrently)
+          for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex];
+            console.log(`📤 Processing parallel batch ${batchIndex + 1}/${batches.length} (${batch.length} emails to send concurrently)...`);
+
+            // Send all emails in this batch in parallel
+            const batchPromises = batch.map(async (subscriber) => {
+              try {
+                // Create send record for tracking
+                const sendId = await createSendRecord(
+                  campaign.id,
+                  subscriber.id,
+                  subscriber.email,
+                  supabase
+                );
+
+                // Generate proper HTML template
+                let htmlContentForSubscriber = generateProperEmailTemplate(
+                  campaign.html_content ||
+                    `<h1>${campaign.subject || "Newsletter"}</h1><p>Content coming soon...</p>`,
+                  campaign.subject || "Newsletter"
+                );
+
+                // Add tracking
+                if (sendId) {
+                  htmlContentForSubscriber = injectEmailTracking(
+                    htmlContentForSubscriber,
+                    campaign.id,
+                    subscriber.id,
+                    sendId
+                  );
+                }
+
+                // Personalize content if variables are present
+                let personalizedHtml = htmlContentForSubscriber;
+                let personalizedText = campaign.text_content || campaign.subject || "Newsletter";
+                let personalizedSubject = campaign.subject || "Newsletter";
+                
+                if (hasPersonalization) {
+                  personalizedHtml = personalizeContent(htmlContentForSubscriber, subscriber);
+                  personalizedText = personalizeContent(personalizedText, subscriber);
+                  personalizedSubject = personalizeContent(personalizedSubject, subscriber);
+                }
+
+                // Send email
+                const emailResult = await sendEmail({
+                  to: subscriber.email,
+                  subject: personalizedSubject,
+                  html: personalizedHtml,
+                  text: personalizedText,
+                  from: `${campaign.sender_name || "Cymasphere"} <${
+                    campaign.sender_email || "support@cymasphere.com"
+                  }>`,
+                  replyTo: campaign.reply_to_email || undefined,
+                });
+
+                if (emailResult.success) {
+                  // Update send record with message_id
+                  if (sendId && emailResult.messageId) {
+                    await supabase
+                      .from("email_sends")
+                      .update({
+                        status: "sent",
+                        message_id: emailResult.messageId,
+                      })
+                      .eq("id", sendId);
+                  }
+                  return { success: true, email: subscriber.email, sendId, error: null };
+                } else {
+                  return { success: false, email: subscriber.email, sendId, error: emailResult.error };
+                }
+              } catch (emailError) {
+                return { 
+                  success: false, 
+                  email: subscriber.email, 
+                  sendId: null, 
+                  error: emailError instanceof Error ? emailError.message : String(emailError) 
+                };
+              }
+            });
+
+            // Wait for all emails in this batch to complete (parallel execution)
+            const batchResults = await Promise.all(batchPromises);
+
+            // Process results
+            for (const result of batchResults) {
+              if (result.success) {
+                sentCount++;
+                sendResults.push({
+                  email: result.email,
+                  success: true,
+                  sendId: result.sendId,
+                });
+              } else {
+                failedCount++;
+                sendResults.push({
+                  email: result.email,
+                  success: false,
+                  error: result.error,
+                  sendId: result.sendId,
+                });
+              }
+            }
+
+            console.log(`✅ Parallel batch ${batchIndex + 1} completed: ${batchResults.filter(r => r.success).length}/${batch.length} sent successfully`);
+
+            // Small delay between batches to avoid overwhelming AWS SES
+            if (batchIndex < batches.length - 1) {
+              await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES_MS));
+            }
+          }
+        } else {
+          // Individual sending mode (original behavior - sequential, one at a time)
+          console.log(`📧 Using SEQUENTIAL sending mode (one email per recipient, one at a time)`);
+          
+          for (const subscriber of subscribersResult) {
           try {
             // Create send record for tracking
             const sendId = await createSendRecord(
@@ -395,11 +556,22 @@ export async function POST(request: NextRequest) {
               );
             }
 
+            // Personalize content if variables are present
+            let personalizedHtml = htmlContent;
+            let personalizedText = campaign.text_content || campaign.subject || "Newsletter";
+            let personalizedSubject = campaign.subject || "Newsletter";
+            
+            if (hasPersonalization) {
+              personalizedHtml = personalizeContent(htmlContent, subscriber);
+              personalizedText = personalizeContent(personalizedText, subscriber);
+              personalizedSubject = personalizeContent(personalizedSubject, subscriber);
+            }
+
             const emailResult = await sendEmail({
               to: subscriber.email,
-              subject: campaign.subject || "Newsletter",
-              html: htmlContent,
-              text: campaign.text_content || campaign.subject || "Newsletter",
+              subject: personalizedSubject,
+              html: personalizedHtml,
+              text: personalizedText,
               from: `${campaign.sender_name || "Cymasphere"} <${
                 campaign.sender_email || "support@cymasphere.com"
               }>`,

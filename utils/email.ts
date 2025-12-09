@@ -1,5 +1,15 @@
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
 
+interface SendBatchEmailParams {
+  bcc: string[]; // BCC recipients (up to 50 total recipients per AWS SES limit)
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+  replyTo?: string | string[];
+  listUnsubscribe?: string;
+}
+
 // AWS Account Configuration
 // CORRECT AWS ACCOUNT: 375240177147
 // Region: us-east-1
@@ -178,6 +188,164 @@ export async function sendEmail({
     return { 
       success: false, 
       error: errorMessage
+    };
+  }
+}
+
+/**
+ * Sends a batch email using BCC to multiple recipients (up to 50 per email per AWS SES limit)
+ * This is much more efficient than sending individual emails
+ * @param params Batch email parameters
+ * @returns Promise with the result of the email sending operation
+ */
+export async function sendBatchEmail({
+  bcc,
+  subject,
+  text,
+  html,
+  from = "Cymasphere Support <support@cymasphere.com>",
+  replyTo,
+  listUnsubscribe,
+}: SendBatchEmailParams) {
+  const region = process.env.AWS_REGION || "us-east-1";
+  
+  // AWS SES limit: max 50 recipients per email (To + CC + BCC combined)
+  // We use 1 To (sender's own address) and up to 49 BCC recipients
+  const MAX_BCC_PER_EMAIL = 49;
+  
+  if (bcc.length === 0) {
+    return { success: false, error: "No BCC recipients provided" };
+  }
+
+  if (bcc.length > MAX_BCC_PER_EMAIL) {
+    return { 
+      success: false, 
+      error: `Too many BCC recipients. Maximum ${MAX_BCC_PER_EMAIL} per email. Got ${bcc.length}` 
+    };
+  }
+
+  try {
+    const sesClient = new SESClient({ 
+      region,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+      }
+    });
+
+    // Format reply to addresses
+    const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from];
+
+    // Extract email address from "Name <email>" format
+    const fromEmail = from.match(/<(.+)>/)?.[1] || from;
+    const fromName = from.match(/^(.+?)\s*</)?.[1] || 'Cymasphere Support';
+
+    // Use sender's email as the "To" address (required by SES), all actual recipients go in BCC
+    const toAddress = fromEmail;
+
+    // Generate Message-ID
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(7)}@cymasphere.com>`;
+    const date = new Date().toUTCString();
+
+    // Build email headers with BCC
+    const headers: string[] = [
+      `From: ${from}`,
+      `To: ${toAddress}`, // Required by SES, but recipients won't see this
+      `Bcc: ${bcc.join(', ')}`, // All actual recipients in BCC for privacy
+      `Subject: ${subject}`,
+      `Date: ${date}`,
+      `Message-ID: ${messageId}`,
+      `MIME-Version: 1.0`,
+      `X-Mailer: Cymasphere Support System`,
+      `X-Priority: 3`,
+      `Reply-To: ${replyToAddresses.join(', ')}`,
+    ];
+
+    // Add List-Unsubscribe headers
+    if (listUnsubscribe) {
+      headers.push(`List-Unsubscribe: <${listUnsubscribe}>`);
+      headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
+    } else {
+      const defaultUnsubscribe = `https://www.cymasphere.com/dashboard/support`;
+      headers.push(`List-Unsubscribe: <${defaultUnsubscribe}>`);
+      headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
+    }
+
+    // Build multipart message
+    const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+
+    // Build email body
+    let body = '';
+
+    if (text) {
+      body += `--${boundary}\r\n`;
+      body += `Content-Type: text/plain; charset=UTF-8\r\n`;
+      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+      body += `${text}\r\n`;
+    }
+
+    if (html) {
+      body += `--${boundary}\r\n`;
+      body += `Content-Type: text/html; charset=UTF-8\r\n`;
+      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+      body += `${html}\r\n`;
+    }
+
+    body += `--${boundary}--\r\n`;
+
+    // Combine headers and body
+    const rawMessage = headers.join('\r\n') + '\r\n\r\n' + body;
+
+    console.log(`📤 Sending batch email via AWS SES to ${bcc.length} recipients (BCC)...`);
+
+    // Try with configuration set first
+    let command = new SendRawEmailCommand({
+      RawMessage: {
+        Data: Buffer.from(rawMessage),
+      },
+      Destinations: [toAddress, ...bcc], // SES requires all recipients (To + BCC) in Destinations
+      ConfigurationSetName: 'cymasphere-email-events',
+    });
+
+    try {
+      const result = await sesClient.send(command);
+      console.log(`✅ Batch email sent successfully via AWS SES, MessageId: ${result.MessageId}, Recipients: ${bcc.length}`);
+      return { success: true, messageId: result.MessageId, recipientCount: bcc.length };
+    } catch (configSetError: any) {
+      const configSetErrorMessage = configSetError instanceof Error ? configSetError.message : String(configSetError);
+      console.warn("⚠️ Failed with configuration set:", configSetErrorMessage);
+      
+      if (configSetErrorMessage.includes('ConfigurationSetDoesNotExist') || 
+          configSetErrorMessage.includes('configuration set') ||
+          configSetErrorMessage.includes('InvalidParameterValue')) {
+        console.warn("⚠️ Configuration set issue detected. Retrying without configuration set...");
+        command = new SendRawEmailCommand({
+          RawMessage: {
+            Data: Buffer.from(rawMessage),
+          },
+          Destinations: [toAddress, ...bcc],
+        });
+        
+        try {
+          const retryResult = await sesClient.send(command);
+          console.log(`✅ Batch email sent successfully (without config set), MessageId: ${retryResult.MessageId}, Recipients: ${bcc.length}`);
+          return { success: true, messageId: retryResult.MessageId, recipientCount: bcc.length };
+        } catch (retryError) {
+          console.error("❌ Retry without config set also failed:", retryError);
+          throw retryError;
+        }
+      } else {
+        throw configSetError;
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error sending batch email via AWS SES:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error sending batch email";
+    return { 
+      success: false, 
+      error: errorMessage,
+      recipientCount: bcc.length
     };
   }
 } 

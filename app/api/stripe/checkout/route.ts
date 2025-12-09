@@ -132,6 +132,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // CRITICAL: Check if customer already has an active subscription (prevents duplicates)
+    // Skip this check for plan changes and lifetime purchases (handled above)
+    if (resolved_customer_id && planType !== "lifetime" && !isPlanChange) {
+      try {
+        const subscriptions = await stripe.subscriptions.list({
+          customer: resolved_customer_id,
+          status: "all",
+          limit: 100,
+        });
+
+        const activeSubscriptions = subscriptions.data.filter(
+          (sub) => sub.status === "active" || sub.status === "trialing" || sub.status === "past_due"
+        );
+
+        if (activeSubscriptions.length > 0) {
+          console.warn(`⚠️ Customer ${resolved_customer_id} already has ${activeSubscriptions.length} active subscription(s). Blocking duplicate subscription creation.`);
+          return NextResponse.json({
+            url: null,
+            error: "ACTIVE_SUBSCRIPTION_EXISTS",
+            message: "You already have an active subscription. Please manage your existing subscription or wait for it to expire before creating a new one.",
+            hasActiveSubscription: true,
+            activeSubscriptionIds: activeSubscriptions.map(sub => sub.id),
+          }, { status: 400 });
+        }
+      } catch (error) {
+        console.error("Error checking for active subscriptions:", error);
+        // Continue with checkout even if check fails to avoid blocking legitimate purchases
+      }
+    }
+
     // Determine if user is signed up (has a customerId, meaning they're logged in)
     const isSignedUp = !!customerId;
 
