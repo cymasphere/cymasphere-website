@@ -136,6 +136,12 @@ export async function checkUserSubscription(
 
   if (profile.customer_id) {
     const stripeResult = await customerPurchasedProFromSupabase(profile.customer_id);
+    console.log(`[checkUserSubscription] Stripe result for ${profile.email}:`, {
+      success: stripeResult.success,
+      subscription: stripeResult.subscription,
+      error: stripeResult.error ? String(stripeResult.error) : null,
+    });
+    
     if (stripeResult.success && stripeResult.subscription !== "none") {
       stripeSubscription = stripeResult.subscription;
       stripeExpiration = stripeResult.subscription_expiration || null;
@@ -146,12 +152,15 @@ export async function checkUserSubscription(
       // hasn't synced yet or metadata is missing. Only downgrade if Stripe explicitly says they don't have it.
       // If stripeResult.success is false, it means there was an error querying, so we should preserve lifetime.
       // If stripeResult.subscription is "none" but profile has "lifetime", preserve it as a safety measure.
-      if (!stripeResult.success || stripeResult.subscription === "none") {
-        console.log(`[checkUserSubscription] Preserving lifetime subscription for user ${userId} - Stripe query didn't find it but profile has it`);
-        stripeSubscription = "lifetime";
-        stripeExpiration = null;
-      }
+      console.log(`[checkUserSubscription] ⚠️ PRESERVING lifetime subscription for user ${userId} (${profile.email}) - Stripe query returned ${stripeResult.subscription} but profile has lifetime`);
+      stripeSubscription = "lifetime";
+      stripeExpiration = null;
     }
+  } else if (profile.subscription === "lifetime") {
+    // If user has lifetime but no customer_id, preserve it (might be NFR or manual grant)
+    console.log(`[checkUserSubscription] Preserving lifetime for user ${userId} (${profile.email}) - no customer_id but profile has lifetime`);
+    stripeSubscription = "lifetime";
+    stripeExpiration = null;
   }
 
   // Determine final subscription (priority: lifetime > annual > monthly > none)
