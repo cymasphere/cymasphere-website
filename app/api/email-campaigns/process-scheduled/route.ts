@@ -626,6 +626,7 @@ export async function POST(request: NextRequest) {
             });
           }
         }
+        } // Close the else block
 
         // Update campaign with final status
         const finalStatus =
