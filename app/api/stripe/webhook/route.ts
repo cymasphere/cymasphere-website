@@ -97,22 +97,133 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "success", event: event.type });
     }
 
+    // Get customer email from Stripe for invite/email purposes
+    let customerEmail: string | null = null;
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      if (typeof customer === "object" && !customer.deleted) {
+        customerEmail = customer.email || null;
+      }
+    } catch (error) {
+      console.error("Error retrieving customer from Stripe:", error);
+    }
+
     // Find user by customer ID
     const userId = await findUserIdByCustomerId(customerId);
 
-    if (!userId) {
-      console.log(`No user found for customer ID: ${customerId}`);
-      return NextResponse.json({ status: "success", event: event.type });
+    // Handle checkout.session.completed - send invite if no account exists
+    if (event.type === "checkout.session.completed" && customerEmail) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const supabase = await createSupabaseServiceRole();
+
+      // Check if user account exists by email
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", customerEmail.toLowerCase().trim())
+        .maybeSingle();
+
+      // If no account exists, send Supabase invite email
+      if (!existingUser) {
+        try {
+          console.log(
+            `[Webhook] No account found for ${customerEmail}, sending invite...`
+          );
+
+          // Get customer name from Stripe if available
+          const customer = await stripe.customers.retrieve(customerId);
+          let firstName: string | undefined;
+          let lastName: string | undefined;
+
+          if (
+            typeof customer === "object" &&
+            !customer.deleted &&
+            customer.metadata
+          ) {
+            firstName = customer.metadata.first_name;
+            lastName = customer.metadata.last_name;
+          }
+
+          // Build user metadata with customer_id for linking
+          const userMetadata: {
+            invited_by: string;
+            customer_id: string;
+            first_name?: string;
+            last_name?: string;
+          } = {
+            invited_by: "stripe_checkout",
+            customer_id: customerId,
+          };
+
+          if (firstName) {
+            userMetadata.first_name = firstName;
+          }
+          if (lastName) {
+            userMetadata.last_name = lastName;
+          }
+
+          // Send Supabase invite email
+          const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            "https://cymasphere.com";
+          const redirectTo = `${baseUrl}/reset-password`;
+
+          const { data: inviteData, error: inviteError } =
+            await supabase.auth.admin.inviteUserByEmail(
+              customerEmail,
+              {
+                data: userMetadata,
+                redirectTo: redirectTo,
+              }
+            );
+
+          if (inviteError) {
+            // If user already exists, Supabase won't send email (this is expected)
+            if (
+              inviteError.message?.toLowerCase().includes("already") ||
+              inviteError.message?.toLowerCase().includes("exists")
+            ) {
+              console.log(
+                `[Webhook] User ${customerEmail} already has account, skipping invite`
+              );
+            } else {
+              console.error(
+                `[Webhook] Error sending invite to ${customerEmail}:`,
+                inviteError.message
+              );
+            }
+          } else {
+            console.log(
+              `[Webhook] ✅ Sent invite email to ${customerEmail} for customer ${customerId}`
+            );
+            // Note: When user sets password via invite link, account is created with customer_id in metadata
+            // The profile will be linked via findUserIdByCustomerId on next webhook event or login
+          }
+        } catch (inviteError) {
+          console.error(
+            `[Webhook] Unexpected error sending invite:`,
+            inviteError
+          );
+          // Don't fail the webhook if invite fails
+        }
+      } else {
+        console.log(
+          `[Webhook] User ${customerEmail} already has account (ID: ${existingUser.id}), skipping invite`
+        );
+      }
     }
 
-    // Refresh user subscription status
-    console.log(
-      `Refreshing subscription for user ${userId} (customer: ${customerId})`
-    );
-    const result = await checkUserSubscription(userId);
-    console.log(
-      `Subscription updated: ${result.subscription} (${result.source})`
-    );
+    // If user exists, refresh subscription status
+    if (userId) {
+      console.log(
+        `Refreshing subscription for user ${userId} (customer: ${customerId})`
+      );
+      const result = await checkUserSubscription(userId);
+      console.log(
+        `Subscription updated: ${result.subscription} (${result.source})`
+      );
+    }
 
     return NextResponse.json({ status: "success", event: event.type });
   } catch (error) {
