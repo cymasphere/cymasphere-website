@@ -18,7 +18,6 @@ import { Profile, UserProfile } from "@/utils/supabase/types";
 import {
   fetchIsAdmin,
   fetchProfile,
-  updateStripe,
   signUpWithStripe,
 } from "@/utils/supabase/actions";
 import { createClient } from "@/utils/supabase/client";
@@ -83,19 +82,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (profile) {
-          // Check Stripe and NFR subscription status (updates database)
-          // This matches the same pattern used in updateUserFromSession
-          const { success, profile: updatedProfile } = await updateStripe(
-            profile
-          );
+          // Update pro status using centralized function (handles NFR, Stripe, and iOS)
+          try {
+            const { updateUserProStatus } = await import(
+              "@/utils/subscriptions/check-subscription"
+            );
+            const result = await updateUserProStatus(session.user.id);
 
-          if (success && updatedProfile) {
+            // Update profile with the determined subscription status
+            const updatedProfile = {
+              ...profile,
+              subscription: result.subscription,
+              subscription_expiration:
+                result.subscriptionExpiration?.toISOString() || null,
+              subscription_source: result.source,
+            };
+
             setUser({
               ...session.user,
               profile: updatedProfile,
               is_admin,
             });
-          } else if (profile) {
+          } catch (error) {
+            console.error("[refreshUser] Error updating pro status:", error);
+            // Fall back to original profile if update fails
             setUser({ ...session.user, profile, is_admin });
           }
         }
@@ -169,21 +179,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               is_admin: is_admin || false,
             });
 
-            // Update Stripe subscription status asynchronously (non-blocking)
+            // Update pro status asynchronously (non-blocking) using centralized function
             try {
-              const { success, profile: updatedProfile } = await updateStripe(
-                profile
+              const { updateUserProStatus } = await import(
+                "@/utils/subscriptions/check-subscription"
               );
-              if (success && updatedProfile) {
-                setUser({
-                  ...logged_in_user,
-                  profile: updatedProfile,
-                  is_admin: is_admin || false,
-                });
-              }
-            } catch (stripeError) {
-              // Keep the user logged in even if Stripe update fails
-              console.log("Stripe update failed:", stripeError);
+              const result = await updateUserProStatus(logged_in_user.id);
+
+              // Update profile with the determined subscription status
+              const updatedProfile = {
+                ...profile,
+                subscription: result.subscription,
+                subscription_expiration:
+                  result.subscriptionExpiration?.toISOString() || null,
+                subscription_source: result.source,
+              };
+
+              setUser({
+                ...logged_in_user,
+                profile: updatedProfile,
+                is_admin: is_admin || false,
+              });
+            } catch (proStatusError) {
+              // Keep the user logged in even if pro status update fails
+              console.log("Pro status update failed:", proStatusError);
             }
           }
         } else {

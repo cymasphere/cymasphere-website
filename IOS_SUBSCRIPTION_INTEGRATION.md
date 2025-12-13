@@ -5,6 +5,7 @@ This document describes the integration of iOS StoreKit in-app purchases with th
 ## Overview
 
 The system now supports subscriptions from two sources:
+
 1. **Stripe** - Web-based subscriptions (existing)
 2. **iOS StoreKit** - Native iOS in-app purchases (new)
 
@@ -15,6 +16,7 @@ Both subscription types are stored in Supabase and the system automatically dete
 ### Database Schema
 
 A new table `ios_subscriptions` tracks iOS purchases:
+
 - `transaction_id` - Unique StoreKit transaction ID
 - `original_transaction_id` - For subscription renewals
 - `product_id` - App Store Connect product ID
@@ -31,6 +33,7 @@ A new table `ios_subscriptions` tracks iOS purchases:
 Validates iOS receipts with Apple's App Store and syncs to Supabase.
 
 **Request:**
+
 ```json
 {
   "receiptData": "base64_encoded_receipt",
@@ -40,6 +43,7 @@ Validates iOS receipts with Apple's App Store and syncs to Supabase.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -74,6 +78,7 @@ Validates iOS receipts with Apple's App Store and syncs to Supabase.
 ### Subscription Priority
 
 When checking user subscriptions, the system uses this priority:
+
 1. **Lifetime** (highest)
 2. **Annual**
 3. **Monthly**
@@ -84,6 +89,7 @@ If user has subscriptions from both Stripe and iOS, the higher priority subscrip
 ### Product ID Mapping
 
 iOS product IDs map to subscription types:
+
 - `com.NNAudio.Cymasphere.basic` → `lifetime`
 - `com.NNAudio.Cymasphere.monthly.plan` → `monthly`
 - `com.NNAudio.Cymasphere.annual.plan` → `annual`
@@ -93,6 +99,7 @@ iOS product IDs map to subscription types:
 ### 1. Environment Variables
 
 Add to `.env`:
+
 ```bash
 APPLE_SHARED_SECRET=your_apple_shared_secret_from_app_store_connect
 ```
@@ -100,12 +107,14 @@ APPLE_SHARED_SECRET=your_apple_shared_secret_from_app_store_connect
 ### 2. Database Migration
 
 Run the migration:
+
 ```bash
 cd cymasphere-website
 supabase db push
 ```
 
 Or manually apply:
+
 ```bash
 psql -f supabase/migrations/20250130000000_add_ios_subscriptions.sql
 ```
@@ -120,11 +129,13 @@ psql -f supabase/migrations/20250130000000_add_ios_subscriptions.sql
 ### 4. Testing
 
 #### Sandbox Testing
+
 - Use sandbox test accounts in App Store Connect
 - Receipts will be validated against Apple's sandbox environment
 - The API automatically handles sandbox/production switching
 
 #### Production Testing
+
 - Test with real purchases (refundable within 14 days)
 - Monitor `ios_subscriptions` table for successful validations
 - Check user profiles for updated subscription status
@@ -145,6 +156,7 @@ When a user logs in:
 ### Apple Validation
 
 The server validates receipts with Apple's App Store using:
+
 - Production URL: `https://buy.itunes.apple.com/verifyReceipt`
 - Sandbox URL: `https://sandbox.itunes.apple.com/verifyReceipt`
 
@@ -160,16 +172,17 @@ The system automatically retries with sandbox if production validation returns s
 
 ### Utility Function
 
-Use `checkUserSubscription()` from `@/utils/subscriptions/check-subscription`:
+Use `updateUserProStatus()` from `@/utils/subscriptions/check-subscription`:
 
 ```typescript
-import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
-const result = await checkUserSubscription(userId);
+const result = await updateUserProStatus(userId);
 // Returns: { subscription, subscriptionExpiration, source: "stripe" | "ios" | "none" }
 ```
 
 This function:
+
 1. Checks iOS subscriptions
 2. Checks Stripe subscriptions
 3. Returns highest priority subscription
@@ -187,6 +200,7 @@ This function:
 ### Logging
 
 The API endpoint logs:
+
 - Receipt validation attempts
 - Apple API responses
 - Subscription updates
@@ -229,6 +243,3 @@ The API endpoint logs:
 - [ ] Subscription renewal tracking
 - [ ] Cancellation/refund handling
 - [ ] Subscription upgrade/downgrade flows
-
-
-

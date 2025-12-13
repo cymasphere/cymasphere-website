@@ -57,7 +57,7 @@ import {
 } from "@/utils/stripe/actions";
 import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 import { updateUserProfileFromStripe } from "@/app/actions/user-management";
-import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 const Container = styled.div`
   width: 100%;
@@ -575,18 +575,12 @@ const TrialBadgeBox = styled.span<{ $isActive?: boolean }>`
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
-  background-color: ${(props) => 
-    props.$isActive 
-      ? "rgba(34, 197, 94, 0.2)" 
-      : "rgba(156, 163, 175, 0.2)"};
-  color: ${(props) => 
-    props.$isActive 
-      ? "#22c55e" 
-      : "#9ca3af"};
-  border: 1px solid ${(props) => 
-    props.$isActive 
-      ? "rgba(34, 197, 94, 0.4)" 
-      : "rgba(156, 163, 175, 0.4)"};
+  background-color: ${(props) =>
+    props.$isActive ? "rgba(34, 197, 94, 0.2)" : "rgba(156, 163, 175, 0.2)"};
+  color: ${(props) => (props.$isActive ? "#22c55e" : "#9ca3af")};
+  border: 1px solid
+    ${(props) =>
+      props.$isActive ? "rgba(34, 197, 94, 0.4)" : "rgba(156, 163, 175, 0.4)"};
 `;
 
 const SupportTicketsCount = styled.div`
@@ -596,7 +590,11 @@ const SupportTicketsCount = styled.div`
   font-weight: 500;
 `;
 
-const TicketBadge = styled.span<{ $openCount: number; $closedCount: number; $totalCount: number }>`
+const TicketBadge = styled.span<{
+  $openCount: number;
+  $closedCount: number;
+  $totalCount: number;
+}>`
   background-color: ${(props) => {
     // Red if there are open tickets
     if (props.$openCount > 0) return "#e74c3c";
@@ -1418,7 +1416,8 @@ export default function AdminCRM() {
   const [hasPaymentMethod, setHasPaymentMethod] = useState<
     Record<string, boolean>
   >({});
-  const [selectedUserHasPaymentMethod, setSelectedUserHasPaymentMethod] = useState<boolean | null>(null);
+  const [selectedUserHasPaymentMethod, setSelectedUserHasPaymentMethod] =
+    useState<boolean | null>(null);
 
   // More menu state
   const [openMoreMenu, setOpenMoreMenu] = useState<string | null>(null);
@@ -1470,7 +1469,9 @@ export default function AdminCRM() {
 
   // Subscription refresh state
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
-  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<string | null>(null);
+  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<
+    string | null
+  >(null);
 
   // Debounce search term
   useEffect(() => {
@@ -1550,30 +1551,41 @@ export default function AdminCRM() {
       // This allows users to be displayed immediately while additional data loads
       if (result.users.length > 0) {
         const userIds = result.users.map((u) => u.id);
-        
+
         // Fetch payment method status for users with customer IDs
         const usersWithCustomerIds = result.users
           .filter((u) => u.customerId)
           .map((u) => ({ userId: u.id, customerId: u.customerId! }));
-        
+
         if (usersWithCustomerIds.length > 0) {
           // Check payment methods for all customers in parallel
-          const paymentMethodChecks = usersWithCustomerIds.map(async ({ userId, customerId }) => {
-            try {
-              const response = await fetch(`/api/admin/customer-has-payment-method?customerId=${customerId}`);
-              const data = await response.json();
-              return { userId, hasPaymentMethod: data.success && data.hasPaymentMethod };
-            } catch (error) {
-              console.error(`Error checking payment method for ${customerId}:`, error);
-              return { userId, hasPaymentMethod: false };
+          const paymentMethodChecks = usersWithCustomerIds.map(
+            async ({ userId, customerId }) => {
+              try {
+                const response = await fetch(
+                  `/api/admin/customer-has-payment-method?customerId=${customerId}`
+                );
+                const data = await response.json();
+                return {
+                  userId,
+                  hasPaymentMethod: data.success && data.hasPaymentMethod,
+                };
+              } catch (error) {
+                console.error(
+                  `Error checking payment method for ${customerId}:`,
+                  error
+                );
+                return { userId, hasPaymentMethod: false };
+              }
             }
-          });
+          );
 
           Promise.allSettled(paymentMethodChecks).then((results) => {
             const paymentMethodMap: Record<string, boolean> = {};
             results.forEach((result) => {
-              if (result.status === 'fulfilled') {
-                paymentMethodMap[result.value.userId] = result.value.hasPaymentMethod;
+              if (result.status === "fulfilled") {
+                paymentMethodMap[result.value.userId] =
+                  result.value.hasPaymentMethod;
               }
             });
             setHasPaymentMethod((prev) => ({ ...prev, ...paymentMethodMap }));
@@ -1603,7 +1615,11 @@ export default function AdminCRM() {
               }));
 
               // Apply client-side sorting for fields that can't be sorted server-side
-              if (sortField === "lastActive" || sortField === "totalSpent" || sortField === "supportTickets") {
+              if (
+                sortField === "lastActive" ||
+                sortField === "totalSpent" ||
+                sortField === "supportTickets"
+              ) {
                 updatedUsers = [...updatedUsers].sort((a, b) => {
                   let aValue: any;
                   let bValue: any;
@@ -1629,8 +1645,8 @@ export default function AdminCRM() {
                     // Compare dates
                     const aDate = new Date(aValue).getTime();
                     const bDate = new Date(bValue).getTime();
-                    return sortDirection === "asc" 
-                      ? aDate - bDate 
+                    return sortDirection === "asc"
+                      ? aDate - bDate
                       : bDate - aDate;
                   } else {
                     // Compare numbers
@@ -1708,14 +1724,19 @@ export default function AdminCRM() {
 
   // Apply client-side sorting when sortField changes to a client-sortable field
   useEffect(() => {
-    if (sortField === "lastActive" || sortField === "totalSpent" || sortField === "supportTickets") {
+    if (
+      sortField === "lastActive" ||
+      sortField === "totalSpent" ||
+      sortField === "supportTickets"
+    ) {
       setUsers((prevUsers) => {
         // Only sort if we have the data
         const hasData = prevUsers.every(
           (u) =>
             (sortField === "lastActive" && u.lastActive) ||
             (sortField === "totalSpent" && u.totalSpent !== -1) ||
-            (sortField === "supportTickets" && supportTicketCounts[u.id] !== undefined)
+            (sortField === "supportTickets" &&
+              supportTicketCounts[u.id] !== undefined)
         );
 
         if (!hasData) return prevUsers; // Wait for data to load
@@ -1780,16 +1801,15 @@ export default function AdminCRM() {
       "email",
       "trialExpiration",
     ];
-    
+
     // Fields that need client-side sorting (from external sources)
-    const clientSortableFields = [
-      "lastActive",
-      "totalSpent",
-      "supportTickets",
+    const clientSortableFields = ["lastActive", "totalSpent", "supportTickets"];
+
+    const allSortableFields = [
+      ...serverSortableFields,
+      ...clientSortableFields,
     ];
 
-    const allSortableFields = [...serverSortableFields, ...clientSortableFields];
-    
     if (!allSortableFields.includes(field as string)) {
       console.log(`Field "${field}" is not sortable`);
       return;
@@ -1911,26 +1931,30 @@ export default function AdminCRM() {
 
   const getRemainingTrialDays = (trialExpiration?: string): number | null => {
     if (!trialExpiration) return null;
-    
+
     const trialEnd = new Date(trialExpiration);
     const now = new Date();
-    
+
     // Check if trial is still active (not expired)
     if (trialEnd <= now) return null;
-    
+
     // Calculate days remaining
     const diffTime = trialEnd.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays > 0 ? diffDays : null;
   };
 
-  const getTrialInfo = (trialExpiration?: string, createdAt?: string, subscriptionExpiration?: string): { days: number | string; isActive: boolean } | null => {
+  const getTrialInfo = (
+    trialExpiration?: string,
+    createdAt?: string,
+    subscriptionExpiration?: string
+  ): { days: number | string; isActive: boolean } | null => {
     if (!trialExpiration) return null;
-    
+
     const trialEnd = new Date(trialExpiration);
     const now = new Date();
-    
+
     // Check if trial is still active
     if (trialEnd > now) {
       // Active trial - return remaining days
@@ -1938,25 +1962,33 @@ export default function AdminCRM() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return { days: diffDays > 0 ? diffDays : 0, isActive: true };
     }
-    
+
     // Trial has expired - calculate duration
     // Try to determine if it was 7 or 14 days
     let estimatedDuration = 7; // Default to 7 days (most common)
-    
+
     if (createdAt) {
       const accountCreated = new Date(createdAt);
-      const daysFromCreationToTrialEnd = Math.floor((trialEnd.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Heuristic: 
+      const daysFromCreationToTrialEnd = Math.floor(
+        (trialEnd.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Heuristic:
       // - 7-day trials typically end 6-9 days after account creation
       // - 14-day trials typically end 13-16 days after account creation
-      if (daysFromCreationToTrialEnd >= 13 && daysFromCreationToTrialEnd <= 16) {
+      if (
+        daysFromCreationToTrialEnd >= 13 &&
+        daysFromCreationToTrialEnd <= 16
+      ) {
         estimatedDuration = 14;
-      } else if (daysFromCreationToTrialEnd >= 6 && daysFromCreationToTrialEnd <= 9) {
+      } else if (
+        daysFromCreationToTrialEnd >= 6 &&
+        daysFromCreationToTrialEnd <= 9
+      ) {
         estimatedDuration = 7;
       }
     }
-    
+
     // If we have subscription expiration, we can also check when subscription started
     // Subscription typically starts right after trial ends
     if (subscriptionExpiration) {
@@ -1964,7 +1996,7 @@ export default function AdminCRM() {
       // If subscription started very close to trial end, we can infer trial duration
       // But this is less reliable, so we'll stick with the creation-based heuristic
     }
-    
+
     return { days: estimatedDuration, isActive: false };
   };
 
@@ -2070,8 +2102,12 @@ export default function AdminCRM() {
     if (user.customerId) {
       try {
         const [totalSpentResponse, paymentMethodResponse] = await Promise.all([
-          fetch(`/api/admin/customer-total-spent?customerId=${user.customerId}`),
-          fetch(`/api/admin/customer-has-payment-method?customerId=${user.customerId}`)
+          fetch(
+            `/api/admin/customer-total-spent?customerId=${user.customerId}`
+          ),
+          fetch(
+            `/api/admin/customer-has-payment-method?customerId=${user.customerId}`
+          ),
         ]);
 
         const totalSpentData = await totalSpentResponse.json();
@@ -2084,46 +2120,60 @@ export default function AdminCRM() {
           setSelectedUserHasPaymentMethod(null);
         }
 
-        if (totalSpentData.success && typeof totalSpentData.totalSpent === 'number') {
+        if (
+          totalSpentData.success &&
+          typeof totalSpentData.totalSpent === "number"
+        ) {
           // Update selectedUser with recalculated totalSpent
           setSelectedUser((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              totalSpent: totalSpentData.totalSpent >= 0 ? totalSpentData.totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+              totalSpent:
+                totalSpentData.totalSpent >= 0
+                  ? totalSpentData.totalSpent
+                  : prev.totalSpent === -1
+                  ? -1
+                  : 0,
             };
           });
         } else {
-          console.error("Error recalculating totalSpent:", totalSpentData.error);
+          console.error(
+            "Error recalculating totalSpent:",
+            totalSpentData.error
+          );
           // Fall back to calculation from fetched data if API fails
-      const purchasesTotal = purchases
-        .filter((p) => 
-          p.status === "succeeded" && 
-          p.description !== "Subscription payment"
-        )
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
+          const purchasesTotal = purchases
+            .filter(
+              (p) =>
+                p.status === "succeeded" &&
+                p.description !== "Subscription payment"
+            )
+            .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-      const invoicesTotal = invoices
-        .filter((inv) => inv.status === "paid")
-        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+          const invoicesTotal = invoices
+            .filter((inv) => inv.status === "paid")
+            .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
-      const totalSpent = purchasesTotal + invoicesTotal;
+          const totalSpent = purchasesTotal + invoicesTotal;
 
-      setSelectedUser((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
-        };
-      });
+          setSelectedUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              totalSpent:
+                totalSpent >= 0 ? totalSpent : prev.totalSpent === -1 ? -1 : 0,
+            };
+          });
         }
       } catch (error) {
         console.error("Error recalculating totalSpent from API:", error);
         // Fall back to calculation from fetched data if API fails
         const purchasesTotal = purchases
-          .filter((p) => 
-            p.status === "succeeded" && 
-            p.description !== "Subscription payment"
+          .filter(
+            (p) =>
+              p.status === "succeeded" &&
+              p.description !== "Subscription payment"
           )
           .reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -2137,7 +2187,8 @@ export default function AdminCRM() {
           if (!prev) return prev;
           return {
             ...prev,
-            totalSpent: totalSpent >= 0 ? totalSpent : (prev.totalSpent === -1 ? -1 : 0),
+            totalSpent:
+              totalSpent >= 0 ? totalSpent : prev.totalSpent === -1 ? -1 : 0,
           };
         });
       }
@@ -2631,20 +2682,20 @@ export default function AdminCRM() {
 
   const handleRefreshSubscription = async () => {
     if (!selectedUser?.id) return;
-    
+
     try {
       setRefreshingSubscription(true);
       setSubscriptionRefreshMessage(null);
-      
-      const result = await checkUserSubscription(selectedUser.id);
-      
+
+      const result = await updateUserProStatus(selectedUser.id);
+
       setSubscriptionRefreshMessage(
         `Subscription updated: ${result.subscription} (${result.source})`
       );
-      
+
       // Refresh user data
       await fetchUsers();
-      
+
       // Update selected user if modal is still open
       const updatedUsersResult = await getAllUsersForCRMAdmin(
         currentPage,
@@ -2655,7 +2706,9 @@ export default function AdminCRM() {
         sortDirection
       );
       if (updatedUsersResult && updatedUsersResult.users) {
-        const updatedUser = updatedUsersResult.users.find(u => u.id === selectedUser.id);
+        const updatedUser = updatedUsersResult.users.find(
+          (u) => u.id === selectedUser.id
+        );
         if (updatedUser) {
           setSelectedUser(updatedUser);
         }
@@ -2911,7 +2964,9 @@ export default function AdminCRM() {
                     </LastActiveHeaderCell>
                     <TableHeaderCell
                       $sortable={true}
-                      onClick={() => handleSort("supportTickets" as keyof UserData)}
+                      onClick={() =>
+                        handleSort("supportTickets" as keyof UserData)
+                      }
                     >
                       Support Tickets
                       {getSortIcon("supportTickets" as keyof UserData)}
@@ -2986,28 +3041,38 @@ export default function AdminCRM() {
                                 userData.hasNfr ? "nfr" : userData.subscription
                               )}
                               $variant={
-                                userData.hasNfr || isSubscriptionPremium(userData.subscription)
+                                userData.hasNfr ||
+                                isSubscriptionPremium(userData.subscription)
                                   ? "premium"
                                   : "default"
                               }
                             >
-                              {userData.hasNfr ? <FaCrown /> : getSubscriptionIcon(userData.subscription)}
+                              {userData.hasNfr ? (
+                                <FaCrown />
+                              ) : (
+                                getSubscriptionIcon(userData.subscription)
+                              )}
                               {userData.hasNfr ? "NFR" : userData.subscription}
                             </SubscriptionBadge>
-                            {userData.customerId && hasPaymentMethod[userData.id] && (
-                              <FaCreditCard 
-                                style={{ 
-                                  fontSize: '0.9rem', 
-                                  color: 'var(--text-secondary)',
-                                  marginLeft: '0.25rem'
-                                }} 
-                                title="Credit card on file"
-                              />
-                            )}
+                            {userData.customerId &&
+                              hasPaymentMethod[userData.id] && (
+                                <FaCreditCard
+                                  style={{
+                                    fontSize: "0.9rem",
+                                    color: "var(--text-secondary)",
+                                    marginLeft: "0.25rem",
+                                  }}
+                                  title="Credit card on file"
+                                />
+                              )}
                           </SubscriptionCell>
                           <TrialCell>
                             {(() => {
-                              const trialInfo = getTrialInfo(userData.trialExpiration, userData.createdAt, userData.subscriptionExpiration);
+                              const trialInfo = getTrialInfo(
+                                userData.trialExpiration,
+                                userData.createdAt,
+                                userData.subscriptionExpiration
+                              );
                               if (!trialInfo) return null;
                               return (
                                 <TrialBadgeBox $isActive={trialInfo.isActive}>
@@ -3027,8 +3092,8 @@ export default function AdminCRM() {
                           <TableCell>
                             <SupportTicketsCount>
                               <FaTicketAlt />
-                              <TicketBadge 
-                                $openCount={supportTicketCount.open} 
+                              <TicketBadge
+                                $openCount={supportTicketCount.open}
                                 $closedCount={supportTicketCount.closed}
                                 $totalCount={supportTicketCount.total}
                               >
@@ -3126,23 +3191,25 @@ export default function AdminCRM() {
                     </>
                   ) : (
                     <>
-                      Showing{" "}
-                      {(currentPage - 1) * usersPerPage + 1} to{" "}
-                      {Math.min(
-                        currentPage * usersPerPage,
-                        totalCount
-                      )}{" "}
-                      of {totalCount} users
+                      Showing {(currentPage - 1) * usersPerPage + 1} to{" "}
+                      {Math.min(currentPage * usersPerPage, totalCount)} of{" "}
+                      {totalCount} users
                       <PageSizeSelect
                         value={usersPerPage}
-                        onChange={(e) => setUsersPerPage(Number(e.target.value))}
+                        onChange={(e) =>
+                          setUsersPerPage(Number(e.target.value))
+                        }
                       >
                         <option value={10}>10</option>
                         <option value={25}>25</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
                       </PageSizeSelect>
-                      <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem' }}>per page</span>
+                      <span
+                        style={{ marginLeft: "0.5rem", fontSize: "0.85rem" }}
+                      >
+                        per page
+                      </span>
                     </>
                   )}
                 </PaginationInfo>
@@ -3225,19 +3292,36 @@ export default function AdminCRM() {
                   <InfoItem>
                     <InfoLabel>Subscription</InfoLabel>
                     <InfoValue>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                          width: "100%",
+                        }}
+                      >
                         <SubscriptionBadge
                           $color={getSubscriptionBadgeColor(
-                            selectedUser.hasNfr ? "nfr" : selectedUser.subscription
+                            selectedUser.hasNfr
+                              ? "nfr"
+                              : selectedUser.subscription
                           )}
                           $variant={
-                            selectedUser.hasNfr || isSubscriptionPremium(selectedUser.subscription)
+                            selectedUser.hasNfr ||
+                            isSubscriptionPremium(selectedUser.subscription)
                               ? "premium"
                               : "default"
                           }
                         >
-                          {selectedUser.hasNfr ? <FaCrown /> : getSubscriptionIcon(selectedUser.subscription)}
-                          {selectedUser.hasNfr ? "NFR" : selectedUser.subscription}
+                          {selectedUser.hasNfr ? (
+                            <FaCrown />
+                          ) : (
+                            getSubscriptionIcon(selectedUser.subscription)
+                          )}
+                          {selectedUser.hasNfr
+                            ? "NFR"
+                            : selectedUser.subscription}
                         </SubscriptionBadge>
                         <RefreshButton
                           onClick={handleRefreshSubscription}
@@ -3248,11 +3332,17 @@ export default function AdminCRM() {
                           {refreshingSubscription ? (
                             <LoadingSpinner />
                           ) : (
-                            <FaSyncAlt style={{ display: 'block' }} />
+                            <FaSyncAlt style={{ display: "block" }} />
                           )}
                         </RefreshButton>
                         {subscriptionRefreshMessage && (
-                          <span style={{ fontSize: '0.85rem', color: 'var(--success)', marginLeft: '8px' }}>
+                          <span
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "var(--success)",
+                              marginLeft: "8px",
+                            }}
+                          >
                             {subscriptionRefreshMessage}
                           </span>
                         )}
@@ -3263,11 +3353,13 @@ export default function AdminCRM() {
                     <InfoLabel>Trial Days Left</InfoLabel>
                     <InfoValue>
                       {(() => {
-                        const daysLeft = getRemainingTrialDays(selectedUser.trialExpiration);
+                        const daysLeft = getRemainingTrialDays(
+                          selectedUser.trialExpiration
+                        );
                         if (daysLeft === null) {
                           return "N/A";
                         }
-                        return `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+                        return `${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
                       })()}
                     </InfoValue>
                   </InfoItem>
@@ -3275,7 +3367,12 @@ export default function AdminCRM() {
                     <InfoLabel>Has Payment Method</InfoLabel>
                     <InfoValue>
                       {selectedUserHasPaymentMethod === null ? (
-                        <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                        <LoadingSpinner
+                          style={{
+                            display: "inline-block",
+                            marginRight: "8px",
+                          }}
+                        />
                       ) : selectedUserHasPaymentMethod ? (
                         "Yes"
                       ) : (
@@ -3287,7 +3384,12 @@ export default function AdminCRM() {
                     <InfoLabel>Total Spent</InfoLabel>
                     <InfoValue>
                       {selectedUser.totalSpent === -1 ? (
-                        <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                        <LoadingSpinner
+                          style={{
+                            display: "inline-block",
+                            marginRight: "8px",
+                          }}
+                        />
                       ) : (
                         formatCurrency(selectedUser.totalSpent)
                       )}
@@ -3295,7 +3397,9 @@ export default function AdminCRM() {
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Join Date</InfoLabel>
-                    <InfoValue>{formatDateTimeNoLeadingZero(selectedUser.createdAt)}</InfoValue>
+                    <InfoValue>
+                      {formatDateTimeNoLeadingZero(selectedUser.createdAt)}
+                    </InfoValue>
                   </InfoItem>
                   <InfoItem>
                     <InfoLabel>Last Active</InfoLabel>
@@ -3613,9 +3717,7 @@ export default function AdminCRM() {
                               {purchase.id}
                             </StripeLink>
                           </DataTableCell>
-                          <DataTableCell>
-                            {purchase.description}
-                          </DataTableCell>
+                          <DataTableCell>{purchase.description}</DataTableCell>
                           <DataTableCell>
                             {formatCurrency(purchase.amount)}
                           </DataTableCell>
@@ -3693,7 +3795,9 @@ export default function AdminCRM() {
                               {invoice.id}
                             </StripeLink>
                           </DataTableCell>
-                          <DataTableCell>{invoice.number || "N/A"}</DataTableCell>
+                          <DataTableCell>
+                            {invoice.number || "N/A"}
+                          </DataTableCell>
                           <DataTableCell>
                             {formatCurrency(invoice.amount)}
                           </DataTableCell>
@@ -3722,25 +3826,25 @@ export default function AdminCRM() {
                                     `Invoice ${invoice.number || invoice.id}`
                                   )
                                 }
-                                >
-                                  {refundLoading === invoice.id ? (
-                                    <LoadingSpinner />
-                                  ) : (
-                                    <FaUndo />
-                                  )}
-                                  {refundSuccess === invoice.id
-                                    ? "Refunded"
-                                    : "Refund"}
-                                </RefundButton>
-                              )}
-                            </DataTableCell>
-                          </DataTableRow>
-                        ))}
-                      </DataTableBody>
-                    </DataTable>
-                  ) : (
-                    <EmptyState>No invoices found</EmptyState>
-                  )}
+                              >
+                                {refundLoading === invoice.id ? (
+                                  <LoadingSpinner />
+                                ) : (
+                                  <FaUndo />
+                                )}
+                                {refundSuccess === invoice.id
+                                  ? "Refunded"
+                                  : "Refund"}
+                              </RefundButton>
+                            )}
+                          </DataTableCell>
+                        </DataTableRow>
+                      ))}
+                    </DataTableBody>
+                  </DataTable>
+                ) : (
+                  <EmptyState>No invoices found</EmptyState>
+                )}
               </ModalSection>
             </ModalContent>
           </ModalOverlay>

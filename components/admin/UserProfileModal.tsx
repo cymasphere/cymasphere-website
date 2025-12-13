@@ -20,10 +20,8 @@ import {
   getCustomerInvoicesAdmin,
   getUserSupportTicketsAdmin,
 } from "@/app/actions/user-management";
-import {
-  getCustomerSubscriptions,
-} from "@/utils/stripe/actions";
-import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
+import { getCustomerSubscriptions } from "@/utils/stripe/actions";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -382,11 +380,29 @@ interface UserProfileModalProps {
   user: UserData | null;
   isOpen: boolean;
   onClose: () => void;
-  onCancelSubscription?: (subscriptionId: string, customerId: string) => Promise<void>;
-  onReactivateSubscription?: (subscriptionId: string, customerId: string) => Promise<void>;
-  onChangePlan?: (subscriptionId: string, newPlan: "monthly" | "annual", customerId: string) => Promise<void>;
-  onRefundPurchase?: (purchaseId: string, amount: number, description: string) => Promise<void>;
-  onRefundInvoice?: (invoiceId: string, amount: number, description: string) => Promise<void>;
+  onCancelSubscription?: (
+    subscriptionId: string,
+    customerId: string
+  ) => Promise<void>;
+  onReactivateSubscription?: (
+    subscriptionId: string,
+    customerId: string
+  ) => Promise<void>;
+  onChangePlan?: (
+    subscriptionId: string,
+    newPlan: "monthly" | "annual",
+    customerId: string
+  ) => Promise<void>;
+  onRefundPurchase?: (
+    purchaseId: string,
+    amount: number,
+    description: string
+  ) => Promise<void>;
+  onRefundInvoice?: (
+    invoiceId: string,
+    amount: number,
+    description: string
+  ) => Promise<void>;
   onRefreshUser?: () => Promise<void> | void;
   subscriptionLoading?: string | null;
   refundLoading?: string | null;
@@ -415,24 +431,35 @@ export default function UserProfileModal({
   refundSuccess,
   getSubscriptionBadgeColor = (sub) => {
     switch (sub) {
-      case "monthly": return "#4c46d6";
-      case "annual": return "#2d8a7a";
-      case "lifetime": return "#d4a017";
-      case "admin": return "#d63447";
-      case "nfr": return "#9b59b6";
-      default: return "#6c757d";
+      case "monthly":
+        return "#4c46d6";
+      case "annual":
+        return "#2d8a7a";
+      case "lifetime":
+        return "#d4a017";
+      case "admin":
+        return "#d63447";
+      case "nfr":
+        return "#9b59b6";
+      default:
+        return "#6c757d";
     }
   },
   getSubscriptionIcon = (sub) => {
     switch (sub) {
-      case "admin": return <FaUserShield />;
-      case "lifetime": return <FaCrown />;
-      case "nfr": return <FaCrown />;
-      default: return null;
+      case "admin":
+        return <FaUserShield />;
+      case "lifetime":
+        return <FaCrown />;
+      case "nfr":
+        return <FaCrown />;
+      default:
+        return null;
     }
   },
   isSubscriptionPremium = (sub) => ["lifetime", "admin"].includes(sub),
-  formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(),
+  formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString(),
   formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString(undefined, {
@@ -469,33 +496,43 @@ export default function UserProfileModal({
   const [userSubscriptions, setUserSubscriptions] = useState<any[]>([]);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
-  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<string | null>(null);
-  const [userPurchases, setUserPurchases] = useState<Array<{
-    id: string;
-    amount: number;
-    status: string;
-    createdAt: string;
-    description: string;
-  }>>([]);
+  const [subscriptionRefreshMessage, setSubscriptionRefreshMessage] = useState<
+    string | null
+  >(null);
+  const [userPurchases, setUserPurchases] = useState<
+    Array<{
+      id: string;
+      amount: number;
+      status: string;
+      createdAt: string;
+      description: string;
+    }>
+  >([]);
   const [loadingPurchases, setLoadingPurchases] = useState(false);
-  const [userInvoices, setUserInvoices] = useState<Array<{
-    id: string;
-    number: string | null;
-    amount: number;
-    status: string;
-    createdAt: string;
-    paidAt: string | null;
-  }>>([]);
+  const [userInvoices, setUserInvoices] = useState<
+    Array<{
+      id: string;
+      number: string | null;
+      amount: number;
+      status: string;
+      createdAt: string;
+      paidAt: string | null;
+    }>
+  >([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
-  const [supportTickets, setSupportTickets] = useState<Array<{
-    id: string;
-    ticket_number: string;
-    subject: string;
-    status: string;
-    created_at: string;
-  }>>([]);
+  const [supportTickets, setSupportTickets] = useState<
+    Array<{
+      id: string;
+      ticket_number: string;
+      subject: string;
+      status: string;
+      created_at: string;
+    }>
+  >([]);
   const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
-  const [hasPaymentMethod, setHasPaymentMethod] = useState<boolean | null>(null);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState<boolean | null>(
+    null
+  );
 
   const fetchUserSubscriptions = useCallback(async (customerId: string) => {
     try {
@@ -575,23 +612,23 @@ export default function UserProfileModal({
 
   const handleRefreshSubscription = useCallback(async () => {
     if (!user?.id) return;
-    
+
     try {
       setRefreshingSubscription(true);
       setSubscriptionRefreshMessage(null);
-      
-      const result = await checkUserSubscription(user.id);
-      
+
+      const result = await updateUserProStatus(user.id);
+
       if (result) {
         setSubscriptionRefreshMessage(
           `Subscription updated: ${result.subscription} (${result.source})`
         );
-        
+
         // Call onRefreshUser if provided to refresh the user data in parent
         if (onRefreshUser) {
           await onRefreshUser();
         }
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setSubscriptionRefreshMessage(null);
@@ -616,14 +653,16 @@ export default function UserProfileModal({
       setUserInvoices([]);
       setSupportTickets([]);
       setHasPaymentMethod(null);
-      
+
       if (user.customerId) {
         fetchUserSubscriptions(user.customerId);
         fetchUserPurchases(user.customerId);
         fetchUserInvoices(user.customerId);
-        
+
         // Fetch payment method status
-        fetch(`/api/admin/customer-has-payment-method?customerId=${user.customerId}`)
+        fetch(
+          `/api/admin/customer-has-payment-method?customerId=${user.customerId}`
+        )
           .then((response) => response.json())
           .then((data) => {
             if (data.success) {
@@ -648,7 +687,15 @@ export default function UserProfileModal({
       setSupportTickets([]);
       setHasPaymentMethod(null);
     }
-  }, [isOpen, user?.id, user?.customerId, fetchUserSubscriptions, fetchUserPurchases, fetchUserInvoices, fetchUserSupportTickets]);
+  }, [
+    isOpen,
+    user?.id,
+    user?.customerId,
+    fetchUserSubscriptions,
+    fetchUserPurchases,
+    fetchUserInvoices,
+    fetchUserSupportTickets,
+  ]);
 
   if (!user) return null;
 
@@ -691,18 +738,31 @@ export default function UserProfileModal({
                 <InfoItem>
                   <InfoLabel>Subscription</InfoLabel>
                   <InfoValue>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexWrap: "wrap",
+                        width: "100%",
+                      }}
+                    >
                       <SubscriptionBadge
                         $color={getSubscriptionBadgeColor(
                           user.hasNfr ? "nfr" : user.subscription
                         )}
                         $variant={
-                          user.hasNfr || isSubscriptionPremium(user.subscription)
+                          user.hasNfr ||
+                          isSubscriptionPremium(user.subscription)
                             ? "premium"
                             : "default"
                         }
                       >
-                        {user.hasNfr ? <FaCrown /> : getSubscriptionIcon(user.subscription)}
+                        {user.hasNfr ? (
+                          <FaCrown />
+                        ) : (
+                          getSubscriptionIcon(user.subscription)
+                        )}
                         {user.hasNfr ? "NFR" : user.subscription}
                       </SubscriptionBadge>
                       <RefreshButton
@@ -714,11 +774,17 @@ export default function UserProfileModal({
                         {refreshingSubscription ? (
                           <LoadingSpinner />
                         ) : (
-                          <FaSyncAlt style={{ display: 'block' }} />
+                          <FaSyncAlt style={{ display: "block" }} />
                         )}
                       </RefreshButton>
                       {subscriptionRefreshMessage && (
-                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', marginLeft: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--success)",
+                            marginLeft: "8px",
+                          }}
+                        >
                           {subscriptionRefreshMessage}
                         </span>
                       )}
@@ -734,8 +800,12 @@ export default function UserProfileModal({
                       const now = new Date();
                       if (trialEnd <= now) return "N/A";
                       const diffTime = trialEnd.getTime() - now.getTime();
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      return diffDays > 0 ? `${diffDays} day${diffDays !== 1 ? 's' : ''}` : "N/A";
+                      const diffDays = Math.ceil(
+                        diffTime / (1000 * 60 * 60 * 24)
+                      );
+                      return diffDays > 0
+                        ? `${diffDays} day${diffDays !== 1 ? "s" : ""}`
+                        : "N/A";
                     })()}
                   </InfoValue>
                 </InfoItem>
@@ -743,7 +813,9 @@ export default function UserProfileModal({
                   <InfoLabel>Has Payment Method</InfoLabel>
                   <InfoValue>
                     {hasPaymentMethod === null ? (
-                      <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                      <LoadingSpinner
+                        style={{ display: "inline-block", marginRight: "8px" }}
+                      />
                     ) : hasPaymentMethod ? (
                       "Yes"
                     ) : (
@@ -755,7 +827,9 @@ export default function UserProfileModal({
                   <InfoLabel>Total Spent</InfoLabel>
                   <InfoValue>
                     {user.totalSpent === -1 ? (
-                      <LoadingSpinner style={{ display: "inline-block", marginRight: "8px" }} />
+                      <LoadingSpinner
+                        style={{ display: "inline-block", marginRight: "8px" }}
+                      />
                     ) : (
                       formatCurrencyFromDollars(user.totalSpent)
                     )}
@@ -768,9 +842,7 @@ export default function UserProfileModal({
                 <InfoItem>
                   <InfoLabel>Last Active</InfoLabel>
                   <InfoValue>
-                    {formatDateTime(
-                      user.lastActive || user.createdAt
-                    )}
+                    {formatDateTime(user.lastActive || user.createdAt)}
                   </InfoValue>
                 </InfoItem>
                 <InfoItem>
@@ -813,7 +885,9 @@ export default function UserProfileModal({
                           Current Period
                         </DataTableHeaderCell>
                         <DataTableHeaderCell>Auto Renew</DataTableHeaderCell>
-                        {onCancelSubscription || onReactivateSubscription || onChangePlan ? (
+                        {onCancelSubscription ||
+                        onReactivateSubscription ||
+                        onChangePlan ? (
                           <DataTableHeaderCell>Actions</DataTableHeaderCell>
                         ) : null}
                       </tr>
@@ -821,11 +895,9 @@ export default function UserProfileModal({
                     <DataTableBody>
                       {userSubscriptions.map((sub) => {
                         const isActive =
-                          sub.status === "active" ||
-                          sub.status === "trialing";
+                          sub.status === "active" || sub.status === "trialing";
                         const isCanceled =
-                          sub.status === "canceled" ||
-                          sub.cancel_at_period_end;
+                          sub.status === "canceled" || sub.cancel_at_period_end;
                         const price = sub.items?.[0]?.price;
                         const priceId = price?.id || "";
                         const interval = price?.recurring?.interval || "";
@@ -842,9 +914,7 @@ export default function UserProfileModal({
                         const customerId =
                           typeof sub.customer === "string"
                             ? sub.customer
-                            : sub.customer?.id ||
-                              user?.customerId ||
-                              "";
+                            : sub.customer?.id || user?.customerId || "";
 
                         return (
                           <DataTableRow key={sub.id}>
@@ -875,12 +945,12 @@ export default function UserProfileModal({
                                     const newPlan = e.target.value as
                                       | "monthly"
                                       | "annual";
-                                    if (newPlan !== currentPlan && isActive && onChangePlan) {
-                                      onChangePlan(
-                                        sub.id,
-                                        newPlan,
-                                        customerId
-                                      );
+                                    if (
+                                      newPlan !== currentPlan &&
+                                      isActive &&
+                                      onChangePlan
+                                    ) {
+                                      onChangePlan(sub.id, newPlan, customerId);
                                     }
                                   }}
                                   disabled={
@@ -913,7 +983,8 @@ export default function UserProfileModal({
                             <DataTableCell>
                               {isCanceled ? "No" : "Yes"}
                             </DataTableCell>
-                            {(onCancelSubscription || onReactivateSubscription) && (
+                            {(onCancelSubscription ||
+                              onReactivateSubscription) && (
                               <DataTableCell>
                                 <div
                                   style={{
@@ -922,25 +993,29 @@ export default function UserProfileModal({
                                     flexWrap: "wrap",
                                   }}
                                 >
-                                  {isActive && !isCanceled && onCancelSubscription && (
-                                    <RefundButton
-                                      variant="danger"
-                                      disabled={subscriptionLoading === sub.id}
-                                      onClick={() =>
-                                        onCancelSubscription(
-                                          sub.id,
-                                          customerId
-                                        )
-                                      }
-                                    >
-                                      {subscriptionLoading === sub.id ? (
-                                        <LoadingSpinner />
-                                      ) : (
-                                        <FaBan />
-                                      )}
-                                      Cancel
-                                    </RefundButton>
-                                  )}
+                                  {isActive &&
+                                    !isCanceled &&
+                                    onCancelSubscription && (
+                                      <RefundButton
+                                        variant="danger"
+                                        disabled={
+                                          subscriptionLoading === sub.id
+                                        }
+                                        onClick={() =>
+                                          onCancelSubscription(
+                                            sub.id,
+                                            customerId
+                                          )
+                                        }
+                                      >
+                                        {subscriptionLoading === sub.id ? (
+                                          <LoadingSpinner />
+                                        ) : (
+                                          <FaBan />
+                                        )}
+                                        Cancel
+                                      </RefundButton>
+                                    )}
                                   {isCanceled && onReactivateSubscription && (
                                     <RefundButton
                                       variant="primary"
@@ -1092,13 +1167,17 @@ export default function UserProfileModal({
                           </StripeLink>
                         </DataTableCell>
                         <DataTableCell>{purchase.description}</DataTableCell>
-                        <DataTableCell>{formatCurrency(purchase.amount * 100)}</DataTableCell>
+                        <DataTableCell>
+                          {formatCurrency(purchase.amount * 100)}
+                        </DataTableCell>
                         <DataTableCell>
                           <StatusBadge $status={purchase.status}>
                             {purchase.status}
                           </StatusBadge>
                         </DataTableCell>
-                        <DataTableCell>{formatDate(purchase.createdAt)}</DataTableCell>
+                        <DataTableCell>
+                          {formatDate(purchase.createdAt)}
+                        </DataTableCell>
                         {onRefundPurchase && (
                           <DataTableCell>
                             {purchase.status === "succeeded" && (
@@ -1178,11 +1257,11 @@ export default function UserProfileModal({
                             {invoice.status}
                           </StatusBadge>
                         </DataTableCell>
-                        <DataTableCell>{formatDate(invoice.createdAt)}</DataTableCell>
                         <DataTableCell>
-                          {invoice.paidAt
-                            ? formatDate(invoice.paidAt)
-                            : "N/A"}
+                          {formatDate(invoice.createdAt)}
+                        </DataTableCell>
+                        <DataTableCell>
+                          {invoice.paidAt ? formatDate(invoice.paidAt) : "N/A"}
                         </DataTableCell>
                         {onRefundInvoice && (
                           <DataTableCell>
@@ -1224,4 +1303,3 @@ export default function UserProfileModal({
     </AnimatePresence>
   );
 }
-

@@ -1,13 +1,12 @@
 "use server";
 
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
-import { updateStripe } from "@/utils/supabase/actions";
-import { fetchProfile } from "@/utils/supabase/actions";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 /**
- * Server action to refresh user subscription status from Stripe by customer ID
+ * Server action to refresh user subscription status by customer ID
  * This is called from checkout success page even if user isn't logged in
- * Matches the user profile by customer_id and updates their pro status from Stripe
+ * Matches the user profile by customer_id and updates their pro status using the centralized function
  */
 export async function refreshSubscriptionByCustomerId(
   customerId: string
@@ -42,41 +41,21 @@ export async function refreshSubscriptionByCustomerId(
       };
     }
 
-    // Fetch full profile to update from Stripe
-    const { profile: fullProfile, error: profileError } = await fetchProfile(
-      profile.id
-    );
-
-    if (profileError || !fullProfile) {
-      return {
-        success: false,
-        error: "Failed to fetch user profile",
-      };
-    }
-
-    // Update subscription status from Stripe (same as AuthContext refreshUser)
+    // Update subscription status using centralized function
     console.log(
-      `[Checkout Refresh] Updating subscription from Stripe for user ${profile.id} (customer: ${customerId})`
+      `[Checkout Refresh] Updating pro status for user ${profile.id} (customer: ${customerId})`
     );
-    const result = await updateStripe(fullProfile);
-
-    if (!result.success || !result.profile) {
-      return {
-        success: false,
-        error:
-          result.error?.toString() || "Failed to update subscription status",
-      };
-    }
+    const result = await updateUserProStatus(profile.id);
 
     console.log(
-      `[Checkout Refresh] Subscription updated: ${result.profile.subscription}`
+      `[Checkout Refresh] Subscription updated: ${result.subscription} (${result.source})`
     );
 
     return {
       success: true,
       userId: profile.id,
-      subscription: result.profile.subscription,
-      expiration: result.profile.subscription_expiration || null,
+      subscription: result.subscription,
+      expiration: result.subscriptionExpiration?.toISOString() || null,
     };
   } catch (error) {
     console.error("[Checkout Refresh] Error:", error);

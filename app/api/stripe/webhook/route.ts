@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
-import { checkUserSubscription } from "@/utils/subscriptions/check-subscription";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -97,26 +97,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "success", event: event.type });
     }
 
-    // Get customer email from Stripe for invite/email purposes
-    let customerEmail: string | null = null;
-    try {
-      const customer = await stripe.customers.retrieve(customerId);
-      if (typeof customer === "object" && !customer.deleted) {
-        customerEmail = customer.email || null;
-      }
-    } catch (error) {
-      console.error("Error retrieving customer from Stripe:", error);
-    }
-
     // Find user by customer ID
     const userId = await findUserIdByCustomerId(customerId);
 
-    // If user exists, refresh subscription status
+    // If user exists, refresh subscription status using centralized function
     if (userId) {
       console.log(
         `Refreshing subscription for user ${userId} (customer: ${customerId})`
       );
-      const result = await checkUserSubscription(userId);
+      const result = await updateUserProStatus(userId);
       console.log(
         `Subscription updated: ${result.subscription} (${result.source})`
       );

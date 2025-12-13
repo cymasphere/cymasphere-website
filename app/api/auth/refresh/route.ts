@@ -3,7 +3,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { Profile } from "@/utils/supabase/types";
-import { updateStripe } from "@/utils/supabase/actions";
 
 interface ProfileWithEmail extends Profile {
   email: string;
@@ -121,9 +120,11 @@ export async function POST(
       if (profile) {
         // Check and update subscription status (NFR, Stripe, and iOS)
         try {
-          // Use comprehensive check that handles NFR, Stripe, and iOS
-          const { checkUserSubscription } = await import("@/utils/subscriptions/check-subscription");
-          const subscriptionCheck = await checkUserSubscription(user.id);
+          // Use centralized function that handles NFR, Stripe, and iOS
+          const { updateUserProStatus } = await import(
+            "@/utils/subscriptions/check-subscription"
+          );
+          const subscriptionCheck = await updateUserProStatus(user.id);
 
           console.log(`[Refresh] Subscription check for ${user.email}:`, {
             subscription: subscriptionCheck.subscription,
@@ -135,12 +136,15 @@ export async function POST(
           const finalProfileWithSubscription = {
             ...profile,
             subscription: subscriptionCheck.subscription,
-            subscription_expiration: subscriptionCheck.subscriptionExpiration?.toISOString() || null,
+            subscription_expiration:
+              subscriptionCheck.subscriptionExpiration?.toISOString() || null,
             subscription_source: subscriptionCheck.source,
             email: user.email,
           };
 
-          console.log(`[Refresh] Returning profile with subscription: ${finalProfileWithSubscription.subscription}`);
+          console.log(
+            `[Refresh] Returning profile with subscription: ${finalProfileWithSubscription.subscription}`
+          );
 
           return ok(
             finalProfileWithSubscription,

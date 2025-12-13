@@ -6,12 +6,76 @@ import { SubscriptionType } from "@/utils/supabase/types";
 import { checkUserManagementPro } from "@/utils/supabase/user-management";
 
 /**
- * Comprehensive subscription check that includes NFR, Stripe, and iOS subscriptions
- * Returns the highest priority subscription (lifetime > annual > monthly > none)
+ * ============================================================================
+ * CENTRALIZED PRO STATUS UPDATE FUNCTION
+ * ============================================================================
+ *
+ * This is the single source of truth for updating a user's pro purchase status.
+ * All subscription status updates throughout the application should call this function.
+ *
+ * ## How the Pro Status System Works
+ *
+ * The system checks three sources of subscription data in priority order:
+ *
+ * ### 1. NFR (Not For Resale) Licenses (Highest Priority)
+ * - Managed in the `user_management` table
+ * - Email-based pro status tracking
+ * - Grants lifetime access (permanent free license)
+ * - Used for influencers, team members, partners, and special cases
+ * - When detected, immediately sets subscription to "lifetime" and returns
+ *
+ * ### 2. iOS In-App Purchases
+ * - Stored in the `ios_subscriptions` table
+ * - Validated via Apple App Store receipts
+ * - Supports monthly, annual, and lifetime subscriptions
+ * - Only active, valid subscriptions with future expiration dates are considered
+ *
+ * ### 3. Stripe Subscriptions
+ * - Synced from Stripe via webhooks to `stripe_tables.stripe_subscriptions`
+ * - Supports monthly, annual, and lifetime subscriptions
+ * - Includes trial period tracking
+ * - Uses customer_id from the user's profile to query Stripe data
+ *
+ * ## Priority Resolution Logic
+ *
+ * When multiple subscription sources exist, the system uses this priority:
+ * 1. Subscription type priority: lifetime > annual > monthly > none
+ * 2. If same type from multiple sources, prefer the one with later expiration
+ * 3. Safety net: If profile already has "lifetime", preserve it even if queries return "none"
+ *    (prevents downgrading users during sync delays or metadata issues)
+ *
+ * ## Update Process
+ *
+ * 1. Fetches user profile using service role client (ensures full access)
+ * 2. Checks NFR status first (if found, updates and returns immediately)
+ * 3. Checks iOS subscriptions
+ * 4. Checks Stripe subscriptions
+ * 5. Resolves conflicts using priority logic
+ * 6. Updates the profile table with final subscription status
+ * 7. Returns the determined subscription type, expiration, and source
+ *
+ * ## When This Function is Called
+ *
+ * - Stripe webhook events (subscription created/updated/cancelled)
+ * - User login (to refresh status on authentication)
+ * - Purchase success page (to update status after checkout)
+ * - Dashboard routes (periodic refresh)
+ * - Admin actions (manual refresh from admin panel)
+ * - NFR status changes (when admin grants/revokes NFR access)
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * const result = await updateUserProStatus(userId);
+ * // result.subscription: "lifetime" | "annual" | "monthly" | "none"
+ * // result.subscriptionExpiration: Date | null
+ * // result.source: "nfr" | "stripe" | "ios" | "none"
+ * ```
+ *
+ * @param userId - The user ID to update pro status for
+ * @returns Object containing the determined subscription type, expiration date, and source
  */
-export async function checkUserSubscription(
-  userId: string
-): Promise<{
+export async function updateUserProStatus(userId: string): Promise<{
   subscription: SubscriptionType;
   subscriptionExpiration: Date | null;
   source: "stripe" | "ios" | "nfr" | "none";
@@ -21,7 +85,9 @@ export async function checkUserSubscription(
   // Get user's profile and email
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("customer_id, email, subscription, subscription_expiration, subscription_source, first_name, last_name")
+    .select(
+      "customer_id, email, subscription, subscription_expiration, subscription_source, first_name, last_name"
+    )
     .eq("id", userId)
     .single();
 
@@ -39,14 +105,19 @@ export async function checkUserSubscription(
   // NFR grants lifetime access (free permanent license)
   if (profile.email) {
     const nfrCheck = await checkUserManagementPro(profile.email);
-    console.log(`[checkUserSubscription] NFR check for ${profile.email}:`, { hasPro: nfrCheck.hasPro, error: nfrCheck.error });
-    
+    console.log(`[updateUserProStatus] NFR check for ${profile.email}:`, {
+      hasPro: nfrCheck.hasPro,
+      error: nfrCheck.error,
+    });
+
     if (!nfrCheck.error && nfrCheck.hasPro) {
-      console.log(`[checkUserSubscription] NFR access granted for ${profile.email}`);
-      
+      console.log(
+        `[updateUserProStatus] NFR access granted for ${profile.email}`
+      );
+
       // Check if this is a new NFR grant (subscription_source wasn't already "nfr")
       const isNewNfrGrant = profile.subscription_source !== "nfr";
-      
+
       // NFR grants lifetime access - update subscription field so app recognizes it
       await supabase
         .from("profiles")
@@ -56,50 +127,60 @@ export async function checkUserSubscription(
           subscription_source: "nfr",
         })
         .eq("id", userId);
-      
+
       // Send welcome email for new NFR grants
       if (isNewNfrGrant) {
         try {
-          const { generateWelcomeEmailHtml, generateWelcomeEmailText } = await import("@/utils/email-campaigns/welcome-email");
+          const { generateWelcomeEmailHtml, generateWelcomeEmailText } =
+            await import("@/utils/email-campaigns/welcome-email");
           const { sendEmail } = await import("@/utils/email");
-          
-          const customerName = profile.first_name && profile.last_name 
-            ? `${profile.first_name} ${profile.last_name}` 
-            : undefined;
-          
+
+          const customerName =
+            profile.first_name && profile.last_name
+              ? `${profile.first_name} ${profile.last_name}`
+              : undefined;
+
           const welcomeEmailHtml = generateWelcomeEmailHtml({
             customerName,
             customerEmail: profile.email,
-            purchaseType: 'elite',
-            planName: 'elite',
+            purchaseType: "elite",
+            planName: "elite",
           });
-          
+
           const welcomeEmailText = generateWelcomeEmailText({
             customerName,
             customerEmail: profile.email,
-            purchaseType: 'elite',
-            planName: 'elite',
+            purchaseType: "elite",
+            planName: "elite",
           });
 
           const emailResult = await sendEmail({
             to: profile.email,
-            subject: 'Welcome to Cymasphere - Elite Access',
+            subject: "Welcome to Cymasphere - Elite Access",
             html: welcomeEmailHtml,
             text: welcomeEmailText,
-            from: 'Cymasphere <support@cymasphere.com>',
+            from: "Cymasphere <support@cymasphere.com>",
           });
-          
+
           if (emailResult.success) {
-            console.log(`✅ Sent welcome email for elite access to ${profile.email} (Message ID: ${emailResult.messageId})`);
+            console.log(
+              `✅ Sent welcome email for elite access to ${profile.email} (Message ID: ${emailResult.messageId})`
+            );
           } else {
-            console.error(`❌ Failed to send welcome email for elite access:`, emailResult.error);
+            console.error(
+              `❌ Failed to send welcome email for elite access:`,
+              emailResult.error
+            );
           }
         } catch (emailError) {
-          console.error('❌ Failed to send welcome email for elite access:', emailError);
+          console.error(
+            "❌ Failed to send welcome email for elite access:",
+            emailError
+          );
           // Don't throw - email failure shouldn't break subscription check
         }
       }
-      
+
       return {
         subscription: "lifetime",
         subscriptionExpiration: null,
@@ -135,13 +216,15 @@ export async function checkUserSubscription(
   let stripeTrialExpiration: Date | null = null;
 
   if (profile.customer_id) {
-    const stripeResult = await customerPurchasedProFromSupabase(profile.customer_id);
-    console.log(`[checkUserSubscription] Stripe result for ${profile.email}:`, {
+    const stripeResult = await customerPurchasedProFromSupabase(
+      profile.customer_id
+    );
+    console.log(`[updateUserProStatus] Stripe result for ${profile.email}:`, {
       success: stripeResult.success,
       subscription: stripeResult.subscription,
       error: stripeResult.error ? String(stripeResult.error) : null,
     });
-    
+
     if (stripeResult.success && stripeResult.subscription !== "none") {
       stripeSubscription = stripeResult.subscription;
       stripeExpiration = stripeResult.subscription_expiration || null;
@@ -152,13 +235,17 @@ export async function checkUserSubscription(
       // hasn't synced yet or metadata is missing. Only downgrade if Stripe explicitly says they don't have it.
       // If stripeResult.success is false, it means there was an error querying, so we should preserve lifetime.
       // If stripeResult.subscription is "none" but profile has "lifetime", preserve it as a safety measure.
-      console.log(`[checkUserSubscription] ⚠️ PRESERVING lifetime subscription for user ${userId} (${profile.email}) - Stripe query returned ${stripeResult.subscription} but profile has lifetime`);
+      console.log(
+        `[updateUserProStatus] ⚠️ PRESERVING lifetime subscription for user ${userId} (${profile.email}) - Stripe query returned ${stripeResult.subscription} but profile has lifetime`
+      );
       stripeSubscription = "lifetime";
       stripeExpiration = null;
     }
   } else if (profile.subscription === "lifetime") {
     // If user has lifetime but no customer_id, preserve it (might be NFR or manual grant)
-    console.log(`[checkUserSubscription] Preserving lifetime for user ${userId} (${profile.email}) - no customer_id but profile has lifetime`);
+    console.log(
+      `[updateUserProStatus] Preserving lifetime for user ${userId} (${profile.email}) - no customer_id but profile has lifetime`
+    );
     stripeSubscription = "lifetime";
     stripeExpiration = null;
   }
@@ -211,7 +298,9 @@ export async function checkUserSubscription(
     // CRITICAL: Before setting to "none", check if profile already has "lifetime"
     // This is a final safety net to prevent downgrading lifetime users
     if (profile.subscription === "lifetime") {
-      console.log(`[checkUserSubscription] Final safety check: Preserving lifetime for user ${userId} - profile has lifetime but all queries returned none`);
+      console.log(
+        `[updateUserProStatus] Final safety check: Preserving lifetime for user ${userId} - profile has lifetime but all queries returned none`
+      );
       finalSubscription = "lifetime";
       finalExpiration = null;
       source = "stripe"; // Assume Stripe source if we're preserving it
@@ -246,5 +335,3 @@ export async function checkUserSubscription(
     source,
   };
 }
-
-
