@@ -15,6 +15,7 @@ The Cymasphere authorization system manages user access through **three distinct
 **Table**: `user_management`
 
 **Columns**:
+
 - `user_email` (TEXT, PRIMARY KEY)
 - `pro` (BOOLEAN) - If true, grants lifetime access
 - `notes` (TEXT) - Admin notes (e.g., "Influencer NFR - 11/13/25")
@@ -26,6 +27,7 @@ The Cymasphere authorization system manages user access through **three distinct
 **Access**: Admin-only via `/admin/nfr` page
 
 **Example**:
+
 ```sql
 INSERT INTO user_management (user_email, pro, notes)
 VALUES ('influencer@example.com', true, 'Influencer NFR - 11/28/25');
@@ -36,8 +38,9 @@ VALUES ('influencer@example.com', true, 'Influencer NFR - 11/28/25');
 **Table**: `stripe_tables.stripe_subscriptions` (via Stripe wrapper)
 
 **Subscription Types**:
+
 - `monthly` - $6/month subscription
-- `annual` - $59/year subscription  
+- `annual` - $59/year subscription
 - `lifetime` - $149 one-time payment
 
 **Purpose**: Web-based subscription purchases
@@ -51,6 +54,7 @@ VALUES ('influencer@example.com', true, 'Influencer NFR - 11/28/25');
 **Table**: `ios_subscriptions`
 
 **Columns**:
+
 - `user_id` - Links to auth.users
 - `transaction_id` - StoreKit transaction ID (unique)
 - `product_id` - App Store product ID
@@ -102,45 +106,50 @@ if (iosPriority > stripePriority) {
 
 ## Unified Authorization Check
 
-**Function**: `checkUnifiedAuthorization(userId, email)`
+**Function**: `updateUserProStatus(userId)`
 
-**Location**: `/utils/subscriptions/unified-auth-check.ts`
+**Location**: `/utils/subscriptions/check-subscription.ts`
 
 **Returns**:
+
 ```typescript
 {
   subscription: SubscriptionType,
   subscriptionExpiration: Date | null,
-  source: "nfr" | "stripe" | "ios" | "none",
-  isAuthorized: boolean
+  source: "nfr" | "stripe" | "ios" | "none"
 }
 ```
 
 **Process**:
+
 1. Check NFR status (user_management table)
-2. Check iOS subscriptions (ios_subscriptions table)
-3. Check Stripe subscriptions (stripe_tables.stripe_subscriptions)
-4. Determine highest priority subscription
-5. Update user's profile.subscription field
-6. Return final authorization result
+2. Clean up expired test receipts (iOS subscriptions with validation_status="test")
+3. Check iOS subscriptions (ios_subscriptions table, includes test receipts)
+4. Check Stripe subscriptions (stripe_tables.stripe_subscriptions)
+5. Determine highest priority subscription
+6. Update user's profile.subscription field
+7. Return final authorization result
 
 ## Integration Points
 
 ### Website
 
 #### Login Route (`/api/auth/login`)
+
 ```typescript
-const authResult = await checkUnifiedAuthorization(user.id, user.email);
-// Returns user with subscription from highest priority source
+const result = await updateUserProStatus(user.id);
+// Returns subscription from highest priority source
 ```
 
 #### Refresh Route (`/api/auth/refresh`)
+
 ```typescript
-const authResult = await checkUnifiedAuthorization(user.id, user.email);
+const result = await updateUserProStatus(user.id);
 // Re-validates authorization on token refresh
 ```
 
 #### iOS Receipt Validation (`/api/ios/validate-receipt`)
+
 ```typescript
 // Validates iOS receipt with Apple
 // Stores in ios_subscriptions table
@@ -156,6 +165,7 @@ result.subscription = jsonResponse["user"]["subscription"];
 ```
 
 The app then checks:
+
 ```cpp
 bool AuthData::hasValidSubscription() const {
   return !subscription.equalsIgnoreCase("none") && !subscription.isEmpty();
@@ -166,37 +176,42 @@ bool AuthData::hasValidSubscription() const {
 
 All three authorization sources are tracked in Supabase:
 
-| Source | Table | Synced Via | Updated When |
-|--------|-------|------------|--------------|
-| NFR | `user_management` | Manual admin entry | Admin updates via `/admin/nfr` |
-| Stripe | `stripe_tables.stripe_subscriptions` | Stripe webhooks | Subscription events from Stripe |
-| iOS | `ios_subscriptions` | Receipt validation API | Purchase/restore in iOS app |
+| Source | Table                                | Synced Via             | Updated When                    |
+| ------ | ------------------------------------ | ---------------------- | ------------------------------- |
+| NFR    | `user_management`                    | Manual admin entry     | Admin updates via `/admin/nfr`  |
+| Stripe | `stripe_tables.stripe_subscriptions` | Stripe webhooks        | Subscription events from Stripe |
+| iOS    | `ios_subscriptions`                  | Receipt validation API | Purchase/restore in iOS app     |
 
 The `profiles` table always reflects the current authorization status:
+
 - `subscription` - Current subscription type (from highest priority source)
 - `subscription_expiration` - Expiration date (null for lifetime/NFR)
 
 ## Example Scenarios
 
 ### Scenario 1: NFR User with Stripe Subscription
+
 - User: influencer@example.com
 - NFR: `pro=true` in user_management
 - Stripe: Active monthly subscription
 - **Result**: `subscription="lifetime"`, `source="nfr"` (NFR takes priority)
 
 ### Scenario 2: User with Both iOS and Stripe
+
 - User: user@example.com
 - iOS: Annual subscription (expires 2026-12-31)
 - Stripe: Monthly subscription (expires 2025-12-31)
 - **Result**: `subscription="annual"`, `source="ios"` (higher priority and later expiration)
 
 ### Scenario 3: User with Expired Stripe, Active iOS
+
 - User: user@example.com
 - Stripe: Cancelled subscription
 - iOS: Active monthly subscription
 - **Result**: `subscription="monthly"`, `source="ios"`
 
 ### Scenario 4: NFR User (No Other Subscriptions)
+
 - User: team@cymasphere.com
 - NFR: `pro=true` in user_management
 - Stripe: None
@@ -206,31 +221,41 @@ The `profiles` table always reflects the current authorization status:
 ## API Endpoints
 
 ### Login
+
 **POST** `/api/auth/login`
+
 - Checks all three authorization sources
 - Returns unified subscription status
 
 ### Refresh Token
+
 **POST** `/api/auth/refresh`
+
 - Re-validates authorization on token refresh
 - Returns updated subscription status
 
 ### iOS Receipt Validation
+
 **POST** `/api/ios/validate-receipt`
+
 - Validates iOS receipt with Apple App Store
 - Stores subscription in `ios_subscriptions` table
 - Triggers unified authorization check
 
 ### NFR Status
+
 **GET** `/api/user/nfr-status`
+
 - Returns user's NFR status from user_management table
 
 ## Admin Tools
 
 ### NFR Management
+
 **Page**: `/admin/nfr`
 
 **Features**:
+
 - View all NFR licenses
 - Add new NFR user (with optional Supabase invite)
 - Toggle pro status on/off
@@ -238,9 +263,11 @@ The `profiles` table always reflects the current authorization status:
 - Delete NFR records
 
 ### User Management
+
 **Page**: `/admin/users`
 
 **Features**:
+
 - View all users
 - See subscription status (includes source: NFR, Stripe, iOS)
 - Force refresh subscription status
@@ -249,6 +276,7 @@ The `profiles` table always reflects the current authorization status:
 ## Flow Diagrams
 
 ### User Login Flow
+
 ```
 User logs in
     ↓
@@ -266,6 +294,7 @@ Return to client with subscription status
 ```
 
 ### iOS Purchase Flow
+
 ```
 User makes iOS purchase
     ↓
@@ -287,6 +316,7 @@ Return subscription status
 ```
 
 ### Stripe Purchase Flow
+
 ```
 User purchases on website
     ↓
@@ -304,6 +334,7 @@ Next login runs unified check
 ## Database Queries
 
 ### Check All Subscriptions for a User
+
 ```sql
 -- NFR
 SELECT 'nfr' as source, user_email, pro, notes
@@ -311,7 +342,7 @@ FROM user_management
 WHERE user_email = 'user@example.com';
 
 -- Stripe
-SELECT 'stripe' as source, 
+SELECT 'stripe' as source,
        attrs->>'status' as status,
        (attrs->'current_period_end')::bigint as expires_at
 FROM stripe_tables.stripe_subscriptions
@@ -329,21 +360,25 @@ WHERE user_id = 'uuid'
 ```
 
 ### Get Current Authorization
-```typescript
-import { checkUnifiedAuthorization } from "@/utils/subscriptions/unified-auth-check";
 
-const authResult = await checkUnifiedAuthorization(userId, email);
-// Returns: { subscription, subscriptionExpiration, source, isAuthorized }
+```typescript
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
+
+const result = await updateUserProStatus(userId);
+// Returns: { subscription, subscriptionExpiration, source }
+// Note: isAuthorized can be determined by checking if subscription !== "none"
 ```
 
 ## Environment Variables
 
 Required for iOS subscriptions:
+
 ```bash
 APPLE_SHARED_SECRET=your_shared_secret_from_app_store_connect
 ```
 
 Required for Stripe:
+
 ```bash
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -359,9 +394,10 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 ## Monitoring
 
 Track authorization sources:
+
 ```sql
 -- Get distribution of authorization sources
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE subscription = 'lifetime') as lifetime_total,
   COUNT(*) FILTER (WHERE subscription = 'annual') as annual_total,
   COUNT(*) FILTER (WHERE subscription = 'monthly') as monthly_total,
@@ -389,17 +425,20 @@ WHERE (attrs->>'status') IN ('active', 'trialing');
 ## Troubleshooting
 
 ### User Shows "none" but has NFR
+
 - Check `user_management` table for email match (case-sensitive)
 - Verify NFR endpoint is being called in login/refresh
 - Check logs for unified auth check results
 
 ### iOS Subscription Not Working
+
 - Check `ios_subscriptions` table for transaction
 - Verify `validation_status` is "valid"
 - Confirm `is_active` is true
 - Check `expires_date` is in the future
 
 ### Stripe Subscription Not Syncing
+
 - Check Stripe webhooks are configured
 - Verify `stripe_tables.stripe_subscriptions` has data
 - Check customer_id matches in profiles table
@@ -408,11 +447,13 @@ WHERE (attrs->>'status') IN ('active', 'trialing');
 
 ```typescript
 // Test ryan@cymasphere.com (has NFR)
-const authResult = await checkUnifiedAuthorization(
-  '900f11b8-c901-49fd-bfab-5fafe984ce72',
-  'ryan@cymasphere.com'
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
+
+const result = await updateUserProStatus(
+  "900f11b8-c901-49fd-bfab-5fafe984ce72"
 );
-// Expected: { subscription: "lifetime", source: "nfr", isAuthorized: true }
+// Expected: { subscription: "lifetime", source: "nfr", subscriptionExpiration: null }
+// Note: isAuthorized can be determined by checking if subscription !== "none"
 ```
 
 ## Summary
@@ -424,5 +465,3 @@ The unified authorization system ensures all users are properly authorized regar
 - **Prioritizes** subscriptions correctly (NFR > lifetime > annual > monthly)
 - **Updates** user profiles with current subscription status
 - **Works** seamlessly across web and iOS app
-
-

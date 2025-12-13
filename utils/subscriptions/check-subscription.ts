@@ -5,6 +5,16 @@ import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe
 import { SubscriptionType } from "@/utils/supabase/types";
 import { checkUserManagementPro } from "@/utils/supabase/user-management";
 
+// Export types for backward compatibility
+export type AuthorizationSource = "nfr" | "stripe" | "ios" | "none";
+
+export interface AuthorizationResult {
+  subscription: SubscriptionType;
+  subscriptionExpiration: Date | null;
+  source: AuthorizationSource;
+  isAuthorized: boolean;
+}
+
 /**
  * ============================================================================
  * CENTRALIZED PRO STATUS UPDATE FUNCTION
@@ -190,13 +200,35 @@ export async function updateUserProStatus(userId: string): Promise<{
     // If NFR check returns false, continue to check iOS/Stripe below
   }
 
-  // Check iOS subscriptions first
+  // Clean up expired test receipts
+  // Test receipts are only valid for 6 hours from validation, after that they should be deleted
+  const now = new Date();
+
+  const { error: cleanupError } = await supabase
+    .from("ios_subscriptions")
+    .delete()
+    .eq("user_id", userId)
+    .eq("validation_status", "test")
+    .lt("expires_date", now.toISOString());
+
+  if (cleanupError) {
+    console.log(
+      `[updateUserProStatus] Error cleaning up expired test receipts:`,
+      cleanupError
+    );
+  } else {
+    console.log(
+      `[updateUserProStatus] Cleaned up expired test receipts for user ${userId}`
+    );
+  }
+
+  // Check iOS subscriptions (include both valid and test receipts that aren't expired)
   const { data: iosSubscriptions, error: iosError } = await supabase
     .from("ios_subscriptions")
-    .select("subscription_type, expires_date")
+    .select("subscription_type, expires_date, validation_status")
     .eq("user_id", userId)
     .eq("is_active", true)
-    .eq("validation_status", "valid")
+    .in("validation_status", ["valid", "test"])
     .gt("expires_date", new Date().toISOString())
     .order("expires_date", { ascending: false });
 
@@ -333,5 +365,98 @@ export async function updateUserProStatus(userId: string): Promise<{
     subscription: finalSubscription,
     subscriptionExpiration: finalExpiration,
     source,
+  };
+}
+
+/**
+ * ============================================================================
+ * DEBUGGING/UTILITY FUNCTION
+ * ============================================================================
+ *
+ * Get all active subscriptions for a user (for debugging/display purposes).
+ * This function provides detailed breakdown of all subscription sources.
+ *
+ * **Note**: For actual authorization checks, use `updateUserProStatus()` instead.
+ * This function is primarily for debugging and displaying subscription details.
+ *
+ * @param userId - User ID to get subscriptions for
+ * @param email - User's email address (for NFR check)
+ * @returns Detailed breakdown of all subscription sources and final authorization
+ */
+export async function getAllUserSubscriptions(
+  userId: string,
+  email: string
+): Promise<{
+  nfr: { hasPro: boolean; notes: string | null } | null;
+  stripe: { subscription: SubscriptionType; expiresDate: Date | null } | null;
+  ios: { subscription: SubscriptionType; expiresDate: Date | null } | null;
+  final: AuthorizationResult;
+}> {
+  const supabase = await createSupabaseServiceRole();
+
+  // Check NFR
+  const nfrCheck = await checkUserManagementPro(email);
+  const nfr =
+    !nfrCheck.error && nfrCheck.hasPro
+      ? { hasPro: true, notes: nfrCheck.notes }
+      : null;
+
+  // Check Stripe
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("customer_id")
+    .eq("id", userId)
+    .single();
+
+  let stripe: {
+    subscription: SubscriptionType;
+    expiresDate: Date | null;
+  } | null = null;
+  if (profile?.customer_id) {
+    const stripeResult = await customerPurchasedProFromSupabase(
+      profile.customer_id
+    );
+    if (stripeResult.success && stripeResult.subscription !== "none") {
+      stripe = {
+        subscription: stripeResult.subscription,
+        expiresDate: stripeResult.subscription_expiration || null,
+      };
+    }
+  }
+
+  // Check iOS (include both valid and test receipts)
+  const { data: iosSubscriptions } = await supabase
+    .from("ios_subscriptions")
+    .select("subscription_type, expires_date")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .in("validation_status", ["valid", "test"])
+    .gt("expires_date", new Date().toISOString())
+    .order("expires_date", { ascending: false })
+    .limit(1);
+
+  let ios: { subscription: SubscriptionType; expiresDate: Date | null } | null =
+    null;
+  if (iosSubscriptions && iosSubscriptions.length > 0) {
+    ios = {
+      subscription: iosSubscriptions[0].subscription_type as SubscriptionType,
+      expiresDate: new Date(iosSubscriptions[0].expires_date),
+    };
+  }
+
+  // Get final authorization using centralized function
+  const result = await updateUserProStatus(userId);
+  const final: AuthorizationResult = {
+    subscription: result.subscription,
+    subscriptionExpiration: result.subscriptionExpiration,
+    source: result.source,
+    isAuthorized: result.subscription !== "none",
+  };
+
+  return {
+    nfr,
+    stripe,
+    ios,
+    final,
   };
 }

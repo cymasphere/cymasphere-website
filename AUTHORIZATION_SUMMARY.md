@@ -7,18 +7,21 @@ The Cymasphere authorization system now tracks and validates access through **th
 ### 1. NFR (Not For Resale) Licenses
 
 **Table**: `user_management`
+
 - Simple email-based pro status tracking
 - Admins can grant/revoke via `/admin/nfr` page
 - **Priority**: Highest - always grants lifetime access
 - **Use case**: Influencers, team members, partners, special cases
 
 **Example NFR users**:
+
 - ryan@cymasphere.com (notes: "elite")
 - lowheatbeats@gmail.com (notes: "Influencer NFR - 11/13/25")
 
 ### 2. Stripe Subscriptions
 
 **Table**: `stripe_tables.stripe_subscriptions`
+
 - Web-based purchases (monthly, annual, lifetime)
 - Synced automatically via Stripe webhooks
 - **Priority**: Second (competes with iOS based on type/expiration)
@@ -27,6 +30,7 @@ The Cymasphere authorization system now tracks and validates access through **th
 ### 3. iOS In-App Purchases
 
 **Table**: `ios_subscriptions`
+
 - Native iOS StoreKit purchases
 - Validated via Apple App Store receipts
 - **Priority**: Second (competes with Stripe based on type/expiration)
@@ -79,17 +83,19 @@ if (iOS.type > Stripe.type) {
 ### Website (Next.js)
 
 **New Files**:
-- `utils/subscriptions/unified-auth-check.ts` - Comprehensive auth check
-- `utils/subscriptions/check-subscription.ts` - Updated with NFR support
+
+- `utils/subscriptions/check-subscription.ts` - Centralized pro status update function (includes NFR, Stripe, and iOS support)
 - `app/api/ios/validate-receipt/route.ts` - iOS receipt validation endpoint
 - `supabase/migrations/20250130000000_add_ios_subscriptions.sql` - iOS table
 - `AUTHORIZATION_SYSTEM.md` - Complete documentation
 
 **Modified Files**:
+
 - `app/api/auth/login/route.ts` - Uses unified auth check
 - `app/api/auth/refresh/route.ts` - Uses unified auth check
 
 **Existing Files** (unchanged but important):
+
 - `utils/supabase/user-management.ts` - NFR checking functions
 - `utils/stripe/supabase-stripe.ts` - Stripe subscription checking
 - `app/(private)/(admin)/admin/nfr/page.tsx` - NFR management UI
@@ -97,10 +103,12 @@ if (iOS.type > Stripe.type) {
 ### iOS App (JUCE/C++)
 
 **New Files**:
+
 - `Source/SDK/iOSKeyboardHelper.h` - iOS keyboard configuration
 - `Source/SDK/iOSKeyboardHelper.mm` - Forces wide keyboard
 
 **Modified Files**:
+
 - `Source/SDK/StoreKitManager.cpp` - Validates receipts with server
 - `Source/SDK/StoreKitBridge.h` - Added receipt retrieval
 - `Source/SDK/StoreKitBridge.mm` - Implements receipt retrieval
@@ -112,6 +120,7 @@ if (iOS.type > Stripe.type) {
 - `Cymasphere.jucer` - Added iOSKeyboardHelper files
 
 **Existing Files** (unchanged):
+
 - `Source/Authentication/AuthenticationManager.cpp` - Receives subscription from API
 
 ## How Each Source Works
@@ -119,13 +128,15 @@ if (iOS.type > Stripe.type) {
 ### NFR Authorization
 
 **Grant NFR**:
+
 1. Admin visits `/admin/nfr`
 2. Adds user email with `pro=true`
 3. Optionally adds notes
 
 **Check NFR**:
+
 1. User logs in
-2. `checkUnifiedAuthorization()` queries `user_management`
+2. `updateUserProStatus()` queries `user_management`
 3. If `pro=true`, returns `subscription="lifetime"`, `source="nfr"`
 4. Profile updated with lifetime access
 
@@ -134,14 +145,16 @@ if (iOS.type > Stripe.type) {
 ### Stripe Authorization
 
 **Purchase**:
+
 1. User visits website pricing page
 2. Selects plan and checks out via Stripe
 3. Stripe webhook fires on subscription creation
 4. Subscription synced to `stripe_tables.stripe_subscriptions`
 
 **Check Stripe**:
+
 1. User logs in
-2. `checkUnifiedAuthorization()` queries Stripe tables
+2. `updateUserProStatus()` queries Stripe tables
 3. Returns subscription type and expiration
 4. Profile updated
 
@@ -150,6 +163,7 @@ if (iOS.type > Stripe.type) {
 ### iOS Authorization
 
 **Purchase**:
+
 1. User opens iOS app
 2. Clicks purchase in app
 3. StoreKit processes payment
@@ -159,8 +173,9 @@ if (iOS.type > Stripe.type) {
 7. Server stores in `ios_subscriptions`
 
 **Check iOS**:
+
 1. User logs in (web or app)
-2. `checkUnifiedAuthorization()` queries `ios_subscriptions`
+2. `updateUserProStatus()` queries `ios_subscriptions` (includes test receipts)
 3. Returns active, valid, non-expired subscriptions
 4. Profile updated
 
@@ -169,6 +184,7 @@ if (iOS.type > Stripe.type) {
 ## Database Schema
 
 ### user_management (NFR)
+
 ```sql
 CREATE TABLE user_management (
   user_email TEXT PRIMARY KEY,
@@ -178,6 +194,7 @@ CREATE TABLE user_management (
 ```
 
 ### ios_subscriptions (iOS)
+
 ```sql
 CREATE TABLE ios_subscriptions (
   id UUID PRIMARY KEY,
@@ -194,12 +211,14 @@ CREATE TABLE ios_subscriptions (
 ```
 
 ### stripe_tables.stripe_subscriptions (Stripe)
+
 ```sql
 -- Managed by Stripe Wrapper extension
 -- Synced automatically via webhooks
 ```
 
 ### profiles (Consolidated Status)
+
 ```sql
 -- profiles table stores the FINAL subscription status
 subscription: subscription_type  -- Result from unified auth check
@@ -209,33 +228,39 @@ subscription_expiration: TIMESTAMPTZ  -- Null for NFR/lifetime
 ## API Endpoints
 
 ### `/api/auth/login` (POST)
+
 - Authenticates user
 - Runs unified authorization check (NFR → iOS → Stripe)
 - Returns subscription status
 
 ### `/api/auth/refresh` (POST)
+
 - Refreshes access token
 - Re-validates authorization from all sources
 - Returns updated subscription status
 
 ### `/api/ios/validate-receipt` (POST)
+
 - Validates iOS receipt with Apple
 - Stores in `ios_subscriptions` table
 - Returns subscription details
 
 ### `/api/user/nfr-status` (GET)
+
 - Returns user's NFR status
 - Used for displaying NFR badge/info
 
 ## Current Status
 
 ### Database
+
 - ✅ `user_management` table exists (NFR)
 - ✅ `ios_subscriptions` table created
 - ✅ `stripe_tables.stripe_subscriptions` exists (via wrapper)
 - ✅ All three sources tracked in Supabase
 
 ### Code
+
 - ✅ Unified authorization check function
 - ✅ Login route uses unified check
 - ✅ Refresh route uses unified check
@@ -244,6 +269,7 @@ subscription_expiration: TIMESTAMPTZ  -- Null for NFR/lifetime
 - ✅ NFR admin interface
 
 ### Tested
+
 - ✅ ryan@cymasphere.com has NFR, profile shows lifetime ✓
 - ✅ ryaneskiljohnson@gmail.com has Stripe monthly ✓
 - ⏳ iOS subscriptions (pending iOS purchases)
@@ -251,14 +277,15 @@ subscription_expiration: TIMESTAMPTZ  -- Null for NFR/lifetime
 ## Example Queries
 
 ### Check User's Authorization Sources
+
 ```sql
-SELECT 
+SELECT
   p.email,
   p.subscription as final_subscription,
   um.pro as has_nfr,
   um.notes as nfr_notes,
-  (SELECT COUNT(*) FROM ios_subscriptions 
-   WHERE user_id = p.id AND is_active = true 
+  (SELECT COUNT(*) FROM ios_subscriptions
+   WHERE user_id = p.id AND is_active = true
    AND expires_date > NOW()) as active_ios,
   CASE WHEN p.customer_id IS NOT NULL THEN true ELSE false END as has_stripe
 FROM profiles p
@@ -267,6 +294,7 @@ WHERE p.email = 'user@example.com';
 ```
 
 ### Get All Active Subscriptions Across All Sources
+
 ```sql
 SELECT 'NFR' as source, user_email, 'lifetime' as type
 FROM user_management WHERE pro = true
@@ -324,5 +352,3 @@ The app doesn't need to know the source (NFR, Stripe, or iOS) - it only needs to
 - Profile table always reflects current authorization status
 - iOS app receives subscription type in login/refresh responses
 - System is backwards compatible with existing users
-
-
