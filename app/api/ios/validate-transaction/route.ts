@@ -2,6 +2,7 @@
 
 // App Store Server API transaction validation endpoint
 // Updated: 2025-01-14 - Added App Store Server API credentials
+// Updated: 2025-12-14 - Fixed: Using In-App Purchase key (DL4CMD84C4) instead of App Store Connect API key
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
