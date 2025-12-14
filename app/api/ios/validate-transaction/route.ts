@@ -569,6 +569,18 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         console.log(
           `[validate-transaction] Creating App Store Server API client for ${name}...`
         );
+        console.log(
+          `[validate-transaction] Client parameters:`,
+          {
+            keyIdLength: keyId?.length,
+            issuerIdLength: issuerId?.length,
+            bundleId: bundleId,
+            environment: name,
+            privateKeyLength: encodedKey.length,
+            privateKeyStartsWith: encodedKey.substring(0, 30),
+            privateKeyEndsWith: encodedKey.substring(encodedKey.length - 30),
+          }
+        );
         const client = new AppStoreServerAPIClient(
           encodedKey,
           keyId,
