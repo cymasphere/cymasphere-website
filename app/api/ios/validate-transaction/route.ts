@@ -554,11 +554,24 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
       };
     }
 
-    // Try production first, then sandbox
-    const environments = [
-      { env: Environment.PRODUCTION, name: "production" },
-      { env: Environment.SANDBOX, name: "sandbox" },
-    ];
+    // Detect if transaction is from sandbox (sandbox transaction IDs typically start with 200000)
+    // Try sandbox first for sandbox transactions to avoid 401 in production
+    const isLikelySandbox = transactionId.startsWith('200000');
+    const environments = isLikelySandbox
+      ? [
+          { env: Environment.SANDBOX, name: "sandbox" },
+          { env: Environment.PRODUCTION, name: "production" },
+        ]
+      : [
+          { env: Environment.PRODUCTION, name: "production" },
+          { env: Environment.SANDBOX, name: "sandbox" },
+        ];
+    
+    if (isLikelySandbox) {
+      console.log(
+        `[validate-transaction] Transaction ID starts with 200000 - likely sandbox, trying sandbox first`
+      );
+    }
 
     for (const { env, name } of environments) {
       try {
