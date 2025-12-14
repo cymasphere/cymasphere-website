@@ -496,13 +496,33 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
 
     // Prepare private key (ensure it has proper PEM headers if needed)
     let encodedKey = privateKey;
-    if (!encodedKey.includes("-----BEGIN")) {
+    const hasHeaders = encodedKey.includes("-----BEGIN");
+    console.log(
+      `[validate-transaction] Private key format check: hasHeaders=${hasHeaders}, length=${encodedKey.length}`
+    );
+    
+    if (!hasHeaders) {
       // If the key doesn't have headers, add them
+      console.log(
+        `[validate-transaction] Adding PEM headers to private key...`
+      );
       encodedKey = `-----BEGIN PRIVATE KEY-----\n${encodedKey.replace(
         /\s/g,
         ""
       )}\n-----END PRIVATE KEY-----`;
     }
+    
+    // Log credential info (without exposing sensitive data)
+    console.log(
+      `[validate-transaction] Credentials check:`,
+      {
+        keyId: keyId ? `${keyId.substring(0, 4)}...` : "missing",
+        issuerId: issuerId ? `${issuerId.substring(0, 8)}...` : "missing",
+        privateKeyLength: encodedKey.length,
+        privateKeyHasHeaders: encodedKey.includes("-----BEGIN"),
+        bundleId: bundleId,
+      }
+    );
 
     // Try production first, then sandbox
     const environments = [
@@ -540,17 +560,35 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
           console.log(
             `[validate-transaction] getTransactionInfo succeeded, got JWS response`
           );
-        } catch (apiError) {
+        } catch (apiError: any) {
           console.error(
             `[validate-transaction] getTransactionInfo failed:`,
             apiError
           );
+          
+          // Check for HTTP status code in error object
+          const httpStatus = apiError?.httpStatusCode || apiError?.statusCode;
+          const apiErrorMessage = apiError?.apiError || apiError?.errorMessage || apiError?.message;
+          
           console.error(
             `[validate-transaction] API error details:`,
-            apiError instanceof Error ? apiError.message : String(apiError),
-            "Stack:",
-            apiError instanceof Error ? apiError.stack : "No stack"
+            {
+              httpStatusCode: httpStatus,
+              apiError: apiErrorMessage,
+              errorMessage: apiError?.errorMessage,
+              fullError: JSON.stringify(apiError, Object.getOwnPropertyNames(apiError))
+            }
           );
+          
+          // If it's a 401, provide more helpful error message
+          if (httpStatus === 401) {
+            const authError = new Error(
+              `Authentication failed (401). Please verify: 1. APPLE_APP_STORE_KEY_ID is correct, 2. APPLE_APP_STORE_ISSUER_ID is correct, 3. APPLE_APP_STORE_PRIVATE_KEY is in correct PEM format with headers, 4. The key has proper permissions in App Store Connect. Original error: ${apiErrorMessage || "No error message"}`
+            );
+            (authError as any).httpStatusCode = 401;
+            throw authError;
+          }
+          
           throw apiError;
         }
 
@@ -617,20 +655,24 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         }
 
         // If it's an authentication error, don't try other environments
+        const httpStatus = (error as any)?.httpStatusCode;
         if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("authentication") ||
-            error.message.includes("unauthorized") ||
-            error.message.includes("UNAUTHORIZED"))
+          httpStatus === 401 ||
+          (error instanceof Error &&
+            (error.message.includes("401") ||
+              error.message.includes("authentication") ||
+              error.message.includes("unauthorized") ||
+              error.message.includes("UNAUTHORIZED")))
         ) {
           console.error(
-            `[validate-transaction] Authentication error in ${name} environment`
+            `[validate-transaction] Authentication error (401) in ${name} environment`
           );
+          const authErrorMsg = error instanceof Error && error.message
+            ? error.message
+            : "Authentication failed (401). Please verify your App Store Server API credentials: APPLE_APP_STORE_KEY_ID, APPLE_APP_STORE_ISSUER_ID, and APPLE_APP_STORE_PRIVATE_KEY are correct and the private key is in proper PEM format.";
           return {
             valid: false,
-            error:
-              "Authentication failed. Please check your App Store Server API credentials.",
+            error: authErrorMsg,
           };
         }
 
