@@ -162,14 +162,20 @@ export async function POST(request: NextRequest) {
     // If validation failed, return error
     if (!validationResult.valid) {
       const errorDetails =
-        validationResult.error || "Unknown validation error";
+        validationResult.error ||
+        validationResult.errorMessage ||
+        "Unknown validation error occurred";
       console.error(
         "[validate-transaction] ERROR - Apple validation failed:",
         errorDetails
       );
       console.error(
-        "[validate-transaction] Validation result:",
+        "[validate-transaction] Full validation result:",
         JSON.stringify(validationResult, null, 2)
+      );
+      console.error(
+        "[validate-transaction] Transaction ID that failed:",
+        transactionId
       );
       return NextResponse.json(
         {
@@ -579,19 +585,35 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
           },
         };
       } catch (error) {
+        const errorDetails = {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : typeof error,
+          stack: error instanceof Error ? error.stack : undefined,
+          fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        };
+
         console.error(
           `[validate-transaction] Error with ${name} environment:`,
-          error
+          errorDetails
         );
 
         // If it's a 404, transaction might not exist in this environment, try next
         if (
           error instanceof Error &&
-          (error.message.includes("404") || error.message.includes("not found"))
+          (error.message.includes("404") ||
+            error.message.includes("not found") ||
+            error.message.includes("NOT_FOUND"))
         ) {
+          console.log(
+            `[validate-transaction] Transaction not found in ${name}, trying next environment...`
+          );
           if (name === "production") {
             continue; // Try sandbox
           }
+          return {
+            valid: false,
+            error: `Transaction ${transactionId} not found in ${name} environment`,
+          };
         }
 
         // If it's an authentication error, don't try other environments
@@ -599,8 +621,12 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
           error instanceof Error &&
           (error.message.includes("401") ||
             error.message.includes("authentication") ||
-            error.message.includes("unauthorized"))
+            error.message.includes("unauthorized") ||
+            error.message.includes("UNAUTHORIZED"))
         ) {
+          console.error(
+            `[validate-transaction] Authentication error in ${name} environment`
+          );
           return {
             valid: false,
             error:
@@ -610,15 +636,24 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
 
         // For other errors in production, try sandbox
         if (name === "production") {
+          console.log(
+            `[validate-transaction] Error in production, will try sandbox:`,
+            errorDetails.message
+          );
           continue;
         }
 
+        // Return detailed error for sandbox (last attempt)
+        const errorMessage =
+          errorDetails.message ||
+          `Failed to validate transaction with Apple (${name} environment)`;
+        console.error(
+          `[validate-transaction] Final error after trying all environments:`,
+          errorMessage
+        );
         return {
           valid: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to validate transaction with Apple",
+          error: errorMessage,
         };
       }
     }
