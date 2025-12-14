@@ -513,16 +513,33 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
     }
     
     // Log credential info (without exposing sensitive data)
+    const keyIdPreview = keyId ? `${keyId.substring(0, 4)}...${keyId.substring(keyId.length - 2)}` : "missing";
+    const issuerIdPreview = issuerId ? `${issuerId.substring(0, 8)}...${issuerId.substring(issuerId.length - 4)}` : "missing";
+    const privateKeyPreview = encodedKey.substring(0, 50) + "..." + encodedKey.substring(encodedKey.length - 30);
+    
     console.log(
       `[validate-transaction] Credentials check:`,
       {
-        keyId: keyId ? `${keyId.substring(0, 4)}...` : "missing",
-        issuerId: issuerId ? `${issuerId.substring(0, 8)}...` : "missing",
+        keyId: keyIdPreview,
+        issuerId: issuerIdPreview,
         privateKeyLength: encodedKey.length,
         privateKeyHasHeaders: encodedKey.includes("-----BEGIN"),
+        privateKeyHasEndHeaders: encodedKey.includes("-----END"),
+        privateKeyPreview: privateKeyPreview,
         bundleId: bundleId,
       }
     );
+    
+    // Validate private key format
+    if (!encodedKey.includes("-----BEGIN PRIVATE KEY-----") || !encodedKey.includes("-----END PRIVATE KEY-----")) {
+      console.error(
+        `[validate-transaction] ERROR: Private key missing proper PEM headers`
+      );
+      return {
+        valid: false,
+        error: "Private key format is invalid. Must include -----BEGIN PRIVATE KEY----- and -----END PRIVATE KEY----- headers.",
+      };
+    }
 
     // Try production first, then sandbox
     const environments = [
