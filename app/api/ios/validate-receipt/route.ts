@@ -19,33 +19,27 @@ import { createHash } from "crypto";
  *
  *   1. Receipt data is received as Base64-encoded string
  *   2. Receipt is cleaned and validated (Base64 format check)
- *   3. Receipt is sent to Apple's validation servers:
- *      - First tries sandbox environment (for testing)
- *      - Falls back to production environment if needed
- *      - Handles environment mismatch errors (21007, 21008)
+ *   3. Receipt is sent to Apple's validation servers (following Apple's official recommendation):
+ *      - First tries production environment (https://buy.itunes.apple.com/verifyReceipt)
+ *      - If status 21007 is returned, receipt is from sandbox - tries sandbox URL
+ *      - This ensures seamless validation during App Review (which tests in sandbox)
  *   4. Apple's response is parsed to extract subscription information
- *   5. Subscription is stored in `ios_subscriptions` table with `validation_status = "valid"`
+ *   5. Subscription is stored in `ios_subscriptions` table with `validation_status = "valid"` or `"test"`
  *   6. User's profile is updated with subscription status
  *
  * ### 2. Test Receipts (Development/Testing Flow)
  *
- *   Test receipts are receipts that cannot be validated with Apple's servers (common during
- *   development when App Store Connect isn't fully configured or receipts are from test devices).
+ *   Test receipts are identified by Apple's `environment` field in the validation response.
  *
  *   Detection:
- *   - If Apple validation fails with status codes 21004, 21005, or 21010
- *   - These codes often indicate test receipts that can't be validated
- *
- *   Local Validation:
- *   - Receipt is validated locally (Base64 format check only)
- *   - A mock Apple response structure is created
- *   - Transaction ID is generated from receipt hash for uniqueness
- *   - Product ID can be provided in request, or defaults to monthly plan
+ *   - Apple returns `environment: "Sandbox"` for test receipts
+ *   - Apple returns `environment: "Production"` for real receipts
+ *   - This is determined automatically from Apple's response after successful validation
  *
  *   Storage:
- *   - Stored with `validation_status = "test"`
- *   - Expiration is set to 6 hours from validation time (not purchase date)
- *   - Treated as valid subscription for 6 hours
+ *   - Stored with `validation_status = "test"` if environment is "Sandbox"
+ *   - Stored with `validation_status = "valid"` if environment is "Production"
+ *   - Test receipts use actual expiration dates from Apple (not 6-hour expiration)
  *
  *   Cleanup:
  *   - Expired test receipts are automatically deleted when `updateUserProStatus()` runs
@@ -97,14 +91,14 @@ import { createHash } from "crypto";
  *
  * ## Test Receipt Handling
  *
- * Test receipts are automatically detected when Apple validation fails with specific
- * status codes. They are validated locally and stored with a 6-hour expiration.
+ * Test receipts are identified by Apple's `environment` field in the validation response.
+ * When Apple successfully validates a receipt, it includes `environment: "Sandbox"` for
+ * test receipts or `environment: "Production"` for real receipts.
  *
- * **Why 6 hours?**
- * - Test receipts are for development/testing only
- * - They shouldn't persist indefinitely in the database
- * - 6 hours is sufficient for testing workflows
- * - Automatic cleanup prevents database bloat
+ * **How test receipts are identified:**
+ * - After successful Apple validation, check `response.environment === "Sandbox"`
+ * - No need for complex status code detection or local validation
+ * - Simpler and more reliable than the old approach
  *
  * **When are test receipts deleted?**
  * - When `updateUserProStatus()` is called and finds expired test receipts
@@ -114,10 +108,10 @@ import { createHash } from "crypto";
  * ## Database Schema
  *
  * Receipts are stored in the `ios_subscriptions` table:
- * - `validation_status`: "valid" (production) or "test" (test receipt)
- * - `expires_date`: Actual expiration for production, 6 hours from validation for test
+ * - `validation_status`: "valid" (production) or "test" (sandbox/test receipt)
+ * - `expires_date`: Actual expiration date from Apple (same for both test and production)
  * - `receipt_data`: Original Base64 receipt data
- * - `apple_validation_response`: Full JSON response from Apple (or mock for test receipts)
+ * - `apple_validation_response`: Full JSON response from Apple (includes environment field)
  *
  * @route POST /api/ios/validate-receipt
  */
@@ -253,39 +247,8 @@ export async function POST(request: NextRequest) {
       isTestReceipt: validationResult.isTestReceipt,
     });
 
-    // Check if this is a test receipt that failed validation
-    let isTestReceipt = false;
-    if (!validationResult.valid && validationResult.isTestReceipt) {
-      console.log(
-        "[validate-receipt] Detected test receipt - attempting local validation..."
-      );
-      const testValidationResult = validateTestReceiptLocally(
-        cleanedReceiptData,
-        productId
-      );
-
-      if (testValidationResult.valid) {
-        console.log(
-          "[validate-receipt] Test receipt validated locally, treating as valid for 6 hours"
-        );
-        isTestReceipt = true;
-        // Use the locally extracted subscription info
-        validationResult.appleResponse = testValidationResult.appleResponse;
-        validationResult.valid = true;
-      } else {
-        console.log(
-          "[validate-receipt] Test receipt failed local validation:",
-          testValidationResult.error
-        );
-        return NextResponse.json(
-          {
-            error: "Receipt validation failed",
-            details: testValidationResult.error || validationResult.error,
-          },
-          { status: 400 }
-        );
-      }
-    } else if (!validationResult.valid) {
+    // If validation failed, return error
+    if (!validationResult.valid) {
       console.log(
         "[validate-receipt] ERROR - Apple validation failed:",
         validationResult.error
@@ -298,6 +261,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Determine if this is a test receipt based on Apple's environment field
+    // Apple returns environment: "Sandbox" for test receipts, "Production" for real ones
+    const isTestReceipt = validationResult.isTestReceipt ?? false;
+    console.log(
+      "[validate-receipt] Receipt is test receipt:",
+      isTestReceipt,
+      "(based on Apple environment field)"
+    );
 
     console.log(
       "[validate-receipt] Receipt validation successful, proceeding to extract subscription info..."
@@ -428,17 +400,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For test receipts, set expiration to 6 hours from now
-    let finalExpiresDate = subscriptionInfo.expiresDate;
-    if (isTestReceipt) {
-      const testExpiration = new Date();
-      testExpiration.setHours(testExpiration.getHours() + 6);
-      finalExpiresDate = testExpiration;
-      console.log(
-        "[validate-receipt] Test receipt - setting expiration to 6 hours from now:",
-        finalExpiresDate.toISOString()
-      );
-    }
+    // Use the actual expiration date from Apple (same for both test and production receipts)
+    const finalExpiresDate = subscriptionInfo.expiresDate;
+    console.log(
+      "[validate-receipt] Using expiration date from Apple:",
+      finalExpiresDate.toISOString(),
+      isTestReceipt ? "(test receipt)" : "(production receipt)"
+    );
 
     if (existingSubscription) {
       // Update existing subscription
@@ -624,31 +592,35 @@ export async function POST(request: NextRequest) {
  *
  * ## Validation Strategy
  *
- * 1. **Sandbox First**: Always tries sandbox environment first (for testing)
- *    - Sandbox shared secret is optional
- *    - Tries without secret first, then with secret if needed
+ * Following Apple's official recommendation (Technical Note TN2413):
  *
- * 2. **Production Fallback**: If sandbox fails with 21007, tries production
- *    - Status 21007 = receipt is from production but sent to sandbox
+ * 1. **Production First**: Always tries production environment first
+ *    - Production URL: https://buy.itunes.apple.com/verifyReceipt
  *    - Production requires shared secret
+ *    - This ensures seamless validation during App Review (which tests in sandbox)
  *
- * 3. **Environment Detection**: Handles environment mismatch errors
- *    - Status 21008 = receipt is from sandbox but sent to production
- *    - Automatically retries with correct environment
+ * 2. **Sandbox Fallback**: If production fails with 21007, tries sandbox
+ *    - Status 21007 = receipt is from sandbox but sent to production
+ *    - Sandbox URL: https://sandbox.itunes.apple.com/verifyReceipt
+ *    - Sandbox shared secret is optional
  *
- * 4. **Test Receipt Detection**: Identifies potential test receipts
- *    - Status 21004, 21005, or 21010 may indicate test receipts
- *    - Returns `isTestReceipt: true` flag for local validation
+ * 3. **Test Receipt Detection**: Identifies test receipts from Apple's response
+ *    - Checks `environment` field in Apple's response
+ *    - Returns `isTestReceipt: true` if `environment === "Sandbox"`
  *
  * ## Apple Validation URLs
  *
- * - **Sandbox**: `https://sandbox.itunes.apple.com/verifyReceipt`
- *   - Used for testing with sandbox accounts
- *   - Shared secret is optional
+ * Following Apple's official recommendation (Technical Note TN2413):
  *
- * - **Production**: `https://buy.itunes.apple.com/verifyReceipt`
- *   - Used for production receipts
+ * - **Production First**: `https://buy.itunes.apple.com/verifyReceipt`
+ *   - Always validate against production first
  *   - Requires shared secret
+ *   - If status 21007 is returned, receipt is from sandbox
+ *
+ * - **Sandbox Fallback**: `https://sandbox.itunes.apple.com/verifyReceipt`
+ *   - Used when production returns status 21007
+ *   - Shared secret is optional
+ *   - This approach ensures seamless validation during App Review
  *
  * ## Request Format
  *
@@ -692,10 +664,16 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
   isTestReceipt?: boolean;
 }> {
   try {
-    // Always try sandbox first for testing, then production if needed
-    // Apple error 21007 means receipt is from sandbox but sent to production (or vice versa)
-    // Error 21004 means shared secret doesn't match (optional for sandbox)
+    // Follow Apple's official recommendation: Always try production first, then sandbox if 21007
+    // See: https://developer.apple.com/library/archive/technotes/tn2413/_index.html
+    // This ensures seamless validation during App Review (which tests in sandbox)
     const sharedSecret = process.env.APPLE_SHARED_SECRET;
+
+    if (!sharedSecret) {
+      console.warn(
+        "[validate-receipt] WARNING: APPLE_SHARED_SECRET not set. Production validation requires shared secret."
+      );
+    }
 
     const validateWithURL = async (url: string, useSecret: boolean = true) => {
       const body: any = {
@@ -703,8 +681,7 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
         "exclude-old-transactions": false,
       };
 
-      // Only include password if shared secret is available and we want to use it
-      // For sandbox testing, shared secret is optional
+      // Include shared secret for production (required) and optionally for sandbox
       if (useSecret && sharedSecret) {
         body.password = sharedSecret;
       }
@@ -719,119 +696,90 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
       return await response.json();
     };
 
-    // Try sandbox first (for testing)
-    // For sandbox, shared secret is optional but some receipts may require it
+    // Step 1: Try production first (Apple's official recommendation)
     console.log(
-      "[validate-receipt] Trying sandbox validation URL first (NO shared secret - optional for sandbox)..."
+      "[validate-receipt] Trying production validation URL first (Apple's recommended approach)..."
     );
-
-    // Sandbox validation WITHOUT shared secret first (it's optional)
     let result = await validateWithURL(
-      "https://sandbox.itunes.apple.com/verifyReceipt",
-      false
+      "https://buy.itunes.apple.com/verifyReceipt",
+      true // Production requires shared secret
     );
     console.log(
-      "[validate-receipt] Sandbox validation (without secret) result status:",
+      "[validate-receipt] Production validation result status:",
       result.status
     );
 
     // Status 0 = valid receipt
     if (result.status === 0) {
       console.log(
-        "[validate-receipt] Receipt validated successfully with sandbox (no secret)"
+        "[validate-receipt] Receipt validated successfully with production"
       );
+      const isTestReceipt = result.environment === "Sandbox";
       console.log(
-        "[validate-receipt] Apple response keys:",
-        Object.keys(result)
+        "[validate-receipt] Environment:",
+        result.environment,
+        "- Test receipt:",
+        isTestReceipt
       );
-      return { valid: true, appleResponse: result };
+      return { valid: true, appleResponse: result, isTestReceipt };
     }
 
-    // If 21004 and we have a shared secret, try with the secret
-    // 21004 can mean shared secret mismatch, so retry with secret if available
-    if (result.status === 21004 && sharedSecret) {
-      console.log(
-        "[validate-receipt] Got 21004 without secret, retrying sandbox WITH shared secret..."
-      );
-      result = await validateWithURL(
-        "https://sandbox.itunes.apple.com/verifyReceipt",
-        true
-      );
-      console.log(
-        "[validate-receipt] Sandbox validation (with secret) result status:",
-        result.status
-      );
-      if (result.status === 0) {
-        console.log(
-          "[validate-receipt] Receipt validated successfully with sandbox (with secret)"
-        );
-        console.log(
-          "[validate-receipt] Apple response keys:",
-          Object.keys(result)
-        );
-        return { valid: true, appleResponse: result };
-      }
-      // If still 21004 with secret, might be wrong environment - try production
-      if (result.status === 21004) {
-        console.log(
-          "[validate-receipt] Still got 21004 with secret, trying production URL as fallback..."
-        );
-        result = await validateWithURL(
-          "https://buy.itunes.apple.com/verifyReceipt",
-          true
-        );
-        console.log(
-          "[validate-receipt] Production validation (after 21004) result status:",
-          result.status
-        );
-        if (result.status === 0) {
-          console.log(
-            "[validate-receipt] Receipt validated successfully with production (after 21004)"
-          );
-          return { valid: true, appleResponse: result };
-        }
-      }
-    }
-
-    // Status 21007 = receipt is from production but we tried sandbox
-    // Status 21008 = receipt is from sandbox but we tried production
+    // Step 2: If production returns 21007, receipt is from sandbox - try sandbox URL
+    // Status 21007 = receipt is from sandbox but sent to production
     if (result.status === 21007) {
-      // Receipt is from production, try production URL
       console.log(
-        "[validate-receipt] Receipt is from production (21007), trying production URL..."
+        "[validate-receipt] Got status 21007 - receipt is from sandbox, trying sandbox URL..."
       );
-      result = await validateWithURL(
-        "https://buy.itunes.apple.com/verifyReceipt",
-        true
-      );
-      console.log(
-        "[validate-receipt] Production validation result status:",
-        result.status
-      );
-      if (result.status === 0) {
-        console.log(
-          "[validate-receipt] Receipt validated successfully with production"
-        );
-        return { valid: true, appleResponse: result };
-      }
-    } else if (result.status === 21008) {
-      // Receipt is from sandbox but we tried production, try sandbox
-      console.log(
-        "[validate-receipt] Receipt is from sandbox (21008), trying sandbox URL..."
-      );
+      // Try sandbox without secret first (it's optional)
       result = await validateWithURL(
         "https://sandbox.itunes.apple.com/verifyReceipt",
         false
       );
       console.log(
-        "[validate-receipt] Sandbox validation (after 21008) result status:",
+        "[validate-receipt] Sandbox validation (without secret) result status:",
         result.status
       );
+
       if (result.status === 0) {
         console.log(
           "[validate-receipt] Receipt validated successfully with sandbox"
         );
-        return { valid: true, appleResponse: result };
+        const isTestReceipt = result.environment === "Sandbox";
+        console.log(
+          "[validate-receipt] Environment:",
+          result.environment,
+          "- Test receipt:",
+          isTestReceipt
+        );
+        return { valid: true, appleResponse: result, isTestReceipt };
+      }
+
+      // If sandbox validation fails with 21004 and we have a shared secret, try with secret
+      if (result.status === 21004 && sharedSecret) {
+        console.log(
+          "[validate-receipt] Got 21004 without secret, retrying sandbox WITH shared secret..."
+        );
+        result = await validateWithURL(
+          "https://sandbox.itunes.apple.com/verifyReceipt",
+          true
+        );
+        console.log(
+          "[validate-receipt] Sandbox validation (with secret) result status:",
+          result.status
+        );
+        if (result.status === 0) {
+          console.log(
+            "[validate-receipt] Receipt validated successfully with sandbox (with secret)"
+          );
+          const isTestReceipt = result.environment === "Sandbox";
+          console.log(
+            "[validate-receipt] Environment:",
+            result.environment,
+            "- Test receipt:",
+            isTestReceipt
+          );
+          return { valid: true, appleResponse: result, isTestReceipt };
+        }
       }
     }
 
@@ -843,24 +791,6 @@ async function validateReceiptWithApple(receiptData: string): Promise<{
       "[validate-receipt] Full Apple response:",
       JSON.stringify(result, null, 2)
     );
-
-    // Check if this might be a test receipt (status 21004 often indicates test receipts that can't be validated)
-    const mightBeTestReceipt =
-      result.status === 21004 ||
-      result.status === 21005 ||
-      result.status === 21010;
-
-    if (mightBeTestReceipt) {
-      console.log(
-        "[validate-receipt] Receipt validation failed - might be a test receipt that can't be validated with Apple"
-      );
-      return {
-        valid: false,
-        error: `Apple validation failed with status: ${result.status}. This might be a test receipt.`,
-        appleResponse: result,
-        isTestReceipt: true,
-      };
-    }
 
     // Log ALL available fields from Apple response (even on error)
     console.log("[validate-receipt] Apple response keys:", Object.keys(result));
