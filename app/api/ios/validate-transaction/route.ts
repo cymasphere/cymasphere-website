@@ -161,14 +161,20 @@ export async function POST(request: NextRequest) {
 
     // If validation failed, return error
     if (!validationResult.valid) {
-      console.log(
+      const errorDetails =
+        validationResult.error || "Unknown validation error";
+      console.error(
         "[validate-transaction] ERROR - Apple validation failed:",
-        validationResult.error
+        errorDetails
+      );
+      console.error(
+        "[validate-transaction] Validation result:",
+        JSON.stringify(validationResult, null, 2)
       );
       return NextResponse.json(
         {
           error: "Transaction validation failed",
-          details: validationResult.error,
+          details: errorDetails,
         },
         { status: 400 }
       );
@@ -505,6 +511,9 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         );
 
         // Create API client (handles JWT generation automatically)
+        console.log(
+          `[validate-transaction] Creating App Store Server API client for ${name}...`
+        );
         const client = new AppStoreServerAPIClient(
           encodedKey,
           keyId,
@@ -514,9 +523,30 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         );
 
         // Get transaction info (returns JWS that needs to be verified)
-        const transactionInfoResponse = await client.getTransactionInfo(
-          transactionId
+        console.log(
+          `[validate-transaction] Calling getTransactionInfo for transaction ${transactionId}...`
         );
+        let transactionInfoResponse;
+        try {
+          transactionInfoResponse = await client.getTransactionInfo(
+            transactionId
+          );
+          console.log(
+            `[validate-transaction] getTransactionInfo succeeded, got JWS response`
+          );
+        } catch (apiError) {
+          console.error(
+            `[validate-transaction] getTransactionInfo failed:`,
+            apiError
+          );
+          console.error(
+            `[validate-transaction] API error details:`,
+            apiError instanceof Error ? apiError.message : String(apiError),
+            "Stack:",
+            apiError instanceof Error ? apiError.stack : "No stack"
+          );
+          throw apiError;
+        }
 
         // Verify and decode the JWS using Apple's root certificates
         const transactionData = await verifyAndDecodeTransactionJWS(
@@ -599,9 +629,21 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
     };
   } catch (error) {
     console.error("[validate-transaction] Error validating with Apple:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message || "Unknown error occurred"
+        : String(error) || "Unknown error occurred";
+    console.error(
+      "[validate-transaction] Error message:",
+      errorMessage,
+      "Error type:",
+      typeof error,
+      "Error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error))
+    );
     return {
       valid: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     };
   }
 }
