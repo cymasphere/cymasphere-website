@@ -1,5 +1,6 @@
 "use server";
 
+// App Store Server API transaction validation endpoint
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
@@ -459,11 +460,24 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
           ", "
         )}`
       );
+      const errorMessage = `Missing required environment variables: ${missing.join(
+        ", "
+      )}. Please configure App Store Server API credentials in App Store Connect. See documentation for setup instructions.`;
+      
+      console.error(
+        `[validate-transaction] ${errorMessage}\n` +
+        `To set up App Store Server API credentials:\n` +
+        `1. Go to App Store Connect > Users and Access > Keys\n` +
+        `2. Create a new key with "App Store Connect API" access\n` +
+        `3. Download the .p8 private key file\n` +
+        `4. Note the Key ID and Issuer ID\n` +
+        `5. Set environment variables: APPLE_APP_STORE_KEY_ID, APPLE_APP_STORE_ISSUER_ID, APPLE_APP_STORE_PRIVATE_KEY\n` +
+        `Alternatively, use /api/ios/validate-receipt endpoint which doesn't require these credentials.`
+      );
+      
       return {
         valid: false,
-        error: `Missing required environment variables: ${missing.join(
-          ", "
-        )}. Please configure App Store Server API credentials in App Store Connect.`,
+        error: errorMessage,
       };
     }
 
