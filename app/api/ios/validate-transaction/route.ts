@@ -1,6 +1,7 @@
 "use server";
 
 // App Store Server API transaction validation endpoint
+// Updated: 2025-01-14 - Added App Store Server API credentials
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
