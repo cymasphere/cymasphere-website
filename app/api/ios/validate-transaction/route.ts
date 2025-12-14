@@ -456,11 +456,12 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
 }> {
   try {
     // Get App Store Server API credentials
-    const keyId = process.env.APPLE_APP_STORE_KEY_ID;
-    const issuerId = process.env.APPLE_APP_STORE_ISSUER_ID;
-    const privateKey = process.env.APPLE_APP_STORE_PRIVATE_KEY;
+    // Trim whitespace/newlines that might have been added when setting env vars
+    const keyId = process.env.APPLE_APP_STORE_KEY_ID?.trim();
+    const issuerId = process.env.APPLE_APP_STORE_ISSUER_ID?.trim();
+    const privateKey = process.env.APPLE_APP_STORE_PRIVATE_KEY?.trim();
     const bundleId =
-      process.env.APPLE_APP_STORE_BUNDLE_ID || "com.NNAudio.Cymasphere";
+      (process.env.APPLE_APP_STORE_BUNDLE_ID || "com.NNAudio.Cymasphere").trim();
 
     if (!keyId || !issuerId || !privateKey) {
       const missing = [];
@@ -513,6 +514,11 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
     }
     
     // Log credential info (without exposing sensitive data)
+    // Show if there are any trailing newlines/whitespace issues
+    const keyIdHasNewline = keyId?.includes('\n') || keyId?.endsWith('\n');
+    const issuerIdHasNewline = issuerId?.includes('\n') || issuerId?.endsWith('\n');
+    const bundleIdHasNewline = bundleId?.includes('\n') || bundleId?.endsWith('\n');
+    
     const keyIdPreview = keyId ? `${keyId.substring(0, 4)}...${keyId.substring(keyId.length - 2)}` : "missing";
     const issuerIdPreview = issuerId ? `${issuerId.substring(0, 8)}...${issuerId.substring(issuerId.length - 4)}` : "missing";
     const privateKeyPreview = encodedKey.substring(0, 50) + "..." + encodedKey.substring(encodedKey.length - 30);
@@ -521,12 +527,18 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
       `[validate-transaction] Credentials check:`,
       {
         keyId: keyIdPreview,
+        keyIdLength: keyId?.length,
+        keyIdHasNewline: keyIdHasNewline,
         issuerId: issuerIdPreview,
+        issuerIdLength: issuerId?.length,
+        issuerIdHasNewline: issuerIdHasNewline,
         privateKeyLength: encodedKey.length,
         privateKeyHasHeaders: encodedKey.includes("-----BEGIN"),
         privateKeyHasEndHeaders: encodedKey.includes("-----END"),
         privateKeyPreview: privateKeyPreview,
         bundleId: bundleId,
+        bundleIdLength: bundleId?.length,
+        bundleIdHasNewline: bundleIdHasNewline,
       }
     );
     
