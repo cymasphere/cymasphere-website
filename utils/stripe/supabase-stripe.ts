@@ -50,50 +50,66 @@ export async function customerPurchasedProFromSupabase(
     // Do this BEFORE checking payment intents so it takes priority
     const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
     const lifetimePriceId2 = process.env.LIFETIME_PRICE_ID_2;
-    
+
     if (lifetimePriceId) {
       try {
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-        console.log(`[customerPurchasedProFromSupabase] Checking invoices FIRST for customer ${customer_id}...`);
+        console.log(
+          `[customerPurchasedProFromSupabase] Checking invoices FIRST for customer ${customer_id}...`
+        );
         const invoices = await stripe.invoices.list({
           customer: customer_id,
           limit: 100,
-          status: 'paid',
-          expand: ['data.lines.data.price'],
+          status: "paid",
+          expand: ["data.lines.data.price"],
         });
 
-        console.log(`[customerPurchasedProFromSupabase] Found ${invoices.data.length} paid invoices for customer ${customer_id}`);
+        console.log(
+          `[customerPurchasedProFromSupabase] Found ${invoices.data.length} paid invoices for customer ${customer_id}`
+        );
 
-        const hasLifetimeInvoice = invoices.data.some(invoice => {
+        const hasLifetimeInvoice = invoices.data.some((invoice) => {
           // Check if invoice has lifetime metadata (same as normal checkout purchases)
-          const hasMetadata = invoice.metadata?.purchase_type === 'lifetime';
-          
+          const hasMetadata = invoice.metadata?.purchase_type === "lifetime";
+
           // Check if invoice line items contain lifetime price ID
-          const hasLifetimePrice = invoice.lines.data.some(line => 
-            line.price?.id === lifetimePriceId || 
-            (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
+          const hasLifetimePrice = invoice.lines.data.some(
+            (line) =>
+              line.price?.id === lifetimePriceId ||
+              (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
           );
 
           if (hasMetadata || hasLifetimePrice) {
-            console.log(`[customerPurchasedProFromSupabase] ✅ Lifetime invoice found: ${invoice.id} (metadata: ${hasMetadata}, price: ${hasLifetimePrice})`);
+            console.log(
+              `[customerPurchasedProFromSupabase] ✅ Lifetime invoice found: ${invoice.id} (metadata: ${hasMetadata}, price: ${hasLifetimePrice})`
+            );
             return true;
           }
           return false;
         });
 
         if (hasLifetimeInvoice) {
-          console.log(`[customerPurchasedProFromSupabase] ✅ Setting hasLifetime = true for customer ${customer_id} based on invoice (PRIORITY CHECK)`);
+          console.log(
+            `[customerPurchasedProFromSupabase] ✅ Setting hasLifetime = true for customer ${customer_id} based on invoice (PRIORITY CHECK)`
+          );
           hasLifetime = true;
           subscriptionType = "lifetime";
         } else {
-          console.log(`[customerPurchasedProFromSupabase] ❌ No lifetime invoice found for customer ${customer_id}`);
+          console.log(
+            `[customerPurchasedProFromSupabase] ❌ No lifetime invoice found for customer ${customer_id}`
+          );
         }
       } catch (invoiceError) {
-        console.error(`[customerPurchasedProFromSupabase] ❌ Error checking invoices for customer ${customer_id}:`, invoiceError);
+        console.error(
+          `[customerPurchasedProFromSupabase] ❌ Error checking invoices for customer ${customer_id}:`,
+          invoiceError
+        );
         // Continue - don't fail the whole check if invoice lookup fails
       }
     } else {
-      console.warn(`[customerPurchasedProFromSupabase] ⚠️ STRIPE_PRICE_ID_LIFETIME not set, skipping invoice check`);
+      console.warn(
+        `[customerPurchasedProFromSupabase] ⚠️ STRIPE_PRICE_ID_LIFETIME not set, skipping invoice check`
+      );
     }
 
     // Then check for lifetime purchase from payment intents (secondary check)
@@ -129,7 +145,7 @@ export async function customerPurchasedProFromSupabase(
 
     // Check payment intents for lifetime purchase (only if invoice check didn't find lifetime)
     const safePaymentIntents = paymentIntents || [];
-    
+
     for (const paymentIntent of safePaymentIntents) {
       const attrs =
         ((paymentIntent as any).attrs as {
@@ -141,35 +157,39 @@ export async function customerPurchasedProFromSupabase(
 
       // Check metadata - this should be set by checkout route
       const hasLifetimeMetadata = attrs?.metadata?.purchase_type === "lifetime";
-      
+
       const isLifetimePurchase = hasLifetimeMetadata;
-      
+
       if (isLifetimePurchase) {
         // If this is a lifetime purchase, check its status
         if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
           hasLifetime = true;
           subscriptionType = "lifetime";
-          
+
           // If metadata is missing, log it for tracking
           if (!hasLifetimeMetadata && hasLifetimePriceId) {
             console.warn(
               `⚠️ Lifetime purchase detected by price ID for customer ${customer_id} ` +
-              `(Payment Intent: ${(paymentIntent as any).id}). ` +
-              `Consider running tag-lifetime-transactions.js to add metadata.`
+                `(Payment Intent: ${(paymentIntent as any).id}). ` +
+                `Consider running tag-lifetime-transactions.js to add metadata.`
             );
           }
-        } else if (attrs.status !== "succeeded" && attrs.status !== "canceled") {
+        } else if (
+          attrs.status !== "succeeded" &&
+          attrs.status !== "canceled"
+        ) {
           // Payment intent exists with lifetime metadata but not succeeded yet
           // Check if there's a corresponding paid invoice (for $0 invoices with coupons)
           // Don't set hasLifetime = false here - let the invoice check handle it
-          console.log(`ℹ️ Found payment intent with lifetime metadata but status ${attrs.status} for customer ${customer_id} - will check invoices`);
+          console.log(
+            `ℹ️ Found payment intent with lifetime metadata but status ${attrs.status} for customer ${customer_id} - will check invoices`
+          );
         } else if (attrs.status === "canceled" || attrs.refunded) {
           // If this lifetime purchase was canceled or refunded, they no longer have lifetime access
           hasLifetime = false;
         }
       }
     }
-
 
     // Check for active subscriptions (even if we found a lifetime purchase)
     const { data: subscriptions, error: subscriptionsError } = await supabase
@@ -272,7 +292,11 @@ export async function customerPurchasedProFromSupabase(
     // CRITICAL: Lifetime status should never be overridden by subscriptions
     if (hasLifetime) {
       subscriptionType = "lifetime";
-      console.log(`✅ Customer ${customer_id} has lifetime access (detected via ${hasLifetime ? 'invoice/payment intent' : 'unknown'})`);
+      console.log(
+        `✅ Customer ${customer_id} has lifetime access (detected via ${
+          hasLifetime ? "invoice/payment intent" : "unknown"
+        })`
+      );
     }
     // Otherwise, use the active subscription type if any
     else if (hasActiveSubscription && activeSubscriptionType) {
@@ -384,74 +408,7 @@ export async function getCustomerInvoices(
   }
 }
 
-/**
- * Deletes a user account by first canceling any active subscriptions,
- * then deleting their Supabase user account
- */
-export async function deleteUserAccount(
-  userId: string
-): Promise<{ success: boolean; error?: string }> {
-  "use server";
-
-  try {
-    // Get the Stripe customer ID for this user
-    const supabase = await createSupabaseServiceRole();
-
-    // First, get the Stripe customer ID from the profiles table
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("customer_id")
-      .eq("id", userId)
-      .single();
-
-    if (profileError) {
-      console.error("Error fetching profile:", profileError);
-      return { success: false, error: "Could not find user profile" };
-    }
-
-    const stripeCustomerId = profile?.customer_id;
-
-    if (stripeCustomerId) {
-      // Get Stripe instance
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-      try {
-        // Get all subscriptions for this customer
-        const subscriptions = await stripe.subscriptions.list({
-          customer: stripeCustomerId,
-          status: "all",
-        });
-
-        // Cancel all subscriptions that aren't already canceled
-        for (const subscription of subscriptions.data) {
-          if (subscription.status !== "canceled") {
-            await stripe.subscriptions.cancel(subscription.id);
-            console.log(
-              `Canceled subscription: ${subscription.id} for customer: ${stripeCustomerId}`
-            );
-          }
-        }
-      } catch (stripeError) {
-        console.error("Error canceling subscriptions:", stripeError);
-        // Do not continue with user deletion if subscription cancellation fails
-        return {
-          success: false,
-          error: "Failed to cancel subscription. Account deletion aborted.",
-        };
-      }
-    }
-
-    // Delete the user from Supabase
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-
-    if (deleteError) {
-      console.error("Error deleting user:", deleteError);
-      return { success: false, error: "Failed to delete user account" };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error in deleteUserAccount:", error);
-    return { success: false, error: "An unexpected error occurred" };
-  }
-}
+// NOTE: deleteUserAccount has been moved to API route /api/user/delete-account
+// This provides proper authentication handling where:
+// - Regular users can only delete their own account
+// - Admins can delete any user's account via ?userId= query parameter

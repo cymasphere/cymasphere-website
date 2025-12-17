@@ -55,7 +55,6 @@ import {
   getCustomerSubscriptions,
   getPrices,
 } from "@/utils/stripe/actions";
-import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 import { updateUserProfileFromStripe } from "@/app/actions/user-management";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
@@ -2492,9 +2491,16 @@ export default function AdminCRM() {
       setDeleteSuccess(null);
       setShowDeleteConfirmation(false);
 
-      const result = await deleteUserAccount(userId);
+      const response = await fetch(
+        `/api/user/delete-account?userId=${userId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-      if (result.success) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setDeleteSuccess(userId);
         // Refresh user data to remove deleted user
         fetchUsers();

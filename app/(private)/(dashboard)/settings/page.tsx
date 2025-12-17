@@ -18,7 +18,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCard from "@/components/settings/CardComponent";
 import { fetchUserSessions } from "@/utils/supabase/actions";
-import { deleteUserAccount } from "@/utils/stripe/supabase-stripe";
 import { useTranslation } from "react-i18next";
 
 const SettingsContainer = styled.div`
@@ -525,9 +524,13 @@ function Settings() {
         throw new Error("User ID not found");
       }
 
-      const result = await deleteUserAccount(user.id);
+      const response = await fetch("/api/user/delete-account", {
+        method: "DELETE",
+      });
 
-      if (result.success) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         // Show success message
         setConfirmationTitle(
           t("dashboard.settings.accountDeleted", "Account Deleted")
