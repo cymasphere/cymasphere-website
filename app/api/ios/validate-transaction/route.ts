@@ -555,42 +555,23 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
       };
     }
 
-    // In production, only check production environment (no sandbox)
-    // In development/preview, allow sandbox checking
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                         process.env.VERCEL_ENV === 'production';
-    
     // Detect if transaction is from sandbox (sandbox transaction IDs typically start with 200000)
+    // Try sandbox first for sandbox transactions to avoid 401 in production
     const isLikelySandbox = transactionId.startsWith('200000');
+    const environments = isLikelySandbox
+      ? [
+          { env: Environment.SANDBOX, name: "sandbox" },
+          { env: Environment.PRODUCTION, name: "production" },
+        ]
+      : [
+          { env: Environment.PRODUCTION, name: "production" },
+          { env: Environment.SANDBOX, name: "sandbox" },
+        ];
     
-    let environments: Array<{ env: Environment; name: string }>;
-    
-    if (isProduction) {
-      // Production: Only check production environment
-      environments = [{ env: Environment.PRODUCTION, name: "production" }];
-      if (isLikelySandbox) {
-        console.warn(
-          `[validate-transaction] WARNING: Sandbox transaction ID detected in production environment. ` +
-          `Sandbox transactions are not valid in production. This transaction will be rejected.`
-        );
-      }
-    } else {
-      // Development/Preview: Try sandbox first for sandbox transactions
-      environments = isLikelySandbox
-        ? [
-            { env: Environment.SANDBOX, name: "sandbox" },
-            { env: Environment.PRODUCTION, name: "production" },
-          ]
-        : [
-            { env: Environment.PRODUCTION, name: "production" },
-            { env: Environment.SANDBOX, name: "sandbox" },
-          ];
-      
-      if (isLikelySandbox) {
-        console.log(
-          `[validate-transaction] Transaction ID starts with 200000 - likely sandbox, trying sandbox first`
-        );
-      }
+    if (isLikelySandbox) {
+      console.log(
+        `[validate-transaction] Transaction ID starts with 200000 - likely sandbox, trying sandbox first`
+      );
     }
 
     for (const { env, name } of environments) {
