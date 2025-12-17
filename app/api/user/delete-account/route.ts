@@ -10,19 +10,32 @@ import Stripe from "stripe";
  * Admins can delete any user by passing ?userId=xxx query parameter.
  *
  * Security:
- * - Requires authentication
+ * - Requires authentication (via cookies OR Bearer token)
  * - Regular users can only delete their own account
  * - Admins can delete any user's account
+ * 
+ * Authentication:
+ * - Web clients: Uses cookie-based authentication
+ * - Mobile/Desktop clients: Uses Bearer token in Authorization header
  */
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
 
+    // Check for Bearer token in Authorization header (mobile/desktop clients)
+    const authHeader = request.headers.get("Authorization");
+    const accessToken = authHeader?.startsWith("Bearer ") 
+      ? authHeader.slice(7) 
+      : null;
+
     // Get the authenticated user
+    // If Bearer token provided, use it; otherwise fall back to cookie auth
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = accessToken 
+      ? await supabase.auth.getUser(accessToken)
+      : await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
