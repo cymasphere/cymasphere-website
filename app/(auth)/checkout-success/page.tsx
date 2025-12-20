@@ -618,8 +618,8 @@ function CheckoutSuccessContent() {
             <InviteTitle>Account Invitation Sent!</InviteTitle>
             <InviteText>
               {customerEmail
-                ? `We've sent an invitation email to ${customerEmail}. Please check your inbox and click the link to set your password and access your account.`
-                : "We've sent an invitation email to your checkout email address. Please check your inbox and click the link to set your password and access your account."}
+                ? `We've sent an invitation email to ${customerEmail}. Please check your inbox (and spam folder) and click the link to set your password and access your account.`
+                : "We've sent an invitation email to your checkout email address. Please check your inbox (and spam folder) and click the link to set your password and access your account."}
             </InviteText>
             <LoginLink href="/login">Go to Login</LoginLink>
           </InviteMessage>
