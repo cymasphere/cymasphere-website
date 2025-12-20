@@ -26,13 +26,31 @@ export async function GET(request: NextRequest) {
       expand: ["subscription", "payment_intent", "customer"],
     });
 
-    // Extract customer ID
+    // Extract customer ID and email
     let customerId: string | null = null;
+    let customerEmail: string | null = null;
     if (session.customer) {
-      customerId =
-        typeof session.customer === "string"
-          ? session.customer
-          : session.customer.id;
+      if (typeof session.customer === "string") {
+        customerId = session.customer;
+      } else {
+        customerId = session.customer.id;
+        // Get email from customer object if available
+        if (!session.customer.deleted && "email" in session.customer) {
+          customerEmail = session.customer.email || null;
+        }
+      }
+    }
+
+    // If we have customer ID but no email, try to retrieve customer
+    if (customerId && !customerEmail) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        if (typeof customer === "object" && !customer.deleted && customer.email) {
+          customerEmail = customer.email;
+        }
+      } catch (error) {
+        console.error("Error retrieving customer email:", error);
+      }
     }
 
     // Extract value and currency
@@ -65,6 +83,7 @@ export async function GET(request: NextRequest) {
       isTrial,
       mode: session.mode, // 'payment' for lifetime, 'subscription' for recurring
       customerId, // Customer ID from the checkout session
+      customerEmail, // Customer email from the checkout session
     });
   } catch (error) {
     console.error("Error fetching checkout session details:", error);

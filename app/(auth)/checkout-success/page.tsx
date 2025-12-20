@@ -1,6 +1,7 @@
 "use client";
 import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
@@ -13,7 +14,11 @@ import {
   trackEventOnce,
   shouldFireEvent,
 } from "@/utils/analytics";
-import { refreshSubscriptionByCustomerId } from "@/app/actions/checkout";
+import {
+  refreshSubscriptionByCustomerId,
+  inviteUserAndRefreshProStatus,
+} from "@/app/actions/checkout";
+import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -128,6 +133,49 @@ const BackButton = styled.button`
   }
 `;
 
+const InviteMessage = styled.div`
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  max-width: 600px;
+  text-align: center;
+`;
+
+const InviteTitle = styled.h3`
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+`;
+
+const InviteText = styled.p`
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+`;
+
+const LoginLink = styled(Link)`
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  }
+`;
+
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -145,6 +193,8 @@ function CheckoutSuccessContent() {
   const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
     currencyParam || "USD"
   );
+  const [inviteSent, setInviteSent] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
 
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
@@ -153,6 +203,84 @@ function CheckoutSuccessContent() {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]); // Run on mount and when refreshUser changes
+
+  // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
+  useEffect(() => {
+    const handleUserInviteAndRefresh = async () => {
+      if (!sessionId) return;
+
+      try {
+        if (isLoggedIn && user?.id) {
+          // User is logged in - refresh pro status immediately
+          console.log(
+            `[Checkout Success] User is logged in (${user.id}), refreshing pro status immediately`
+          );
+          const result = await updateUserProStatus(user.id);
+          console.log(
+            `[Checkout Success] Pro status refreshed: ${result.subscription} (${result.source})`
+          );
+          // Also refresh user context to update UI
+          if (refreshUser) {
+            await refreshUser();
+          }
+        } else if (!isLoggedIn) {
+          // User is not logged in - invite them and refresh pro status
+          console.log(
+            "[Checkout Success] User is not logged in, inviting and refreshing pro status"
+          );
+
+          // First, get the customer email from the session
+          try {
+            const response = await fetch(
+              `/api/checkout-session-details?session_id=${sessionId}`
+            );
+            const data = await response.json();
+            if (data.success && data.customerEmail) {
+              setCustomerEmail(data.customerEmail);
+            }
+          } catch (error) {
+            console.error("[Checkout Success] Error fetching session email:", error);
+          }
+
+          const result = await inviteUserAndRefreshProStatus(sessionId);
+
+          if (result.success) {
+            console.log(
+              `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`
+            );
+            setInviteSent(true);
+            // Get email from session if we don't have it yet
+            if (!customerEmail) {
+              try {
+                const response = await fetch(
+                  `/api/checkout-session-details?session_id=${sessionId}`
+                );
+                const data = await response.json();
+                if (data.success && data.customerEmail) {
+                  setCustomerEmail(data.customerEmail);
+                }
+              } catch (error) {
+                console.error("[Checkout Success] Error getting email:", error);
+              }
+            }
+          } else {
+            console.error(
+              "[Checkout Success] Failed to invite user and refresh pro status:",
+              result.error
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "[Checkout Success] Error in user invite/refresh process:",
+          error
+        );
+        // Don't block page rendering on error
+      }
+    };
+
+    handleUserInviteAndRefresh();
+  }, [sessionId, isLoggedIn, user?.id, refreshUser]);
 
   // Refresh subscription status by customer ID (works even if not logged in)
   useEffect(() => {
@@ -482,9 +610,33 @@ function CheckoutSuccessContent() {
           </>
         )}
 
-        <BackButton onClick={handleContinue}>
+        {inviteSent && !isLoggedIn && (
+          <InviteMessage>
+            <InviteTitle>Account Invitation Sent!</InviteTitle>
+            <InviteText>
+              {customerEmail
+                ? `We've sent an invitation email to ${customerEmail}. Please check your inbox and click the link to set your password and access your account.`
+                : "We've sent an invitation email to your checkout email address. Please check your inbox and click the link to set your password and access your account."}
+            </InviteText>
+            <LoginLink href="/login">
+              Go to Login
+            </LoginLink>
+          </InviteMessage>
+        )}
+
+        <BackButton
+          onClick={() => {
+            if (inviteSent && !isLoggedIn) {
+              router.push("/login");
+            } else {
+              handleContinue();
+            }
+          }}
+        >
           {isLoggedIn || isSignedUp
             ? "Download Cymasphere"
+            : inviteSent
+            ? "Go to Login"
             : "Create Your Account"}
         </BackButton>
       </ContentContainer>
