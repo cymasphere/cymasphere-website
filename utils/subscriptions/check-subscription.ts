@@ -350,6 +350,10 @@ export async function updateUserProStatus(userId: string): Promise<{
   }
   // For iOS and NFR, no trial expiration (they're either active subscriptions or lifetime)
 
+  // Check if this is a new subscription activation (subscription changed from "none" to something)
+  const isNewActivation =
+    profile.subscription === "none" && finalSubscription !== "none";
+
   // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
     .from("profiles")
@@ -360,6 +364,115 @@ export async function updateUserProStatus(userId: string): Promise<{
       subscription_source: source,
     })
     .eq("id", userId);
+
+  // Send welcome email for new activations (trials, subscriptions, lifetime)
+  // NFR emails are already handled above
+  if (isNewActivation && source !== "nfr" && profile.email) {
+    try {
+      const { generateWelcomeEmailHtml, generateWelcomeEmailText } =
+        await import("@/utils/email-campaigns/welcome-email");
+      const { sendEmail } = await import("@/utils/email");
+
+      const customerName =
+        profile.first_name && profile.last_name
+          ? `${profile.first_name} ${profile.last_name}`
+          : undefined;
+
+      // Determine if this is a trial
+      const isTrial = finalTrialExpiration !== null;
+      const trialEndDate = finalTrialExpiration?.toISOString();
+      
+      // Calculate trial days if it's a trial
+      let trialDays: number | undefined;
+      if (isTrial && finalTrialExpiration) {
+        const now = new Date();
+        const daysRemaining = Math.ceil(
+          (finalTrialExpiration.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+        trialDays = Math.max(0, daysRemaining);
+      }
+
+      let purchaseType: "subscription" | "lifetime";
+      let subscriptionType: "monthly" | "annual" | undefined;
+      let planName: string;
+      let subject: string;
+
+      if (finalSubscription === "lifetime") {
+        purchaseType = "lifetime";
+        planName = "lifetime_149";
+        subject = "Welcome to Cymasphere - Lifetime License";
+      } else if (finalSubscription === "monthly") {
+        purchaseType = "subscription";
+        subscriptionType = "monthly";
+        planName = "monthly_6";
+        subject = isTrial
+          ? "Welcome to Cymasphere - Free Trial Started"
+          : "Welcome to Cymasphere - Monthly Subscription";
+      } else if (finalSubscription === "annual") {
+        purchaseType = "subscription";
+        subscriptionType = "annual";
+        planName = "annual_59";
+        subject = isTrial
+          ? "Welcome to Cymasphere - Free Trial Started"
+          : "Welcome to Cymasphere - Annual Subscription";
+      } else {
+        // Shouldn't happen, but skip email if subscription type is unknown
+        return {
+          subscription: finalSubscription,
+          subscriptionExpiration: finalExpiration,
+          source,
+        };
+      }
+
+      const welcomeEmailHtml = generateWelcomeEmailHtml({
+        customerName,
+        customerEmail: profile.email,
+        purchaseType,
+        subscriptionType,
+        planName,
+        isTrial,
+        trialEndDate,
+        trialDays,
+      });
+
+      const welcomeEmailText = generateWelcomeEmailText({
+        customerName,
+        customerEmail: profile.email,
+        purchaseType,
+        subscriptionType,
+        planName,
+        isTrial,
+        trialEndDate,
+        trialDays,
+      });
+
+      const emailResult = await sendEmail({
+        to: profile.email,
+        subject,
+        html: welcomeEmailHtml,
+        text: welcomeEmailText,
+        from: "Cymasphere <support@cymasphere.com>",
+      });
+
+      if (emailResult.success) {
+        console.log(
+          `✅ Sent welcome email for ${finalSubscription} ${isTrial ? "trial" : "subscription"} to ${profile.email} (Message ID: ${emailResult.messageId})`
+        );
+      } else {
+        console.error(
+          `❌ Failed to send welcome email for ${finalSubscription}:`,
+          emailResult.error
+        );
+      }
+    } catch (emailError) {
+      console.error(
+        `❌ Failed to send welcome email for ${finalSubscription}:`,
+        emailError
+      );
+      // Don't throw - email failure shouldn't break subscription check
+    }
+  }
 
   return {
     subscription: finalSubscription,
