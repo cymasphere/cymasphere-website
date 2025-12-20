@@ -239,7 +239,10 @@ function CheckoutSuccessContent() {
               setCustomerEmail(data.customerEmail);
             }
           } catch (error) {
-            console.error("[Checkout Success] Error fetching session email:", error);
+            console.error(
+              "[Checkout Success] Error fetching session email:",
+              error
+            );
           }
 
           const result = await inviteUserAndRefreshProStatus(sessionId);
@@ -618,27 +621,17 @@ function CheckoutSuccessContent() {
                 ? `We've sent an invitation email to ${customerEmail}. Please check your inbox and click the link to set your password and access your account.`
                 : "We've sent an invitation email to your checkout email address. Please check your inbox and click the link to set your password and access your account."}
             </InviteText>
-            <LoginLink href="/login">
-              Go to Login
-            </LoginLink>
+            <LoginLink href="/login">Go to Login</LoginLink>
           </InviteMessage>
         )}
 
-        <BackButton
-          onClick={() => {
-            if (inviteSent && !isLoggedIn) {
-              router.push("/login");
-            } else {
-              handleContinue();
-            }
-          }}
-        >
-          {isLoggedIn || isSignedUp
-            ? "Download Cymasphere"
-            : inviteSent
-            ? "Go to Login"
-            : "Create Your Account"}
-        </BackButton>
+        {!(inviteSent && !isLoggedIn) && (
+          <BackButton onClick={handleContinue}>
+            {isLoggedIn || isSignedUp
+              ? "Download Cymasphere"
+              : "Create Your Account"}
+          </BackButton>
+        )}
       </ContentContainer>
     </PageContainer>
   );
