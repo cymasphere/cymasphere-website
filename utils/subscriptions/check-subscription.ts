@@ -96,7 +96,7 @@ export async function updateUserProStatus(userId: string): Promise<{
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      "customer_id, email, subscription, subscription_expiration, subscription_source, first_name, last_name"
+      "customer_id, email, subscription, subscription_expiration, subscription_source, trial_expiration, first_name, last_name"
     )
     .eq("id", userId)
     .single();
@@ -350,9 +350,16 @@ export async function updateUserProStatus(userId: string): Promise<{
   }
   // For iOS and NFR, no trial expiration (they're either active subscriptions or lifetime)
 
-  // Check if this is a new subscription activation (subscription changed from "none" to something)
-  const isNewActivation =
-    profile.subscription === "none" && finalSubscription !== "none";
+  // Store previous subscription state for comparison
+  const previousSubscription = profile.subscription;
+
+  // Check if subscription type changed
+  const subscriptionTypeChanged = previousSubscription !== finalSubscription;
+
+  // Determine if we should send an email
+  // Send email if subscription type changed (e.g., monthly → annual, annual → lifetime, etc.)
+  // Note: NFR already returned early above, so source can't be "nfr" here
+  const shouldSendEmail = subscriptionTypeChanged && profile.email;
 
   // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
@@ -365,9 +372,9 @@ export async function updateUserProStatus(userId: string): Promise<{
     })
     .eq("id", userId);
 
-  // Send welcome email for new activations (trials, subscriptions, lifetime)
+  // Send email for subscription changes (type changes, trial status changes, new activations)
   // NFR emails are already handled above
-  if (isNewActivation && source !== "nfr" && profile.email) {
+  if (shouldSendEmail && profile.email) {
     try {
       const { generateWelcomeEmailHtml, generateWelcomeEmailText } =
         await import("@/utils/email-campaigns/welcome-email");
@@ -378,10 +385,11 @@ export async function updateUserProStatus(userId: string): Promise<{
           ? `${profile.first_name} ${profile.last_name}`
           : undefined;
 
-      // Determine if this is a trial
-      const isTrial = finalTrialExpiration !== null;
+      // Determine if this is an active trial (trial expiration is in the future)
+      const isTrial =
+        finalTrialExpiration !== null && finalTrialExpiration > new Date();
       const trialEndDate = finalTrialExpiration?.toISOString();
-      
+
       // Calculate trial days if it's a trial
       let trialDays: number | undefined;
       if (isTrial && finalTrialExpiration) {
@@ -398,24 +406,56 @@ export async function updateUserProStatus(userId: string): Promise<{
       let planName: string;
       let subject: string;
 
+      // Determine if this is a new activation (from none to something)
+      const isNewActivation =
+        previousSubscription === "none" && finalSubscription !== "none";
+
       if (finalSubscription === "lifetime") {
         purchaseType = "lifetime";
         planName = "lifetime_149";
-        subject = "Welcome to Cymasphere - Lifetime License";
+        if (isNewActivation) {
+          subject = "Welcome to Cymasphere - Lifetime License";
+        } else if (
+          previousSubscription === "monthly" ||
+          previousSubscription === "annual"
+        ) {
+          subject =
+            "Your Cymasphere Subscription Has Been Upgraded - Lifetime License";
+        } else {
+          subject = "Your Cymasphere Subscription - Lifetime License";
+        }
       } else if (finalSubscription === "monthly") {
         purchaseType = "subscription";
         subscriptionType = "monthly";
         planName = "monthly_6";
-        subject = isTrial
-          ? "Welcome to Cymasphere - Free Trial Started"
-          : "Welcome to Cymasphere - Monthly Subscription";
+        if (isNewActivation) {
+          subject = isTrial
+            ? "Welcome to Cymasphere - Free Trial Started"
+            : "Welcome to Cymasphere - Monthly Subscription";
+        } else if (previousSubscription === "annual") {
+          subject =
+            "Your Cymasphere Subscription Has Been Updated - Monthly Plan";
+        } else {
+          subject = isTrial
+            ? "Your Cymasphere Subscription - Free Trial Started"
+            : "Your Cymasphere Subscription - Monthly Plan";
+        }
       } else if (finalSubscription === "annual") {
         purchaseType = "subscription";
         subscriptionType = "annual";
         planName = "annual_59";
-        subject = isTrial
-          ? "Welcome to Cymasphere - Free Trial Started"
-          : "Welcome to Cymasphere - Annual Subscription";
+        if (isNewActivation) {
+          subject = isTrial
+            ? "Welcome to Cymasphere - Free Trial Started"
+            : "Welcome to Cymasphere - Annual Subscription";
+        } else if (previousSubscription === "monthly") {
+          subject =
+            "Your Cymasphere Subscription Has Been Upgraded - Annual Plan";
+        } else {
+          subject = isTrial
+            ? "Your Cymasphere Subscription - Free Trial Started"
+            : "Your Cymasphere Subscription - Annual Plan";
+        }
       } else {
         // Shouldn't happen, but skip email if subscription type is unknown
         return {
@@ -457,17 +497,19 @@ export async function updateUserProStatus(userId: string): Promise<{
 
       if (emailResult.success) {
         console.log(
-          `✅ Sent welcome email for ${finalSubscription} ${isTrial ? "trial" : "subscription"} to ${profile.email} (Message ID: ${emailResult.messageId})`
+          `✅ Sent email for subscription change (${previousSubscription} → ${finalSubscription}) - ${finalSubscription} ${
+            isTrial ? "trial" : "subscription"
+          } to ${profile.email} (Message ID: ${emailResult.messageId})`
         );
       } else {
         console.error(
-          `❌ Failed to send welcome email for ${finalSubscription}:`,
+          `❌ Failed to send email for subscription change (${previousSubscription} → ${finalSubscription}):`,
           emailResult.error
         );
       }
     } catch (emailError) {
       console.error(
-        `❌ Failed to send welcome email for ${finalSubscription}:`,
+        `❌ Failed to send email for subscription change (${previousSubscription} → ${finalSubscription}):`,
         emailError
       );
       // Don't throw - email failure shouldn't break subscription check
