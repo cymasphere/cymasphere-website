@@ -1,19 +1,13 @@
 "use client";
 import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  trackUserData,
-  hashEmail,
-  trackEventOnce,
-  shouldFireEvent,
-} from "@/utils/analytics";
+import { trackUserData, hashEmail, shouldFireEvent } from "@/utils/analytics";
 import {
   refreshSubscriptionByCustomerId,
   inviteUserAndRefreshProStatus,
@@ -115,7 +109,16 @@ const Message = styled.p`
   color: var(--text-secondary);
 `;
 
-const BackButton = styled.button`
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ActionButton = styled.button`
   padding: 12px 24px;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
@@ -125,11 +128,27 @@ const BackButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 2rem;
 
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  }
+`;
+
+const SecondaryButton = styled.button`
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(108, 99, 255, 0.1);
+    transform: translateY(-3px);
   }
 `;
 
@@ -155,25 +174,6 @@ const InviteText = styled.p`
   line-height: 1.6;
   color: var(--text-secondary);
   margin-bottom: 1rem;
-`;
-
-const LoginLink = styled(Link)`
-  display: inline-block;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-weight: 600;
-  font-size: 1rem;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  margin-top: 0.5rem;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
-  }
 `;
 
 function CheckoutSuccessContent() {
@@ -377,7 +377,7 @@ function CheckoutSuccessContent() {
     // Helper function to track event with user data and deduplication
     const trackEventWithUserData = async (
       eventName: string,
-      eventData: Record<string, any> = {}
+      eventData: Record<string, unknown> = {}
     ) => {
       // Use session_id as event ID for deduplication, or generate one
       const eventId = sessionId || `${eventName}_${Date.now()}`;
@@ -559,16 +559,6 @@ function CheckoutSuccessContent() {
     }
   }, []); // Empty deps - run once on mount, ref prevents duplicate runs
 
-  const handleContinue = () => {
-    if (isLoggedIn) {
-      router.push("/downloads");
-    } else if (isSignedUp) {
-      router.push("/downloads");
-    } else {
-      router.push("/signup");
-    }
-  };
-
   return (
     <PageContainer>
       <HeaderNav>
@@ -621,17 +611,25 @@ function CheckoutSuccessContent() {
                 ? `We've sent an invitation email to ${customerEmail}. Please check your inbox (and spam folder) and click the link to set your password and access your account.`
                 : "We've sent an invitation email to your checkout email address. Please check your inbox (and spam folder) and click the link to set your password and access your account."}
             </InviteText>
-            <LoginLink href="/login">Go to Login</LoginLink>
           </InviteMessage>
         )}
 
-        {!(inviteSent && !isLoggedIn) && (
-          <BackButton onClick={handleContinue}>
-            {isLoggedIn || isSignedUp
-              ? "Download Cymasphere"
-              : "Create Your Account"}
-          </BackButton>
-        )}
+        <ButtonContainer>
+          <ActionButton
+            onClick={() => {
+              if (isLoggedIn) {
+                router.push("/dashboard");
+              } else {
+                router.push("/login");
+              }
+            }}
+          >
+            {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
+          </ActionButton>
+          <SecondaryButton onClick={() => router.push("/getting-started")}>
+            Getting Started
+          </SecondaryButton>
+        </ButtonContainer>
       </ContentContainer>
     </PageContainer>
   );
