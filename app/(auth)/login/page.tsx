@@ -47,7 +47,7 @@ const AuthContainer = styled.div`
   }
 `;
 
-const BackButton = styled.span`
+const BackButton = styled(Link)`
   position: fixed;
   top: 25px;
   left: 30px;
@@ -369,11 +369,9 @@ function Login() {
 
   return (
     <AuthContainer>
-      <Link href={`/`}>
-        <BackButton>
-          <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
-        </BackButton>
-      </Link>
+      <BackButton href={`/`}>
+        <FaArrowLeft /> {t("common.backToHome", "Back to Home")}
+      </BackButton>
       <FormCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

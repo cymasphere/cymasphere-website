@@ -130,8 +130,8 @@ interface ContentProps {
 const Content = styled.main<ContentProps>`
   flex: 1;
   padding: 1.5rem;
-  margin-left: ${props => props.$sidebarVisible ? '280px' : '0'};
-  width: ${props => props.$sidebarVisible ? 'calc(100% - 280px)' : '100%'};
+  margin-left: ${(props) => (props.$sidebarVisible ? "280px" : "0")};
+  width: ${(props) => (props.$sidebarVisible ? "calc(100% - 280px)" : "100%")};
 
   @media (max-width: 768px) {
     margin-left: 0;
@@ -247,7 +247,7 @@ const BackButtonContainer = styled.div`
   }
 `;
 
-const BackButton = styled.div`
+const BackButton = styled(Link)`
   display: flex;
   align-items: center;
   color: var(--text-secondary);
@@ -687,331 +687,368 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <LayoutContainer>
       {!isTutorialCenter() && (
         <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
-        <LogoContainer>
-          <Link href="/admin">
-            <CymasphereLogo
-              size="32px"
-              fontSize="1.4rem"
-              onClick={(e: React.MouseEvent<HTMLElement>) =>
-                handleNavigation(
-                  e as React.MouseEvent<HTMLAnchorElement>,
-                  "/admin"
-                )
-              }
-              className="admin-logo"
-            />
-          </Link>
-        </LogoContainer>
+          <LogoContainer>
+            <Link href="/admin">
+              <CymasphereLogo
+                size="32px"
+                fontSize="1.4rem"
+                onClick={(e: React.MouseEvent<HTMLElement>) =>
+                  handleNavigation(
+                    e as React.MouseEvent<HTMLAnchorElement>,
+                    "/admin"
+                  )
+                }
+                className="admin-logo"
+              />
+            </Link>
+          </LogoContainer>
 
-        <nav>
-          <Link href="/admin">
-            <NavItem
-              $active={pathname === "/admin" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin")}
-            >
-              <FaShieldAlt /> Admin Dashboard
-            </NavItem>
-          </Link>
-          <Link href="/admin/users">
-            <NavItem
-              $active={pathname === "/admin/users" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/users")}
-            >
-              <FaUsers />
-              Users
-            </NavItem>
-          </Link>
-          <Link href="/admin/nfr">
-            <NavItem
-              $active={pathname === "/admin/nfr" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/nfr")}
-            >
-              <FaUserShield />
-              NFR Licenses
-            </NavItem>
-          </Link>
-          <Link href="/admin/coupons">
-            <NavItem
-              $active={pathname === "/admin/coupons" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/coupons")}
-            >
-              <FaTag />
-              Coupons
-            </NavItem>
-          </Link>
-          <Link href="/admin/promotions">
-            <NavItem
-              $active={pathname === "/admin/promotions" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/promotions")}
-            >
-              <FaBullhorn />
-              Promotions
-            </NavItem>
-          </Link>
-          <Link href="/admin/support-tickets">
-            <NavItem
-              $active={pathname === "/admin/support-tickets" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
-            >
-              <FaTicketAlt /> Support Tickets
-            </NavItem>
-          </Link>
-          <Link href="/admin/tutorial-center">
-            <NavItem
-              $active={pathname === "/admin/tutorial-center" || pathname.startsWith("/admin/tutorial-center/") ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/admin/tutorial-center")}
-            >
-              <FaPlay /> Tutorial Center
-            </NavItem>
-          </Link>
+          <nav>
+            <Link href="/admin">
+              <NavItem
+                $active={pathname === "/admin" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin")}
+              >
+                <FaShieldAlt /> Admin Dashboard
+              </NavItem>
+            </Link>
+            <Link href="/admin/users">
+              <NavItem
+                $active={pathname === "/admin/users" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin/users")}
+              >
+                <FaUsers />
+                Users
+              </NavItem>
+            </Link>
+            <Link href="/admin/nfr">
+              <NavItem
+                $active={pathname === "/admin/nfr" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin/nfr")}
+              >
+                <FaUserShield />
+                NFR Licenses
+              </NavItem>
+            </Link>
+            <Link href="/admin/coupons">
+              <NavItem
+                $active={pathname === "/admin/coupons" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin/coupons")}
+              >
+                <FaTag />
+                Coupons
+              </NavItem>
+            </Link>
+            <Link href="/admin/promotions">
+              <NavItem
+                $active={pathname === "/admin/promotions" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/admin/promotions")}
+              >
+                <FaBullhorn />
+                Promotions
+              </NavItem>
+            </Link>
+            <Link href="/admin/support-tickets">
+              <NavItem
+                $active={
+                  pathname === "/admin/support-tickets" ? "true" : "false"
+                }
+                onClick={(e) => handleNavigation(e, "/admin/support-tickets")}
+              >
+                <FaTicketAlt /> Support Tickets
+              </NavItem>
+            </Link>
+            <Link href="/admin/tutorial-center">
+              <NavItem
+                $active={
+                  pathname === "/admin/tutorial-center" ||
+                  pathname.startsWith("/admin/tutorial-center/")
+                    ? "true"
+                    : "false"
+                }
+                onClick={(e) => handleNavigation(e, "/admin/tutorial-center")}
+              >
+                <FaPlay /> Tutorial Center
+              </NavItem>
+            </Link>
 
-          <NavSection>
-            <NavSectionHeader
-              $expanded={emailCampaignsExpanded}
-              onClick={() => setEmailCampaignsExpanded(!emailCampaignsExpanded)}
-              style={{ cursor: "pointer" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                }}
+            <NavSection>
+              <NavSectionHeader
+                $expanded={emailCampaignsExpanded}
+                onClick={() =>
+                  setEmailCampaignsExpanded(!emailCampaignsExpanded)
+                }
+                style={{ cursor: "pointer" }}
               >
-                <FaEnvelope />
-                Email Campaigns
-              </div>
-              {emailCampaignsExpanded ? <FaChevronDown /> : <FaChevronRight />}
-            </NavSectionHeader>
-            {emailCampaignsExpanded && (
-              <SubNavItems
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                <Link href="/admin/email-campaigns/subscribers">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/subscribers"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(e, "/admin/email-campaigns/subscribers")
-                    }
-                  >
-                    <FaUser /> Subscribers
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/email-campaigns/audiences">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/audiences"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(e, "/admin/email-campaigns/audiences")
-                    }
-                  >
-                    <FaUsers /> Audiences
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/email-campaigns/campaigns">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/campaigns"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(e, "/admin/email-campaigns/campaigns")
-                    }
-                  >
-                    <FaEnvelopeOpen /> Campaigns
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/email-campaigns/templates">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/templates"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(e, "/admin/email-campaigns/templates")
-                    }
-                  >
-                    <FaFileAlt /> Templates
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/email-campaigns/automations">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/automations"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(e, "/admin/email-campaigns/automations")
-                    }
-                  >
-                    <FaCogs /> Automations
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/email-campaigns/deliverability">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/email-campaigns/deliverability"
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) =>
-                      handleNavigation(
-                        e,
-                        "/admin/email-campaigns/deliverability"
-                      )
-                    }
-                  >
-                    <FaShieldAlt /> Deliverability
-                  </SubNavItem>
-                </Link>
-              </SubNavItems>
-            )}
-          </NavSection>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <FaEnvelope />
+                  Email Campaigns
+                </div>
+                {emailCampaignsExpanded ? (
+                  <FaChevronDown />
+                ) : (
+                  <FaChevronRight />
+                )}
+              </NavSectionHeader>
+              {emailCampaignsExpanded && (
+                <SubNavItems
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Link href="/admin/email-campaigns/subscribers">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/subscribers"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(
+                          e,
+                          "/admin/email-campaigns/subscribers"
+                        )
+                      }
+                    >
+                      <FaUser /> Subscribers
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/email-campaigns/audiences">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/audiences"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/email-campaigns/audiences")
+                      }
+                    >
+                      <FaUsers /> Audiences
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/email-campaigns/campaigns">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/campaigns"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/email-campaigns/campaigns")
+                      }
+                    >
+                      <FaEnvelopeOpen /> Campaigns
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/email-campaigns/templates">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/templates"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/email-campaigns/templates")
+                      }
+                    >
+                      <FaFileAlt /> Templates
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/email-campaigns/automations">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/automations"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(
+                          e,
+                          "/admin/email-campaigns/automations"
+                        )
+                      }
+                    >
+                      <FaCogs /> Automations
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/email-campaigns/deliverability">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/email-campaigns/deliverability"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(
+                          e,
+                          "/admin/email-campaigns/deliverability"
+                        )
+                      }
+                    >
+                      <FaShieldAlt /> Deliverability
+                    </SubNavItem>
+                  </Link>
+                </SubNavItems>
+              )}
+            </NavSection>
 
-          <NavSection>
-            <NavSectionHeader
-              $expanded={adManagerExpanded}
-              onClick={() => setAdManagerExpanded(!adManagerExpanded)}
-              style={{ cursor: "pointer" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                }}
+            <NavSection>
+              <NavSectionHeader
+                $expanded={adManagerExpanded}
+                onClick={() => setAdManagerExpanded(!adManagerExpanded)}
+                style={{ cursor: "pointer" }}
               >
-                <FaFacebook />
-                Ad Manager
-              </div>
-              {adManagerExpanded ? <FaChevronDown /> : <FaChevronRight />}
-            </NavSectionHeader>
-            {adManagerExpanded && (
-              <SubNavItems
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                <Link href="/admin/ad-manager">
-                  <SubNavItem
-                    $active={pathname === "/admin/ad-manager" ? "true" : "false"}
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
-                  >
-                    <FaChartBar /> Dashboard
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/ad-manager/campaigns">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/ad-manager/campaigns" ||
-                      pathname.startsWith("/admin/ad-manager/campaigns/")
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/campaigns")}
-                  >
-                    <FaBullhorn /> Campaigns
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/ad-manager/ads/create">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/ad-manager/ads/create" ||
-                      pathname.startsWith("/admin/ad-manager/ads/")
-                        ? "true"
-                        : "false"
-                    }
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/ads/create")}
-                  >
-                    <FaImage /> Create Ad
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/ad-manager/audiences">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/ad-manager/audiences" ? "true" : "false"
-                    }
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/audiences")}
-                  >
-                    <FaBullseye /> Audiences
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/ad-manager/analytics">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/ad-manager/analytics" ? "true" : "false"
-                    }
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/analytics")}
-                  >
-                    <FaChartLine /> Analytics
-                  </SubNavItem>
-                </Link>
-                <Link href="/admin/ad-manager/settings">
-                  <SubNavItem
-                    $active={
-                      pathname === "/admin/ad-manager/settings" ? "true" : "false"
-                    }
-                    onClick={(e) => handleNavigation(e, "/admin/ad-manager/settings")}
-                  >
-                    <FaCog /> Settings
-                  </SubNavItem>
-                </Link>
-              </SubNavItems>
-            )}
-          </NavSection>
-        </nav>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <FaFacebook />
+                  Ad Manager
+                </div>
+                {adManagerExpanded ? <FaChevronDown /> : <FaChevronRight />}
+              </NavSectionHeader>
+              {adManagerExpanded && (
+                <SubNavItems
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Link href="/admin/ad-manager">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager" ? "true" : "false"
+                      }
+                      onClick={(e) => handleNavigation(e, "/admin/ad-manager")}
+                    >
+                      <FaChartBar /> Dashboard
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/ad-manager/campaigns">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager/campaigns" ||
+                        pathname.startsWith("/admin/ad-manager/campaigns/")
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/ad-manager/campaigns")
+                      }
+                    >
+                      <FaBullhorn /> Campaigns
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/ad-manager/ads/create">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager/ads/create" ||
+                        pathname.startsWith("/admin/ad-manager/ads/")
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/ad-manager/ads/create")
+                      }
+                    >
+                      <FaImage /> Create Ad
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/ad-manager/audiences">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager/audiences"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/ad-manager/audiences")
+                      }
+                    >
+                      <FaBullseye /> Audiences
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/ad-manager/analytics">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager/analytics"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/ad-manager/analytics")
+                      }
+                    >
+                      <FaChartLine /> Analytics
+                    </SubNavItem>
+                  </Link>
+                  <Link href="/admin/ad-manager/settings">
+                    <SubNavItem
+                      $active={
+                        pathname === "/admin/ad-manager/settings"
+                          ? "true"
+                          : "false"
+                      }
+                      onClick={(e) =>
+                        handleNavigation(e, "/admin/ad-manager/settings")
+                      }
+                    >
+                      <FaCog /> Settings
+                    </SubNavItem>
+                  </Link>
+                </SubNavItems>
+              )}
+            </NavSection>
+          </nav>
 
-        <UserInfo>
-          <UserName>
-            <h4>{user_display_name}</h4>
-            <p>{user.email}</p>
-          </UserName>
-          <LogoutButton onClick={handleLogout}>
-            <FaSignOutAlt /> Logout
-          </LogoutButton>
-        </UserInfo>
-      </Sidebar>
+          <UserInfo>
+            <UserName>
+              <h4>{user_display_name}</h4>
+              <p>{user.email}</p>
+            </UserName>
+            <LogoutButton onClick={handleLogout}>
+              <FaSignOutAlt /> Logout
+            </LogoutButton>
+          </UserInfo>
+        </Sidebar>
       )}
       {!isTutorialCenter() && (
         <>
           <MobileOverlay $isOpen={sidebarOpen} />
 
           <MobileHeader>
-        <MenuButton onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <FaTimes /> : <FaBars />}
-        </MenuButton>
+            <MenuButton onClick={() => setSidebarOpen(!sidebarOpen)}>
+              {sidebarOpen ? <FaTimes /> : <FaBars />}
+            </MenuButton>
 
-        <MobileLogoContent>
-          <CymasphereLogo
-            size="24px"
-            fontSize="1.2rem"
-            href="/admin"
-            onClick={(e: React.MouseEvent<HTMLElement>) =>
-              handleNavigation(
-                e as React.MouseEvent<HTMLAnchorElement>,
-                "/admin"
-              )
-            }
-            className="mobile-admin-logo"
-          />
-        </MobileLogoContent>
+            <MobileLogoContent>
+              <CymasphereLogo
+                size="24px"
+                fontSize="1.2rem"
+                href="/admin"
+                onClick={(e: React.MouseEvent<HTMLElement>) =>
+                  handleNavigation(
+                    e as React.MouseEvent<HTMLAnchorElement>,
+                    "/admin"
+                  )
+                }
+                className="mobile-admin-logo"
+              />
+            </MobileLogoContent>
 
-        <div style={{ width: "24px" }} />
-      </MobileHeader>
+            <div style={{ width: "24px" }} />
+          </MobileHeader>
         </>
       )}
       {sidebarOpen && !isTutorialCenter() && (
@@ -1088,7 +1125,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           <Link href="/admin/tutorial-center">
             <MobileNavItem
-              $active={pathname === "/admin/tutorial-center" || pathname.startsWith("/admin/tutorial-center/") ? "true" : "false"}
+              $active={
+                pathname === "/admin/tutorial-center" ||
+                pathname.startsWith("/admin/tutorial-center/")
+                  ? "true"
+                  : "false"
+              }
               variants={menuItemVariants}
               custom={4}
               initial="hidden"
@@ -1238,7 +1280,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               custom={12}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/ad-manager/campaigns")}
+              onClick={(e) =>
+                handleNavigation(e, "/admin/ad-manager/campaigns")
+              }
             >
               <FaBullhorn /> Ad Campaigns
             </MobileNavItem>
@@ -1256,7 +1300,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               custom={13}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/ad-manager/ads/create")}
+              onClick={(e) =>
+                handleNavigation(e, "/admin/ad-manager/ads/create")
+              }
             >
               <FaImage /> Create Ad
             </MobileNavItem>
@@ -1271,7 +1317,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               custom={14}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/ad-manager/audiences")}
+              onClick={(e) =>
+                handleNavigation(e, "/admin/ad-manager/audiences")
+              }
             >
               <FaBullseye /> Ad Audiences
             </MobileNavItem>
@@ -1286,7 +1334,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               custom={15}
               initial="hidden"
               animate="visible"
-              onClick={(e) => handleNavigation(e, "/admin/ad-manager/analytics")}
+              onClick={(e) =>
+                handleNavigation(e, "/admin/ad-manager/analytics")
+              }
             >
               <FaChartLine /> Ad Analytics
             </MobileNavItem>
@@ -1339,12 +1389,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <Content $sidebarVisible={!isTutorialCenter()}>
         {!isTutorialCenter() && (
           <BackButtonContainer>
-          <Link href="/dashboard">
-            <BackButton>
+            <BackButton href="/dashboard">
               Back to Dashboard <FaArrowLeft />
             </BackButton>
-          </Link>
-        </BackButtonContainer>
+          </BackButtonContainer>
         )}
 
         <PageTransition
