@@ -3329,6 +3329,26 @@ export default function AdminCRM() {
                             ? "NFR"
                             : selectedUser.subscription}
                         </SubscriptionBadge>
+                        {(() => {
+                          // Check if user has an active subscription set to cancel
+                          const hasActiveCanceledSubscription =
+                            userSubscriptions.some(
+                              (sub) =>
+                                (sub.status === "active" ||
+                                  sub.status === "trialing") &&
+                                sub.cancel_at_period_end === true
+                            );
+                          return hasActiveCanceledSubscription ? (
+                            <FaBan
+                              style={{
+                                color: "#ff6b6b",
+                                fontSize: "16px",
+                                cursor: "help",
+                              }}
+                              title="Subscription will cancel at period end"
+                            />
+                          ) : null;
+                        })()}
                         <RefreshButton
                           onClick={handleRefreshSubscription}
                           disabled={refreshingSubscription}
@@ -3503,9 +3523,29 @@ export default function AdminCRM() {
                                 </StripeLink>
                               </DataTableCell>
                               <DataTableCell>
-                                <StatusBadge $status={sub.status}>
-                                  {sub.status}
-                                </StatusBadge>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <StatusBadge $status={sub.status}>
+                                    {sub.status}
+                                  </StatusBadge>
+                                  {isActive &&
+                                    sub.cancel_at_period_end &&
+                                    !isCanceled && (
+                                      <FaBan
+                                        style={{
+                                          color: "#ff6b6b",
+                                          fontSize: "14px",
+                                          cursor: "help",
+                                        }}
+                                        title="Subscription will cancel at period end"
+                                      />
+                                    )}
+                                </div>
                               </DataTableCell>
                               <DataTableCell>
                                 <PlanSelect
