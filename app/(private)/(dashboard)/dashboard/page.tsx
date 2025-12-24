@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -169,9 +169,15 @@ const Button = styled.button`
   justify-content: center;
   gap: 8px;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 7px 14px rgba(108, 99, 255, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -391,6 +397,8 @@ function DashboardPage() {
     error: null,
   });
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const navigationInProgressRef = useRef(false);
 
   // Trial duration in days
   const trialDays = 7; // Default value
@@ -485,17 +493,41 @@ function DashboardPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const navigateToBilling = () => {
+  const navigateToBilling = useCallback(() => {
+    if (navigationInProgressRef.current) return; // Prevent multiple clicks
+    navigationInProgressRef.current = true;
+    setIsNavigating(true);
     router.push("/billing");
-  };
+    // Reset after a short delay in case navigation fails
+    setTimeout(() => {
+      navigationInProgressRef.current = false;
+      setIsNavigating(false);
+    }, 2000);
+  }, [router]);
 
-  const navigateToDownloads = () => {
+  const navigateToDownloads = useCallback(() => {
+    if (navigationInProgressRef.current) return; // Prevent multiple clicks
+    navigationInProgressRef.current = true;
+    setIsNavigating(true);
     router.push("/downloads");
-  };
+    // Reset after a short delay in case navigation fails
+    setTimeout(() => {
+      navigationInProgressRef.current = false;
+      setIsNavigating(false);
+    }, 2000);
+  }, [router]);
 
-  const navigateToSettings = () => {
+  const navigateToSettings = useCallback(() => {
+    if (navigationInProgressRef.current) return; // Prevent multiple clicks
+    navigationInProgressRef.current = true;
+    setIsNavigating(true);
     router.push("/settings");
-  };
+    // Reset after a short delay in case navigation fails
+    setTimeout(() => {
+      navigationInProgressRef.current = false;
+      setIsNavigating(false);
+    }, 2000);
+  }, [router]);
 
   const handleContactInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -979,9 +1011,9 @@ function DashboardPage() {
                 ? navigateToDownloads
                 : navigateToBilling
             }
-            disabled={isLoadingPrices}
+            disabled={isLoadingPrices || isNavigating}
           >
-            {isLoadingPrices ? (
+            {isLoadingPrices || isNavigating ? (
               <LoadingComponent size="20px" text="" />
             ) : user.profile.subscription === "lifetime" ? (
               t("dashboard.downloads.downloadButton", "Download")
