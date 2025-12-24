@@ -1,3 +1,30 @@
+/**
+ * @fileoverview Toast Component
+ * @module components/common/Toast
+ * 
+ * A toast notification component that displays temporary messages to users.
+ * Supports multiple types (info, success, error, warning) with automatic dismissal
+ * and smooth slide animations.
+ * 
+ * @example
+ * // Success toast
+ * <Toast 
+ *   message="Settings saved successfully!" 
+ *   type="success" 
+ *   duration={3000} 
+ *   onClose={() => {}} 
+ * />
+ * 
+ * @example
+ * // Error toast
+ * <Toast 
+ *   message="Failed to save changes" 
+ *   type="error" 
+ *   duration={5000} 
+ *   onClose={handleClose} 
+ * />
+ */
+
 import React, { useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import {
@@ -124,17 +151,41 @@ const CloseButton = styled.button`
   }
 `;
 
+/**
+ * @brief Props for Toast component
+ */
+interface ToastProps {
+  /** @param {string} message - The message text to display */
+  message: string;
+  /** @param {"info"|"success"|"error"|"warning"} [type="info"] - Toast type, determines color and icon */
+  type?: "info" | "success" | "error" | "warning";
+  /** @param {number} [duration=3000] - Auto-dismiss duration in milliseconds */
+  duration?: number;
+  /** @param {() => void} onClose - Callback function called when toast is dismissed */
+  onClose: () => void;
+}
+
+/**
+ * @brief Toast component
+ * 
+ * Displays a temporary notification message with type-specific styling and icons.
+ * Automatically dismisses after the specified duration with smooth slide-out animation.
+ * 
+ * @param {ToastProps} props - Component props
+ * @returns {JSX.Element} The rendered toast notification
+ * 
+ * @note Toast appears at the top center of the viewport
+ * @note Uses slide-in and slide-out animations for smooth transitions
+ * @note Type determines icon and accent color (top border)
+ * @note Close button is available but currently doesn't trigger onClose
+ * @note Auto-dismisses after duration with 300ms animation delay
+ */
 const Toast = ({
   message,
   type = "info",
   duration = 3000,
   onClose,
-}: {
-  message: string;
-  type: string;
-  duration: number;
-  onClose: () => void;
-}) => {
+}: ToastProps) => {
   const [isClosing, setIsClosing] = React.useState(false);
 
   const handleClose = () => {};

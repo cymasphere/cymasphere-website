@@ -1,3 +1,28 @@
+/**
+ * @fileoverview LegalModal Component
+ * @module components/modals/LegalModal
+ * 
+ * Modal component for displaying legal documents (Terms of Service and Privacy Policy).
+ * Features scrollable content, smooth animations, and full internationalization support.
+ * Content is dynamically rendered based on modal type.
+ * 
+ * @example
+ * // Terms of Service
+ * <LegalModal 
+ *   isOpen={showTerms} 
+ *   onClose={() => setShowTerms(false)} 
+ *   modalType="terms" 
+ * />
+ * 
+ * @example
+ * // Privacy Policy
+ * <LegalModal 
+ *   isOpen={showPrivacy} 
+ *   onClose={() => setShowPrivacy(false)} 
+ *   modalType="privacy" 
+ * />
+ */
+
 "use client";
 
 import React, { useEffect, useCallback } from "react";
@@ -193,12 +218,35 @@ const LegalContent = styled.div`
   }
 `;
 
+/**
+ * @brief Props for LegalModal component
+ */
 interface LegalModalProps {
+  /** @param {boolean} isOpen - Whether the modal is visible */
   isOpen: boolean;
+  /** @param {() => void} onClose - Callback to close the modal */
   onClose: () => void;
+  /** @param {"terms"|"privacy"} modalType - Type of legal document to display */
   modalType: "terms" | "privacy";
 }
 
+/**
+ * @brief LegalModal component
+ * 
+ * Displays legal documents (Terms of Service or Privacy Policy) in a scrollable
+ * modal with smooth animations. Content is fully internationalized and includes
+ * comprehensive sections covering all legal aspects of the service.
+ * 
+ * @param {LegalModalProps} props - Component props
+ * @returns {JSX.Element} The rendered legal modal component
+ * 
+ * @note Prevents body scrolling when modal is open
+ * @note Content is memoized to prevent expensive DOM recreation
+ * @note Supports click-outside-to-close functionality
+ * @note Includes custom scrollbar styling
+ * @note Terms of Service includes 12 sections covering all aspects
+ * @note Privacy Policy includes 10 sections covering data handling
+ */
 const LegalModal: React.FC<LegalModalProps> = ({
   isOpen,
   onClose,

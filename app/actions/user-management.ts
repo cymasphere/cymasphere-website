@@ -1,3 +1,13 @@
+/**
+ * @fileoverview User management server actions
+ * 
+ * This file contains server actions for managing users including admin checks,
+ * user management records, CRM data retrieval, and user communication. All
+ * operations require admin authentication.
+ * 
+ * @module actions/user-management
+ */
+
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
@@ -10,13 +20,32 @@ import {
 import { fetchProfile } from "@/utils/supabase/actions";
 import { sendEmail } from "@/utils/email";
 
+/**
+ * User management record interface
+ */
 export interface UserManagementRecord {
   user_email: string;
   pro: boolean;
   notes: string | null;
 }
 
-// Helper to check if user is admin
+/**
+ * @brief Helper function to check if current user is an admin
+ * 
+ * Checks if the authenticated user has an entry in the admins table.
+ * Returns false if user is not authenticated or if admin record doesn't exist.
+ * 
+ * @param supabase Supabase client instance
+ * @returns Promise resolving to true if user is admin, false otherwise
+ * @note Handles PGRST116 error (no rows returned) as non-admin
+ * 
+ * @example
+ * ```typescript
+ * const supabase = await createClient();
+ * const isAdmin = await checkAdmin(supabase);
+ * // Returns: true if user is admin, false otherwise
+ * ```
+ */
 export async function checkAdmin(supabase: ReturnType<typeof createClient>) {
   const {
     data: { user },
@@ -36,7 +65,20 @@ export async function checkAdmin(supabase: ReturnType<typeof createClient>) {
 }
 
 /**
- * Get all user_management records (admin only)
+ * @brief Server action to get all user management records
+ * 
+ * Retrieves all user management records from the database, ordered by email
+ * address. Used by admin interface for managing user notes and pro status.
+ * 
+ * @returns Promise with user management records array or error
+ * @note Requires admin access (checked via checkAdmin)
+ * @note Returns records ordered by email address (ascending)
+ * 
+ * @example
+ * ```typescript
+ * const result = await getUserManagementRecords();
+ * // Returns: { data: [{ user_email: "...", pro: true, notes: "..." }], error: null }
+ * ```
  */
 export async function getUserManagementRecords(): Promise<{
   data: UserManagementRecord[] | null;
@@ -70,7 +112,23 @@ export async function getUserManagementRecords(): Promise<{
 }
 
 /**
- * Create new user_management record (admin only)
+ * @brief Server action to create a new user management record
+ * 
+ * Creates a new user management record with email, pro status, and optional
+ * notes. Validates email format before creating the record.
+ * 
+ * @param user_email User's email address (required)
+ * @param pro Whether user has pro status (required)
+ * @param notes Optional notes about the user
+ * @returns Promise with created record or error
+ * @note Requires admin access (checked via checkAdmin)
+ * @note Validates email format before creation
+ * 
+ * @example
+ * ```typescript
+ * const result = await createUserManagementRecord("user@example.com", true, "VIP customer");
+ * // Returns: { data: { user_email: "...", pro: true, notes: "..." }, error: null }
+ * ```
  */
 export async function createUserManagementRecord(
   user_email: string,
@@ -166,7 +224,23 @@ export async function createUserManagementRecord(
 }
 
 /**
- * Update existing user_management record (admin only)
+ * @brief Server action to update an existing user management record
+ * 
+ * Updates a user management record with new pro status and/or notes. If pro
+ * status is changed to true, also updates the user's profile subscription
+ * using the centralized update function.
+ * 
+ * @param user_email Email address of the user to update (required)
+ * @param updates Object with optional pro status and notes
+ * @returns Promise with updated record or error
+ * @note Requires admin access (checked via checkAdmin)
+ * @note Updates user profile subscription if pro status set to true
+ * 
+ * @example
+ * ```typescript
+ * const result = await updateUserManagementRecord("user@example.com", { pro: true, notes: "Updated" });
+ * // Returns: { data: { user_email: "...", pro: true, notes: "Updated" }, error: null }
+ * ```
  */
 export async function updateUserManagementRecord(
   user_email: string,

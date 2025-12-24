@@ -1,3 +1,17 @@
+/**
+ * @fileoverview FeaturesSection Component
+ * @module components/sections/FeaturesSection
+ * 
+ * Main features section for the landing page. Displays a grid of feature cards
+ * with icons, titles, descriptions, and background images. Each card opens a
+ * detailed modal with comprehensive feature information. Supports click-to-expand
+ * functionality and smooth animations.
+ * 
+ * @example
+ * // Basic usage
+ * <FeaturesSection />
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -236,6 +250,29 @@ const cardVariants = {
   }),
 };
 
+/**
+ * @brief FeaturesSection component
+ * 
+ * Displays a grid of feature cards showcasing Cymasphere's capabilities:
+ * - Song Builder
+ * - Harmony Palettes
+ * - Pattern Editor
+ * - Voicing Generator
+ * - Intelligent Generation
+ * - Voice Handling
+ * - DAW Integration
+ * - Specialized Track Types
+ * - Progression Timeline
+ * 
+ * @returns {JSX.Element} The rendered features section component
+ * 
+ * @note Each card opens FeatureModal with detailed information
+ * @note Cards have unique gradient rotations for visual variety
+ * @note Background images are loaded from Supabase storage
+ * @note Supports internationalization through react-i18next
+ * @note Feature descriptions are formatted with keyword highlighting
+ * @note Cards animate in sequence on scroll into view
+ */
 const FeaturesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(0);

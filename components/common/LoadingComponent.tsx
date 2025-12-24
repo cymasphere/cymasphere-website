@@ -1,3 +1,23 @@
+/**
+ * @fileoverview LoadingComponent
+ * @module components/common/LoadingComponent
+ * 
+ * A full-featured loading indicator component that displays an animated energy ball
+ * with optional text. Supports both inline and full-screen display modes.
+ * 
+ * @example
+ * // Inline loading
+ * <LoadingComponent text="Loading data..." />
+ * 
+ * @example
+ * // Full-screen loading overlay
+ * <LoadingComponent 
+ *   size="80px" 
+ *   text="Please wait..." 
+ *   fullScreen={true} 
+ * />
+ */
+
 import React from "react";
 import styled from "styled-components";
 import EnergyBall from "@/components/common/EnergyBall";
@@ -27,12 +47,30 @@ const LoadingText = styled.p`
   text-align: center;
 `;
 
+/**
+ * @brief Props for the LoadingComponent
+ */
 interface LoadingComponentProps {
+  /** @param {string} [size="60px"] - Size of the energy ball icon */
   size?: string;
+  /** @param {string} [text] - Optional loading message to display */
   text?: string;
+  /** @param {boolean} [fullScreen=false] - If true, displays as full-screen overlay */
   fullScreen?: boolean;
 }
 
+/**
+ * @brief LoadingComponent
+ * 
+ * Displays a loading indicator with an animated energy ball and optional text.
+ * Can be used inline within a container or as a full-screen overlay.
+ * 
+ * @param {LoadingComponentProps} props - Component props
+ * @returns {JSX.Element} The rendered loading component
+ * 
+ * @note Full-screen mode uses fixed positioning and high z-index
+ * @note Text is optional and only displays if provided
+ */
 const LoadingComponent: React.FC<LoadingComponentProps> = ({
   size = "60px",
   text,

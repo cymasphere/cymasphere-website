@@ -1,3 +1,16 @@
+/**
+ * @fileoverview NextFooter Component
+ * @module components/layout/NextFooter
+ * 
+ * Next.js App Router-optimized footer component with navigation links,
+ * social media icons, and legal information modals. Uses Next.js navigation
+ * hooks for client-side routing.
+ * 
+ * @example
+ * // Basic usage
+ * <NextFooter />
+ */
+
 import React, { useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
@@ -175,6 +188,20 @@ const Copyright = styled.div`
   }
 `;
 
+/**
+ * @brief NextFooter component
+ * 
+ * Footer component optimized for Next.js App Router. Provides four-column
+ * layout with brand information, navigation, account links, and company
+ * information. Includes legal modals and social media links.
+ * 
+ * @returns {JSX.Element} The rendered footer component
+ * 
+ * @note Uses Next.js useRouter and usePathname hooks for navigation
+ * @note Logo click plays audio chord when on home page
+ * @note Responsive design with mobile-optimized grid layout
+ * @note Includes legal modals for terms and privacy policy
+ */
 const NextFooter = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);

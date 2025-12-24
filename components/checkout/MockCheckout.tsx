@@ -1,3 +1,16 @@
+/**
+ * @fileoverview MockCheckout Component
+ * @module components/checkout/MockCheckout
+ * 
+ * Mock checkout page component for development and testing purposes.
+ * Receives plan details via URL query parameters and displays a placeholder
+ * checkout interface. Used when Stripe checkout is not available.
+ * 
+ * @example
+ * // Accessed via URL with query parameters
+ * /mock-checkout?plan=Cymasphere Pro&billing=monthly&price=9.99
+ */
+
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import styled from "styled-components";
@@ -50,6 +63,18 @@ interface FormState {
   price: number;
 }
 
+/**
+ * @brief MockCheckout component
+ * 
+ * Placeholder checkout page that receives plan information from URL query
+ * parameters. Currently displays a minimal interface with plan details.
+ * 
+ * @returns {JSX.Element} Mock checkout page container
+ * 
+ * @note This is a development/testing component
+ * @note Plan details are extracted from URL search parameters
+ * @note Component state includes form fields for future implementation
+ */
 const MockCheckout: React.FC = () => {
   const searchParams = useSearchParams();
   const [formState, setFormState] = useState<FormState>({

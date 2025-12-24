@@ -1,13 +1,91 @@
+/**
+ * @fileoverview Stripe coupon management API endpoint
+ * 
+ * This endpoint handles deletion of Stripe coupons. Requires admin authentication
+ * and deletes the coupon from Stripe. Used for managing promotional codes and
+ * discount coupons in the system.
+ * 
+ * @module api/stripe/coupons/[id]
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
 
+/**
+ * Stripe client instance with specific API version
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-11-20.acacia',
 });
 
 /**
- * DELETE - Delete a Stripe coupon
+ * @brief DELETE endpoint to delete a Stripe coupon
+ * 
+ * Deletes a coupon from Stripe by ID. Requires admin authentication.
+ * Validates user is an admin before allowing deletion.
+ * 
+ * Route parameters:
+ * - id: Stripe coupon ID to delete (from URL path)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "message": "Coupon deleted successfully"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing coupon ID:
+ * ```json
+ * {
+ *   "error": "Coupon ID required"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Stripe deletion error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "No such coupon: 'coupon_xxx'"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not authenticated:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * 403 Forbidden - Not admin:
+ * ```json
+ * {
+ *   "error": "Forbidden"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Internal server error"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @param params Route parameters containing coupon ID
+ * @returns NextResponse with success status or error
+ * @note Requires admin authentication
+ * @note Coupon deletion is permanent and cannot be undone
+ * 
+ * @example
+ * ```typescript
+ * // DELETE /api/stripe/coupons/coupon_abc123
+ * // Returns: { success: true, message: "Coupon deleted successfully" }
+ * ```
  */
 export async function DELETE(
   request: NextRequest,

@@ -1,13 +1,34 @@
+/**
+ * @fileoverview Internationalization configuration and utilities.
+ * @module app/i18n/i18n-config
+ * @description Provides i18next configuration, language detection, and translation loading.
+ * Handles language preference detection from localStorage and browser settings.
+ */
+
 "use client";
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-// Languages we support
+/**
+ * @brief Array of supported language codes.
+ * @description List of all language codes supported by the application.
+ */
 export const languages = ['en', 'es', 'fr', 'it', 'de', 'pt', 'tr', 'zh', 'ja'];
+
+/**
+ * @brief Default language code.
+ * @description Fallback language used when no preference is detected.
+ */
 export const defaultLanguage = 'en';
 
-// Function to get the current language preference from localStorage or browser
+/**
+ * @brief Gets the current language preference from localStorage or browser.
+ * @description Checks localStorage first, then browser language settings.
+ * Handles language variants (e.g., 'en-US' -> 'en', 'es-MX' -> 'es').
+ * @returns {string} Language code to use.
+ * @note Saves detected language to localStorage for future use.
+ */
 export const getCurrentLanguage = (): string => {
   if (typeof window === 'undefined') return defaultLanguage;
   
@@ -43,7 +64,17 @@ export const getCurrentLanguage = (): string => {
   return defaultLanguage;
 };
 
-// Function to load translations for a language
+/**
+ * @brief Loads translations for a specified locale from the API.
+ * @description Fetches translations from the translations API endpoint and
+ * initializes or updates i18next with the loaded translations.
+ * @param {string} locale - The locale code to load translations for.
+ * @returns {Promise<object>} Promise resolving to the translation data object.
+ * @note Adds timestamp query parameter to prevent caching.
+ * @note Initializes i18next if not already initialized.
+ * @note Saves language preference to localStorage.
+ * @note Returns empty object on error to prevent crashes.
+ */
 export const loadTranslations = async (locale: string) => {
   try {
     // Add timestamp to prevent caching

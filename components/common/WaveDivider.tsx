@@ -1,3 +1,25 @@
+/**
+ * @fileoverview WaveDivider Component
+ * @module components/common/WaveDivider
+ * 
+ * A decorative wave divider component that creates smooth transitions between
+ * sections with different background colors. Generates SVG wave patterns with
+ * customizable complexity and orientation.
+ * 
+ * @example
+ * // Basic usage
+ * <WaveDivider topColor="#1A1A2E" bottomColor="#ffffff" />
+ * 
+ * @example
+ * // Complex wave with inversion
+ * <WaveDivider 
+ *   topColor="#000000" 
+ *   bottomColor="#ffffff" 
+ *   complexity={3} 
+ *   invert={true} 
+ * />
+ */
+
 import React from 'react';
 import styled from 'styled-components';
 
@@ -21,14 +43,35 @@ const WaveSVG = styled.svg`
 `;
 
 /**
- * WaveDivider component
- * Creates a subtle, seamless audio waveform-like transition between sections
+ * @brief Props for WaveDivider component
+ */
+interface WaveDividerProps {
+  /** @param {string} [topColor="#1A1A2E"] - Color of the section above the divider */
+  topColor?: string;
+  /** @param {string} [bottomColor="#ffffff"] - Color of the section below the divider */
+  bottomColor?: string;
+  /** @param {React.CSSProperties} [style] - Additional inline styles */
+  style?: React.CSSProperties;
+  /** @param {1|2|3} [complexity=2] - Wave complexity level (1=simple, 2=medium, 3=complex) */
+  complexity?: 1 | 2 | 3;
+  /** @param {boolean} [invert=false] - If true, inverts the wave pattern */
+  invert?: boolean;
+}
+
+/**
+ * @brief WaveDivider component
  * 
- * @param {Object} props
- * @param {string} props.topColor - The color of the section above
- * @param {string} props.bottomColor - The color of the section below
- * @param {number} props.complexity - Controls the complexity of the wave (1-3)
- * @param {boolean} props.invert - If true, inverts the wave pattern
+ * Creates a seamless audio waveform-like transition between sections with
+ * different background colors. Uses SVG paths to generate smooth wave patterns
+ * that can be customized for complexity and orientation.
+ * 
+ * @param {WaveDividerProps} props - Component props
+ * @returns {JSX.Element} The rendered wave divider component
+ * 
+ * @note Uses negative margins to overlap with adjacent sections for seamless transition
+ * @note SVG viewBox is 1600x100 for responsive scaling
+ * @note Complexity levels affect the number of wave peaks and valleys
+ * @note Invert option flips the wave pattern vertically
  */
 const WaveDivider = ({ 
   topColor = "#1A1A2E", 
@@ -36,7 +79,7 @@ const WaveDivider = ({
   style = {},
   complexity = 2,
   invert = false
-}) => {
+}: WaveDividerProps) => {
   // Generate path based on complexity
   const getWavePath = () => {
     if (complexity === 1) {

@@ -1,10 +1,68 @@
+/**
+ * @fileoverview Email campaigns management API endpoint
+ * 
+ * This endpoint handles CRUD operations for email campaigns. Supports listing
+ * all campaigns with pagination, creating new campaigns, and managing campaign
+ * metadata including audiences, content, and scheduling information.
+ * 
+ * @module api/email-campaigns/campaigns
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 
 /**
- * GET /api/email-campaigns/campaigns
- * Get all email campaigns (admin only)
+ * @brief GET endpoint to retrieve all email campaigns with pagination
+ * 
+ * Returns a paginated list of all email campaigns with their metadata,
+ * including audience relationships (included and excluded audiences).
+ * Results are ordered by creation date (newest first).
+ * 
+ * Query parameters:
+ * - limit: Number of campaigns to return (default: 25)
+ * - offset: Number of campaigns to skip for pagination (default: 0)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaigns": [
+ *     {
+ *       "id": "uuid",
+ *       "name": "Campaign Name",
+ *       "subject": "Email Subject",
+ *       "status": "draft",
+ *       "scheduled_at": "2024-01-01T00:00:00.000Z",
+ *       "audienceIds": ["uuid1", "uuid2"],
+ *       "excludedAudienceIds": ["uuid3"]
+ *     }
+ *   ],
+ *   "total": 100,
+ *   "limit": 25,
+ *   "offset": 0
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to fetch campaigns"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with campaigns array and pagination info
+ * @note Includes audience relationships (included and excluded) for each campaign
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/email-campaigns/campaigns?limit=50&offset=0
+ * // Returns: { success: true, campaigns: [...], total: 100, limit: 50, offset: 0 }
+ * ```
  */
 export async function GET(request: NextRequest) {
   try {
@@ -84,8 +142,68 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/email-campaigns/campaigns
- * Create a new email campaign (admin only)
+ * @brief POST endpoint to create a new email campaign
+ * 
+ * Creates a new email campaign with content, sender information, and audience
+ * targeting. Associates the campaign with included and excluded audiences.
+ * Campaigns are created in "draft" status by default.
+ * 
+ * Request body (JSON):
+ * - name: Campaign name (required)
+ * - subject: Email subject line (required)
+ * - senderName: Sender display name (optional, default: "Cymasphere")
+ * - senderEmail: Sender email address (optional, default: "support@cymasphere.com")
+ * - replyToEmail: Reply-to email address (optional)
+ * - preheader: Email preheader text (optional)
+ * - description: Campaign description (optional)
+ * - htmlContent: HTML email content (optional)
+ * - textContent: Plain text email content (optional)
+ * - audienceIds: Array of audience IDs to include (optional)
+ * - excludedAudienceIds: Array of audience IDs to exclude (optional)
+ * - status: Campaign status (optional, default: "draft")
+ * - scheduled_at: Scheduled send time (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "uuid",
+ *     "name": "Campaign Name",
+ *     "subject": "Email Subject",
+ *     "status": "draft"
+ *   }
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing required fields:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Name and subject are required"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to create campaign"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with campaign data
+ * @returns NextResponse with created campaign data or error
+ * @note Audience relations are created separately and don't block campaign creation on failure
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/email-campaigns/campaigns
+ * // Body: { name: "Newsletter", subject: "Monthly Update", audienceIds: ["uuid"] }
+ * // Returns: { success: true, campaign: { id: "uuid", ... } }
+ * ```
  */
 export async function POST(request: NextRequest) {
   try {

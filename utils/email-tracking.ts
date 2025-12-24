@@ -1,5 +1,12 @@
 /**
- * Email tracking utilities for injecting tracking pixels and rewriting links
+ * @fileoverview Email tracking and bot detection utilities
+ * 
+ * This file provides utilities for email tracking including bot detection
+ * for open tracking, link rewriting for click tracking, and tracking pixel
+ * injection. Uses industry best practices for identifying automated opens
+ * to maintain accurate email analytics.
+ * 
+ * @module utils/email-tracking
  */
 
 /**
@@ -66,11 +73,29 @@ const SUSPICIOUS_IPS = [
 ];
 
 /**
- * Determines if an email open is likely from a bot or automated system
- * Uses 2024 industry best practices for bot detection
- * @param userAgent - The user agent string
- * @param ipAddress - The IP address  
- * @returns true if likely automated, false if likely human
+ * @brief Determines if an email open is likely from a bot or automated system
+ * 
+ * Analyzes user agent and IP address to identify automated email opens.
+ * Uses 2024 industry best practices for bot detection including:
+ * - Known bot user agents (Googlebot, email security scanners, etc.)
+ * - Suspicious IP patterns (localhost, development IPs)
+ * - Explicit test/debug patterns
+ * 
+ * @param userAgent User agent string from the request
+ * @param ipAddress IP address of the request
+ * @returns true if likely automated/bot, false if likely human
+ * @note Only flags obvious bots to avoid false positives
+ * @note Does not flag private network IPs (legitimate home/office networks)
+ * @note Includes email security scanners and corporate email filters
+ * 
+ * @example
+ * ```typescript
+ * const isBot = isLikelyBotOpen("Googlebot/2.1", "66.249.64.1");
+ * // Returns: true
+ * 
+ * const isBot = isLikelyBotOpen("Mozilla/5.0...", "192.168.1.1");
+ * // Returns: false (private network IPs are not flagged)
+ * ```
  */
 export function isLikelyBotOpen(
   userAgent: string | null,

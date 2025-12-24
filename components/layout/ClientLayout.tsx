@@ -1,3 +1,18 @@
+/**
+ * @fileoverview ClientLayout Component
+ * @module components/layout/ClientLayout
+ * 
+ * Client-side only layout component for Next.js App Router. Provides header,
+ * animated main content area, and footer. Optimized for client-side rendering
+ * with smooth page transitions.
+ * 
+ * @example
+ * // Basic usage in a client component
+ * <ClientLayout>
+ *   <YourPageContent />
+ * </ClientLayout>
+ */
+
 "use client";
 
 import React from "react";
@@ -50,7 +65,30 @@ const pageVariants = {
   },
 };
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
+/**
+ * @brief Props for ClientLayout component
+ */
+interface ClientLayoutProps {
+  /** @param {React.ReactNode} children - Page content to render */
+  children: React.ReactNode;
+}
+
+/**
+ * @brief ClientLayout component
+ * 
+ * Client-side layout wrapper for Next.js App Router pages. Provides header,
+ * animated main content area with page transitions, and footer. Uses Framer
+ * Motion for smooth animations.
+ * 
+ * @param {ClientLayoutProps} props - Component props
+ * @returns {JSX.Element} The rendered layout component
+ * 
+ * @note This component is marked with "use client" directive
+ * @note Uses NextHeader and Footer components
+ * @note Main content includes fade and slide animations
+ * @note Layout uses full viewport height with flexbox
+ */
+export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <LayoutWrapper>
       <NextHeader />

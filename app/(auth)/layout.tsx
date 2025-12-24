@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Authentication layout component with page transition animations.
+ * @module app/(auth)/layout
+ * @description Provides a layout wrapper for authentication pages (login, signup, etc.)
+ * with smooth page transition animations using Framer Motion.
+ */
+
 "use client";
 
 import React from "react";
@@ -48,10 +55,22 @@ const pageVariants = {
   },
 };
 
+/**
+ * @brief Interface for AuthLayout component props.
+ * @description Defines the props structure for the authentication layout component.
+ */
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * @brief Authentication layout component.
+ * @description Wraps authentication pages with a layout container and smooth
+ * page transition animations using Framer Motion.
+ * @param {LayoutProps} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to render.
+ * @returns {JSX.Element} Layout wrapper with page transitions.
+ */
 export default function AuthLayout({ children }: LayoutProps) {
   return (
     <LayoutWrapper>

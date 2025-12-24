@@ -1,7 +1,21 @@
+/**
+ * @fileoverview Email campaign management server actions
+ * 
+ * This file contains server actions for managing email campaigns including
+ * listing campaigns with pagination and audience relations, and retrieving
+ * individual campaign details. All operations require admin access enforced
+ * by Row Level Security (RLS) policies.
+ * 
+ * @module actions/email-campaigns/campaigns
+ */
+
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
 
+/**
+ * Parameters for getting campaigns list
+ */
 export interface GetCampaignsParams {
   limit?: number;
   offset?: number;
@@ -41,7 +55,24 @@ export interface GetCampaignResponse {
 }
 
 /**
- * Get all email campaigns (admin only)
+ * @brief Server action to get all email campaigns with pagination
+ * 
+ * Retrieves a paginated list of email campaigns ordered by creation date
+ * (newest first). Includes audience relationships (included and excluded
+ * audiences) loaded in batch for efficiency. Returns total count for pagination.
+ * 
+ * @param params Optional parameters for pagination (limit, offset)
+ * @returns Promise with campaigns array, total count, and pagination info
+ * @note Requires admin access (enforced by RLS policies)
+ * @note Batch loads audience relations to avoid N+1 query problem
+ * @note Falls back to simpler query if range query fails
+ * @note Limits audience relations query to 1000 records for safety
+ * 
+ * @example
+ * ```typescript
+ * const result = await getCampaigns({ limit: 25, offset: 0 });
+ * // Returns: { campaigns: [...], total: 100, limit: 25, offset: 0 }
+ * ```
  */
 export async function getCampaigns(
   params?: GetCampaignsParams
@@ -145,7 +176,23 @@ export async function getCampaigns(
 }
 
 /**
- * Get a single campaign by ID (admin only)
+ * @brief Server action to get a single email campaign by ID
+ * 
+ * Retrieves complete campaign details including HTML/text content, sender
+ * information, preheader, description, and audience relationships. Transforms
+ * database field names (snake_case) to frontend-friendly names (camelCase).
+ * 
+ * @param campaignId Campaign ID to retrieve
+ * @returns Promise with complete campaign data including content and audiences
+ * @note Requires admin access (enforced by RLS policies)
+ * @note Separates included and excluded audiences from relations
+ * @note Transforms database fields to frontend-friendly format
+ * 
+ * @example
+ * ```typescript
+ * const result = await getCampaign("campaign-uuid");
+ * // Returns: { campaign: { id: "...", name: "...", htmlContent: "...", ... } }
+ * ```
  */
 export async function getCampaign(
   campaignId: string

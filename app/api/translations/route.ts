@@ -1,10 +1,28 @@
+/**
+ * @fileoverview Internationalization translations API endpoint
+ * 
+ * This endpoint serves internationalization (i18n) translation files for
+ * the application. Merges locale-specific translations with English fallbacks
+ * to ensure complete translation coverage. Supports multiple languages and
+ * includes CORS headers for cross-origin requests.
+ * 
+ * @module api/translations
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import "server-only";
 
-// Languages we support - duplicated here to avoid importing from client component
+/**
+ * Supported language codes
+ * @note Duplicated here to avoid importing from client component
+ */
 const languages = ["en", "es", "fr", "it", "de", "pt", "tr", "zh", "ja"];
+
+/**
+ * Default language code (English)
+ */
 const defaultLanguage = "en";
 
 // Deep merge of objects
@@ -65,6 +83,57 @@ const getFallbackTranslations = (locale: string) => {
   return fallbacks[locale] || fallbacks.en;
 };
 
+/**
+ * @brief GET endpoint to retrieve translations for a locale
+ * 
+ * Loads translation files from the filesystem and merges locale-specific
+ * translations with English fallbacks to ensure complete coverage. Supports
+ * multiple languages and includes CORS headers for cross-origin requests.
+ * 
+ * Query parameters:
+ * - locale: Language code - "en", "es", "fr", "it", "de", "pt", "tr", "zh", "ja" (optional, default: "en")
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "common": {
+ *     "loading": "Loading...",
+ *     "error": "Error",
+ *     ...
+ *   },
+ *   "subscriber": {
+ *     "details": "Subscriber Details",
+ *     ...
+ *   }
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error - Fallback:
+ * ```json
+ * {
+ *   "common": {
+ *     "loading": "Loading...",
+ *     ...
+ *   }
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with merged translations or fallback translations
+ * @note Merges locale-specific translations with English fallbacks
+ * @note Includes CORS headers for cross-origin requests
+ * @note Caches responses for 1 hour (Cache-Control header)
+ * @note Falls back to English if locale file not found
+ * @note Uses deep merge to preserve nested translation structure
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/translations?locale=es
+ * // Returns: { common: {...}, subscriber: {...}, ... } (merged with English fallbacks)
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     // Add CORS headers for cross-origin requests

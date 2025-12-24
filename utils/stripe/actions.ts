@@ -1,16 +1,44 @@
+/**
+ * @fileoverview Stripe server actions for checkout and customer management
+ * 
+ * This file contains server actions for Stripe operations including checkout
+ * session creation, customer management, price retrieval, and subscription
+ * status checking. Handles trial eligibility and payment method collection.
+ * 
+ * @module utils/stripe/actions
+ */
+
 "use server";
 
 import Stripe from "stripe";
 import { SubscriptionType } from "@/utils/supabase/types";
 import { PlanType, PriceData } from "@/types/stripe";
 
+/**
+ * Stripe client instance initialized with secret key
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
- * Server action to initiate checkout process
- * @param planType The selected plan type
- * @param email Optional user email
+ * @brief Server action to initiate Stripe checkout process
+ * 
+ * Creates a Stripe checkout session for the selected plan. Finds or creates
+ * a Stripe customer if email is provided, then creates a checkout session
+ * with appropriate settings for the plan type.
+ * 
+ * @param planType The selected plan type (monthly, annual, lifetime)
+ * @param email Optional user email for customer lookup/creation
+ * @param customerId Optional existing Stripe customer ID
  * @param collectPaymentMethod Whether to collect payment method during checkout (extends trial)
+ * @returns Promise with checkout session URL or error
+ * @note Creates or finds customer if email provided
+ * @note Collects payment method if collectPaymentMethod is true (extends trial)
+ * 
+ * @example
+ * ```typescript
+ * const result = await initiateCheckout("annual", "user@example.com", undefined, true);
+ * // Returns: { url: "https://checkout.stripe.com/...", error: undefined }
+ * ```
  */
 export async function initiateCheckout(
   planType: PlanType,
@@ -44,8 +72,22 @@ export async function initiateCheckout(
 }
 
 /**
- * Fetches all plan prices for the product
- * @returns Object containing the prices for each plan type
+ * @brief Server action to fetch all plan prices from Stripe
+ * 
+ * Retrieves pricing information for monthly, annual, and lifetime plans
+ * from Stripe. Includes product details and current pricing. Can optionally
+ * apply active promotions/coupons (currently commented out).
+ * 
+ * @returns Promise with prices object containing data for each plan type
+ * @note Uses environment variables for price IDs
+ * @note Expands product information for each price
+ * @note Can be extended to include active promotions
+ * 
+ * @example
+ * ```typescript
+ * const result = await getPrices();
+ * // Returns: { prices: { monthly: {...}, annual: {...}, lifetime: {...} }
+ * ```
  */
 export async function getPrices(): Promise<{
   prices: Record<PlanType, PriceData>;

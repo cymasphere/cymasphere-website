@@ -1,6 +1,14 @@
 /**
- * Utility functions for synthesizer creation and management
+ * @fileoverview Synthesizer creation and management utilities
+ * 
+ * This file provides utilities for creating and managing synthesizers using
+ * Tone.js. Includes polyphonic synths, FM synths, pad synths, and modulation
+ * effects (chorus, vibrato, phaser, auto-panner). Handles synth disposal and
+ * effects chain integration.
+ * 
+ * @module utils/synthUtils
  */
+
 import * as Tone from "tone";
 import type { Frequency } from "tone";
 import { EffectsChain } from "@/utils/effectsUtils";

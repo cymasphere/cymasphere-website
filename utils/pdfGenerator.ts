@@ -1,5 +1,18 @@
+/**
+ * @fileoverview PDF generation utility for Cymasphere quickstart guide
+ * 
+ * This file provides a PDF generator class for creating branded quickstart
+ * guide PDFs. Includes modern styling, logo integration, multi-page support,
+ * and responsive layout. Uses jsPDF for PDF generation.
+ * 
+ * @module utils/pdfGenerator
+ */
+
 import jsPDF from 'jspdf';
 
+/**
+ * Quickstart content structure interface
+ */
 export interface QuickstartContent {
   title: string;
   sections: {
@@ -8,6 +21,24 @@ export interface QuickstartContent {
   }[];
 }
 
+/**
+ * @brief PDF generator class for Cymasphere quickstart guides
+ * 
+ * Creates branded PDF documents with modern styling, logo integration, and
+ * multi-section content. Handles page breaks, headers, footers, and responsive
+ * layout. Includes compression for logo images to reduce PDF size.
+ * 
+ * @note Uses jsPDF for PDF generation
+ * @note Includes logo compression for smaller file sizes
+ * @note Supports multi-page documents with automatic page breaks
+ * 
+ * @example
+ * ```typescript
+ * const pdf = new CymasphereQuickstartPDF();
+ * pdf.addContent(quickstartContent);
+ * const blob = pdf.generate();
+ * ```
+ */
 export class CymasphereQuickstartPDF {
   private doc: jsPDF;
   private primaryColor: string = '#6C63FF';

@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Supabase Stripe integration utilities
+ * 
+ * This file contains utilities for checking customer subscription status
+ * by querying Supabase Stripe tables (stripe_payment_intents, stripe_subscriptions,
+ * stripe_invoices). Handles lifetime purchases, active subscriptions, and
+ * invoice history retrieval.
+ * 
+ * @module utils/stripe/supabase-stripe
+ */
+
 "use server";
 
 import { SubscriptionType } from "@/utils/supabase/types";
@@ -5,6 +16,9 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { cancelSubscription } from "./actions";
 import Stripe from "stripe";
 
+/**
+ * Response type for customer pro subscription check
+ */
 export type CustomerPurchasedProResponse = {
   success: boolean;
   subscription: SubscriptionType;
@@ -31,8 +45,29 @@ type StripeSubscriptionAttrs = {
 };
 
 /**
- * Checks if a customer has purchased a pro subscription
- * by querying the Supabase Stripe tables
+ * @brief Checks if a customer has purchased a pro subscription from Supabase Stripe tables
+ * 
+ * Determines customer subscription status by checking:
+ * 1. Stripe invoices for lifetime purchases (highest priority)
+ * 2. Payment intents for lifetime purchases (secondary check)
+ * 3. Active subscriptions (monthly/annual)
+ * 
+ * If customer has both lifetime and active subscription, automatically cancels
+ * the subscription since lifetime takes precedence. Returns subscription type,
+ * expiration dates, and trial information.
+ * 
+ * @param customer_id Stripe customer ID to check
+ * @returns Promise with subscription status, expiration dates, and trial info
+ * @note Lifetime purchases take precedence over subscriptions
+ * @note Automatically cancels active subscriptions if lifetime is detected
+ * @note Handles invalid customer IDs gracefully (returns "none")
+ * @note Checks invoices first for most reliable lifetime detection
+ * 
+ * @example
+ * ```typescript
+ * const result = await customerPurchasedProFromSupabase("cus_abc123");
+ * // Returns: { success: true, subscription: "lifetime", ... }
+ * ```
  */
 export async function customerPurchasedProFromSupabase(
   customer_id: string
@@ -320,7 +355,7 @@ export async function customerPurchasedProFromSupabase(
 }
 
 /**
- * Interface for invoice data returned from the Supabase Stripe tables
+ * Invoice data interface from Supabase Stripe tables
  */
 export interface InvoiceData {
   id: string;
@@ -334,9 +369,23 @@ export interface InvoiceData {
 }
 
 /**
- * Fetches invoice history for a customer from the Supabase Stripe tables
- * @param customerId The Stripe customer ID to fetch invoices for
+ * @brief Fetches invoice history for a customer from Supabase Stripe tables
+ * 
+ * Retrieves paid invoices for a customer, ordered by period end date (newest first).
+ * Formats invoice data including amounts, status, PDF URLs, and receipt URLs.
+ * 
+ * @param customerId Stripe customer ID to fetch invoices for
  * @param limit Number of invoices to return (default: 10)
+ * @returns Promise with invoices array and error status
+ * @note Uses service role client to access stripe_tables schema
+ * @note Handles invalid customer IDs gracefully (returns empty array)
+ * @note Converts amounts from cents to dollars
+ * 
+ * @example
+ * ```typescript
+ * const result = await getCustomerInvoices("cus_abc123", 20);
+ * // Returns: { invoices: [...], error: null }
+ * ```
  */
 export async function getCustomerInvoices(
   customerId: string | null,

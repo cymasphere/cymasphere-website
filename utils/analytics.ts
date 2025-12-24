@@ -1,15 +1,20 @@
 /**
- * Analytics Event Tracking Utilities
+ * @fileoverview Analytics event tracking utilities
  * 
- * Provides helper functions for tracking custom events across different analytics platforms:
- * - Google Tag Manager / Google Analytics (via dataLayer)
- * - Meta Pixel (Facebook/Instagram)
+ * This file provides helper functions for tracking custom events across
+ * different analytics platforms including Google Tag Manager/Google Analytics
+ * (via dataLayer) and Meta Pixel (Facebook/Instagram). Includes email hashing
+ * for privacy-compliant tracking and purchase/lead event tracking.
  * 
- * Usage:
- *   import { trackEvent, trackPurchase, trackPageView } from '@/utils/analytics';
+ * @module utils/analytics
  * 
- *   trackEvent('button_click', { button_name: 'signup' });
- *   trackPurchase({ value: 99.99, currency: 'USD', items: [...] });
+ * @example
+ * ```typescript
+ * import { trackEvent, trackPurchase, trackPageView } from '@/utils/analytics';
+ * 
+ * trackEvent('button_click', { button_name: 'signup' });
+ * trackPurchase({ value: 99.99, currency: 'USD', items: [...] });
+ * ```
  */
 
 declare global {

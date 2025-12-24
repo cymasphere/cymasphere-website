@@ -1,7 +1,21 @@
+/**
+ * @fileoverview Subscriber management server actions
+ * 
+ * This file contains server actions for managing email subscribers including
+ * listing subscribers with search and filtering, retrieving subscriber details,
+ * and evaluating dynamic audience membership based on subscriber profiles and
+ * custom rules.
+ * 
+ * @module actions/email-campaigns/subscribers
+ */
+
 "use server";
 
 import { createClient } from '@/utils/supabase/server';
 
+/**
+ * Parameters for getting subscribers list
+ */
 export interface GetSubscribersParams {
   search?: string;
   status?: string;
@@ -62,7 +76,28 @@ export interface GetSubscriberResponse {
   };
 }
 
-// Helper function to evaluate dynamic audience membership
+/**
+ * @brief Helper function to evaluate dynamic audience membership
+ * 
+ * Evaluates whether a subscriber matches the rules for a dynamic audience.
+ * Checks subscriber and profile fields against audience filter rules including
+ * subscription status, trial status, and other custom criteria.
+ * 
+ * @param subscriber Subscriber data from database
+ * @param profile User profile data (if subscriber is a user)
+ * @param filters Audience filter rules to evaluate
+ * @returns true if subscriber matches audience rules, false otherwise
+ * @note Returns true by default if no rules are defined
+ * @note Supports subscription, status, and trial_status field rules
+ * 
+ * @example
+ * ```typescript
+ * const matches = evaluateDynamicAudienceMembership(subscriber, profile, {
+ *   rules: [{ field: "subscription", value: "annual" }]
+ * });
+ * // Returns: true if subscriber has annual subscription
+ * ```
+ */
 function evaluateDynamicAudienceMembership(subscriber: any, profile: any, filters: any): boolean {
   if (!filters.rules || !Array.isArray(filters.rules) || filters.rules.length === 0) {
     return true; // Default to true if no rules
@@ -87,7 +122,26 @@ function evaluateDynamicAudienceMembership(subscriber: any, profile: any, filter
 }
 
 /**
- * Get all subscribers (admin only)
+ * @brief Server action to get all subscribers with search, filtering, and pagination
+ * 
+ * Retrieves a paginated list of subscribers with optional search and status
+ * filtering. Includes subscriber statistics, audience membership counts, and
+ * profile data (names) for subscribers who are also users. Transforms database
+ * fields to frontend-friendly format.
+ * 
+ * @param params Optional parameters for search, status filter, and pagination
+ * @returns Promise with subscribers array, pagination info, and statistics
+ * @note Requires admin access (enforced by RLS policies)
+ * @note Searches by email address (case-insensitive)
+ * @note Filters by subscriber status if provided
+ * @note Includes audience membership counts (static audiences only)
+ * @note Merges profile data for subscribers who are users
+ * 
+ * @example
+ * ```typescript
+ * const result = await getSubscribers({ search: "john", status: "active", page: 1, limit: 25 });
+ * // Returns: { subscribers: [...], pagination: {...}, stats: {...} }
+ * ```
  */
 export async function getSubscribers(
   params?: GetSubscribersParams
@@ -311,7 +365,24 @@ export async function getSubscribers(
 }
 
 /**
- * Get a single subscriber by ID (admin only)
+ * @brief Server action to get a single subscriber by ID with complete details
+ * 
+ * Retrieves complete subscriber information including profile data (if subscriber
+ * is a user), audience memberships, engagement history, email history, and
+ * custom fields. Transforms database fields to frontend-friendly format.
+ * 
+ * @param subscriberId Subscriber ID to retrieve
+ * @returns Promise with complete subscriber data including history and memberships
+ * @note Requires admin access (enforced by RLS policies)
+ * @note Includes profile data if subscriber is linked to a user account
+ * @note Loads audience memberships (both static and dynamic)
+ * @note Includes engagement and email history
+ * 
+ * @example
+ * ```typescript
+ * const result = await getSubscriber("subscriber-uuid");
+ * // Returns: { subscriber: { id: "...", email: "...", audiences: [...], ... } }
+ * ```
  */
 export async function getSubscriber(subscriberId: string): Promise<GetSubscriberResponse> {
   try {

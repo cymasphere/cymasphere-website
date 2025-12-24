@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Checkout-related server actions
+ * 
+ * This file contains server actions for handling post-checkout operations,
+ * including refreshing subscription status and inviting users after purchase.
+ * These actions are called from the checkout success page and work even when
+ * users are not logged in.
+ * 
+ * @module actions/checkout
+ */
+
 "use server";
 
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
@@ -5,9 +16,24 @@ import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 import { getCheckoutSessionResult } from "@/utils/stripe/actions";
 
 /**
- * Server action to refresh user subscription status by customer ID
- * This is called from checkout success page even if user isn't logged in
- * Matches the user profile by customer_id and updates their pro status using the centralized function
+ * @brief Server action to refresh user subscription status by Stripe customer ID
+ * 
+ * Finds the user profile by Stripe customer_id and updates their pro status
+ * using the centralized subscription checking function. This is called from
+ * the checkout success page even if the user isn't logged in, allowing
+ * subscription status to be updated immediately after purchase.
+ * 
+ * @param customerId Stripe customer ID to look up user by
+ * @returns Promise with success status, user ID, subscription details, or error
+ * @note Uses service role client to access profiles table
+ * @note Calls centralized updateUserProStatus function for consistency
+ * @note Can be called without user authentication
+ * 
+ * @example
+ * ```typescript
+ * const result = await refreshSubscriptionByCustomerId("cus_abc123");
+ * // Returns: { success: true, userId: "...", subscription: "annual", expiration: "..." }
+ * ```
  */
 export async function refreshSubscriptionByCustomerId(
   customerId: string
@@ -68,9 +94,31 @@ export async function refreshSubscriptionByCustomerId(
 }
 
 /**
- * Server action to invite user by email from checkout session and refresh pro status
- * This is called from checkout success page when user is not logged in
- * Invites the user with their checkout email, then refreshes their pro status
+ * @brief Server action to invite user by email from checkout session and refresh pro status
+ * 
+ * Retrieves the customer email from a Stripe checkout session, invites the user
+ * to create an account (if they don't already exist), and then refreshes their
+ * subscription status. This is called from the checkout success page when the
+ * user is not logged in, allowing them to receive account access after purchase.
+ * 
+ * Handles multiple scenarios:
+ * - User already exists in profiles table
+ * - User exists in auth but not in profiles
+ * - User needs to be invited via Supabase Auth
+ * - Profile creation timing issues (waits for triggers)
+ * 
+ * @param sessionId Stripe checkout session ID to retrieve customer email from
+ * @returns Promise with success status, user ID, subscription details, or error
+ * @note Uses service role client for admin operations
+ * @note Handles race conditions with profile creation triggers
+ * @note Extracts first name from email address for user metadata
+ * @note Sets redirectTo URL for password reset after invite
+ * 
+ * @example
+ * ```typescript
+ * const result = await inviteUserAndRefreshProStatus("cs_test_abc123");
+ * // Returns: { success: true, userId: "...", subscription: "annual", expiration: "..." }
+ * ```
  */
 export async function inviteUserAndRefreshProStatus(
   sessionId: string

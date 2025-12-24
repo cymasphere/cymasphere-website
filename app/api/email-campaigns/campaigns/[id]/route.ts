@@ -1,9 +1,60 @@
+/**
+ * @fileoverview Individual email campaign management API endpoint
+ * 
+ * This endpoint handles operations on a single email campaign by ID.
+ * Supports retrieving, updating, and deleting campaigns. Includes full
+ * campaign data with audience relationships.
+ * 
+ * @module api/email-campaigns/campaigns/[id]
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 /**
- * GET /api/email-campaigns/campaigns/[id]
- * Get a single email campaign (admin only)
+ * @brief GET endpoint to retrieve a single email campaign by ID
+ * 
+ * Returns complete campaign data including content, metadata, and audience
+ * relationships (included and excluded audiences). Data is transformed to
+ * camelCase for frontend consumption.
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "uuid",
+ *     "name": "Campaign Name",
+ *     "subject": "Email Subject",
+ *     "htmlContent": "<html>...</html>",
+ *     "audienceIds": ["uuid1"],
+ *     "excludedAudienceIds": ["uuid2"]
+ *   }
+ * }
+ * ```
+ * 
+ * 404 Not Found:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Campaign not found"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with campaign data or error
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/email-campaigns/campaigns/uuid-123
+ * // Returns: { success: true, campaign: {...} }
+ * ```
  */
 export async function GET(
   request: NextRequest,
@@ -76,8 +127,56 @@ export async function GET(
 }
 
 /**
- * PUT /api/email-campaigns/campaigns/[id]
- * Update an email campaign (admin only)
+ * @brief PUT endpoint to update an email campaign
+ * 
+ * Updates campaign fields including content, metadata, status, scheduling,
+ * and audience relationships. Only provided fields are updated (partial update).
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Request body (JSON) - all fields optional except name and subject:
+ * - name: Campaign name (required if provided)
+ * - subject: Email subject line (required if provided)
+ * - senderName, senderEmail, replyToEmail, preheader, description
+ * - htmlContent, textContent
+ * - audienceIds, excludedAudienceIds
+ * - status, scheduled_at
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "uuid",
+ *     "name": "Updated Name",
+ *     "subject": "Updated Subject",
+ *     "status": "scheduled"
+ *   }
+ * }
+ * ```
+ * 
+ * 400 Bad Request:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Name and subject are required"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with update data
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with updated campaign data or error
+ * @note Audience relations are replaced (deleted and recreated) if provided
+ * 
+ * @example
+ * ```typescript
+ * // PUT /api/email-campaigns/campaigns/uuid-123
+ * // Body: { name: "Updated Name", status: "scheduled" }
+ * // Returns: { success: true, campaign: {...} }
+ * ```
  */
 export async function PUT(
   request: NextRequest,
@@ -192,8 +291,42 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/email-campaigns/campaigns/[id]
- * Delete an email campaign (admin only)
+ * @brief DELETE endpoint to delete an email campaign
+ * 
+ * Permanently deletes a campaign and all related records (cascade delete).
+ * This operation cannot be undone.
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "message": "Campaign deleted successfully"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to delete campaign"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with success status or error
+ * @note Related records (audiences, sends, etc.) are deleted via cascade
+ * 
+ * @example
+ * ```typescript
+ * // DELETE /api/email-campaigns/campaigns/uuid-123
+ * // Returns: { success: true, message: "Campaign deleted successfully" }
+ * ```
  */
 export async function DELETE(
   request: NextRequest,

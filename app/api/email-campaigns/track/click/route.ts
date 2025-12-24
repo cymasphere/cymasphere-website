@@ -1,12 +1,60 @@
+/**
+ * @fileoverview Email click tracking redirect API endpoint
+ * 
+ * This endpoint tracks email link clicks and redirects users to the target URL.
+ * Records unique clicks per email send and URL combination with deduplication.
+ * Updates campaign statistics with unique click counts. Validates UUID formats
+ * to prevent database errors.
+ * 
+ * @module api/email-campaigns/track/click
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
-// Helper function to validate UUID format
+/**
+ * @brief Validates UUID format to prevent PostgreSQL errors
+ * 
+ * @param uuid UUID string to validate
+ * @returns True if valid UUID format, false otherwise
+ */
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
+/**
+ * @brief GET endpoint to track email link clicks and redirect
+ * 
+ * Records email click events and redirects users to the target URL.
+ * Implements deduplication per send_id and URL combination to ensure
+ * only unique clicks are counted. Updates campaign statistics with
+ * unique clicker counts.
+ * 
+ * Query parameters:
+ * - s: Send ID (email_sends.id) - required
+ * - c: Campaign ID - required
+ * - u: Subscriber ID - required
+ * - url: Target URL to redirect to - required
+ * 
+ * Responses:
+ * 
+ * 302 Redirect - Always redirects to target URL:
+ * - Location: target URL from query parameter
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse redirect to target URL
+ * @note Always redirects even on errors (fallback to cymasphere.com if URL missing)
+ * @note Deduplicates clicks per send_id and URL (only first click is recorded)
+ * @note Validates UUID formats to prevent database errors
+ * @note Uses service role client to bypass RLS for anonymous tracking
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/email-campaigns/track/click?s=uuid&c=uuid&u=uuid&url=https://example.com
+ * // Redirects to: https://example.com
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

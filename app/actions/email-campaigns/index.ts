@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Email campaign server actions index
+ * 
+ * This file re-exports all email campaign-related server actions and their
+ * TypeScript types. All actions are marked with "use server" in their source
+ * files, so no additional directive is needed here.
+ * 
+ * @module actions/email-campaigns
+ */
+
 // Export all email campaign actions
 // Note: "use server" is not needed here since we're just re-exporting from files that already have "use server"
 export { getCampaigns, getCampaign } from './campaigns';

@@ -1,3 +1,22 @@
+/**
+ * @fileoverview PlanSelectionModal Component
+ * @module components/modals/PlanSelectionModal
+ * 
+ * Modal component for selecting and changing subscription plans. Displays billing
+ * period toggle, pricing card, and confirmation button. Includes informational
+ * messages about plan changes and subscription transitions.
+ * 
+ * @example
+ * // Basic usage
+ * <PlanSelectionModal 
+ *   isOpen={isOpen} 
+ *   onClose={handleClose} 
+ *   profile={userProfile} 
+ *   onIntervalChange={handleIntervalChange} 
+ *   onConfirm={handleConfirm} 
+ * />
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -155,39 +174,77 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+/**
+ * @brief Props for PlanSelectionModal component
+ */
 interface PlanSelectionModalProps {
+  /** @param {boolean} isOpen - Whether the modal is visible */
   isOpen: boolean;
+  /** @param {() => void} onClose - Callback to close the modal */
   onClose: () => void;
+  /** @param {Profile} profile - User profile with subscription information */
   profile: Profile;
+  /** @param {(interval: string) => void} onIntervalChange - Callback when billing interval changes */
   onIntervalChange: (interval: string) => void;
+  /** @param {() => void} onConfirm - Callback when user confirms plan selection */
   onConfirm: () => void;
+  /** @param {(date: string | number | null | undefined) => string} [formatDate] - Optional date formatter function */
   formatDate?: (date: string | number | null | undefined) => string;
+  /** @param {string} planName - Name of the plan (unused but kept for compatibility) */
   planName: string;
+  /** @param {number} monthlyPrice - Monthly plan price (unused but kept for compatibility) */
   monthlyPrice: number;
+  /** @param {number} yearlyPrice - Yearly plan price (unused but kept for compatibility) */
   yearlyPrice: number;
+  /** @param {number} lifetimePrice - Lifetime plan price (unused but kept for compatibility) */
   lifetimePrice: number;
+  /** @param {string} planDescription - Plan description (unused but kept for compatibility) */
   planDescription: string;
+  /** @param {string[]} planFeatures - Plan features list (unused but kept for compatibility) */
   planFeatures: string[];
+  /** @param {Object} [monthlyDiscount] - Monthly discount information (unused but kept for compatibility) */
   monthlyDiscount?: {
     percent_off?: number;
     amount_off?: number;
     promotion_code?: string;
   };
+  /** @param {Object} [yearlyDiscount] - Yearly discount information (unused but kept for compatibility) */
   yearlyDiscount?: {
     percent_off?: number;
     amount_off?: number;
     promotion_code?: string;
   };
+  /** @param {Object} [lifetimeDiscount] - Lifetime discount information (unused but kept for compatibility) */
   lifetimeDiscount?: {
     percent_off?: number;
     amount_off?: number;
     promotion_code?: string;
   };
+  /** @param {(willProvideCard: boolean) => void} [onCardToggleChange] - Callback for card toggle (unused but kept for compatibility) */
   onCardToggleChange?: (willProvideCard: boolean) => void;
+  /** @param {boolean} [isPlanChangeLoading=false] - Whether plan change is in progress */
   isPlanChangeLoading?: boolean;
+  /** @param {boolean|null} [hasHadTrial=null] - Whether user has previously used a trial */
   hasHadTrial?: boolean | null;
 }
 
+/**
+ * @brief PlanSelectionModal component
+ * 
+ * Modal for selecting a new subscription plan. Displays billing period toggle,
+ * pricing card with current selection, and confirmation button. Shows informational
+ * messages about plan transitions (e.g., yearly to monthly changes take effect
+ * after current billing period).
+ * 
+ * @param {PlanSelectionModalProps} props - Component props
+ * @returns {JSX.Element} The rendered modal component
+ * 
+ * @note Prevents body scrolling when modal is open
+ * @note Initializes selected billing period from user's current subscription
+ * @note Disables confirm button if selected plan matches current plan
+ * @note Shows loading spinner during plan change processing
+ * @note Uses change_plan variant for billing toggle and pricing card
+ */
 const PlanSelectionModal = ({
   isOpen,
   onClose,

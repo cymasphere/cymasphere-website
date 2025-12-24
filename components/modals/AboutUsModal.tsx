@@ -1,3 +1,19 @@
+/**
+ * @fileoverview AboutUsModal Component
+ * @module components/modals/AboutUsModal
+ * 
+ * Modal component for displaying company information including mission, story,
+ * values, approach, and future plans. Features scrollable content with smooth
+ * animations and full internationalization support.
+ * 
+ * @example
+ * // Basic usage
+ * <AboutUsModal 
+ *   isOpen={showAbout} 
+ *   onClose={() => setShowAbout(false)} 
+ * />
+ */
+
 "use client";
 
 import React, { useEffect, memo } from "react";
@@ -331,11 +347,35 @@ const AboutUsContentSection = memo(() => {
 // Add display name to memoized component
 AboutUsContentSection.displayName = "AboutUsContentSection";
 
+/**
+ * @brief Props for AboutUsModal component
+ */
 interface AboutUsModalProps {
+  /** @param {boolean} isOpen - Whether the modal is visible */
   isOpen: boolean;
+  /** @param {() => void} onClose - Callback to close the modal */
   onClose: () => void;
 }
 
+/**
+ * @brief AboutUsModal component
+ * 
+ * Displays comprehensive company information including:
+ * - Mission statement
+ * - Company story and founders
+ * - Core values
+ * - Development approach
+ * - Future roadmap
+ * 
+ * @param {AboutUsModalProps} props - Component props
+ * @returns {JSX.Element} The rendered about us modal component
+ * 
+ * @note Prevents body scrolling when modal is open
+ * @note Content section is memoized to prevent unnecessary re-renders
+ * @note Supports click-outside-to-close functionality
+ * @note Includes custom scrollbar styling
+ * @note Fully internationalized through react-i18next
+ */
 const AboutUsModal = ({ isOpen, onClose }: AboutUsModalProps) => {
   // Add translation hook
   const { t } = useTranslation();

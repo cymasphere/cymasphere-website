@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Footer Component
+ * @module components/layout/Footer
+ * 
+ * Comprehensive footer component with navigation links, social media icons,
+ * contact form modal, and legal information modals. Supports internationalization
+ * and includes interactive elements like modals for contact and legal pages.
+ * 
+ * @example
+ * // Basic usage
+ * <Footer />
+ */
+
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Link from "next/link";
@@ -358,11 +371,42 @@ const SubmitButton = styled.button`
   }
 `;
 
-// Simple i18n wrapper functions to avoid hook ordering issues
+/**
+ * @brief Translation helper function
+ * 
+ * Gets translation from i18next without using hooks to avoid hook ordering issues.
+ * 
+ * @param {string} key - Translation key
+ * @param {string} defaultValue - Fallback value if translation not found
+ * @param {Record<string, any>} [options] - Translation options
+ * @returns {string} Translated text
+ */
 function getTranslation(key: string, defaultValue: string, options?: Record<string, any>): string {
   return i18next.t(key, { defaultValue, ...options }) as string;
 }
 
+/**
+ * @brief Footer component
+ * 
+ * Main footer component with four-column layout:
+ * - Brand information and social links
+ * - Navigation links
+ * - Account links
+ * - Company information and legal links
+ * 
+ * Includes modals for:
+ * - Contact form
+ * - Terms of service
+ * - Privacy policy
+ * - About us
+ * 
+ * @returns {JSX.Element} The rendered footer component
+ * 
+ * @note Supports internationalization through i18next
+ * @note Contact form submission is currently simulated (TODO: implement API)
+ * @note Logo click plays audio chord when on home page
+ * @note Responsive design with mobile-optimized layout
+ */
 const Footer = () => {
   // All hooks at the top in consistent order
   const [showTermsModal, setShowTermsModal] = useState(false);

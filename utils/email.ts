@@ -1,5 +1,18 @@
+/**
+ * @fileoverview Email sending utilities using AWS SES
+ * 
+ * This file provides email sending functionality using Amazon SES (Simple Email
+ * Service). Includes support for single emails, batch emails (BCC), HTML/text
+ * content, reply-to addresses, and List-Unsubscribe headers for better deliverability.
+ * 
+ * @module utils/email
+ */
+
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
 
+/**
+ * Parameters for batch email sending (BCC)
+ */
 interface SendBatchEmailParams {
   bcc: string[]; // BCC recipients (up to 50 total recipients per AWS SES limit)
   subject: string;
@@ -25,9 +38,32 @@ interface SendEmailParams {
 }
 
 /**
- * Sends an email using Amazon SES with proper headers for better deliverability
- * @param params Email parameters
- * @returns Promise with the result of the email sending operation
+ * @brief Sends an email using Amazon SES with proper headers for deliverability
+ * 
+ * Sends a single email or multiple emails (to array) using AWS SES. Includes
+ * proper email headers for better deliverability including Message-ID, Date,
+ * List-Unsubscribe headers, and multipart content (HTML/text). Supports reply-to
+ * addresses and custom from addresses.
+ * 
+ * @param params Email parameters including recipients, subject, content, and headers
+ * @returns Promise with message ID from AWS SES
+ * @note Uses AWS SES with credentials from environment variables
+ * @note Default region is us-east-1
+ * @note Default sender is "Cymasphere Support <support@cymasphere.com>"
+ * @note Includes List-Unsubscribe headers for Gmail deliverability
+ * @note Generates unique Message-ID for each email
+ * @note Supports both HTML and text content (multipart/alternative)
+ * 
+ * @example
+ * ```typescript
+ * const messageId = await sendEmail({
+ *   to: "user@example.com",
+ *   subject: "Welcome!",
+ *   html: "<h1>Welcome</h1>",
+ *   text: "Welcome"
+ * });
+ * // Returns: "0100018a-1234-5678-9abc-def012345678-000000"
+ * ```
  */
 export async function sendEmail({
   to,
@@ -193,10 +229,29 @@ export async function sendEmail({
 }
 
 /**
- * Sends a batch email using BCC to multiple recipients (up to 50 per email per AWS SES limit)
- * This is much more efficient than sending individual emails
- * @param params Batch email parameters
- * @returns Promise with the result of the email sending operation
+ * @brief Sends a batch email using BCC to multiple recipients
+ * 
+ * Sends emails to multiple recipients using BCC (Blind Carbon Copy) for efficiency.
+ * AWS SES allows up to 50 total recipients per email (To + CC + BCC combined), so
+ * this function batches recipients into groups of 49 BCC recipients plus 1 To address.
+ * This is much more efficient than sending individual emails.
+ * 
+ * @param params Batch email parameters including BCC array, subject, and content
+ * @returns Promise with array of message IDs from AWS SES
+ * @note AWS SES limit: max 50 recipients per email (To + CC + BCC)
+ * @note Uses 1 To address (sender) + up to 49 BCC recipients per batch
+ * @note Automatically batches large recipient lists into multiple emails
+ * @note Uses same email headers and deliverability features as sendEmail
+ * 
+ * @example
+ * ```typescript
+ * const messageIds = await sendBatchEmail({
+ *   bcc: ["user1@example.com", "user2@example.com", ...],
+ *   subject: "Newsletter",
+ *   html: "<h1>Newsletter</h1>"
+ * });
+ * // Returns: ["message-id-1", "message-id-2", ...]
+ * ```
  */
 export async function sendBatchEmail({
   bcc,

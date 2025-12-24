@@ -1,3 +1,32 @@
+/**
+ * @fileoverview EmailCollectionModal Component
+ * @module components/modals/EmailCollectionModal
+ * 
+ * Modal component for collecting user email addresses during checkout flow.
+ * Used for guest checkout when users are not logged in. Supports both trial
+ * signups and lifetime purchases. Includes email validation and error handling.
+ * 
+ * @example
+ * // For trial signup
+ * <EmailCollectionModal 
+ *   isOpen={showModal} 
+ *   onClose={() => setShowModal(false)} 
+ *   onSubmit={handleEmailSubmit} 
+ *   collectPaymentMethod={true} 
+ *   trialDays={14} 
+ * />
+ * 
+ * @example
+ * // For lifetime purchase
+ * <EmailCollectionModal 
+ *   isOpen={showModal} 
+ *   onClose={() => setShowModal(false)} 
+ *   onSubmit={handleEmailSubmit} 
+ *   collectPaymentMethod={true} 
+ *   trialDays={0} 
+ * />
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -188,14 +217,39 @@ const LoginButton = styled(Button)`
   }
 `;
 
+/**
+ * @brief Props for EmailCollectionModal component
+ */
 interface EmailCollectionModalProps {
+  /** @param {boolean} isOpen - Whether the modal is visible */
   isOpen: boolean;
+  /** @param {() => void} onClose - Callback to close the modal */
   onClose: () => void;
+  /** @param {(email: string) => Promise<{success: boolean, error?: string}>} onSubmit - Async callback to submit email */
   onSubmit: (email: string) => Promise<{ success: boolean; error?: string }>;
+  /** @param {boolean} collectPaymentMethod - Whether payment method collection is required */
   collectPaymentMethod: boolean;
+  /** @param {number} trialDays - Number of trial days (0 for lifetime purchase) */
   trialDays: number;
 }
 
+/**
+ * @brief EmailCollectionModal component
+ * 
+ * Modal for collecting email addresses from guest users during checkout.
+ * Validates email format, handles submission errors, and provides login
+ * redirect option if email is already associated with an account.
+ * 
+ * @param {EmailCollectionModalProps} props - Component props
+ * @returns {JSX.Element} The rendered email collection modal
+ * 
+ * @note Uses React Portal to render outside component tree
+ * @note Only renders on client side (checks for document)
+ * @note Validates email format before submission
+ * @note Shows login button if email is already associated with account
+ * @note Supports Enter key to submit form
+ * @note Modal title and message adapt based on trialDays (0 = lifetime purchase)
+ */
 export default function EmailCollectionModal({
   isOpen,
   onClose,

@@ -1,6 +1,58 @@
+/**
+ * @fileoverview Facebook OAuth callback handler API endpoint
+ * 
+ * This endpoint handles the OAuth callback from Facebook after user authorization.
+ * Exchanges the authorization code for an access token, optionally exchanges for
+ * a long-lived token, and stores the token securely. Includes CSRF protection
+ * via state parameter validation.
+ * 
+ * @module api/facebook-ads/callback
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { storeFacebookToken } from '@/utils/facebook/api';
 
+/**
+ * @brief GET endpoint to handle Facebook OAuth callback
+ * 
+ * Processes the OAuth callback from Facebook, validates the state parameter
+ * for CSRF protection, exchanges the authorization code for an access token,
+ * and stores the token. Redirects back to the ad manager with success or error status.
+ * 
+ * Query parameters:
+ * - code: Authorization code from Facebook (required if successful)
+ * - state: CSRF protection state parameter (required)
+ * - error: OAuth error code (if authorization was denied)
+ * 
+ * Responses:
+ * 
+ * 302 Redirect - Success:
+ * - Redirects to: /admin/ad-manager?connected=true
+ * 
+ * 302 Redirect - OAuth error:
+ * - Redirects to: /admin/ad-manager?error=oauth_denied
+ * 
+ * 302 Redirect - Invalid state:
+ * - Redirects to: /admin/ad-manager?error=invalid_state
+ * 
+ * 302 Redirect - No code:
+ * - Redirects to: /admin/ad-manager?error=no_code
+ * 
+ * 302 Redirect - Token exchange failed:
+ * - Redirects to: /admin/ad-manager?error=token_exchange_failed
+ * 
+ * @param request Next.js request object containing OAuth callback query parameters
+ * @returns NextResponse redirect to ad manager with status
+ * @note Validates state parameter for CSRF protection
+ * @note Exchanges short-lived token for long-lived token (60 days)
+ * @note Stores token securely (in production, should be stored in database)
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/facebook-ads/callback?code=abc123&state=facebook_ads_connect
+ * // Redirects to: /admin/ad-manager?connected=true
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -43,6 +95,24 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * @brief Exchanges Facebook OAuth authorization code for access token
+ * 
+ * Makes a request to Facebook's token endpoint to exchange the authorization
+ * code for a short-lived access token. Optionally exchanges for a long-lived
+ * token (60 days) for better user experience.
+ * 
+ * @param code Authorization code from Facebook OAuth callback
+ * @returns Access token string or null if exchange failed
+ * @note Requires FACEBOOK_APP_ID and FACEBOOK_APP_SECRET
+ * @note Attempts to exchange for long-lived token automatically
+ * 
+ * @example
+ * ```typescript
+ * const token = await exchangeCodeForToken("authorization_code");
+ * // Returns: "access_token_string" or null
+ * ```
+ */
 async function exchangeCodeForToken(code: string): Promise<string | null> {
   try {
     const clientId = process.env.FACEBOOK_APP_ID;
@@ -88,6 +158,23 @@ async function exchangeCodeForToken(code: string): Promise<string | null> {
   }
 }
 
+/**
+ * @brief Exchanges short-lived token for long-lived token
+ * 
+ * Converts a short-lived access token (1-2 hours) to a long-lived token
+ * (60 days) for better user experience and reduced re-authentication.
+ * 
+ * @param shortLivedToken Short-lived access token to exchange
+ * @returns Long-lived access token or null if exchange failed
+ * @note Falls back to short-lived token if exchange fails
+ * @note Long-lived tokens expire after 60 days
+ * 
+ * @example
+ * ```typescript
+ * const longToken = await exchangeForLongLivedToken("short_token");
+ * // Returns: "long_lived_token" or null
+ * ```
+ */
 async function exchangeForLongLivedToken(shortLivedToken: string): Promise<string | null> {
   try {
     const clientId = process.env.FACEBOOK_APP_ID;

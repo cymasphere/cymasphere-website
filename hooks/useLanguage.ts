@@ -1,9 +1,32 @@
+/**
+ * @fileoverview Custom hook for managing language and internationalization.
+ * @module hooks/useLanguage
+ * @description Provides language detection, switching, and translation loading.
+ * Automatically detects language from localStorage or browser preferences and
+ * manages i18next language state.
+ */
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import i18next from 'i18next';
 import { languages, defaultLanguage, loadTranslations } from '@/app/i18n/i18n-config';
 
+/**
+ * @brief Custom hook for language management.
+ * @description Initializes language from localStorage or browser preferences,
+ * loads translations, and provides language switching functionality.
+ * @returns {Object} Object containing current language, loading state, changeLanguage function, and available languages.
+ * @returns {string} returns.currentLanguage - The currently active language code.
+ * @returns {boolean} returns.isLoading - Whether translations are currently loading.
+ * @returns {Function} returns.changeLanguage - Function to switch to a different language.
+ * @returns {string[]} returns.languages - Array of available language codes.
+ * @note Automatically saves language preference to localStorage.
+ * @note Emits 'languageChange' event on window when language changes.
+ * @example
+ * const { currentLanguage, changeLanguage, isLoading } = useLanguage();
+ * await changeLanguage('es');
+ */
 export default function useLanguage() {
   const [currentLanguage, setCurrentLanguage] = useState<string>(defaultLanguage);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +72,13 @@ export default function useLanguage() {
     initLanguage();
   }, []);
   
-  // Function to change language
+  /**
+   * @brief Changes the application language and loads translations.
+   * @param {string} lang - The language code to switch to (must be in available languages).
+   * @returns {Promise<void>} Promise that resolves when language change is complete.
+   * @note Does nothing if language is invalid or already active.
+   * @note Saves preference to localStorage and emits 'languageChange' event.
+   */
   const changeLanguage = async (lang: string) => {
     if (!languages.includes(lang) || lang === currentLanguage) return;
     

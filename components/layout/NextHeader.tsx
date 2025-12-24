@@ -1,3 +1,20 @@
+/**
+ * @fileoverview NextHeader Component
+ * @module components/layout/NextHeader
+ * 
+ * Comprehensive header component for Next.js App Router with navigation,
+ * authentication state, mobile menu, user dropdown, and language selector.
+ * Includes scroll detection, active section highlighting, and smooth animations.
+ * 
+ * @example
+ * // Basic usage
+ * <NextHeader />
+ * 
+ * @example
+ * // With active banner
+ * <NextHeader hasActiveBanner={true} />
+ */
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -23,7 +40,14 @@ import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 // Import translations directly to avoid hook ordering issues
 import i18next from "i18next";
 
-// Import audio utilities dynamically to avoid SSR issues
+/**
+ * @brief Audio playback function
+ * 
+ * Dynamically imports and plays the Lydian Maj7 chord sound when logo is clicked.
+ * Uses dynamic import to avoid SSR issues with audio utilities.
+ * 
+ * @returns {Promise<void>}
+ */
 const playSound = async () => {
   if (typeof window !== "undefined") {
     const { playLydianMaj7Chord } = await import("../../utils/audioUtils");
@@ -31,7 +55,15 @@ const playSound = async () => {
   }
 };
 
-// Function to get translations without using hooks
+/**
+ * @brief Translation helper function
+ * 
+ * Gets translation from i18next without using hooks to avoid hook ordering issues.
+ * Provides fallback values for common keys when i18next is not initialized.
+ * 
+ * @param {string} key - Translation key
+ * @returns {string} Translated text or fallback value
+ */
 const getTranslation = (key: string): string => {
   // Safe access to i18next - if it's not initialized yet, return a fallback
   if (i18next.isInitialized) {
@@ -580,10 +612,35 @@ const UserMenuLogout = styled.button`
   }
 `;
 
+/**
+ * @brief Props for NextHeader component
+ */
 interface NextHeaderProps {
+  /** @param {boolean} [hasActiveBanner=false] - Whether an active banner is displayed (affects header styling) */
   hasActiveBanner?: boolean;
 }
 
+/**
+ * @brief NextHeader component
+ * 
+ * Main navigation header with:
+ * - Logo with audio interaction
+ * - Desktop and mobile navigation menus
+ * - Authentication state management
+ * - User dropdown menu
+ * - Language selector
+ * - Scroll detection and active section highlighting
+ * 
+ * @param {NextHeaderProps} props - Component props
+ * @returns {JSX.Element} The rendered header component
+ * 
+ * @note Uses AuthContext for user authentication state
+ * @note Supports internationalization through i18next
+ * @note Mobile menu includes full-screen overlay with animations
+ * @note Logo click plays audio chord and creates visual ripple effect
+ * @note Header background changes on scroll or when menu is open
+ * @note Active section is detected based on scroll position
+ */
 const NextHeader = ({ hasActiveBanner = false }: NextHeaderProps = {}) => {
   const router = useRouter();
   const pathname = usePathname();

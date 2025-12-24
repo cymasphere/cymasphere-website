@@ -1,3 +1,23 @@
+/**
+ * @fileoverview LoadingSpinner Component
+ * @module components/common/LoadingSpinner
+ * 
+ * A loading spinner component that displays the Cymasphere logo with optional text.
+ * Supports three size variants (small, medium, large) and full-screen overlay mode.
+ * 
+ * @example
+ * // Basic usage
+ * <LoadingSpinner />
+ * 
+ * @example
+ * // Full-screen with custom text
+ * <LoadingSpinner 
+ *   size="large" 
+ *   fullScreen={true} 
+ *   text="Loading your content..." 
+ * />
+ */
+
 import React from "react";
 import styled from "styled-components";
 import CymasphereLogo from "./CymasphereLogo";
@@ -47,15 +67,31 @@ const LoadingText = styled.div<LoadingTextProps>`
       : "1.2rem"};
 `;
 
-// Define interface for component props
+/**
+ * @brief Props for the LoadingSpinner component
+ */
 interface LoadingSpinnerProps {
+  /** @param {"small"|"medium"|"large"} [size="medium"] - Size variant of the spinner */
   size?: "small" | "medium" | "large";
+  /** @param {boolean} [fullScreen=false] - If true, displays as full-screen overlay */
   fullScreen?: boolean;
+  /** @param {string} [text="Loading..."] - Loading message text */
   text?: string;
 }
 
 /**
- * Simplified loading spinner for the Cymasphere app
+ * @brief LoadingSpinner component
+ * 
+ * Displays a loading spinner using the Cymasphere logo with optional text.
+ * The logo size adapts based on the size prop, and can be displayed inline
+ * or as a full-screen overlay.
+ * 
+ * @param {LoadingSpinnerProps} props - Component props
+ * @returns {JSX.Element} The rendered loading spinner component
+ * 
+ * @note Size mapping: small=80px, medium=120px, large=140px
+ * @note Full-screen mode uses fixed positioning with z-index 4000
+ * @note Text is always displayed (defaults to "Loading...")
  */
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "medium",

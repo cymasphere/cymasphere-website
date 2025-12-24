@@ -1,8 +1,25 @@
+/**
+ * @fileoverview Error boundary component for handling application errors.
+ * @module app/error
+ * @description Displays a user-friendly error page when an error occurs in the application.
+ * Provides options to retry or return to the homepage.
+ */
+
 "use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
 
+/**
+ * @brief Error boundary component.
+ * @description Displays an error page with retry and home navigation options.
+ * Logs errors to the console for debugging.
+ * @param {Object} props - Component props.
+ * @param {Error & { digest?: string }} props.error - The error object that triggered the boundary.
+ * @param {Function} props.reset - Function to reset the error state and retry rendering.
+ * @returns {JSX.Element} Error page UI.
+ * @note Automatically logs errors to console on mount.
+ */
 export default function Error({
   error,
   reset,

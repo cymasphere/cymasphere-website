@@ -1,3 +1,16 @@
+/**
+ * @fileoverview FAQSection Component
+ * @module components/sections/FAQSection
+ * 
+ * Frequently Asked Questions section with expandable accordion-style items.
+ * Each FAQ item can be expanded to show the answer. Features smooth animations
+ * and icon indicators for each question.
+ * 
+ * @example
+ * // Basic usage
+ * <FAQSection />
+ */
+
 "use client";
 
 import React, { useState } from "react";
@@ -122,6 +135,22 @@ interface FAQItem {
   answer: string;
 }
 
+/**
+ * @brief FAQSection component
+ * 
+ * Displays frequently asked questions in an accordion format. Questions are
+ * loaded from translation files and can be expanded to reveal answers. Each
+ * question has an associated icon for visual identification.
+ * 
+ * @returns {JSX.Element} The rendered FAQ section component
+ * 
+ * @note Questions and answers are loaded from translation files
+ * @note Multiple questions can be expanded simultaneously
+ * @note Answers support HTML content via dangerouslySetInnerHTML
+ * @note Icons cycle through a predefined set
+ * @note Cards animate in sequence on scroll into view
+ * @note Supports internationalization through react-i18next
+ */
 const FAQSection = () => {
   const [expandedFaqs, setExpandedFaqs] = useState<ExpandedFaqs>({});
   const { t } = useTranslation();

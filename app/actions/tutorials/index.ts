@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Tutorial management server actions index
+ * 
+ * This file re-exports all tutorial-related server actions and their TypeScript
+ * types. Includes actions for videos, playlists, progress tracking, user profiles,
+ * playlist generation, analytics, and YouTube integration.
+ * 
+ * @module actions/tutorials
+ */
+
 // Export all tutorial actions
 // Note: "use server" is not needed here since we're just re-exporting from files that already have "use server"
 export { getVideos, getVideo, updateVideo, getVideoScript, getVideosWithDurations } from './videos';

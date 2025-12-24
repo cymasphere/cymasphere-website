@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Root layout component for the Next.js application.
+ * @module app/layout
+ * @description Provides the root HTML structure, font configuration, metadata,
+ * and wraps the application with necessary providers (styled-components, i18n, language).
+ * Includes analytics and performance monitoring.
+ */
+
 import { Geist } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import { Metadata } from "next";
@@ -9,7 +17,10 @@ import Analytics from "@/components/analytics/Analytics";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-// Metadata configuration
+/**
+ * @brief Metadata configuration for the application.
+ * @description Defines SEO metadata, title, description, and favicon configurations.
+ */
 export const metadata: Metadata = {
   title: "Cymasphere",
   description: "Advanced Chord Generation",
@@ -83,11 +94,24 @@ const montserrat = Montserrat({
   display: "swap", // Prevents text reflow
 });
 
-// Define the interface for the RootLayout props
+/**
+ * @brief Interface for RootLayout component props.
+ * @description Defines the props structure for the root layout component.
+ */
 interface RootLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * @brief Root layout component.
+ * @description Provides the root HTML structure with font configuration,
+ * metadata, and provider wrappers. Includes DNS prefetching for external services.
+ * @param {RootLayoutProps} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to render.
+ * @returns {JSX.Element} Root HTML structure with providers.
+ * @note Uses font-display: swap to prevent text reflow during font loading.
+ * @note Includes DNS prefetching for Google Tag Manager and YouTube.
+ */
 export default function RootLayout({
   children
 }: RootLayoutProps) {

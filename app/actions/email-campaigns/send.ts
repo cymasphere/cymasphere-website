@@ -1,14 +1,31 @@
+/**
+ * @fileoverview Email campaign sending server actions
+ * 
+ * This file contains server actions for sending email campaigns to subscribers.
+ * Includes safety mechanisms to prevent accidental sends, support for scheduled
+ * campaigns, timezone-aware delivery, and batch email processing. Handles
+ * personalization, HTML/text generation, and campaign tracking.
+ * 
+ * @module actions/email-campaigns/send
+ */
+
 "use server";
 
 import { sendEmail } from "@/utils/email";
 import { createClient } from "@/utils/supabase/server";
 import { generateHtmlFromElements, generateTextFromElements, personalizeContent } from "@/utils/email-campaigns/email-generation";
 
-// 🔒 SAFETY CONFIGURATION - CRITICAL FOR PREVENTING ACCIDENTAL SENDS
+/**
+ * Safety configuration flags for preventing accidental email sends
+ * @note Set to true only when explicitly testing email functionality
+ */
 const DEVELOPMENT_MODE = false; // Temporarily disabled for testing
 const TEST_MODE = false; // Temporarily disabled for testing
 
-// 🔒 SAFE EMAIL WHITELIST - Only these emails will receive messages in development
+/**
+ * Safe email whitelist for development/testing
+ * Only these emails will receive messages when safety modes are enabled
+ */
 const SAFE_TEST_EMAILS = [
   "ryan@cymasphere.com",
   "test@cymasphere.com",
@@ -526,6 +543,44 @@ async function getSubscribersForAudiences(
 
 /**
  * Send an email campaign (admin only)
+ */
+/**
+ * @brief Server action to send an email campaign to subscribers
+ * 
+ * Sends an email campaign to selected audiences with support for:
+ * - Test email mode (sends to single test address with [TEST] prefix)
+ * - Immediate sending
+ * - Scheduled sending (date/time)
+ * - Timezone-aware scheduled sending
+ * - Draft mode (saves without sending)
+ * 
+ * Includes safety mechanisms:
+ * - Development mode restrictions (whitelist emails only)
+ * - Test mode restrictions (test audiences only)
+ * - Email validation and subscriber filtering
+ * - Batch email processing with AWS SES
+ * - Personalization per subscriber
+ * - Campaign tracking and analytics
+ * 
+ * @param params Campaign parameters including content, audiences, and schedule
+ * @returns Promise with send results, statistics, and any errors
+ * @note Requires admin access (enforced by RLS policies)
+ * @note Respects subscriber status (only sends to active subscribers)
+ * @note Handles excluded audiences (removes subscribers from excluded audiences)
+ * @note Creates campaign record in database if campaignId not provided
+ * @note Generates HTML and text versions of email from elements
+ * 
+ * @example
+ * ```typescript
+ * const result = await sendCampaign({
+ *   name: "Welcome Campaign",
+ *   subject: "Welcome to Cymasphere!",
+ *   audienceIds: ["audience-1", "audience-2"],
+ *   emailElements: [...],
+ *   scheduleType: "immediate"
+ * });
+ * // Returns: { success: true, stats: {...}, results: [...] }
+ * ```
  */
 export async function sendCampaign(
   params: SendCampaignParams

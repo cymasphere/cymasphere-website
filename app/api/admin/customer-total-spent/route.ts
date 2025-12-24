@@ -1,8 +1,73 @@
+/**
+ * @fileoverview Admin API endpoint to calculate customer total spending
+ * 
+ * This endpoint calculates the total amount a customer has spent by summing
+ * all successful, non-refunded Stripe charges. Used by admin interface for
+ * customer analytics and support. Requires admin authentication.
+ * 
+ * @module api/admin/customer-total-spent
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { checkAdmin } from '@/app/actions/user-management';
 import Stripe from 'stripe';
 
+/**
+ * @brief GET endpoint to calculate total amount spent by a customer
+ * 
+ * Sums all successful, paid charges for a customer, subtracting any refunded
+ * amounts. Uses charges as the source of truth for actual money charged.
+ * Deduplicates charges by ID to prevent double counting.
+ * 
+ * Query parameters:
+ * - customerId: Stripe customer ID to calculate spending for (required)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "totalSpent": 2847.92
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing customerId:
+ * ```json
+ * {
+ *   "error": "customerId is required"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not admin:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "error": "Failed to calculate total spent",
+ *   "details": "Error message"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with total spent amount (in dollars) or error
+ * @note Requires admin authentication
+ * @note Only counts paid, non-refunded charges
+ * @note Subtracts refunded amounts from charge totals
+ * @note Returns amount in dollars (converted from cents)
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/admin/customer-total-spent?customerId=cus_abc123
+ * // Returns: { success: true, totalSpent: 2847.92 }
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();

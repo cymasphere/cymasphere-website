@@ -1,5 +1,12 @@
 /**
- * Utility functions to handle synth and effect parameter updates
+ * @fileoverview Synthesizer and effect parameter update utilities
+ * 
+ * This file provides utilities for updating synthesizer and effect parameters
+ * dynamically. Handles different synth types (polysynth, fmsynth, padsynth) and
+ * various parameter types including envelopes, modulation, and effects. Includes
+ * type guards and safe parameter access.
+ * 
+ * @module utils/synthParamUtils
  */
 
 // Define interfaces for the Tone.js objects we're working with

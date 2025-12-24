@@ -1,3 +1,17 @@
+/**
+ * @fileoverview HeroSection Component
+ * @module components/sections/HeroSection
+ * 
+ * Main hero section component for the landing page. Features animated title with
+ * cycling words, floating musical notes with voice-leading animations, chord
+ * progression playback, and background video. Includes interactive elements for
+ * playing notes and chords.
+ * 
+ * @example
+ * // Basic usage
+ * <HeroSection />
+ */
+
 "use client";
 
 import React, {
@@ -220,6 +234,27 @@ const ClientOnly = dynamic(() => Promise.resolve(ClientOnlyHeroTitle), {
   ssr: false,
 });
 
+/**
+ * @brief HeroSection component
+ * 
+ * Main landing page hero section with:
+ * - Animated title with cycling words (Music, Song, Chord, etc.)
+ * - Floating musical notes that transition between chords using voice-leading
+ * - Interactive note and chord playback
+ * - Background video with fade-in effect
+ * - Call-to-action buttons
+ * 
+ * @returns {JSX.Element} The rendered hero section component
+ * 
+ * @note Uses Tone.js for audio synthesis and playback
+ * @note Applies "atmospheric" preset to synth for ambient sound
+ * @note Chord progression cycles every 4 seconds
+ * @note Title words cycle every 2 seconds
+ * @note Notes use voice-leading principles for smooth transitions
+ * @note Synth initialization is deferred to avoid blocking FCP
+ * @note Video background fades in when loaded
+ * @note Supports mobile-responsive layout
+ */
 const HeroSection = () => {
   const { t } = useTranslation();
 

@@ -1,8 +1,20 @@
+/**
+ * @fileoverview 404 Not Found page component.
+ * @module app/not-found
+ * @description Displays a user-friendly 404 error page when a route is not found.
+ * Includes the Cymasphere logo and a link to return to the homepage.
+ */
+
 "use client";
 
 import Link from "next/link";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 
+/**
+ * @brief 404 Not Found page component.
+ * @description Renders a centered 404 error page with logo, message, and home link.
+ * @returns {JSX.Element} 404 error page UI.
+ */
 export default function NotFound() {
   return (
     <div

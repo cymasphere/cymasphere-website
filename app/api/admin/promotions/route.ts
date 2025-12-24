@@ -1,12 +1,85 @@
+/**
+ * @fileoverview Admin promotions management API endpoint
+ * 
+ * This endpoint handles CRUD operations for promotional campaigns. Supports
+ * creating, updating, listing, and deleting promotions. Automatically creates
+ * Stripe coupons when requested and calculates sale prices based on discount
+ * types. Requires admin authentication.
+ * 
+ * @module api/admin/promotions
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 import { pstDateToUTC } from '@/utils/timezoneUtils';
 
+/**
+ * Stripe client instance initialized with secret key from environment variables
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
- * GET - Fetch all promotions
+ * @brief GET endpoint to retrieve all promotions
+ * 
+ * Fetches all promotional campaigns from the database, ordered by priority
+ * (highest first) and creation date (newest first). Returns complete promotion
+ * data including discount details, sale prices, and Stripe coupon information.
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "promotions": [
+ *     {
+ *       "id": "uuid",
+ *       "name": "Promotion Name",
+ *       "title": "Sale Title",
+ *       "active": true,
+ *       "discount_type": "percentage",
+ *       "discount_value": 25,
+ *       "stripe_coupon_code": "SALE25",
+ *       "sale_price_monthly": 4.50,
+ *       "sale_price_annual": 44.25,
+ *       "sale_price_lifetime": 111.75
+ *     }
+ *   ]
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not authenticated:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * 403 Forbidden - Not admin:
+ * ```json
+ * {
+ *   "error": "Forbidden"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "error": "Failed to fetch promotions"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @returns NextResponse with promotions array or error
+ * @note Requires admin authentication
+ * @note Results ordered by priority (descending) then creation date (descending)
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/admin/promotions
+ * // Returns: { success: true, promotions: [...] }
+ * ```
  */
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +126,74 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST - Create or update a promotion
+ * @brief POST endpoint to create or update a promotion
+ * 
+ * Creates a new promotion or updates an existing one. Automatically calculates
+ * sale prices based on discount type and value. Optionally creates a Stripe
+ * coupon if requested. Converts PST date inputs to UTC for database storage.
+ * 
+ * Request body (JSON):
+ * - id: Promotion ID (optional, if provided updates existing promotion)
+ * - name: Promotion name (required)
+ * - title: Promotion title/heading (required)
+ * - description: Promotion description (optional)
+ * - active: Whether promotion is active (required)
+ * - start_date: Start date in PST format (optional)
+ * - end_date: End date in PST format (optional)
+ * - applicable_plans: Array of plan types - ["monthly", "annual", "lifetime"] (required)
+ * - discount_type: Discount type - "percentage" or "amount" (required)
+ * - discount_value: Discount value (percentage or dollar amount) (required)
+ * - stripe_coupon_code: Stripe coupon code to use/create (optional)
+ * - create_stripe_coupon: Whether to create Stripe coupon (optional)
+ * - banner_theme: Banner theme/style (optional)
+ * - priority: Display priority (optional, default: 0)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "promotion": {
+ *     "id": "uuid",
+ *     "name": "Promotion Name",
+ *     "title": "Sale Title",
+ *     "active": true,
+ *     "stripe_coupon_created": true
+ *   },
+ *   "stripe_coupon_created": true
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing fields:
+ * ```json
+ * {
+ *   "error": "Missing required fields"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error - Stripe coupon creation failed:
+ * ```json
+ * {
+ *   "error": "Failed to create Stripe coupon",
+ *   "details": "Error message"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with promotion data
+ * @returns NextResponse with created/updated promotion or error
+ * @note Requires admin authentication
+ * @note Automatically calculates sale prices for applicable plans
+ * @note Creates Stripe coupon if create_stripe_coupon is true
+ * @note Converts PST dates to UTC for database storage
+ * @note Sets coupon redeem_by date based on promotion end_date
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/admin/promotions
+ * // Body: { name: "Summer Sale", title: "25% Off", discount_type: "percentage", discount_value: 25, ... }
+ * // Returns: { success: true, promotion: {...}, stripe_coupon_created: true }
+ * ```
  */
 export async function POST(request: NextRequest) {
   try {
@@ -289,7 +429,63 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE - Delete a promotion
+ * @brief DELETE endpoint to delete a promotion
+ * 
+ * Permanently deletes a promotion from the database. This operation cannot
+ * be undone. Note: This does not delete the associated Stripe coupon (if any).
+ * 
+ * Query parameters:
+ * - id: Promotion ID to delete (required)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "message": "Promotion deleted successfully"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing ID:
+ * ```json
+ * {
+ *   "error": "Promotion ID required"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not authenticated:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * 403 Forbidden - Not admin:
+ * ```json
+ * {
+ *   "error": "Forbidden"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "error": "Failed to delete promotion"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with success status or error
+ * @note Requires admin authentication
+ * @note Deletion is permanent and cannot be undone
+ * @note Does not delete associated Stripe coupon (must be deleted separately)
+ * 
+ * @example
+ * ```typescript
+ * // DELETE /api/admin/promotions?id=uuid-123
+ * // Returns: { success: true, message: "Promotion deleted successfully" }
+ * ```
  */
 export async function DELETE(request: NextRequest) {
   try {

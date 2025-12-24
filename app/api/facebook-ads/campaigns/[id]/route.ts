@@ -1,6 +1,79 @@
+/**
+ * @fileoverview Individual Facebook ad campaign management API endpoint
+ * 
+ * This endpoint handles operations on a single Facebook ad campaign by ID.
+ * Supports retrieving, updating, and deleting campaigns. Includes development
+ * mode with mock data for testing.
+ * 
+ * @module api/facebook-ads/campaigns/[id]
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createFacebookAPI, CAMPAIGN_OBJECTIVES } from '@/utils/facebook/api';
 
+/**
+ * @brief GET endpoint to retrieve a single Facebook ad campaign by ID
+ * 
+ * Fetches detailed information about a specific campaign including name,
+ * objective, status, budget, scheduling, and platform targeting.
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success (development mode):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "1",
+ *     "name": "Campaign Name",
+ *     "objective": "TRAFFIC",
+ *     "status": "active",
+ *     "platforms": { "facebook": true, "instagram": false },
+ *     "budget": { "type": "daily", "amount": 1000 },
+ *     "schedule": { "startDate": "2024-01-20T09:00", "endDate": "2024-02-20T23:59" }
+ *   },
+ *   "isDevelopmentMode": true
+ * }
+ * ```
+ * 
+ * 200 OK - Success (production):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {...}
+ * }
+ * ```
+ * 
+ * 404 Not Found:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Campaign not found"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not connected:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Not connected to Facebook Ads"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with campaign data or error
+ * @note Development mode: Returns mock data for predefined campaign IDs
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/facebook-ads/campaigns/campaign_123
+ * // Returns: { success: true, campaign: {...} }
+ * ```
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -124,6 +197,68 @@ export async function GET(
   }
 }
 
+/**
+ * @brief PUT endpoint to update a Facebook ad campaign
+ * 
+ * Updates campaign fields including name, objective, status, budget, and
+ * scheduling. Validates required fields and objective before updating.
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Request body (JSON):
+ * - name: Campaign name (required)
+ * - objective: Campaign objective (required)
+ * - status: Campaign status (required)
+ * - description: Campaign description (optional)
+ * - platforms: Platform targeting object (optional)
+ * - budget: Budget object with type and amount (optional)
+ * - schedule: Schedule object with startDate and endDate (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "campaign_id",
+ *     "name": "Updated Name",
+ *     "objective": "TRAFFIC",
+ *     "status": "active"
+ *   }
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing fields:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Missing required fields: name, objective, status"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Invalid objective:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Invalid campaign objective"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with update data
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with updated campaign data or error
+ * @note Validates campaign objective against CAMPAIGN_OBJECTIVES
+ * @note Development mode: Simulates update with mock data
+ * 
+ * @example
+ * ```typescript
+ * // PUT /api/facebook-ads/campaigns/campaign_123
+ * // Body: { name: "Updated Name", status: "active" }
+ * // Returns: { success: true, campaign: {...} }
+ * ```
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -214,6 +349,54 @@ export async function PUT(
   }
 }
 
+/**
+ * @brief DELETE endpoint to delete a Facebook ad campaign
+ * 
+ * Permanently deletes a campaign from Facebook Ads. This operation cannot
+ * be undone and will also delete associated ad sets and ads.
+ * 
+ * Route parameters:
+ * - id: Campaign ID (from URL path)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "message": "Campaign deleted successfully"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not connected:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Not connected to Facebook Ads"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to delete campaign"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @param params Route parameters containing campaign ID
+ * @returns NextResponse with success status or error
+ * @note Deletion is permanent and cannot be undone
+ * @note Also deletes associated ad sets and ads
+ * @note Development mode: Simulates deletion
+ * 
+ * @example
+ * ```typescript
+ * // DELETE /api/facebook-ads/campaigns/campaign_123
+ * // Returns: { success: true, message: "Campaign deleted successfully" }
+ * ```
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

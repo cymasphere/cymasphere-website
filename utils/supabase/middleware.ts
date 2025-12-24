@@ -1,6 +1,40 @@
+/**
+ * @fileoverview Supabase middleware for session management
+ * 
+ * This file provides middleware functionality for managing Supabase authentication
+ * sessions in Next.js middleware. Refreshes user sessions automatically and
+ * handles cookie management for authentication state.
+ * 
+ * @module utils/supabase/middleware
+ */
+
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * @brief Updates Supabase authentication session in middleware
+ * 
+ * Creates a Supabase client in middleware context and refreshes the user's
+ * authentication session. This ensures sessions stay valid across requests
+ * and handles automatic token refresh.
+ * 
+ * CRITICAL: Do not remove the `supabase.auth.getUser()` call. It is required
+ * for session refresh. Removing it can cause users to be randomly logged out.
+ * 
+ * @param request Next.js request object
+ * @returns NextResponse with updated cookies for session management
+ * @note Must return the supabaseResponse object as-is to preserve cookies
+ * @note Do not run code between createServerClient and getUser()
+ * @note If creating a new response, must copy cookies from supabaseResponse
+ * 
+ * @example
+ * ```typescript
+ * // In middleware.ts
+ * export async function middleware(request: NextRequest) {
+ *   return await updateSession(request);
+ * }
+ * ```
+ */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,

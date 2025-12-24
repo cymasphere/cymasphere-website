@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Custom hook for handling Stripe checkout session initiation.
+ * @module hooks/useCheckout
+ * @description Provides a centralized checkout hook for creating Stripe checkout sessions,
+ * handling payment method collection, trial status, and plan changes. Used by both
+ * PricingSection and BillingPage to ensure consistency.
+ */
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -5,10 +13,19 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanType } from "@/types/stripe";
 
+/**
+ * @brief Options for configuring the checkout hook.
+ * @description Allows customization of error handling behavior.
+ */
 interface UseCheckoutOptions {
   onError?: (error: string) => void;
 }
 
+/**
+ * @brief Return type for the useCheckout hook.
+ * @description Defines the shape of the return value, including checkout initiation
+ * function, loading state, and error state.
+ */
 interface UseCheckoutReturn {
   initiateCheckout: (
     planType: PlanType,
@@ -25,8 +42,19 @@ interface UseCheckoutReturn {
 }
 
 /**
- * Centralized checkout hook for handling Stripe checkout sessions
- * Used by both PricingSection and BillingPage to ensure consistency
+ * @brief Centralized checkout hook for handling Stripe checkout sessions.
+ * @description Creates Stripe checkout sessions with proper payment method collection
+ * logic based on trial status, plan type, and user state. Handles redirects and error states.
+ * @param {UseCheckoutOptions} [options={}] - Optional configuration for error handling.
+ * @returns {UseCheckoutReturn} Object containing checkout initiation function, loading state, and error state.
+ * @note Used by both PricingSection and BillingPage to ensure consistency.
+ * @note For lifetime plans, always requires payment method.
+ * @note Priority for payment method collection: hasHadTrial > willProvideCard > collectPaymentMethod.
+ * @example
+ * const { initiateCheckout, isLoading, error } = useCheckout({
+ *   onError: (err) => console.error(err)
+ * });
+ * await initiateCheckout('monthly', { willProvideCard: true });
  */
 export function useCheckout(options: UseCheckoutOptions = {}): UseCheckoutReturn {
   const router = useRouter();

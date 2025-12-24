@@ -1,3 +1,23 @@
+/**
+ * @fileoverview SynthControls Component
+ * @module components/synth/SynthControls
+ * 
+ * Comprehensive synthesizer control panel with tabbed interface for synth parameters
+ * and effects. Supports multiple synth types (PolySynth, FMSynth, PadSynth) with
+ * type-specific controls. Includes effects chain controls for reverb, delay, chorus,
+ * and stereo width.
+ * 
+ * @example
+ * // Basic usage
+ * <SynthControls 
+ *   selectedSynth="polysynth" 
+ *   synth={synthInstance} 
+ *   effectsChain={effectsChainInstance} 
+ *   updateSynthParam={handleSynthParamUpdate} 
+ *   updateEffectParam={handleEffectParamUpdate} 
+ * />
+ */
+
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -96,16 +116,41 @@ const tabVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
+/**
+ * @brief Props for SynthControls component
+ */
 interface SynthControlsProps {
+  /** @param {string} selectedSynth - Currently selected synth type (polysynth, fmsynth, padsynth) */
   selectedSynth: string;
+  /** @param {any} synth - Tone.js synth instance (PolySynth, FMSynth, or PadSynth) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   synth: any; // Would ideally be a more specific type
+  /** @param {any} effectsChain - Effects chain object with reverb, delay, chorus, etc. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   effectsChain: any; // Would ideally be a more specific type
+  /** @param {(synth: string, param: string, value: number) => void} updateSynthParam - Callback to update synth parameter */
   updateSynthParam: (synth: string, param: string, value: number) => void;
+  /** @param {(effect: string, param: string, value: number) => void} updateEffectParam - Callback to update effect parameter */
   updateEffectParam: (effect: string, param: string, value: number) => void;
 }
 
+/**
+ * @brief SynthControls component
+ * 
+ * Tabbed control panel for synthesizer parameters and effects. Displays different
+ * controls based on selected synth type. Syncs with synth and effects chain state
+ * to display current parameter values.
+ * 
+ * @param {SynthControlsProps} props - Component props
+ * @returns {JSX.Element} The rendered synth controls component
+ * 
+ * @note Supports three synth types: PolySynth, FMSynth, PadSynth
+ * @note Each synth type has type-specific parameters (e.g., modulation index for FM)
+ * @note Effects tab includes reverb, delay, chorus, stereo width, and master volume
+ * @note Parameter values are synced from synth/effects chain on mount and when they change
+ * @note Uses smooth tab transitions with Framer Motion
+ * @note All sliders include real-time value display
+ */
 const SynthControls: React.FC<SynthControlsProps> = ({
   selectedSynth,
   synth,

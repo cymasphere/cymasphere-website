@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Client-side layout component providing theme, context providers, and conditional UI elements.
+ * @module app/ClientLayout
+ * @description Wraps the application with styled-components theme, toast notifications, authentication,
+ * and conditionally renders header, footer, promotion banner, and chat widget based on route.
+ * Handles YouTube API lazy loading for performance optimization.
+ */
+
 "use client";
 
 import React, { useEffect, Suspense, useState } from "react";
@@ -67,10 +75,25 @@ const Main = styled.main`
   }
 `;
 
+/**
+ * @brief Interface for ClientLayout component props.
+ * @description Defines the props structure for the client layout component.
+ */
 interface ClientLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * @brief Client-side layout component.
+ * @description Provides theme, context providers, and manages conditional rendering
+ * of header, footer, promotion banner, and chat widget. Handles YouTube API lazy loading.
+ * @param {ClientLayoutProps} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to render.
+ * @returns {JSX.Element} Layout with providers and conditional UI elements.
+ * @note Hides header/footer on auth, dashboard, and admin routes.
+ * @note Hides chat widget only on auth routes.
+ * @note Lazy loads YouTube API with delay for non-admin routes to optimize FCP.
+ */
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
   const [hasActivePromotion, setHasActivePromotion] = useState(false);
@@ -193,7 +216,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   );
 }
 
-// Separate component to access AuthContext
+/**
+ * @brief Internal layout content component with auth context access.
+ * @description Renders header, footer, promotion banner, and chat widget
+ * conditionally based on route and user state. Accesses auth context to check
+ * user subscription status for promotion banner visibility.
+ * @param {Object} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to render.
+ * @param {boolean} props.shouldHideHeaderFooter - Whether to hide header and footer.
+ * @param {boolean} props.shouldHideChat - Whether to hide chat widget.
+ * @param {boolean} props.hasActivePromotion - Whether there's an active promotion.
+ * @param {string | null} props.pathname - Current route pathname.
+ * @returns {JSX.Element} Layout content with conditional UI elements.
+ * @note Hides promotion banner for lifetime subscription users.
+ */
 function LayoutContent({
   children,
   shouldHideHeaderFooter,

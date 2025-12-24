@@ -1,5 +1,18 @@
+/**
+ * @fileoverview Email campaign scheduler utility
+ * 
+ * This file provides a cron-based scheduler for processing scheduled email
+ * campaigns. Periodically calls the email campaign processing endpoint to
+ * send scheduled campaigns. Includes rate limiting and error handling.
+ * 
+ * @module utils/scheduler
+ */
+
 import * as cron from "node-cron";
 
+/**
+ * Scheduler configuration interface
+ */
 interface SchedulerConfig {
   enabled: boolean;
   cronExpression: string;

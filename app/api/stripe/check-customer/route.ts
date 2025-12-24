@@ -1,8 +1,93 @@
+/**
+ * @fileoverview Stripe customer existence and history check API endpoint
+ * 
+ * This endpoint checks if a Stripe customer exists for a given email address
+ * and provides information about their transaction history and subscription status.
+ * Used to determine if a customer is eligible for trials or special offers.
+ * 
+ * @module api/stripe/check-customer
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
+/**
+ * Stripe client instance initialized with secret key from environment variables
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+/**
+ * @brief POST endpoint to check customer existence and history
+ * 
+ * Searches for Stripe customers by email and checks their transaction history
+ * (payment intents, invoices) and active subscription status. Returns whether
+ * the customer exists, has prior transactions, and has active subscriptions.
+ * 
+ * Request body (JSON):
+ * - email: Customer email address to check (required)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Customer exists with history:
+ * ```json
+ * {
+ *   "exists": true,
+ *   "hasPriorTransactions": true,
+ *   "hasActiveSubscription": true
+ * }
+ * ```
+ * 
+ * 200 OK - Customer exists, no history:
+ * ```json
+ * {
+ *   "exists": true,
+ *   "hasPriorTransactions": false,
+ *   "hasActiveSubscription": false
+ * }
+ * ```
+ * 
+ * 200 OK - Customer does not exist:
+ * ```json
+ * {
+ *   "exists": false,
+ *   "hasPriorTransactions": false,
+ *   "hasActiveSubscription": false
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing email:
+ * ```json
+ * {
+ *   "exists": false,
+ *   "hasPriorTransactions": false,
+ *   "hasActiveSubscription": false,
+ *   "error": "Email is required"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "exists": false,
+ *   "hasPriorTransactions": false,
+ *   "hasActiveSubscription": false,
+ *   "error": "Failed to check customer"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with email
+ * @returns NextResponse with customer existence and history information
+ * @note Checks up to 10 customers with the same email (handles duplicates)
+ * @note Checks payment intents, invoices, and subscriptions for transaction history
+ * @note Active subscriptions include both "active" and "trialing" statuses
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/stripe/check-customer
+ * // Body: { email: "user@example.com" }
+ * // Returns: { exists: true, hasPriorTransactions: true, hasActiveSubscription: false }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -37,6 +122,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * @brief Checks if a customer exists in Stripe and their transaction history
+ * 
+ * Searches for Stripe customers by email and examines their payment history
+ * (payment intents and invoices) and subscription status. Returns comprehensive
+ * information about the customer's existence and purchase history.
+ * 
+ * @param email Customer email address to search for
+ * @returns Object with customer existence, transaction history, and subscription status
+ * @note Searches up to 10 customers with the same email (handles duplicate customers)
+ * @note Checks payment intents and invoices for transaction history
+ * @note Active subscriptions include "active" and "trialing" statuses
+ * @note Returns false for all fields on errors to avoid blocking legitimate operations
+ * 
+ * @example
+ * ```typescript
+ * const result = await checkExistingCustomer("user@example.com");
+ * // Returns: { exists: true, hasPriorTransactions: true, hasActiveSubscription: false }
+ * ```
+ */
 async function checkExistingCustomer(email: string): Promise<{
   exists: boolean;
   hasPriorTransactions: boolean;

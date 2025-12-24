@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Homepage component with performance optimizations.
+ * @module app/page
+ * @description The main landing page featuring hero, features, pricing, FAQ, and contact sections.
+ * Uses dynamic imports and lazy loading for non-critical sections to optimize First Contentful Paint (FCP).
+ */
+
 "use client";
 
 // Performance optimized homepage
@@ -31,7 +38,14 @@ const ContactSection = dynamic(() => import("@/components/sections/ContactSectio
   loading: () => <GenericSectionSkeleton height="500px" />,
 });
 
-// Simple reusable skeleton for all sections
+/**
+ * @brief Reusable skeleton loading component for sections.
+ * @description Provides a generic loading skeleton with customizable height
+ * for use while sections are being loaded.
+ * @param {Object} props - Component props.
+ * @param {string} [props.height="600px"] - Height of the skeleton component.
+ * @returns {JSX.Element} Skeleton loading component.
+ */
 const GenericSectionSkeleton = ({ height = "600px" }: { height?: string }) => {
   const SkeletonBox = ({ h, w = "100%", style = {} }: { h: string, w?: string, style?: React.CSSProperties }) => (
     <div className="skeleton-loading" style={{ height: h, width: w, ...style }} />
@@ -48,6 +62,14 @@ const GenericSectionSkeleton = ({ height = "600px" }: { height?: string }) => {
   );
 };
 
+/**
+ * @brief Homepage component.
+ * @description Renders the main landing page with hero section rendered immediately
+ * and secondary sections lazy-loaded for performance optimization.
+ * @returns {JSX.Element} Homepage with all sections.
+ * @note Hero section is critical and rendered immediately with Suspense.
+ * @note Secondary sections use dynamic imports to optimize FCP.
+ */
 export default function Home() {
   return (
     <>

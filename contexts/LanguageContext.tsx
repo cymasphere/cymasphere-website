@@ -1,9 +1,21 @@
+/**
+ * @fileoverview Language context provider for managing internationalization and translations.
+ * @module contexts/LanguageContext
+ * @description Provides translation functions, language switching, and translation loading state.
+ * Integrates with i18next for translation management.
+ */
+
 "use client";
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import useLanguageHook from '@/hooks/useLanguage';
 import i18next from 'i18next';
 
+/**
+ * @brief Type definition for the language context.
+ * @description Defines the shape of the language context value, including
+ * translation function, loading states, current language, and language switching.
+ */
 interface LanguageContextType {
   t: (key: string, options?: any) => string;
   translationsLoaded: boolean;
@@ -15,6 +27,14 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+/**
+ * @brief Language context provider component.
+ * @description Wraps the application with language context, providing translation
+ * functions and language management. Uses the useLanguage hook internally.
+ * @param {Object} props - Component props.
+ * @param {ReactNode} props.children - Child components to wrap with language context.
+ * @returns {JSX.Element} LanguageContext provider wrapping children.
+ */
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { currentLanguage, isLoading, changeLanguage, languages } = useLanguageHook();
 
@@ -39,6 +59,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * @brief Custom hook to access the language context.
+ * @description Provides access to translation functions, current language,
+ * language switching, and loading states. Must be used within a LanguageProvider.
+ * @returns {LanguageContextType} Language context value.
+ * @throws {Error} If used outside of LanguageProvider.
+ * @example
+ * const { t, currentLanguage, changeLanguage } = useLanguage();
+ * const translatedText = t('welcome.message');
+ */
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {

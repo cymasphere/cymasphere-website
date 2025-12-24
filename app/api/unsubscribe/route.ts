@@ -1,13 +1,42 @@
+/**
+ * @fileoverview Email unsubscribe/resubscribe API endpoint
+ * 
+ * This endpoint handles email subscription management including unsubscribe
+ * and resubscribe actions. Includes rate limiting, token verification for
+ * security, and prevents email enumeration attacks. Resubscribe requires
+ * admin authentication.
+ * 
+ * @module api/unsubscribe
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceRole } from '@/utils/supabase/service';
 import { createClient } from '@/utils/supabase/server';
 import { verifyUnsubscribeToken } from '@/utils/email-campaigns/unsubscribe-tokens';
 
-// Rate limiting in-memory store (in production, use Redis)
+/**
+ * Rate limiting in-memory store
+ * @note In production, use Redis for distributed rate limiting
+ */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 /**
- * Check rate limiting
+ * @brief Checks rate limiting for IP address
+ * 
+ * Implements simple rate limiting to prevent abuse. Tracks request count
+ * per IP address within a time window.
+ * 
+ * @param ip Client IP address
+ * @param maxRequests Maximum requests allowed in window (default: 10)
+ * @param windowSecs Time window in seconds (default: 60)
+ * @returns true if request is allowed, false if rate limited
+ * @note Uses in-memory store (consider Redis for production)
+ * 
+ * @example
+ * ```typescript
+ * const allowed = checkRateLimit("192.168.1.1", 10, 60);
+ * // Returns: true if under limit, false if rate limited
+ * ```
  */
 function checkRateLimit(ip: string, maxRequests: number = 10, windowSecs: number = 60): boolean {
   const now = Date.now();

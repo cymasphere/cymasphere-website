@@ -1,9 +1,89 @@
+/**
+ * @fileoverview Stripe pricing information API endpoint
+ * 
+ * This endpoint retrieves current pricing information for all available plans
+ * (monthly, annual, lifetime) from Stripe. Returns formatted price data including
+ * amounts, currencies, intervals, and product names. Includes fallback pricing
+ * in case of Stripe API errors.
+ * 
+ * @module api/stripe/prices
+ */
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PlanType, PriceData, PricesResponse } from "@/types/stripe";
 
+/**
+ * Stripe client instance initialized with secret key from environment variables
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+/**
+ * @brief GET endpoint to retrieve all plan pricing information
+ * 
+ * Fetches pricing data for monthly, annual, and lifetime plans from Stripe.
+ * Retrieves prices with expanded product information and formats the response
+ * with plan details. Returns fallback pricing if Stripe API calls fail.
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "prices": {
+ *     "monthly": {
+ *       "id": "price_xxx",
+ *       "type": "monthly",
+ *       "amount": 600,
+ *       "currency": "usd",
+ *       "interval": "month",
+ *       "name": "Pro Plan (Monthly)"
+ *     },
+ *     "annual": {
+ *       "id": "price_yyy",
+ *       "type": "annual",
+ *       "amount": 5900,
+ *       "currency": "usd",
+ *       "interval": "year",
+ *       "name": "Pro Plan (Annual)"
+ *     },
+ *     "lifetime": {
+ *       "id": "price_zzz",
+ *       "type": "lifetime",
+ *       "amount": 14900,
+ *       "currency": "usd",
+ *       "name": "Pro Plan (Lifetime)"
+ *     }
+ *   }
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error - Fallback pricing:
+ * ```json
+ * {
+ *   "success": false,
+ *   "prices": {
+ *     "monthly": { "id": "", "type": "monthly", "amount": 0, "currency": "usd", "name": "Monthly Plan" },
+ *     "annual": { "id": "", "type": "annual", "amount": 0, "currency": "usd", "name": "Annual Plan" },
+ *     "lifetime": { "id": "", "type": "lifetime", "amount": 0, "currency": "usd", "name": "Lifetime Plan" }
+ *   },
+ *   "error": "Failed to fetch prices"
+ * }
+ * ```
+ * 
+ * @returns NextResponse with pricing data for all plans
+ * @note Prices are retrieved in parallel for performance
+ * @note Product information is expanded to get product names
+ * @note Returns fallback pricing (zero amounts) if Stripe API fails
+ * @note Amounts are in cents (e.g., 600 = $6.00)
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/stripe/prices
+ * // Returns: { success: true, prices: { monthly: {...}, annual: {...}, lifetime: {...} } }
+ * ```
+ */
 export async function GET(): Promise<NextResponse<PricesResponse>> {
   try {
     // Get the price IDs from environment variables

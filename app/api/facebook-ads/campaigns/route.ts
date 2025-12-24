@@ -1,6 +1,86 @@
+/**
+ * @fileoverview Facebook Ads campaigns management API endpoint
+ * 
+ * This endpoint handles listing and creating Facebook ad campaigns. Supports
+ * fetching all campaigns with transformed data and creating new campaigns with
+ * validation. Includes development mode with mock data for testing.
+ * 
+ * @module api/facebook-ads/campaigns
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createFacebookAPI, CAMPAIGN_OBJECTIVES } from '@/utils/facebook/api';
 
+/**
+ * @brief GET endpoint to retrieve all Facebook ad campaigns
+ * 
+ * Fetches all campaigns from the Facebook Ads account and transforms them
+ * to a standardized format. Returns campaign data including status, objectives,
+ * budgets, and performance metrics (if available).
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success (development mode):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaigns": [
+ *     {
+ *       "id": "1",
+ *       "name": "Campaign Name",
+ *       "status": "active",
+ *       "objective": "TRAFFIC",
+ *       "platform": "facebook",
+ *       "budget": 1000,
+ *       "spent": 245.50,
+ *       "impressions": 12450,
+ *       "clicks": 312,
+ *       "conversions": 24,
+ *       "ctr": 2.51,
+ *       "cpc": 0.78,
+ *       "cpm": 19.72
+ *     }
+ *   ],
+ *   "isDevelopmentMode": true
+ * }
+ * ```
+ * 
+ * 200 OK - Success (production):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaigns": [...]
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not connected:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Not connected to Facebook Ads"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to fetch campaigns"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object
+ * @returns NextResponse with campaigns array or error
+ * @note Transforms Facebook campaign data to standardized format
+ * @note Performance metrics (spent, impressions, clicks) require separate insights API calls
+ * @note Development mode: Returns mock data if FACEBOOK_MOCK_CONNECTION=true
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/facebook-ads/campaigns
+ * // Returns: { success: true, campaigns: [...] }
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     // Development mode: return enhanced mock data
@@ -117,6 +197,93 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * @brief POST endpoint to create a new Facebook ad campaign
+ * 
+ * Creates a new campaign in Facebook Ads with the specified name, objective,
+ * status, budget, and scheduling. Validates required fields and campaign
+ * objective before creation.
+ * 
+ * Request body (JSON):
+ * - name: Campaign name (required)
+ * - objective: Campaign objective from CAMPAIGN_OBJECTIVES (required)
+ * - status: Campaign status - "active", "paused", etc. (required)
+ * - dailyBudget: Daily budget in cents (optional)
+ * - lifetimeBudget: Lifetime budget in cents (optional)
+ * - startTime: Campaign start time (optional)
+ * - endTime: Campaign end time (optional)
+ * - platforms: Platform targeting object (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success (development mode):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "mock_1234567890",
+ *     "name": "Campaign Name",
+ *     "status": "paused",
+ *     "objective": "TRAFFIC",
+ *     "platform": "facebook",
+ *     "budget": 1000
+ *   },
+ *   "message": "Campaign created successfully (Development Mode)",
+ *   "isDevelopmentMode": true
+ * }
+ * ```
+ * 
+ * 200 OK - Success (production):
+ * ```json
+ * {
+ *   "success": true,
+ *   "campaign": {
+ *     "id": "campaign_id",
+ *     "name": "Campaign Name",
+ *     "status": "paused",
+ *     "objective": "TRAFFIC",
+ *     "createdAt": "2024-01-01T00:00:00Z"
+ *   }
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing fields:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Missing required fields: name, objective, status"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Invalid objective:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Invalid campaign objective"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not connected:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Not connected to Facebook Ads"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with campaign data
+ * @returns NextResponse with created campaign data or error
+ * @note Validates campaign objective against CAMPAIGN_OBJECTIVES
+ * @note Budget must be specified in cents (e.g., $10.00 = 1000)
+ * @note Development mode: Simulates creation with mock data
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/facebook-ads/campaigns
+ * // Body: { name: "New Campaign", objective: "TRAFFIC", status: "paused", dailyBudget: 1000 }
+ * // Returns: { success: true, campaign: {...} }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
     // Development mode: simulate campaign creation

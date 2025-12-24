@@ -1,7 +1,22 @@
+/**
+ * @fileoverview AI chat assistant API endpoint
+ * 
+ * This endpoint provides an AI-powered chat assistant for Cymasphere using
+ * OpenAI GPT with RAG (Retrieval Augmented Generation) for context-aware
+ * responses. Supports multiple languages and includes keyword-based fallback
+ * responses when OpenAI is unavailable. Uses multilingual FAQ responses for
+ * common questions.
+ * 
+ * @module api/chat
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { cymasphereRAG } from '@/lib/rag';
 
+/**
+ * Chat message interface
+ */
 interface ChatMessage {
   id: string;
   text: string;
@@ -9,13 +24,19 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+/**
+ * Chat request interface
+ */
 interface ChatRequest {
   message: string;
   conversationHistory: ChatMessage[];
   language?: string;
 }
 
-// Initialize OpenAI client
+/**
+ * OpenAI client instance initialized with API key from environment variables
+ * Null if API key is not configured
+ */
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 }) : null;
@@ -454,6 +475,29 @@ function detectIntent(message: string, language: string = 'en'): string | null {
   return null;
 }
 
+/**
+ * @brief Generates AI response using RAG (Retrieval Augmented Generation)
+ * 
+ * Uses a three-layer RAG system to generate context-aware responses:
+ * 1. Retrieves relevant context from knowledge base
+ * 2. Generates response with retrieved context
+ * 3. Verifies response accuracy against context
+ * 
+ * Falls back to keyword-based responses if OpenAI is unavailable or RAG fails.
+ * 
+ * @param message User's message/query
+ * @param conversationHistory Array of previous messages in the conversation
+ * @param language Language code for response (default: 'en')
+ * @returns AI-generated response string
+ * @note Uses cymasphereRAG for context retrieval and response generation
+ * @note Falls back to generateFallbackResponse if RAG fails
+ * 
+ * @example
+ * ```typescript
+ * const response = await generateAIResponse("What is Cymasphere?", [], "en");
+ * // Returns: "Cymasphere is a complete song creation suite..."
+ * ```
+ */
 async function generateAIResponse(message: string, conversationHistory: ChatMessage[], language: string = 'en'): Promise<string> {
   // Check if OpenAI is available
   if (!openai) {
@@ -484,6 +528,29 @@ async function generateAIResponse(message: string, conversationHistory: ChatMess
   }
 }
 
+/**
+ * @brief Generates fallback response using keyword matching and FAQ responses
+ * 
+ * Creates context-aware responses when OpenAI/RAG is unavailable by:
+ * 1. Detecting user intent from message keywords
+ * 2. Matching intent to multilingual FAQ responses
+ * 3. Using default responses for common scenarios
+ * 
+ * Supports multiple languages with language-specific responses for common
+ * questions about pricing, features, getting started, support, etc.
+ * 
+ * @param message User's message/query
+ * @param language Language code for response (default: 'en')
+ * @returns Fallback response string based on keywords and intent
+ * @note Uses FAQ_RESPONSES and SALES_RESPONSES for keyword matching
+ * @note Includes empathetic responses for common user struggles
+ * 
+ * @example
+ * ```typescript
+ * const response = generateFallbackResponse("How much does it cost?", "en");
+ * // Returns: "Cymasphere keeps pricing simple—Monthly $6..."
+ * ```
+ */
 function generateFallbackResponse(message: string, language: string = 'en'): string {
   const intent = detectIntent(message, language);
   const faqResponses = FAQ_RESPONSES[language] || FAQ_RESPONSES['en'];
@@ -566,6 +633,56 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
   return langDefaults.general;
 }
 
+/**
+ * @brief POST endpoint to generate AI chat assistant response
+ * 
+ * Processes user messages and generates AI-powered responses using RAG
+ * (Retrieval Augmented Generation) with fallback to keyword-based responses.
+ * Supports multiple languages and maintains conversation context.
+ * 
+ * Request body (JSON):
+ * - message: User's message/query (required)
+ * - conversationHistory: Array of previous chat messages (optional)
+ * - language: Language code for response - "en", "es", "fr", etc. (optional, default: "en")
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "response": "AI-generated response text",
+ *   "timestamp": "2024-01-01T00:00:00.000Z",
+ *   "language": "en"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing message:
+ * ```json
+ * {
+ *   "error": "Message is required"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "error": "Internal server error"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with message and context
+ * @returns NextResponse with AI-generated response or error
+ * @note Uses RAG system for context-aware responses
+ * @note Falls back to keyword-based responses if RAG unavailable
+ * @note Supports multiple languages with language-specific responses
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/chat
+ * // Body: { message: "What is Cymasphere?", conversationHistory: [], language: "en" }
+ * // Returns: { response: "...", timestamp: "...", language: "en" }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json();

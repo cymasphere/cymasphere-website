@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Authentication context provider for managing user authentication state and operations.
+ * @module contexts/AuthContext
+ * @description Provides authentication functionality including sign up, sign in, sign out,
+ * password reset, profile management, and subscription status updates. Integrates with
+ * Supabase for authentication and user profile management.
+ */
+
 "use client";
 
 import React, {
@@ -24,6 +32,11 @@ import { createClient } from "@/utils/supabase/client";
 import { logEnvironmentStatus } from "@/utils/env-check";
 // import { updateSubscriberTimezone } from "@/utils/supabase/timezone-tracker";
 
+/**
+ * @brief Type definition for the authentication context.
+ * @description Defines the shape of the authentication context value, including
+ * user state, session, Supabase client, loading state, and authentication methods.
+ */
 type AuthContextType = {
   user: UserProfile | null;
   session: Session | null;
@@ -54,6 +67,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const supabase = createClient();
 
+/**
+ * @brief Authentication context provider component.
+ * @description Manages user authentication state, session management, profile updates,
+ * and subscription status. Handles authentication state changes and provides methods
+ * for sign up, sign in, sign out, password reset, and profile updates.
+ * @param {Object} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to wrap with authentication context.
+ * @returns {JSX.Element} AuthContext provider wrapping children.
+ * @note Automatically updates subscription status using centralized check-subscription utility.
+ * @note Logs environment status on mount to help debug 500 errors.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -64,6 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logEnvironmentStatus();
   }, []);
 
+  /**
+   * @brief Refreshes the current user's profile and subscription status.
+   * @description Fetches the latest profile data, admin status, and subscription
+   * information from the database and updates the user state.
+   * @returns {Promise<void>} Promise that resolves when the user data is refreshed.
+   * @note Uses centralized updateUserProStatus function to handle NFR, Stripe, and iOS subscriptions.
+   */
   const refreshUser = useCallback(async () => {
     if (session?.user) {
       try {
@@ -143,9 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               customer_id: null,
               subscription_expiration: null,
               trial_expiration: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
+            } as Profile;
             setUser({
               ...logged_in_user,
               profile: defaultProfile,
@@ -249,10 +278,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  /**
+   * @brief Signs in a user with email and password.
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password.
+   * @returns {Promise<AuthTokenResponsePassword>} Promise resolving to authentication response.
+   */
   const signIn = async (email: string, password: string) => {
     return await supabase.auth.signInWithPassword({ email, password });
   };
 
+  /**
+   * @brief Signs up a new user with Stripe integration.
+   * @param {string} first_name - User's first name.
+   * @param {string} last_name - User's last name.
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password.
+   * @returns {Promise<AuthResponse>} Promise resolving to authentication response.
+   * @note Creates a Stripe customer during sign up.
+   */
   const signUp = async (
     first_name: string,
     last_name: string,
@@ -262,16 +306,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await signUpWithStripe(first_name, last_name, email, password);
   };
 
+  /**
+   * @brief Signs out the current user.
+   * @param {("global" | "local" | "others" | undefined)} scope - Sign out scope.
+   * @description "global" signs out from all devices, "local" signs out from current device,
+   * "others" signs out from all other devices, undefined uses default behavior.
+   * @returns {Promise<{error: AuthError | null}>} Promise resolving to sign out result.
+   */
   const signOut = async (scope: "global" | "local" | "others" | undefined) => {
     return await supabase.auth.signOut({ scope });
   };
 
+  /**
+   * @brief Sends a password reset email to the user.
+   * @param {string} email - User's email address.
+   * @returns {Promise<{error: AuthError | null, data: object | null}>} Promise resolving to reset result.
+   * @note Redirects to /reset-password page after email link is clicked.
+   */
   const resetPassword = async (email: string) => {
     return await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
     });
   };
 
+  /**
+   * @brief Updates the user's profile information.
+   * @param {Profile} profile - Profile object with updated fields.
+   * @returns {Promise<{error: string | null}>} Promise resolving to update result.
+   * @note Only works if user is logged in. Updates both database and local state.
+   */
   const updateProfile = async (profile: Profile) => {
     if (user) {
       const { error } = await supabase
@@ -305,6 +368,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * @brief Custom hook to access the authentication context.
+ * @description Provides access to user state, session, authentication methods,
+ * and Supabase client. Must be used within an AuthProvider.
+ * @returns {AuthContextType} Authentication context value.
+ * @throws {Error} If used outside of AuthProvider.
+ * @example
+ * const { user, signIn, signOut } = useAuth();
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

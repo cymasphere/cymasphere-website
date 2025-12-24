@@ -1,3 +1,21 @@
+/**
+ * @fileoverview StripeCheckout Component
+ * @module components/checkout/StripeCheckout
+ * 
+ * Component for initiating Stripe checkout sessions. Handles checkout button
+ * rendering, loading states, error handling, and redirects to checkout flow.
+ * In development mode, redirects to mock checkout instead of actual Stripe.
+ * 
+ * @example
+ * // Basic usage
+ * <StripeCheckout 
+ *   priceId="price_1234567890" 
+ *   buttonText="Subscribe Now" 
+ *   billingPeriod="monthly" 
+ *   price="$9.99" 
+ * />
+ */
+
 import React, { useState } from "react";
 // import { loadStripe } from "@stripe/stripe-js";
 import styled from "styled-components";
@@ -52,21 +70,36 @@ const StatusMessage = styled.div<StatusMessageProps>`
   font-size: 0.9rem;
 `;
 
+/**
+ * @brief Props for StripeCheckout component
+ */
 interface StripeCheckoutProps {
+  /** @param {string} priceId - The Stripe price ID for the selected plan */
   priceId: string;
+  /** @param {string} buttonText - Text to display on the checkout button */
   buttonText: string;
+  /** @param {string} billingPeriod - The selected billing period (monthly, yearly, or lifetime) */
   billingPeriod: string;
+  /** @param {string} price - The price of the plan to display */
   price: string;
+  /** @param {number} [trialDays] - Optional number of trial days (currently unused) */
   trialDays?: number;
 }
 
 /**
- * StripeCheckout component for handling Stripe checkout sessions
- * @param {Object} props
- * @param {string} props.priceId - The Stripe price ID for the selected plan
- * @param {string} props.buttonText - Text to display on the checkout button
- * @param {string} props.billingPeriod - The selected billing period (monthly, yearly, or lifetime)
- * @param {string} props.price - The price of the plan to display
+ * @brief StripeCheckout component
+ * 
+ * Handles Stripe checkout session creation and user redirection. In development
+ * mode, automatically redirects to mock checkout to avoid 404 errors. In production,
+ * creates a Stripe checkout session and redirects the user.
+ * 
+ * @param {StripeCheckoutProps} props - Component props
+ * @returns {JSX.Element} Checkout button with loading and error states
+ * 
+ * @note In development mode, always uses mock checkout
+ * @note Stripe integration is currently commented out (see code comments)
+ * @note Displays error messages if checkout session creation fails
+ * @note Button is disabled during loading state
  */
 const StripeCheckout: React.FC<StripeCheckoutProps> = ({
   priceId,

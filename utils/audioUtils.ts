@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Audio utilities for Web Audio API and Tone.js integration
+ * 
+ * This file provides utilities for audio initialization, note playback, chord
+ * generation, and audio context management. Uses lazy loading for Tone.js to
+ * avoid automatic AudioContext initialization. Includes reverb effects and
+ * Lydian mode chord generation.
+ * 
+ * @module utils/audioUtils
+ */
+
 // Lazy import Tone.js to avoid automatic AudioContext initialization
 let Tone: any = null;
 

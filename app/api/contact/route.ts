@@ -1,6 +1,78 @@
+/**
+ * @fileoverview Contact form submission API endpoint
+ * 
+ * This endpoint handles contact form submissions from the website. Validates
+ * form data, formats HTML email, and sends notification email to support
+ * team using AWS SES. Includes reply-to header for direct responses.
+ * 
+ * @module api/contact
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/email";
 
+/**
+ * @brief POST endpoint to handle contact form submissions
+ * 
+ * Processes contact form submissions, validates required fields and email
+ * format, formats a professional HTML email, and sends it to the support
+ * team. Sets reply-to header so responses go directly to the user.
+ * 
+ * Request body (JSON):
+ * - name: Sender's name (optional)
+ * - email: Sender's email address (required)
+ * - subject: Email subject (required)
+ * - message: Message content (required)
+ * - userId: User ID if logged in (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "messageId": "0100018a-1234-5678-9abc-def012345678-000000"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing fields:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Missing required fields"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Invalid email:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Invalid email address"
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Failed to send email",
+ *   "details": "Check server logs for more information about AWS credentials"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with form data
+ * @returns NextResponse with success status and message ID or error
+ * @note Sends email to support@cymasphere.com
+ * @note Sets reply-to header to user's email for direct responses
+ * @note Includes HTML email template with Cymasphere branding
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/contact
+ * // Body: { name: "John", email: "john@example.com", subject: "Question", message: "..." }
+ * // Returns: { success: true, messageId: "..." }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body

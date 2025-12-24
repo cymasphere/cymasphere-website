@@ -1,17 +1,41 @@
+/**
+ * @fileoverview Scheduled email campaign processor API endpoint
+ * 
+ * This endpoint processes scheduled email campaigns. Called by cron jobs
+ * (Vercel Cron or AWS EventBridge) to send campaigns that are due. Handles
+ * audience targeting, content personalization, email tracking injection,
+ * and supports both sequential and parallel batch sending modes. Updates
+ * campaign status and statistics after sending.
+ * 
+ * @module api/email-campaigns/process-scheduled
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, sendBatchEmail } from "@/utils/email";
 import { injectEmailTracking, createSendRecord } from "@/utils/email-tracking";
 import { personalizeContent } from "@/utils/email-campaigns/email-generation";
 
-// Feature flag: Enable parallel batch sending (sends multiple personalized emails concurrently)
-// Set ENABLE_BATCH_EMAIL_SENDING=true to enable (much faster for large campaigns)
-// Uses parallel sending: sends multiple personalized emails at once instead of one-by-one
+/**
+ * Feature flag: Enable parallel batch sending (sends multiple personalized emails concurrently)
+ * Set ENABLE_BATCH_EMAIL_SENDING=true to enable (much faster for large campaigns)
+ * Uses parallel sending: sends multiple personalized emails at once instead of one-by-one
+ */
 const ENABLE_BATCH_SENDING = process.env.ENABLE_BATCH_EMAIL_SENDING === 'true';
-const PARALLEL_BATCH_SIZE = parseInt(process.env.EMAIL_PARALLEL_BATCH_SIZE || '50'); // Emails to send concurrently
-const DELAY_BETWEEN_BATCHES_MS = parseInt(process.env.EMAIL_BATCH_DELAY_MS || '200'); // Delay between batches to avoid rate limits
+/** Number of emails to send concurrently in parallel batch mode */
+const PARALLEL_BATCH_SIZE = parseInt(process.env.EMAIL_PARALLEL_BATCH_SIZE || '50');
+/** Delay between batches in milliseconds to avoid rate limits */
+const DELAY_BETWEEN_BATCHES_MS = parseInt(process.env.EMAIL_BATCH_DELAY_MS || '200');
 
-// Check if content contains personalization variables
+/**
+ * @brief Checks if email content contains personalization variables
+ * 
+ * Detects if content includes variables like {{firstName}}, {{email}}, etc.
+ * that need to be personalized per subscriber.
+ * 
+ * @param content Email content (HTML, text, or subject) to check
+ * @returns True if personalization variables are present, false otherwise
+ */
 function hasPersonalizationVariables(content: string): boolean {
   const personalizationPatterns = [
     /\{\{firstName\}\}/,
@@ -139,7 +163,71 @@ function generateProperEmailTemplate(
 </html>`;
 }
 
-// This endpoint will be called by a cron job every minute
+/**
+ * @brief POST endpoint to process scheduled email campaigns
+ * 
+ * Finds and processes all campaigns scheduled for the current time or earlier.
+ * Handles audience targeting (static and dynamic), content personalization,
+ * email tracking, and sending via AWS SES. Supports both sequential and
+ * parallel batch sending modes. Updates campaign status and statistics.
+ * 
+ * Request headers:
+ * - authorization: Bearer token with CRON_SECRET (for manual/API calls)
+ * - x-vercel-cron-signature: Vercel cron signature (for Vercel cron jobs)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "message": "Successfully processed 2 scheduled campaigns",
+ *   "processed": 2,
+ *   "results": [
+ *     {
+ *       "campaignId": "uuid",
+ *       "name": "Campaign Name",
+ *       "status": "sent",
+ *       "totalRecipients": 100,
+ *       "sent": 98,
+ *       "failed": 2,
+ *       "successRate": 98
+ *     }
+ *   ]
+ * }
+ * ```
+ * 
+ * 200 OK - No campaigns to process:
+ * ```json
+ * {
+ *   "message": "No scheduled campaigns to process",
+ *   "processed": 0,
+ *   "recentlyProcessed": [...]
+ * }
+ * ```
+ * 
+ * 401 Unauthorized:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object with authorization headers
+ * @returns NextResponse with processing results
+ * @note Requires authorization (Vercel cron signature or CRON_SECRET)
+ * @note Uses service role client to bypass RLS
+ * @note Supports both static and dynamic audiences
+ * @note Personalizes content if variables are present
+ * @note Parallel batch mode sends multiple emails concurrently (faster)
+ * @note Sequential mode sends one email at a time (safer for rate limits)
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/email-campaigns/process-scheduled
+ * // Headers: { "authorization": "Bearer cron-secret" }
+ * // Returns: { message: "...", processed: 2, results: [...] }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   const executionTime = new Date().toISOString();
   console.log(`🔄 Processing scheduled campaigns at ${executionTime}...`);
@@ -717,7 +805,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to get subscribers for audiences (reused from send route)
+/**
+ * @brief Gets subscribers for given audiences (included and excluded)
+ * 
+ * Retrieves subscribers from static and dynamic audiences. Handles audience
+ * filtering, exclusion logic, and status validation. Returns final list of
+ * active subscribers after applying inclusion and exclusion rules.
+ * 
+ * @param audienceIds Array of audience IDs to include
+ * @param excludedAudienceIds Array of audience IDs to exclude (optional)
+ * @returns Array of subscriber objects
+ * @note Supports both static (junction table) and dynamic (filter-based) audiences
+ * @note Filters out inactive and unsubscribed subscribers
+ * @note Excluded audiences remove subscribers from the final list
+ * 
+ * @example
+ * ```typescript
+ * const subscribers = await getSubscribersForAudiences(["aud1"], ["aud2"]);
+ * // Returns: [{ id: "uuid", email: "user@example.com", ... }, ...]
+ * ```
+ */
 async function getSubscribersForAudiences(
   audienceIds: string[],
   excludedAudienceIds: string[] = []
@@ -979,7 +1086,36 @@ async function getSubscribersForAudiences(
   }
 }
 
-// Allow GET requests for testing purposes and showing status
+/**
+ * @brief GET endpoint to check scheduled campaign processor status
+ * 
+ * Returns status information about the scheduled campaign processor including
+ * last execution time and next expected execution. Useful for monitoring and
+ * debugging cron job execution.
+ * 
+ * Responses:
+ * 
+ * 200 OK:
+ * ```json
+ * {
+ *   "message": "Scheduled campaign processor status",
+ *   "currentTime": "2024-01-01T12:00:00.000Z",
+ *   "lastExecutionTime": "2024-01-01T11:59:00.000Z",
+ *   "timeSinceLastExecution": "1 minutes ago",
+ *   "cronSchedule": "Every minute",
+ *   "nextExpectedExecution": "2024-01-01T12:00:00.000Z"
+ * }
+ * ```
+ * 
+ * @returns NextResponse with processor status information
+ * @note Does not require authentication (read-only status check)
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/email-campaigns/process-scheduled
+ * // Returns: { message: "...", lastExecutionTime: "...", ... }
+ * ```
+ */
 export async function GET() {
   const now = new Date().toISOString();
 

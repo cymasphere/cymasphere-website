@@ -1,3 +1,17 @@
+/**
+ * @fileoverview PricingSection Component
+ * @module components/sections/PricingSection
+ * 
+ * Main pricing section for the landing page. Features an interactive 3D canvas
+ * with clickable chord molecules, billing period toggle, pricing card, trial
+ * information banner, and promotional sale banner. Includes sophisticated
+ * background animation with musical chord visualizations.
+ * 
+ * @example
+ * // Basic usage
+ * <PricingSection />
+ */
+
 "use client";
 
 import React, {
@@ -1284,6 +1298,25 @@ const TrialText = styled.div`
 `;
 
 
+/**
+ * @brief PricingSection component
+ * 
+ * Main pricing section with:
+ * - Interactive 3D canvas with clickable chord molecules (desktop only)
+ * - Billing period toggle (monthly, yearly, lifetime)
+ * - Pricing card with dynamic pricing and promotions
+ * - Trial information banner (hidden if user has used trial)
+ * - Promotional sale banner (hidden for lifetime users)
+ * 
+ * @returns {JSX.Element} The rendered pricing section component
+ * 
+ * @note ChordWeb canvas is hidden on mobile devices for performance
+ * @note Fetches active promotions from /api/promotions/active
+ * @note Checks Stripe trial status for logged-in users
+ * @note Lifetime users never see promotional banners
+ * @note Billing period defaults to user's current subscription if logged in
+ * @note Supports internationalization through react-i18next
+ */
 const PricingSection = () => {
   const { t } = useTranslation();
   // Get authentication context

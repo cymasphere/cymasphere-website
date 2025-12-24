@@ -1,17 +1,53 @@
+/**
+ * @fileoverview Unsubscribe token generation and verification utilities
+ * 
+ * This file provides secure token generation and verification for email
+ * unsubscribe links. Uses HMAC-SHA256 for signing tokens to prevent tampering
+ * and includes expiration logic for security.
+ * 
+ * @module utils/email-campaigns/unsubscribe-tokens
+ */
+
 import crypto from 'crypto';
 
 /**
- * Secret key for signing unsubscribe tokens
- * In production, this should be stored in an environment variable
+ * @brief Gets the secret key for signing unsubscribe tokens
+ * 
+ * Retrieves the unsubscribe token secret from environment variables.
+ * Falls back to Supabase service role key or a default (for development only).
+ * 
+ * @returns Secret key string for token signing
+ * @note In production, should use UNSUBSCRIBE_TOKEN_SECRET environment variable
+ * @note Falls back to SUPABASE_SERVICE_ROLE_KEY if available
+ * 
+ * @example
+ * ```typescript
+ * const secret = getUnsubscribeSecret();
+ * // Returns: process.env.UNSUBSCRIBE_TOKEN_SECRET || ...
+ * ```
  */
 const getUnsubscribeSecret = (): string => {
   return process.env.UNSUBSCRIBE_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'default-secret-change-in-production';
 };
 
 /**
- * Generate a signed token for unsubscribe links
- * Token includes: email, timestamp, and a random nonce
- * Expires after 30 days
+ * @brief Generates a signed token for unsubscribe links
+ * 
+ * Creates a cryptographically signed token containing the email address,
+ * timestamp, and random nonce. Uses HMAC-SHA256 for signing to prevent
+ * tampering. Tokens expire after 30 days by default.
+ * 
+ * @param email Email address to include in token
+ * @returns Base64URL-encoded token string (payload.signature)
+ * @note Token format: email|timestamp|nonce.signature
+ * @note Uses base64url encoding for URL-safe tokens
+ * @note Default expiration is 30 days (configurable in verify function)
+ * 
+ * @example
+ * ```typescript
+ * const token = generateUnsubscribeToken("user@example.com");
+ * // Returns: "dXNlckBleGFtcGxlLmNvbXwxNzAwMDAwMDAwfGFiY2RlZmc..."
+ * ```
  */
 export function generateUnsubscribeToken(email: string): string {
   const secret = getUnsubscribeSecret();
@@ -32,8 +68,23 @@ export function generateUnsubscribeToken(email: string): string {
 }
 
 /**
- * Verify and decode an unsubscribe token
- * Returns the email if valid, null if invalid or expired
+ * @brief Verifies and decodes an unsubscribe token
+ * 
+ * Verifies the HMAC signature of an unsubscribe token and extracts the email
+ * address. Returns null if the token is invalid, expired, or tampered with.
+ * 
+ * @param token Base64URL-encoded token to verify
+ * @param maxAgeDays Maximum age of token in days (default: 30)
+ * @returns Email address if token is valid, null otherwise
+ * @note Verifies HMAC signature to prevent tampering
+ * @note Checks token expiration based on timestamp
+ * @note Returns null for invalid, expired, or malformed tokens
+ * 
+ * @example
+ * ```typescript
+ * const email = verifyUnsubscribeToken(token, 30);
+ * // Returns: "user@example.com" if valid, null if invalid/expired
+ * ```
  */
 export function verifyUnsubscribeToken(token: string, maxAgeDays: number = 30): string | null {
   try {

@@ -1,6 +1,48 @@
+/**
+ * @fileoverview Email open tracking pixel API endpoint
+ * 
+ * This endpoint serves a 1x1 transparent PNG pixel for tracking email opens.
+ * Records unique opens per email send with deduplication to prevent multiple
+ * counts from the same email. Updates campaign statistics with open counts.
+ * Includes basic bot detection to filter out obvious test requests.
+ * 
+ * @module api/email-campaigns/track/open
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * @brief GET endpoint to track email opens via tracking pixel
+ * 
+ * Serves a transparent 1x1 PNG pixel and records email open events.
+ * Implements deduplication to ensure only the first open per email send
+ * is counted. Updates campaign statistics with unique open counts.
+ * 
+ * Query parameters:
+ * - s: Send ID (email_sends.id) - required
+ * - c: Campaign ID - required
+ * - u: Subscriber ID - required
+ * 
+ * Responses:
+ * 
+ * 200 OK - Always returns tracking pixel (PNG image):
+ * - Content-Type: image/png
+ * - 1x1 transparent PNG pixel
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with PNG tracking pixel
+ * @note Always returns pixel even on errors (to prevent broken images in emails)
+ * @note Deduplicates opens per send_id (only first open is recorded)
+ * @note Includes basic bot detection for obvious test patterns
+ * @note Uses service role client to bypass RLS for anonymous tracking
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/email-campaigns/track/open?s=uuid&c=uuid&u=uuid
+ * // Returns: PNG image (1x1 transparent pixel)
+ * ```
+ */
 export async function GET(request: NextRequest) {
   console.log('🔥 UNIQUE OPENS TRACKING - DEDUPLICATION');
   

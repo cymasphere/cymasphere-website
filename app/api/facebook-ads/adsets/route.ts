@@ -1,6 +1,69 @@
+/**
+ * @fileoverview Facebook ad sets management API endpoint
+ * 
+ * This endpoint handles listing and creating Facebook ad sets. Ad sets define
+ * targeting, budget, and optimization settings for groups of ads. Supports
+ * filtering by campaign and includes development mode with mock data.
+ * 
+ * @module api/facebook-ads/adsets
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createFacebookAPI } from '@/utils/facebook/api';
 
+/**
+ * @brief GET endpoint to retrieve Facebook ad sets
+ * 
+ * Fetches ad sets from Facebook Ads account, optionally filtered by campaign.
+ * Returns ad set data including targeting, budget, placements, and performance metrics.
+ * 
+ * Query parameters:
+ * - campaignId: Filter ad sets by campaign ID (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "adSets": [
+ *     {
+ *       "id": "adset_1",
+ *       "name": "Ad Set Name",
+ *       "campaignId": "campaign_1",
+ *       "status": "active",
+ *       "budget": 500,
+ *       "targeting": {
+ *         "ageMin": 25,
+ *         "ageMax": 45,
+ *         "genders": ["male", "female"],
+ *         "locations": ["United States"]
+ *       },
+ *       "placements": ["facebook_feeds", "instagram_feeds"]
+ *     }
+ *   ]
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not connected:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Not connected to Facebook Ads"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing query parameters
+ * @returns NextResponse with ad sets array or error
+ * @note Can filter by campaignId
+ * @note Performance metrics require separate insights API calls
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/facebook-ads/adsets?campaignId=campaign_123
+ * // Returns: { success: true, adSets: [...] }
+ * ```
+ */
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
@@ -96,6 +159,60 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * @brief POST endpoint to create a new Facebook ad set
+ * 
+ * Creates a new ad set with targeting, budget, optimization settings, and
+ * scheduling. Ad sets define who sees the ads and how much to spend.
+ * 
+ * Request body (JSON):
+ * - name: Ad set name (required)
+ * - campaignId: Campaign ID to associate with (required)
+ * - status: Ad set status - "active", "paused", etc. (required)
+ * - dailyBudget: Daily budget in cents (optional)
+ * - targeting: Targeting object with demographics, interests, etc. (optional)
+ * - optimizationGoal: Optimization goal - "LINK_CLICKS", "CONVERSIONS", etc. (optional)
+ * - billingEvent: Billing event - "LINK_CLICKS", "IMPRESSIONS", etc. (optional)
+ * - startTime: Ad set start time (optional)
+ * - endTime: Ad set end time (optional)
+ * - placements: Array of placement names (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "success": true,
+ *   "adSet": {
+ *     "id": "adset_id",
+ *     "name": "Ad Set Name",
+ *     "campaignId": "campaign_id",
+ *     "status": "paused",
+ *     "createdAt": "2024-01-01T00:00:00Z"
+ *   }
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing fields:
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "Missing required fields: name, campaignId, status"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with ad set data
+ * @returns NextResponse with created ad set data or error
+ * @note Budget must be specified in cents (e.g., $10.00 = 1000)
+ * @note Targeting defines who sees the ads
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/facebook-ads/adsets
+ * // Body: { name: "New Ad Set", campaignId: "campaign_123", status: "paused", dailyBudget: 1000 }
+ * // Returns: { success: true, adSet: {...} }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
     // Development mode: simulate ad set creation

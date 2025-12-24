@@ -1,12 +1,26 @@
+/**
+ * @fileoverview Custom hook for initializing and managing MIDI device access.
+ * @module hooks/useMIDISetup
+ * @description Provides MIDI device initialization, output device listing, and device selection.
+ * Automatically initializes MIDI access on mount and sets default output if available.
+ */
+
 import { useState, useEffect } from "react";
 import { initializeMIDI } from "../utils/midiUtils";
 
+/**
+ * @brief Type definition for MIDI output device.
+ * @description Represents a MIDI output device with its unique ID and display name.
+ */
 interface MIDIOutput {
   id: string;
   name: string;
 }
 
-// Using a more specific approach for MIDIAccess
+/**
+ * @brief Type definition for MIDI access object.
+ * @description Represents the Web MIDI API access object with inputs and outputs.
+ */
 interface MIDIAccessType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   inputs: Record<string, any>;
@@ -15,8 +29,22 @@ interface MIDIAccessType {
 }
 
 /**
- * Custom hook for initializing and managing MIDI access
- * @returns {Object} Object containing MIDI state (access, outputs, selectedOutput)
+ * @brief Custom hook for initializing and managing MIDI access.
+ * @description Initializes MIDI access on mount, lists available output devices,
+ * and provides device selection functionality.
+ * @returns {Object} Object containing MIDI state and device selection handler.
+ * @returns {MIDIAccessType | null} returns.midiAccess - The MIDI access object or null if not initialized.
+ * @returns {MIDIOutput[]} returns.midiOutputs - Array of available MIDI output devices.
+ * @returns {MIDIOutput | null} returns.midiOutput - Currently selected MIDI output device.
+ * @returns {string | null} returns.selectedOutput - ID of the selected output device.
+ * @returns {string | null} returns.selectedPort - Name of the selected port.
+ * @returns {Function} returns.handleMidiDeviceChange - Handler for MIDI device selection changes.
+ * @note Automatically sets default output device if available on initialization.
+ * @example
+ * const { midiOutputs, midiOutput, handleMidiDeviceChange } = useMIDISetup();
+ * <select onChange={handleMidiDeviceChange}>
+ *   {midiOutputs.map(output => <option key={output.id}>{output.name}</option>)}
+ * </select>
  */
 const useMIDISetup = () => {
   const [midiAccess, setMidiAccess] = useState<MIDIAccessType | null>(null);
@@ -47,7 +75,12 @@ const useMIDISetup = () => {
     initMidi();
   }, []);
 
-  // Handle MIDI device selection change
+  /**
+   * @brief Handles MIDI device selection change from a select element.
+   * @param {React.ChangeEvent<HTMLSelectElement>} event - Change event from select element.
+   * @description Updates the selected MIDI output device based on the selected device name.
+   * @note Logs device selection for debugging purposes.
+   */
   const handleMidiDeviceChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {

@@ -1,3 +1,28 @@
+/**
+ * @fileoverview PricingCard Component
+ * @module components/pricing/PricingCard
+ * 
+ * Comprehensive pricing card component that displays plan information, pricing,
+ * features, trial options, and checkout functionality. Supports multiple billing
+ * periods (monthly, annual, lifetime) with dynamic pricing, promotions, and
+ * user-specific states (current plan, lifetime owner, trial eligibility).
+ * 
+ * @example
+ * // Basic usage
+ * <PricingCard 
+ *   billingPeriod="monthly" 
+ *   onBillingPeriodChange={(period) => setPeriod(period)} 
+ * />
+ * 
+ * @example
+ * // With trial options
+ * <PricingCard 
+ *   billingPeriod="annual" 
+ *   showTrialOptions={true} 
+ *   onBillingPeriodChange={handleChange} 
+ * />
+ */
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -392,15 +417,47 @@ const Loader = styled.div`
   }
 `;
 
+/**
+ * @brief Props for PricingCard component
+ */
 interface PricingCardProps {
+  /** @param {PlanType} billingPeriod - Current billing period selection */
   billingPeriod: PlanType;
+  /** @param {(period: PlanType) => void} [onBillingPeriodChange] - Callback when billing period changes */
   onBillingPeriodChange?: (period: PlanType) => void;
+  /** @param {boolean} [showTrialOptions=false] - Whether to display trial option radio buttons */
   showTrialOptions?: boolean;
+  /** @param {boolean} [compact=false] - Whether to use compact layout */
   compact?: boolean;
+  /** @param {boolean} [hideButton=false] - Whether to hide the checkout button */
   hideButton?: boolean;
+  /** @param {"default"|"change_plan"} [variant="default"] - Component variant for different contexts */
   variant?: "default" | "change_plan";
 }
 
+/**
+ * @brief PricingCard component
+ * 
+ * Displays a comprehensive pricing card with:
+ * - Dynamic pricing from Stripe API
+ * - Active promotion support with sale prices
+ * - Trial options (7-day no card, 14-day with card)
+ * - User subscription state detection
+ * - Badge indicators (Current Plan, Lifetime Owner, Trial Available)
+ * - Feature list with translations
+ * - Checkout functionality with email collection for guests
+ * 
+ * @param {PricingCardProps} props - Component props
+ * @returns {JSX.Element} The rendered pricing card component
+ * 
+ * @note Fetches prices from /api/stripe/prices on mount
+ * @note Fetches active promotions from /api/promotions/active
+ * @note Checks Stripe trial status for logged-in users
+ * @note Shows email collection modal for guest checkout
+ * @note Supports lifetime, annual, and monthly billing periods
+ * @note Displays discount tags and strikethrough prices for sales
+ * @note Button text and action adapts based on user subscription state
+ */
 export default function PricingCard({
   billingPeriod,
   onBillingPeriodChange,

@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Layout Component
+ * @module components/layout/Layout
+ * 
+ * Main layout wrapper component for pages. Provides header, main content area,
+ * and footer with page transition animations. Uses dynamic header loading for
+ * client-side rendering optimization.
+ * 
+ * @example
+ * // Basic usage
+ * <Layout>
+ *   <YourPageContent />
+ * </Layout>
+ */
+
 import React from "react";
 import styled from "styled-components";
 import dynamic from "next/dynamic";
@@ -50,10 +65,27 @@ const pageVariants = {
   },
 };
 
+/**
+ * @brief Props for Layout component
+ */
 interface LayoutProps {
+  /** @param {React.ReactNode} children - Page content to render within the layout */
   children: React.ReactNode;
 }
 
+/**
+ * @brief Layout component
+ * 
+ * Provides the main page structure with header, animated main content area,
+ * and footer. Includes smooth page transition animations using Framer Motion.
+ * 
+ * @param {LayoutProps} props - Component props
+ * @returns {JSX.Element} The rendered layout component
+ * 
+ * @note Header is dynamically imported with SSR disabled for client-side features
+ * @note Main content uses Framer Motion for fade and slide animations
+ * @note Layout uses full viewport height with flexbox for proper footer positioning
+ */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <LayoutWrapper>

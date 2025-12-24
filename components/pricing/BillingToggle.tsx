@@ -1,3 +1,26 @@
+/**
+ * @fileoverview BillingToggle Component
+ * @module components/pricing/BillingToggle
+ * 
+ * Toggle component for switching between billing periods (monthly, yearly, lifetime).
+ * Displays savings information and disables options based on user's current subscription.
+ * 
+ * @example
+ * // Basic usage
+ * <BillingToggle 
+ *   billingPeriod={billingPeriod} 
+ *   onBillingPeriodChange={setBillingPeriod} 
+ * />
+ * 
+ * @example
+ * // With user subscription
+ * <BillingToggle 
+ *   billingPeriod={billingPeriod} 
+ *   onBillingPeriodChange={setBillingPeriod} 
+ *   userSubscription={user.profile.subscription} 
+ * />
+ */
+
 "use client";
 
 import React from "react";
@@ -76,14 +99,37 @@ const SavingsInfo = styled.p`
   }
 `;
 
+/**
+ * @brief Props for BillingToggle component
+ */
 interface BillingToggleProps {
+  /** @param {PlanType} billingPeriod - Currently selected billing period */
   billingPeriod: PlanType;
+  /** @param {(period: PlanType) => void} onBillingPeriodChange - Callback when period changes */
   onBillingPeriodChange: (period: PlanType) => void;
+  /** @param {string} [userSubscription] - User's current subscription type */
   userSubscription?: string;
+  /** @param {boolean} [showSavingsInfo=true] - Whether to display savings information below toggle */
   showSavingsInfo?: boolean;
+  /** @param {"default"|"change_plan"} [variant="default"] - Component variant */
   variant?: "default" | "change_plan";
 }
 
+/**
+ * @brief BillingToggle component
+ * 
+ * Three-button toggle for selecting billing period. In default variant, disables
+ * options that don't match the user's current subscription. In change_plan variant,
+ * allows selecting any plan including the current one.
+ * 
+ * @param {BillingToggleProps} props - Component props
+ * @returns {JSX.Element} The rendered billing toggle component
+ * 
+ * @note Disabled buttons are visually dimmed and non-clickable
+ * @note Shows savings information below toggle (25% for annual, "Best Value" for lifetime)
+ * @note Uses gradient styling for active button
+ * @note Supports internationalization through react-i18next
+ */
 export default function BillingToggle({
   billingPeriod,
   onBillingPeriodChange,

@@ -1,13 +1,32 @@
+/**
+ * @fileoverview Admin AI support response generator API endpoint
+ * 
+ * This endpoint generates AI-powered support ticket responses using OpenAI GPT.
+ * Provides context from the current ticket conversation, all tickets for pattern
+ * recognition, and a comprehensive Cymasphere knowledge base. Falls back to
+ * template responses if OpenAI is unavailable. Requires admin authentication.
+ * 
+ * @module api/admin/support-tickets/ai-response
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { checkAdmin } from "@/app/actions/user-management";
 import OpenAI from "openai";
 
+/**
+ * OpenAI client instance initialized with API key from environment variables
+ * Null if API key is not configured
+ */
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 }) : null;
 
-// Cymasphere knowledge base for context (same as chat assistant)
+/**
+ * Cymasphere knowledge base for AI context
+ * Contains comprehensive information about the product, features, pricing,
+ * support, and common customer questions for generating accurate responses.
+ */
 const CYMASPHERE_KNOWLEDGE_BASE = `
 # Cymasphere Platform Information
 
@@ -203,6 +222,68 @@ Cymasphere is designed to help overcome these challenges by:
 - Focus on one element at a time (harmony, then melody, then arrangement)
 `;
 
+/**
+ * @brief POST endpoint to generate AI-powered support ticket response
+ * 
+ * Generates a professional support response using OpenAI GPT-4o-mini with
+ * context from the current ticket conversation, all tickets for pattern
+ * recognition, and the Cymasphere knowledge base. Falls back to template
+ * responses if OpenAI is unavailable or encounters errors.
+ * 
+ * Request body (JSON):
+ * - prompt: User's prompt/instruction for the AI (required)
+ * - ticketId: Current ticket ID to include conversation context (optional)
+ * - allTickets: Array of all tickets for pattern recognition (optional)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success (AI response):
+ * ```json
+ * {
+ *   "success": true,
+ *   "response": "Thank you for contacting Cymasphere support! Based on your message..."
+ * }
+ * ```
+ * 
+ * 200 OK - Success (fallback response):
+ * ```json
+ * {
+ *   "success": true,
+ *   "response": "Thank you for contacting Cymasphere support!...",
+ *   "isFallback": true,
+ *   "error": "OpenAI API key not configured - using template response"
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing prompt:
+ * ```json
+ * {
+ *   "error": "Prompt is required"
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not admin:
+ * ```json
+ * {
+ *   "error": "Unauthorized"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with prompt and context
+ * @returns NextResponse with AI-generated response or fallback template
+ * @note Requires admin authentication
+ * @note Uses GPT-4o-mini model for cost-effective responses
+ * @note Includes full conversation thread if ticketId provided
+ * @note Falls back to template responses if OpenAI unavailable
+ * @note Template responses are context-aware based on prompt keywords
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/admin/support-tickets/ai-response
+ * // Body: { prompt: "Write a response about refunds", ticketId: "uuid", allTickets: [...] }
+ * // Returns: { success: true, response: "Thank you for contacting..." }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
@@ -429,7 +510,26 @@ ${allTicketsContext ? `\n${allTicketsContext}\n` : ''}
   }
 }
 
-// Fallback response generator when OpenAI is unavailable
+/**
+ * @brief Generates fallback template response when OpenAI is unavailable
+ * 
+ * Creates context-aware template responses based on prompt keywords when
+ * OpenAI API is unavailable, quota exceeded, or encounters errors. Provides
+ * helpful responses for common support scenarios like refunds, installation,
+ * trials, pricing, and features.
+ * 
+ * @param prompt User's prompt/instruction
+ * @param ticketContext Current ticket context (optional)
+ * @returns Template response string based on prompt keywords
+ * @note Uses keyword matching to provide relevant template responses
+ * @note Falls back to generic helpful response if no keywords match
+ * 
+ * @example
+ * ```typescript
+ * const response = generateFallbackResponse("How do I get a refund?", "");
+ * // Returns: Template refund response
+ * ```
+ */
 function generateFallbackResponse(prompt: string, ticketContext: string): string {
   const lowerPrompt = prompt.toLowerCase();
   

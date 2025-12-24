@@ -1,7 +1,26 @@
 /**
- * Environment variables checker for debugging deployment issues
+ * @fileoverview Environment variable validation and logging utilities.
+ * @module utils/env-check
+ * @description Provides functions to check for required environment variables and log
+ * environment status for debugging deployment issues. Helps identify missing configuration
+ * that could cause runtime errors.
  */
 
+/**
+ * @brief Checks if all required environment variables are set.
+ * @description Validates that all critical environment variables are present in the environment.
+ * Logs missing variables to the console and returns a boolean indicating if all are present.
+ * @returns {boolean} True if all required environment variables are set, false otherwise.
+ * @note Logs missing variables to console.error if any are missing.
+ * @note Logs success message if all variables are present.
+ * @note Required variables include Supabase, Stripe, and AWS credentials.
+ * @example
+ * ```typescript
+ * if (!checkEnvironmentVariables()) {
+ *   console.error("Missing required environment variables!");
+ * }
+ * ```
+ */
 export const checkEnvironmentVariables = () => {
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
@@ -25,6 +44,27 @@ export const checkEnvironmentVariables = () => {
   return true;
 };
 
+/**
+ * @brief Logs the status of all environment variables to the console.
+ * @description Logs whether each environment variable is set or missing, with special
+ * handling for server-only variables that are expected to be missing on the client.
+ * Useful for debugging deployment and configuration issues.
+ * @returns {void}
+ * @note Detects if running on server or client and handles variables accordingly.
+ * @note Server-only variables (SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, AWS_*) show
+ * "N/A (server-only)" on the client, which is expected behavior.
+ * @note Public variables (NEXT_PUBLIC_*) are checked on both server and client.
+ * @example
+ * ```typescript
+ * logEnvironmentStatus();
+ * // Output:
+ * // Environment check:
+ * // - NODE_ENV: production
+ * // - NEXT_PUBLIC_SITE_URL: SET
+ * // - NEXT_PUBLIC_SUPABASE_URL: SET
+ * // ...
+ * ```
+ */
 export const logEnvironmentStatus = () => {
   const isServer = typeof window === 'undefined';
   console.log('Environment check:');

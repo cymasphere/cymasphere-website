@@ -1,6 +1,63 @@
+/**
+ * @fileoverview Current authenticated user retrieval API endpoint
+ * 
+ * This endpoint returns information about the currently authenticated
+ * user including profile data and admin status. Used for client-side
+ * authentication state management and user profile display.
+ * 
+ * @module api/get-current-user
+ */
+
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+/**
+ * @brief GET endpoint to retrieve current authenticated user
+ * 
+ * Fetches the authenticated user's information including:
+ * - User ID and email from Supabase Auth
+ * - Complete profile data from profiles table
+ * - Admin status and admin record (if applicable)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "user": {
+ *     "id": "user-uuid",
+ *     "email": "user@example.com",
+ *     "profile": {
+ *       "id": "user-uuid",
+ *       "email": "user@example.com",
+ *       "pro": true,
+ *       "subscription": "annual",
+ *       ...
+ *     },
+ *     "isAdmin": false,
+ *     "adminRecord": null
+ *   }
+ * }
+ * ```
+ * 
+ * 401 Unauthorized - Not authenticated:
+ * ```json
+ * {
+ *   "error": "Not authenticated"
+ * }
+ * ```
+ * 
+ * @returns NextResponse with user data or authentication error
+ * @note Requires valid Supabase authentication session
+ * @note Handles case where admin record doesn't exist (PGRST116 error)
+ * @note Returns null for adminRecord if user is not admin
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/get-current-user
+ * // Returns: { user: { id: "...", email: "...", profile: {...}, isAdmin: false } }
+ * ```
+ */
 export async function GET() {
   const supabase = await createClient();
 

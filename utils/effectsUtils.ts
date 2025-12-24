@@ -1,10 +1,19 @@
 /**
- * Utility functions for audio effects management
+ * @fileoverview Audio effects chain management utilities for Tone.js.
+ * @module utils/effectsUtils
+ * @description Provides functions for initializing and disposing of audio effects chains
+ * including reverb, delay, chorus, compression, limiting, stereo widening, and distortion.
+ * Manages the complete effects chain with proper signal routing and cleanup.
  */
+
 import * as Tone from "tone";
 import { DisposableSynth } from "./synthUtils";
 
-// Define the type for the effects chain object
+/**
+ * @brief Interface for the complete audio effects chain.
+ * @description Defines the structure of the effects chain object containing all audio effects
+ * and a method to retrieve individual effects by name.
+ */
 export interface EffectsChain {
   reverb: Tone.Reverb;
   compressor: Tone.Compressor;
@@ -20,10 +29,24 @@ export interface EffectsChain {
 }
 
 /**
- * Initializes a complete effects chain for audio processing
- * @param {typeof Tone | null} toneLib - The Tone.js library object instance
- * @param {DisposableSynth} synth - Optional synth to connect to the effects chain
- * @returns {Promise<EffectsChain>} Promise resolving to the effects chain object
+ * @brief Initializes a complete audio effects chain for processing.
+ * @description Creates and connects a full effects chain including reverb, delay, chorus,
+ * compression, limiting, stereo widening, and distortion. Starts the Tone.js AudioContext
+ * if needed and connects an optional synthesizer to the chain.
+ * @param {typeof Tone | null} [toneLib=null] - The Tone.js library object instance (required).
+ * @param {DisposableSynth} [synth=null] - Optional synthesizer to connect to the effects chain.
+ * @returns {Promise<EffectsChain>} Promise resolving to the complete effects chain object.
+ * @throws {Error} If toneLib is not provided.
+ * @note Effects are connected in this order: synth → stereo widener → chorus → delay → reverb → soft clipper → compressor → limiter → master volume → destination.
+ * @note Automatically starts Tone.js AudioContext if it's not running.
+ * @note Waits for reverb impulse response generation before returning.
+ * @note Checks if synth is disposed before connecting to prevent errors.
+ * @example
+ * ```typescript
+ * const effects = await initializeEffectsChain(Tone, mySynth);
+ * effects.reverb.set({ wet: 0.5 });
+ * effects.masterVolume.volume.value = -3;
+ * ```
  */
 export const initializeEffectsChain = async (
   toneLib: typeof Tone | null = null,
@@ -146,8 +169,20 @@ export const initializeEffectsChain = async (
 };
 
 /**
- * Disposes of an effects chain and its components
- * @param {EffectsChain | null | undefined} effectsChain - Effects chain to dispose
+ * @brief Disposes of an effects chain and all its components.
+ * @description Safely disposes of all effects in the chain to free up resources and prevent
+ * memory leaks. Handles errors gracefully if disposal fails for any effect.
+ * @param {EffectsChain | null | undefined} effectsChain - Effects chain to dispose of.
+ * @returns {void}
+ * @note Does nothing if effectsChain is null or undefined.
+ * @note Skips the getEffect method when disposing.
+ * @note Logs warnings if disposal fails for any effect but continues with others.
+ * @example
+ * ```typescript
+ * const effects = await initializeEffectsChain(Tone);
+ * // ... use effects ...
+ * disposeEffectsChain(effects); // Clean up when done
+ * ```
  */
 export const disposeEffectsChain = (
   effectsChain: EffectsChain | null | undefined

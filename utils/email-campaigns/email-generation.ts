@@ -1,12 +1,42 @@
 /**
- * Shared utility functions for generating email HTML and text content
- * Extracted from app/api/email-campaigns/send/route.ts
+ * @fileoverview Email content generation utilities
+ * 
+ * This file contains utilities for generating HTML and text email content from
+ * email element arrays. Includes link tracking, personalization, unsubscribe
+ * link generation, and responsive email HTML generation.
+ * 
+ * @module utils/email-campaigns/email-generation
  */
 
 import { generateUnsubscribeUrl } from './unsubscribe-tokens';
 
 /**
- * Generate HTML from email elements with tracking
+ * @brief Generates HTML email content from email elements with tracking
+ * 
+ * Converts an array of email elements (text, images, buttons, etc.) into
+ * complete HTML email content. Includes:
+ * - Link rewriting for click tracking
+ * - Unsubscribe link generation
+ * - View-in-browser link
+ * - Responsive email styling
+ * - Preheader text support
+ * 
+ * @param elements Array of email elements to render
+ * @param subject Email subject line
+ * @param campaignId Optional campaign ID for tracking
+ * @param subscriberId Optional subscriber ID for tracking
+ * @param sendId Optional send ID for tracking
+ * @param preheader Optional preheader text shown in inbox preview
+ * @returns Complete HTML email content as string
+ * @note Rewrites all links for click tracking if tracking parameters provided
+ * @note Uses production URL for tracking even in development
+ * @note Handles full-width and constrained-width element layouts
+ * 
+ * @example
+ * ```typescript
+ * const html = generateHtmlFromElements(elements, "Welcome", "campaign-123", "user-456", "send-789");
+ * // Returns: "<html>...</html>"
+ * ```
  */
 export function generateHtmlFromElements(
   elements: any[],

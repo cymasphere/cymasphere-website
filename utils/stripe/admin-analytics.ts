@@ -1,9 +1,22 @@
+/**
+ * @fileoverview Stripe admin analytics and CRM utilities
+ * 
+ * This file contains server actions for admin analytics including dashboard
+ * statistics, user data retrieval for CRM, customer purchase/invoice history,
+ * and support ticket management. All operations require admin access.
+ * 
+ * @module utils/stripe/admin-analytics
+ */
+
 "use server";
 
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { SubscriptionType } from "@/utils/supabase/types";
 import Stripe from "stripe";
 
+/**
+ * Stripe client instance initialized with secret key
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export interface AdminDashboardStats {
@@ -78,8 +91,23 @@ export interface DetailedUserData extends UserData {
 }
 
 /**
- * Fetches comprehensive admin dashboard statistics
+ * @brief Fetches comprehensive admin dashboard statistics
+ * 
+ * Retrieves aggregated statistics for the admin dashboard including user counts,
+ * subscription metrics, revenue data, and recent activity. This function
+ * performs multiple database queries and is marked as deprecated in favor
+ * of individual stat functions for better performance.
+ * 
+ * @returns Promise with comprehensive dashboard statistics
  * @deprecated Use individual stat functions instead for better performance
+ * @note Uses service role client to access all data
+ * @note Performs multiple queries which can be slow with large datasets
+ * 
+ * @example
+ * ```typescript
+ * const stats = await getAdminDashboardStats();
+ * // Returns: { totalUsers: 1000, activeSubscriptions: 500, monthlyRevenue: 3000, ... }
+ * ```
  */
 export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
   try {

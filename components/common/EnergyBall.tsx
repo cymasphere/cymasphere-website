@@ -1,3 +1,19 @@
+/**
+ * @fileoverview EnergyBall Component
+ * @module components/common/EnergyBall
+ * 
+ * An animated energy ball icon with pulsing, rotating, and shimmering effects.
+ * Used as the primary brand icon throughout the Cymasphere application.
+ * 
+ * @example
+ * // Basic usage
+ * <EnergyBall />
+ * 
+ * @example
+ * // Custom size
+ * <EnergyBall size="60px" marginRight="20px" />
+ */
+
 import React from "react";
 import styled, { keyframes } from "styled-components";
 
@@ -102,11 +118,31 @@ const Core = styled.div`
   box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.7);
 `;
 
+/**
+ * @brief Props for the EnergyBall component
+ */
 interface EnergyBallProps {
+  /** @param {string} [size] - Size of the energy ball (width and height) */
   size?: string;
+  /** @param {string} [marginRight="10px"] - Right margin spacing */
   marginRight?: string;
 }
 
+/**
+ * @brief EnergyBall component
+ * 
+ * Creates an animated spherical icon with multiple visual effects:
+ * - Pulsing animation with expanding shadow
+ * - Rotating outer ring
+ * - Shimmering gradient background
+ * - Radial gradient core
+ * 
+ * @param {EnergyBallProps} props - Component props
+ * @returns {JSX.Element} The rendered energy ball component
+ * 
+ * @note Uses CSS keyframe animations for performance
+ * @note Default size is 40px if not specified
+ */
 const EnergyBall: React.FC<EnergyBallProps> = ({
   size,
   marginRight = "10px",

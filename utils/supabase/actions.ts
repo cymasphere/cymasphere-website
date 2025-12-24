@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Supabase server actions for authentication and profile management
+ * 
+ * This file contains server actions for user authentication, profile fetching,
+ * and admin checks. Includes integration with Stripe for customer creation
+ * during signup and subscriber creation for email campaigns.
+ * 
+ * @module utils/supabase/actions
+ */
+
 "use server";
 
 import { PostgrestError } from "@supabase/supabase-js";
@@ -5,6 +15,29 @@ import { createClient } from "@/utils/supabase/server";
 import { Profile } from "@/utils/supabase/types";
 import { findOrCreateCustomer } from "@/utils/stripe/actions";
 
+/**
+ * @brief Server action to sign up a user with Stripe customer creation
+ * 
+ * Creates a new user account with Supabase Auth and automatically:
+ * - Creates or finds a Stripe customer for the user
+ * - Creates a subscriber record for email campaigns
+ * - Links the user profile with Stripe customer ID
+ * 
+ * @param first_name User's first name
+ * @param last_name User's last name
+ * @param email User's email address
+ * @param password User's password
+ * @returns Promise with Supabase auth response
+ * @note Creates Stripe customer before user signup
+ * @note Creates subscriber record after successful signup
+ * @note Does not fail signup if subscriber creation fails
+ * 
+ * @example
+ * ```typescript
+ * const result = await signUpWithStripe("John", "Doe", "john@example.com", "password123");
+ * // Returns: { data: { user: {...}, session: {...} }, error: null }
+ * ```
+ */
 export async function signUpWithStripe(
   first_name: string,
   last_name: string,
@@ -73,6 +106,20 @@ export async function signUpWithStripe(
   }
 }
 
+/**
+ * @brief Server action to fetch user profile by ID
+ * 
+ * Retrieves a user's profile from the profiles table by user ID.
+ * 
+ * @param id User ID to fetch profile for
+ * @returns Promise with profile data or error
+ * 
+ * @example
+ * ```typescript
+ * const { profile, error } = await fetchProfile("user-uuid");
+ * // Returns: { profile: {...}, error: null }
+ * ```
+ */
 export async function fetchProfile(
   id: string
 ): Promise<{ profile: Profile | null; error: PostgrestError | null }> {
@@ -87,6 +134,20 @@ export async function fetchProfile(
   return { profile, error };
 }
 
+/**
+ * @brief Server action to check if a user is an admin
+ * 
+ * Checks if a user has an entry in the admins table.
+ * 
+ * @param id User ID to check admin status for
+ * @returns Promise with admin status boolean and error
+ * 
+ * @example
+ * ```typescript
+ * const { is_admin, error } = await fetchIsAdmin("user-uuid");
+ * // Returns: { is_admin: true, error: null }
+ * ```
+ */
 export async function fetchIsAdmin(
   id: string
 ): Promise<{ is_admin: boolean; error: PostgrestError | null }> {

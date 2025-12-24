@@ -1,14 +1,42 @@
+/**
+ * @fileoverview Stripe checkout session creation API endpoint
+ * 
+ * This endpoint creates Stripe checkout sessions for subscription and one-time payments.
+ * Handles customer creation/lookup, trial period management, duplicate subscription prevention,
+ * lifetime purchase validation, automatic promotion code application, and payment method
+ * collection requirements. Supports both logged-in users (with customer_id) and guest
+ * checkouts (with email only).
+ * 
+ * @module api/stripe/checkout
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PlanType } from "@/types/stripe";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { randomUUID } from "crypto";
 
+/**
+ * Stripe client instance initialized with secret key from environment variables
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
- * Map price_id to plan name for Meta tracking
- * Returns format: monthly_6, annual_59, lifetime_149
+ * @brief Maps Stripe price ID to plan name format for Meta conversion tracking
+ * 
+ * Retrieves the price from Stripe and formats it as a plan name string for
+ * Meta pixel event tracking. Format: monthly_6, annual_59, lifetime_149
+ * 
+ * @param priceId Stripe price ID to retrieve
+ * @param planType Plan type identifier (monthly, annual, lifetime)
+ * @returns Formatted plan name string for tracking
+ * @note Returns fallback format if price retrieval fails
+ * 
+ * @example
+ * ```typescript
+ * const planName = await getPlanName("price_123", "monthly");
+ * // Returns: "monthly_6" (if price is $6.00)
+ * ```
  */
 async function getPlanName(priceId: string, planType: PlanType): Promise<string> {
   try {
@@ -30,8 +58,96 @@ async function getPlanName(priceId: string, planType: PlanType): Promise<string>
   }
 }
 
+/**
+ * @brief POST endpoint to create a Stripe checkout session
+ * 
+ * Creates a Stripe checkout session for subscription or one-time payment plans.
+ * Handles customer creation/lookup, validates trial eligibility, prevents duplicate
+ * subscriptions and lifetime purchases, applies automatic promotions, and configures
+ * payment method collection requirements. Supports both logged-in users and guest checkouts.
+ * 
+ * Request body (JSON):
+ * - planType: Plan type - "monthly", "annual", or "lifetime" (required)
+ * - email: User's email address (required if customerId not provided)
+ * - customerId: Existing Stripe customer ID (optional, for logged-in users)
+ * - collectPaymentMethod: Whether to require payment method upfront (default: false)
+ * - isPlanChange: Whether this is a plan change for existing subscription (default: false)
+ * 
+ * Responses:
+ * 
+ * 200 OK - Success:
+ * ```json
+ * {
+ *   "url": "https://checkout.stripe.com/pay/cs_test_..."
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Missing customer ID and email:
+ * ```json
+ * {
+ *   "url": null,
+ *   "error": "No such customer: 'cus_xxx'. Please provide an email address."
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Trial already used:
+ * ```json
+ * {
+ *   "url": null,
+ *   "error": "TRIAL_USED_BEFORE",
+ *   "message": "You've already used a trial before. Please provide payment information to proceed.",
+ *   "hasHadTrial": true
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Lifetime already purchased:
+ * ```json
+ * {
+ *   "url": null,
+ *   "error": "LIFETIME_ALREADY_PURCHASED",
+ *   "message": "You already have a lifetime license! To purchase another license (for example, as a gift), please create a new account using a different email address.",
+ *   "hasLifetime": true
+ * }
+ * ```
+ * 
+ * 400 Bad Request - Active subscription exists:
+ * ```json
+ * {
+ *   "url": null,
+ *   "error": "ACTIVE_SUBSCRIPTION_EXISTS",
+ *   "message": "You already have an active subscription. Please manage your existing subscription or wait for it to expire before creating a new one.",
+ *   "hasActiveSubscription": true,
+ *   "activeSubscriptionIds": ["sub_xxx"]
+ * }
+ * ```
+ * 
+ * 500 Internal Server Error - Checkout session creation failed:
+ * ```json
+ * {
+ *   "url": null,
+ *   "error": "Failed to create checkout session"
+ * }
+ * ```
+ * 
+ * @param request Next.js request object containing JSON body with checkout parameters
+ * @returns NextResponse with checkout URL or error
+ * @note Maximum 1 trial per customer (enforced for non-lifetime plans)
+ * @note Maximum 1 lifetime purchase per customer (enforced)
+ * @note Maximum 1 active subscription per customer (enforced for non-lifetime plans)
+ * @note Automatic promotion codes are applied if active promotion exists in database
+ * @note Trial period: 7 days (default) or 14 days (if collectPaymentMethod is true)
+ * @note Plan changes never include trial periods
+ * 
+ * @example
+ * ```typescript
+ * // POST /api/stripe/checkout
+ * // Body: { planType: "monthly", email: "user@example.com", collectPaymentMethod: false }
+ * // Returns: { url: "https://checkout.stripe.com/pay/cs_test_..." }
+ * ```
+ */
 export async function POST(request: NextRequest) {
   try {
+    // Parse JSON request body
     const body = await request.json();
     const {
       planType,
@@ -191,9 +307,25 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Finds or creates a customer in Stripe
- * Note: This is a duplicate of the function in utils/stripe/actions.ts
- * Consider importing from there instead to avoid code duplication
+ * @brief Finds or creates a Stripe customer by email address
+ * 
+ * Searches for an existing Stripe customer with the given email. If found,
+ * returns the customer ID. If not found, creates a new customer with
+ * idempotency protection to prevent duplicate creation from concurrent requests.
+ * Handles race conditions and retries on creation failures.
+ * 
+ * @param email Customer email address (will be normalized to lowercase)
+ * @returns Stripe customer ID
+ * @note Email is normalized (lowercase, trimmed) to prevent duplicates
+ * @note Uses hour-based idempotency keys to prevent race conditions
+ * @note Retries lookup on creation failures to handle concurrent requests
+ * @note This is a duplicate of the function in utils/stripe/actions.ts - consider importing instead
+ * 
+ * @example
+ * ```typescript
+ * const customerId = await findOrCreateCustomer("user@example.com");
+ * // Returns: "cus_abc123" (existing or newly created)
+ * ```
  */
 async function findOrCreateCustomer(email: string): Promise<string> {
   try {
@@ -280,7 +412,21 @@ async function findOrCreateCustomer(email: string): Promise<string> {
 }
 
 /**
- * Checks if a customer has previously had a trial subscription
+ * @brief Checks if a customer has previously used a trial subscription
+ * 
+ * Queries all subscriptions for the customer and checks if any subscription
+ * had a trial period (trial_start, trial_end, or status "trialing").
+ * Used to enforce the one-trial-per-customer policy.
+ * 
+ * @param customerId Stripe customer ID to check
+ * @returns True if customer has had a trial before, false otherwise
+ * @note Returns false on errors to avoid blocking legitimate purchases
+ * 
+ * @example
+ * ```typescript
+ * const hadTrial = await hasCustomerHadTrial("cus_abc123");
+ * // Returns: true if customer has used a trial, false otherwise
+ * ```
  */
 async function hasCustomerHadTrial(customerId: string): Promise<boolean> {
   try {
@@ -305,8 +451,24 @@ async function hasCustomerHadTrial(customerId: string): Promise<boolean> {
 }
 
 /**
- * Checks if a customer has already purchased lifetime access
- * This prevents duplicate lifetime purchases
+ * @brief Checks if a customer has already purchased lifetime access
+ * 
+ * Performs comprehensive checks across multiple data sources to determine
+ * if a customer has already purchased a lifetime license. Checks Stripe charges,
+ * payment intents, invoices, and the database profile. Prevents duplicate
+ * lifetime purchases by blocking checkout if lifetime access is detected.
+ * 
+ * @param customerId Stripe customer ID to check
+ * @returns True if customer has lifetime access, false otherwise
+ * @note Checks multiple sources: charges, payment intents, database, and invoices
+ * @note Returns false on errors to avoid blocking legitimate purchases
+ * @note This prevents duplicate lifetime purchases (one per customer)
+ * 
+ * @example
+ * ```typescript
+ * const hasLifetime = await hasCustomerPurchasedLifetime("cus_abc123");
+ * // Returns: true if customer has lifetime access, false otherwise
+ * ```
  */
 async function hasCustomerPurchasedLifetime(customerId: string): Promise<boolean> {
   try {
@@ -390,7 +552,30 @@ async function hasCustomerPurchasedLifetime(customerId: string): Promise<boolean
 }
 
 /**
- * Creates a Stripe checkout session for the selected plan
+ * @brief Creates a Stripe checkout session for the selected plan
+ * 
+ * Creates a Stripe checkout session with appropriate configuration based on
+ * plan type, trial eligibility, and payment method requirements. Handles
+ * subscription and one-time payment modes, applies automatic promotions,
+ * configures trial periods, and sets up success/cancel URLs.
+ * 
+ * @param customerId Stripe customer ID (required)
+ * @param planType Plan type - "monthly", "annual", or "lifetime"
+ * @param collectPaymentMethod Whether to require payment method upfront (default: false)
+ * @param isSignedUp Whether user is logged in (default: false)
+ * @param isPlanChange Whether this is a plan change (default: false)
+ * @returns Object with checkout URL or error message
+ * @note Lifetime plans use "payment" mode, others use "subscription" mode
+ * @note Trial periods: 7 days (default) or 14 days (if collectPaymentMethod is true)
+ * @note Plan changes never include trial periods
+ * @note Automatic promotion codes are applied if active promotion exists
+ * @note Manual promotion codes are enabled if no auto-discount is applied
+ * 
+ * @example
+ * ```typescript
+ * const result = await createCheckoutSession("cus_abc123", "monthly", false, true, false);
+ * // Returns: { url: "https://checkout.stripe.com/pay/cs_test_..." }
+ * ```
  */
 async function createCheckoutSession(
   customerId: string | undefined,

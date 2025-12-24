@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Custom hook for initializing and managing audio effects chain.
+ * @module hooks/useEffectsChain
+ * @description Provides Tone.js effects chain initialization and cleanup.
+ * Automatically initializes effects on mount and disposes them on unmount.
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,8 +16,17 @@ import {
 } from "@/utils/effectsUtils";
 
 /**
- * Custom hook for initializing and managing the effects chain
- * @returns {EffectsChain | null} The effects chain object or null if not initialized
+ * @brief Custom hook for initializing and managing the effects chain.
+ * @description Initializes the audio effects chain (reverb, delay, chorus, etc.)
+ * on component mount and automatically disposes it on unmount to prevent memory leaks.
+ * @returns {EffectsChain | null} The effects chain object or null if not initialized.
+ * @note Effects chain is initialized asynchronously and may be null initially.
+ * @note Automatically cleans up effects chain on component unmount.
+ * @example
+ * const effectsChain = useEffectsChain();
+ * if (effectsChain) {
+ *   effectsChain.reverb.set({ wet: 0.5 });
+ * }
  */
 const useEffectsChain = (): EffectsChain | null => {
   const [effectsChain, setEffectsChain] = useState<EffectsChain | null>(null);

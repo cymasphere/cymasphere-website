@@ -1,3 +1,27 @@
+/**
+ * @fileoverview NextLayout Component
+ * @module components/layout/NextLayout
+ * 
+ * Next.js-optimized layout component with optional header and footer.
+ * Includes SEO meta tags, page title management, and smooth content transitions.
+ * 
+ * @example
+ * // Basic usage
+ * <NextLayout>
+ *   <YourPageContent />
+ * </NextLayout>
+ * 
+ * @example
+ * // Without header and footer
+ * <NextLayout 
+ *   title="Custom Page Title" 
+ *   showHeader={false} 
+ *   showFooter={false} 
+ * >
+ *   <YourPageContent />
+ * </NextLayout>
+ */
+
 import React from "react";
 import dynamic from "next/dynamic";
 import styled from "styled-components";
@@ -39,13 +63,34 @@ const pageVariants = {
   },
 };
 
+/**
+ * @brief Props for NextLayout component
+ */
 interface NextLayoutProps {
+  /** @param {React.ReactNode} children - Page content to render */
   children: React.ReactNode;
+  /** @param {string} [title] - Page title for SEO and browser tab */
   title?: string;
+  /** @param {boolean} [showHeader=true] - Whether to display the header */
   showHeader?: boolean;
+  /** @param {boolean} [showFooter=true] - Whether to display the footer */
   showFooter?: boolean;
 }
 
+/**
+ * @brief NextLayout component
+ * 
+ * Next.js-optimized layout wrapper with configurable header and footer display.
+ * Includes SEO meta tags, viewport configuration, and smooth fade transitions
+ * for page content.
+ * 
+ * @param {NextLayoutProps} props - Component props
+ * @returns {JSX.Element} The rendered layout component
+ * 
+ * @note Header is dynamically imported with SSR disabled
+ * @note Default title includes SEO-optimized description
+ * @note Content uses fade-in/fade-out animations for smooth transitions
+ */
 const NextLayout: React.FC<NextLayoutProps> = ({
   children,
   title = "CYMASPHERE - Sound Therapy & Brainwave Entertainment",
