@@ -179,7 +179,7 @@ const InviteText = styled.p`
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, loading: authLoading } = useAuth();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   const isTrial = searchParams.get("isTrial") === "true";
   const isLifetime = searchParams.get("isLifetime") === "true";
@@ -198,6 +198,8 @@ function CheckoutSuccessContent() {
 
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
+  // Ref to track if we've already processed the invite/refresh
+  const hasProcessedInvite = useRef(false);
 
   // Refresh pro status on mount (same as login and dashboard pages)
   useEffect(() => {
@@ -205,9 +207,16 @@ function CheckoutSuccessContent() {
   }, [refreshUser]); // Run on mount and when refreshUser changes
 
   // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
+  // Wait for auth to finish loading before processing
   useEffect(() => {
+    // Don't process until auth has finished loading
+    if (authLoading) return;
+    // Only process once
+    if (hasProcessedInvite.current) return;
+    if (!sessionId) return;
+
     const handleUserInviteAndRefresh = async () => {
-      if (!sessionId) return;
+      hasProcessedInvite.current = true;
 
       try {
         if (isLoggedIn && user?.id) {
@@ -283,7 +292,7 @@ function CheckoutSuccessContent() {
     };
 
     handleUserInviteAndRefresh();
-  }, [sessionId, isLoggedIn, user?.id, refreshUser]);
+  }, [sessionId, isLoggedIn, user?.id, refreshUser, authLoading]);
 
   // Refresh subscription status by customer ID (works even if not logged in)
   useEffect(() => {
@@ -603,33 +612,42 @@ function CheckoutSuccessContent() {
           </>
         )}
 
-        {inviteSent && !isLoggedIn && (
-          <InviteMessage>
-            <InviteTitle>Account Invitation Sent!</InviteTitle>
-            <InviteText>
-              {customerEmail
-                ? `We've sent an invitation email to ${customerEmail}. Please check your inbox (and spam folder) and click the link to set your password and access your account.`
-                : "We've sent an invitation email to your checkout email address. Please check your inbox (and spam folder) and click the link to set your password and access your account."}
-            </InviteText>
-          </InviteMessage>
-        )}
+        {authLoading ? (
+          <LoadingSpinner
+            size="large"
+            text="Processing checkout..."
+          />
+        ) : (
+          <>
+            {inviteSent && !isLoggedIn && (
+              <InviteMessage>
+                <InviteTitle>Account Invitation Sent!</InviteTitle>
+                <InviteText>
+                  {customerEmail
+                    ? `We've sent an invitation email to ${customerEmail}. Please check your inbox (and spam folder) and click the link to set your password and access your account.`
+                    : "We've sent an invitation email to your checkout email address. Please check your inbox (and spam folder) and click the link to set your password and access your account."}
+                </InviteText>
+              </InviteMessage>
+            )}
 
-        <ButtonContainer>
-          <ActionButton
-            onClick={() => {
-              if (isLoggedIn) {
-                router.push("/dashboard");
-              } else {
-                router.push("/login");
-              }
-            }}
-          >
-            {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
-          </ActionButton>
-          <SecondaryButton onClick={() => router.push("/getting-started")}>
-            Getting Started
-          </SecondaryButton>
-        </ButtonContainer>
+            <ButtonContainer>
+              <ActionButton
+                onClick={() => {
+                  if (isLoggedIn) {
+                    router.push("/dashboard");
+                  } else {
+                    router.push("/login");
+                  }
+                }}
+              >
+                {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
+              </ActionButton>
+              <SecondaryButton onClick={() => router.push("/getting-started")}>
+                Getting Started
+              </SecondaryButton>
+            </ButtonContainer>
+          </>
+        )}
       </ContentContainer>
     </PageContainer>
   );
