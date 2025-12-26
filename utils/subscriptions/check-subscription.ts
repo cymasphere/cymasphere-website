@@ -4,6 +4,7 @@ import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { customerPurchasedProFromSupabase } from "@/utils/stripe/supabase-stripe";
 import { SubscriptionType } from "@/utils/supabase/types";
 import { checkUserManagementPro } from "@/utils/supabase/user-management";
+import Stripe from "stripe";
 
 // Export types for backward compatibility
 export type AuthorizationSource = "nfr" | "stripe" | "ios" | "none";
@@ -152,6 +153,57 @@ export async function updateUserProStatus(userId: string): Promise<UpdateUserPro
  * @returns Object containing the determined subscription type, expiration date, and source
  * @note This function should not be called directly - use updateUserProStatus() instead
  */
+/**
+ * @brief Finds an existing Stripe customer by email (does not create new customers)
+ * 
+ * Searches for an existing Stripe customer with the given email address.
+ * Only searches - does not create a new customer if none is found.
+ * 
+ * @param email Customer email address to search for
+ * @returns Stripe customer ID if found, null otherwise
+ * @note Email is normalized (lowercase, trimmed) before searching
+ * @note Returns the most recently created customer if multiple exist
+ * 
+ * @example
+ * ```typescript
+ * const customerId = await findExistingCustomerByEmail("user@example.com");
+ * // Returns: "cus_abc123" or null
+ * ```
+ */
+async function findExistingCustomerByEmail(email: string): Promise<string | null> {
+  try {
+    if (!email) return null;
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    
+    // Normalize email: lowercase and trim
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Search for existing customers with this email
+    const customers = await stripe.customers.list({
+      email: normalizedEmail,
+      limit: 10, // Get more results to handle potential duplicates
+    });
+
+    if (customers.data.length > 0) {
+      // If there are multiple customers with the same email, log a warning
+      if (customers.data.length > 1) {
+        console.warn(
+          `[updateUserProStatus] Found ${customers.data.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`
+        );
+      }
+      // Return the most recently created customer (first in list is typically most recent)
+      return customers.data[0].id;
+    }
+
+    // No customer found
+    return null;
+  } catch (error) {
+    console.error("[updateUserProStatus] Error finding customer by email:", error);
+    return null;
+  }
+}
+
 async function updateUserProStatusInternal(userId: string): Promise<UpdateUserProStatusResult> {
   const supabase = await createSupabaseServiceRole();
 
@@ -170,6 +222,46 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
       subscriptionExpiration: null,
       source: "none",
     };
+  }
+
+  // LINK CUSTOMER_ID IF MISSING
+  // If user doesn't have a customer_id but has an email, try to find it in Stripe
+  // This handles cases where users made purchases but customer_id wasn't synced to their profile
+  if (!profile.customer_id && profile.email) {
+    console.log(
+      `[updateUserProStatus] No customer_id found for user ${userId}, attempting to find by email: ${profile.email}`
+    );
+    
+    const foundCustomerId = await findExistingCustomerByEmail(profile.email);
+    
+    if (foundCustomerId) {
+      console.log(
+        `[updateUserProStatus] Found customer_id ${foundCustomerId} for user ${userId}, updating profile`
+      );
+      
+      // Update the profile with the found customer_id
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ customer_id: foundCustomerId })
+        .eq("id", userId);
+      
+      if (updateError) {
+        console.error(
+          `[updateUserProStatus] Error updating customer_id for user ${userId}:`,
+          updateError
+        );
+      } else {
+        // Update the profile object we're working with so subsequent checks use the customer_id
+        profile.customer_id = foundCustomerId;
+        console.log(
+          `[updateUserProStatus] Successfully linked customer_id ${foundCustomerId} to user ${userId}`
+        );
+      }
+    } else {
+      console.log(
+        `[updateUserProStatus] No Stripe customer found for email ${profile.email}`
+      );
+    }
   }
 
   // CHECK NFR STATUS FIRST (highest priority)
