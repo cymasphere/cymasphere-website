@@ -595,7 +595,7 @@ function CheckoutSuccessContent() {
             <Title>Trial Started!</Title>
             <Subtitle>Welcome to Cymasphere Pro</Subtitle>
             <Message>
-              {isSignedUp
+              {isLoggedIn || isSignedUp
                 ? "Your free trial has been successfully activated. You can now explore all the premium features of Cymasphere Pro."
                 : "Your free trial has been successfully activated. To start using Cymasphere Pro, you'll need to create your account."}
             </Message>
@@ -605,7 +605,7 @@ function CheckoutSuccessContent() {
             <Title>Payment Successful!</Title>
             <Subtitle>Thank you for your purchase</Subtitle>
             <Message>
-              {isSignedUp
+              {isLoggedIn || isSignedUp
                 ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
                 : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
             </Message>
@@ -631,20 +631,19 @@ function CheckoutSuccessContent() {
             )}
 
             <ButtonContainer>
-              <ActionButton
-                onClick={() => {
-                  if (isLoggedIn) {
-                    router.push("/dashboard");
-                  } else {
-                    router.push("/login");
-                  }
-                }}
-              >
-                {isLoggedIn ? "Go to Dashboard" : "Go to Login"}
-              </ActionButton>
-              <SecondaryButton onClick={() => router.push("/getting-started")}>
-                Getting Started
-              </SecondaryButton>
+              {isLoggedIn ? (
+                <>
+                  <ActionButton onClick={() => router.push("/downloads")}>
+                    Downloads
+                  </ActionButton>
+                  <SecondaryButton onClick={() => router.push("/getting-started")}>
+                    Getting Started
+                  </SecondaryButton>
+                </>
+              ) : (
+                // When not logged in, don't show any buttons - user should wait for invite
+                null
+              )}
             </ButtonContainer>
           </>
         )}
