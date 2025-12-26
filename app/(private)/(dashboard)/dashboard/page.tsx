@@ -12,6 +12,7 @@ import {
   FaExclamationTriangle,
   FaInfoCircle,
   FaDownload,
+  FaRocket,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboard } from "@/contexts/DashboardContext";
@@ -660,6 +661,24 @@ function DashboardPage() {
 
         <StatCard
           whileHover={{ y: -5, transition: { duration: 0.2 } }}
+          onClick={() => router.push("/getting-started")}
+        >
+          <StatHeader>
+            <StatTitle>{t("dashboard.main.gettingStarted", "Getting Started")}</StatTitle>
+            <StatIcon color="linear-gradient(90deg, #84fab0, #8fd3f4)">
+              <FaRocket />
+            </StatIcon>
+          </StatHeader>
+          <StatValue>
+            {t("dashboard.main.learnMore", "Learn")}
+          </StatValue>
+          <StatDescription>
+            {t("dashboard.main.gettingStartedDescription", "Start your journey")}
+          </StatDescription>
+        </StatCard>
+
+        <StatCard
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
           onClick={navigateToSettings}
         >
           <StatHeader>
@@ -687,24 +706,6 @@ function DashboardPage() {
           </StatValue>
           <StatDescription>
             {t("dashboard.main.activeDevices", "Active device connections")}
-          </StatDescription>
-        </StatCard>
-
-        <StatCard
-          whileHover={{ y: -5, transition: { duration: 0.2 } }}
-          onClick={() => setShowContactModal(true)}
-        >
-          <StatHeader>
-            <StatTitle>{t("dashboard.main.support", "Support")}</StatTitle>
-            <StatIcon color="linear-gradient(90deg, #84fab0, #8fd3f4)">
-              <FaHeadphones />
-            </StatIcon>
-          </StatHeader>
-          <StatValue>
-            {t("dashboard.main.supportAvailability", "24/7")}
-          </StatValue>
-          <StatDescription>
-            {t("dashboard.main.premiumSupport", "Premium support available")}
           </StatDescription>
         </StatCard>
       </StatsGrid>
