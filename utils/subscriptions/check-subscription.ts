@@ -8,6 +8,29 @@ import { checkUserManagementPro } from "@/utils/supabase/user-management";
 // Export types for backward compatibility
 export type AuthorizationSource = "nfr" | "stripe" | "ios" | "none";
 
+/**
+ * @brief Return type for updateUserProStatus function
+ * 
+ * Represents the result of updating a user's pro subscription status,
+ * including the subscription type, expiration date, and source.
+ */
+export type UpdateUserProStatusResult = {
+  subscription: SubscriptionType;
+  subscriptionExpiration: Date | null;
+  source: "stripe" | "ios" | "nfr" | "none";
+};
+
+/**
+ * @fileoverview Per-user mutex/lock mechanism to prevent race conditions
+ * 
+ * This Map tracks ongoing updateUserProStatus operations per user ID.
+ * When multiple calls come in for the same user, subsequent calls will
+ * wait for the first one to complete and return the same result.
+ * 
+ * @module utils/subscriptions/check-subscription
+ */
+const userUpdateLocks = new Map<string, Promise<UpdateUserProStatusResult>>();
+
 export interface AuthorizationResult {
   subscription: SubscriptionType;
   subscriptionExpiration: Date | null;
@@ -84,12 +107,52 @@ export interface AuthorizationResult {
  *
  * @param userId - The user ID to update pro status for
  * @returns Object containing the determined subscription type, expiration date, and source
+ * @note This function uses a per-user mutex to prevent race conditions when
+ *       multiple calls are made concurrently for the same user. Subsequent calls
+ *       will wait for the first one to complete and return the same result.
  */
-export async function updateUserProStatus(userId: string): Promise<{
-  subscription: SubscriptionType;
-  subscriptionExpiration: Date | null;
-  source: "stripe" | "ios" | "nfr" | "none";
-}> {
+export async function updateUserProStatus(userId: string): Promise<UpdateUserProStatusResult> {
+  // Check if there's already an ongoing update for this user
+  const existingUpdate = userUpdateLocks.get(userId);
+  if (existingUpdate) {
+    console.log(
+      `[updateUserProStatus] Waiting for existing update to complete for user ${userId}`
+    );
+    // Wait for the existing update to complete and return its result
+    return await existingUpdate;
+  }
+
+  // Create a new update promise
+  const updatePromise = updateUserProStatusInternal(userId);
+
+  // Store it in the lock map
+  userUpdateLocks.set(userId, updatePromise);
+
+  try {
+    // Execute the update
+    const result = await updatePromise;
+    return result;
+  } finally {
+    // Remove from lock map when done (whether success or failure)
+    userUpdateLocks.delete(userId);
+    console.log(
+      `[updateUserProStatus] Completed update for user ${userId}, lock released`
+    );
+  }
+}
+
+/**
+ * @brief Internal implementation of updateUserProStatus
+ * 
+ * This is the actual implementation that performs the subscription status update.
+ * It's separated from the public function to allow the mutex wrapper to handle
+ * concurrent calls properly.
+ * 
+ * @param userId - The user ID to update pro status for
+ * @returns Object containing the determined subscription type, expiration date, and source
+ * @note This function should not be called directly - use updateUserProStatus() instead
+ */
+async function updateUserProStatusInternal(userId: string): Promise<UpdateUserProStatusResult> {
   const supabase = await createSupabaseServiceRole();
 
   // Get user's profile and email
