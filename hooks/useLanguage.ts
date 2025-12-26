@@ -55,9 +55,9 @@ export default function useLanguage() {
         }
       }
       
-      // Load translations
+      // Load translations (loadTranslations will use context cache if available)
       try {
-        await loadTranslations(lang);
+        await loadTranslations(lang, true); // Use cache
         // Force language change
         await i18next.changeLanguage(lang);
         setCurrentLanguage(lang);
@@ -85,7 +85,8 @@ export default function useLanguage() {
     setIsLoading(true);
     try {
       console.log(`[useLanguage] Changing language to: ${lang}`);
-      await loadTranslations(lang);
+      // loadTranslations will use context cache if available
+      await loadTranslations(lang, true); // Use cache
       await i18next.changeLanguage(lang);
       localStorage.setItem('i18nextLng', lang);
       setCurrentLanguage(lang);

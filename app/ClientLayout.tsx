@@ -13,6 +13,7 @@ import styled from "styled-components";
 import { ThemeProvider } from "styled-components";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { TranslationsProvider } from "@/contexts/TranslationsContext";
 import NextHeader from "@/components/layout/NextHeader";
 import Footer from "@/components/layout/Footer";
 import { usePathname } from "next/navigation";
@@ -200,18 +201,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <ThemeProvider theme={theme}>
-      <ToastProvider>
-        <AuthProvider>
-          <LayoutContent
-            shouldHideHeaderFooter={shouldHideHeaderFooter}
-            shouldHideChat={shouldHideChat}
-            hasActivePromotion={hasActivePromotion}
-            pathname={pathname}
-          >
-            {children}
-          </LayoutContent>
-        </AuthProvider>
-      </ToastProvider>
+      <TranslationsProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <LayoutContent
+              shouldHideHeaderFooter={shouldHideHeaderFooter}
+              shouldHideChat={shouldHideChat}
+              hasActivePromotion={hasActivePromotion}
+              pathname={pathname}
+            >
+              {children}
+            </LayoutContent>
+          </AuthProvider>
+        </ToastProvider>
+      </TranslationsProvider>
     </ThemeProvider>
   );
 }

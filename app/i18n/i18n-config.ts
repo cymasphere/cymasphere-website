@@ -10,6 +10,15 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+// Try to import TranslationsContext (may not be available in all contexts)
+let useTranslationsContext: (() => any) | null = null;
+try {
+  const translationsModule = require('@/contexts/TranslationsContext');
+  useTranslationsContext = translationsModule.useTranslations;
+} catch (e) {
+  // Context not available, will use fallback cache
+}
+
 /**
  * @brief Array of supported language codes.
  * @description List of all language codes supported by the application.
@@ -64,24 +73,92 @@ export const getCurrentLanguage = (): string => {
   return defaultLanguage;
 };
 
+// In-memory cache for translations (fallback if context is not available)
+let translationsCache: { [locale: string]: any } = {};
+
 /**
- * @brief Loads translations for a specified locale from the API.
- * @description Fetches translations from the translations API endpoint and
- * initializes or updates i18next with the loaded translations.
+ * @brief Helper function to initialize i18next with translations
+ */
+const initializeI18n = async (locale: string, data: any) => {
+  // Always store language preference in localStorage
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem('i18nextLng', locale);
+  }
+  
+  // Initialize i18next with the translations
+  if (!i18n.isInitialized) {
+    await i18n
+      .use(initReactI18next)
+      .init({
+        lng: locale,
+        fallbackLng: defaultLanguage,
+        interpolation: {
+          escapeValue: false,
+        },
+        resources: {
+          [locale]: {
+            translation: data
+          }
+        },
+        returnNull: false,
+        returnEmptyString: false,
+      });
+  } else {
+    i18n.changeLanguage(locale);
+    i18n.addResourceBundle(locale, 'translation', data, true, true);
+  }
+};
+
+/**
+ * @brief Loads translations for a specified locale from the API or cache.
+ * @description Fetches translations from the translations API endpoint (or uses cache)
+ * and initializes or updates i18next with the loaded translations.
+ * Uses TranslationsContext if available, otherwise falls back to module-level cache.
  * @param {string} locale - The locale code to load translations for.
+ * @param {boolean} useCache - Whether to use cached translations if available (default: true).
  * @returns {Promise<object>} Promise resolving to the translation data object.
- * @note Adds timestamp query parameter to prevent caching.
+ * @note Uses TranslationsContext cache if available, otherwise uses module-level cache.
  * @note Initializes i18next if not already initialized.
  * @note Saves language preference to localStorage.
  * @note Returns empty object on error to prevent crashes.
  */
-export const loadTranslations = async (locale: string) => {
+export const loadTranslations = async (locale: string, useCache: boolean = true) => {
   try {
-    // Add timestamp to prevent caching
-    const timestamp = new Date().getTime();
+    // Try to use TranslationsContext if available (preferred method)
+    if (useCache && useTranslationsContext) {
+      try {
+        // This will only work if called within a React component that has access to the context
+        // For cases where we're not in a React context, we'll fall back to module cache
+        const translationsContext = useTranslationsContext();
+        if (translationsContext) {
+          // Check if already cached
+          if (translationsContext.hasTranslations(locale)) {
+            const cachedData = translationsContext.getCachedTranslations(locale);
+            await initializeI18n(locale, cachedData);
+            return cachedData;
+          }
+          
+          // Get from context (will fetch and cache if needed)
+          const data = await translationsContext.getTranslations(locale);
+          await initializeI18n(locale, data);
+          return data;
+        }
+      } catch (contextError) {
+        // Context not available (e.g., called outside React component tree)
+        // Fall through to module-level cache
+        console.log('[loadTranslations] TranslationsContext not available, using module cache');
+      }
+    }
     
-    // Use fetch to get translations from our API
-    const response = await fetch(`/api/translations?locale=${locale}&_=${timestamp}`);
+    // Fallback to module-level cache
+    if (useCache && translationsCache[locale]) {
+      const cachedData = translationsCache[locale];
+      await initializeI18n(locale, cachedData);
+      return cachedData;
+    }
+    
+    // Fetch from API (no timestamp to allow browser caching)
+    const response = await fetch(`/api/translations?locale=${locale}`);
     
     // Check if response is ok (200-299)
     if (!response.ok) {
@@ -96,34 +173,10 @@ export const loadTranslations = async (locale: string) => {
       console.warn(`[loadTranslations] Received empty translations for locale ${locale}`);
     }
     
-    // Always store language preference in localStorage
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('i18nextLng', locale);
-    }
+    // Cache the translations in module-level cache
+    translationsCache[locale] = data;
     
-    // Initialize i18next with the fetched translations
-    if (!i18n.isInitialized) {
-      await i18n
-        .use(initReactI18next)
-        .init({
-          lng: locale,
-          fallbackLng: defaultLanguage,
-          interpolation: {
-            escapeValue: false, // React already escapes values
-          },
-          resources: {
-            [locale]: {
-              translation: data
-            }
-          },
-          returnNull: false, // Don't return null for missing translations
-          returnEmptyString: false, // Don't return empty string for missing translations
-        });
-    } else {
-      // Just change the language and add resources if already initialized
-      i18n.changeLanguage(locale);
-      i18n.addResourceBundle(locale, 'translation', data, true, true);
-    }
+    await initializeI18n(locale, data);
 
     return data;
   } catch (error) {
