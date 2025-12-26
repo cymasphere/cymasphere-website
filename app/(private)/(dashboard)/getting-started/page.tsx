@@ -1,4 +1,5 @@
 "use client";
+// Trivial change to trigger Vercel deployment
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
@@ -600,46 +601,16 @@ const getInstructions = (
 
   const instructions: InstructionData[] = [];
 
-  // Virtual MIDI setup (required for standalone only, not for plugin versions)
-  if (type === "standalone") {
-    if (os === "macos") {
-      instructions.push({
-        title: "Set Up Virtual MIDI Device (IAC Driver)",
-        steps: [
-          'Open "Audio MIDI Setup" (Applications > Utilities)',
-          'Click "Window" > "Show MIDI Studio"',
-          'Double-click "IAC Driver"',
-          'Check "Device is online"',
-          'Click "Done"',
-        ],
-      });
-    } else {
-      instructions.push({
-        title: "Set Up Virtual MIDI Device (LoopMIDI)",
-        steps: [
-          'Download and install the free <a href="https://www.tobias-erichsen.de/software/loopmidi.html" target="_blank" rel="noopener noreferrer">LoopMIDI</a> software, which allows you to create a virtual MIDI device that you can route MIDI from Cymasphere to',
-          "Launch LoopMIDI and click '+' to create a new port",
-          'Name it (e.g., "Cymasphere MIDI")',
-          "Keep LoopMIDI running while using Cymasphere",
-        ],
-      });
-    }
-  }
-
   // DAW-specific instructions
   if (daw === "logic") {
     if (type === "standalone") {
       instructions.push({
         title: "Configure Logic Pro for Standalone",
         steps: [
-          "Create a software instrument track",
-          "Add an External Instrument track",
-          `Set the MIDI destination to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          }`,
-          "Add an instrument track with any virtual instrument",
+          "Create a software instrument track with any virtual instrument",
+          `Set the MIDI input to "Cymasphere Virtual Output"`,
           "Record-enable the instrument track",
-          "Cymasphere will output MIDI to the virtual MIDI device, which will come back into Logic Pro like an external keyboard",
+          "Cymasphere will output MIDI to its own virtual MIDI device by default (Cymasphere Virtual Output), which will come back into Logic Pro like an external keyboard",
         ],
       });
       instructions.push({
@@ -661,9 +632,6 @@ const getInstructions = (
           "Create a new software instrument track",
           "Add Cymasphere as a MIDI FX",
           "In the instrument slot, under Utility, add External Instrument to the same track",
-          `Open External Instrument and set MIDI Destination to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          }`,
           "Create a new software instrument track with any virtual instrument",
           "Set the MIDI input channel of the instrument track to 1, 2, 3, or the appropriate channel",
           "Record-enable the instrument track",
@@ -689,9 +657,7 @@ const getInstructions = (
         title: "Configure Ableton Live for Standalone",
         steps: [
           "Create a MIDI track",
-          `Set the MIDI input to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          }`,
+          `Set the MIDI input to "Cymasphere Virtual Output"`,
           "Create an instrument track with any virtual instrument",
           "Arm both tracks for recording",
           "Cymasphere will send MIDI to Ableton through the virtual MIDI device",
@@ -701,9 +667,7 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
-          `Go to Preferences > MIDI and enable ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          } as a Remote input`,
+          `Go to Preferences > MIDI and enable "Cymasphere Virtual Output" as a Remote input`,
           "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
           "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
           "In Cymasphere, click the corresponding transport button",
@@ -720,9 +684,7 @@ const getInstructions = (
           "Open the plugin menu on the side, navigate to NNAudio > Cymasphere, and drag it to create a new track",
           "For each instrument you want to use, create a MIDI track and set its input to the Cymasphere track",
           `Change the input dropdown from "Post FX" to "Cymasphere"`,
-          `Set the MIDI Out to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          } and select the appropriate MIDI channel (1, 2, 3, etc.)`,
+          `Set the MIDI Out to "Cymasphere Virtual Output" and select the appropriate MIDI channel (1, 2, 3, etc.)`,
           "Create an instrument track with any virtual instrument",
           "Record-enable both the MIDI track and instrument track (not the Cymasphere track)",
           "Open Cymasphere and press voicing buttons in Palette view—you'll see MIDI flow from Cymasphere → MIDI track → instrument track",
@@ -732,9 +694,7 @@ const getInstructions = (
         title: "MIDI Map Transport Controls (Optional but Recommended)",
         steps: [
           "This allows you to use Cymasphere's transport control to sync with Ableton Live's transport",
-          `Go to Preferences > MIDI and enable ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          } as a Remote input`,
+          `Go to Preferences > MIDI and enable "Cymasphere Virtual Output" as a Remote input`,
           "In Ableton Live, click the MIDI button in the top right corner (or press Cmd/Ctrl + M) to enter MIDI Map Mode",
           "Click on the transport control you want to map in Ableton (e.g., Play button, Stop button, Record button)",
           "In Cymasphere, click the corresponding transport button",
@@ -751,9 +711,7 @@ const getInstructions = (
         title: "Configure Studio One for Standalone",
         steps: [
           "Create a MIDI track",
-          `Set the MIDI input to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          }`,
+          `Set the MIDI input to "Cymasphere Virtual Output"`,
           "Create an instrument track with any virtual instrument",
           "Arm both tracks for recording",
           "Cymasphere will send MIDI to Studio One through the virtual MIDI device",
@@ -768,9 +726,7 @@ const getInstructions = (
           } > External Devices`,
           "Click the 'Add' button to add a new device",
           "Select 'New Control Surface' or choose your virtual MIDI device from the list",
-          `Set 'Receive From' to ${
-            os === "macos" ? "IAC Driver" : "your LoopMIDI port"
-          }`,
+          `Set 'Receive From' to "Cymasphere Virtual Output"`,
           "Click 'MIDI Learn' button in the device settings",
           "In Cymasphere, click the transport control you want to map (e.g., Play, Stop, Record)",
           "Right-click the corresponding control in Studio One and assign the command (e.g., Start, Stop, Record)",
@@ -814,14 +770,12 @@ const getInstructions = (
     instructions.push({
       title: "General Setup Instructions",
       steps: [
-        `Set up your virtual MIDI device (${
-          os === "macos" ? "IAC Driver on macOS" : "LoopMIDI on Windows"
-        })`,
+        `Cymasphere Virtual Output is enabled by default—no setup needed!`,
         type === "plugin"
           ? "Add Cymasphere as a MIDI Effect (VST3 or AU)"
-          : "Configure your DAW to receive MIDI from the virtual device",
+          : `Configure your DAW to receive MIDI from "Cymasphere Virtual Output"`,
         "Create an instrument track with your desired virtual instrument",
-        "Route MIDI from Cymasphere through the virtual device to your instrument",
+        "Route MIDI from Cymasphere through Cymasphere Virtual Output to your instrument",
         "Record-enable the instrument track",
         "Open Cymasphere and test with Palette view voicing buttons",
         "For specific help, join our Discord community at discord.gg/gXGqqYR47B",
