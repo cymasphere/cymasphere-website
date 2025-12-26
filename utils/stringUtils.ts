@@ -43,3 +43,41 @@ export const formatDate = (date: Date | string | undefined) => {
     year: "numeric",
   });
 };
+
+/**
+ * @brief Formats a user's name from first and last name components.
+ * @description Combines first and last name into a display string, handling null/undefined values.
+ * Returns "Guest" if both names are missing, or just the available name if only one is provided.
+ * @param {string | null | undefined} firstName - The user's first name.
+ * @param {string | null | undefined} lastName - The user's last name.
+ * @returns {string} Formatted name string: "Guest" if both missing, single name if one missing, or full name if both present.
+ * @note Handles null, undefined, and empty string values consistently.
+ * @example
+ * ```typescript
+ * formatUserName("John", "Doe"); // Returns "John Doe"
+ * formatUserName("John", null); // Returns "John"
+ * formatUserName(null, "Doe"); // Returns "Doe"
+ * formatUserName(null, null); // Returns "Guest"
+ * formatUserName(undefined, undefined); // Returns "Guest"
+ * ```
+ */
+export const formatUserName = (
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
+): string => {
+  // If both names are null/undefined/empty, return "Guest"
+  if (!firstName && !lastName) {
+    return "Guest";
+  }
+
+  // If only one name exists, return just that name
+  if (firstName && !lastName) {
+    return firstName;
+  }
+  if (!firstName && lastName) {
+    return lastName;
+  }
+
+  // Both names exist, return full name
+  return `${firstName} ${lastName}`;
+};

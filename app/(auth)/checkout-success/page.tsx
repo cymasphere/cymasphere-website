@@ -201,10 +201,11 @@ function CheckoutSuccessContent() {
   // Ref to track if we've already processed the invite/refresh
   const hasProcessedInvite = useRef(false);
 
-  // Refresh pro status on mount (same as login and dashboard pages)
+  // Refresh pro status on mount only (same as login and dashboard pages)
   useEffect(() => {
     refreshUser();
-  }, [refreshUser]); // Run on mount and when refreshUser changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
 
   // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
   // Wait for auth to finish loading before processing
@@ -292,7 +293,8 @@ function CheckoutSuccessContent() {
     };
 
     handleUserInviteAndRefresh();
-  }, [sessionId, isLoggedIn, user?.id, refreshUser, authLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, isLoggedIn, user?.id, authLoading]);
 
   // Refresh subscription status by customer ID (works even if not logged in)
   useEffect(() => {
@@ -338,7 +340,8 @@ function CheckoutSuccessContent() {
     };
 
     refreshByCustomerId();
-  }, [sessionId, isLoggedIn, refreshUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, isLoggedIn]);
 
   // Track promotion conversion
   useEffect(() => {

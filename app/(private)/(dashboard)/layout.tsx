@@ -25,6 +25,7 @@ import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import useLanguage from "@/hooks/useLanguage";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
+import { formatUserName } from "@/utils/stringUtils";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -439,9 +440,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [languageLoading]);
 
   const user_display_name = useMemo(() => {
-    if (!user) return "";
-    return user.profile.first_name + " " + user.profile.last_name;
-  }, [user]);
+    if (!user) return "Guest";
+    return formatUserName(user.profile.first_name, user.profile.last_name);
+  }, [user?.profile?.first_name, user?.profile?.last_name]); // Only depend on name fields, not whole user object
 
   const toggleSidebar = () => {
     setSidebarOpen((prevState) => !prevState);

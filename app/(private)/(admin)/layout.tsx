@@ -36,6 +36,7 @@ import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
+import { formatUserName } from "@/utils/stringUtils";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -578,16 +579,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [user, router]);
 
   const user_display_name = useMemo(() => {
-    if (user?.profile?.first_name && user?.profile?.last_name) {
-      return `${user.profile.first_name} ${user.profile.last_name}`;
-    } else if (user?.profile?.first_name) {
-      return user.profile.first_name;
-    } else if (user?.profile?.last_name) {
-      return user.profile.last_name;
-    } else if (user?.email) {
-      return user.email.split("@")[0];
-    }
-    return "Guest";
+    if (!user) return "Guest";
+    return formatUserName(user.profile?.first_name, user.profile?.last_name);
   }, [user]);
 
   const handleNavigation = (

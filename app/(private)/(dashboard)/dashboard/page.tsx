@@ -14,7 +14,7 @@ import {
   FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
-import { capitalize } from "@/utils/stringUtils";
+import { capitalize, formatUserName } from "@/utils/stringUtils";
 import { getUpcomingInvoice } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -330,15 +330,6 @@ const FormTextarea = styled.textarea`
   }
 `;
 
-const formatName = (
-  firstName: string | null,
-  lastName: string | null
-): string => {
-  if (firstName || lastName) {
-    return `${firstName || ""} ${lastName || ""}`.trim();
-  }
-  return "";
-};
 
 function DashboardPage() {
   const { t } = useTranslation();
@@ -347,10 +338,11 @@ function DashboardPage() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Refresh pro status on mount (same as login)
+  // Refresh pro status on mount only (same as login)
   useEffect(() => {
     refreshUser();
-  }, [refreshUser]); // Run on mount and when refreshUser changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
 
   useEffect(() => {
     const checkMobile = () => {
@@ -437,10 +429,11 @@ function DashboardPage() {
       }
     }
 
-    if (user) {
+    if (user?.id) {
       fetchDeviceCount();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user ID, not whole user object
 
   // Fetch NFR status
   useEffect(() => {
@@ -459,10 +452,11 @@ function DashboardPage() {
       }
     }
 
-    if (user) {
+    if (user?.id) {
       fetchNfrStatus();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user ID, not whole user object
 
   // Determine if user has completed a trial
   const hasCompletedTrial = () => {
@@ -708,7 +702,7 @@ function DashboardPage() {
               "dashboard.main.welcome",
               "Welcome back, {{name}}!",
               {
-                name: formatName(
+                name: formatUserName(
                   user.profile.first_name,
                   user.profile.last_name
                 ),

@@ -26,7 +26,6 @@ import {
   getCustomerInvoices,
   InvoiceData,
 } from "@/utils/stripe/supabase-stripe";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
@@ -63,8 +62,8 @@ interface ProfileWithSubscriptionDetails {
   trial_expiration: string | null;
   subscription_expiration: string | null;
   customer_id: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 // Helper functions for safely checking subscription status
@@ -403,14 +402,14 @@ export default function BillingPage() {
   const [willProvideCard, setWillProvideCard] = useState(false);
   const [isPlanChangeLoading, setIsPlanChangeLoading] = useState(false);
 
-  const router = useRouter();
   const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
 
-  // Refresh pro status on mount (same as login)
+  // Refresh pro status on mount only (same as login)
   useEffect(() => {
     refreshUserFromAuth();
-  }, [refreshUserFromAuth]); // Run on mount and when refreshUserFromAuth changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
 
   // Use centralized checkout hook
   const { initiateCheckout: initiateCheckoutHook } = useCheckout({
@@ -422,7 +421,7 @@ export default function BillingPage() {
   });
 
   // Get subscription data from user object and cast to extended profile type
-  const userSubscription = user.profile as ProfileWithSubscriptionDetails;
+  const userSubscription = user.profile as unknown as ProfileWithSubscriptionDetails;
 
   // Define a function to determine if the user is in a trial period
   const isInTrialPeriod = useMemo(() => {
@@ -451,7 +450,7 @@ export default function BillingPage() {
     useState<PlanType>("monthly");
 
   // State for plan prices and discounts
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [, setIsLoadingPrices] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
   const [yearlyPrice, setYearlyPrice] = useState<number | null>(null);
@@ -510,7 +509,7 @@ export default function BillingPage() {
         new Date(userSubscription.trial_expiration) < new Date() &&
         userSubscription.subscription === "none")
     );
-  }, [userSubscription]);
+  }, [userSubscription.subscription, userSubscription.trial_expiration]); // Use stable values
 
   // Check if the user should see trial messaging
   const shouldShowTrialContent = useMemo(() => {
@@ -522,7 +521,8 @@ export default function BillingPage() {
   const refreshUserData = async () => {
     // Refresh user data from AuthContext which will fetch the latest profile
     await refreshUserFromAuth();
-    // Also update lastUserUpdate to trigger data refetching in useEffect
+    // Update lastUserUpdate to trigger data refetching in useEffect
+    // This is safe because it only triggers when explicitly called, not on every subscription change
     setLastUserUpdate(new Date());
   };
 
@@ -546,6 +546,10 @@ export default function BillingPage() {
       setHasHadTrial(false); // Default to false on error
     }
   }, [user?.email]);
+
+  // Track subscription changes separately to avoid infinite loops
+  // We don't want subscription changes to trigger data refetches
+  // Only lastUserUpdate should trigger refetches
 
   // Fetch NFR status
   useEffect(() => {
@@ -684,17 +688,20 @@ export default function BillingPage() {
     // Fetch all data when component mounts or lastUserUpdate changes
     fetchAllData();
 
-    // Check trial status for logged-in users
+    // Check trial status for logged-in users (only once per email change)
     if (user?.email) {
       checkTrialStatus();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     user?.profile?.customer_id,
     isInTrialPeriod,
-    lastUserUpdate,
-    userSubscription.subscription,
+    lastUserUpdate, // Only this should trigger refetches
     user?.email,
-    checkTrialStatus,
+    user?.id,
+    // Removed subscription from dependencies to prevent infinite loops
+    // Removed checkTrialStatus from dependencies - it's stable based on user?.email
+    // Removed refreshUserFromAuth to prevent infinite loops
   ]);
 
   // Function to refresh all data
@@ -746,12 +753,13 @@ export default function BillingPage() {
 
       // Convert SubscriptionType to PlanType, handling 'admin' and 'none' cases
       let validPlanType: "monthly" | "annual" | "lifetime";
-      if (
-        selectedBillingPeriod === "monthly" ||
-        selectedBillingPeriod === "annual" ||
-        selectedBillingPeriod === "lifetime"
-      ) {
-        validPlanType = selectedBillingPeriod;
+      const period = selectedBillingPeriod as string;
+      if (period === "monthly") {
+        validPlanType = "monthly";
+      } else if (period === "annual") {
+        validPlanType = "annual";
+      } else if (period === "lifetime") {
+        validPlanType = "lifetime";
       } else {
         // Default to monthly for 'admin', 'none', or any other invalid types
         validPlanType = "monthly";
@@ -769,12 +777,13 @@ export default function BillingPage() {
     try {
       // Convert SubscriptionType to PlanType for checkout
       let validPlanType: "monthly" | "annual" | "lifetime";
-      if (
-        selectedBillingPeriod === "monthly" ||
-        selectedBillingPeriod === "annual" ||
-        selectedBillingPeriod === "lifetime"
-      ) {
-        validPlanType = selectedBillingPeriod;
+      const period = selectedBillingPeriod as string;
+      if (period === "monthly") {
+        validPlanType = "monthly";
+      } else if (period === "annual") {
+        validPlanType = "annual";
+      } else if (period === "lifetime") {
+        validPlanType = "lifetime";
       } else {
         // Default to monthly for any other invalid types
         validPlanType = "monthly";
@@ -938,6 +947,14 @@ export default function BillingPage() {
     }
   };
 
+  // Debug: Log customer_id to help diagnose issues
+  useEffect(() => {
+    console.log("[BillingPage] customer_id:", userSubscription.customer_id);
+    console.log("[BillingPage] invoices:", invoices.length);
+    console.log("[BillingPage] isLoadingInvoices:", isLoadingInvoices);
+    console.log("[BillingPage] invoiceError:", invoiceError);
+  }, [userSubscription.customer_id, invoices.length, isLoadingInvoices, invoiceError]);
+
   return (
     <BillingContainer>
       {/* Loading overlay */}
@@ -1072,6 +1089,15 @@ export default function BillingPage() {
                   )}
                 </div>
               </PlanDetails>
+              
+              {/* Show Manage Billing button if user has a customer_id */}
+              {userSubscription.customer_id && (
+                <ButtonContainer>
+                  <Button onClick={handleManageBilling}>
+                    {t("dashboard.billing.manageBilling", "Manage Billing")}
+                  </Button>
+                </ButtonContainer>
+              )}
             </CardContent>
           </BillingCard>
 
@@ -1304,10 +1330,8 @@ export default function BillingPage() {
         </BillingCard>
       )}
 
-      {/* Only show billing history for paid subscribers */}
-      {(!isSubscriptionNone(userSubscription.subscription) ||
-        hasNfr === true) && (
-        <BillingCard>
+      {/* Always show billing history section - will show invoices if customer_id is found or empty state if not */}
+      <BillingCard>
           <CardTitle>
             <FaHistory />{" "}
             {t("dashboard.billing.paymentHistory", "Payment History")}
@@ -1384,7 +1408,6 @@ export default function BillingPage() {
             )}
           </CardContent>
         </BillingCard>
-      )}
 
       {/* Plan Selection Modal */}
       <AnimatePresence>
@@ -1392,7 +1415,7 @@ export default function BillingPage() {
           <PlanSelectionModal
             isOpen={showPlanModal}
             onClose={() => setShowPlanModal(false)}
-            profile={userSubscription}
+            profile={user.profile}
             onIntervalChange={handleIntervalChange}
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
@@ -1439,7 +1462,6 @@ export default function BillingPage() {
             yearlyDiscount={yearlyDiscount || undefined}
             lifetimeDiscount={lifetimeDiscount || undefined}
             onCardToggleChange={handleCardToggleChange}
-            isPlanChangeLoading={isPlanChangeLoading}
             hasHadTrial={hasHadTrial}
           />
         )}

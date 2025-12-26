@@ -14,6 +14,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
+  useRef,
 } from "react";
 import {
   SupabaseClient,
@@ -82,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const isUpdatingUserRef = useRef(false);
+  const lastProStatusUpdateRef = useRef<number>(0);
 
   // Log environment status on mount to help debug 500 errors
   useEffect(() => {
@@ -149,6 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Simple session update effect - based on working project
   useEffect(() => {
     const updateUserFromSession = async () => {
+      // Prevent concurrent updates
+      if (isUpdatingUserRef.current) {
+        return;
+      }
+      
+      isUpdatingUserRef.current = true;
+      
       try {
         setLoading(user === null);
         const {
@@ -202,36 +213,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (profile) {
             // Set user immediately with basic profile data
-            setUser({
-              ...logged_in_user,
-              profile,
-              is_admin: is_admin || false,
+            // Use functional update to prevent unnecessary re-renders
+            setUser((prevUser) => {
+              const newUser = {
+                ...logged_in_user,
+                profile,
+                is_admin: is_admin || false,
+              };
+              
+              // Only update if user ID changed or profile data actually changed
+              if (prevUser && 
+                  prevUser.id === newUser.id &&
+                  prevUser.email === newUser.email &&
+                  prevUser.is_admin === newUser.is_admin &&
+                  JSON.stringify(prevUser.profile) === JSON.stringify(profile)) {
+                return prevUser; // Return same reference if no change
+              }
+              
+              return newUser;
             });
 
             // Update pro status asynchronously (non-blocking) using centralized function
-            try {
-              const { updateUserProStatus } = await import(
-                "@/utils/subscriptions/check-subscription"
-              );
-              const result = await updateUserProStatus(logged_in_user.id);
+            // Only update if subscription has actually changed to prevent loops
+            const currentSubscription = profile.subscription;
+            const currentSource = profile.subscription_source;
+            
+            // Throttle pro status updates - only update if it's been at least 30 seconds since last update
+            const now = Date.now();
+            const timeSinceLastUpdate = now - lastProStatusUpdateRef.current;
+            const UPDATE_THROTTLE_MS = 30000; // 30 seconds
+            
+            // Skip update if we just updated recently (prevent loops)
+            // Only update if:
+            // 1. Subscription is "none" (new user, needs initial check)
+            // 2. No source set (needs initial check)
+            // 3. It's been at least 30 seconds since last update
+            const shouldUpdateProStatus = 
+              (currentSubscription === "none" || !currentSource) ||
+              (timeSinceLastUpdate > UPDATE_THROTTLE_MS);
+            
+            if (shouldUpdateProStatus) {
+              lastProStatusUpdateRef.current = now;
+              try {
+                const { updateUserProStatus } = await import(
+                  "@/utils/subscriptions/check-subscription"
+                );
+                const result = await updateUserProStatus(logged_in_user.id);
 
-              // Update profile with the determined subscription status
-              const updatedProfile = {
-                ...profile,
-                subscription: result.subscription,
-                subscription_expiration:
-                  result.subscriptionExpiration?.toISOString() || null,
-                subscription_source: result.source,
-              };
+              // Only update user state if subscription actually changed
+              if (result.subscription !== currentSubscription || 
+                  result.source !== currentSource) {
+                const updatedProfile = {
+                  ...profile,
+                  subscription: result.subscription,
+                  subscription_expiration:
+                    result.subscriptionExpiration?.toISOString() || null,
+                  subscription_source: result.source,
+                };
 
-              setUser({
-                ...logged_in_user,
-                profile: updatedProfile,
-                is_admin: is_admin || false,
-              });
-            } catch (proStatusError) {
-              // Keep the user logged in even if pro status update fails
-              console.log("Pro status update failed:", proStatusError);
+                // Use functional update to prevent unnecessary re-renders
+                setUser((prevUser) => {
+                  // Only update if the subscription actually changed
+                  if (prevUser && 
+                      prevUser.profile.subscription === result.subscription &&
+                      prevUser.profile.subscription_source === result.source) {
+                    return prevUser; // Return same reference if no change
+                  }
+                  
+                  return {
+                    ...logged_in_user,
+                    profile: updatedProfile,
+                    is_admin: is_admin || false,
+                  };
+                });
+              }
+              } catch (proStatusError) {
+                // Keep the user logged in even if pro status update fails
+                console.log("Pro status update failed:", proStatusError);
+              }
             }
           }
         } else {
@@ -250,12 +309,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         setLoading(false);
+        isUpdatingUserRef.current = false;
       }
     };
 
-    updateUserFromSession();
+    // Only run if session actually changed (not just a reference change)
+    // Use stable values from session instead of the whole object
+    const sessionToken = session?.access_token;
+    const sessionUserId = session?.user?.id;
+    
+    // Only update if we have a valid session and it's different from current user
+    if (sessionToken && sessionUserId) {
+      // Check if this is actually a different session than what we have
+      const currentUserId = user?.id;
+      if (sessionUserId !== currentUserId) {
+        updateUserFromSession();
+      } else {
+        // Same user, just refresh if needed (throttled by updateUserFromSession)
+        // Don't call updateUserFromSession if user already exists and matches
+        setLoading(false);
+      }
+    } else if (!session) {
+      // Handle logout case
+      setUser(null);
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, [session?.access_token, session?.user?.id]); // Use stable values instead of whole session object
 
   // Simple auth state change handler - based on working project
   useEffect(() => {
@@ -352,18 +432,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: "not logged in" };
   };
 
-  const value = {
-    user,
-    session,
-    supabase,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updateProfile,
-    refreshUser,
-  };
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      supabase,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updateProfile,
+      refreshUser,
+    }),
+    [user, session, loading, refreshUser]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
