@@ -18,6 +18,7 @@ import {
   FaTicketAlt,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { DashboardProvider } from "@/contexts/DashboardContext";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
@@ -478,19 +479,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Return loading state if not mounted yet or translations not loaded
   if (!user || !translationsLoaded) {
     return (
-      <LayoutContainer>
-        <Content
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <LoadingComponent
-            text={t("dashboard.layout.loading", "Loading dashboard...")}
-          />
-        </Content>
-      </LayoutContainer>
+      <DashboardProvider>
+        <LayoutContainer>
+          <Content
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <LoadingComponent
+              text={t("dashboard.layout.loading", "Loading dashboard...")}
+            />
+          </Content>
+        </LayoutContainer>
+      </DashboardProvider>
     );
   }
 
@@ -567,7 +570,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <LayoutContainer>
+    <DashboardProvider>
+      <LayoutContainer>
       <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
         <LogoContainer>
           <Link href="/dashboard">
@@ -884,6 +888,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </PageTransition>
       </Content>
     </LayoutContainer>
+    </DashboardProvider>
   );
 }
 

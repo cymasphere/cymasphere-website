@@ -15,18 +15,14 @@ import {
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { SubscriptionType } from "@/utils/supabase/types";
 import {
-  getUpcomingInvoice,
   createCustomerPortalSession,
 } from "@/utils/stripe/actions";
 import { useCheckout } from "@/hooks/useCheckout";
 import PricingCard from "@/components/pricing/PricingCard";
 import BillingToggle from "@/components/pricing/BillingToggle";
 import { PlanType } from "@/types/stripe";
-import {
-  getCustomerInvoices,
-  InvoiceData,
-} from "@/utils/stripe/supabase-stripe";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboard } from "@/contexts/DashboardContext";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
@@ -404,6 +400,21 @@ export default function BillingPage() {
 
   const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
+  
+  // Use dashboard context for shared data
+  const {
+    prices,
+    priceError,
+    hasNfr,
+    upcomingInvoice,
+    isLoadingUpcomingInvoice,
+    invoices,
+    isLoadingInvoices,
+    refreshPrices,
+    refreshNfr,
+    refreshUpcomingInvoice,
+    refreshInvoices,
+  } = useDashboard();
 
   // Refresh pro status on mount only (same as login)
   useEffect(() => {
@@ -442,19 +453,9 @@ export default function BillingPage() {
   // State for trial status checking
   const [hasHadTrial, setHasHadTrial] = useState<boolean | null>(null);
 
-  // State for NFR status
-  const [hasNfr, setHasNfr] = useState<boolean | null>(null);
-
   // State for billing period selection (for pricing card)
   const [selectedBillingPeriodForPricing, setSelectedBillingPeriodForPricing] =
     useState<PlanType>("monthly");
-
-  // State for plan prices and discounts
-  const [, setIsLoadingPrices] = useState(true);
-  const [priceError, setPriceError] = useState<string | null>(null);
-  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
-  const [yearlyPrice, setYearlyPrice] = useState<number | null>(null);
-  const [lifetimePrice, setLifetimePrice] = useState<number | null>(null);
 
   // Add a variable to determine the subscription interval
   const subscriptionInterval = useMemo(() => {
@@ -464,36 +465,8 @@ export default function BillingPage() {
     return null;
   }, [userSubscription.subscription]);
 
-  // State for discounts
-  const [monthlyDiscount, setMonthlyDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
+  // Discounts and invoices are now provided by DashboardContext
 
-  const [yearlyDiscount, setYearlyDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
-
-  const [lifetimeDiscount, setLifetimeDiscount] = useState<{
-    percent_off?: number;
-    amount_off?: number;
-    promotion_code?: string;
-  } | null>(null);
-
-  // State for upcoming invoice and invoices
-  const [upcomingInvoiceAmount, setUpcomingInvoiceAmount] = useState<
-    number | null
-  >(null);
-  const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
-  const [invoices, setInvoices] = useState<InvoiceData[]>([]);
-  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
-  const [invoiceError, setInvoiceError] = useState<string | null>(null);
-
-  // Add a new state to track when user data is updated
-  const [lastUserUpdate, setLastUserUpdate] = useState<Date>(new Date());
 
   // Add state for portal redirect loading
   const [isPortalLoading, setIsPortalLoading] = useState(false);
@@ -521,9 +494,6 @@ export default function BillingPage() {
   const refreshUserData = async () => {
     // Refresh user data from AuthContext which will fetch the latest profile
     await refreshUserFromAuth();
-    // Update lastUserUpdate to trigger data refetching in useEffect
-    // This is safe because it only triggers when explicitly called, not on every subscription change
-    setLastUserUpdate(new Date());
   };
 
   // Function to check if customer has had a trial before
@@ -551,142 +521,18 @@ export default function BillingPage() {
   // We don't want subscription changes to trigger data refetches
   // Only lastUserUpdate should trigger refetches
 
-  // Fetch NFR status
+  // Fetch upcoming invoice and invoices when needed (context handles prices and NFR)
   useEffect(() => {
-    async function fetchNfrStatus() {
-      try {
-        const response = await fetch("/api/user/nfr-status");
-        const data = await response.json();
-        console.log("[Billing] NFR status response:", data);
-        if (data.hasNfr) {
-          setHasNfr(true);
-        } else {
-          setHasNfr(false);
-        }
-      } catch (err) {
-        console.error("Error fetching NFR status:", err);
-        setHasNfr(false);
+    // Only fetch user-specific data if they have a customer ID
+    if (user?.profile?.customer_id) {
+      // Fetch upcoming invoice if user has an active subscription or is in trial
+      if (isInTrialPeriod || userSubscription.subscription !== "none") {
+        refreshUpcomingInvoice();
       }
+
+      // Fetch invoice history
+      refreshInvoices();
     }
-
-    if (user) {
-      fetchNfrStatus();
-    }
-  }, [user]);
-
-  // Fetch all data: prices, upcoming invoice, invoices
-  // This useEffect depends on lastUserUpdate to trigger refetching when user data changes
-  useEffect(() => {
-    // Function to fetch all pricing data
-    async function fetchAllData() {
-      // Fetch prices
-      fetchPrices();
-
-      // Only fetch user-specific data if they have a customer ID
-      if (user?.profile?.customer_id) {
-        // Fetch upcoming invoice if user has an active subscription or is in trial
-        if (isInTrialPeriod || userSubscription.subscription !== "none") {
-          fetchUpcomingInvoice();
-        }
-
-        // Fetch invoice history
-        fetchInvoices();
-      }
-    }
-
-    // Fetch prices from Stripe
-    async function fetchPrices() {
-      try {
-        setIsLoadingPrices(true);
-        setPriceError(null);
-
-        const response = await fetch("/api/stripe/prices");
-        const result = await response.json();
-
-        if (result.error) {
-          setPriceError(result.error);
-          return;
-        }
-
-        if (result.success && result.prices) {
-          // Update state with fetched prices
-          setMonthlyPrice(Math.round(result.prices.monthly.amount / 100));
-          setYearlyPrice(Math.round(result.prices.annual.amount / 100));
-          setLifetimePrice(Math.round(result.prices.lifetime.amount / 100));
-
-          // Store discount information if available
-          if (result.prices.monthly.discount) {
-            setMonthlyDiscount(result.prices.monthly.discount);
-          }
-
-          if (result.prices.annual.discount) {
-            setYearlyDiscount(result.prices.annual.discount);
-          }
-
-          if (result.prices.lifetime.discount) {
-            setLifetimeDiscount(result.prices.lifetime.discount);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching prices:", err);
-        setPriceError("Failed to load pricing information");
-      } finally {
-        setIsLoadingPrices(false);
-      }
-    }
-
-    // Fetch upcoming invoice
-    async function fetchUpcomingInvoice() {
-      if (!user?.profile?.customer_id) return;
-
-      try {
-        setIsLoadingInvoice(true);
-        const { amount, error } = await getUpcomingInvoice(
-          user.profile.customer_id
-        );
-
-        if (error) {
-          console.error("Error fetching upcoming invoice:", error);
-          // Don't set the amount if there's an error
-          setUpcomingInvoiceAmount(null);
-        } else {
-          setUpcomingInvoiceAmount(amount);
-        }
-      } catch (err) {
-        console.error("Error in fetchUpcomingInvoice:", err);
-        setUpcomingInvoiceAmount(null);
-      } finally {
-        setIsLoadingInvoice(false);
-      }
-    }
-
-    // Fetch invoice history
-    async function fetchInvoices() {
-      if (!user?.profile?.customer_id) return;
-
-      try {
-        setIsLoadingInvoices(true);
-        setInvoiceError(null);
-        const { invoices, error } = await getCustomerInvoices(
-          user.profile.customer_id
-        );
-
-        if (error) {
-          console.error("Error fetching invoices:", error);
-          setInvoiceError(error);
-        } else {
-          setInvoices(invoices);
-        }
-      } catch (err) {
-        console.error("Error in fetchInvoices:", err);
-        setInvoiceError("Failed to load invoice history");
-      } finally {
-        setIsLoadingInvoices(false);
-      }
-    }
-
-    // Fetch all data when component mounts or lastUserUpdate changes
-    fetchAllData();
 
     // Check trial status for logged-in users (only once per email change)
     if (user?.email) {
@@ -696,20 +542,23 @@ export default function BillingPage() {
   }, [
     user?.profile?.customer_id,
     isInTrialPeriod,
-    lastUserUpdate, // Only this should trigger refetches
     user?.email,
     user?.id,
     // Removed subscription from dependencies to prevent infinite loops
     // Removed checkTrialStatus from dependencies - it's stable based on user?.email
-    // Removed refreshUserFromAuth to prevent infinite loops
   ]);
 
   // Function to refresh all data
   const refreshAllData = async () => {
     // Refresh user data from auth context
     await refreshUserData();
-    // Update lastUserUpdate to trigger data refetching in the useEffect
-    setLastUserUpdate(new Date());
+    // Refresh all dashboard context data
+    await Promise.all([
+      refreshPrices(),
+      refreshNfr(),
+      refreshUpcomingInvoice(),
+      refreshInvoices(),
+    ]);
   };
 
   // Add a separate handler for when users click X or outside the modal
@@ -824,10 +673,10 @@ export default function BillingPage() {
   const getCurrentPrice = (): string => {
     const price =
       userSubscription.subscription === "monthly"
-        ? monthlyPrice
+        ? prices.monthly
         : userSubscription.subscription === "annual"
-        ? yearlyPrice
-        : lifetimePrice;
+        ? prices.yearly
+        : prices.lifetime;
 
     return price !== null ? price.toString() : "--";
   };
@@ -952,8 +801,7 @@ export default function BillingPage() {
     console.log("[BillingPage] customer_id:", userSubscription.customer_id);
     console.log("[BillingPage] invoices:", invoices.length);
     console.log("[BillingPage] isLoadingInvoices:", isLoadingInvoices);
-    console.log("[BillingPage] invoiceError:", invoiceError);
-  }, [userSubscription.customer_id, invoices.length, isLoadingInvoices, invoiceError]);
+  }, [userSubscription.customer_id, invoices.length, isLoadingInvoices]);
 
   return (
     <BillingContainer>
@@ -990,9 +838,9 @@ export default function BillingPage() {
               {
                 trialDays: 7,
                 daysLeft: daysLeftInTrial,
-                amount: isLoadingInvoice
+                amount: isLoadingUpcomingInvoice
                   ? "..."
-                  : upcomingInvoiceAmount?.toFixed(2) || getCurrentPrice(),
+                  : (upcomingInvoice.amount?.toFixed(2) || getCurrentPrice()),
                 date: formatDate(userSubscription.trial_expiration),
               }
             )}
@@ -1353,10 +1201,6 @@ export default function BillingPage() {
                   )}
                 />
               </div>
-            ) : invoiceError ? (
-              <div style={{ color: "var(--error)", padding: "1rem 0" }}>
-                {invoiceError}
-              </div>
             ) : invoices.length === 0 ? (
               <div
                 style={{ color: "var(--text-secondary)", padding: "1rem 0" }}
@@ -1420,9 +1264,9 @@ export default function BillingPage() {
             onConfirm={handleConfirmPlanChange}
             formatDate={formatDate}
             planName="Cymasphere Pro"
-            monthlyPrice={monthlyPrice ?? 0}
-            yearlyPrice={yearlyPrice ?? 0}
-            lifetimePrice={lifetimePrice ?? 0}
+            monthlyPrice={prices.monthly ?? 0}
+            yearlyPrice={prices.yearly ?? 0}
+            lifetimePrice={prices.lifetime ?? 0}
             planDescription={t("pricing.proSolution")}
             isPlanChangeLoading={isPlanChangeLoading}
             planFeatures={(() => {
@@ -1458,9 +1302,9 @@ export default function BillingPage() {
                 "Premium Support & All Future Updates",
               ];
             })()}
-            monthlyDiscount={monthlyDiscount || undefined}
-            yearlyDiscount={yearlyDiscount || undefined}
-            lifetimeDiscount={lifetimeDiscount || undefined}
+            monthlyDiscount={prices.monthlyDiscount || undefined}
+            yearlyDiscount={prices.yearlyDiscount || undefined}
+            lifetimeDiscount={prices.lifetimeDiscount || undefined}
             onCardToggleChange={handleCardToggleChange}
             hasHadTrial={hasHadTrial}
           />

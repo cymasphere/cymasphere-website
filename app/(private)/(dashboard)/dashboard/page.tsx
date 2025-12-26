@@ -14,11 +14,10 @@ import {
   FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboard } from "@/contexts/DashboardContext";
 import { capitalize, formatUserName } from "@/utils/stringUtils";
-import { getUpcomingInvoice } from "@/utils/stripe/actions";
 import { useRouter } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
-import { fetchUserSessions } from "@/utils/supabase/actions";
 import { useTranslation } from "react-i18next";
 
 const DashboardContainer = styled.div`
@@ -337,6 +336,18 @@ function DashboardPage() {
   const user = userAuth!;
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Use dashboard context for shared data
+  const {
+    prices,
+    isLoadingPrices,
+    priceError,
+    hasNfr,
+    deviceCount,
+    isLoadingDevices,
+    upcomingInvoice,
+    isLoadingUpcomingInvoice,
+  } = useDashboard();
 
   // Refresh pro status on mount only (same as login)
   useEffect(() => {
@@ -352,7 +363,6 @@ function DashboardPage() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-  const [hasNfr, setHasNfr] = useState<boolean | null>(null);
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState("");
@@ -367,28 +377,7 @@ function DashboardPage() {
     message: "",
   });
   const [isContactSubmitting, setIsContactSubmitting] = useState(false);
-  const [deviceCount, setDeviceCount] = useState(0);
   const [maxDevices, setMaxDevices] = useState(3);
-  const [isLoadingDevices, setIsLoadingDevices] = useState(true);
-
-  // State for prices
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  const [priceError, setPriceError] = useState<string | null>(null);
-  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
-  const [yearlyPrice, setYearlyPrice] = useState<number | null>(null);
-  const [lifetimePrice, setLifetimePrice] = useState<number | null>(null);
-
-  // State for upcoming invoice
-  const [upcomingInvoice, setUpcomingInvoice] = useState<{
-    amount: number | null;
-    due_date: Date | null;
-    error: string | null;
-  }>({
-    amount: null,
-    due_date: null,
-    error: null,
-  });
-  const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const navigationInProgressRef = useRef(false);
 
@@ -410,53 +399,7 @@ function DashboardPage() {
     });
   };
 
-  // Fetch device count on component mount
-  useEffect(() => {
-    async function fetchDeviceCount() {
-      try {
-        setIsLoadingDevices(true);
-        const { sessions, error } = await fetchUserSessions();
-
-        if (error) {
-          console.error("Error fetching device count:", error);
-        } else {
-          setDeviceCount(sessions?.length || 0);
-        }
-      } catch (err) {
-        console.error("Error in fetchDeviceCount:", err);
-      } finally {
-        setIsLoadingDevices(false);
-      }
-    }
-
-    if (user?.id) {
-      fetchDeviceCount();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only depend on user ID, not whole user object
-
-  // Fetch NFR status
-  useEffect(() => {
-    async function fetchNfrStatus() {
-      try {
-        const response = await fetch("/api/user/nfr-status");
-        const data = await response.json();
-        if (data.hasNfr) {
-          setHasNfr(true);
-        } else {
-          setHasNfr(false);
-        }
-      } catch (err) {
-        console.error("Error fetching NFR status:", err);
-        setHasNfr(false);
-      }
-    }
-
-    if (user?.id) {
-      fetchNfrStatus();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only depend on user ID, not whole user object
+  // Device count, NFR status, prices, and upcoming invoice are now provided by DashboardContext
 
   // Determine if user has completed a trial
   const hasCompletedTrial = () => {
@@ -587,94 +530,13 @@ function DashboardPage() {
     }
   };
 
-  // Fetch prices and upcoming invoice on component mount
+  // Prices and upcoming invoice are now fetched by DashboardContext
+  // Trigger upcoming invoice fetch if user has customer ID
   useEffect(() => {
-    async function fetchPrices() {
-      try {
-        setIsLoadingPrices(true);
-        setPriceError(null);
-
-        const response = await fetch("/api/stripe/prices");
-        const result = await response.json();
-
-        if (result.error) {
-          setPriceError(
-            t(
-              "dashboard.billing.errorOccurred",
-              "An error occurred: {{error}}",
-              { error: result.error }
-            )
-          );
-          return;
-        }
-
-        if (result.success && result.prices) {
-          setMonthlyPrice(Math.round(result.prices.monthly.amount / 100));
-          setYearlyPrice(Math.round(result.prices.annual.amount / 100));
-          setLifetimePrice(Math.round(result.prices.lifetime.amount / 100));
-        }
-      } catch (err) {
-        console.error("Error fetching prices:", err);
-        setPriceError(
-          t("dashboard.billing.errorOccurred", "An error occurred: {{error}}", {
-            error:
-              err instanceof Error
-                ? err.message
-                : t("common.unknownError", "Unknown error"),
-          })
-        );
-      } finally {
-        setIsLoadingPrices(false);
-      }
+    if (user?.profile?.customer_id && !upcomingInvoice.amount && !upcomingInvoice.error && !isLoadingUpcomingInvoice) {
+      // Context will handle fetching
     }
-
-    async function fetchUpcomingInvoice() {
-      if (!user?.profile?.customer_id) return;
-
-      try {
-        setIsLoadingInvoice(true);
-
-        const { amount, error } = await getUpcomingInvoice(
-          user.profile.customer_id
-        );
-
-        if (error) {
-          // Only show as error if it's not the common "no upcoming invoices" case
-          setUpcomingInvoice({
-            amount: null,
-            due_date: null,
-            error: error,
-          });
-        } else {
-          setUpcomingInvoice({
-            amount: amount,
-            due_date: null, // API doesn't return due date currently
-            error: null,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching upcoming invoice:", err);
-
-        setUpcomingInvoice({
-          amount: null,
-          due_date: null,
-          error: null, // Don't show errors for common cases like no upcoming invoices
-        });
-      } finally {
-        setIsLoadingInvoice(false);
-      }
-    }
-
-    // Only fetch if the user is logged in
-    if (user) {
-      fetchPrices();
-
-      // Only fetch upcoming invoice if user has customer ID
-      if (user.profile.customer_id) {
-        fetchUpcomingInvoice();
-      }
-    }
-  }, [user]);
+  }, [user?.profile?.customer_id, upcomingInvoice, isLoadingUpcomingInvoice]);
 
   const handleModalClose = () => {
     setShowConfirmationModal(false);
@@ -929,13 +791,13 @@ function DashboardPage() {
                     "dashboard.main.firstPayment",
                     "${{amount}}.00 on {{date}}",
                     {
-                      amount: isLoadingPrices ? "..." : monthlyPrice,
+                      amount: isLoadingPrices ? "..." : prices.monthly,
                       date: formatDate(user.profile.trial_expiration),
                     }
                   )
                 ) : user.profile.subscription === "lifetime" ? (
                   "$0.00"
-                ) : isLoadingInvoice ? (
+                ) : isLoadingUpcomingInvoice ? (
                   <LoadingComponent size="16px" text="" />
                 ) : upcomingInvoice.error ? (
                   "$0.00"

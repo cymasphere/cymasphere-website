@@ -16,8 +16,8 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboard } from "@/contexts/DashboardContext";
 import AnimatedCard from "@/components/settings/CardComponent";
-import { fetchUserSessions } from "@/utils/supabase/actions";
 import { useTranslation } from "react-i18next";
 
 const SettingsContainer = styled.div`
@@ -315,6 +315,7 @@ function Settings() {
   });
 
   const { user, session, signOut, refreshUser } = useAuth();
+  const { devices, isLoadingDevices, refreshDevices } = useDashboard();
 
   // Refresh pro status on mount (same as login)
   useEffect(() => {
@@ -330,69 +331,14 @@ function Settings() {
     "success" | "warning" | "info"
   >("success");
 
-  // Real session data for active devices
-  const [activeDevices, setActiveDevices] = useState<Device[]>([]);
-  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-
-  // Common function to refresh sessions data
+  // Use devices from DashboardContext instead of fetching separately
+  const activeDevices = devices;
+  const isLoadingSessions = isLoadingDevices;
+  
+  // Refresh devices when needed
   const refreshSessionData = useCallback(async () => {
-    if (!user || !session) return;
-
-    setIsLoadingSessions(true);
-    try {
-      const { sessions, error } = await fetchUserSessions();
-
-      if (error) {
-        console.error("Error fetching sessions:", error);
-        return;
-      }
-
-      if (sessions && sessions.length > 0) {
-        // Transform the session data into the device format
-        const deviceData: Device[] = sessions.map((sessionData) => {
-          // Determine device type based on device name
-          let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
-          const deviceName = sessionData.device_name;
-
-          if (
-            deviceName.includes("Mobile") ||
-            deviceName.includes("Android") ||
-            deviceName.includes("iPhone")
-          ) {
-            deviceType = "mobile";
-          } else if (
-            deviceName.includes("iPad") ||
-            deviceName.includes("Tablet")
-          ) {
-            deviceType = "tablet";
-          }
-
-          // Format last active time
-          const formattedTime = formatLastActive(
-            new Date(sessionData.last_used)
-          );
-
-          return {
-            name: deviceName,
-            type: deviceType,
-            location: sessionData.ip,
-            lastActive: formattedTime,
-          };
-        });
-
-        setActiveDevices(deviceData);
-      }
-    } catch (err) {
-      console.error("Failed to fetch sessions:", err);
-    } finally {
-      setIsLoadingSessions(false);
-    }
-  }, [user, session]);
-
-  // Fetch the user's active sessions
-  useEffect(() => {
-    refreshSessionData();
-  }, [refreshSessionData]);
+    await refreshDevices();
+  }, [refreshDevices]);
 
   // Helper function to format the last active time
   const formatLastActive = (date: Date): string => {
