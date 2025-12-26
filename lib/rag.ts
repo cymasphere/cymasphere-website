@@ -1,7 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { Document } from "@langchain/core/documents";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import { OpenAIEmbeddings } from "@langchain/openai";
 
 // Cymasphere website content (this would normally be scraped/updated dynamically)
@@ -201,7 +201,7 @@ Cymasphere is designed to help overcome these challenges by:
 `;
 
 class CymasphereRAG {
-  private vectorStore: MemoryVectorStore | null = null;
+  private vectorStore: FaissStore | null = null;
   private llm: ChatOpenAI;
   private embeddings: OpenAIEmbeddings;
 
@@ -226,8 +226,9 @@ class CymasphereRAG {
 
     const docs = await textSplitter.createDocuments([CYMASPHERE_KNOWLEDGE_BASE]);
 
-    // Create vector store
-    this.vectorStore = await MemoryVectorStore.fromDocuments(docs, this.embeddings);
+    // Create vector store - FaissStore requires a directory, but we'll use it in-memory
+    // For in-memory use, we create a temporary directory or use a simple approach
+    this.vectorStore = await FaissStore.fromDocuments(docs, this.embeddings);
   }
 
   async retrieveRelevantContext(query: string): Promise<string> {
