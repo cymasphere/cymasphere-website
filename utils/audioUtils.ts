@@ -149,7 +149,8 @@ function createImpulseResponse(
   duration: number,
   predelay: number
 ): AudioBuffer {
-  const sampleRate = 44100;
+  // Use the AudioContext's sample rate to match the context rate
+  const sampleRate = context.sampleRate;
   const length = sampleRate * duration;
   const impulse = context.createBuffer(2, length, sampleRate);
   const impulseL = impulse.getChannelData(0);
