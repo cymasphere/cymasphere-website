@@ -13,10 +13,6 @@ const nextConfig = {
       bodySizeLimit: '10mb', // Increase limit to 10MB for file uploads
     },
   },
-  // Force webpack instead of Turbopack to avoid compatibility issues
-  webpack: (config, { isServer }) => {
-    return config;
-  },
   // Exclude problematic symlinks from build
   outputFileTracingExcludes: {
     '*': [
