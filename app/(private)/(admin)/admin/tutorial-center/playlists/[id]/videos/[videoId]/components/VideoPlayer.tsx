@@ -439,8 +439,9 @@ export default function VideoPlayer({ video, script }: VideoPlayerProps) {
     if (!user) return;
 
     try {
-      await updateVideoProgress(video.id, {
-        progress_percentage: progressValue,
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      await updateVideoProgress(userId, video.id, {
+        progress: progressValue,
         completed,
       });
     } catch (error) {

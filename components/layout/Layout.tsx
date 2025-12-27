@@ -17,7 +17,7 @@ import React from "react";
 import styled from "styled-components";
 import dynamic from "next/dynamic";
 import Footer from "./Footer";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 const DynamicHeader = dynamic(() => import("./NextHeader"), { ssr: false });
 
@@ -42,7 +42,7 @@ const Main = styled(motion.main)`
 `;
 
 // Animation variants
-const pageVariants = {
+const pageVariants: Variants = {
   initial: {
     opacity: 0,
     y: 20,

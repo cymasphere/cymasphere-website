@@ -36,7 +36,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
@@ -1387,12 +1387,12 @@ function CampaignsPage() {
     },
   ];
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 

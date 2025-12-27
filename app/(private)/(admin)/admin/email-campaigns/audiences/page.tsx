@@ -35,7 +35,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled, { css, createGlobalStyle } from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { useRouter } from "next/navigation";
@@ -575,7 +575,7 @@ interface DatabaseAudience {
   description: string | null;
   filters: any;
   subscriber_count: number | null;
-  created_by: string | null;
+  created_by?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -696,12 +696,12 @@ function AudiencesPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 

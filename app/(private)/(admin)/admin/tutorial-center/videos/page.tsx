@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaVideo,
   FaFilter,
@@ -19,10 +19,10 @@ import Link from "next/link";
 import { getVideos } from "@/app/actions/tutorials";
 
 // Animation variants
-const fadeIn = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
+  const fadeIn: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
+  };
 
 const Container = styled.div`
   width: 100%;

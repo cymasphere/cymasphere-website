@@ -2534,7 +2534,14 @@ function CreateCampaignPage() {
           mode: 'light',
           refreshCounts: true,
         });
-        setAudiences(data.audiences || []);
+        const mappedAudiences: Audience[] = (data.audiences || []).map(audience => ({
+          id: audience.id,
+          name: audience.name,
+          description: audience.description || '',
+          subscriber_count: audience.subscriber_count,
+          type: (audience.filters && typeof audience.filters === 'object' && (audience.filters as any).audience_type === 'static') ? 'static' : 'dynamic',
+        }));
+        setAudiences(mappedAudiences);
       } catch (error) {
         console.error('Error loading audiences:', error);
       } finally {
@@ -2546,7 +2553,20 @@ function CreateCampaignPage() {
       try {
         setTemplatesLoading(true);
         const data = await getTemplates();
-        setTemplates(data.templates || []);
+        const mappedTemplates: Template[] = (data.templates || []).map(template => ({
+          id: template.id,
+          name: template.name,
+          description: template.description || '',
+          subject: template.subject || '',
+          template_type: template.template_type || '',
+          status: template.status || '',
+          html_content: '', // EmailTemplate doesn't include content, will be loaded when needed
+          text_content: '', // EmailTemplate doesn't include content, will be loaded when needed
+          variables: template.variables || {},
+          created_at: template.created_at || '',
+          updated_at: template.updated_at || '',
+        }));
+        setTemplates(mappedTemplates);
       } catch (error) {
         console.error('Error loading templates:', error);
       } finally {
@@ -2621,7 +2641,7 @@ function CreateCampaignPage() {
               audienceIds: campaign.audienceIds || [],
               excludedAudienceIds: campaign.excludedAudienceIds || [],
               template: campaign.template_id || '',
-              content: campaign.html_content || '',
+              content: campaign.htmlContent || '',
               scheduleType: campaign.scheduled_at ? 'scheduled' : '',
               scheduleDate: campaign.scheduled_at ? (() => {
                 const scheduledDate = new Date(campaign.scheduled_at);
@@ -2640,9 +2660,9 @@ function CreateCampaignPage() {
             });
             
             // Parse email elements from html_content if available
-            if (campaign.html_content) {
+            if (campaign.htmlContent) {
               // First try to extract embedded elements JSON comment
-              const match = campaign.html_content.match(/<!--ELEMENTS_B64:([^>]*)-->/);
+              const match = campaign.htmlContent.match(/<!--ELEMENTS_B64:([^>]*)-->/);
               let restoredElements: any[] | null = null;
               if (match && match[1]) {
                 try {
@@ -2666,7 +2686,7 @@ function CreateCampaignPage() {
               } else {
                 // Fallback: naive parse to at least show content
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(campaign.html_content, 'text/html');
+                const doc = parser.parseFromString(campaign.htmlContent, 'text/html');
                 const elements = Array.from(doc.body.children).map((element, index) => ({
                   id: `element_${index}`,
                   type: (element as HTMLElement).getAttribute('data-type') || (element.tagName.toLowerCase() === 'h1' ? 'header' : 'text'),
@@ -2678,15 +2698,13 @@ function CreateCampaignPage() {
                 }
               }
             }
-          } else if (response.status === 404) {
+          } else {
             console.warn(`Campaign with ID ${editId} not found, creating new campaign instead`);
             // Campaign doesn't exist, treat as create mode
             // Clear the edit parameter from URL
             const url = new URL(window.location.href);
             url.searchParams.delete('edit');
             window.history.replaceState({}, '', url.toString());
-          } else {
-            console.error('Failed to load campaign:', response.status);
           }
         } catch (error) {
           console.error('Error loading campaign:', error);
@@ -2945,7 +2963,7 @@ function CreateCampaignPage() {
           audienceIds: campaignData.audienceIds,
           excludedAudienceIds: campaignData.excludedAudienceIds,
           emailElements: emailElements,
-          scheduleType: campaignData.scheduleType,
+          scheduleType: (campaignData.scheduleType || 'draft') as 'draft' | 'immediate' | 'scheduled' | 'timezone',
           scheduleDate: campaignData.scheduleDate,
           scheduleTime: campaignData.scheduleTime
         });
@@ -2958,7 +2976,7 @@ function CreateCampaignPage() {
           // Update message based on actual result
           if (sendResult.status === 'scheduled') {
             setSendingMessage(
-              sendResult.scheduleType === 'timezone' 
+              sendResult.stats?.scheduleType === 'timezone' 
                 ? `Campaign scheduled for timezone-based delivery at ${sendResult.stats?.sendTime}!`
                 : `Campaign scheduled for ${formatScheduledTime(sendResult.scheduledFor)}!`
             );
@@ -3381,7 +3399,7 @@ function CreateCampaignPage() {
           const elementsWithProperties = ensureElementProperties(newElements);
           setEmailElements(elementsWithProperties);
           console.log('Template visual elements loaded with brand header:', newElements);
-        } else if (template.html_content) {
+        } else if (template.htmlContent) {
           // Fallback: If no visual elements, create a basic text element
           console.log('Template has no visual elements, creating fallback');
           const fallbackElement = {

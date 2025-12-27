@@ -34,7 +34,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import { getAnalytics } from "@/app/actions/email-campaigns";
 
@@ -584,7 +584,7 @@ function PerformancePage() {
         
         setPerformanceData(transformedData);
       } else {
-        throw new Error(result.error || 'Unknown error');
+        throw new Error('Failed to fetch analytics data');
       }
     } catch (err) {
       console.error('Error fetching performance data:', err);
@@ -629,12 +629,12 @@ function PerformancePage() {
     );
   }
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 

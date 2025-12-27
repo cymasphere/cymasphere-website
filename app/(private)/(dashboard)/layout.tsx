@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaCreditCard,
   FaTimes,
@@ -516,7 +516,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   // Animation variants for menu items
-  const menuItemVariants = {
+  const menuItemVariants: Variants = {
     hidden: {
       opacity: 0,
       y: 20,
@@ -530,13 +530,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       transition: {
         delay: i * 0.1,
         duration: 0.3,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     }),
   };
 
   // Animation variants for smooth page transitions
-  const pageVariants = {
+  const pageVariants: Variants = {
     initial: {
       opacity: 0,
       y: 10,
@@ -546,7 +546,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       y: 0,
       transition: {
         duration: 0.4,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     },
     exit: {
@@ -554,7 +554,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       y: -10,
       transition: {
         duration: 0.3,
-        ease: "easeIn",
+        ease: "easeIn" as const,
       },
     },
   };

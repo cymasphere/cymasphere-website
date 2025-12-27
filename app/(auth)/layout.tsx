@@ -9,7 +9,7 @@
 
 import React from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -32,7 +32,7 @@ const Main = styled(motion.main)`
 `;
 
 // Animation variants
-const pageVariants = {
+const pageVariants: Variants = {
   initial: {
     opacity: 0,
     y: 20,
@@ -42,7 +42,7 @@ const pageVariants = {
     y: 0,
     transition: {
       duration: 0.4,
-      ease: [0.43, 0.13, 0.23, 0.96],
+      ease: [0.43, 0.13, 0.23, 0.96] as [number, number, number, number],
     },
   },
   exit: {
@@ -50,7 +50,7 @@ const pageVariants = {
     y: -20,
     transition: {
       duration: 0.3,
-      ease: [0.43, 0.13, 0.23, 0.96],
+      ease: [0.43, 0.13, 0.23, 0.96] as [number, number, number, number],
     },
   },
 };

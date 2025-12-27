@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
 import CymasphereLogo from "@/components/common/CymasphereLogo";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -257,13 +257,13 @@ const ModalLink = styled.span`
   }
 `;
 
-const buttonVariants = {
+const buttonVariants: Variants = {
   hover: {
     scale: 1.03,
     boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
     transition: {
       duration: 0.3,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
     },
   },
   tap: {

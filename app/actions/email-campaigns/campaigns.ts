@@ -51,6 +51,7 @@ export interface GetCampaignResponse {
     description?: string;
     htmlContent?: string;
     textContent?: string;
+    brandHeader?: string;
   };
 }
 

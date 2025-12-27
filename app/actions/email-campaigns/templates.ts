@@ -134,6 +134,11 @@ export interface GetTemplateResponse {
   template: EmailTemplate & {
     htmlContent?: string;
     textContent?: string;
+    sender_name?: string;
+    sender_email?: string;
+    reply_to_email?: string;
+    preheader?: string;
+    type?: string;
   };
 }
 

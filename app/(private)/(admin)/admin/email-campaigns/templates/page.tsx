@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 import { getTemplates } from "@/app/actions/email-campaigns";
@@ -485,7 +485,23 @@ function TemplatesPage() {
       try {
         setLoading(true);
         const data = await getTemplates();
-        setTemplates(data.templates || []);
+        const mappedTemplates: Template[] = (data.templates || []).map(template => ({
+          id: template.id,
+          name: template.name,
+          description: template.description || '',
+          subject: template.subject || '',
+          template_type: template.template_type || '',
+          status: template.status || '',
+          html_content: '',
+          text_content: '',
+          variables: template.variables || {},
+          created_at: template.created_at || '',
+          updated_at: template.updated_at || '',
+          type: template.template_type || 'custom',
+          usage_count: template.usage_count || 0,
+          last_used_at: template.last_used_at || null,
+        }));
+        setTemplates(mappedTemplates);
       } catch (error) {
         console.error('Error loading templates:', error);
         setTemplates([]);
@@ -551,12 +567,12 @@ function TemplatesPage() {
     },
   ];
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 

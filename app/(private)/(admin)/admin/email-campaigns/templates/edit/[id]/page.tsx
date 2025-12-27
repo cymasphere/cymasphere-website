@@ -873,7 +873,14 @@ function EditTemplatePage() {
       try {
         setAudiencesLoading(true);
         const data = await getAudiences({ mode: 'light' });
-        setAudiences(data.audiences || []);
+        const mappedAudiences: Audience[] = (data.audiences || []).map(audience => ({
+          id: audience.id,
+          name: audience.name,
+          description: audience.description || '',
+          subscriber_count: audience.subscriber_count,
+          type: (audience.filters && typeof audience.filters === 'object' && (audience.filters as any).audience_type === 'static') ? 'static' : 'dynamic',
+        }));
+        setAudiences(mappedAudiences);
       } catch (error) {
         console.error('Error loading audiences:', error);
         setAudiences([]);
@@ -897,6 +904,9 @@ function EditTemplatePage() {
         setIsLoading(true);
         console.log('Loading template data for ID:', params.id);
         console.log('Making fetch request to:', `/api/email-campaigns/templates/${params.id}`);
+        if (!params.id || typeof params.id !== 'string') {
+          throw new Error('Template ID is required');
+        }
         const data = await getTemplate(params.id);
         console.log('Raw API response:', data);
         const template = data.template;
@@ -904,8 +914,8 @@ function EditTemplatePage() {
         if (template) {
           
           console.log('Loaded template data:', template);
-          console.log('Template audiences:', template.audiences);
-          console.log('Template excluded audiences:', template.excludedAudiences);
+          console.log('Template audiences:', template.audienceIds);
+          console.log('Template excluded audiences:', template.excludedAudienceIds);
           
           // Update template data state
           setTemplateData({
@@ -927,8 +937,8 @@ function EditTemplatePage() {
           // No need to merge audience objects here since audiences are loaded separately
 
           // Parse HTML content back to email elements if available
-          if (template.htmlContent || template.html_content) {
-            const htmlContent = template.htmlContent || template.html_content;
+          if (template.htmlContent) {
+            const htmlContent = template.htmlContent;
             
             // Check if template has visual_elements in variables (new format)
             if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {

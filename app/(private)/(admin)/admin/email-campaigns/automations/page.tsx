@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaRobot,
   FaSearch,
@@ -629,7 +629,7 @@ function AutomationsPage() {
     },
   ];
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
@@ -637,7 +637,7 @@ function AutomationsPage() {
       transition: {
         delay: i * 0.1,
         duration: 0.5,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     }),
   };

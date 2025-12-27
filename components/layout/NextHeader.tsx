@@ -34,7 +34,7 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import EnergyBall from "@/components/common/EnergyBall";
 import NextLanguageSelector from "@/components/i18n/NextLanguageSelector";
 // Import translations directly to avoid hook ordering issues
@@ -107,7 +107,7 @@ const fadeIn = {
 };
 
 // Simplified menu item variants for better performance
-const menuItemVariants = {
+const menuItemVariants: Variants = {
   hidden: {
     opacity: 0,
     x: -20,
@@ -118,7 +118,7 @@ const menuItemVariants = {
     transition: {
       delay: i * 0.05, // Reduced delay for faster animation
       duration: 0.2, // Shorter duration
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   }),
 };

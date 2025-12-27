@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import EnergyBall from "@/components/common/EnergyBall";
 import { useTranslation } from "react-i18next";
@@ -241,13 +241,13 @@ const LinkText = styled.div`
   }
 `;
 
-const buttonVariants = {
+const buttonVariants: Variants = {
   hover: {
     scale: 1.03,
     boxShadow: "0 5px 15px rgba(108, 99, 255, 0.4)",
     transition: {
       duration: 0.3,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
     },
   },
   tap: {

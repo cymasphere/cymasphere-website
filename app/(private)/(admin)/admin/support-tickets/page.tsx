@@ -40,7 +40,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { 
   createSupportTicketAdmin, 
   updateSupportTicketStatusAdmin,
@@ -1800,7 +1800,14 @@ function SupportTicketsPage() {
     try {
       const result = await getSupportTicketAdmin(ticketId);
       if (result.ticket) {
-        setTicketDetails(prev => new Map(prev).set(ticketId, result.ticket!));
+        if (result.ticket) {
+          const ticket: Ticket = {
+            ...result.ticket,
+            user_first_name: (result.ticket as any).user_first_name || null,
+            user_last_name: (result.ticket as any).user_last_name || null,
+          };
+          setTicketDetails(prev => new Map(prev).set(ticketId, ticket));
+        }
       }
     } catch (error) {
       console.error("Error fetching ticket details:", error);
@@ -1941,6 +1948,11 @@ function SupportTicketsPage() {
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
     
+    if (aValue == null || bValue == null) {
+      if (aValue == null && bValue == null) return 0;
+      return aValue == null ? (sortDirection === 'asc' ? -1 : 1) : (sortDirection === 'asc' ? 1 : -1);
+    }
+    
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
@@ -1953,12 +1965,12 @@ function SupportTicketsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTickets = ticketsToDisplay.slice(startIndex, startIndex + itemsPerPage);
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 
@@ -2156,7 +2168,7 @@ function SupportTicketsPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketDetails.get(selectedTicketId)?.messages?.length, selectedTicketId]);
+  }, [ticketDetails.get(selectedTicketId || '')?.messages?.length, selectedTicketId]);
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -3276,7 +3288,7 @@ function SupportTicketsPage() {
                               </div>
                             </Message>
                           ))}
-                          {(!ticketDetails.get(selectedTicketId)?.messages || ticketDetails.get(selectedTicketId)!.messages.length === 0) && (
+                          {(!ticketDetails.get(selectedTicketId || '')?.messages || ticketDetails.get(selectedTicketId || '')?.messages?.length === 0) && (
                             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                               No messages yet. Start the conversation below.
                             </div>

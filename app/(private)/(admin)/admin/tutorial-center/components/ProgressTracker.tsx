@@ -197,7 +197,7 @@ const EmptyState = styled.div`
 interface ProgressData {
   progress: { [videoId: string]: any };
   totalProgress: number;
-  userPath: {
+  userPath?: {
     theoryLevel: string;
     techLevel: string;
     appMode: string;
@@ -220,21 +220,17 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
 
       try {
         const progressData = await getVideoProgress(user.id);
-        // Handle both array and object responses
-        if (Array.isArray(progressData)) {
-          // Convert array to object format
-          const progressObj: Record<string, any> = {};
-          progressData.forEach((p: any) => {
-            progressObj[p.video_id] = {
-              progress: p.progress_percentage || 0,
-              completed: p.completed || false,
-              lastWatched: p.last_watched || new Date().toISOString(),
-            };
-          });
-          setProgressData({ progress: progressObj });
-        } else {
-          setProgressData({ progress: { [progressData.video_id]: progressData } });
-        }
+        // getVideoProgress returns { progress: Record<string, any>, totalProgress: number, userPath?: {...} }
+        setProgressData({
+          progress: progressData.progress || {},
+          totalProgress: progressData.totalProgress || 0,
+          userPath: progressData.userPath || {
+            theoryLevel: '',
+            techLevel: '',
+            appMode: '',
+            musicalGoals: [],
+          },
+        });
       } catch (error) {
         console.error('Failed to fetch progress:', error);
       } finally {
@@ -314,7 +310,7 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
         <ProgressStats>
           <StatItem>
             <FaUser />
-            {progressData.userPath.theoryLevel} • {progressData.userPath.techLevel}
+            {progressData.userPath?.theoryLevel || 'N/A'} • {progressData.userPath?.techLevel || 'N/A'}
           </StatItem>
           <StatItem>
             <FaTrophy />

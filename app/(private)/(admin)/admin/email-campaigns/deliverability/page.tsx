@@ -35,7 +35,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import TableLoadingRow from "@/components/common/TableLoadingRow";
 import { getDeliverability } from "@/app/actions/email-campaigns";
@@ -724,12 +724,12 @@ function DeliverabilityPage() {
   console.log('🖥️ Displaying domains:', filteredDomains.length, filteredDomains);
   console.log('🖥️ Displaying bounces:', filteredBounces.length, filteredBounces);
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
     }),
   };
 

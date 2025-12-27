@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaUsers,
   FaMoneyBillWave,
@@ -784,9 +784,9 @@ export default function AdminDashboard() {
   //   return null;
   // }
 
-  const fadeIn = {
+  const fadeIn: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
   };
 
   const staggerChildren = {
@@ -972,8 +972,7 @@ export default function AdminDashboard() {
                           marginLeft: '0.5rem', 
                           fontWeight: 'normal', 
                           opacity: 0.9,
-                          WebkitTextFillColor: 'white',
-                          textFillColor: 'white'
+                          WebkitTextFillColor: 'white'
                         }}>
                           (MRR: {formatCurrency(mrr)})
                         </span>
@@ -1113,8 +1112,7 @@ export default function AdminDashboard() {
                                 fontWeight: 'normal',
                                 opacity: 0.8,
                                 color: 'white',
-                                WebkitTextFillColor: 'white',
-                                textFillColor: 'white'
+                                WebkitTextFillColor: 'white'
                               }}>
                                 {formatted.unit}
                               </span>
@@ -1130,8 +1128,7 @@ export default function AdminDashboard() {
                             fontWeight: 'normal',
                             opacity: 0.8,
                             color: 'white',
-                            WebkitTextFillColor: 'white',
-                            textFillColor: 'white'
+                            WebkitTextFillColor: 'white'
                           }}>
                             months
                           </span>
@@ -1473,6 +1470,10 @@ function AnalyticsTab({
 
     const fetchFreshData = async () => {
       try {
+        if (timeRange === 'projections') {
+          // Skip fetching for projections, use cached or empty data
+          return;
+        }
         const data = await getAnalyticsTimeSeries(timeRange);
         setAnalyticsData(data);
         
@@ -1503,9 +1504,9 @@ function AnalyticsTab({
     fetchAnalyticsData();
   }, [timeRange]);
 
-  const fadeIn = {
+  const fadeIn: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
   };
 
   // Calculate projections based on historical data and inputs - recalculates when params change
@@ -1775,7 +1776,7 @@ function AnalyticsTab({
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number) => formatCurrencyForChart(value)}
+                    formatter={(value: number | undefined) => formatCurrencyForChart(value ?? 0)}
                   />
                   <Legend />
                   <Line 

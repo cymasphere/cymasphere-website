@@ -25,7 +25,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import Head from "next/head";
 import NextFooter from "./NextFooter";
 
@@ -43,7 +43,7 @@ const ContentWrapper = styled(motion.div)`
   width: 100%;
 `;
 
-const pageVariants = {
+const pageVariants: Variants = {
   initial: {
     opacity: 0,
   },
@@ -51,14 +51,14 @@ const pageVariants = {
     opacity: 1,
     transition: {
       duration: 0.4,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
     },
   },
   out: {
     opacity: 0,
     transition: {
       duration: 0.3,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
     },
   },
 };

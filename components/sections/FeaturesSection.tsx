@@ -16,7 +16,7 @@
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaMusic,
   FaWaveSquare,
@@ -237,7 +237,7 @@ const FeatureCard = styled(motion.div)<{ $rotation?: number; $imageUrl?: string 
   }
 `;
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 50 },
   visible: (i: number) => ({
     opacity: 1,
@@ -245,7 +245,7 @@ const cardVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.6,
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   }),
 };

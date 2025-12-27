@@ -37,6 +37,7 @@ export interface Subscriber {
   totalClicks?: number;
   tags?: string[];
   audienceCount?: number;
+  location?: string;
 }
 
 export interface GetSubscribersResponse {

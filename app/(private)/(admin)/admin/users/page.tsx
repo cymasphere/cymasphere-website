@@ -1617,7 +1617,7 @@ export default function AdminCRM() {
               if (
                 sortField === "lastActive" ||
                 sortField === "totalSpent" ||
-                sortField === "supportTickets"
+                (sortField as string) === "supportTickets"
               ) {
                 updatedUsers = [...updatedUsers].sort((a, b) => {
                   let aValue: any;
@@ -1629,7 +1629,7 @@ export default function AdminCRM() {
                   } else if (sortField === "totalSpent") {
                     aValue = a.totalSpent;
                     bValue = b.totalSpent;
-                  } else if (sortField === "supportTickets") {
+                  } else if ((sortField as string) === "supportTickets") {
                     aValue = supportTicketCounts[a.id]?.total || 0;
                     bValue = supportTicketCounts[b.id]?.total || 0;
                   }
@@ -1726,7 +1726,7 @@ export default function AdminCRM() {
     if (
       sortField === "lastActive" ||
       sortField === "totalSpent" ||
-      sortField === "supportTickets"
+      (sortField as string) === "supportTickets"
     ) {
       setUsers((prevUsers) => {
         // Only sort if we have the data
@@ -1734,7 +1734,7 @@ export default function AdminCRM() {
           (u) =>
             (sortField === "lastActive" && u.lastActive) ||
             (sortField === "totalSpent" && u.totalSpent !== -1) ||
-            (sortField === "supportTickets" &&
+            ((sortField as string) === "supportTickets" &&
               supportTicketCounts[u.id] !== undefined)
         );
 
@@ -1750,7 +1750,7 @@ export default function AdminCRM() {
           } else if (sortField === "totalSpent") {
             aValue = a.totalSpent;
             bValue = b.totalSpent;
-          } else if (sortField === "supportTickets") {
+          } else if ((sortField as string) === "supportTickets") {
             aValue = supportTicketCounts[a.id]?.total || 0;
             bValue = supportTicketCounts[b.id]?.total || 0;
           }

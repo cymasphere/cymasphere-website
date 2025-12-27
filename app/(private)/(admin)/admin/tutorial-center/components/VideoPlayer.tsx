@@ -3,13 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { getVideoProgress, updateVideoProgress } from "@/app/actions/tutorials";
 
-// YouTube API types
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+// YouTube API types are defined in types/youtube.d.ts
 
 const VideoWrapper = styled.div`
   position: relative;
@@ -34,7 +28,7 @@ interface VideoPlayerProps {
   videoId: string;
   title: string;
   description: string;
-  playlistId: string;
+  playlistId?: string;
   onProgressUpdate?: (progress: number, completed: boolean) => void;
 }
 
@@ -56,10 +50,11 @@ export default function VideoPlayer({
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
       
-      const progressData = await getVideoProgress(userId, videoId);
+      const progressData = await getVideoProgress(userId);
       
-      if (progressData && !Array.isArray(progressData)) {
-        const progress = progressData.progress_percentage || 0;
+      if (progressData && progressData.progress) {
+        const videoProgress = progressData.progress[videoId];
+        const progress = videoProgress?.progress || 0;
         if (progress > 0) {
           maxPositionRef.current = progress;
           console.log('Loaded progress from database:', progress);
@@ -75,10 +70,11 @@ export default function VideoPlayer({
     try {
       const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
       
-      const progressData = await getVideoProgress(userId, videoId);
+      const progressData = await getVideoProgress(userId);
       
-      if (progressData && !Array.isArray(progressData)) {
-        const progress = progressData.progress_percentage || 0;
+      if (progressData && progressData.progress) {
+        const videoProgress = progressData.progress[videoId];
+        const progress = videoProgress?.progress || 0;
         if (progress > localProgress) {
           console.log('Database has higher progress, updating local:', progress);
           maxPositionRef.current = progress;
@@ -94,8 +90,9 @@ export default function VideoPlayer({
   // Save progress to database
   const saveProgress = useCallback(async (progress: number, completed: boolean) => {
     try {
-      await updateVideoProgress(videoId, {
-        progress_percentage: progress,
+      const userId = (typeof window !== 'undefined' && localStorage.getItem('userId')) || '900f11b8-c901-49fd-bfab-5fafe984ce72';
+      await updateVideoProgress(userId, videoId, {
+        progress: progress,
         completed,
       });
 
@@ -207,7 +204,7 @@ export default function VideoPlayer({
         console.log('Iframe src:', iframe.src);
 
         // Now create the YouTube Player
-        playerRef.current = new window.YT.Player(iframe, {
+        playerRef.current = new window.YT.Player(iframe.id || 'youtube-player', {
           events: {
             onReady: (event: any) => {
               console.log('YouTube player ready for:', videoId);

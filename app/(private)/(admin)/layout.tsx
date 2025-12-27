@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   FaTimes,
   FaSignOutAlt,
@@ -649,21 +649,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     };
   }, [sidebarOpen]);
 
-  const fadeIn = {
+  const fadeIn: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.6, ease: "easeOut" as const },
     },
   };
 
-  const menuItemVariants = {
+  const menuItemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.3, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.3, ease: "easeOut" as const },
     }),
   };
 
@@ -794,7 +794,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" as const }}
                 >
                   <Link href="/admin/email-campaigns/subscribers">
                     <SubNavItem
@@ -916,7 +916,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" as const }}
                 >
                   <Link href="/admin/ad-manager">
                     <SubNavItem
