@@ -12,8 +12,10 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '10mb', // Increase limit to 10MB for file uploads
     },
-    // Disable Turbopack to avoid symlink issues
-    turbo: false,
+  },
+  // Force webpack instead of Turbopack to avoid compatibility issues
+  webpack: (config, { isServer }) => {
+    return config;
   },
   // Exclude problematic symlinks from build
   outputFileTracingExcludes: {
