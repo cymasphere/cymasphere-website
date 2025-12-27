@@ -13,6 +13,12 @@ const nextConfig = {
       bodySizeLimit: '10mb', // Increase limit to 10MB for file uploads
     },
   },
+  // Exclude problematic symlinks from build
+  outputFileTracingExcludes: {
+    '*': [
+      'cymasphere/svg_conv/**/*',
+    ],
+  },
 };
 
 module.exports = nextConfig;
