@@ -1,0 +1,9 @@
+﻿bun.exe : $ next lint
+At C:\Users\garre\AppData\Roaming\npm\bun.ps1:14 char:3
++   & "$basedir/node_modules/bun/bin/bun.exe"   $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ next lint:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Invalid project directory provided, no such directory: C:\Development\cymasphere-website\lint
+error: script "lint" exited with code 1

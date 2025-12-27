@@ -17,18 +17,18 @@ export interface PlaylistVideo {
 export interface Playlist {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   videoCount: number;
   totalDuration: string;
   views: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null;
+  updatedAt: string | null;
   targetTheoryLevel: string;
   targetTechLevel: string;
   appModeFilter: string;
   musicalGoal: string;
-  estimatedDuration: number;
-  difficultyRating: number;
+  estimatedDuration: number | null;
+  difficultyRating: number | null;
   videos: PlaylistVideo[];
 }
 
@@ -129,8 +129,8 @@ export async function getPlaylists(): Promise<GetPlaylistsResponse> {
     // Transform the data to match the expected format
     const transformedPlaylists = sortedPlaylists?.map(playlist => {
       const videos = playlist.playlist_videos
-        ?.sort((a, b) => a.sequence_order - b.sequence_order)
-        .map(pv => pv.tutorial_videos)
+        ?.sort((a: any, b: any) => a.sequence_order - b.sequence_order)
+        .map((pv: any) => pv.tutorial_videos)
         .filter(Boolean) || [];
 
       return {
@@ -357,8 +357,8 @@ export async function getPlaylist(playlistId: string): Promise<Playlist> {
     }
 
     const videos = playlist.playlist_videos
-      ?.sort((a, b) => a.sequence_order - b.sequence_order)
-      .map(pv => pv.tutorial_videos)
+      ?.sort((a: any, b: any) => a.sequence_order - b.sequence_order)
+      .map((pv: any) => pv.tutorial_videos)
       .filter(Boolean) || [];
 
     return {

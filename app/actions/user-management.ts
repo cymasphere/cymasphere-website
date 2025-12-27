@@ -19,6 +19,7 @@ import {
 } from "@/utils/stripe/admin-analytics";
 import { fetchProfile } from "@/utils/supabase/actions";
 import { sendEmail } from "@/utils/email";
+import type Stripe from "stripe";
 
 /**
  * User management record interface
@@ -46,7 +47,7 @@ export interface UserManagementRecord {
  * // Returns: true if user is admin, false otherwise
  * ```
  */
-export async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+export async function checkAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -815,6 +816,7 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
     ticket_number: string;
     subject: string;
     status: string;
+    priority: string;
     created_at: string;
     updated_at: string;
   }>;
@@ -829,7 +831,7 @@ export async function getUserSupportTicketsAdmin(userId: string): Promise<{
 
     const { data: tickets, error: ticketsError } = await supabase
       .from("support_tickets")
-      .select("id, ticket_number, subject, status, created_at, updated_at")
+      .select("id, ticket_number, subject, status, priority, created_at, updated_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -2920,7 +2922,7 @@ export async function uploadSupportTicketAttachment(
 
     if (uploadError) {
       console.error("[Attachment Upload] Storage upload error:", uploadError);
-      console.error("[Attachment Upload] Error code:", uploadError.statusCode);
+      console.error("[Attachment Upload] Error code:", (uploadError as { statusCode?: number }).statusCode);
       console.error("[Attachment Upload] Error message:", uploadError.message);
 
       // If bucket doesn't exist, try to create it
@@ -3074,7 +3076,7 @@ export async function uploadSupportTicketAttachment(
               file_type: file.type,
               attachment_type: attachmentType,
               storage_path: storagePath,
-              url: publicUrl,
+              url: signedUrl,
             })
             .select("id")
             .single();
@@ -3157,8 +3159,9 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
     // Create a map of payment intent IDs to their invoices
     const piToInvoiceMap = new Map<string, Stripe.Invoice>();
     invoices.data.forEach((inv) => {
-      if (inv.payment_intent && typeof inv.payment_intent === "string") {
-        piToInvoiceMap.set(inv.payment_intent, inv);
+      const paymentIntent = (inv as any).payment_intent;
+      if (paymentIntent && typeof paymentIntent === "string") {
+        piToInvoiceMap.set(paymentIntent, inv);
       }
     });
 
@@ -3173,7 +3176,7 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
       // Check if this payment intent is linked to an invoice (subscription payment)
       else if (piToInvoiceMap.has(pi.id)) {
         const invoice = piToInvoiceMap.get(pi.id)!;
-        if (invoice.subscription) {
+        if ((invoice as any).subscription) {
           // It's a subscription payment
           description = "Subscription payment";
         } else {
@@ -3182,9 +3185,9 @@ export async function getCustomerPurchasesAdmin(customerId: string): Promise<{
       }
       // Check if payment intent has invoice in expanded data
       else if (
-        pi.invoice &&
-        typeof pi.invoice === "object" &&
-        "subscription" in pi.invoice
+        (pi as any).invoice &&
+        typeof (pi as any).invoice === "object" &&
+        "subscription" in (pi as any).invoice
       ) {
         description = "Subscription payment";
       } else if (pi.amount === 0) {

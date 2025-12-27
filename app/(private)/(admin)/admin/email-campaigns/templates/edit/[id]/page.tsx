@@ -686,7 +686,7 @@ interface Audience {
   id: string;
   name: string;
   description: string;
-  subscriber_count: number;
+  subscriber_count: number | null;
   type: 'static' | 'dynamic';
 }
 

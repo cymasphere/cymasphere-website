@@ -419,7 +419,6 @@ export default function BillingPage() {
   // Refresh pro status on mount only (same as login)
   useEffect(() => {
     refreshUserFromAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
   // Use centralized checkout hook
@@ -538,7 +537,6 @@ export default function BillingPage() {
     if (user?.email) {
       checkTrialStatus();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     user?.profile?.customer_id,
     isInTrialPeriod,

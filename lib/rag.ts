@@ -245,7 +245,7 @@ class CymasphereRAG {
     const context = await this.retrieveRelevantContext(query);
 
     // Extract NEPQ state from conversation
-    const nepqState = this.extractNEPQState(conversationHistory, query);
+    const nepqState = (this as any).extractNEPQState(conversationHistory, query);
 
     // Layer 2: Generate response with retrieved context
     const systemPrompt = `You are a sales assistant for Cymasphere who strictly follows NEPQ. You are also empathetic and supportive of musicians' creative struggles.

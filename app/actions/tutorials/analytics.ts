@@ -87,7 +87,7 @@ export async function getUserAnalytics(
       console.error('Error fetching progress data:', progressError);
     }
 
-    const progress = progressData?.progress_data || {};
+    const progress = (progressData?.progress_data || {}) as Record<string, any>;
 
     // Get user's completed videos
     const { data: completedVideos, error: completedError } = await supabase
@@ -115,7 +115,7 @@ export async function getUserAnalytics(
     }
 
     // Calculate user-specific metrics
-    const completedVideoIds = Object.keys(progress).filter(videoId => progress[videoId]?.completed);
+    const completedVideoIds = Object.keys(progress).filter((videoId: string) => progress[videoId]?.completed);
     const totalVideosWatched = completedVideoIds.length;
     const totalTimeSpent = completedVideoIds.reduce((total, videoId) => {
       const videoProgress = progress[videoId];
@@ -140,7 +140,7 @@ export async function getUserAnalytics(
             tech_level_required
           )
         `)
-        .eq('playlist_id', userPath.current_playlist_id || '2509f80f-477f-4027-b02e-bcdba3c66511'); // Default to first playlist
+        .eq('playlist_id', userPath.generated_playlist_id || '2509f80f-477f-4027-b02e-bcdba3c66511'); // Default to first playlist
 
       if (!playlistError && playlistVideos) {
         userPlaylistVideos = playlistVideos.map(pv => pv.tutorial_videos).filter(Boolean);

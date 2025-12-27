@@ -16,10 +16,10 @@ export interface EmailAudience {
   id: string;
   name: string;
   description: string | null;
-  subscriber_count: number;
+  subscriber_count: number | null;
   filters: any;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface GetAudiencesResponse {
@@ -44,11 +44,26 @@ export async function getAudiences(
     const refreshCounts = params?.refreshCounts || false;
 
     // Get audiences (light or full)
-    const { data: audiences, error } = await supabase
-      .from('email_audiences')
-      .select(mode === 'light' ? 'id,name,description,subscriber_count,created_at,updated_at,filters' : '*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    let audiences: any[] | null = null;
+    let error: any = null;
+
+    if (mode === 'light') {
+      const result = await supabase
+        .from('email_audiences')
+        .select('id,name,description,subscriber_count,created_at,updated_at,filters')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      audiences = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('email_audiences')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      audiences = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('Error fetching audiences:', error);
@@ -268,6 +283,14 @@ export async function createAudience(
 
     if (!name) {
       throw new Error('Name is required');
+    }
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Not authenticated');
     }
 
     // Calculate initial subscriber count - matching API route logic exactly

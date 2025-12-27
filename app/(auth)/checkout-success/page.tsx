@@ -204,7 +204,6 @@ function CheckoutSuccessContent() {
   // Refresh pro status on mount only (same as login and dashboard pages)
   useEffect(() => {
     refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
   // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
@@ -293,7 +292,6 @@ function CheckoutSuccessContent() {
     };
 
     handleUserInviteAndRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isLoggedIn, user?.id, authLoading]);
 
   // Refresh subscription status by customer ID (works even if not logged in)
@@ -340,7 +338,6 @@ function CheckoutSuccessContent() {
     };
 
     refreshByCustomerId();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isLoggedIn]);
 
   // Track promotion conversion

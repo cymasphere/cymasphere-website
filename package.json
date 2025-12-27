@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --fix",
+    "lint:fix": "eslint . --fix",
     "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
     "supabase-migrate": "bun x supabase db push"
   },
@@ -73,6 +74,8 @@
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.1",

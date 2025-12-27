@@ -24,12 +24,12 @@ export interface GetCampaignsParams {
 export interface Campaign {
   id: string;
   name: string;
-  subject: string;
+  subject: string | null;
   status: string;
   scheduled_at: string | null;
   sent_at: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   template_id: string | null;
   audienceIds?: string[];
   excludedAudienceIds?: string[];

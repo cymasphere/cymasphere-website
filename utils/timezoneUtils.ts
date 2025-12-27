@@ -71,7 +71,7 @@ function isDaylightSavingTime(date: Date, timezone: string): boolean {
     
     // If current offset differs from standard time, it's likely DST
     return Math.max(janOffset, julOffset) !== currentOffset;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -84,7 +84,7 @@ function getTimezoneOffset(date: Date, timezone: string): number {
     const utc = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
     const local = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
     return (utc.getTime() - local.getTime()) / (1000 * 60); // Return in minutes
-  } catch (error) {
+  } catch (_error) {
     return 0;
   }
 }
@@ -100,7 +100,7 @@ export function formatTimezone(timezone: string): string {
       return parts[parts.length - 1].replace(/_/g, ' ');
     }
     return timezone;
-  } catch (error) {
+  } catch (_error) {
     return timezone;
   }
 }
@@ -130,7 +130,7 @@ export function getOptimalSendTimes() {
 export function convertTimeToTimezone(time: string, fromTimezone: string, toTimezone: string): string {
   try {
     // Create a date object for today with the specified time
-    const today = new Date();
+    const _today = new Date();
     const [hours, minutes] = time.split(':').map(Number);
     
     // Create date in the source timezone
@@ -154,7 +154,7 @@ export function isValidTimezone(timezone: string): boolean {
   try {
     Intl.DateTimeFormat(undefined, { timeZone: timezone });
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -268,7 +268,7 @@ export function pstDateToUTC(dateString: string | null | undefined, isEndDate: b
         // Start of day: 00:00:00 PST
         return new Date(Date.UTC(year, month - 1, day, 8, 0, 0)).toISOString();
       }
-    } catch (e) {
+    } catch (_e) {
       return new Date(dateString + (isEndDate ? 'T23:59:59.000Z' : 'T00:00:00.000Z')).toISOString();
     }
   }

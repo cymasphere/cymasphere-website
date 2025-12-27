@@ -109,9 +109,11 @@ export async function customerPurchasedProFromSupabase(
 
           // Check if invoice line items contain lifetime price ID
           const hasLifetimePrice = invoice.lines.data.some(
-            (line) =>
-              line.price?.id === lifetimePriceId ||
-              (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
+            (line) => {
+              const lineWithPrice = line as Stripe.InvoiceLineItem & { price?: Stripe.Price | string };
+              return (typeof lineWithPrice.price === 'object' && lineWithPrice.price?.id === lifetimePriceId) ||
+                     (lifetimePriceId2 && typeof lineWithPrice.price === 'object' && lineWithPrice.price?.id === lifetimePriceId2);
+            }
           );
 
           if (hasMetadata || hasLifetimePrice) {
@@ -202,7 +204,7 @@ export async function customerPurchasedProFromSupabase(
           subscriptionType = "lifetime";
 
           // If metadata is missing, log it for tracking
-          if (!hasLifetimeMetadata && hasLifetimePriceId) {
+          if (!hasLifetimeMetadata && lifetimePriceId) {
             console.warn(
               `⚠️ Lifetime purchase detected by price ID for customer ${customer_id} ` +
                 `(Payment Intent: ${(paymentIntent as any).id}). ` +

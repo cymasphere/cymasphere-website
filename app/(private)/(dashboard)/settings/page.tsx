@@ -2,9 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import {
-  FaGlobe,
   FaTrash,
   FaExclamationTriangle,
   FaSignOutAlt,
@@ -54,12 +52,12 @@ const CardContent = styled.div`
   color: var(--text-secondary);
 `;
 
-const SettingsList = styled.div`
+const _SettingsList = styled.div`
   display: flex;
   flex-direction: column;
 `;
 
-const SettingItem = styled.div`
+const _SettingItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -71,23 +69,23 @@ const SettingItem = styled.div`
   }
 `;
 
-const SettingInfo = styled.div`
+const _SettingInfo = styled.div`
   flex: 1;
 `;
 
-const SettingTitle = styled.div`
+const _SettingTitle = styled.div`
   font-size: 1rem;
   font-weight: 500;
   color: var(--text);
   margin-bottom: 0.25rem;
 `;
 
-const SettingDescription = styled.div`
+const _SettingDescription = styled.div`
   font-size: 0.85rem;
   color: var(--text-secondary);
 `;
 
-const SelectWrapper = styled.div`
+const _SelectWrapper = styled.div`
   position: relative;
 
   &::after {
@@ -102,7 +100,7 @@ const SelectWrapper = styled.div`
   }
 `;
 
-const Select = styled.select`
+const _Select = styled.select`
   background-color: rgba(30, 30, 46, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text);
@@ -288,6 +286,7 @@ const ModalFooter = styled.div`
   justify-content: flex-end;
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface SettingsState {
   // Remove the language: string; entry
   // If this is the only entry, make it an empty interface

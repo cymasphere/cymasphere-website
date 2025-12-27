@@ -46,10 +46,8 @@ export async function previewEmail(campaignId: string): Promise<PreviewResponse>
     // Parse email elements from html_content (embedded base64 JSON)
     let emailElements = [];
     try {
-      // First try to get elements from email_elements field
-      if (campaign.email_elements) {
-        emailElements = JSON.parse(campaign.email_elements);
-      } else if (campaign.html_content) {
+      // Extract embedded elements from html_content
+      if (campaign.html_content) {
         // Extract embedded elements from html_content
         const match = campaign.html_content.match(/<!--ELEMENTS_B64:([^>]*)-->/);
         if (match && match[1]) {
@@ -314,7 +312,7 @@ export async function previewEmail(campaignId: string): Promise<PreviewResponse>
       campaign: {
         id: campaign.id,
         name: campaign.name,
-        subject: campaign.subject
+        subject: campaign.subject || ''
       }
     };
   } catch (error) {

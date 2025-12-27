@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
           console.log(`   Personalization: ${hasPersonalization ? 'ENABLED (each email personalized)' : 'DISABLED (same content for all)'}`);
           
           // Split subscribers into parallel batches
-          const batches: typeof subscribersResult[][] = [];
+          const batches: Array<typeof subscribersResult> = [];
           for (let i = 0; i < subscribersResult.length; i += PARALLEL_BATCH_SIZE) {
             batches.push(subscribersResult.slice(i, i + PARALLEL_BATCH_SIZE));
           }

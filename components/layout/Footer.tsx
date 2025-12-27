@@ -440,7 +440,7 @@ const Footer = () => {
 
   // When language changes, this will re-render the component
   // using the _ variable to ensure ESLint doesn't complain about unused vars
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _ = language;
 
   const handleContactInputChange = (

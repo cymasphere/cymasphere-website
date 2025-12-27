@@ -124,7 +124,7 @@ export async function getAnalytics(
           id: campaign.id,
           name: campaign.name,
           type: 'Campaign',
-          status: campaign.status,
+          status: campaign.status || 'draft',
           sent: emailsSent,
           delivered: campaign.emails_delivered || 0,
           opens: campaign.emails_opened || 0,

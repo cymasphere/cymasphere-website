@@ -531,9 +531,10 @@ async function hasCustomerPurchasedLifetime(customerId: string): Promise<boolean
 
     const hasLifetimeInvoice = invoices.data.some(invoice => {
       if (invoice.status !== 'paid') return false;
-      return invoice.lines.data.some(line => 
-        line.price?.id === lifetimePriceId
-      );
+      return invoice.lines.data.some(line => {
+        const lineWithPrice = line as Stripe.InvoiceLineItem & { price?: Stripe.Price | string };
+        return typeof lineWithPrice.price === 'object' && lineWithPrice.price?.id === lifetimePriceId;
+      });
     });
 
     if (hasLifetimeInvoice) {
@@ -649,7 +650,7 @@ async function createCheckoutSession(
         
         if (profile) {
           userId = profile.id;
-          userEmail = profile.email;
+          userEmail = profile.email || undefined;
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -663,7 +664,7 @@ async function createCheckoutSession(
     if (!userEmail && customerId) {
       try {
         const customer = await stripe.customers.retrieve(customerId);
-        userEmail = typeof customer === 'object' && !customer.deleted ? customer.email : undefined;
+        userEmail = typeof customer === 'object' && !customer.deleted ? (customer.email || undefined) : undefined;
       } catch (error) {
         console.error("Error retrieving customer email:", error);
       }

@@ -353,7 +353,6 @@ function DashboardPage() {
   // Refresh pro status on mount only (same as login)
   useEffect(() => {
     refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
   useEffect(() => {

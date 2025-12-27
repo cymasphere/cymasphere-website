@@ -609,7 +609,6 @@ function SupportPage() {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showContent, tickets, searchParams]);
 
   const fetchTickets = async () => {
@@ -678,7 +677,6 @@ function SupportPage() {
     ) {
       fetchTicketDetails(selectedTicketId, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTicketId]);
 
   // Re-evaluate scroll position when ticket details change
@@ -694,7 +692,6 @@ function SupportPage() {
         });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketDetails, selectedTicketId]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
@@ -809,6 +806,11 @@ function SupportPage() {
 
     let aValue = a[sortField as keyof typeof a];
     let bValue = b[sortField as keyof typeof b];
+
+    // Handle null/undefined values
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === "asc" ? -1 : 1;
+    if (bValue == null) return sortDirection === "asc" ? 1 : -1;
 
     if (typeof aValue === "string") aValue = aValue.toLowerCase();
     if (typeof bValue === "string") bValue = bValue.toLowerCase();
@@ -1125,7 +1127,7 @@ function SupportPage() {
             </TableHeader>
             <TableBody>
               {loadingTickets ? (
-                <TableLoadingRow colSpan={5} />
+                <TableLoadingRow colSpan={5} message={t("dashboard.support.loading", "Loading tickets...")} />
               ) : filteredTickets.length === 0 ? (
                 <tr>
                   <td
@@ -1477,7 +1479,7 @@ function SupportPage() {
                             transition={{
                               duration: 1,
                               repeat: Infinity,
-                              ease: "linear",
+                              ease: "linear" as const,
                             }}
                             style={{
                               width: "20px",
@@ -1637,9 +1639,7 @@ function SupportPage() {
                               gap: "1rem",
                             }}
                           >
-                            {ticketDetails
-                              .get(selectedTicketId)
-                              ?.messages?.map((message) => {
+                            {ticketDetails.get(selectedTicketId)?.messages?.map((message) => {
                                 const isCurrentUser =
                                   message.user_id === user?.id;
                                 return (
@@ -1678,7 +1678,7 @@ function SupportPage() {
                                             )})`}
                                         </MessageTime>
                                       </MessageBubble>
-                                      {message.attachments?.map((att) => (
+                                      {message.attachments && message.attachments.length > 0 && message.attachments.map((att) => (
                                         <MessageAttachment key={att.id}>
                                           {att.attachment_type === "image" &&
                                           att.url ? (
@@ -1768,8 +1768,7 @@ function SupportPage() {
                                 );
                               })}
                             {(!ticketDetails.get(selectedTicketId)?.messages ||
-                              ticketDetails.get(selectedTicketId)!.messages
-                                .length === 0) && (
+                              (ticketDetails.get(selectedTicketId)?.messages?.length ?? 0) === 0) && (
                               <div
                                 style={{
                                   padding: "2rem",

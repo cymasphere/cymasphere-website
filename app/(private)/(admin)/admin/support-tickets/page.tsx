@@ -1765,7 +1765,6 @@ function SupportTicketsPage() {
         router.replace(newUrl, { scroll: false });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showContent, searchParams]);
 
   const fetchTickets = async () => {
@@ -2118,7 +2117,6 @@ function SupportTicketsPage() {
     if (selectedTicketId && !ticketDetails.has(selectedTicketId) && !loadingDetails.has(selectedTicketId)) {
       fetchTicketDetails(selectedTicketId, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTicketId]);
 
   // Re-evaluate scroll position when ticket details change
@@ -2141,7 +2139,6 @@ function SupportTicketsPage() {
         setTimeout(checkScroll, 1000);
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketDetails, selectedTicketId]);
   
   // Auto-scroll to bottom when messages first load (but don't interfere with scroll detection)
@@ -2167,7 +2164,6 @@ function SupportTicketsPage() {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketDetails.get(selectedTicketId || '')?.messages?.length, selectedTicketId]);
 
   // Close status dropdown when clicking outside
@@ -2759,7 +2755,7 @@ function SupportTicketsPage() {
                         {updatingStatus === ticket.id && (
                           <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                             style={{
                               width: "12px",
                               height: "12px",
@@ -2969,7 +2965,7 @@ function SupportTicketsPage() {
                         <>
                           <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                             style={{
                               width: "16px",
                               height: "16px",
@@ -3111,7 +3107,7 @@ function SupportTicketsPage() {
                       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                           style={{ 
                             width: '20px', 
                             height: '20px', 

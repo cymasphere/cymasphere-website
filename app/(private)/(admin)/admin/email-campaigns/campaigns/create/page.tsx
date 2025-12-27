@@ -15,29 +15,12 @@ import {
   FaEye,
   FaSave,
   FaPaperPlane,
-  FaChevronRight,
   FaInfoCircle,
-  FaFilter,
-  FaTag,
-  FaImage,
   FaCode,
   FaClock,
-  FaPlay,
-  FaHeading,
-  FaFont,
-  FaMousePointer,
-  FaDivide,
-  FaShareAlt,
   FaExpandArrowsAlt,
-  FaColumns,
-  FaVideo,
-  FaCog,
   FaDesktop,
   FaMobileAlt,
-  FaEnvelope,
-  FaPaintBrush,
-  FaTextHeight,
-  FaPuzzlePiece,
   FaTimes,
   FaExclamationTriangle,
   FaSearch,
@@ -49,7 +32,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCampaign, getAudiences, getTemplates, getTemplate, calculateReach, sendCampaign, previewEmail } from "@/app/actions/email-campaigns";
-import styled, { keyframes, css } from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from "@/components/common/LoadingComponent";
 import Link from "next/link";
@@ -1908,7 +1891,7 @@ interface Audience {
   id: string;
   name: string;
   description: string;
-  subscriber_count: number;
+  subscriber_count: number | null;
   type: 'static' | 'dynamic';
 }
 
@@ -2457,8 +2440,8 @@ function CreateCampaignPage() {
       // Fallback to simple calculation
       const includedAudiences = audiences.filter(a => campaignData.audienceIds.includes(a.id));
       const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
-      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+      const totalIncluded = includedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count || 0), 0);
+      const totalExcluded = excludedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count || 0), 0);
       
       setReachData({
         totalIncluded,
@@ -3469,8 +3452,8 @@ function CreateCampaignPage() {
     const excludedAudiences = audiences.filter(a => campaignData.excludedAudienceIds.includes(a.id));
     
     // Calculate fallback totals from audience subscriber_count
-    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
-    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + audience.subscriber_count, 0);
+    const fallbackTotalIncluded = includedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count || 0), 0);
+    const fallbackTotalExcluded = excludedAudiences.reduce((sum, audience) => sum + (audience.subscriber_count || 0), 0);
     
     return {
       totalIncluded: reachData.isLoading ? fallbackTotalIncluded : (reachData.totalIncluded || fallbackTotalIncluded),
@@ -4361,7 +4344,7 @@ function CreateCampaignPage() {
                               <AudienceDetails>
                                 <AudienceCount>
                                   <FaUsers />
-                                  {audience.subscriber_count.toLocaleString()} subscribers
+                                  {(audience.subscriber_count || 0).toLocaleString()} subscribers
                                 </AudienceCount>
                                 <AudienceType $type={audience.type}>
                                   {audience.type}
@@ -4846,7 +4829,7 @@ function CreateCampaignPage() {
                 {isSending && (
                   <LoadingSpinner
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                   />
                 )}
                 {campaignData.scheduleType === 'immediate' && <FaPaperPlane />}
@@ -5371,7 +5354,7 @@ function CreateCampaignPage() {
                   >
                     {isSending ? (
                       <>
-                        <LoadingSpinner animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
+                        <LoadingSpinner animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }} />
                         Sending...
                       </>
                     ) : (
@@ -5426,7 +5409,7 @@ function CreateCampaignPage() {
                     {isDeleting && (
                       <LoadingSpinner
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" as const }}
                       />
                     )}
                     <FaTrash />

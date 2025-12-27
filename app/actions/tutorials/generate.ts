@@ -194,7 +194,7 @@ export async function generatePlaylist(
     
     // Filter videos based on user profile and conditions
     const filteredVideos = basePlaylist.playlist_videos
-      ?.filter(pv => {
+      ?.filter((pv: any) => {
         const video = pv.tutorial_videos;
         if (!video) return false;
 
@@ -236,8 +236,8 @@ export async function generatePlaylist(
 
         return true;
       })
-      .sort((a, b) => a.sequence_order - b.sequence_order)
-      .map(pv => pv.tutorial_videos)
+      .sort((a: any, b: any) => a.sequence_order - b.sequence_order)
+      .map((pv: any) => pv.tutorial_videos)
       .filter(Boolean) || [];
 
     // Create personalized playlist

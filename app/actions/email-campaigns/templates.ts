@@ -12,14 +12,14 @@ export interface EmailTemplate {
   id: string;
   name: string;
   description: string | null;
-  subject: string;
+  subject: string | null;
   template_type: string;
   status: string;
   variables: any;
-  created_by: string;
+  created_by: string | null;
   last_used_at: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   usage_count?: number;
   audienceIds?: string[];
   excludedAudienceIds?: string[];
@@ -54,11 +54,11 @@ export async function getTemplates(
     }
 
     if (params?.type && ['welcome', 'newsletter', 'promotional', 'transactional', 'custom'].includes(params.type)) {
-      query = query.eq('template_type', params.type);
+      query = query.eq('template_type', params.type as 'custom' | 'welcome' | 'newsletter' | 'promotional' | 'transactional');
     }
 
     if (params?.status && ['draft', 'active', 'archived'].includes(params.status)) {
-      query = query.eq('status', params.status);
+      query = query.eq('status', params.status as 'active' | 'draft' | 'archived');
     }
 
     const { data: templates, error } = await query;

@@ -25,7 +25,6 @@ import {
   FaFacebook,
   FaBullhorn,
   FaChartLine,
-  FaPlus,
   FaImage,
   FaBullseye,
   FaPlay,
@@ -584,7 +583,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [user]);
 
   const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
+    e: React.MouseEvent<HTMLElement>,
     href: string
   ) => {
     e.preventDefault();
@@ -687,7 +686,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 fontSize="1.4rem"
                 onClick={(e: React.MouseEvent<HTMLElement>) =>
                   handleNavigation(
-                    e as React.MouseEvent<HTMLAnchorElement>,
+                    e,
                     "/admin"
                   )
                 }
@@ -1032,7 +1031,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href="/admin"
                 onClick={(e: React.MouseEvent<HTMLElement>) =>
                   handleNavigation(
-                    e as React.MouseEvent<HTMLAnchorElement>,
+                    e,
                     "/admin"
                   )
                 }

@@ -503,14 +503,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       opacity: 0,
       transition: {
         duration: 0.3,
-        ease: "easeInOut",
+        ease: "easeInOut" as const,
       },
     },
     visible: {
       opacity: 1,
       transition: {
         duration: 0.3,
-        ease: "easeInOut",
+        ease: "easeInOut" as const,
       },
     },
   };
@@ -561,7 +561,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Function to handle navigation with router
   const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
+    e: React.MouseEvent<HTMLElement>,
     path: string
   ) => {
     e.preventDefault();

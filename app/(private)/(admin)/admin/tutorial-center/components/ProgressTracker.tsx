@@ -324,7 +324,7 @@ export default function ProgressTracker({ className }: ProgressTrackerProps) {
           $progress={progressData.totalProgress}
           initial={{ width: 0 }}
           animate={{ width: `${progressData.totalProgress}%` }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={{ duration: 1, ease: "easeOut" as const }}
         />
       </ProgressBar>
 

@@ -334,7 +334,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token, session?.user?.id]); // Use stable values instead of whole session object
 
   // Simple auth state change handler - based on working project

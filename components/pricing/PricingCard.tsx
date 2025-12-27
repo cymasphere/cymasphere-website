@@ -665,7 +665,7 @@ export default function PricingCard({
   // Check if this is the current plan
   const isCurrentPlan =
     user?.profile?.subscription === billingPeriod &&
-    user.profile.subscription !== "none";
+    user?.profile?.subscription !== "none";
 
   // Determine if we should show trial options
   // Don't show if user already has an active subscription

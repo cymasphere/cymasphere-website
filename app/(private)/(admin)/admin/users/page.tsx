@@ -2809,7 +2809,7 @@ export default function AdminCRM() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.6, ease: "easeOut" as const },
     },
   };
 
@@ -2907,7 +2907,7 @@ export default function AdminCRM() {
                     transition={{
                       duration: 1,
                       repeat: Infinity,
-                      ease: "linear",
+                      ease: "linear" as const,
                     }}
                     style={{
                       width: "20px",

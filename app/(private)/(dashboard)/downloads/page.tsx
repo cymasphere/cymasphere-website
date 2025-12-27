@@ -5,7 +5,6 @@ import {
   FaDownload,
   FaWindows,
   FaApple,
-  FaFilePdf,
   FaInfoCircle,
   FaRocket,
   FaTabletAlt,
@@ -311,7 +310,7 @@ const ResourceLink = styled.a`
 
 function Downloads() {
   const { t } = useTranslation();
-  const { supabase, user, refreshUser } = useAuth();
+  const { supabase, user: _user, refreshUser } = useAuth();
   const router = useRouter();
 
   // Refresh pro status on mount (same as login)

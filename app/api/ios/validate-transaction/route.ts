@@ -165,7 +165,6 @@ export async function POST(request: NextRequest) {
     if (!validationResult.valid) {
       const errorDetails =
         validationResult.error ||
-        validationResult.errorMessage ||
         "Unknown validation error occurred";
       console.error(
         "[validate-transaction] ERROR - Apple validation failed:",
@@ -462,7 +461,7 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
     const keyId = process.env.APPLE_APP_STORE_KEY_ID?.trim();
     const issuerId = process.env.APPLE_APP_STORE_ISSUER_ID?.trim();
     const privateKey = process.env.APPLE_APP_STORE_PRIVATE_KEY?.trim();
-    const bundleId =
+    const bundleId: string =
       (process.env.APPLE_APP_STORE_BUNDLE_ID || "com.NNAudio.Cymasphere").trim();
 
     if (!keyId || !issuerId || !privateKey) {
@@ -649,6 +648,12 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         }
 
         // Verify and decode the JWS using Apple's root certificates
+        if (!bundleId) {
+          throw new Error("Bundle ID is required but not set");
+        }
+        if (!transactionInfoResponse.signedTransactionInfo) {
+          throw new Error("Signed transaction info is missing from response");
+        }
         const transactionData = await verifyAndDecodeTransactionJWS(
           transactionInfoResponse.signedTransactionInfo,
           bundleId,
@@ -835,12 +840,13 @@ async function verifyAndDecodeTransactionJWS(
     // enableOnlineChecks: true enables online certificate revocation checking
     // appAppleId: required for production, optional for sandbox
     const appAppleId = process.env.APPLE_APP_STORE_APP_ID;
+    const appAppleIdNumber = appAppleId ? parseInt(appAppleId, 10) : undefined;
     const verifier = new SignedDataVerifier(
       appleRootCAs,
       true, // enableOnlineChecks
       environment,
       bundleId,
-      environment === Environment.PRODUCTION ? appAppleId : undefined
+      environment === Environment.PRODUCTION ? appAppleIdNumber : undefined
     );
 
     // Verify and decode the JWS using the official library method
@@ -867,13 +873,13 @@ async function verifyAndDecodeTransactionJWS(
       // Extract the transaction data from the decoded payload
       // The payload structure follows Apple's Transaction schema
       verifiedTransaction = {
-        transactionId: decodedPayload.transactionId,
+        transactionId: decodedPayload.transactionId || '',
         originalTransactionId:
-          decodedPayload.originalTransactionId || decodedPayload.transactionId,
-        productId: decodedPayload.productId,
-        purchaseDate: decodedPayload.purchaseDate,
-        expiresDate: decodedPayload.expiresDate,
-        signedDate: decodedPayload.signedDate,
+          decodedPayload.originalTransactionId || decodedPayload.transactionId || '',
+        productId: decodedPayload.productId || '',
+        purchaseDate: decodedPayload.purchaseDate || 0,
+        expiresDate: decodedPayload.expiresDate ?? 0,
+        signedDate: decodedPayload.signedDate || 0,
       };
     } catch (verificationError) {
       console.error(

@@ -350,7 +350,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
 
       if (invoices) {
-        setInvoices(invoices);
+        // Convert InvoiceData[] to Invoice[] by converting created from string to number
+        const convertedInvoices: Invoice[] = invoices.map(inv => ({
+          ...inv,
+          created: new Date(inv.created).getTime() / 1000, // Convert ISO string to Unix timestamp
+        }));
+        setInvoices(convertedInvoices);
       } else {
         setInvoices([]);
       }

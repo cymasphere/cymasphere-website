@@ -83,7 +83,6 @@ export default function GlobalError({
               Try again
             </button>
             {/* Using standard a tag since Link requires client navigation */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/"
               style={{

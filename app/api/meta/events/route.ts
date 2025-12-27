@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Log to Supabase (before sending to Meta)
-    await logEventToSupabase(body, request, 'success');
+    await logEventToSupabase(metaEvent, body, 'success');
 
     // In test mode, just log and return success
     if (TEST_MODE && body.testEventCode) {
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
     const result = await sendToMetaAPI([metaEvent], body.testEventCode);
 
     if (!result.success) {
-      await logEventToSupabase(body, request, 'failed', result.error);
+      await logEventToSupabase(metaEvent, body, 'failed', result.error);
       return NextResponse.json(
         { error: result.error || 'Failed to send event to Meta' },
         { status: 500 }

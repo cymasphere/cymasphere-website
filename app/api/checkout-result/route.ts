@@ -51,12 +51,13 @@ export async function GET(request: NextRequest) {
     const isSignedUp = sessionResult.metadata?.is_signed_up === "true";
 
     // Determine if this is a free trial
-    const isTrial =
+    const isTrial = Boolean(
       sessionResult.mode === "subscription" &&
       (sessionResult.hasTrialPeriod === true ||
         (sessionResult.subscription &&
           typeof sessionResult.subscription !== "string" &&
-          sessionResult.subscription.trial_end));
+          sessionResult.subscription.trial_end))
+    );
 
     // Get subscription value and currency for dataLayer tracking
     let subscriptionValue: number | undefined;

@@ -227,7 +227,7 @@ export async function POST(
           getAll() {
             return [];
           },
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+           
           setAll(_cookiesToSet) {},
         },
         global: {

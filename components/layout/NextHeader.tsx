@@ -93,7 +93,7 @@ const fadeIn = {
     y: -20,
     transition: {
       duration: 0.2,
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   },
   visible: {
@@ -101,7 +101,7 @@ const fadeIn = {
     y: 0,
     transition: {
       duration: 0.25,
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   },
 };

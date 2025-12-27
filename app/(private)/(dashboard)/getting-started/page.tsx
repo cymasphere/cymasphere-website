@@ -11,7 +11,6 @@ import {
   FaArrowRight,
   FaArrowLeft,
   FaCheckCircle,
-  FaMusic,
   FaDownload,
   FaCog,
   FaPlay,
@@ -436,24 +435,24 @@ const NavButton = styled.button<{ $primary?: boolean; $disabled?: boolean }>`
   }}
 `;
 
-const CompletionScreen = styled(motion.div)`
+const _CompletionScreen = styled(motion.div)`
   text-align: center;
   padding: 2rem;
 `;
 
-const CompletionIcon = styled.div`
+const _CompletionIcon = styled.div`
   font-size: 5rem;
   color: var(--primary);
   margin-bottom: 1.5rem;
 `;
 
-const CompletionTitle = styled.h2`
+const _CompletionTitle = styled.h2`
   font-size: 2rem;
   margin-bottom: 1rem;
   color: var(--text);
 `;
 
-const CompletionMessage = styled.p`
+const _CompletionMessage = styled.p`
   font-size: 1.1rem;
   color: var(--text-secondary);
   margin-bottom: 2rem;
@@ -787,8 +786,8 @@ const getInstructions = (
 };
 
 export default function GettingStartedWizard() {
-  const { t } = useTranslation();
-  const { supabase, user, refreshUser } = useAuth();
+  const { t: _t } = useTranslation();
+  const { supabase, user: _user, refreshUser } = useAuth();
 
   // Refresh pro status on mount (same as login)
   useEffect(() => {

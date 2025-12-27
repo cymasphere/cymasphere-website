@@ -18,7 +18,7 @@ import Toast from "@/components/common/Toast";
 export type ToastData = {
   id: string;
   message: string;
-  type: string;
+  type: "info" | "success" | "error" | "warning";
   duration: number;
 };
 
@@ -28,7 +28,7 @@ export type ToastData = {
  * for showing and hiding toasts, and convenience methods for different toast types.
  */
 export type ToastContextType = {
-  showToast: (message: string, type: string, duration: number) => string;
+  showToast: (message: string, type: "info" | "success" | "error" | "warning", duration: number) => string;
   hideToast: (id: string) => void;
   success: (message: string, duration: number) => string;
   error: (message: string, duration: number) => string;
@@ -57,7 +57,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
    * @param {number} [duration=3000] - Duration in milliseconds before auto-dismissing.
    * @returns {string} The unique ID of the created toast.
    */
-  const showToast = (message: string, type = "info", duration = 3000) => {
+  const showToast = (message: string, type: "info" | "success" | "error" | "warning" = "info", duration = 3000) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type, duration }]);
     return id;
