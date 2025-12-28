@@ -647,7 +647,7 @@ function CheckoutSuccessContent() {
 
         {authLoading ? (
           <LoadingSpinner
-            size="medium"
+            size="small"
             text="Processing checkout..."
           />
         ) : (
@@ -690,7 +690,7 @@ export default function CheckoutSuccess() {
     <Suspense
       fallback={
         <LoadingSpinner
-          size="medium"
+          size="small"
           fullScreen={true}
           text="Processing checkout..."
         />
