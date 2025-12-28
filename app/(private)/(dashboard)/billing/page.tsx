@@ -365,6 +365,50 @@ const AlertBanner = styled.div`
   }
 `;
 
+const TrialBadge = styled.div`
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(108, 99, 255, 0.15));
+  border: 2px solid rgba(78, 205, 196, 0.5);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.2);
+`;
+
+const TrialBadgeTitle = styled.div`
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  svg {
+    font-size: 1.25rem;
+  }
+`;
+
+const TrialBadgeText = styled.div`
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+  
+  .days-count {
+    font-size: 1.5rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0.25rem;
+  }
+`;
+
+const TrialBadgeSubtext = styled.div`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+`;
+
 // Add these styled components for the loading overlay
 const LoadingOverlay = styled.div`
   position: fixed;
@@ -1004,6 +1048,8 @@ export default function BillingPage() {
                         ? "Elite Access"
                         : isSubscriptionLifetime(userSubscription.subscription)
                         ? t("dashboard.billing.lifetimePlan", "Lifetime")
+                        : isInTrialPeriod
+                        ? t("dashboard.billing.trialPlan", "Free Trial")
                         : subscriptionInterval === "month"
                         ? t("dashboard.billing.monthly", "Monthly")
                         : t("dashboard.billing.yearly", "Yearly")}
@@ -1049,6 +1095,12 @@ export default function BillingPage() {
                         "dashboard.billing.lifetimePlanDesc",
                         "Full access to all features forever with free updates"
                       )
+                    : isInTrialPeriod
+                    ? t(
+                        "dashboard.billing.trialPlanDesc",
+                        "Free trial active - Full access to all premium features. {{days}} days remaining.",
+                        { days: daysLeftInTrial }
+                      )
                     : t(
                         "dashboard.billing.paidPlanDesc",
                         "Full access to all premium features and content"
@@ -1078,6 +1130,34 @@ export default function BillingPage() {
 
               {/* Right Column */}
               <div>
+                {/* Trial Badge - Show prominently if in trial */}
+                {isInTrialPeriod && (
+                  <TrialBadge>
+                    <TrialBadgeTitle>
+                      <FaGift />
+                      {t("dashboard.billing.onFreeTrial", "🎉 You're on a FREE TRIAL")}
+                    </TrialBadgeTitle>
+                    <TrialBadgeText>
+                      {daysLeftInTrial === 1
+                        ? t("dashboard.billing.trialLastDay", "Last day of your trial!")
+                        : (
+                            <>
+                              <span className="days-count">{daysLeftInTrial}</span>
+                              {" "}
+                              {t("dashboard.billing.trialDaysLeft", "days left")}
+                            </>
+                          )}
+                    </TrialBadgeText>
+                    <TrialBadgeSubtext>
+                      {t(
+                        "dashboard.billing.trialExpires",
+                        "Trial expires on {{date}}",
+                        { date: formatDate(userSubscription.trial_expiration) }
+                      )}
+                    </TrialBadgeSubtext>
+                  </TrialBadge>
+                )}
+
                 {/* Next billing date */}
                 {!isSubscriptionNone(userSubscription.subscription) &&
                   !isSubscriptionLifetime(userSubscription.subscription) &&
