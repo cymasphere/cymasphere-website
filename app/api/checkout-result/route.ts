@@ -51,12 +51,30 @@ export async function GET(request: NextRequest) {
     const isSignedUp = sessionResult.metadata?.is_signed_up === "true";
 
     // Determine if this is a free trial
+    // A subscription has a trial if:
+    // 1. hasTrialPeriod flag is true (from getCheckoutSessionResult)
+    // 2. OR subscription has a trial_end timestamp
+    // 3. OR subscription status is "trialing"
     const isTrial =
       sessionResult.mode === "subscription" &&
       (sessionResult.hasTrialPeriod === true ||
         (sessionResult.subscription &&
           typeof sessionResult.subscription !== "string" &&
-          sessionResult.subscription.trial_end));
+          (sessionResult.subscription.trial_end || 
+           sessionResult.subscription.status === "trialing")));
+
+    // Log trial detection for debugging
+    console.log(`[Checkout Result] Trial Detection:`, {
+      mode: sessionResult.mode,
+      hasTrialPeriod: sessionResult.hasTrialPeriod,
+      subscriptionStatus: sessionResult.subscription && typeof sessionResult.subscription !== "string" 
+        ? sessionResult.subscription.status 
+        : 'N/A',
+      trial_end: sessionResult.subscription && typeof sessionResult.subscription !== "string" 
+        ? sessionResult.subscription.trial_end 
+        : 'N/A',
+      isTrial: isTrial
+    });
 
     // Get subscription value and currency for dataLayer tracking
     let subscriptionValue: number | undefined;

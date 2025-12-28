@@ -176,6 +176,30 @@ const InviteText = styled.p`
   margin-bottom: 1rem;
 `;
 
+const TrialInfoBox = styled.div`
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(108, 99, 255, 0.1));
+  border: 2px solid rgba(78, 205, 196, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  max-width: 600px;
+  text-align: center;
+`;
+
+const TrialInfoTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+`;
+
+const TrialInfoText = styled.p`
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+`;
+
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -595,13 +619,19 @@ function CheckoutSuccessContent() {
 
         {isTrial ? (
           <>
-            <Title>Trial Started!</Title>
-            <Subtitle>Welcome to Cymasphere Pro</Subtitle>
+            <Title>🎉 Free Trial Activated!</Title>
+            <Subtitle>Welcome to Cymasphere Pro - No Charge Today</Subtitle>
             <Message>
               {isLoggedIn || isSignedUp
-                ? "Your free trial has been successfully activated. You can now explore all the premium features of Cymasphere Pro."
-                : "Your free trial has been successfully activated. To start using Cymasphere Pro, you'll need to create your account."}
+                ? "Your free trial has been successfully started. Explore all premium features with no payment required during your trial period."
+                : "Your free trial has been successfully started. Check your email to create your account and start exploring all premium features - no payment required during your trial period."}
             </Message>
+            <TrialInfoBox>
+              <TrialInfoTitle>✨ Zero Cost Trial</TrialInfoTitle>
+              <TrialInfoText>
+                You will NOT be charged during your trial period. Explore all features risk-free. Cancel anytime before your trial ends to avoid any charges.
+              </TrialInfoText>
+            </TrialInfoBox>
           </>
         ) : (
           <>
@@ -609,15 +639,15 @@ function CheckoutSuccessContent() {
             <Subtitle>Thank you for your purchase</Subtitle>
             <Message>
               {isLoggedIn || isSignedUp
-                ? "Your payment has been processed successfully. You can now access your Cymasphere Pro downloads."
-                : "Your payment has been processed successfully. To start using Cymasphere Pro, you'll need to create your account."}
+                ? "Your payment has been processed successfully. You now have full access to Cymasphere Pro."
+                : "Your payment has been processed successfully. Check your email to create your account and access Cymasphere Pro."}
             </Message>
           </>
         )}
 
         {authLoading ? (
           <LoadingSpinner
-            size="large"
+            size="medium"
             text="Processing checkout..."
           />
         ) : (
@@ -660,7 +690,7 @@ export default function CheckoutSuccess() {
     <Suspense
       fallback={
         <LoadingSpinner
-          size="large"
+          size="medium"
           fullScreen={true}
           text="Processing checkout..."
         />

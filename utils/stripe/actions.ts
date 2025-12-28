@@ -532,6 +532,8 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
   hasTrialPeriod?: boolean;
   subscription?: Stripe.Subscription | string;
   metadata?: Record<string, string>;
+  amountTotal?: number;
+  currency?: string;
   error?: string;
 }> {
   try {
@@ -568,8 +570,15 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
           : session.subscription.id;
 
       // Check if the subscription includes a trial period
+      // A subscription has a trial if:
+      // 1. It has a trial_end timestamp (future trial or active trial)
+      // 2. OR the status is explicitly "trialing"
       if (typeof session.subscription !== "string") {
-        hasTrialPeriod = !!session.subscription.trial_end;
+        hasTrialPeriod = 
+          !!session.subscription.trial_end || 
+          session.subscription.status === "trialing";
+        
+        console.log(`[Checkout Session] Trial detection: trial_end=${session.subscription.trial_end}, status=${session.subscription.status}, hasTrialPeriod=${hasTrialPeriod}`);
       }
     }
 
@@ -590,6 +599,8 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       hasTrialPeriod,
       subscription,
       metadata: session.metadata || undefined,
+      amountTotal: session.amount_total || undefined,
+      currency: session.currency || undefined,
     };
   } catch (error) {
     console.error("Error fetching checkout session:", error);
