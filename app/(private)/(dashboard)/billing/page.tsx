@@ -394,12 +394,23 @@ const TrialBadgeText = styled.div`
   font-size: 1rem;
   color: var(--text);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   
   .days-count {
     font-size: 1.5rem;
     color: var(--accent);
     font-weight: 700;
     margin: 0 0.25rem;
+  }
+  
+  .expiration-date {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-left: auto;
   }
 `;
 
@@ -1174,22 +1185,35 @@ export default function BillingPage() {
                     </TrialBadgeTitle>
                     <TrialBadgeText>
                       {daysLeftInTrial === 1
-                        ? t("dashboard.billing.trialLastDay", "Last day of your trial!")
+                        ? (
+                            <>
+                              <span>{t("dashboard.billing.trialLastDay", "Last day of your trial!")}</span>
+                              <span className="expiration-date">
+                                {t(
+                                  "dashboard.billing.trialExpires",
+                                  "Trial expires on {{date}}",
+                                  { date: formatDate(userSubscription.trial_expiration) }
+                                )}
+                              </span>
+                            </>
+                          )
                         : (
                             <>
-                              <span className="days-count">{daysLeftInTrial}</span>
-                              {" "}
-                              {t("dashboard.billing.trialDaysLeft", "days left")}
+                              <span>
+                                <span className="days-count">{daysLeftInTrial}</span>
+                                {" "}
+                                {t("dashboard.billing.trialDaysLeft", "days left")}
+                              </span>
+                              <span className="expiration-date">
+                                {t(
+                                  "dashboard.billing.trialExpires",
+                                  "Trial expires on {{date}}",
+                                  { date: formatDate(userSubscription.trial_expiration) }
+                                )}
+                              </span>
                             </>
                           )}
                     </TrialBadgeText>
-                    <TrialBadgeSubtext>
-                      {t(
-                        "dashboard.billing.trialExpires",
-                        "Trial expires on {{date}}",
-                        { date: formatDate(userSubscription.trial_expiration) }
-                      )}
-                    </TrialBadgeSubtext>
                   </TrialBadge>
                 )}
 
