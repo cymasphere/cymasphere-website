@@ -666,9 +666,10 @@ export default function BillingPage() {
     }
 
     // For existing users with an active plan switching between monthly/annual
-    // Redirect them to Stripe Checkout to review and confirm the change
+    // CRITICAL: If user is currently trialing, update subscription directly to preserve trial
+    // If not trialing, use checkout for plan change
     try {
-      // Convert SubscriptionType to PlanType for checkout
+      // Convert SubscriptionType to PlanType
       let validPlanType: "monthly" | "annual" | "lifetime";
       const period = selectedBillingPeriod as string;
       if (period === "monthly") {
@@ -682,6 +683,42 @@ export default function BillingPage() {
         validPlanType = "monthly";
       }
 
+      // If user is currently trialing, update subscription directly to preserve trial
+      if (isInTrialPeriod && userSubscription.customer_id && validPlanType !== "lifetime") {
+        try {
+          const { updateSubscription } = await import("@/utils/stripe/actions");
+          const updateResult = await updateSubscription(
+            userSubscription.customer_id,
+            validPlanType === "monthly" ? "monthly" : "annual"
+          );
+
+          if (updateResult.success) {
+            // Close modal and refresh data
+            setShowPlanModal(false);
+            setIsPlanChangeLoading(false);
+            await refreshAllData();
+            
+            // Show success message
+            setConfirmationTitle(t("dashboard.billing.planUpdated", "Plan Updated"));
+            setConfirmationMessage(
+              t(
+                "dashboard.billing.planUpdatedMessage",
+                "Your plan has been updated. Your free trial continues with the {{plan}} plan.",
+                { plan: validPlanType === "monthly" ? t("dashboard.billing.monthly", "Monthly") : t("dashboard.billing.yearly", "Yearly") }
+              )
+            );
+            setShowConfirmationModal(true);
+            return;
+          } else {
+            throw new Error(updateResult.error || "Failed to update subscription");
+          }
+        } catch (updateError) {
+          console.error("Error updating subscription directly:", updateError);
+          // Fall through to checkout if direct update fails
+        }
+      }
+
+      // If not trialing, or if direct update failed, use checkout for plan change
       // Keep modal open and show loading spinner while creating checkout session
       // Redirect to Stripe Checkout for plan change
       const result = await initiateCheckoutHook(validPlanType, {
