@@ -711,6 +711,11 @@ export async function updateSubscription(
       : trialing_sub.data[0];
 
     const subscriptionId = subscription.id;
+    
+    // BULLETPROOF: Verify subscription has items before updating
+    if (!subscription.items?.data?.length) {
+      return { success: false, error: "Subscription has no items" };
+    }
 
     const updateParams: Stripe.SubscriptionUpdateParams = {
       items: [
@@ -719,9 +724,26 @@ export async function updateSubscription(
           price: priceId,
         },
       ],
+      // CRITICAL: Preserve trial period if subscription is trialing
+      // Stripe automatically preserves trial_end, but we explicitly set proration to none
+      // to ensure no charges occur during trial
+      proration_behavior: subscription.status === "trialing" ? "none" : "create_prorations",
     };
+    
+    // Log trial preservation
+    if (subscription.trial_end) {
+      console.log(`[updateSubscription] Preserving trial_end: ${new Date(subscription.trial_end * 1000).toISOString()}`);
+    }
 
-    await stripe.subscriptions.update(subscriptionId, updateParams);
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+    
+    // BULLETPROOF: Verify trial was preserved after update
+    if (subscription.trial_end && !updatedSubscription.trial_end) {
+      console.error(`[updateSubscription] WARNING: Trial was lost during update! Original trial_end: ${subscription.trial_end}, New trial_end: ${updatedSubscription.trial_end}`);
+      // This should never happen with Stripe, but log it if it does
+    } else if (subscription.trial_end && updatedSubscription.trial_end) {
+      console.log(`[updateSubscription] Trial preserved: trial_end=${updatedSubscription.trial_end}`);
+    }
 
     return { success: true };
   } catch (error) {

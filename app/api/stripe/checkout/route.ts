@@ -602,13 +602,17 @@ async function createCheckoutSession(
       return { url: null, error: `Invalid plan type: ${planType}` };
     }
 
-    // Check if customer has previously had a trial
+    // BULLETPROOF: Check if customer has previously had a trial
     let hasHadTrial = false;
     try {
       hasHadTrial = await hasCustomerHadTrial(customerId);
+      console.log(`[createCheckoutSession] Customer ${customerId} hasHadTrial: ${hasHadTrial}`);
     } catch (error) {
       console.error("Error checking trial history in createCheckoutSession:", error);
-      // Continue with checkout even if trial check fails
+      // On error, default to false (allow trial) - better UX than blocking legitimate users
+      // The hasCustomerHadTrial function already defaults to false on error
+      hasHadTrial = false;
+      console.warn(`[createCheckoutSession] Trial check failed, defaulting to hasHadTrial=false (will allow trial if eligible)`);
     }
 
     // Determine mode based on plan type
@@ -624,14 +628,27 @@ async function createCheckoutSession(
       // All other plans are subscriptions
       mode = "subscription";
 
-      // For plan changes, NEVER add a trial period - user already has a subscription
-      // Only add trial for new subscriptions if customer hasn't had one before
-      if (!isPlanChange && !hasHadTrial) {
+      // BULLETPROOF: Multiple safeguards to prevent accidental trials
+      // 1. NEVER add trial for plan changes
+      // 2. NEVER add trial if customer has had one before
+      // 3. ONLY add trial for new subscriptions from customers who never had a trial
+      const shouldGiveTrial = !isPlanChange && !hasHadTrial;
+      
+      if (shouldGiveTrial) {
+        const trialDays = collectPaymentMethod ? 14 : 7;
         subscriptionData = {
-          trial_period_days: collectPaymentMethod ? 14 : 7, // Extended trial if collecting payment method
+          trial_period_days: trialDays,
         };
+        console.log(`[createCheckoutSession] Adding ${trialDays}-day trial for new subscription`);
+      } else {
+        // BULLETPROOF: Explicitly log why trial is NOT being given
+        if (isPlanChange) {
+          console.log(`[createCheckoutSession] NO TRIAL: This is a plan change`);
+        } else if (hasHadTrial) {
+          console.log(`[createCheckoutSession] NO TRIAL: Customer has had a trial before`);
+        }
+        // No trial_period_days - they'll be charged immediately
       }
-      // If this is a plan change OR customer has had a trial before, no trial_period_days - they'll be charged immediately
     }
 
     // Get user_id and email from Supabase if customer_id is available

@@ -58,27 +58,51 @@ export async function GET(request: NextRequest) {
     let currency: string = "USD";
     let isTrial = false;
 
-    if (session.mode === "subscription" && session.subscription) {
-      const subscription =
-        typeof session.subscription === "string"
-          ? await stripe.subscriptions.retrieve(session.subscription)
-          : session.subscription;
+    if (session.mode === "subscription") {
+      // BULLETPROOF: Multiple checks for trial detection
+      
+      // CHECK 1: Session subscription_data has trial_period_days
+      if (session.subscription_data?.trial_period_days && session.subscription_data.trial_period_days > 0) {
+        isTrial = true;
+        console.log(`[Checkout Session Details] Trial detected via subscription_data.trial_period_days: ${session.subscription_data.trial_period_days}`);
+      }
+      
+      // CHECK 2: Check subscription object if available
+      if (session.subscription) {
+        const subscription =
+          typeof session.subscription === "string"
+            ? await stripe.subscriptions.retrieve(session.subscription, {
+                expand: ["items.data.price"]
+              })
+            : session.subscription;
 
-      // Check if subscription has a trial - check trial_end, trial_start, or status
-      isTrial = !!(
-        subscription.trial_end || 
-        subscription.trial_start ||
-        subscription.status === "trialing"
-      );
+        // Check if subscription has a trial - check trial_end, trial_start, or status
+        const hasTrialEnd = !!subscription.trial_end;
+        const hasTrialStart = !!subscription.trial_start;
+        const isTrialingStatus = subscription.status === "trialing";
+        
+        if (hasTrialEnd || hasTrialStart || isTrialingStatus) {
+          isTrial = true;
+          console.log(`[Checkout Session Details] Trial detected via subscription: trial_end=${hasTrialEnd}, trial_start=${hasTrialStart}, status=${subscription.status}`);
+        }
 
-      if (!isTrial && subscription.items?.data?.[0]?.price) {
-        value = (subscription.items.data[0].price.unit_amount || 0) / 100;
-        currency = subscription.currency?.toUpperCase() || "USD";
+        // Get value only if NOT a trial
+        if (!isTrial && subscription.items?.data?.[0]?.price) {
+          value = (subscription.items.data[0].price.unit_amount || 0) / 100;
+          currency = subscription.currency?.toUpperCase() || "USD";
+        }
+      }
+      
+      // CHECK 3: If amount_total is 0/null and subscription_data has trial_period_days, it's a trial
+      if (!isTrial && (session.amount_total === 0 || session.amount_total === null) && session.subscription_data?.trial_period_days) {
+        isTrial = true;
+        console.log(`[Checkout Session Details] Trial detected via amount_total check (no payment collected)`);
       }
     } else if (session.mode === "payment" && session.amount_total) {
       // For one-time payments (lifetime), use amount_total
       value = session.amount_total / 100; // Convert cents to dollars
       currency = session.currency?.toUpperCase() || "USD";
+      isTrial = false; // Lifetime purchases are never trials
     }
 
     return NextResponse.json({

@@ -377,30 +377,25 @@ export class CymasphereQuickstartPDF {
     currentY += step2Height + 10;
     
     // Step 3: Virtual MIDI Setup
-    const step3Height = this.addStepCard('3', 'Set Up Virtual MIDI Device', [
-      'To use Cymasphere with your DAW, you need a virtual MIDI device:',
+    const step3Height = this.addStepCard('3', 'Configure MIDI Routing', [
+      'Cymasphere includes a built-in virtual MIDI output that is enabled by default:',
       '',
-      'macOS:',
-      '• Open "Audio MIDI Setup" (Applications > Utilities)',
-      '• Click "Window" > "Show MIDI Studio"',
-      '• Double-click "IAC Driver"',
-      '• Check "Device is online"',
-      '• Click "Done"',
+      '• No setup required—Cymasphere Virtual Output is automatically available',
+      '• No additional software installation needed (no IAC Driver or LoopMIDI required)',
       '',
-      'Windows:',
-      '• Download and install LoopMIDI from tobias-erichsen.de',
-      '• Launch LoopMIDI and click "+" to create a new port',
-      '• Name it (e.g., "Cymasphere MIDI")',
-      '• Keep LoopMIDI running while using Cymasphere',
-      '',
-      'After creating and enabling the virtual MIDI device:',
+      'To use Cymasphere with your DAW:',
       '',
       'In Logic Pro:',
       '• Create a software instrument track',
-      '• Add an External Instrument track, and set the MIDI destination to the IAC Driver (macOS) or LoopMIDI port (Windows)',
+      '• Add an External Instrument track, and set the MIDI destination to "Cymasphere Virtual Output"',
       '• Add an instrument track with any virtual instrument',
       '',
-      'Now Cymasphere will output MIDI to the virtual MIDI device, which will come back into the DAW like an external keyboard, and any record-enabled instrument tracks will play that MIDI.'
+      'In other DAWs:',
+      '• Set the MIDI input to "Cymasphere Virtual Output"',
+      '• Create an instrument track with your desired virtual instrument',
+      '• Record-enable the instrument track',
+      '',
+      'Now Cymasphere will output MIDI through Cymasphere Virtual Output, which will come back into your DAW like an external keyboard, and any record-enabled instrument tracks will play that MIDI.'
     ], currentY);
     
     currentY += step3Height + 10;

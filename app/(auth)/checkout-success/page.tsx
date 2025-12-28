@@ -205,10 +205,58 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const { user, refreshUser, loading: authLoading } = useAuth();
   const isSignedUp = searchParams.get("isSignedUp") === "true";
-  const isTrial = searchParams.get("isTrial") === "true";
+  // BULLETPROOF: Validate isTrial parameter - verify from session if needed
+  const isTrialParam = searchParams.get("isTrial");
+  let isTrial = isTrialParam === "true";
   const isLifetime = searchParams.get("isLifetime") === "true";
   const isLoggedIn = !!user;
   const sessionId = searchParams.get("session_id");
+  
+  // State to track verified trial status (double-check from session if URL param seems wrong)
+  const [verifiedIsTrial, setVerifiedIsTrial] = useState<boolean | null>(null);
+  
+  // BULLETPROOF: Double-check trial status from session if we have sessionId
+  // This catches any edge cases where URL param might be wrong
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    // Only verify if isTrial is false but mode is subscription (might be a trial we missed)
+    // Or if isTrial param is missing/null
+    if (isTrialParam === null || (isTrialParam === "false" && !isLifetime)) {
+      const verifyTrialStatus = async () => {
+        try {
+          const response = await fetch(
+            `/api/checkout-session-details?session_id=${sessionId}`
+          );
+          const data = await response.json();
+          
+          if (data.success) {
+            // If session says it's a trial but URL param says false, trust the session
+            if (data.isTrial === true && isTrialParam === "false") {
+              console.warn(`[Checkout Success] Trial mismatch detected! URL says false but session says true. Using session data.`);
+              setVerifiedIsTrial(true);
+            } else if (data.isTrial === false && isTrialParam === "true") {
+              console.warn(`[Checkout Success] Trial mismatch detected! URL says true but session says false. Using session data.`);
+              setVerifiedIsTrial(false);
+            } else {
+              setVerifiedIsTrial(data.isTrial || false);
+            }
+          }
+        } catch (error) {
+          console.error("[Checkout Success] Error verifying trial status:", error);
+          // If verification fails, trust the URL param
+          setVerifiedIsTrial(null);
+        }
+      };
+      
+      verifyTrialStatus();
+    }
+  }, [sessionId, isTrialParam, isLifetime]);
+  
+  // Use verified trial status if available, otherwise use URL param
+  if (verifiedIsTrial !== null) {
+    isTrial = verifiedIsTrial;
+  }
   const valueParam = searchParams.get("value");
   const currencyParam = searchParams.get("currency");
   const [subscriptionValue, setSubscriptionValue] = useState<number | null>(
@@ -409,6 +457,9 @@ function CheckoutSuccessContent() {
     // Get user data (extracted once to avoid dependency issues)
     const userId = user?.id || user?.profile?.id;
     const userEmail = user?.email || user?.profile?.email;
+    
+    // BULLETPROOF: Use verified trial status if available, otherwise use URL param
+    const finalIsTrial = verifiedIsTrial !== null ? verifiedIsTrial : isTrial;
 
     // Helper function to track event with user data and deduplication
     const trackEventWithUserData = async (
@@ -456,7 +507,7 @@ function CheckoutSuccessContent() {
       }
     };
 
-    if (isTrial) {
+    if (finalIsTrial) {
       // Track free trial as subscription_success with value 0
       trackEventWithUserData("subscription_success", {
         subscription: {
@@ -513,7 +564,7 @@ function CheckoutSuccessContent() {
           currency: subscriptionCurrency,
         },
       });
-    } else if (sessionId && !isTrial) {
+    } else if (sessionId && !finalIsTrial) {
       // If we have session_id but no value, fetch it from API
       fetch(`/api/checkout-session-details?session_id=${sessionId}`)
         .then((res) => res.json())
@@ -617,7 +668,8 @@ function CheckoutSuccessContent() {
       >
         <SuccessIcon />
 
-        {isTrial ? (
+        {/* BULLETPROOF: Use verified trial status if available, otherwise use URL param */}
+        {(verifiedIsTrial !== null ? verifiedIsTrial : isTrial) ? (
           <>
             <Title>🎉 Free Trial Activated!</Title>
             <Subtitle>Welcome to Cymasphere Pro - No Charge Today</Subtitle>

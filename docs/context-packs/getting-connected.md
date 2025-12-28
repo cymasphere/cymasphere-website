@@ -20,14 +20,14 @@ Per‑video context packs
 
 - Use case: Use Cymasphere Standalone to control instruments in your DAW via virtual MIDI.
 - Objectives:
-  - Enable/choose a virtual MIDI device (IAC on macOS).
-  - Set Cymasphere MIDI Out → virtual MIDI.
-  - Set DAW MIDI In → virtual MIDI on an instrument track; verify meters.
+  - Use Cymasphere Virtual Output (enabled by default).
+  - Set Cymasphere MIDI Out → Cymasphere Virtual Output.
+  - Set DAW MIDI In → Cymasphere Virtual Output on an instrument track; verify meters.
 - Interfaces to show: Cymasphere MIDI Out selector; DAW track input/monitor.
 - Steps:
-  1. macOS: Audio MIDI Setup → enable IAC Driver; create a port.
-  2. Cymasphere Standalone → set MIDI Out to the IAC port.
-  3. DAW: create Software Instrument track with MIDI input from that port; arm/monitor.
+  1. Cymasphere Virtual Output is enabled by default—no setup needed!
+  2. Cymasphere Standalone → set MIDI Out to "Cymasphere Virtual Output".
+  3. DAW: create Software Instrument track with MIDI input from "Cymasphere Virtual Output"; arm/monitor.
   4. Play a voicing; confirm meters and sound.
 - Pitfalls/Fixes: No virtual port; DAW input not set; track not monitoring.
 - References: Feature Catalog 15.1 (routing overview); DAW docs for virtual MIDI.

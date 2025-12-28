@@ -78,8 +78,8 @@ This plan outlines all video content for the Cymasphere tutorial system, organiz
 **Duration**: 3-5 minutes
 **Description**: Send MIDI from Cymasphere Standalone to your DAW via virtual MIDI.
 **Learning Objectives**:
-- Enable/choose virtual MIDI (IAC/LoopMIDI)
-- Set Cymasphere MIDI Out and DAW MIDI In
+- Use Cymasphere Virtual Output (enabled by default)
+- Set Cymasphere MIDI Out and DAW MIDI In to Cymasphere Virtual Output
 - Verify meter activity and sound
 
 #### **Video 1.3.2: "Plugin Setup in DAW"**
