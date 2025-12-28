@@ -1048,8 +1048,6 @@ export default function BillingPage() {
                         ? "Elite Access"
                         : isSubscriptionLifetime(userSubscription.subscription)
                         ? t("dashboard.billing.lifetimePlan", "Lifetime")
-                        : isInTrialPeriod
-                        ? t("dashboard.billing.trialPlan", "Free Trial")
                         : subscriptionInterval === "month"
                         ? t("dashboard.billing.monthly", "Monthly")
                         : t("dashboard.billing.yearly", "Yearly")}
