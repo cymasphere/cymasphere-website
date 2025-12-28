@@ -1221,23 +1221,51 @@ export default function BillingPage() {
                 {!isSubscriptionNone(userSubscription.subscription) &&
                   !isSubscriptionLifetime(userSubscription.subscription) &&
                   hasNfr !== true && (
-                    <div style={{ marginTop: "0" }}>
-                      <div
-                        style={{
-                          fontSize: "0.9rem",
-                          color: "var(--text-secondary)",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        {t(
-                          "dashboard.billing.nextBilling",
-                          "Next billing date"
+                    <div style={{ marginTop: "0", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+                      <div style={{ flex: "1", minWidth: "200px" }}>
+                        <div
+                          style={{
+                            fontSize: "0.9rem",
+                            color: "var(--text-secondary)",
+                            marginBottom: "0.25rem",
+                          }}
+                        >
+                          {t(
+                            "dashboard.billing.nextBilling",
+                            "Next billing date"
+                          )}
+                          :
+                        </div>
+                        <div>
+                          {formatDate(userSubscription.subscription_expiration)}
+                        </div>
+                      </div>
+                      
+                      {/* Trial Status - show if we know the status, but not for lifetime or Elite access */}
+                      {hasHadTrial !== null &&
+                        !hasNfr &&
+                        !isSubscriptionLifetime(userSubscription.subscription) && (
+                          <div
+                            style={{
+                              padding: "0.75rem",
+                              background: "rgba(16, 185, 129, 0.1)",
+                              borderRadius: "6px",
+                              fontSize: "0.9rem",
+                              display: "flex",
+                              alignItems: "center",
+                              color: "var(--success)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <FaCheck
+                              style={{ marginRight: "0.5rem", flexShrink: 0 }}
+                            />
+                            {t(
+                              "dashboard.billing.usedFreeTrial",
+                              "You used your free trial to start this subscription"
+                            )}
+                          </div>
                         )}
-                        :
-                      </div>
-                      <div>
-                        {formatDate(userSubscription.subscription_expiration)}
-                      </div>
                     </div>
                   )}
 
@@ -1268,32 +1296,6 @@ export default function BillingPage() {
                     )}
                   </div>
                 )}
-
-                {/* Trial Status - show if we know the status, but not for lifetime or Elite access */}
-                {hasHadTrial !== null &&
-                  !hasNfr &&
-                  !isSubscriptionLifetime(userSubscription.subscription) && (
-                    <div
-                      style={{
-                        marginTop: "0.75rem",
-                        padding: "0.75rem",
-                        background: "rgba(16, 185, 129, 0.1)",
-                        borderRadius: "6px",
-                        fontSize: "0.9rem",
-                        display: "flex",
-                        alignItems: "center",
-                        color: "var(--success)",
-                      }}
-                    >
-                      <FaCheck
-                        style={{ marginRight: "0.5rem", flexShrink: 0 }}
-                      />
-                      {t(
-                        "dashboard.billing.usedFreeTrial",
-                        "You used your free trial to start this subscription"
-                      )}
-                    </div>
-                  )}
               </div>
             </PlanDetails>
 
