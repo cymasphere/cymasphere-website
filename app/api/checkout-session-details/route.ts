@@ -64,7 +64,12 @@ export async function GET(request: NextRequest) {
           ? await stripe.subscriptions.retrieve(session.subscription)
           : session.subscription;
 
-      isTrial = !!subscription.trial_end;
+      // Check if subscription has a trial - check trial_end, trial_start, or status
+      isTrial = !!(
+        subscription.trial_end || 
+        subscription.trial_start ||
+        subscription.status === "trialing"
+      );
 
       if (!isTrial && subscription.items?.data?.[0]?.price) {
         value = (subscription.items.data[0].price.unit_amount || 0) / 100;

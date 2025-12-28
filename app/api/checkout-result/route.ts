@@ -51,28 +51,46 @@ export async function GET(request: NextRequest) {
     const isSignedUp = sessionResult.metadata?.is_signed_up === "true";
 
     // Determine if this is a free trial
-    // A subscription has a trial if:
-    // 1. hasTrialPeriod flag is true (from getCheckoutSessionResult)
-    // 2. OR subscription has a trial_end timestamp
-    // 3. OR subscription status is "trialing"
-    const isTrial =
-      sessionResult.mode === "subscription" &&
-      (sessionResult.hasTrialPeriod === true ||
-        (sessionResult.subscription &&
-          typeof sessionResult.subscription !== "string" &&
-          (sessionResult.subscription.trial_end || 
-           sessionResult.subscription.status === "trialing")));
+    // We need to check the subscription directly to see if it has a trial
+    let isTrial = false;
+    let subscription: any = null;
+    
+    if (sessionResult.mode === "subscription") {
+      // Get the subscription object (retrieve if it's just an ID)
+      if (sessionResult.subscription) {
+        if (typeof sessionResult.subscription === "string") {
+          // Need to retrieve the subscription to check trial status
+          const { default: Stripe } = await import("stripe");
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+          subscription = await stripe.subscriptions.retrieve(sessionResult.subscription);
+        } else {
+          subscription = sessionResult.subscription;
+        }
+        
+        // Check if subscription has a trial
+        // A subscription has a trial if:
+        // 1. It has a trial_end timestamp (even if in the past, it means it had a trial)
+        // 2. OR the status is explicitly "trialing"
+        // 3. OR trial_start exists (indicates trial was set up)
+        isTrial = !!(
+          subscription.trial_end || 
+          subscription.status === "trialing" ||
+          subscription.trial_start
+        );
+      } else if (sessionResult.hasTrialPeriod === true) {
+        // Fallback to the hasTrialPeriod flag if subscription isn't available
+        isTrial = true;
+      }
+    }
 
     // Log trial detection for debugging
     console.log(`[Checkout Result] Trial Detection:`, {
       mode: sessionResult.mode,
       hasTrialPeriod: sessionResult.hasTrialPeriod,
-      subscriptionStatus: sessionResult.subscription && typeof sessionResult.subscription !== "string" 
-        ? sessionResult.subscription.status 
-        : 'N/A',
-      trial_end: sessionResult.subscription && typeof sessionResult.subscription !== "string" 
-        ? sessionResult.subscription.trial_end 
-        : 'N/A',
+      subscriptionId: sessionResult.subscriptionId,
+      subscriptionStatus: subscription?.status || 'N/A',
+      trial_end: subscription?.trial_end || 'N/A',
+      trial_start: subscription?.trial_start || 'N/A',
       isTrial: isTrial
     });
 
@@ -80,14 +98,10 @@ export async function GET(request: NextRequest) {
     let subscriptionValue: number | undefined;
     let subscriptionCurrency: string | undefined;
 
-    if (
-      !isTrial &&
-      sessionResult.subscription &&
-      typeof sessionResult.subscription !== "string"
-    ) {
-      // Get the amount from the subscription
-      const subscription = sessionResult.subscription;
-      if (subscription.items?.data?.[0]?.price) {
+    // Use the subscription we already retrieved above
+    if (sessionResult.mode === "subscription" && subscription) {
+      // Get the amount from the subscription (only if not a trial)
+      if (!isTrial && subscription.items?.data?.[0]?.price) {
         subscriptionValue =
           (subscription.items.data[0].price.unit_amount || 0) / 100; // Convert cents to dollars
         subscriptionCurrency = subscription.currency?.toUpperCase() || "USD";
@@ -109,13 +123,8 @@ export async function GET(request: NextRequest) {
 
     // If this is a subscription with a trial, immediately refresh subscription status
     // This helps avoid race conditions where the plugin checks before webhook processes
-    if (
-      isTrial &&
-      sessionResult.subscription &&
-      typeof sessionResult.subscription !== "string"
-    ) {
+    if (isTrial && subscription) {
       try {
-        const subscription = sessionResult.subscription;
         const userId = sessionResult.metadata?.user_id;
 
         if (userId) {
