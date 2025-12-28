@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const isSignedUp = sessionResult.metadata?.is_signed_up === "true";
 
     // Determine if this is a free trial
-    // We need to check the subscription directly to see if it has a trial
+    // CRITICAL: For trials, we need to detect them reliably
     let isTrial = false;
     let subscription: any = null;
     
@@ -62,23 +62,33 @@ export async function GET(request: NextRequest) {
           // Need to retrieve the subscription to check trial status
           const { default: Stripe } = await import("stripe");
           const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-          subscription = await stripe.subscriptions.retrieve(sessionResult.subscription);
+          try {
+            subscription = await stripe.subscriptions.retrieve(sessionResult.subscription);
+          } catch (error) {
+            console.error("[Checkout Result] Error retrieving subscription:", error);
+          }
         } else {
           subscription = sessionResult.subscription;
         }
-        
-        // Check if subscription has a trial
-        // A subscription has a trial if:
-        // 1. It has a trial_end timestamp (even if in the past, it means it had a trial)
-        // 2. OR the status is explicitly "trialing"
-        // 3. OR trial_start exists (indicates trial was set up)
-        isTrial = !!(
-          subscription.trial_end || 
-          subscription.status === "trialing" ||
-          subscription.trial_start
-        );
-      } else if (sessionResult.hasTrialPeriod === true) {
-        // Fallback to the hasTrialPeriod flag if subscription isn't available
+      }
+      
+      // Check multiple indicators for trial:
+      // 1. hasTrialPeriod flag from session
+      // 2. Subscription status is "trialing"
+      // 3. Subscription has trial_end timestamp
+      // 4. Subscription has trial_start timestamp
+      // 5. Session amount_total is 0 or null (no payment collected)
+      const hasTrialFlag = sessionResult.hasTrialPeriod === true;
+      const isTrialingStatus = subscription?.status === "trialing";
+      const hasTrialEnd = !!subscription?.trial_end;
+      const hasTrialStart = !!subscription?.trial_start;
+      const noPaymentCollected = sessionResult.amountTotal === 0 || sessionResult.amountTotal === null || sessionResult.amountTotal === undefined;
+      
+      isTrial = hasTrialFlag || isTrialingStatus || hasTrialEnd || hasTrialStart || (noPaymentCollected && sessionResult.mode === "subscription");
+      
+      // If we have subscription but it says no trial, but hasTrialPeriod flag says yes, trust the flag
+      if (hasTrialFlag && subscription && !hasTrialEnd && !isTrialingStatus) {
+        // Flag says trial but subscription doesn't show it yet - trust the flag (subscription might not be fully created)
         isTrial = true;
       }
     }
