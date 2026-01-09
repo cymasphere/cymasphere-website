@@ -86,11 +86,11 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
                 Hi ${firstName}! We hope you've been enjoying Cymasphere Pro. Your free trial ends on <strong>${trialEndDateFormatted}</strong>, and we'd love to keep you creating with all the premium features you've been using.
               </p>
               
-              <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 8px; border-left: 4px solid #6c63ff;">
-                <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #6c63ff; text-transform: uppercase; letter-spacing: 0.5px;">
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #6c63ff;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #6c63ff; text-transform: uppercase; letter-spacing: 0.5px;">
                   Your Subscription
                 </p>
-                <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #333;">
+                <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #333;">
                   ${planName}
                 </p>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #666; line-height: 1.6;">
@@ -106,7 +106,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
               
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${updatePaymentMethodUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);">
+                <a href="${updatePaymentMethodUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
                   Continue Your Journey →
                 </a>
               </div>
