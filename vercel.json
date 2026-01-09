@@ -5,6 +5,10 @@
     {
       "path": "/api/email-campaigns/process-scheduled",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/trial-ending-reminders/send",
+      "schedule": "0 9 * * *"
     }
   ],
   "functions": {
@@ -16,6 +20,9 @@
     },
     "app/api/email-campaigns/campaigns/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/trial-ending-reminders/send/route.ts": {
+      "maxDuration": 60
     }
   }
 }
