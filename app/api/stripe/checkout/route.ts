@@ -770,26 +770,53 @@ async function createCheckoutSession(
     let hasAutoDiscount = false;
     try {
       const supabase = await createSupabaseServiceRole();
-      const { data: activePromotion } = await supabase
+      
+      // Fetch all active promotions, then filter by plan and date in JavaScript
+      // This is more reliable than using .contains() with array syntax
+      const { data: promotions, error: promoError } = await supabase
         .from('promotions')
         .select('*')
         .eq('active', true)
-        .contains('applicable_plans', [planType])
-        .order('priority', { ascending: false })
-        .limit(1)
-        .single();
+        .order('priority', { ascending: false });
 
-      if (activePromotion && activePromotion.stripe_coupon_code) {
-        // Check if promotion is within date range
+      if (promoError) {
+        console.error('Error fetching promotions:', promoError);
+        throw promoError;
+      }
+
+      if (promotions && promotions.length > 0) {
         const now = new Date();
-        const startValid = !activePromotion.start_date || new Date(activePromotion.start_date) <= now;
-        const endValid = !activePromotion.end_date || new Date(activePromotion.end_date) >= now;
+        
+        // Find the highest priority promotion that:
+        // 1. Applies to this plan type
+        // 2. Is within date range (or has no date restrictions)
+        const activePromotion = promotions.find(promo => {
+          // Check if plan is applicable
+          const planApplicable = promo.applicable_plans && 
+            Array.isArray(promo.applicable_plans) && 
+            promo.applicable_plans.includes(planType);
+          
+          if (!planApplicable) return false;
 
-        if (startValid && endValid) {
+          // Check date range
+          const startValid = !promo.start_date || new Date(promo.start_date) <= now;
+          const endValid = !promo.end_date || new Date(promo.end_date) >= now;
+
+          return startValid && endValid;
+        });
+
+        if (activePromotion && activePromotion.stripe_coupon_code) {
           // Validate that the coupon exists in Stripe before applying
           try {
-            await stripe.coupons.retrieve(activePromotion.stripe_coupon_code);
-            // Coupon exists, safe to apply
+            const coupon = await stripe.coupons.retrieve(activePromotion.stripe_coupon_code);
+            
+            // Double-check coupon is valid
+            if (!coupon.valid) {
+              console.warn(`⚠️ Coupon ${activePromotion.stripe_coupon_code} exists but is not valid`);
+              throw new Error('Coupon is not valid');
+            }
+            
+            // Coupon exists and is valid, safe to apply
             sessionParams.discounts = [
               {
                 coupon: activePromotion.stripe_coupon_code,
@@ -797,15 +824,27 @@ async function createCheckoutSession(
             ];
             hasAutoDiscount = true;
             console.log(`🎁 Auto-applying promotion coupon: ${activePromotion.stripe_coupon_code} for ${planType} plan`);
+            console.log(`📊 Promotion details:`, {
+              name: activePromotion.name,
+              title: activePromotion.title,
+              discount_type: activePromotion.discount_type,
+              discount_value: activePromotion.discount_value,
+              priority: activePromotion.priority,
+            });
           } catch (couponError: any) {
-            // Coupon doesn't exist in Stripe
-            console.warn(`⚠️ Coupon ${activePromotion.stripe_coupon_code} not found in Stripe, skipping auto-apply`);
+            // Coupon doesn't exist in Stripe or is invalid
+            console.warn(`⚠️ Coupon ${activePromotion.stripe_coupon_code} not found or invalid in Stripe:`, couponError.message);
+            console.warn(`   Promotion: ${activePromotion.name} (${activePromotion.title})`);
             // Continue without discount - user can still enter code manually
           }
+        } else {
+          console.log(`ℹ️ No active promotion found for ${planType} plan (checked ${promotions.length} active promotions)`);
         }
+      } else {
+        console.log(`ℹ️ No active promotions in database`);
       }
     } catch (error) {
-      console.log('No active promotion found for plan:', planType);
+      console.error('Error in promotion lookup:', error);
       // Continue without discount if promotion lookup fails
     }
 
