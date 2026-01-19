@@ -2213,6 +2213,22 @@ async function sendSupportTicketEmailNotificationToAdmin(
 
     const messageChainHtmlString = messageChainHtml.join("");
 
+    // Determine if this is a new ticket or a response
+    const isNewTicket = (messages || []).length === 1;
+    const emailTitle = isNewTicket
+      ? "New Support Ticket"
+      : "New Response to Support Ticket";
+    const emailSubject = isNewTicket
+      ? `New Support Ticket: ${ticket.ticket_number} - ${ticket.subject}`
+      : `New User Response: ${ticket.ticket_number} - ${ticket.subject}`;
+    const emailIntro = isNewTicket
+      ? `A new support ticket has been created: <strong>${
+          ticket.ticket_number
+        }</strong>: "${ticket.subject}".`
+      : `A user has responded to support ticket <strong>${
+          ticket.ticket_number
+        }</strong>: "${ticket.subject}".`;
+
     // Generate admin ticket view URL - opens ticket modal
     const baseUrl = "https://www.cymasphere.com";
     const ticketUrl = `${baseUrl}/admin/support-tickets?ticket=${ticketId}`;
@@ -2224,7 +2240,7 @@ async function sendSupportTicketEmailNotificationToAdmin(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Response to Support Ticket</title>
+    <title>${emailTitle}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; padding: 20px 0;">
@@ -2241,12 +2257,10 @@ async function sendSupportTicketEmailNotificationToAdmin(
                     <tr>
                         <td style="padding: 30px 24px;">
                             <h1 style="font-size: 1.5rem; color: #333; margin: 0 0 20px 0; font-weight: 600;">
-                                New Response to Support Ticket
+                                ${emailTitle}
                             </h1>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
-                                A user has responded to support ticket <strong>${
-                                  ticket.ticket_number
-                                }</strong>: "${ticket.subject}".
+                                ${emailIntro}
                             </p>
                             <p style="color: #666; line-height: 1.6; margin: 0 0 20px 0;">
                                 <strong>User:</strong> ${
@@ -2299,11 +2313,15 @@ async function sendSupportTicketEmailNotificationToAdmin(
 
     // Create plain text version
     const emailText = `
-New Response to Support Ticket
+${emailTitle}
 
-A user has responded to support ticket ${ticket.ticket_number}: "${
+${isNewTicket
+  ? `A new support ticket has been created: ${ticket.ticket_number}: "${
       ticket.subject
-    }".
+    }".`
+  : `A user has responded to support ticket ${ticket.ticket_number}: "${
+      ticket.subject
+    }".`}
 
 User: ${userName || userEmail}
 Email: ${userEmail}
@@ -2339,7 +2357,7 @@ This is an automated notification from Cymasphere Support.
     // Send email to admin
     const emailResult = await sendEmail({
       to: "support@cymasphere.com",
-      subject: `New User Response: ${ticket.ticket_number} - ${ticket.subject}`,
+      subject: emailSubject,
       html: emailHtml,
       text: emailText,
       from: "Cymasphere Support <support@cymasphere.com>",
@@ -2701,19 +2719,32 @@ export async function createSupportTicket(data: {
 
     // Create the initial message
     if (ticket) {
-      const { error: messageError } = await supabase
+      const { data: message, error: messageError } = await supabase
         .from("support_messages")
         .insert({
           ticket_id: ticket.id,
           user_id: user.id,
           content: data.description,
           is_admin: false, // User creates it
-        });
+        })
+        .select("id")
+        .single();
 
       if (messageError) {
         console.error("Error creating initial message:", messageError);
         // Ticket was created but message failed - still return success
         // as the ticket exists
+      } else if (message) {
+        // Send email notification to support@cymasphere.com when user creates a ticket
+        try {
+          await sendSupportTicketEmailNotificationToAdmin(ticket.id, message.id);
+        } catch (emailError) {
+          // Don't fail the ticket creation if email fails
+          console.error(
+            "Error sending support ticket email notification to admin:",
+            emailError
+          );
+        }
       }
     }
 
