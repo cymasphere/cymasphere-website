@@ -191,12 +191,12 @@ const DownloadButton = styled.a<{ disabled?: boolean }>`
   }
 `;
 
-const ComingSoonBadge = styled.div`
+const LiveBadge = styled.div`
   position: absolute;
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
   color: white;
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
@@ -204,7 +204,7 @@ const ComingSoonBadge = styled.div`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
   z-index: 10;
   white-space: nowrap;
 `;
@@ -567,9 +567,9 @@ function Downloads() {
             </DownloadItem>
 
             <DownloadItemWithBadge>
-              <ComingSoonBadge>
-                {t("dashboard.downloads.comingSoon", "Coming Soon")}
-              </ComingSoonBadge>
+              <LiveBadge>
+                {t("dashboard.downloads.live", "Live")}
+              </LiveBadge>
               <DownloadHeader>
                 <DownloadIcon>
                   <FaTabletAlt />
@@ -589,23 +589,21 @@ function Downloads() {
                   <DownloadDescription>
                     {t(
                       "dashboard.downloads.ipadDesc",
-                      "Native iPad app with full feature set, optimized for iPad. Available soon on the App Store."
+                      "Native iPad app with full feature set, optimized for iPad. Available now on the App Store."
                     )}
                   </DownloadDescription>
                   <DownloadMeta>
                     <DownloadSize>—</DownloadSize>
                     <DownloadDate>
-                      {t("dashboard.downloads.comingSoon", "Coming Soon")}
+                      {t("dashboard.downloads.availableNow", "Available Now")}
                     </DownloadDate>
                   </DownloadMeta>
                 </div>
                 <DownloadButtonContainer>
                   <DownloadButton
-                    href="#"
-                    disabled={true}
-                    onClick={(e) => {
-                      e.preventDefault();
-                    }}
+                    href="https://apps.apple.com/us/app/cymasphere/id6749278520"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <FaApple />{" "}
                     {t(
