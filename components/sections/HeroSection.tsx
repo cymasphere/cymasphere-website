@@ -23,6 +23,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { FaApple, FaWindows, FaTabletAlt, FaPlug } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
 import { getPresetById } from "@/utils/presets";
@@ -148,6 +149,84 @@ const SecondaryButton = styled(motion.a)`
   &:hover {
     background: rgba(108, 99, 255, 0.1);
     border-color: var(--accent);
+  }
+`;
+
+const PlatformAvailability = styled(motion.div)`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: 1rem 0;
+
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding: 0.75rem 0;
+  }
+`;
+
+const PlatformBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  svg {
+    color: var(--primary);
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    background: rgba(108, 99, 255, 0.15);
+    border-color: rgba(108, 99, 255, 0.5);
+    color: var(--text);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+
+    svg {
+      font-size: 1rem;
+    }
+  }
+`;
+
+const FormatBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+
+  svg {
+    color: var(--accent);
+    font-size: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+
+    svg {
+      font-size: 0.9rem;
+    }
   }
 `;
 
@@ -1072,6 +1151,29 @@ const HeroSection = () => {
         >
           {t("hero.subtitle", "Enter the next evolution of music creation, where theoretical foundations invisibly guide your workflow. Chords and melodies connect with purpose, empowering your unique musical vision.")}
         </HeroSubtitle>
+
+        <PlatformAvailability
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
+          <PlatformBadge>
+            <FaApple />
+            {t("hero.platforms.macos", "macOS")}
+          </PlatformBadge>
+          <PlatformBadge>
+            <FaWindows />
+            {t("hero.platforms.windows", "Windows")}
+          </PlatformBadge>
+          <PlatformBadge>
+            <FaTabletAlt />
+            {t("hero.platforms.ipad", "iPad")}
+          </PlatformBadge>
+          <FormatBadge>
+            <FaPlug />
+            AU · VST3
+          </FormatBadge>
+        </PlatformAvailability>
 
         <ButtonGroup
           initial={{ opacity: 0 }}

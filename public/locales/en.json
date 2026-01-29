@@ -75,6 +75,11 @@
     "tooltips": {
       "playNote": "Click to play this note",
       "playChord": "Click to play the chord"
+    },
+    "platforms": {
+      "macos": "macOS",
+      "windows": "Windows",
+      "ipad": "iPad"
     }
   },
   "features": {
