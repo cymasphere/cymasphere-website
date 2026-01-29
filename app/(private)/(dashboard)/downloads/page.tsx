@@ -191,29 +191,6 @@ const DownloadButton = styled.a<{ disabled?: boolean }>`
   }
 `;
 
-const LiveBadge = styled.div`
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #4ecdc4, #44a08d);
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
-  z-index: 10;
-  white-space: nowrap;
-`;
-
-const DownloadItemWithBadge = styled(DownloadItem)`
-  position: relative;
-  overflow: visible;
-`;
-
 const ResourcesSection = styled.div`
   margin-top: 2rem;
 `;
@@ -566,10 +543,7 @@ function Downloads() {
               </DownloadDetails>
             </DownloadItem>
 
-            <DownloadItemWithBadge>
-              <LiveBadge>
-                {t("dashboard.downloads.live", "Live")}
-              </LiveBadge>
+            <DownloadItem>
               <DownloadHeader>
                 <DownloadIcon>
                   <FaTabletAlt />
@@ -613,7 +587,7 @@ function Downloads() {
                   </DownloadButton>
                 </DownloadButtonContainer>
               </DownloadDetails>
-            </DownloadItemWithBadge>
+            </DownloadItem>
           </DownloadsGrid>
         </CardContent>
       </DownloadCard>
