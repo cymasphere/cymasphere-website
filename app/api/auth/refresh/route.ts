@@ -75,24 +75,6 @@ const err = (code: string, message: string): NextResponse<UserResponse> => {
 };
 
 /**
- * Supabase server client instance for authentication operations
- * Cookies are not used in this API route (stateless authentication)
- */
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      setAll(_cookiesToSet) {},
-    },
-  }
-);
-
-/**
  * @brief POST endpoint to refresh an authentication session
  * 
  * Refreshes an expired or expiring session by validating the refresh token and
@@ -197,6 +179,40 @@ export async function POST(
   request: NextRequest
 ): Promise<NextResponse<UserResponse>> {
   try {
+    // Extract client IP and device info from request headers for session metadata
+    // Supports both direct IP and proxied requests (x-forwarded-for)
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip");
+    const userAgent = request.headers.get("user-agent");
+
+    const allHeaders: Record<string, string> = {};
+    if (clientIp) {
+      allHeaders["X-Forwarded-For"] = clientIp;
+    }
+    if (userAgent) {
+      allHeaders["User-Agent"] = userAgent;
+    }
+
+    // Create Supabase server client with forwarded headers so session has device metadata
+    // Cookies are not used in this API route (stateless authentication)
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return [];
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          setAll(_cookiesToSet) {},
+        },
+        global: {
+          headers: allHeaders,
+        },
+      }
+    );
+
     // Parse form data from request body
     const body = await request.formData();
     const access_token = body.get("access_token")?.toString();
