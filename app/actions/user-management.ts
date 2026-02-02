@@ -1869,7 +1869,7 @@ async function sendSupportTicketEmailNotification(
 
     // Generate ticket view URL - always use production URL for emails
     const baseUrl = "https://www.cymasphere.com";
-    const ticketUrl = `${baseUrl}/dashboard/support?ticket=${ticketId}`;
+    const ticketUrl = `${baseUrl}/support?ticket=${ticketId}`;
 
     // Create email HTML
     const emailHtml = `
@@ -1935,7 +1935,7 @@ async function sendSupportTicketEmailNotification(
                             </p>
                             <p style="margin: 0;">
                                 <a href="${baseUrl}" style="color: #6c63ff; text-decoration: none;">Visit our website</a> | 
-                                <a href="${baseUrl}/dashboard/support" style="color: #6c63ff; text-decoration: none;">View all tickets</a>
+                                <a href="${baseUrl}/support" style="color: #6c63ff; text-decoration: none;">View all tickets</a>
                             </p>
                         </td>
                     </tr>

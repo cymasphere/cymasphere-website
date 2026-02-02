@@ -120,7 +120,7 @@ export async function sendEmail({
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     } else {
       // Default unsubscribe URL
-      const defaultUnsubscribe = `https://www.cymasphere.com/dashboard/support`;
+      const defaultUnsubscribe = `https://www.cymasphere.com/support`;
       headers.push(`List-Unsubscribe: <${defaultUnsubscribe}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     }
@@ -321,7 +321,7 @@ export async function sendBatchEmail({
       headers.push(`List-Unsubscribe: <${listUnsubscribe}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     } else {
-      const defaultUnsubscribe = `https://www.cymasphere.com/dashboard/support`;
+      const defaultUnsubscribe = `https://www.cymasphere.com/support`;
       headers.push(`List-Unsubscribe: <${defaultUnsubscribe}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     }
