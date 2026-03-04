@@ -15,9 +15,12 @@ import { SubscriptionType } from "@/utils/supabase/types";
 import { PlanType, PriceData } from "@/types/stripe";
 
 /**
- * Stripe client instance initialized with secret key
+ * Stripe client instance initialized with secret key.
+ * Uses fixed API version for consistent behavior (promotion codes use promotion.coupon, not top-level coupon).
  */
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-11-20.acacia",
+});
 
 /**
  * @brief Server action to initiate Stripe checkout process
@@ -1189,49 +1192,57 @@ export async function createPromotionCode(
   expiresAt?: number
 ): Promise<{ success: boolean; promotionCode?: any; error?: string }> {
   try {
-    const promotionCodeData: Stripe.PromotionCodeCreateParams = {
-      coupon: couponId,
+    // Build params with only allowed keys. Do not send top-level "coupon" - API expects promotion.coupon only.
+    const promotionCodeData: Record<string, unknown> = {
+      promotion: {
+        type: "coupon",
+        coupon: couponId,
+      },
       max_redemptions: maxRedemptions,
     };
 
-    // Add custom code if provided
     if (code) {
       promotionCodeData.code = code.toUpperCase();
     }
-
-    // Add expiration if provided
-    if (expiresAt) {
+    if (expiresAt != null) {
       promotionCodeData.expires_at = expiresAt;
     }
 
-    const promotionCode = await stripe.promotionCodes.create(promotionCodeData);
+    const promotionCode = await stripe.promotionCodes.create(
+      promotionCodeData as Stripe.PromotionCodeCreateParams
+    );
 
-    // Serialize the promotion code object to plain object
+    // Resolve coupon from response (new API: promotion.coupon; legacy: top-level coupon)
+    const rawCoupon = (promotionCode as any).promotion?.coupon ?? (promotionCode as any).coupon;
+    const couponPayload =
+      rawCoupon == null
+        ? { id: "", name: null, percent_off: null, amount_off: null, currency: null }
+        : typeof rawCoupon === "string"
+          ? rawCoupon
+          : {
+              id: rawCoupon.id ?? "",
+              object: rawCoupon.object,
+              amount_off: rawCoupon.amount_off ?? null,
+              created: rawCoupon.created,
+              currency: rawCoupon.currency ?? null,
+              duration: rawCoupon.duration,
+              duration_in_months: rawCoupon.duration_in_months ?? null,
+              livemode: rawCoupon.livemode,
+              max_redemptions: rawCoupon.max_redemptions ?? null,
+              metadata: rawCoupon.metadata,
+              name: rawCoupon.name ?? null,
+              percent_off: rawCoupon.percent_off ?? null,
+              redeem_by: rawCoupon.redeem_by ?? null,
+              times_redeemed: rawCoupon.times_redeemed,
+              valid: rawCoupon.valid,
+            };
+
     const serializedPromotionCode = {
       id: promotionCode.id,
       object: promotionCode.object,
       active: promotionCode.active,
       code: promotionCode.code,
-      coupon:
-        typeof promotionCode.coupon === "string"
-          ? promotionCode.coupon
-          : {
-              id: promotionCode.coupon.id,
-              object: promotionCode.coupon.object,
-              amount_off: promotionCode.coupon.amount_off,
-              created: promotionCode.coupon.created,
-              currency: promotionCode.coupon.currency,
-              duration: promotionCode.coupon.duration,
-              duration_in_months: promotionCode.coupon.duration_in_months,
-              livemode: promotionCode.coupon.livemode,
-              max_redemptions: promotionCode.coupon.max_redemptions,
-              metadata: promotionCode.coupon.metadata,
-              name: promotionCode.coupon.name,
-              percent_off: promotionCode.coupon.percent_off,
-              redeem_by: promotionCode.coupon.redeem_by,
-              times_redeemed: promotionCode.coupon.times_redeemed,
-              valid: promotionCode.coupon.valid,
-            },
+      coupon: couponPayload,
       created: promotionCode.created,
       customer: promotionCode.customer,
       expires_at: promotionCode.expires_at,
@@ -1342,7 +1353,7 @@ export async function listPromotionCodes(options?: {
   try {
     const listParams: Stripe.PromotionCodeListParams = {
       limit: options?.limit || 100,
-      expand: ["data.coupon"], // Expand coupon data
+      expand: ["data.promotion.coupon", "data.coupon"], // New API uses promotion.coupon; keep data.coupon for backward compatibility
     };
 
     if (options?.active !== undefined) {
@@ -1355,33 +1366,38 @@ export async function listPromotionCodes(options?: {
 
     const promotionCodes = await stripe.promotionCodes.list(listParams);
 
-    // Serialize the promotion codes to plain objects
-    const serializedPromotionCodes = promotionCodes.data.map(
+    // Resolve coupon from new shape (promotion.coupon) or legacy (coupon)
+    const getCoupon = (pc: Stripe.PromotionCode) => {
+      const raw = (pc as any).promotion?.coupon ?? (pc as any).coupon;
+      if (raw == null) return { id: "", name: null, percent_off: null, amount_off: null, currency: null };
+      if (typeof raw === "string") return { id: raw, name: null, percent_off: null, amount_off: null, currency: null };
+      return {
+        id: raw?.id ?? "",
+        object: raw.object,
+        amount_off: raw.amount_off ?? null,
+        created: raw.created,
+        currency: raw.currency ?? null,
+        duration: raw.duration,
+        duration_in_months: raw.duration_in_months ?? null,
+        livemode: raw.livemode,
+        max_redemptions: raw.max_redemptions ?? null,
+        metadata: raw.metadata,
+        name: raw.name ?? null,
+        percent_off: raw.percent_off ?? null,
+        redeem_by: raw.redeem_by ?? null,
+        times_redeemed: raw.times_redeemed,
+        valid: raw.valid,
+      };
+    };
+
+    // Serialize the promotion codes to plain objects (filter out any undefined entries)
+    const serializedPromotionCodes = promotionCodes.data.filter(Boolean).map(
       (promotionCode) => ({
         id: promotionCode.id,
         object: promotionCode.object,
         active: promotionCode.active,
         code: promotionCode.code,
-        coupon:
-          typeof promotionCode.coupon === "string"
-            ? promotionCode.coupon
-            : {
-                id: promotionCode.coupon.id,
-                object: promotionCode.coupon.object,
-                amount_off: promotionCode.coupon.amount_off,
-                created: promotionCode.coupon.created,
-                currency: promotionCode.coupon.currency,
-                duration: promotionCode.coupon.duration,
-                duration_in_months: promotionCode.coupon.duration_in_months,
-                livemode: promotionCode.coupon.livemode,
-                max_redemptions: promotionCode.coupon.max_redemptions,
-                metadata: promotionCode.coupon.metadata,
-                name: promotionCode.coupon.name,
-                percent_off: promotionCode.coupon.percent_off,
-                redeem_by: promotionCode.coupon.redeem_by,
-                times_redeemed: promotionCode.coupon.times_redeemed,
-                valid: promotionCode.coupon.valid,
-              },
+        coupon: getCoupon(promotionCode),
         created: promotionCode.created,
         customer: promotionCode.customer,
         expires_at: promotionCode.expires_at,
