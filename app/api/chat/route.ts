@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { cymasphereRAG } from '@/lib/rag';
+import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
 
 /**
  * Chat message interface
@@ -685,6 +686,14 @@ function generateFallbackResponse(message: string, language: string = 'en'): str
  */
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request);
+    if (!checkRateLimit(clientIp, 20, 60)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body: ChatRequest = await request.json();
     const { message, conversationHistory, language } = body;
     

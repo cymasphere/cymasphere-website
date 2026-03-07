@@ -66,7 +66,8 @@ const Sidebar = styled.aside<SidebarProps>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(
+    background:
+      radial-gradient(
         circle at 30% 50%,
         rgba(108, 99, 255, 0.1),
         transparent 50%
@@ -277,7 +278,8 @@ const MobileMenu = styled(motion.div)`
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(
+    background:
+      radial-gradient(
         circle at 30% 50%,
         rgba(108, 99, 255, 0.15),
         transparent 50%
@@ -453,7 +455,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     try {
       setSidebarOpen(false);
       await signOut("local");
-      router.push("/login");
+      // Redirect is handled by (private)/layout when auth.user becomes null;
+      // avoid duplicate redirect to prevent flashing / redirect loops
     } catch (error) {
       console.error("Failed to log out:", error);
     }
@@ -503,14 +506,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       opacity: 0,
       transition: {
         duration: 0.3,
-        ease: "easeInOut",
       },
     },
     visible: {
       opacity: 1,
       transition: {
         duration: 0.3,
-        ease: "easeInOut",
       },
     },
   };
@@ -530,7 +531,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       transition: {
         delay: i * 0.1,
         duration: 0.3,
-        ease: "easeOut",
       },
     }),
   };
@@ -546,7 +546,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       y: 0,
       transition: {
         duration: 0.4,
-        ease: "easeOut",
       },
     },
     exit: {
@@ -554,7 +553,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       y: -10,
       transition: {
         duration: 0.3,
-        ease: "easeIn",
       },
     },
   };
@@ -562,7 +560,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Function to handle navigation with router
   const handleNavigation = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    path: string
+    path: string,
   ) => {
     e.preventDefault();
     setSidebarOpen(false);
@@ -572,280 +570,96 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardProvider>
       <LayoutContainer>
-      <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
-        <LogoContainer>
-          <Link href="/dashboard">
-            <CymasphereLogo
-              size="32px"
-              fontSize="1.4rem"
-              onClick={(e: React.MouseEvent<HTMLElement>) =>
-                handleNavigation(
-                  e as React.MouseEvent<HTMLAnchorElement>,
-                  "/dashboard"
-                )
-              }
-              className="dashboard-logo"
-            />
-          </Link>
-        </LogoContainer>
+        <Sidebar ref={sidebarRef} $isOpen={sidebarOpen}>
+          <LogoContainer>
+            <Link href="/dashboard">
+              <CymasphereLogo
+                size="32px"
+                fontSize="1.4rem"
+                onClick={(e: React.MouseEvent<HTMLElement>) =>
+                  handleNavigation(
+                    e as React.MouseEvent<HTMLAnchorElement>,
+                    "/dashboard",
+                  )
+                }
+                className="dashboard-logo"
+              />
+            </Link>
+          </LogoContainer>
 
-        <nav>
-          <Link href="/dashboard">
-            <NavItem
-              $active={pathname === "/dashboard" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/dashboard")}
-            >
-              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
-            </NavItem>
-          </Link>
-          <Link href="/profile">
-            <NavItem
-              $active={pathname === "/profile" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/profile")}
-            >
-              <FaUser /> {t("dashboard.layout.profile", "Profile")}
-            </NavItem>
-          </Link>
-          <Link href="/billing">
-            <NavItem
-              $active={pathname === "/billing" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/billing")}
-            >
-              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
-            </NavItem>
-          </Link>
-          <Link href="/downloads">
-            <NavItem
-              $active={pathname === "/downloads" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/downloads")}
-            >
-              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
-            </NavItem>
-          </Link>
-          <Link href="/getting-started">
-            <NavItem
-              $active={pathname === "/getting-started" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/getting-started")}
-            >
-              <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
-            </NavItem>
-          </Link>
-          <Link href="/support">
-            <NavItem
-              $active={pathname === "/support" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/support")}
-            >
-              <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
-            </NavItem>
-          </Link>
-          <Link href="/settings">
-            <NavItem
-              $active={pathname === "/settings" ? "true" : "false"}
-              onClick={(e) => handleNavigation(e, "/settings")}
-            >
-              <FaCog /> {t("dashboard.layout.settings", "Settings")}
-            </NavItem>
-          </Link>
-          {user.is_admin && (
-            <Link href="/admin">
+          <nav>
+            <Link href="/dashboard">
               <NavItem
-                $active={pathname.startsWith("/admin") ? "true" : "false"}
-                onClick={(e) => handleNavigation(e, "/admin")}
+                $active={pathname === "/dashboard" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/dashboard")}
               >
-                <FaShieldAlt />{" "}
-                {t("dashboard.layout.adminConsole", "Admin Console")}
+                <FaTachometerAlt />{" "}
+                {t("dashboard.layout.dashboard", "Dashboard")}
               </NavItem>
             </Link>
-          )}
-        </nav>
-
-        <UserInfo>
-          <UserName>
-            <h4>
-              {t("dashboard.layout.welcomeUser", "{{name}}", {
-                name: user_display_name,
-              })}
-            </h4>
-            <p>
-              {t("dashboard.layout.emailLabel", "{{email}}", {
-                email: user.email,
-              })}
-            </p>
-          </UserName>
-          <LogoutButton onClick={handleLogout}>
-            <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
-          </LogoutButton>
-        </UserInfo>
-      </Sidebar>
-      <MobileOverlay $isOpen={sidebarOpen} />
-      <MobileHeader>
-        <MobileLogoContent onClick={() => router.push("/dashboard")}>
-          <div
-            className="mobile-logo"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <span
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                fontFamily: '"Montserrat", sans-serif',
-                letterSpacing: "2px",
-                textTransform: "uppercase",
-                marginLeft: "6px",
-              }}
-            >
-              <span
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--primary), var(--accent))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
+            <Link href="/profile">
+              <NavItem
+                $active={pathname === "/profile" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/profile")}
               >
-                {t("common.brandFirst", "CYMA")}
-              </span>
-              <span style={{ color: "white" }}>
-                {t("common.brandSecond", "SPHERE")}
-              </span>
-            </span>
-          </div>
-        </MobileLogoContent>
-
-        <MenuButton onClick={toggleSidebar}>
-          {sidebarOpen ? <FaTimes /> : <FaBars />}
-        </MenuButton>
-      </MobileHeader>
-      {sidebarOpen && (
-        <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
-          <MobileNavTitle>
-            {t("dashboard.layout.account", "Account")}
-          </MobileNavTitle>
-
-          <Link href="/dashboard">
-            <MobileNavItem
-              $active={pathname === "/dashboard" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={0}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/dashboard")}
-            >
-              <FaTachometerAlt /> {t("dashboard.layout.dashboard", "Dashboard")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/profile">
-            <MobileNavItem
-              $active={pathname === "/profile" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={1}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/profile")}
-            >
-              <FaUser /> {t("dashboard.layout.profile", "Profile")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/billing">
-            <MobileNavItem
-              $active={pathname === "/billing" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={2}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/billing")}
-            >
-              <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/downloads">
-            <MobileNavItem
-              $active={pathname === "/downloads" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={3}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/downloads")}
-            >
-              <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/getting-started">
-            <MobileNavItem
-              $active={pathname === "/getting-started" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={4}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/getting-started")}
-            >
-              <FaRocket /> {t("dashboard.layout.gettingStarted", "Getting Started")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/support">
-            <MobileNavItem
-              $active={pathname === "/support" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={5}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/support")}
-            >
-              <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
-            </MobileNavItem>
-          </Link>
-
-          <Link href="/settings">
-            <MobileNavItem
-              $active={pathname === "/settings" ? "true" : "false"}
-              variants={menuItemVariants}
-              custom={6}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/settings")}
-            >
-              <FaCog /> {t("dashboard.layout.settings", "Settings")}
-            </MobileNavItem>
-          </Link>
-
-          {user.is_admin && (
-            <Link href="/admin">
-              <MobileNavItem
-                $active={pathname.startsWith("/admin") ? "true" : "false"}
-                variants={menuItemVariants}
-                custom={7}
-                initial="hidden"
-                animate="visible"
-                onClick={(e) => handleNavigation(e, "/admin")}
-              >
-                <FaShieldAlt />{" "}
-                {t("dashboard.layout.adminConsole", "Admin Console")}
-              </MobileNavItem>
+                <FaUser /> {t("dashboard.layout.profile", "Profile")}
+              </NavItem>
             </Link>
-          )}
+            <Link href="/billing">
+              <NavItem
+                $active={pathname === "/billing" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/billing")}
+              >
+                <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
+              </NavItem>
+            </Link>
+            <Link href="/downloads">
+              <NavItem
+                $active={pathname === "/downloads" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/downloads")}
+              >
+                <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
+              </NavItem>
+            </Link>
+            <Link href="/getting-started">
+              <NavItem
+                $active={pathname === "/getting-started" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/getting-started")}
+              >
+                <FaRocket />{" "}
+                {t("dashboard.layout.gettingStarted", "Getting Started")}
+              </NavItem>
+            </Link>
+            <Link href="/support">
+              <NavItem
+                $active={pathname === "/support" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/support")}
+              >
+                <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
+              </NavItem>
+            </Link>
+            <Link href="/settings">
+              <NavItem
+                $active={pathname === "/settings" ? "true" : "false"}
+                onClick={(e) => handleNavigation(e, "/settings")}
+              >
+                <FaCog /> {t("dashboard.layout.settings", "Settings")}
+              </NavItem>
+            </Link>
+            {user.is_admin && (
+              <Link href="/admin">
+                <NavItem
+                  $active={pathname.startsWith("/admin") ? "true" : "false"}
+                  onClick={(e) => handleNavigation(e, "/admin")}
+                >
+                  <FaShieldAlt />{" "}
+                  {t("dashboard.layout.adminConsole", "Admin Console")}
+                </NavItem>
+              </Link>
+            )}
+          </nav>
 
-          <Link href="/">
-            <MobileNavItem
-              $active="false"
-              variants={menuItemVariants}
-              custom={8}
-              initial="hidden"
-              animate="visible"
-              onClick={(e) => handleNavigation(e, "/")}
-            >
-              <FaHome /> {t("dashboard.layout.backToHome", "Back to Home")}
-            </MobileNavItem>
-          </Link>
-
-          <MobileFooterSection>
-            <MobileLanguageWrapper>
-              <NextLanguageSelector />
-            </MobileLanguageWrapper>
-
+          <UserInfo>
             <UserName>
               <h4>
                 {t("dashboard.layout.welcomeUser", "{{name}}", {
@@ -858,36 +672,224 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 })}
               </p>
             </UserName>
-
             <LogoutButton onClick={handleLogout}>
               <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
             </LogoutButton>
-          </MobileFooterSection>
-        </MobileMenu>
-      )}
-      <BackButtonContainer>
-        <NextLanguageSelector />
-        <BackButton
-          href="/"
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
-            handleNavigation(e, "/")
-          }
-        >
-          {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
-        </BackButton>
-      </BackButtonContainer>
-      <Content>
-        <PageTransition
-          key={pathname}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={pageVariants}
-        >
-          {children}
-        </PageTransition>
-      </Content>
-    </LayoutContainer>
+          </UserInfo>
+        </Sidebar>
+        <MobileOverlay $isOpen={sidebarOpen} />
+        <MobileHeader>
+          <MobileLogoContent onClick={() => router.push("/dashboard")}>
+            <div
+              className="mobile-logo"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <span
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: "bold",
+                  fontFamily: '"Montserrat", sans-serif',
+                  letterSpacing: "2px",
+                  textTransform: "uppercase",
+                  marginLeft: "6px",
+                }}
+              >
+                <span
+                  style={{
+                    background:
+                      "linear-gradient(90deg, var(--primary), var(--accent))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {t("common.brandFirst", "CYMA")}
+                </span>
+                <span style={{ color: "white" }}>
+                  {t("common.brandSecond", "SPHERE")}
+                </span>
+              </span>
+            </div>
+          </MobileLogoContent>
+
+          <MenuButton onClick={toggleSidebar}>
+            {sidebarOpen ? <FaTimes /> : <FaBars />}
+          </MenuButton>
+        </MobileHeader>
+        {sidebarOpen && (
+          <MobileMenu initial="hidden" animate="visible" variants={fadeIn}>
+            <MobileNavTitle>
+              {t("dashboard.layout.account", "Account")}
+            </MobileNavTitle>
+
+            <Link href="/dashboard">
+              <MobileNavItem
+                $active={pathname === "/dashboard" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={0}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/dashboard")}
+              >
+                <FaTachometerAlt />{" "}
+                {t("dashboard.layout.dashboard", "Dashboard")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/profile">
+              <MobileNavItem
+                $active={pathname === "/profile" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={1}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/profile")}
+              >
+                <FaUser /> {t("dashboard.layout.profile", "Profile")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/billing">
+              <MobileNavItem
+                $active={pathname === "/billing" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={2}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/billing")}
+              >
+                <FaCreditCard /> {t("dashboard.layout.billing", "Billing")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/downloads">
+              <MobileNavItem
+                $active={pathname === "/downloads" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={3}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/downloads")}
+              >
+                <FaDownload /> {t("dashboard.layout.downloads", "Downloads")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/getting-started">
+              <MobileNavItem
+                $active={pathname === "/getting-started" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={4}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/getting-started")}
+              >
+                <FaRocket />{" "}
+                {t("dashboard.layout.gettingStarted", "Getting Started")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/support">
+              <MobileNavItem
+                $active={pathname === "/support" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={5}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/support")}
+              >
+                <FaTicketAlt /> {t("dashboard.layout.support", "Support")}
+              </MobileNavItem>
+            </Link>
+
+            <Link href="/settings">
+              <MobileNavItem
+                $active={pathname === "/settings" ? "true" : "false"}
+                variants={menuItemVariants}
+                custom={6}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/settings")}
+              >
+                <FaCog /> {t("dashboard.layout.settings", "Settings")}
+              </MobileNavItem>
+            </Link>
+
+            {user.is_admin && (
+              <Link href="/admin">
+                <MobileNavItem
+                  $active={pathname.startsWith("/admin") ? "true" : "false"}
+                  variants={menuItemVariants}
+                  custom={7}
+                  initial="hidden"
+                  animate="visible"
+                  onClick={(e) => handleNavigation(e, "/admin")}
+                >
+                  <FaShieldAlt />{" "}
+                  {t("dashboard.layout.adminConsole", "Admin Console")}
+                </MobileNavItem>
+              </Link>
+            )}
+
+            <Link href="/">
+              <MobileNavItem
+                $active="false"
+                variants={menuItemVariants}
+                custom={8}
+                initial="hidden"
+                animate="visible"
+                onClick={(e) => handleNavigation(e, "/")}
+              >
+                <FaHome /> {t("dashboard.layout.backToHome", "Back to Home")}
+              </MobileNavItem>
+            </Link>
+
+            <MobileFooterSection>
+              <MobileLanguageWrapper>
+                <NextLanguageSelector />
+              </MobileLanguageWrapper>
+
+              <UserName>
+                <h4>
+                  {t("dashboard.layout.welcomeUser", "{{name}}", {
+                    name: user_display_name,
+                  })}
+                </h4>
+                <p>
+                  {t("dashboard.layout.emailLabel", "{{email}}", {
+                    email: user.email,
+                  })}
+                </p>
+              </UserName>
+
+              <LogoutButton onClick={handleLogout}>
+                <FaSignOutAlt /> {t("dashboard.layout.logout", "Logout")}
+              </LogoutButton>
+            </MobileFooterSection>
+          </MobileMenu>
+        )}
+        <BackButtonContainer>
+          <NextLanguageSelector />
+          <BackButton
+            href="/"
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) =>
+              handleNavigation(e, "/")
+            }
+          >
+            {t("dashboard.layout.backToSite", "Back to Site")} <FaArrowLeft />
+          </BackButton>
+        </BackButtonContainer>
+        <Content>
+          <PageTransition
+            key={pathname}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+          >
+            {children}
+          </PageTransition>
+        </Content>
+      </LayoutContainer>
     </DashboardProvider>
   );
 }

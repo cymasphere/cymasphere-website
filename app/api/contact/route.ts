@@ -10,6 +10,22 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/email";
+import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
+import { isAllowedOrigin } from "@/utils/request-validation";
+
+/**
+ * @brief Escapes a string for safe use in HTML
+ * @param str Raw string (e.g. user input)
+ * @returns HTML-encoded string
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 /**
  * @brief POST endpoint to handle contact form submissions
@@ -75,6 +91,21 @@ import { sendEmail } from "@/utils/email";
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!isAllowedOrigin(request)) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    const clientIp = getClientIp(request);
+    if (!checkRateLimit(clientIp, 5, 60)) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     // Parse the request body
     const body = await request.json();
     const { name, email, subject, message, userId = null } = body;
@@ -96,9 +127,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create email content
+    // Create email content (plain text uses raw values; HTML uses escaped values to prevent injection)
     const emailSubject = subject;
-    
+    const safeName = escapeHtml((name || "Not provided").toString());
+    const safeEmail = escapeHtml(email.toString());
+    const safeSubject = escapeHtml(subject.toString());
+    const safeMessage = message.toString().replace(/\n/g, "<br>").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    const safeUserId = userId != null ? escapeHtml(userId.toString()) : "";
+
     // Plain text email
     const textContent = `
 Name: ${name || "Not provided"}
@@ -109,7 +145,7 @@ Message:
 ${message}
     `;
 
-    // HTML email
+    // HTML email (all user input escaped)
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -315,28 +351,28 @@ ${message}
                         
                         <div class="field" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                             <span class="label" style="font-weight: bold; color: #6c63ff; display: block; margin-bottom: 5px;">Name</span>
-                            <span style="color: #ffffff;">${name || "Not provided"}</span>
+                            <span style="color: #ffffff;">${safeName}</span>
                         </div>
                         
                         <div class="field" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                             <span class="label" style="font-weight: bold; color: #6c63ff; display: block; margin-bottom: 5px;">Email</span>
-                            <a href="mailto:${email}" style="color: #6c63ff; text-decoration: none;">${email}</a>
+                            <a href="mailto:${safeEmail}" style="color: #6c63ff; text-decoration: none;">${safeEmail}</a>
                         </div>
                         
-                        ${userId ? `<div class="field" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        ${safeUserId ? `<div class="field" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                             <span class="label" style="font-weight: bold; color: #6c63ff; display: block; margin-bottom: 5px;">User ID</span>
-                            <span style="color: #ffffff;">${userId}</span>
+                            <span style="color: #ffffff;">${safeUserId}</span>
                         </div>` : ""}
                         
                         <div class="field" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                             <span class="label" style="font-weight: bold; color: #6c63ff; display: block; margin-bottom: 5px;">Subject</span>
-                            <span style="color: #ffffff;">${subject}</span>
+                            <span style="color: #ffffff;">${safeSubject}</span>
                         </div>
                         
                         <div class="message-box" style="margin-top: 25px; padding: 15px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 3px solid #6c63ff;">
                             <span class="label" style="font-weight: bold; color: #6c63ff; display: block; margin-bottom: 5px;">Message</span>
                             <div style="color: #b3b3b3; margin-top: 10px;">
-                                ${message.replace(/\n/g, "<br>")}
+                                ${safeMessage}
                             </div>
                         </div>
                         

@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import LoadingComponent from "@/components/common/LoadingComponent";
@@ -21,6 +21,7 @@ import LoadingComponent from "@/components/common/LoadingComponent";
  * @param {React.ReactNode} props.children - Child components to render.
  * @returns {JSX.Element} Children if authenticated, loading component while checking, or redirects to login.
  * @note Encodes current pathname as redirect parameter for post-login navigation.
+ * @note Redirect is triggered only once per unauthenticated transition to avoid infinite redirect loops.
  */
 export default function RootLayout({
   children,
@@ -30,12 +31,20 @@ export default function RootLayout({
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     if (!auth.user && !auth.loading) {
-      // Encode the current path to include it as a redirect parameter
-      const redirectUrl = encodeURIComponent(pathname);
-      router.push(`/login?redirect=${redirectUrl}`);
+      // Redirect only once when we transition to unauthenticated to prevent
+      // multiple router.push calls and UI flashing / infinite loop on logout
+      if (!hasRedirectedRef.current) {
+        hasRedirectedRef.current = true;
+        const redirectUrl = encodeURIComponent(pathname);
+        router.push(`/login?redirect=${redirectUrl}`);
+      }
+    } else if (auth.user) {
+      // Reset so a future logout can redirect again
+      hasRedirectedRef.current = false;
     }
   }, [auth.user, router, auth.loading, pathname]);
 

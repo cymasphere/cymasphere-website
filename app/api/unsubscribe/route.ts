@@ -13,55 +13,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceRole } from '@/utils/supabase/service';
 import { createClient } from '@/utils/supabase/server';
 import { verifyUnsubscribeToken } from '@/utils/email-campaigns/unsubscribe-tokens';
-
-/**
- * Rate limiting in-memory store
- * @note In production, use Redis for distributed rate limiting
- */
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-/**
- * @brief Checks rate limiting for IP address
- * 
- * Implements simple rate limiting to prevent abuse. Tracks request count
- * per IP address within a time window.
- * 
- * @param ip Client IP address
- * @param maxRequests Maximum requests allowed in window (default: 10)
- * @param windowSecs Time window in seconds (default: 60)
- * @returns true if request is allowed, false if rate limited
- * @note Uses in-memory store (consider Redis for production)
- * 
- * @example
- * ```typescript
- * const allowed = checkRateLimit("192.168.1.1", 10, 60);
- * // Returns: true if under limit, false if rate limited
- * ```
- */
-function checkRateLimit(ip: string, maxRequests: number = 10, windowSecs: number = 60): boolean {
-  const now = Date.now();
-  const entry = rateLimitStore.get(ip);
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitStore.set(ip, { count: 1, resetTime: now + windowSecs * 1000 });
-    return true;
-  }
-
-  if (entry.count >= maxRequests) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
+import { checkRateLimit, getClientIp } from '@/utils/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get client IP for rate limiting
-    const clientIp =
-      request.headers.get('x-forwarded-for')?.split(',')[0] ||
-      request.headers.get('x-real-ip') ||
-      '127.0.0.1';
+    const clientIp = getClientIp(request);
 
     // Rate limiting check (10 requests per minute per IP)
     if (!checkRateLimit(clientIp, 10, 60)) {
@@ -95,7 +51,7 @@ export async function POST(request: NextRequest) {
       console.error('[Unsubscribe API] SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
       console.error('[Unsubscribe API] Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', '));
       return NextResponse.json(
-        { success: false, error: 'Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY. Please restart your dev server.' },
+        { success: false, error: 'Server configuration error. Please try again later.' },
         { status: 500 }
       );
     }
@@ -105,44 +61,43 @@ export async function POST(request: NextRequest) {
       supabase = await createSupabaseServiceRole();
     } catch (error) {
       console.error('[Unsubscribe API] Error creating Supabase service role client:', error);
-      const errorDetails = error instanceof Error ? error.message : String(error);
       console.error('[Unsubscribe API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return NextResponse.json(
-        { success: false, error: 'Server configuration error', details: errorDetails },
+        { success: false, error: 'Server configuration error. Please try again later.' },
         { status: 500 }
       );
     }
 
     if (action === 'unsubscribe') {
-      // Verify token if provided (required for security)
-      let verifiedEmail: string | null = null;
-      if (token) {
-        verifiedEmail = verifyUnsubscribeToken(token);
-        if (!verifiedEmail) {
-          console.warn(`[Unsubscribe API] Invalid or expired token for email: ${email}`);
-          // Return generic success to prevent email enumeration
-          return NextResponse.json({
-            success: true,
-            message: 'Successfully unsubscribed from emails',
-            email: email.toLowerCase(),
-            status: 'unsubscribed'
-          });
-        }
-        
-        // Verify token email matches request email
-        if (verifiedEmail !== email.toLowerCase()) {
-          console.warn(`[Unsubscribe API] Token email mismatch: ${verifiedEmail} vs ${email}`);
-          return NextResponse.json({
-            success: true,
-            message: 'Successfully unsubscribed from emails',
-            email: email.toLowerCase(),
-            status: 'unsubscribed'
-          });
-        }
-      } else {
-        // Token is recommended but not strictly required for backward compatibility
-        // Log missing token for security monitoring
-        console.warn(`[Unsubscribe API] Unsubscribe request without token for email: ${email} from IP: ${clientIp}`);
+      // Token is required for security (prevents mass-unsubscribe abuse)
+      if (!token) {
+        return NextResponse.json(
+          { success: false, error: 'Unsubscribe token is required' },
+          { status: 400 }
+        );
+      }
+
+      const verifiedEmail = verifyUnsubscribeToken(token);
+      if (!verifiedEmail) {
+        console.warn(`[Unsubscribe API] Invalid or expired token for email: ${email}`);
+        // Return generic success to prevent email enumeration
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully unsubscribed from emails',
+          email: email.toLowerCase(),
+          status: 'unsubscribed'
+        });
+      }
+
+      // Verify token email matches request email
+      if (verifiedEmail !== email.toLowerCase()) {
+        console.warn(`[Unsubscribe API] Token email mismatch: ${verifiedEmail} vs ${email}`);
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully unsubscribed from emails',
+          email: email.toLowerCase(),
+          status: 'unsubscribed'
+        });
       }
 
       // Handle unsubscribe

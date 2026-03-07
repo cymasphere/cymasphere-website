@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 
 /**
  * @brief POST endpoint to register a new user account
@@ -92,6 +93,14 @@ import { createClient } from "@supabase/supabase-js";
  */
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request);
+    if (!checkRateLimit(clientIp, 3, 600)) {
+      return NextResponse.json(
+        { success: false, error: "Too many registration attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     // Parse form data from request body
     const data = await request.formData();
     const email = data.get("email")?.toString();
@@ -118,6 +127,16 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Password is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Password must be at least 8 characters long",
         },
         { status: 400 }
       );

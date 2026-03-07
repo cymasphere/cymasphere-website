@@ -49,24 +49,6 @@ const err = (code: string, message: string): NextResponse<LogoutResponse> => {
 };
 
 /**
- * Supabase server client instance for authentication operations
- * Cookies are not used in this API route (stateless authentication)
- */
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      setAll(_cookiesToSet) {},
-    },
-  }
-);
-
-/**
  * @brief POST endpoint to logout a user session
  * 
  * Invalidates the user's authentication session. The session must be set first
@@ -164,6 +146,21 @@ export async function POST(
         "invalid_token",
         "access_token and refresh_token are required"
       );
+
+    // Create Supabase client per request to avoid shared state across concurrent requests
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return [];
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          setAll(_cookiesToSet) {},
+        },
+      }
+    );
 
     // Set the session in Supabase first
     // This is required before we can perform logout operations

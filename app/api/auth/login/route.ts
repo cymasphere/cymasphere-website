@@ -14,6 +14,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { Profile } from "@/utils/supabase/types";
+import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { createServerClient } from "@supabase/ssr";
 import { Database } from "@/database.types";
 
@@ -182,6 +183,23 @@ export async function POST(
   request: NextRequest
 ): Promise<NextResponse<LoginResponse>> {
   try {
+    const clientIp = getClientIp(request);
+    if (!checkRateLimit(clientIp, 5, 60)) {
+      return NextResponse.json(
+        {
+          user: null,
+          access_token: null,
+          refresh_token: null,
+          expires_at: null,
+          error: {
+            code: "rate_limit_exceeded",
+            message: "Too many login attempts. Please try again later.",
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     // Parse form data from request body
     const body = await request.formData();
 
