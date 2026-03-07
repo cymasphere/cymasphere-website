@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 
 // Create Supabase client with service role key for webhook processing
 const supabase = createClient(
@@ -8,22 +7,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Verify SNS signature (for production security)
-function verifySignature(payload: string, headers: any): boolean {
-  // For development, skip signature verification
-  if (process.env.NODE_ENV === 'development') {
+/**
+ * @brief Verifies webhook request using optional shared secret
+ *
+ * When SES_WEBHOOK_SECRET is set, requires Authorization: Bearer <secret>.
+ * Use a proxy or Lambda in front of this endpoint that verifies SNS signature
+ * and forwards with the secret. In production without the secret set, rejects.
+ */
+function verifyWebhookAuth(request: NextRequest): boolean {
+  const secret = process.env.SES_WEBHOOK_SECRET;
+  if (process.env.NODE_ENV === 'development' && !secret) {
     return true;
   }
-  
-  // In production, you should verify the SNS signature
-  // This is a simplified version - implement full SNS signature verification
-  const signature = headers['x-amz-sns-signature'];
-  const signingCertUrl = headers['x-amz-sns-signing-cert-url'];
-  
-  // TODO: Implement proper SNS signature verification
-  // For now, return true but log a warning
-  console.warn('⚠️ SNS signature verification not implemented - this should be done in production');
-  return true;
+  if (!secret) {
+    console.error('SES_WEBHOOK_SECRET is not set - rejecting webhook in production');
+    return false;
+  }
+  const authHeader = request.headers.get('authorization');
+  return authHeader === `Bearer ${secret}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -37,10 +38,10 @@ export async function POST(request: NextRequest) {
       bodyLength: body.length
     });
 
-    // Verify the request is from AWS SNS
-    if (!verifySignature(body, headers)) {
-      console.error('❌ Invalid SNS signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    // Verify webhook authorization (shared secret; SNS verification should be done by proxy if needed)
+    if (!verifyWebhookAuth(request)) {
+      console.error('❌ SES webhook unauthorized');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let message;

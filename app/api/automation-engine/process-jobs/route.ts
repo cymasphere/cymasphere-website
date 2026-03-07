@@ -30,10 +30,16 @@ export async function POST(request: NextRequest) {
   console.log('🚀 Automation job processor started');
   
   try {
-    // Verify request authorization (for cron jobs)
+    // Verify request authorization (for cron jobs). CRON_SECRET must be set (no fallback).
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.error('❌ CRON_SECRET is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error: CRON_SECRET not set' },
+        { status: 500 }
+      );
+    }
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'automation-engine-secret';
-    
     if (authHeader !== `Bearer ${cronSecret}`) {
       console.log('❌ Unauthorized automation job processor request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

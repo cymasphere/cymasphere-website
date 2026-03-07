@@ -78,6 +78,18 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TEST_MODE = process.env.NODE_ENV === 'development';
 
+/** CORS origin: in production restrict to site URL; in development allow any for local testing. */
+const CORS_ORIGIN =
+  process.env.NODE_ENV === 'development'
+    ? '*'
+    : (process.env.NEXT_PUBLIC_SITE_URL ?? '*');
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': CORS_ORIGIN,
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 // Meta API endpoint
 const META_API_VERSION = 'v18.0';
 const META_API_ENDPOINT = `https://graph.facebook.com/${META_API_VERSION}/${PIXEL_ID}/events`;
@@ -253,7 +265,7 @@ export async function POST(request: NextRequest) {
     console.warn(`⚠️ Rate limit exceeded for IP: ${clientIp}`);
     return NextResponse.json(
       { error: 'Too many requests' },
-      { status: 429 }
+      { status: 429, headers: CORS_HEADERS }
     );
   }
 
@@ -265,14 +277,14 @@ export async function POST(request: NextRequest) {
     if (!body.eventName) {
       return NextResponse.json(
         { error: 'Missing required field: eventName' },
-        { status: 400 }
+        { status: 400, headers: CORS_HEADERS }
       );
     }
 
     if (!body.userData || Object.keys(body.userData).length === 0) {
       return NextResponse.json(
         { error: 'Missing required field: userData' },
-        { status: 400 }
+        { status: 400, headers: CORS_HEADERS }
       );
     }
 
@@ -307,11 +319,14 @@ export async function POST(request: NextRequest) {
     // In test mode, just log and return success
     if (TEST_MODE && body.testEventCode) {
       console.log('🧪 Test mode - Event would be sent with test code:', body.testEventCode);
-      return NextResponse.json({
-        success: true,
-        message: 'Event logged (test mode)',
-        event: metaEvent,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Event logged (test mode)',
+          event: metaEvent,
+        },
+        { headers: CORS_HEADERS }
+      );
     }
 
     // Send to Meta API
@@ -321,22 +336,25 @@ export async function POST(request: NextRequest) {
       await logEventToSupabase(body, request, 'failed', result.error);
       return NextResponse.json(
         { error: result.error || 'Failed to send event to Meta' },
-        { status: 500 }
+        { status: 500, headers: CORS_HEADERS }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Event sent to Meta Conversions API',
-      facebookId: result.facebookId,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Event sent to Meta Conversions API',
+        facebookId: result.facebookId,
+      },
+      { headers: CORS_HEADERS }
+    );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('❌ Error in /api/meta/events:', errorMessage);
 
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }
@@ -347,11 +365,7 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers: CORS_HEADERS,
   });
 }
 

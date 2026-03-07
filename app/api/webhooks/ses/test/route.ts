@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * @brief Verifies CRON_SECRET from Authorization header for test webhook
+ */
+function isAuthorized(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const authHeader = request.headers.get('authorization');
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const eventType = searchParams.get('event') || 'delivery';

@@ -51,14 +51,12 @@ const pageVariants = {
     opacity: 1,
     transition: {
       duration: 0.4,
-      ease: "easeInOut",
     },
   },
   out: {
     opacity: 0,
     transition: {
       duration: 0.3,
-      ease: "easeInOut",
     },
   },
 };

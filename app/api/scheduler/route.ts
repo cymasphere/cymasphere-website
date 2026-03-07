@@ -1,7 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { emailScheduler } from "@/utils/scheduler";
 
-export async function GET() {
+/**
+ * @brief Verifies CRON_SECRET from Authorization header
+ * @returns 401 response if unauthorized, null if authorized
+ */
+function checkAuth(request: NextRequest): NextResponse | null {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: "Server configuration error: CRON_SECRET not set" },
+      { status: 500 }
+    );
+  }
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
+}
+
+export async function GET(request: NextRequest) {
+  const authError = checkAuth(request);
+  if (authError) return authError;
   try {
     const status = emailScheduler.getStatus();
     
@@ -25,6 +46,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = checkAuth(request);
+  if (authError) return authError;
   try {
     const body = await request.json();
     const action = body.action;

@@ -654,7 +654,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.6 },
     },
   };
 
@@ -663,7 +663,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.3, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.3 },
     }),
   };
 

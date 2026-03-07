@@ -1,13 +1,16 @@
 /**
  * ADMIN/TESTING ENDPOINT ONLY
- * 
+ *
  * This endpoint is for testing email templates and sending sample emails.
- * 
+ * Requires CRON_SECRET in Authorization header (Bearer token).
+ *
  * PRODUCTION EMAILS are sent automatically via:
  * - utils/subscriptions/check-subscription.ts -> updateUserProStatus()
  * - Triggered when subscription changes from "none" to active (trial/subscription/lifetime)
- * 
+ *
  * This endpoint should NOT be used in production workflows.
+ *
+ * @module api/test-welcome-emails
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -17,11 +20,28 @@ import {
   generateWelcomeEmailText,
 } from "@/utils/email-campaigns/welcome-email";
 
+/**
+ * @brief Verifies CRON_SECRET from Authorization header
+ * @returns true if authorized
+ */
+function isAuthorized(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const authHeader = request.headers.get("authorization");
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
 export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return POST(request);
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   // Admin/testing endpoint - sends to test email
   const testEmail = "garrett@cymasphere.com";
 

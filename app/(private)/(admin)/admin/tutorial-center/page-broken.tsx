@@ -1017,13 +1017,17 @@ export default function TutorialCenter() {
         )}
 
         {generatedPlaylist && (
-          <motion.div variants={fadeIn} style={{ marginBottom: '2rem' }}>
+          <motion.div variants={fadeIn} style={{ marginBottom: "2rem" }}>
             <PlaylistCard
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              style={{ 
-                border: `2px solid ${generatedPlaylist.isDemo ? 'var(--accent)' : 'var(--primary)}`, 
-                background: generatedPlaylist.isDemo ? 'rgba(78, 205, 196, 0.05)' : 'rgba(108, 99, 255, 0.05)' 
+              style={{
+                border: generatedPlaylist.isDemo
+                  ? "2px solid var(--accent)"
+                  : "2px solid var(--primary)",
+                background: generatedPlaylist.isDemo
+                  ? "rgba(78, 205, 196, 0.05)"
+                  : "rgba(108, 99, 255, 0.05)",
               }}
             >
               <PlaylistHeader>
