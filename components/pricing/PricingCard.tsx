@@ -1,25 +1,25 @@
 /**
  * @fileoverview PricingCard Component
  * @module components/pricing/PricingCard
- * 
+ *
  * Comprehensive pricing card component that displays plan information, pricing,
  * features, trial options, and checkout functionality. Supports multiple billing
  * periods (monthly, annual, lifetime) with dynamic pricing, promotions, and
  * user-specific states (current plan, lifetime owner, trial eligibility).
- * 
+ *
  * @example
  * // Basic usage
- * <PricingCard 
- *   billingPeriod="monthly" 
- *   onBillingPeriodChange={(period) => setPeriod(period)} 
+ * <PricingCard
+ *   billingPeriod="monthly"
+ *   onBillingPeriodChange={(period) => setPeriod(period)}
  * />
- * 
+ *
  * @example
  * // With trial options
- * <PricingCard 
- *   billingPeriod="annual" 
- *   showTrialOptions={true} 
- *   onBillingPeriodChange={handleChange} 
+ * <PricingCard
+ *   billingPeriod="annual"
+ *   showTrialOptions={true}
+ *   onBillingPeriodChange={handleChange}
  * />
  */
 
@@ -35,7 +35,6 @@ import { useCheckout } from "@/hooks/useCheckout";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import EmailCollectionModal from "../modals/EmailCollectionModal";
 import LoadingSpinner from "../common/LoadingSpinner";
 
 // Type definitions for CymasphereLogo component
@@ -63,7 +62,10 @@ const PricingCardContainer = styled(motion.div)<{
   border-radius: 12px;
   overflow: visible;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
   max-width: 420px;
   margin: 0 auto;
   border: 2px solid
@@ -71,8 +73,8 @@ const PricingCardContainer = styled(motion.div)<{
       props.$isLifetimeOwner
         ? "#f59e0b"
         : props.$isCurrentPlan
-        ? "#10b981"
-        : "var(--primary)"};
+          ? "#10b981"
+          : "var(--primary)"};
   z-index: 5;
 
   &:hover {
@@ -169,10 +171,12 @@ const OriginalPrice = styled.div<{ $hasPeriod?: boolean }>`
   opacity: 0.5;
   font-weight: 500;
   position: absolute;
-  right: ${props => props.$hasPeriod ? 'calc(50% + 5.5rem)' : 'calc(50% + 4rem)'};
-  
+  right: ${(props) =>
+    props.$hasPeriod ? "calc(50% + 5.5rem)" : "calc(50% + 4rem)"};
+
   @media (max-width: 480px) {
-    right: ${props => props.$hasPeriod ? 'calc(50% + 4.5rem)' : 'calc(50% + 3rem)'};
+    right: ${(props) =>
+      props.$hasPeriod ? "calc(50% + 4.5rem)" : "calc(50% + 3rem)"};
     font-size: 1rem;
   }
 `;
@@ -201,9 +205,10 @@ const BillingPeriod = styled.span`
 `;
 
 const DiscountTag = styled.span<{ $isSale?: boolean }>`
-  background: ${props => props.$isSale 
-    ? 'linear-gradient(135deg, #FF6B6B, #FF0000)' 
-    : 'linear-gradient(135deg, var(--accent), var(--primary))'};
+  background: ${(props) =>
+    props.$isSale
+      ? "linear-gradient(135deg, #FF6B6B, #FF0000)"
+      : "linear-gradient(135deg, var(--accent), var(--primary))"};
   color: white;
   padding: 4px 10px;
   border-radius: 12px;
@@ -213,13 +218,14 @@ const DiscountTag = styled.span<{ $isSale?: boolean }>`
   left: 100%;
   margin-left: 8px;
   white-space: nowrap;
-  box-shadow: ${props => props.$isSale 
-    ? '0 4px 12px rgba(255, 107, 107, 0.4)' 
-    : 'none'};
-  animation: ${props => props.$isSale ? 'pulse 2s ease-in-out infinite' : 'none'};
+  box-shadow: ${(props) =>
+    props.$isSale ? "0 4px 12px rgba(255, 107, 107, 0.4)" : "none"};
+  animation: ${(props) =>
+    props.$isSale ? "pulse 2s ease-in-out infinite" : "none"};
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1);
     }
     50% {
@@ -437,7 +443,7 @@ interface PricingCardProps {
 
 /**
  * @brief PricingCard component
- * 
+ *
  * Displays a comprehensive pricing card with:
  * - Dynamic pricing from Stripe API
  * - Active promotion support with sale prices
@@ -446,10 +452,10 @@ interface PricingCardProps {
  * - Badge indicators (Current Plan, Lifetime Owner, Trial Available)
  * - Feature list with translations
  * - Checkout functionality with email collection for guests
- * 
+ *
  * @param {PricingCardProps} props - Component props
  * @returns {JSX.Element} The rendered pricing card component
- * 
+ *
  * @note Fetches prices from /api/stripe/prices on mount
  * @note Fetches active promotions from /api/promotions/active
  * @note Checks Stripe trial status for logged-in users
@@ -471,11 +477,10 @@ export default function PricingCard({
   const router = useRouter();
   const { initiateCheckout } = useCheckout();
   const [prices, setPrices] = useState<Record<PlanType, PriceData> | null>(
-    null
+    null,
   );
   const [pricesLoading, setPricesLoading] = useState(true);
   const [trialType, setTrialType] = useState<"7day" | "14day">("14day");
-  const [showEmailModal, setShowEmailModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<
     "short" | "long" | null
   >(null);
@@ -515,16 +520,18 @@ export default function PricingCard({
 
     const fetchPromotion = async () => {
       try {
-        const response = await fetch(`/api/promotions/active?plan=${billingPeriod}`);
+        const response = await fetch(
+          `/api/promotions/active?plan=${billingPeriod}`,
+        );
         const data = await response.json();
-        
+
         if (data.success && data.promotion) {
           setActivePromotion(data.promotion);
         } else {
           setActivePromotion(null);
         }
       } catch (error) {
-        console.error('Error fetching promotion:', error);
+        console.error("Error fetching promotion:", error);
         setActivePromotion(null);
       }
     };
@@ -541,7 +548,8 @@ export default function PricingCard({
       }
 
       try {
-        const { checkCustomerTrialStatus } = await import("@/utils/stripe/actions");
+        const { checkCustomerTrialStatus } =
+          await import("@/utils/stripe/actions");
         const result = await checkCustomerTrialStatus(user.email);
 
         if (result.error) {
@@ -563,7 +571,13 @@ export default function PricingCard({
 
   // Calculate price details
   const priceDetails = useMemo(() => {
-    if (!currentPlan) return { display: "--", original: undefined, discountText: "", isSale: false };
+    if (!currentPlan)
+      return {
+        display: "--",
+        original: undefined,
+        discountText: "",
+        isSale: false,
+      };
 
     const baseAmount = currentPlan.amount / 100;
     let discountedAmount = baseAmount;
@@ -572,11 +586,14 @@ export default function PricingCard({
     let isSale = false;
 
     // Check if there's an active promotion for this plan from database
-    if (activePromotion && activePromotion.applicable_plans?.includes(billingPeriod)) {
+    if (
+      activePromotion &&
+      activePromotion.applicable_plans?.includes(billingPeriod)
+    ) {
       // Get sale price for this plan
       const salePriceField = `sale_price_${billingPeriod}`;
       const salePrice = activePromotion[salePriceField];
-      
+
       if (salePrice !== null && salePrice !== undefined) {
         discountedAmount = salePrice;
         // Use retail price for strikethrough to show bigger discount
@@ -590,7 +607,9 @@ export default function PricingCard({
           discountText = `${discount}% OFF`;
         } else {
           originalPrice = `$${baseAmount.toFixed(0)}${t("pricing.perMonth", "/month")}`;
-          const discount = Math.round(((baseAmount - salePrice) / baseAmount) * 100);
+          const discount = Math.round(
+            ((baseAmount - salePrice) / baseAmount) * 100,
+          );
           discountText = `${discount}% OFF`;
         }
         isSale = true;
@@ -598,7 +617,8 @@ export default function PricingCard({
     } else if (currentPlan.discount) {
       // Stripe discount applied
       if (currentPlan.discount.percent_off) {
-        discountedAmount = baseAmount * (1 - currentPlan.discount.percent_off / 100);
+        discountedAmount =
+          baseAmount * (1 - currentPlan.discount.percent_off / 100);
         discountText = `${currentPlan.discount.percent_off}% OFF`;
       } else if (currentPlan.discount.amount_off) {
         discountedAmount = baseAmount - currentPlan.discount.amount_off / 100;
@@ -614,11 +634,11 @@ export default function PricingCard({
     } else {
       // No sale, no discount - show standard strikethrough prices
       if (billingPeriod === "lifetime") {
-        originalPrice = "$249";  // $149 is 40% off $249
+        originalPrice = "$249"; // $149 is 40% off $249
       } else if (billingPeriod === "annual") {
-        originalPrice = `$79${t("pricing.perYear", "/year")}`;   // $59 is 25% off $79
+        originalPrice = `$79${t("pricing.perYear", "/year")}`; // $59 is 25% off $79
       } else if (billingPeriod === "monthly") {
-        originalPrice = `$8${t("pricing.perMonth", "/month")}`;    // $6 is 25% off $8
+        originalPrice = `$8${t("pricing.perMonth", "/month")}`; // $6 is 25% off $8
       }
     }
 
@@ -670,8 +690,8 @@ export default function PricingCard({
   // Determine if we should show trial options
   // Don't show if user already has an active subscription
   const shouldShowTrialOptions =
-    showTrialOptions && 
-    !hasHadStripeTrial && 
+    showTrialOptions &&
+    !hasHadStripeTrial &&
     billingPeriod !== "lifetime" &&
     (!user?.profile || user?.profile?.subscription === "none");
 
@@ -682,29 +702,29 @@ export default function PricingCard({
     if (!hasHadStripeTrial || billingPeriod === "lifetime") {
       return false;
     }
-    
+
     // If hideButton is true (modal context) or variant is change_plan, show message regardless of subscription status
     if (hideButton || variant === "change_plan") {
       return true;
     }
-    
+
     // Otherwise, only show if subscription is "none" and showTrialOptions is true
     return (
       showTrialOptions &&
       (!user?.profile || user?.profile?.subscription === "none")
     );
-  }, [hasHadStripeTrial, showTrialOptions, billingPeriod, user?.profile?.subscription, hideButton, variant]);
+  }, [
+    hasHadStripeTrial,
+    showTrialOptions,
+    billingPeriod,
+    user?.profile?.subscription,
+    hideButton,
+    variant,
+  ]);
 
-  // Handle checkout
+  // Handle checkout — navigate to checkout page (email and promo collected there)
   const handleCheckout = async (collectPaymentMethod: boolean) => {
     if (!prices) return;
-
-    // If user is not logged in, show email collection modal
-    // (for trials or lifetime purchases)
-    if (!user) {
-      setShowEmailModal(true);
-      return;
-    }
 
     setCheckoutLoading(collectPaymentMethod ? "long" : "short");
 
@@ -717,68 +737,12 @@ export default function PricingCard({
 
     // Show alert for critical errors (like duplicate lifetime purchase)
     if (!result.success && result.error) {
-      // Show user-friendly alert for important errors
-      if (result.error.includes("lifetime license") || result.error.includes("LIFETIME_ALREADY_PURCHASED")) {
+      if (
+        result.error.includes("lifetime license") ||
+        result.error.includes("LIFETIME_ALREADY_PURCHASED")
+      ) {
         alert(result.error);
       }
-    }
-  };
-
-  // Handle email submission
-  const handleEmailSubmit = async (
-    email: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    if (!prices)
-      return { success: false, error: "Price information is not available" };
-
-    try {
-      const customerCheckResponse = await fetch("/api/stripe/check-customer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const customerCheck = await customerCheckResponse.json();
-
-      if (customerCheck.error) {
-        return { success: false, error: customerCheck.error };
-      }
-
-      if (customerCheck.exists && customerCheck.hasPriorTransactions) {
-        return {
-          success: false,
-          error:
-            "This email is already associated with an account. Please sign in to continue.",
-        };
-      }
-
-      setShowEmailModal(false);
-      setCheckoutLoading(trialType === "14day" ? "long" : "short");
-
-      const collectPaymentMethod = trialType === "14day";
-
-      const result = await initiateCheckout(billingPeriod, {
-        collectPaymentMethod,
-        email, // Pass the email from the modal
-      });
-
-      if (result.success) {
-        return { success: true };
-      } else {
-        return {
-          success: false,
-          error: result.error || "Could not create checkout session",
-        };
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      setCheckoutLoading(null);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
     }
   };
 
@@ -790,7 +754,9 @@ export default function PricingCard({
           ? t("pricing.freeTrial.startTrial", "Start Trial")
           : t("pricing.buyNow", "Buy Now"),
         action: () =>
-          handleCheckout(shouldShowTrialOptions ? trialType === "14day" : false),
+          handleCheckout(
+            shouldShowTrialOptions ? trialType === "14day" : false,
+          ),
         variant: "primary" as const,
         requiresPrices: true,
       };
@@ -890,52 +856,66 @@ export default function PricingCard({
             <>
               <PriceDisplay>
                 {priceDetails.original && (
-                  <OriginalPrice $hasPeriod={billingPeriod !== 'lifetime'}>
+                  <OriginalPrice $hasPeriod={billingPeriod !== "lifetime"}>
                     {priceDetails.original}
                   </OriginalPrice>
                 )}
-                <div style={{ display: "flex", alignItems: "center", flexDirection: "column", gap: "0.25rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexDirection: "column",
+                    gap: "0.25rem",
+                  }}
+                >
                   <PriceContainer>
                     <Price>{priceDetails.display}</Price>
                     <BillingPeriod>{getPeriodText()}</BillingPeriod>
                     {priceDetails.discountText && (
                       <DiscountTag $isSale={priceDetails.isSale}>
-                        {priceDetails.isSale ? '🔥 ' : ''}{priceDetails.discountText}
+                        {priceDetails.isSale ? "🔥 " : ""}
+                        {priceDetails.discountText}
                       </DiscountTag>
                     )}
                   </PriceContainer>
                 </div>
               </PriceDisplay>
               {billingPeriod === "monthly" && (
-                <div style={{ 
-                  marginTop: "5px", 
-                  fontSize: "0.9rem", 
-                  textAlign: "center",
-                  color: "#b0b0b0"
-                }}>
+                <div
+                  style={{
+                    marginTop: "5px",
+                    fontSize: "0.9rem",
+                    textAlign: "center",
+                    color: "#b0b0b0",
+                  }}
+                >
                   {t("pricing.cancelAnytime", "Cancel anytime")}
                 </div>
               )}
               {billingPeriod === "annual" && currentPlan && (
-                <div style={{ 
-                  marginTop: "5px", 
-                  fontSize: "0.9rem", 
-                  textAlign: "center",
-                  color: "#b0b0b0"
-                }}>
-                  {t("pricing.equivalentTo", "Equivalent to")}{" "}
-                  ${(currentPlan.amount / 100 / 12).toFixed(2)}
+                <div
+                  style={{
+                    marginTop: "5px",
+                    fontSize: "0.9rem",
+                    textAlign: "center",
+                    color: "#b0b0b0",
+                  }}
+                >
+                  {t("pricing.equivalentTo", "Equivalent to")} $
+                  {(currentPlan.amount / 100 / 12).toFixed(2)}
                   {t("pricing.perMonth", "/month")}{" "}
                   {t("pricing.billed", "billed annually")}
                 </div>
               )}
               {billingPeriod === "lifetime" && (
-                <div style={{
-                  marginTop: "5px",
-                  fontSize: "0.9rem",
-                  textAlign: "center",
-                  color: "#b0b0b0"
-                }}>
+                <div
+                  style={{
+                    marginTop: "5px",
+                    fontSize: "0.9rem",
+                    textAlign: "center",
+                    color: "#b0b0b0",
+                  }}
+                >
                   {t("pricing.oneTimePurchase", "one-time purchase")}
                 </div>
               )}
@@ -970,7 +950,7 @@ export default function PricingCard({
             <TrialMessage>
               {t(
                 "pricing.noTrialAvailable",
-                "You've already used a free trial. Start a subscription to continue enjoying all premium features."
+                "You've already used a free trial. Start a subscription to continue enjoying all premium features.",
               )}
             </TrialMessage>
           )}
@@ -984,7 +964,7 @@ export default function PricingCard({
                       <FaGift />{" "}
                       {t(
                         "pricing.freeTrial.chooseFree",
-                        "Choose your free trial option:"
+                        "Choose your free trial option:",
                       )}
                     </RadioOptionTitle>
                     <RadioButtonGroup>
@@ -1002,12 +982,12 @@ export default function PricingCard({
                         <TrialDescription>
                           {t(
                             "pricing.freeTrial.withCard",
-                            "14-day trial - Add card on file"
+                            "14-day trial - Add card on file",
                           )}
                           <br />
                           {t(
                             "pricing.freeTrial.noCharge",
-                            "(won't be charged until trial ends)"
+                            "(won't be charged until trial ends)",
                           )}
                         </TrialDescription>
                       </RadioOption>
@@ -1026,7 +1006,7 @@ export default function PricingCard({
                         <TrialDescription>
                           {t(
                             "pricing.freeTrial.noCard",
-                            "7-day trial - No credit card required"
+                            "7-day trial - No credit card required",
                           )}
                         </TrialDescription>
                       </RadioOption>
@@ -1051,7 +1031,7 @@ export default function PricingCard({
                   <TrialMessage>
                     {t(
                       "pricing.noTrialAvailable",
-                      "You've already used a free trial. Start a subscription to continue enjoying all premium features."
+                      "You've already used a free trial. Start a subscription to continue enjoying all premium features.",
                     )}
                   </TrialMessage>
                   <CheckoutButton
@@ -1091,22 +1071,6 @@ export default function PricingCard({
           )}
         </CardBody>
       </PricingCardContainer>
-
-      {/* Show email collection modal if open */}
-      {showEmailModal && (
-        <EmailCollectionModal
-          isOpen={showEmailModal}
-          onClose={() => setShowEmailModal(false)}
-          onSubmit={handleEmailSubmit}
-          collectPaymentMethod={
-            billingPeriod === "lifetime" ? true : trialType === "14day"
-          }
-          trialDays={
-            billingPeriod === "lifetime" ? 0 : trialType === "14day" ? 14 : 7
-          }
-        />
-      )}
     </>
   );
 }
-

@@ -1,11 +1,11 @@
 /**
  * @fileoverview Checkout-related server actions
- * 
+ *
  * This file contains server actions for handling post-checkout operations,
  * including refreshing subscription status and inviting users after purchase.
  * These actions are called from the checkout success page and work even when
  * users are not logged in.
- * 
+ *
  * @module actions/checkout
  */
 
@@ -17,18 +17,18 @@ import { getCheckoutSessionResult } from "@/utils/stripe/actions";
 
 /**
  * @brief Server action to refresh user subscription status by Stripe customer ID
- * 
+ *
  * Finds the user profile by Stripe customer_id and updates their pro status
  * using the centralized subscription checking function. This is called from
  * the checkout success page even if the user isn't logged in, allowing
  * subscription status to be updated immediately after purchase.
- * 
+ *
  * @param customerId Stripe customer ID to look up user by
  * @returns Promise with success status, user ID, subscription details, or error
  * @note Uses service role client to access profiles table
  * @note Calls centralized updateUserProStatus function for consistency
  * @note Can be called without user authentication
- * 
+ *
  * @example
  * ```typescript
  * const result = await refreshSubscriptionByCustomerId("cus_abc123");
@@ -36,7 +36,7 @@ import { getCheckoutSessionResult } from "@/utils/stripe/actions";
  * ```
  */
 export async function refreshSubscriptionByCustomerId(
-  customerId: string
+  customerId: string,
 ): Promise<{
   success: boolean;
   userId?: string;
@@ -70,12 +70,12 @@ export async function refreshSubscriptionByCustomerId(
 
     // Update subscription status using centralized function
     console.log(
-      `[Checkout Refresh] Updating pro status for user ${profile.id} (customer: ${customerId})`
+      `[Checkout Refresh] Updating pro status for user ${profile.id} (customer: ${customerId})`,
     );
     const result = await updateUserProStatus(profile.id);
 
     console.log(
-      `[Checkout Refresh] Subscription updated: ${result.subscription} (${result.source})`
+      `[Checkout Refresh] Subscription updated: ${result.subscription} (${result.source})`,
     );
 
     return {
@@ -94,34 +94,12 @@ export async function refreshSubscriptionByCustomerId(
 }
 
 /**
- * @brief Server action to invite user by email from checkout session and refresh pro status
- * 
- * Retrieves the customer email from a Stripe checkout session, invites the user
- * to create an account (if they don't already exist), and then refreshes their
- * subscription status. This is called from the checkout success page when the
- * user is not logged in, allowing them to receive account access after purchase.
- * 
- * Handles multiple scenarios:
- * - User already exists in profiles table
- * - User exists in auth but not in profiles
- * - User needs to be invited via Supabase Auth
- * - Profile creation timing issues (waits for triggers)
- * 
- * @param sessionId Stripe checkout session ID to retrieve customer email from
- * @returns Promise with success status, user ID, subscription details, or error
- * @note Uses service role client for admin operations
- * @note Handles race conditions with profile creation triggers
- * @note Extracts first name from email address for user metadata
- * @note Sets redirectTo URL for password reset after invite
- * 
- * @example
- * ```typescript
- * const result = await inviteUserAndRefreshProStatus("cs_test_abc123");
- * // Returns: { success: true, userId: "...", subscription: "annual", expiration: "..." }
- * ```
+ * @brief Internal: invite by email and refresh pro status (used by session and payment-intent flows).
+ * @param customerEmail Normalized customer email
+ * @returns Promise with success, userId, subscription, expiration, or error
  */
-export async function inviteUserAndRefreshProStatus(
-  sessionId: string
+async function inviteByEmailAndRefreshProStatus(
+  customerEmail: string,
 ): Promise<{
   success: boolean;
   userId?: string;
@@ -131,24 +109,6 @@ export async function inviteUserAndRefreshProStatus(
   warning?: string;
 }> {
   try {
-    if (!sessionId) {
-      return {
-        success: false,
-        error: "Missing session_id parameter",
-      };
-    }
-
-    // Get checkout session details to retrieve customer email
-    const sessionResult = await getCheckoutSessionResult(sessionId);
-
-    if (!sessionResult.success || !sessionResult.customerEmail) {
-      return {
-        success: false,
-        error: "Could not retrieve email from checkout session",
-      };
-    }
-
-    const customerEmail = sessionResult.customerEmail.toLowerCase().trim();
     const supabase = await createSupabaseServiceRole();
 
     // First, check if user already exists by querying profiles table
@@ -162,13 +122,14 @@ export async function inviteUserAndRefreshProStatus(
     if (existingProfile?.id) {
       userId = existingProfile.id;
       console.log(
-        `[Checkout Invite] User already exists with email ${customerEmail}, userId: ${userId}`
+        `[Checkout Invite] User already exists with email ${customerEmail}, userId: ${userId}`,
       );
     } else {
       // User doesn't exist, check auth.users to see if they were already invited
       // We'll try to invite and handle the error if user already exists
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com";
+        const baseUrl =
+          process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com";
         const redirectTo = `${baseUrl}/reset-password`;
 
         // Extract first part of email (before @) to use as first_name
@@ -192,7 +153,7 @@ export async function inviteUserAndRefreshProStatus(
             inviteError.message?.includes("User already registered")
           ) {
             console.log(
-              `[Checkout Invite] User already exists in auth, finding profile for ${customerEmail}`
+              `[Checkout Invite] User already exists in auth, finding profile for ${customerEmail}`,
             );
             // User was already invited/exists, find their profile
             // Wait a moment for profile to be created if it was just created
@@ -210,7 +171,7 @@ export async function inviteUserAndRefreshProStatus(
               // Try to get from auth and create profile if needed
               const { data: authUsers } = await supabase.auth.admin.listUsers();
               const matchingUser = authUsers?.users.find(
-                (u) => u.email?.toLowerCase().trim() === customerEmail
+                (u) => u.email?.toLowerCase().trim() === customerEmail,
               );
 
               if (matchingUser?.id) {
@@ -220,7 +181,10 @@ export async function inviteUserAndRefreshProStatus(
               }
             }
           } else {
-            console.error("[Checkout Invite] Error inviting user:", inviteError);
+            console.error(
+              "[Checkout Invite] Error inviting user:",
+              inviteError,
+            );
             return {
               success: false,
               error: `Failed to invite user: ${inviteError.message}`,
@@ -230,14 +194,17 @@ export async function inviteUserAndRefreshProStatus(
           // Invite successful, user was created
           userId = inviteData.user.id;
           console.log(
-            `[Checkout Invite] Successfully invited user ${customerEmail}, userId: ${userId}`
+            `[Checkout Invite] Successfully invited user ${customerEmail}, userId: ${userId}`,
           );
 
           // Wait a moment for profile to be created by trigger
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       } catch (inviteError) {
-        console.error("[Checkout Invite] Unexpected error inviting user:", inviteError);
+        console.error(
+          "[Checkout Invite] Unexpected error inviting user:",
+          inviteError,
+        );
         return {
           success: false,
           error: "Failed to invite user",
@@ -266,12 +233,12 @@ export async function inviteUserAndRefreshProStatus(
     // Now refresh pro status for the user
     if (userId) {
       console.log(
-        `[Checkout Invite] Refreshing pro status for user ${userId} (email: ${customerEmail})`
+        `[Checkout Invite] Refreshing pro status for user ${userId} (email: ${customerEmail})`,
       );
       const result = await updateUserProStatus(userId);
 
       console.log(
-        `[Checkout Invite] Pro status refreshed: ${result.subscription} (${result.source})`
+        `[Checkout Invite] Pro status refreshed: ${result.subscription} (${result.source})`,
       );
 
       return {
@@ -293,4 +260,59 @@ export async function inviteUserAndRefreshProStatus(
       error: "Failed to invite user and refresh pro status",
     };
   }
+}
+
+/**
+ * @brief Server action to invite user by email from checkout session and refresh pro status
+ *
+ * @param sessionId Stripe checkout session ID to retrieve customer email from
+ * @returns Promise with success status, user ID, subscription details, or error
+ */
+export async function inviteUserAndRefreshProStatus(
+  sessionId: string,
+): Promise<{
+  success: boolean;
+  userId?: string;
+  subscription?: string;
+  expiration?: string | null;
+  error?: string;
+  warning?: string;
+}> {
+  if (!sessionId) {
+    return { success: false, error: "Missing session_id parameter" };
+  }
+  const sessionResult = await getCheckoutSessionResult(sessionId);
+  if (!sessionResult.success || !sessionResult.customerEmail) {
+    return {
+      success: false,
+      error: "Could not retrieve email from checkout session",
+    };
+  }
+  return inviteByEmailAndRefreshProStatus(
+    sessionResult.customerEmail.toLowerCase().trim(),
+  );
+}
+
+/**
+ * @brief Server action to invite user by email and refresh pro status (e.g. after in-app lifetime checkout).
+ *
+ * Used when checkout success has customer email from payment intent details but no session ID.
+ *
+ * @param customerEmail Customer email address
+ * @returns Promise with success status, user ID, subscription details, or error
+ */
+export async function inviteUserByEmailAndRefreshProStatus(
+  customerEmail: string,
+): Promise<{
+  success: boolean;
+  userId?: string;
+  subscription?: string;
+  expiration?: string | null;
+  error?: string;
+  warning?: string;
+}> {
+  if (!customerEmail?.trim()) {
+    return { success: false, error: "Missing customer email" };
+  }
+  return inviteByEmailAndRefreshProStatus(customerEmail.toLowerCase().trim());
 }

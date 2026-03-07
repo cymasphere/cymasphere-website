@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "compile": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "bunx tsc --noEmit",
+    "test:e2e": "echo \"No E2E tests configured. Replace npm script 'test:e2e' with your E2E runner.\"",
     "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
     "supabase-migrate": "bun x supabase db push"
   },
@@ -61,6 +64,8 @@
     "recharts": "^3.6.0",
     "redux": "^5.0.1",
     "rehype-sanitize": "^6.0.0",
+    "@stripe/react-stripe-js": "^3.2.0",
+    "@stripe/stripe-js": "^5.4.0",
     "stripe": "^20.1.0",
     "styled-components": "^6.1.19",
     "tone": "^15.1.22",

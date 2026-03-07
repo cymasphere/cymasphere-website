@@ -1,11 +1,11 @@
 /**
  * @fileoverview Stripe webhook handler API endpoint
- * 
+ *
  * This endpoint receives and processes Stripe webhook events. Validates webhook
  * signatures for security, extracts customer information from events, and updates
  * user subscription status in the database. Handles all Stripe event types that
  * may affect subscription status (payments, subscriptions, invoices, etc.).
- * 
+ *
  * @module api/stripe/webhook
  */
 
@@ -23,14 +23,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
  * @brief Extracts customer ID from any Stripe event object
- * 
+ *
  * Attempts to extract the customer ID from a Stripe event's data object.
  * Handles both string customer IDs and customer objects with nested IDs.
- * 
+ *
  * @param event Stripe webhook event object
  * @returns Customer ID string if found, null otherwise
  * @note Works with any event type that has a customer field
- * 
+ *
  * @example
  * ```typescript
  * const customerId = extractCustomerId(stripeEvent);
@@ -50,17 +50,17 @@ function extractCustomerId(event: Stripe.Event): string | null {
 
 /**
  * @brief Finds user ID in database by Stripe customer ID
- * 
+ *
  * Searches for a user profile by Stripe customer ID. First attempts direct
  * lookup by customer_id field. If not found, retrieves customer email from
  * Stripe and searches by email, then updates the profile with the customer_id
  * for future lookups.
- * 
+ *
  * @param customerId Stripe customer ID to search for
  * @returns User ID (UUID) if found, null otherwise
  * @note Falls back to email lookup if customer_id not found in database
  * @note Updates customer_id in profile if found via email lookup
- * 
+ *
  * @example
  * ```typescript
  * const userId = await findUserIdByCustomerId("cus_abc123");
@@ -68,7 +68,7 @@ function extractCustomerId(event: Stripe.Event): string | null {
  * ```
  */
 async function findUserIdByCustomerId(
-  customerId: string
+  customerId: string,
 ): Promise<string | null> {
   const supabase = await createSupabaseServiceRole();
 
@@ -112,20 +112,20 @@ async function findUserIdByCustomerId(
 
 /**
  * @brief POST endpoint to handle Stripe webhook events
- * 
+ *
  * Receives and processes Stripe webhook events. Validates webhook signature
  * for security, extracts customer information, finds the associated user,
  * and refreshes their subscription status. Handles all event types that may
  * affect subscription status.
- * 
+ *
  * Request headers:
  * - stripe-signature: Stripe webhook signature for verification (required)
- * 
+ *
  * Request body:
  * - Raw webhook event payload from Stripe (JSON string)
- * 
+ *
  * Responses:
- * 
+ *
  * 200 OK - Success:
  * ```json
  * {
@@ -133,7 +133,7 @@ async function findUserIdByCustomerId(
  *   "event": "checkout.session.completed"
  * }
  * ```
- * 
+ *
  * 200 OK - No customer ID in event:
  * ```json
  * {
@@ -141,14 +141,14 @@ async function findUserIdByCustomerId(
  *   "event": "payment_intent.created"
  * }
  * ```
- * 
+ *
  * 400 Bad Request - Invalid signature:
  * ```json
  * {
  *   "error": "Invalid signature"
  * }
  * ```
- * 
+ *
  * 200 OK - Processing error:
  * ```json
  * {
@@ -156,14 +156,14 @@ async function findUserIdByCustomerId(
  *   "error": "Error message"
  * }
  * ```
- * 
+ *
  * @param request Next.js request object containing webhook payload and signature
  * @returns NextResponse with processing status
  * @note Webhook signature is verified using STRIPE_WEBHOOK_SECRET
  * @note Subscription status is refreshed using centralized updateUserProStatus function
  * @note Events without customer IDs are accepted but skipped
  * @note All Stripe event types are supported
- * 
+ *
  * @example
  * ```typescript
  * // POST /api/stripe/webhook
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -202,17 +202,88 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "success", event: event.type });
     }
 
+    // payment_intent.succeeded with purchase_type lifetime: set profile subscription immediately
+    // so success page and app see correct state without depending on stripe_payment_intents sync
+    if (event.type === "payment_intent.succeeded") {
+      const pi = event.data.object as Stripe.PaymentIntent;
+      if (pi.metadata?.purchase_type === "lifetime") {
+        const userId = await findUserIdByCustomerId(customerId);
+        if (userId) {
+          const supabase = await createSupabaseServiceRole();
+          await supabase
+            .from("profiles")
+            .update({ subscription: "lifetime" })
+            .eq("id", userId);
+          console.log(
+            `[Webhook] Set profile subscription to lifetime for user ${userId} (payment_intent.succeeded)`,
+          );
+        }
+      }
+    }
+
+    // Sync subscription to stripe_subscriptions when created/updated via API (e.g. subscription-setup)
+    // so updateUserProStatus can read it even without external Supabase-Stripe sync
+    if (
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.created"
+    ) {
+      const sub = event.data.object as Stripe.Subscription & {
+        current_period_start?: number;
+        current_period_end?: number;
+      };
+      const supabase = await createSupabaseServiceRole();
+      const row = {
+        id: sub.id,
+        customer:
+          typeof sub.customer === "string"
+            ? sub.customer
+            : (sub.customer?.id ?? null),
+        currency: sub.currency ?? null,
+        current_period_start:
+          sub.current_period_start != null
+            ? new Date(sub.current_period_start * 1000).toISOString()
+            : null,
+        current_period_end:
+          sub.current_period_end != null
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
+        attrs: {
+          status: sub.status,
+          trial_start: sub.trial_start,
+          trial_end: sub.trial_end,
+          items: sub.items?.data?.map((item) => ({
+            price: item.price?.id,
+          })),
+        } as Record<string, unknown>,
+      };
+      await (
+        supabase as unknown as {
+          schema: (s: string) => {
+            from: (t: string) => {
+              upsert: (
+                d: typeof row,
+                o?: { onConflict?: string },
+              ) => Promise<unknown>;
+            };
+          };
+        }
+      )
+        .schema("stripe_tables")
+        .from("stripe_subscriptions")
+        .upsert(row, { onConflict: "id" });
+    }
+
     // Find user by customer ID
     const userId = await findUserIdByCustomerId(customerId);
 
     // If user exists, refresh subscription status using centralized function
     if (userId) {
       console.log(
-        `Refreshing subscription for user ${userId} (customer: ${customerId})`
+        `Refreshing subscription for user ${userId} (customer: ${customerId})`,
       );
       const result = await updateUserProStatus(userId);
       console.log(
-        `Subscription updated: ${result.subscription} (${result.source})`
+        `Subscription updated: ${result.subscription} (${result.source})`,
       );
     }
 

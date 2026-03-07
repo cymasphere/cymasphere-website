@@ -1,10 +1,10 @@
 /**
  * @fileoverview Stripe server actions for checkout and customer management
- * 
+ *
  * This file contains server actions for Stripe operations including checkout
  * session creation, customer management, price retrieval, and subscription
  * status checking. Handles trial eligibility and payment method collection.
- * 
+ *
  * @module utils/stripe/actions
  */
 
@@ -13,6 +13,7 @@
 import Stripe from "stripe";
 import { SubscriptionType } from "@/utils/supabase/types";
 import { PlanType, PriceData } from "@/types/stripe";
+import { createSupabaseServiceRole } from "@/utils/supabase/service";
 
 /**
  * Stripe client instance initialized with secret key
@@ -21,11 +22,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
  * @brief Server action to initiate Stripe checkout process
- * 
+ *
  * Creates a Stripe checkout session for the selected plan. Finds or creates
  * a Stripe customer if email is provided, then creates a checkout session
  * with appropriate settings for the plan type.
- * 
+ *
  * @param planType The selected plan type (monthly, annual, lifetime)
  * @param email Optional user email for customer lookup/creation
  * @param customerId Optional existing Stripe customer ID
@@ -33,7 +34,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  * @returns Promise with checkout session URL or error
  * @note Creates or finds customer if email provided
  * @note Collects payment method if collectPaymentMethod is true (extends trial)
- * 
+ *
  * @example
  * ```typescript
  * const result = await initiateCheckout("annual", "user@example.com", undefined, true);
@@ -44,7 +45,7 @@ export async function initiateCheckout(
   planType: PlanType,
   email?: string,
   customerId?: string,
-  collectPaymentMethod: boolean = false
+  collectPaymentMethod: boolean = false,
 ): Promise<{ url: string | null; error?: string }> {
   try {
     let resolved_customer_id: string | undefined;
@@ -59,7 +60,7 @@ export async function initiateCheckout(
     return await createCheckoutSession(
       resolved_customer_id,
       planType,
-      collectPaymentMethod
+      collectPaymentMethod,
     );
   } catch (error) {
     console.error("Checkout error:", error);
@@ -73,16 +74,16 @@ export async function initiateCheckout(
 
 /**
  * @brief Server action to fetch all plan prices from Stripe
- * 
+ *
  * Retrieves pricing information for monthly, annual, and lifetime plans
  * from Stripe. Includes product details and current pricing. Can optionally
  * apply active promotions/coupons (currently commented out).
- * 
+ *
  * @returns Promise with prices object containing data for each plan type
  * @note Uses environment variables for price IDs
  * @note Expands product information for each price
  * @note Can be extended to include active promotions
- * 
+ *
  * @example
  * ```typescript
  * const result = await getPrices();
@@ -229,7 +230,7 @@ export async function getPrices(): Promise<{
 export async function createCheckoutSession(
   customerId: string | undefined,
   planType: PlanType,
-  collectPaymentMethod: boolean = false
+  collectPaymentMethod: boolean = false,
 ): Promise<{ url: string | null; error?: string }> {
   try {
     // Return error if customer ID is not provided
@@ -350,7 +351,7 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
       // If there are multiple customers with the same email, log a warning
       if (customers.data.length > 1) {
         console.warn(
-          `Found ${customers.data.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`
+          `Found ${customers.data.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`,
         );
       }
       // Return the most recently created customer (first in list is typically most recent)
@@ -362,9 +363,9 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
     // Key includes current hour so failed attempts can be retried after an hour
     // All signups within the same hour use the same key, preventing duplicates from spam clicking
     const now = new Date();
-    const hourKey = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}`;
-    const idempotencyKey = `cust_${normalizedEmail.replace(/[^a-z0-9]/g, '_')}_${hourKey}`;
-    
+    const hourKey = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}${String(now.getUTCHours()).padStart(2, "0")}`;
+    const idempotencyKey = `cust_${normalizedEmail.replace(/[^a-z0-9]/g, "_")}_${hourKey}`;
+
     try {
       const customer = await stripe.customers.create(
         {
@@ -372,7 +373,7 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
         },
         {
           idempotencyKey: idempotencyKey.substring(0, 255), // Stripe has 255 char limit
-        }
+        },
       );
 
       return customer.id;
@@ -381,28 +382,30 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
       // 1. Idempotency key collision (another request is creating the same customer)
       // 2. Network/API error
       // 3. Customer was created between our check and create (race condition)
-      
+
       // Always retry the lookup - another process may have created the customer
       // Wait a brief moment to allow concurrent request to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const retryCustomers = await stripe.customers.list({
         email: normalizedEmail,
         limit: 1,
       });
 
       if (retryCustomers.data.length > 0) {
-        console.log(`Customer found on retry after creation error: ${retryCustomers.data[0].id}`);
+        console.log(
+          `Customer found on retry after creation error: ${retryCustomers.data[0].id}`,
+        );
         return retryCustomers.data[0].id;
       }
 
       // If retry also fails, check for specific error codes
       if (
-        createError?.code === 'idempotency_key_in_use' ||
-        createError?.type === 'StripeIdempotencyError'
+        createError?.code === "idempotency_key_in_use" ||
+        createError?.type === "StripeIdempotencyError"
       ) {
         // Idempotency key collision - wait a bit longer and retry lookup
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const finalRetry = await stripe.customers.list({
           email: normalizedEmail,
           limit: 1,
@@ -427,7 +430,7 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
  * @returns True if customer has had a trial before
  */
 export async function hasCustomerHadTrial(
-  customerId: string
+  customerId: string,
 ): Promise<boolean> {
   try {
     // Get all subscriptions for this customer
@@ -441,13 +444,83 @@ export async function hasCustomerHadTrial(
       (sub) =>
         sub.trial_start !== null ||
         sub.trial_end !== null ||
-        sub.status === "trialing"
+        sub.status === "trialing",
     );
 
     return hasHadTrial;
   } catch (error) {
     console.error("Error checking customer trial history:", error);
     // If we can't check, assume they haven't had a trial to be safe
+    return false;
+  }
+}
+
+/**
+ * @brief Checks if a customer has already purchased lifetime access
+ *
+ * Performs comprehensive checks across multiple data sources to determine
+ * if a customer has already purchased a lifetime license. Checks Stripe charges,
+ * payment intents, invoices, and the database profile. Prevents duplicate
+ * lifetime purchases by blocking checkout if lifetime access is detected.
+ *
+ * @param customerId Stripe customer ID to check
+ * @returns True if customer has lifetime access, false otherwise
+ * @note Checks multiple sources: charges, payment intents, database, and invoices
+ * @note Returns false on errors to avoid blocking legitimate purchases
+ */
+export async function hasCustomerPurchasedLifetime(
+  customerId: string,
+): Promise<boolean> {
+  try {
+    const lifetimePriceId = process.env.STRIPE_PRICE_ID_LIFETIME;
+    if (!lifetimePriceId) return false;
+
+    const charges = await stripe.charges.list({
+      customer: customerId,
+      limit: 100,
+    });
+    const hasLifetimeCharge = charges.data.some(
+      (charge) =>
+        charge.paid &&
+        charge.amount > 0 &&
+        (charge.metadata?.purchase_type === "lifetime" ||
+          charge.description?.toLowerCase().includes("lifetime")),
+    );
+    if (hasLifetimeCharge) return true;
+
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: customerId,
+      limit: 100,
+    });
+    const hasLifetimePayment = paymentIntents.data.some(
+      (pi) =>
+        pi.status === "succeeded" && pi.metadata?.purchase_type === "lifetime",
+    );
+    if (hasLifetimePayment) return true;
+
+    const supabase = await createSupabaseServiceRole();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription")
+      .eq("customer_id", customerId)
+      .single();
+    if (profile?.subscription === "lifetime") return true;
+
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 100,
+    });
+    const hasLifetimeInvoice = invoices.data.some((invoice) => {
+      if (invoice.status !== "paid") return false;
+      return invoice.lines.data.some(
+        (line) => line.price?.id === lifetimePriceId,
+      );
+    });
+    if (hasLifetimeInvoice) return true;
+
+    return false;
+  } catch (error) {
+    console.error("Error checking lifetime purchase history:", error);
     return false;
   }
 }
@@ -495,11 +568,11 @@ export type CustomerPurchasedProResponse = {
 
 export async function cancelSubscription(
   customerId: string,
-  subscriptionId: string
+  subscriptionId: string,
 ): Promise<{ success: boolean; error?: Error | unknown }> {
   try {
     console.log(
-      `Cancelling subscription ${subscriptionId} for customer ${customerId} who upgraded to lifetime`
+      `Cancelling subscription ${subscriptionId} for customer ${customerId} who upgraded to lifetime`,
     );
 
     // Cancel the subscription immediately
@@ -575,11 +648,13 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       // 1. It has a trial_end timestamp (future trial or active trial)
       // 2. OR the status is explicitly "trialing"
       if (typeof session.subscription !== "string") {
-        hasTrialPeriod = 
-          !!session.subscription.trial_end || 
+        hasTrialPeriod =
+          !!session.subscription.trial_end ||
           session.subscription.status === "trialing";
-        
-        console.log(`[Checkout Session] Trial detection: trial_end=${session.subscription.trial_end}, status=${session.subscription.status}, hasTrialPeriod=${hasTrialPeriod}`);
+
+        console.log(
+          `[Checkout Session] Trial detection: trial_end=${session.subscription.trial_end}, status=${session.subscription.status}, hasTrialPeriod=${hasTrialPeriod}`,
+        );
       }
     }
 
@@ -667,7 +742,7 @@ export async function getUpcomingInvoice(customerId: string | null): Promise<{
  */
 export async function updateSubscription(
   customerId: string,
-  planType: "monthly" | "annual"
+  planType: "monthly" | "annual",
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (!customerId) {
@@ -711,7 +786,7 @@ export async function updateSubscription(
       : trialing_sub.data[0];
 
     const subscriptionId = subscription.id;
-    
+
     // BULLETPROOF: Verify subscription has items before updating
     if (!subscription.items?.data?.length) {
       return { success: false, error: "Subscription has no items" };
@@ -727,22 +802,32 @@ export async function updateSubscription(
       // CRITICAL: Preserve trial period if subscription is trialing
       // Stripe automatically preserves trial_end, but we explicitly set proration to none
       // to ensure no charges occur during trial
-      proration_behavior: subscription.status === "trialing" ? "none" : "create_prorations",
+      proration_behavior:
+        subscription.status === "trialing" ? "none" : "create_prorations",
     };
-    
+
     // Log trial preservation
     if (subscription.trial_end) {
-      console.log(`[updateSubscription] Preserving trial_end: ${new Date(subscription.trial_end * 1000).toISOString()}`);
+      console.log(
+        `[updateSubscription] Preserving trial_end: ${new Date(subscription.trial_end * 1000).toISOString()}`,
+      );
     }
 
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-    
+    const updatedSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      updateParams,
+    );
+
     // BULLETPROOF: Verify trial was preserved after update
     if (subscription.trial_end && !updatedSubscription.trial_end) {
-      console.error(`[updateSubscription] WARNING: Trial was lost during update! Original trial_end: ${subscription.trial_end}, New trial_end: ${updatedSubscription.trial_end}`);
+      console.error(
+        `[updateSubscription] WARNING: Trial was lost during update! Original trial_end: ${subscription.trial_end}, New trial_end: ${updatedSubscription.trial_end}`,
+      );
       // This should never happen with Stripe, but log it if it does
     } else if (subscription.trial_end && updatedSubscription.trial_end) {
-      console.log(`[updateSubscription] Trial preserved: trial_end=${updatedSubscription.trial_end}`);
+      console.log(
+        `[updateSubscription] Trial preserved: trial_end=${updatedSubscription.trial_end}`,
+      );
     }
 
     return { success: true };
@@ -810,12 +895,12 @@ export async function checkExistingCustomer(email: string): Promise<{
         (sub) =>
           sub.status === "trialing" ||
           sub.status === "active" ||
-          sub.status === "past_due"
+          sub.status === "past_due",
       );
 
     // Check if they have an active subscription
     const hasActiveSubscription = subscriptions.data.some(
-      (sub) => sub.status === "active" || sub.status === "trialing"
+      (sub) => sub.status === "active" || sub.status === "trialing",
     );
 
     // Return the customer status information
@@ -842,7 +927,7 @@ export async function checkExistingCustomer(email: string): Promise<{
  * @returns URL to the customer portal
  */
 export async function createCustomerPortalSession(
-  customerId: string
+  customerId: string,
 ): Promise<{ url: string | null; error?: string }> {
   try {
     const session = await stripe.billingPortal.sessions.create({
@@ -872,7 +957,7 @@ export async function createCustomerPortalSession(
 export async function refundPaymentIntent(
   paymentIntentId: string,
   amount?: number,
-  reason?: "duplicate" | "fraudulent" | "requested_by_customer"
+  reason?: "duplicate" | "fraudulent" | "requested_by_customer",
 ): Promise<{ success: boolean; refund?: any; error?: string }> {
   try {
     const refundData: Stripe.RefundCreateParams = {
@@ -927,7 +1012,7 @@ export async function refundPaymentIntent(
 export async function refundInvoice(
   invoiceId: string,
   amount?: number,
-  reason?: Stripe.CreditNoteCreateParams.Reason
+  reason?: Stripe.CreditNoteCreateParams.Reason,
 ): Promise<{ success: boolean; creditNote?: any; error?: string }> {
   try {
     // First, get the invoice to check its status and amount
@@ -1009,7 +1094,7 @@ export async function refundInvoice(
  * @param paymentIntentId The payment intent ID
  */
 export async function getPaymentIntentRefunds(
-  paymentIntentId: string
+  paymentIntentId: string,
 ): Promise<{ refunds: any[]; error?: string }> {
   try {
     const refunds = await stripe.refunds.list({
@@ -1050,7 +1135,7 @@ export async function getPaymentIntentRefunds(
  * @param invoiceId The invoice ID
  */
 export async function getInvoiceCreditNotes(
-  invoiceId: string
+  invoiceId: string,
 ): Promise<{ creditNotes: any[]; error?: string }> {
   try {
     const creditNotes = await stripe.creditNotes.list({
@@ -1119,7 +1204,7 @@ export async function createOneTimeCoupon(
   discountType: "percent" | "amount",
   discountValue: number,
   name?: string,
-  currency: string = "usd"
+  currency: string = "usd",
 ): Promise<{ success: boolean; coupon?: any; error?: string }> {
   try {
     const couponData: Stripe.CouponCreateParams = {
@@ -1186,7 +1271,7 @@ export async function createPromotionCode(
   couponId: string,
   code?: string,
   maxRedemptions: number = 1,
-  expiresAt?: number
+  expiresAt?: number,
 ): Promise<{ success: boolean; promotionCode?: any; error?: string }> {
   try {
     const promotionCodeData: Stripe.PromotionCodeCreateParams = {
@@ -1273,7 +1358,7 @@ export async function createOneTimeDiscountCode(
     currency?: string;
     expiresAt?: number;
     maxRedemptions?: number;
-  }
+  },
 ): Promise<{
   success: boolean;
   coupon?: any;
@@ -1287,7 +1372,7 @@ export async function createOneTimeDiscountCode(
       discountType,
       discountValue,
       options?.name,
-      options?.currency
+      options?.currency,
     );
 
     if (!couponResult.success || !couponResult.coupon) {
@@ -1302,7 +1387,7 @@ export async function createOneTimeDiscountCode(
       couponResult.coupon.id,
       options?.code,
       options?.maxRedemptions || 1,
-      options?.expiresAt
+      options?.expiresAt,
     );
 
     if (!promotionCodeResult.success || !promotionCodeResult.promotionCode) {
@@ -1390,7 +1475,7 @@ export async function listPromotionCodes(options?: {
         metadata: promotionCode.metadata,
         restrictions: promotionCode.restrictions,
         times_redeemed: promotionCode.times_redeemed,
-      })
+      }),
     );
 
     return {
@@ -1448,10 +1533,7 @@ export async function listCoupons(options?: {
     console.error("Error listing coupons:", error);
     return {
       coupons: [],
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to list coupons",
+      error: error instanceof Error ? error.message : "Failed to list coupons",
     };
   }
 }
@@ -1461,7 +1543,7 @@ export async function listCoupons(options?: {
  * @param promotionCodeId The promotion code ID to deactivate
  */
 export async function deactivatePromotionCode(
-  promotionCodeId: string
+  promotionCodeId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await stripe.promotionCodes.update(promotionCodeId, {
@@ -1490,7 +1572,7 @@ export async function deactivatePromotionCode(
  */
 export async function cancelSubscriptionAdmin(
   subscriptionId: string,
-  reason?: string
+  reason?: string,
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     const subscription = await stripe.subscriptions.cancel(subscriptionId, {
@@ -1543,7 +1625,7 @@ export async function cancelSubscriptionAdmin(
  * @param subscriptionId The subscription ID to reactivate
  */
 export async function reactivateSubscription(
-  subscriptionId: string
+  subscriptionId: string,
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     // Update the subscription to remove the cancellation
@@ -1598,13 +1680,12 @@ export async function reactivateSubscription(
  */
 export async function changeSubscriptionPlan(
   subscriptionId: string,
-  newPriceId: string
+  newPriceId: string,
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     // Get the current subscription
-    const currentSubscription = await stripe.subscriptions.retrieve(
-      subscriptionId
-    );
+    const currentSubscription =
+      await stripe.subscriptions.retrieve(subscriptionId);
 
     if (!currentSubscription.items.data.length) {
       return {
@@ -1681,7 +1762,7 @@ export async function changeSubscriptionPlan(
  * @param subscriptionId The subscription ID to retrieve
  */
 export async function getSubscriptionDetails(
-  subscriptionId: string
+  subscriptionId: string,
 ): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
@@ -1746,7 +1827,7 @@ export async function getSubscriptionDetails(
  * @param customerId The customer ID
  */
 export async function getCustomerSubscriptions(
-  customerId: string
+  customerId: string,
 ): Promise<{ success: boolean; subscriptions?: any[]; error?: string }> {
   try {
     const subscriptions = await stripe.subscriptions.list({

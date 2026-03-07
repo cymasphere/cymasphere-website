@@ -11,6 +11,7 @@ import { trackUserData, hashEmail, shouldFireEvent } from "@/utils/analytics";
 import {
   refreshSubscriptionByCustomerId,
   inviteUserAndRefreshProStatus,
+  inviteUserByEmailAndRefreshProStatus,
 } from "@/app/actions/checkout";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
 
@@ -31,7 +32,8 @@ const PageContainer = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(
+    background:
+      radial-gradient(
         circle at 30% 50%,
         rgba(108, 99, 255, 0.15),
         transparent 50%
@@ -177,7 +179,11 @@ const InviteText = styled.p`
 `;
 
 const TrialInfoBox = styled.div`
-  background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(108, 99, 255, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(78, 205, 196, 0.1),
+    rgba(108, 99, 255, 0.1)
+  );
   border: 2px solid rgba(78, 205, 196, 0.4);
   border-radius: 12px;
   padding: 1.5rem;
@@ -207,52 +213,65 @@ function CheckoutSuccessContent() {
   const isSignedUp = searchParams.get("isSignedUp") === "true";
   // BULLETPROOF: Validate isTrial parameter - verify from session if needed
   const isTrialParam = searchParams.get("isTrial");
-  let isTrial = isTrialParam === "true";
+  const isTrialFlag = isTrialParam === "true";
+  let isTrial = isTrialFlag;
   const isLifetime = searchParams.get("isLifetime") === "true";
   const isLoggedIn = !!user;
   const sessionId = searchParams.get("session_id");
-  
+  const paymentIntentId = searchParams.get("payment_intent_id");
+  const detailsParam = paymentIntentId
+    ? `payment_intent_id=${paymentIntentId}`
+    : sessionId
+      ? `session_id=${sessionId}`
+      : null;
+
   // State to track verified trial status (double-check from session if URL param seems wrong)
   const [verifiedIsTrial, setVerifiedIsTrial] = useState<boolean | null>(null);
-  
-  // BULLETPROOF: Double-check trial status from session if we have sessionId
-  // This catches any edge cases where URL param might be wrong
+
+  // BULLETPROOF: Double-check trial status from session (only for Checkout Session, not payment_intent_id)
   useEffect(() => {
-    if (!sessionId) return;
-    
-    // Only verify if isTrial is false but mode is subscription (might be a trial we missed)
+    if (!sessionId || paymentIntentId) return;
+
+    // Only verify if initial trial flag is false but mode is subscription (might be a trial we missed)
     // Or if isTrial param is missing/null
-    if (isTrialParam === null || (isTrialParam === "false" && !isLifetime)) {
+    if (isTrialParam === null || (!isTrialFlag && !isLifetime)) {
       const verifyTrialStatus = async () => {
         try {
           const response = await fetch(
-            `/api/checkout-session-details?session_id=${sessionId}`
+            `/api/checkout-session-details?session_id=${sessionId}`,
           );
           const data = await response.json();
-          
+
           if (data.success) {
             // If session says it's a trial but URL param says false, trust the session
             if (data.isTrial === true && isTrialParam === "false") {
-              console.warn(`[Checkout Success] Trial mismatch detected! URL says false but session says true. Using session data.`);
+              console.warn(
+                `[Checkout Success] Trial mismatch detected! URL says false but session says true. Using session data.`,
+              );
               setVerifiedIsTrial(true);
             } else if (data.isTrial === false && isTrialParam === "true") {
-              console.warn(`[Checkout Success] Trial mismatch detected! URL says true but session says false. Using session data.`);
+              console.warn(
+                `[Checkout Success] Trial mismatch detected! URL says true but session says false. Using session data.`,
+              );
               setVerifiedIsTrial(false);
             } else {
               setVerifiedIsTrial(data.isTrial || false);
             }
           }
         } catch (error) {
-          console.error("[Checkout Success] Error verifying trial status:", error);
+          console.error(
+            "[Checkout Success] Error verifying trial status:",
+            error,
+          );
           // If verification fails, trust the URL param
           setVerifiedIsTrial(null);
         }
       };
-      
+
       verifyTrialStatus();
     }
   }, [sessionId, isTrialParam, isLifetime]);
-  
+
   // Use verified trial status if available, otherwise use URL param
   if (verifiedIsTrial !== null) {
     isTrial = verifiedIsTrial;
@@ -260,10 +279,10 @@ function CheckoutSuccessContent() {
   const valueParam = searchParams.get("value");
   const currencyParam = searchParams.get("currency");
   const [subscriptionValue, setSubscriptionValue] = useState<number | null>(
-    valueParam ? parseFloat(valueParam) : null
+    valueParam ? parseFloat(valueParam) : null,
   );
   const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
-    currencyParam || "USD"
+    currencyParam || "USD",
   );
   const [inviteSent, setInviteSent] = useState(false);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
@@ -273,6 +292,15 @@ function CheckoutSuccessContent() {
   // Ref to track if we've already processed the invite/refresh
   const hasProcessedInvite = useRef(false);
 
+  // Clear guest email used for checkout so next visit doesn't reuse it
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("checkout_guest_email");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Refresh pro status on mount only (same as login and dashboard pages)
   useEffect(() => {
     refreshUser();
@@ -280,108 +308,112 @@ function CheckoutSuccessContent() {
   }, []); // Run only on mount
 
   // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
-  // Wait for auth to finish loading before processing
+  // Supports both session_id (Stripe Checkout) and payment_intent_id (in-app lifetime)
   useEffect(() => {
-    // Don't process until auth has finished loading
     if (authLoading) return;
-    // Only process once
     if (hasProcessedInvite.current) return;
-    if (!sessionId) return;
+    if (!detailsParam) return;
 
     const handleUserInviteAndRefresh = async () => {
       hasProcessedInvite.current = true;
 
       try {
         if (isLoggedIn && user?.id) {
-          // User is logged in - refresh pro status immediately
           console.log(
-            `[Checkout Success] User is logged in (${user.id}), refreshing pro status immediately`
+            `[Checkout Success] User is logged in (${user.id}), refreshing pro status immediately`,
           );
           const result = await updateUserProStatus(user.id);
           console.log(
-            `[Checkout Success] Pro status refreshed: ${result.subscription} (${result.source})`
+            `[Checkout Success] Pro status refreshed: ${result.subscription} (${result.source})`,
           );
-          // Also refresh user context to update UI
-          if (refreshUser) {
-            await refreshUser();
-          }
+          if (refreshUser) await refreshUser();
         } else if (!isLoggedIn) {
-          // User is not logged in - invite them and refresh pro status
           console.log(
-            "[Checkout Success] User is not logged in, inviting and refreshing pro status"
+            "[Checkout Success] User is not logged in, inviting and refreshing pro status",
           );
 
-          // First, get the customer email from the session
-          try {
+          if (paymentIntentId) {
             const response = await fetch(
-              `/api/checkout-session-details?session_id=${sessionId}`
+              `/api/checkout-session-details?${detailsParam}`,
             );
             const data = await response.json();
             if (data.success && data.customerEmail) {
               setCustomerEmail(data.customerEmail);
-            }
-          } catch (error) {
-            console.error(
-              "[Checkout Success] Error fetching session email:",
-              error
-            );
-          }
-
-          const result = await inviteUserAndRefreshProStatus(sessionId);
-
-          if (result.success) {
-            console.log(
-              `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`
-            );
-            setInviteSent(true);
-            // Get email from session if we don't have it yet
-            if (!customerEmail) {
-              try {
-                const response = await fetch(
-                  `/api/checkout-session-details?session_id=${sessionId}`
+              const result = await inviteUserByEmailAndRefreshProStatus(
+                data.customerEmail,
+              );
+              if (result.success) {
+                console.log(
+                  `[Checkout Success] User invited (payment intent flow): ${result.subscription}`,
                 );
-                const data = await response.json();
-                if (data.success && data.customerEmail) {
-                  setCustomerEmail(data.customerEmail);
-                }
-              } catch (error) {
-                console.error("[Checkout Success] Error getting email:", error);
+                setInviteSent(true);
+              } else {
+                console.error(
+                  "[Checkout Success] Failed to invite (payment intent):",
+                  result.error,
+                );
               }
             }
           } else {
-            console.error(
-              "[Checkout Success] Failed to invite user and refresh pro status:",
-              result.error
-            );
+            try {
+              const response = await fetch(
+                `/api/checkout-session-details?${detailsParam}`,
+              );
+              const data = await response.json();
+              if (data.success && data.customerEmail) {
+                setCustomerEmail(data.customerEmail);
+              }
+            } catch (err) {
+              console.error(
+                "[Checkout Success] Error fetching session email:",
+                err,
+              );
+            }
+            const result = await inviteUserAndRefreshProStatus(sessionId!);
+            if (result.success) {
+              console.log(
+                `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`,
+              );
+              setInviteSent(true);
+            } else {
+              console.error(
+                "[Checkout Success] Failed to invite user and refresh pro status:",
+                result.error,
+              );
+            }
           }
         }
       } catch (error) {
         console.error(
           "[Checkout Success] Error in user invite/refresh process:",
-          error
+          error,
         );
-        // Don't block page rendering on error
       }
     };
 
     handleUserInviteAndRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isLoggedIn, user?.id, authLoading]);
+  }, [
+    detailsParam,
+    sessionId,
+    paymentIntentId,
+    isLoggedIn,
+    user?.id,
+    authLoading,
+  ]);
 
-  // Refresh subscription status by customer ID (works even if not logged in)
+  // Refresh subscription status by customer ID (works for both session_id and payment_intent_id)
   useEffect(() => {
     const refreshByCustomerId = async () => {
-      if (!sessionId) return;
+      if (!detailsParam) return;
 
       try {
-        // Fetch session details to get customer ID
         const response = await fetch(
-          `/api/checkout-session-details?session_id=${sessionId}`
+          `/api/checkout-session-details?${detailsParam}`,
         );
         const data = await response.json();
 
         if (data.success && data.customerId) {
-          // Call server action to refresh subscription status
           const result = await refreshSubscriptionByCustomerId(data.customerId);
 
           if (result.success) {
@@ -389,31 +421,27 @@ function CheckoutSuccessContent() {
               "[Checkout Success] Refreshed subscription status for customer:",
               data.customerId,
               "subscription:",
-              result.subscription
+              result.subscription,
             );
-
-            // If user is logged in, also refresh their context
-            if (isLoggedIn && refreshUser) {
-              await refreshUser();
-            }
+            if (isLoggedIn && refreshUser) await refreshUser();
           } else {
             console.error(
               "[Checkout Success] Failed to refresh subscription:",
-              result.error
+              result.error,
             );
           }
         }
       } catch (error) {
         console.error(
           "[Checkout Success] Error refreshing subscription by customer ID:",
-          error
+          error,
         );
       }
     };
 
     refreshByCustomerId();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isLoggedIn]);
+  }, [detailsParam, isLoggedIn]);
 
   // Track promotion conversion
   useEffect(() => {
@@ -457,17 +485,18 @@ function CheckoutSuccessContent() {
     // Get user data (extracted once to avoid dependency issues)
     const userId = user?.id || user?.profile?.id;
     const userEmail = user?.email || user?.profile?.email;
-    
+
     // BULLETPROOF: Use verified trial status if available, otherwise use URL param
     const finalIsTrial = verifiedIsTrial !== null ? verifiedIsTrial : isTrial;
 
     // Helper function to track event with user data and deduplication
     const trackEventWithUserData = async (
       eventName: string,
-      eventData: Record<string, unknown> = {}
+      eventData: Record<string, unknown> = {},
     ) => {
-      // Use session_id as event ID for deduplication, or generate one
-      const eventId = sessionId || `${eventName}_${Date.now()}`;
+      // Use session_id or payment_intent_id as event ID for deduplication, or generate one
+      const eventId =
+        sessionId || paymentIntentId || `${eventName}_${Date.now()}`;
 
       // Check if event should fire (deduplication check)
       if (!shouldFireEvent(eventName, eventId)) {
@@ -531,12 +560,11 @@ function CheckoutSuccessContent() {
       trackEventWithUserData("purchase", {
         value: subscriptionValue,
         currency: subscriptionCurrency,
-        transaction_id: sessionId,
+        transaction_id: sessionId || paymentIntentId || undefined,
         items: purchaseItems,
       });
 
       // Also fire Meta Pixel directly to ensure parameters are sent
-      // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
       if (typeof window !== "undefined" && window.fbq) {
         window.fbq(
           "track",
@@ -552,8 +580,8 @@ function CheckoutSuccessContent() {
             })),
           },
           {
-            eventID: sessionId || `purchase_${Date.now()}`, // For deduplication with server events
-          }
+            eventID: sessionId || paymentIntentId || `purchase_${Date.now()}`,
+          },
         );
       }
     } else if (subscriptionValue !== null) {
@@ -564,9 +592,9 @@ function CheckoutSuccessContent() {
           currency: subscriptionCurrency,
         },
       });
-    } else if (sessionId && !finalIsTrial) {
-      // If we have session_id but no value, fetch it from API
-      fetch(`/api/checkout-session-details?session_id=${sessionId}`)
+    } else if (detailsParam && !finalIsTrial) {
+      // If we have session_id or payment_intent_id but no value, fetch from API
+      fetch(`/api/checkout-session-details?${detailsParam}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.value !== null) {
@@ -590,12 +618,10 @@ function CheckoutSuccessContent() {
               trackEventWithUserData("purchase", {
                 value: data.value,
                 currency: data.currency || "USD",
-                transaction_id: sessionId,
+                transaction_id: sessionId || paymentIntentId || undefined,
                 items: purchaseItems,
               });
 
-              // Also fire Meta Pixel directly to ensure parameters are sent
-              // (trackPurchase would duplicate dataLayer push, so we fire fbq directly)
               if (typeof window !== "undefined" && window.fbq) {
                 window.fbq(
                   "track",
@@ -611,8 +637,9 @@ function CheckoutSuccessContent() {
                     })),
                   },
                   {
-                    eventID: sessionId || `purchase_${Date.now()}`, // For deduplication with server events
-                  }
+                    eventID:
+                      sessionId || paymentIntentId || `purchase_${Date.now()}`,
+                  },
                 );
               }
             } else {
@@ -681,7 +708,9 @@ function CheckoutSuccessContent() {
             <TrialInfoBox>
               <TrialInfoTitle>✨ Zero Cost Trial</TrialInfoTitle>
               <TrialInfoText>
-                You will NOT be charged during your trial period. Explore all features risk-free. Cancel anytime before your trial ends to avoid any charges.
+                You will NOT be charged during your trial period. Explore all
+                features risk-free. Cancel anytime before your trial ends to
+                avoid any charges.
               </TrialInfoText>
             </TrialInfoBox>
           </>
@@ -698,10 +727,7 @@ function CheckoutSuccessContent() {
         )}
 
         {authLoading ? (
-          <LoadingSpinner
-            size="small"
-            text="Processing checkout..."
-          />
+          <LoadingSpinner size="small" text="Processing checkout..." />
         ) : (
           <>
             {inviteSent && !isLoggedIn && (
@@ -721,14 +747,14 @@ function CheckoutSuccessContent() {
                   <ActionButton onClick={() => router.push("/downloads")}>
                     Downloads
                   </ActionButton>
-                  <SecondaryButton onClick={() => router.push("/getting-started")}>
+                  <SecondaryButton
+                    onClick={() => router.push("/getting-started")}
+                  >
                     Getting Started
                   </SecondaryButton>
                 </>
-              ) : (
-                // When not logged in, don't show any buttons - user should wait for invite
-                null
-              )}
+              ) : // When not logged in, don't show any buttons - user should wait for invite
+              null}
             </ButtonContainer>
           </>
         )}
