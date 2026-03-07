@@ -685,9 +685,12 @@ interface TemplateData {
 interface Audience {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   subscriber_count: number;
-  type: 'static' | 'dynamic';
+  filters?: any;
+  created_at: string;
+  updated_at: string;
+  type?: "static" | "dynamic";
 }
 
 // HTML parser to convert saved HTML content back to visual editor elements
@@ -927,8 +930,8 @@ function EditTemplatePage() {
           // No need to merge audience objects here since audiences are loaded separately
 
           // Parse HTML content back to email elements if available
-          if (template.htmlContent || template.html_content) {
-            const htmlContent = template.htmlContent || template.html_content;
+          if (template.htmlContent) {
+            const htmlContent = template.htmlContent;
             
             // Check if template has visual_elements in variables (new format)
             if (template.variables?.visual_elements && Array.isArray(template.variables.visual_elements)) {

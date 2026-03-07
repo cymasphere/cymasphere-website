@@ -578,13 +578,11 @@ function PerformancePage() {
             openRate: campaign.openRate,
             clickRate: campaign.clickRate,
             performance: campaign.openRate > 25 ? 'excellent' : campaign.openRate > 20 ? 'good' : campaign.openRate > 15 ? 'average' : 'poor',
-            sentDate: campaign.sentDate
+            sentDate: campaign.sentAt
           }))
         };
         
         setPerformanceData(transformedData);
-      } else {
-        throw new Error(result.error || 'Unknown error');
       }
     } catch (err) {
       console.error('Error fetching performance data:', err);
@@ -634,7 +632,7 @@ function PerformancePage() {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6 },
     }),
   };
 

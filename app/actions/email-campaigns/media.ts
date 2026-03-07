@@ -28,6 +28,24 @@ export async function previewEmail(campaignId: string): Promise<PreviewResponse>
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('user', user.id)
+      .single();
+
+    if (!adminCheck) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     if (!campaignId) {
       throw new Error('Campaign ID is required');
     }

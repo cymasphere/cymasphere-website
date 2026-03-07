@@ -23,6 +23,14 @@ export interface EmailTemplate {
   usage_count?: number;
   audienceIds?: string[];
   excludedAudienceIds?: string[];
+  // Optional legacy/template fields used by frontend
+  sender_name?: string;
+  sender_email?: string;
+  reply_to_email?: string;
+  preheader?: string;
+  type?: string;
+  html_content?: string;
+  text_content?: string;
 }
 
 export interface GetTemplatesResponse {

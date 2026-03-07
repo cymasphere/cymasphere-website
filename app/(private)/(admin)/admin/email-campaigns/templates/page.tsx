@@ -446,19 +446,23 @@ const EmptyState = styled.div`
   }
 `;
 
-// Template interface
+// Template interface aligned with EmailTemplate
 interface Template {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   subject: string;
   template_type: string;
-  type: string;
   status: string;
-  usage_count: number;
+  variables: any;
+  created_by: string;
   last_used_at: string | null;
   created_at: string;
   updated_at: string;
+  usage_count?: number;
+  type?: string;
+  audienceIds?: string[];
+  excludedAudienceIds?: string[];
 }
 
 function TemplatesPage() {
@@ -556,7 +560,7 @@ function TemplatesPage() {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6 },
     }),
   };
 

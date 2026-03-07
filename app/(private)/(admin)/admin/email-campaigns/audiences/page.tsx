@@ -575,7 +575,7 @@ interface DatabaseAudience {
   description: string | null;
   filters: any;
   subscriber_count: number | null;
-  created_by: string | null;
+  created_by?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -701,7 +701,7 @@ function AudiencesPage() {
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+      transition: { delay: i * 0.1, duration: 0.6 },
     }),
   };
 

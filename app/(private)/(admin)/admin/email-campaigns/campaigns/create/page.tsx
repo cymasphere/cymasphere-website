@@ -1903,27 +1903,36 @@ const EditableText = styled.div.withConfig({
   ` : ''}
 `;
 
-// Audience interface
+// Audience interface aligned with EmailAudience
 interface Audience {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   subscriber_count: number;
-  type: 'static' | 'dynamic';
+  filters?: any;
+  created_at: string;
+  updated_at: string;
+  type?: "static" | "dynamic";
 }
 
+// Template interface aligned with EmailTemplate / GetTemplateResponse
 interface Template {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   subject: string;
   template_type: string;
   status: string;
-  html_content: string;
-  text_content: string;
   variables: any;
+  created_by: string;
+  last_used_at: string | null;
   created_at: string;
   updated_at: string;
+  usage_count?: number;
+  audienceIds?: string[];
+  excludedAudienceIds?: string[];
+  htmlContent?: string;
+  textContent?: string;
 }
 
 
@@ -1943,7 +1952,7 @@ interface CampaignData {
   excludedAudienceIds: string[]; // Array of excluded audience IDs
   template: string;
   content: string;
-  scheduleType: string;
+  scheduleType: "immediate" | "scheduled" | "timezone" | "draft";
   scheduleDate: string;
   scheduleTime: string;
 }
@@ -2617,12 +2626,12 @@ function CreateCampaignPage() {
               replyToEmail: campaign.replyToEmail || '',
               preheader: campaign.preheader || '',
               description: campaign.description || '',
-              brandHeader: campaign.brandHeader || 'CYMASPHERE',
+              brandHeader: 'CYMASPHERE',
               audienceIds: campaign.audienceIds || [],
               excludedAudienceIds: campaign.excludedAudienceIds || [],
               template: campaign.template_id || '',
-              content: campaign.html_content || '',
-              scheduleType: campaign.scheduled_at ? 'scheduled' : '',
+              content: campaign.htmlContent || '',
+              scheduleType: campaign.scheduled_at ? 'scheduled' : 'immediate',
               scheduleDate: campaign.scheduled_at ? (() => {
                 const scheduledDate = new Date(campaign.scheduled_at);
                 console.log('📅 Loading scheduled time for editing:', {
@@ -2639,10 +2648,10 @@ function CreateCampaignPage() {
               })() : ''
             });
             
-            // Parse email elements from html_content if available
-            if (campaign.html_content) {
+            // Parse email elements from htmlContent if available
+            if (campaign.htmlContent) {
               // First try to extract embedded elements JSON comment
-              const match = campaign.html_content.match(/<!--ELEMENTS_B64:([^>]*)-->/);
+              const match = campaign.htmlContent.match(/<!--ELEMENTS_B64:([^>]*)-->/);
               let restoredElements: any[] | null = null;
               if (match && match[1]) {
                 try {
@@ -2666,7 +2675,7 @@ function CreateCampaignPage() {
               } else {
                 // Fallback: naive parse to at least show content
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(campaign.html_content, 'text/html');
+                const doc = parser.parseFromString(campaign.htmlContent, 'text/html');
                 const elements = Array.from(doc.body.children).map((element, index) => ({
                   id: `element_${index}`,
                   type: (element as HTMLElement).getAttribute('data-type') || (element.tagName.toLowerCase() === 'h1' ? 'header' : 'text'),
@@ -2678,15 +2687,6 @@ function CreateCampaignPage() {
                 }
               }
             }
-          } else if (response.status === 404) {
-            console.warn(`Campaign with ID ${editId} not found, creating new campaign instead`);
-            // Campaign doesn't exist, treat as create mode
-            // Clear the edit parameter from URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('edit');
-            window.history.replaceState({}, '', url.toString());
-          } else {
-            console.error('Failed to load campaign:', response.status);
           }
         } catch (error) {
           console.error('Error loading campaign:', error);
@@ -2958,7 +2958,7 @@ function CreateCampaignPage() {
           // Update message based on actual result
           if (sendResult.status === 'scheduled') {
             setSendingMessage(
-              sendResult.scheduleType === 'timezone' 
+              sendResult.stats?.scheduleType === 'timezone' 
                 ? `Campaign scheduled for timezone-based delivery at ${sendResult.stats?.sendTime}!`
                 : `Campaign scheduled for ${formatScheduledTime(sendResult.scheduledFor)}!`
             );
@@ -3381,7 +3381,7 @@ function CreateCampaignPage() {
           const elementsWithProperties = ensureElementProperties(newElements);
           setEmailElements(elementsWithProperties);
           console.log('Template visual elements loaded with brand header:', newElements);
-        } else if (template.html_content) {
+        } else if (template.htmlContent) {
           // Fallback: If no visual elements, create a basic text element
           console.log('Template has no visual elements, creating fallback');
           const fallbackElement = {

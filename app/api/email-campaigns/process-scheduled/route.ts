@@ -239,22 +239,25 @@ export async function POST(request: NextRequest) {
     // Verify the request is authorized (Vercel cron, AWS cron, or manual with secret)
     const authHeader = request.headers.get("authorization");
     const vercelSecret = request.headers.get("x-vercel-cron-signature");
-    const cronSecret = process.env.CRON_SECRET || "your-secret-key";
+    const cronSecret = process.env.CRON_SECRET;
 
-    // Allow Vercel cron jobs, AWS cron jobs with API key, or manual calls with API key
+    // CRON_SECRET must be set for API key auth (no fallback)
     const isVercelCron = !!vercelSecret;
-    const isApiKeyCron = authHeader === `Bearer ${cronSecret}`;
+    const isApiKeyCron = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
     const isAuthorized = isVercelCron || isApiKeyCron;
 
     if (!isAuthorized) {
+      if (!cronSecret && !vercelSecret) {
+        console.error("❌ CRON_SECRET is not set - cannot authorize API key cron requests");
+        return NextResponse.json(
+          { error: "Server configuration error: CRON_SECRET not set" },
+          { status: 500 }
+        );
+      }
       console.log(
-        "❌ Unauthorized cron job request - missing vercel cron signature or API key"
+        "❌ Unauthorized cron job request - missing vercel cron signature or valid API key"
       );
-      console.log(
-        "❌ Expected Authorization header:",
-        `Bearer ${cronSecret.slice(0, 8)}...`
-      );
-      console.log("❌ Received Authorization header:", authHeader || "none");
+      console.log("❌ Received Authorization header:", authHeader ? "present" : "none");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -451,22 +454,6 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`📬 Sending to ${subscribersResult.length} subscribers`);
-
-        // Debug AWS environment variables
-        console.log("🔧 AWS Environment Check:");
-        console.log(
-          "  AWS_ACCESS_KEY_ID:",
-          process.env.AWS_ACCESS_KEY_ID
-            ? `${process.env.AWS_ACCESS_KEY_ID.slice(0, 8)}...`
-            : "NOT_SET"
-        );
-        console.log(
-          "  AWS_SECRET_ACCESS_KEY:",
-          process.env.AWS_SECRET_ACCESS_KEY
-            ? `${process.env.AWS_SECRET_ACCESS_KEY.slice(0, 8)}...`
-            : "NOT_SET"
-        );
-        console.log("  AWS_REGION:", process.env.AWS_REGION || "NOT_SET");
 
         // Send emails - Use parallel batch sending if enabled (sends multiple personalized emails concurrently)
         let sentCount = 0;
