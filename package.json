@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next dev",
+    "dev": "next dev",
     "build": "next build --webpack",
     "compile": "next build --webpack",
     "start": "next start",
@@ -81,7 +81,6 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
-    "cross-env": "^7.0.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.1",
     "postcss": "^8.5.6",
