@@ -58,6 +58,9 @@ async function grantLifetimeLicense(email, customerId) {
       payment_intent_data: {
         metadata: {
           purchase_type: 'lifetime',
+          plan_type: 'lifetime',
+          plan_name: 'lifetime_0',
+          price_id: lifetimePriceId,
         },
       },
       invoice_creation: {
@@ -65,6 +68,9 @@ async function grantLifetimeLicense(email, customerId) {
         invoice_data: {
           metadata: {
             purchase_type: 'lifetime',
+            plan_type: 'lifetime',
+            plan_name: 'lifetime_0',
+            price_id: lifetimePriceId,
           },
         },
       },
@@ -84,6 +90,9 @@ async function grantLifetimeLicense(email, customerId) {
       days_until_due: 0,
       metadata: {
         purchase_type: 'lifetime',
+        plan_type: 'lifetime',
+        plan_name: 'lifetime_0',
+        price_id: lifetimePriceId,
       },
       description: 'Lifetime Access',
     });
@@ -101,6 +110,9 @@ async function grantLifetimeLicense(email, customerId) {
       discounts: [{ coupon: coupon.id }],
       metadata: {
         purchase_type: 'lifetime',
+        plan_type: 'lifetime',
+        plan_name: 'lifetime_0',
+        price_id: lifetimePriceId,
       },
     });
 

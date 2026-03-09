@@ -113,10 +113,10 @@ async function checkForDuplicates(customerId) {
 }
 
 async function fixUserSubscriptions(userEmail) {
-  // Find user profile
+  // Find user profile (include subscription so we never overwrite lifetime)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, email, customer_id')
+    .select('id, email, customer_id, subscription')
     .eq('email', userEmail)
     .single();
 
@@ -178,31 +178,36 @@ async function fixUserSubscriptions(userEmail) {
     }
   }
 
-  // Update profile with the subscription we're keeping
-  const subscriptionItem = subscriptionToKeep.items.data[0];
-  if (subscriptionItem) {
-    const priceId = subscriptionItem.price.id;
-    const subscriptionType = 
-      priceId === process.env.STRIPE_PRICE_ID_MONTHLY 
-        ? "monthly" 
-        : priceId === process.env.STRIPE_PRICE_ID_ANNUAL
-        ? "annual" 
-        : "none";
+  // Update profile with the subscription we're keeping (never overwrite lifetime)
+  const currentSubscription = profile.subscription;
+  if (currentSubscription === 'lifetime') {
+    console.log(`\n⚠️ User has lifetime access - skipping profile update to avoid downgrade`);
+  } else {
+    const subscriptionItem = subscriptionToKeep.items.data[0];
+    if (subscriptionItem) {
+      const priceId = subscriptionItem.price.id;
+      const subscriptionType =
+        priceId === process.env.STRIPE_PRICE_ID_MONTHLY
+          ? "monthly"
+          : priceId === process.env.STRIPE_PRICE_ID_ANNUAL
+          ? "annual"
+          : "none";
 
-    try {
-      await supabase
-        .from("profiles")
-        .update({
-          subscription: subscriptionType,
-          subscription_expiration: new Date(subscriptionToKeep.current_period_end * 1000).toISOString(),
-          trial_expiration: subscriptionToKeep.trial_end ? new Date(subscriptionToKeep.trial_end * 1000).toISOString() : null,
-        })
-        .eq("id", profile.id);
+      try {
+        await supabase
+          .from("profiles")
+          .update({
+            subscription: subscriptionType,
+            subscription_expiration: new Date(subscriptionToKeep.current_period_end * 1000).toISOString(),
+            trial_expiration: subscriptionToKeep.trial_end ? new Date(subscriptionToKeep.trial_end * 1000).toISOString() : null,
+          })
+          .eq("id", profile.id);
 
-      console.log(`\n✅ Updated profile subscription to: ${subscriptionType}`);
-    } catch (updateError) {
-      console.error(`❌ Failed to update profile:`, updateError.message);
-      cancelSuccess = false;
+        console.log(`\n✅ Updated profile subscription to: ${subscriptionType}`);
+      } catch (updateError) {
+        console.error(`❌ Failed to update profile:`, updateError.message);
+        cancelSuccess = false;
+      }
     }
   }
 
