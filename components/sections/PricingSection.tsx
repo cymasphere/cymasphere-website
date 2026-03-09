@@ -1,12 +1,12 @@
 /**
  * @fileoverview PricingSection Component
  * @module components/sections/PricingSection
- * 
+ *
  * Main pricing section for the landing page. Features an interactive 3D canvas
  * with clickable chord molecules, billing period toggle, pricing card, trial
  * information banner, and promotional sale banner. Includes sophisticated
  * background animation with musical chord visualizations.
- * 
+ *
  * @example
  * // Basic usage
  * <PricingSection />
@@ -38,6 +38,10 @@ import i18next from "i18next";
 import BillingToggle from "../pricing/BillingToggle";
 import PricingCard from "../pricing/PricingCard";
 import PromotionBanner from "../banners/PromotionBanner";
+import { useCheckout, type InlineCheckoutParams } from "@/hooks/useCheckout";
+import { EmbeddedCheckout } from "../checkout/EmbeddedCheckout";
+import { AnimatePresence } from "framer-motion";
+import { FaTimes } from "react-icons/fa";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -266,7 +270,7 @@ const ChordWeb = React.memo(() => {
         }, 5000); // Increased from 3000 to match longer reverb tail
       }
     },
-    []
+    [],
   );
 
   // Pre-compute color values for better performance
@@ -336,7 +340,7 @@ const ChordWeb = React.memo(() => {
       },
       { name: "Cmaj7", notes: ["C", "E", "G", "B"], color: chordColors[13] },
     ],
-    [chordColors]
+    [chordColors],
   );
 
   // Define positions for each chord molecule
@@ -536,7 +540,7 @@ const ChordWeb = React.memo(() => {
       time: number,
       index: number,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      totalNotes: number
+      totalNotes: number,
     ) => {
       // Scale based on z-depth (perspective)
       const scale = 400 / (400 + z);
@@ -605,7 +609,7 @@ const ChordWeb = React.memo(() => {
           0,
           centerX,
           centerY,
-          radius
+          radius,
         );
 
         // Use gradient that matches the overall color theme
@@ -667,7 +671,7 @@ const ChordWeb = React.memo(() => {
 
         // Cache gradient for performance
         const gradientKey = `${position.x.toFixed(0)},${position.y.toFixed(
-          0
+          0,
         )},${glowRadius.toFixed(1)}`;
         let gradient =
           position.cachedGradient?.key === gradientKey
@@ -681,7 +685,7 @@ const ChordWeb = React.memo(() => {
             0,
             position.x,
             position.y,
-            glowRadius
+            glowRadius,
           );
 
           // Change glow color based on playing state
@@ -690,11 +694,11 @@ const ChordWeb = React.memo(() => {
             // Ethereal glow that fades slowly for reverb effect
             const playFactor = Math.pow(
               1 - (time - position.playingTime) / 5,
-              1.2
+              1.2,
             );
             glowColor = chord.color.replace(
               "0.9",
-              (0.5 * playFactor + 0.2).toString()
+              (0.5 * playFactor + 0.2).toString(),
             );
           } else if (
             position.collisionTime &&
@@ -878,7 +882,7 @@ const ChordWeb = React.memo(() => {
           chord.color,
           time,
           index,
-          noteCount
+          noteCount,
         );
       });
 
@@ -897,7 +901,7 @@ const ChordWeb = React.memo(() => {
     // Draw connections between chord molecules - fewer connections for performance
     const drawConnections = (positions: (ChordCenter | null)[]) => {
       const validPositions = positions.filter(
-        (p) => p !== null
+        (p) => p !== null,
       ) as ChordCenter[];
 
       // Only draw connections for closer objects (performance optimization)
@@ -1238,7 +1242,6 @@ const SectionSubtitle = styled.p`
   pointer-events: none; /* No need for interaction */
 `;
 
-
 // Simplified particle element - just one subtle accent
 const Particle = styled.div`
   position: absolute;
@@ -1252,7 +1255,6 @@ const Particle = styled.div`
   bottom: 5%;
   right: 5%;
 `;
-
 
 // Add definitions for the components causing linter errors
 const TrialBanner = styled.div`
@@ -1297,19 +1299,67 @@ const TrialText = styled.div`
   }
 `;
 
+/** Overlay and container for inline checkout modal. */
+const CheckoutModalOverlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+`;
+
+const CheckoutModalContainer = styled(motion.div)`
+  position: relative;
+  width: 95%;
+  max-width: 460px;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: var(--background);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+`;
+
+const CheckoutModalCloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text);
+  }
+`;
 
 /**
  * @brief PricingSection component
- * 
+ *
  * Main pricing section with:
  * - Interactive 3D canvas with clickable chord molecules (desktop only)
  * - Billing period toggle (monthly, yearly, lifetime)
  * - Pricing card with dynamic pricing and promotions
  * - Trial information banner (hidden if user has used trial)
  * - Promotional sale banner (hidden for lifetime users)
- * 
+ *
  * @returns {JSX.Element} The rendered pricing section component
- * 
+ *
  * @note ChordWeb canvas is hidden on mobile devices for performance
  * @note Fetches active promotions from /api/promotions/active
  * @note Checks Stripe trial status for logged-in users
@@ -1326,7 +1376,7 @@ const PricingSection = () => {
   const [language, setLanguage] = useState(() =>
     typeof window !== "undefined"
       ? (window as any).i18next?.language || "en"
-      : "en"
+      : "en",
   );
 
   // Effect to listen for language changes
@@ -1349,6 +1399,13 @@ const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState<PlanType>("monthly");
   // State for checking if user has had trial via Stripe
   const [hasHadStripeTrial, setHasHadStripeTrial] = useState<boolean>(false);
+  // Inline checkout: when set, show checkout form in a modal instead of redirecting
+  const [inlineCheckoutParams, setInlineCheckoutParams] =
+    useState<InlineCheckoutParams | null>(null);
+
+  const { initiateCheckout } = useCheckout({
+    onInlineCheckout: setInlineCheckoutParams,
+  });
 
   // Fetch trial status when user is logged in
   useEffect(() => {
@@ -1359,7 +1416,8 @@ const PricingSection = () => {
       }
 
       try {
-        const { checkCustomerTrialStatus } = await import("@/utils/stripe/actions");
+        const { checkCustomerTrialStatus } =
+          await import("@/utils/stripe/actions");
         const result = await checkCustomerTrialStatus(user.email);
 
         if (result.error) {
@@ -1414,7 +1472,6 @@ const PricingSection = () => {
     );
   }, [user, hasHadStripeTrial]);
 
-
   // Check for active sale (fetched by banner component)
   // Skip entirely for lifetime users - they don't need promotions
   const [hasActiveSale, setHasActiveSale] = useState(false);
@@ -1424,7 +1481,7 @@ const PricingSection = () => {
   // This runs whenever user or subscription changes
   useEffect(() => {
     if (user?.profile?.subscription === "lifetime") {
-      console.log('🚫 User has lifetime - hiding all promotions');
+      console.log("🚫 User has lifetime - hiding all promotions");
       setHasActiveSale(false);
       setIsBannerDismissed(false);
     }
@@ -1440,12 +1497,12 @@ const PricingSection = () => {
 
     const checkActiveSale = async () => {
       try {
-        const response = await fetch('/api/promotions/active');
+        const response = await fetch("/api/promotions/active");
         const data = await response.json();
-        
+
         if (data.success && data.promotion) {
           // Check if the promotion banner has been dismissed
-          const closedBanners = localStorage.getItem('closedPromotionBanners');
+          const closedBanners = localStorage.getItem("closedPromotionBanners");
           if (closedBanners) {
             try {
               const closedIds = JSON.parse(closedBanners);
@@ -1460,21 +1517,21 @@ const PricingSection = () => {
           } else {
             setIsBannerDismissed(false);
           }
-          
+
           setHasActiveSale(true);
         } else {
           setHasActiveSale(false);
           setIsBannerDismissed(false);
         }
       } catch (error) {
-        console.error('Error checking active sale:', error);
+        console.error("Error checking active sale:", error);
         setHasActiveSale(false);
         setIsBannerDismissed(false);
       }
     };
 
     checkActiveSale();
-    
+
     // Listen for storage changes to update when banner is dismissed (cross-tab)
     const handleStorageChange = () => {
       // Don't check if user has lifetime
@@ -1485,7 +1542,7 @@ const PricingSection = () => {
       }
       checkActiveSale();
     };
-    
+
     // Listen for custom event when banner is dismissed in same window
     const handleBannerDismissed = () => {
       // Don't check if user has lifetime
@@ -1495,7 +1552,7 @@ const PricingSection = () => {
         return;
       }
       // Immediately check localStorage to update state
-      const closedBanners = localStorage.getItem('closedPromotionBanners');
+      const closedBanners = localStorage.getItem("closedPromotionBanners");
       if (closedBanners) {
         try {
           const closedIds = JSON.parse(closedBanners);
@@ -1509,13 +1566,16 @@ const PricingSection = () => {
         setIsBannerDismissed(false);
       }
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('promotionBannerDismissed', handleBannerDismissed);
-    
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("promotionBannerDismissed", handleBannerDismissed);
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('promotionBannerDismissed', handleBannerDismissed);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
+        "promotionBannerDismissed",
+        handleBannerDismissed,
+      );
     };
   }, [user?.profile?.subscription]);
 
@@ -1537,10 +1597,16 @@ const PricingSection = () => {
 
           {/* Promotional Sale Banner - Only show if header banner has been dismissed (to avoid duplicate) and user doesn't have lifetime */}
           {/* CRITICAL: Check user subscription FIRST - never show for lifetime users */}
-          {!(user?.profile?.subscription === "lifetime") && 
-           hasActiveSale && 
-           isBannerDismissed && 
-           <PromotionBanner showCountdown={true} dismissible={false} variant="card" />}
+          {!(user?.profile?.subscription === "lifetime") &&
+            hasActiveSale &&
+            isBannerDismissed && (
+              <PromotionBanner
+                showCountdown={true}
+                dismissible={false}
+                variant="card"
+                initiateCheckout={initiateCheckout}
+              />
+            )}
 
           {/* Free Trial Banner - Only show if user hasn't completed a trial */}
           {!shouldHideTrialContent && (
@@ -1553,12 +1619,12 @@ const PricingSection = () => {
                 <p>
                   {t(
                     "pricing.freeTrial.description",
-                    "Experience all premium features with two trial options."
+                    "Experience all premium features with two trial options.",
                   )}
                   <br />
                   {t(
                     "pricing.freeTrial.options",
-                    "Choose 7 days with no card or 14 days with card on file."
+                    "Choose 7 days with no card or 14 days with card on file.",
                   )}
                 </p>
               </TrialText>
@@ -1568,12 +1634,12 @@ const PricingSection = () => {
           <SectionSubtitle>
             {t(
               "pricing.chooseOption",
-              "Choose the billing option that works best for you."
+              "Choose the billing option that works best for you.",
             )}
             <br />
             {t(
               "pricing.allFeatures",
-              "All options include full access to all features."
+              "All options include full access to all features.",
             )}
           </SectionSubtitle>
 
@@ -1596,10 +1662,47 @@ const PricingSection = () => {
           <PricingCard
             billingPeriod={billingPeriod}
             onBillingPeriodChange={(period) => setBillingPeriod(period)}
-            showTrialOptions={!hasHadStripeTrial && (!user?.profile || user?.profile?.subscription === "none")}
+            showTrialOptions={
+              !hasHadStripeTrial &&
+              (!user?.profile || user?.profile?.subscription === "none")
+            }
+            initiateCheckout={initiateCheckout}
           />
         </motion.div>
       </ContentContainer>
+
+      <AnimatePresence>
+        {inlineCheckoutParams && (
+          <CheckoutModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setInlineCheckoutParams(null)}
+          >
+            <CheckoutModalContainer
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CheckoutModalCloseButton
+                type="button"
+                onClick={() => setInlineCheckoutParams(null)}
+                aria-label="Close"
+              >
+                <FaTimes size={18} />
+              </CheckoutModalCloseButton>
+              <EmbeddedCheckout
+                planType={inlineCheckoutParams.planType}
+                collectPaymentMethod={inlineCheckoutParams.collectPaymentMethod}
+                isPlanChange={inlineCheckoutParams.isPlanChange}
+                trialOption={inlineCheckoutParams.trialOption}
+                onClose={() => setInlineCheckoutParams(null)}
+              />
+            </CheckoutModalContainer>
+          </CheckoutModalOverlay>
+        )}
+      </AnimatePresence>
     </PricingContainer>
   );
 };

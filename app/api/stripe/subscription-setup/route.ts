@@ -3,13 +3,17 @@
  *
  * Creates a Stripe Subscription with payment_behavior: default_incomplete and returns
  * the first invoice's PaymentIntent client_secret so the client can collect payment
- * on-site with CardElement and confirmCardPayment (nnaudio pattern). Handles trial
- * eligibility, promo codes, and duplicate subscription prevention.
+ * on-site. Handles trial eligibility, promo codes, and duplicate subscription prevention.
+ *
+ * For 7-day trials without a payment method, sets trial_settings.end_behavior
+ * .missing_payment_method to "cancel" so Stripe cancels the subscription at trial end
+ * instead of creating an invoice. This prevents billing/charge failure emails.
  *
  * @module api/stripe/subscription-setup
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 import {
   findOrCreateCustomer,
@@ -18,8 +22,27 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
 import { PlanType } from "@/types/stripe";
+import { inviteUserByEmailAndRefreshProStatus } from "@/app/actions/checkout";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+/**
+ * @brief Returns plan name for metadata/tracking (e.g. monthly_6, annual_59).
+ */
+async function getPlanName(
+  priceId: string,
+  planType: PlanType,
+): Promise<string> {
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    const amount = (price.unit_amount || 0) / 100;
+    if (planType === "monthly") return `monthly_${amount}`;
+    if (planType === "annual") return `annual_${amount}`;
+    return `${planType}_${amount}`;
+  } catch {
+    return `${planType}_unknown`;
+  }
+}
 
 const STRIPE_UNAVAILABLE_MSG =
   "Payment service is temporarily unavailable. Please try again later.";
@@ -29,7 +52,8 @@ const VALID_SUB_PLANS: PlanType[] = ["monthly", "annual"];
 /**
  * @brief POST endpoint to create a subscription and return first invoice PaymentIntent
  *
- * Request body: { planType, email?, customerId?, promotionCode?, collectPaymentMethod?, isPlanChange? }
+ * Request body: { planType, email?, promotionCode?, collectPaymentMethod?, isPlanChange?, paymentMethodId? }
+ * Customer is always resolved by email (find-or-create).
  * Returns: { success: true, clientSecret, paymentIntentId, subscriptionId } or error.
  *
  * @param request Next.js request with JSON body
@@ -56,17 +80,21 @@ export async function POST(request: NextRequest) {
     const {
       planType,
       email,
-      customerId,
+      customerId: bodyCustomerId,
       promotionCode,
       collectPaymentMethod = false,
       isPlanChange = false,
+      paymentMethodId,
     }: {
       planType: string;
       email?: string;
+      /** When set, use this Stripe customer ID and skip findOrCreateCustomer lookup. */
       customerId?: string;
       promotionCode?: string;
       collectPaymentMethod?: boolean;
       isPlanChange?: boolean;
+      /** When set, subscription is created with this payment method (no clientSecret returned). Call after SetupIntent confirm. */
+      paymentMethodId?: string;
     } = body;
 
     if (!planType || !VALID_SUB_PLANS.includes(planType as PlanType)) {
@@ -96,37 +124,21 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let resolvedCustomerId: string | undefined;
-
-    if (customerId) {
-      try {
-        await stripe.customers.retrieve(customerId);
-        resolvedCustomerId = customerId;
-      } catch {
-        if (email) {
-          resolvedCustomerId = await findOrCreateCustomer(email);
-        } else {
-          return NextResponse.json(
-            {
-              success: false,
-              error: "No such customer. Please provide an email address.",
-            },
-            { status: 400 },
-          );
-        }
-      }
-    } else if (email?.trim()) {
-      resolvedCustomerId = await findOrCreateCustomer(email.trim());
-    } else if (user?.email) {
-      resolvedCustomerId = await findOrCreateCustomer(user.email);
-    }
-
-    if (!resolvedCustomerId) {
+    const checkoutEmail =
+      (typeof email === "string" && email.trim() ? email.trim() : null) ??
+      user?.email ??
+      null;
+    if (!checkoutEmail) {
       return NextResponse.json(
-        { success: false, error: "Email or customer ID is required." },
+        { success: false, error: "Email is required." },
         { status: 400 },
       );
     }
+
+    const resolvedCustomerId =
+      typeof bodyCustomerId === "string" && bodyCustomerId.trim()
+        ? bodyCustomerId.trim()
+        : await findOrCreateCustomer(checkoutEmail);
 
     if (user?.id) {
       const { data: profile } = await supabase
@@ -173,6 +185,20 @@ export async function POST(request: NextRequest) {
     } catch {
       // default false
     }
+
+    if (hasHadTrial && !collectPaymentMethod) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "TRIAL_USED_BEFORE",
+          message:
+            "You've already used a trial before. Please provide payment information to proceed.",
+          hasHadTrial: true,
+        },
+        { status: 400 },
+      );
+    }
+
     const shouldGiveTrial = !isPlanChange && !hasHadTrial;
     const trialDays = shouldGiveTrial
       ? collectPaymentMethod
@@ -189,11 +215,22 @@ export async function POST(request: NextRequest) {
         limit: 1,
       });
       const promo = list.data[0];
-      if (promo?.coupon) {
+      const couponRef =
+        promo?.promotion?.coupon ?? (promo as { coupon?: string })?.coupon;
+      if (couponRef) {
         couponId =
-          typeof promo.coupon === "string" ? promo.coupon : promo.coupon.id;
+          typeof couponRef === "string"
+            ? couponRef
+            : (couponRef as { id: string }).id;
       }
     }
+
+    const planName = await getPlanName(priceId, planType as PlanType);
+    const resolvedEmail =
+      (typeof email === "string" && email.trim() ? email.trim() : null) ??
+      user?.email ??
+      null;
+    const eventId = randomUUID();
 
     const subscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: resolvedCustomerId,
@@ -201,45 +238,156 @@ export async function POST(request: NextRequest) {
       payment_behavior: "default_incomplete",
       payment_settings: {
         save_default_payment_method: "on_subscription",
+        ...(paymentMethodId ? { default_payment_method: paymentMethodId } : {}),
       },
-      expand: [
-        "latest_invoice",
-        "latest_invoice.payments",
-        "latest_invoice.payments.data.payment.payment_intent",
-      ],
+      expand: paymentMethodId
+        ? ["latest_invoice"]
+        : [
+            "latest_invoice",
+            "latest_invoice.confirmation_secret",
+            "pending_setup_intent",
+          ],
       metadata: {
         plan_type: planType,
+        plan_name:
+          trialDays != null ? `${planName}_trial${trialDays}` : planName,
         user_id: user?.id ?? "anonymous",
+        event_id: eventId,
+        ...(resolvedEmail && { email: resolvedEmail }),
       },
     };
-    if (couponId) subscriptionParams.coupon = couponId;
+    if (couponId) subscriptionParams.discounts = [{ coupon: couponId }];
     if (trialDays != null) subscriptionParams.trial_period_days = trialDays;
 
-    const subscription = await stripe.subscriptions.create(subscriptionParams);
+    // 7-day trial without payment method: cancel at trial end so Stripe does not
+    // create an invoice or send billing/charge failure emails.
+    const is7DayNoCard = trialDays === 7 && !collectPaymentMethod;
+    if (is7DayNoCard) {
+      (
+        subscriptionParams as Stripe.SubscriptionCreateParams & {
+          trial_settings?: {
+            end_behavior?: { missing_payment_method?: string };
+          };
+        }
+      ).trial_settings = {
+        end_behavior: {
+          missing_payment_method: "cancel",
+        },
+      };
+    }
+
+    const now = new Date();
+    const hourKey = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}${String(now.getUTCHours()).padStart(2, "0")}`;
+    const subscriptionIdempotencyKey = `sub_${resolvedCustomerId}_${planType}_${hourKey}`.substring(
+      0,
+      255,
+    );
+
+    const subscription = await stripe.subscriptions.create(subscriptionParams, {
+      idempotencyKey: subscriptionIdempotencyKey,
+    });
+
+    // Invite and refresh pro status for ALL successful subscription creations (not just paymentMethodId path).
+    // Makes the invite reliable and server-side regardless of redirect/inline flow.
+    let inviteSent = false;
+    if (resolvedEmail?.trim()) {
+      try {
+        await inviteUserByEmailAndRefreshProStatus(resolvedEmail.trim());
+        inviteSent = true;
+      } catch (inviteErr) {
+        console.error(
+          "[subscription-setup] Invite after subscription creation:",
+          inviteErr,
+        );
+      }
+    }
+
+    if (paymentMethodId) {
+      return NextResponse.json({
+        success: true,
+        subscriptionId: subscription.id,
+        type: "subscription",
+        inviteSent,
+      });
+    }
 
     const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-    const firstPayment = latestInvoice?.payments?.data?.[0];
-    const paymentRef = firstPayment?.payment?.payment_intent;
-    const paymentIntent =
-      typeof paymentRef === "object" && paymentRef !== null
-        ? paymentRef
-        : typeof paymentRef === "string"
-          ? await stripe.paymentIntents.retrieve(paymentRef)
-          : undefined;
+    const confirmationSecret = latestInvoice?.confirmation_secret;
+    let clientSecret: string | null =
+      typeof confirmationSecret === "object" && confirmationSecret !== null
+        ? confirmationSecret.client_secret
+        : null;
 
-    if (!paymentIntent?.client_secret) {
+    if (
+      !clientSecret &&
+      latestInvoice &&
+      typeof latestInvoice === "object" &&
+      latestInvoice.id
+    ) {
+      const invoiceId = latestInvoice.id;
+      const invoice = await stripe.invoices.retrieve(invoiceId, {
+        expand: ["payment_intent"],
+      });
+      const pi = invoice.payment_intent;
+      if (typeof pi === "object" && pi !== null && pi.client_secret) {
+        clientSecret = pi.client_secret;
+      } else if (typeof pi === "string") {
+        const intent = await stripe.paymentIntents.retrieve(pi);
+        clientSecret = intent.client_secret;
+      }
+    }
+
+    let intentType: "payment_intent" | "setup_intent" = "payment_intent";
+
+    if (!clientSecret) {
+      const pendingSetupIntent = subscription.pending_setup_intent;
+      if (pendingSetupIntent) {
+        const setupIntent =
+          typeof pendingSetupIntent === "string"
+            ? await stripe.setupIntents.retrieve(pendingSetupIntent)
+            : pendingSetupIntent;
+        if (setupIntent.client_secret) {
+          clientSecret = setupIntent.client_secret;
+          intentType = "setup_intent";
+        }
+      }
+    }
+
+    if (!clientSecret) {
       return NextResponse.json(
-        { success: false, error: "Failed to create subscription payment." },
+        {
+          success: false,
+          error:
+            "This subscription could not be set up for payment. If you chose a free trial with no card, try starting from the pricing page again and select an option that collects payment.",
+        },
         { status: 500 },
       );
     }
 
+    if (intentType === "payment_intent" && resolvedEmail) {
+      const paymentIntentId = clientSecret.split("_secret_")[0];
+      if (paymentIntentId?.startsWith("pi_")) {
+        try {
+          await stripe.paymentIntents.update(paymentIntentId, {
+            receipt_email: resolvedEmail,
+          });
+        } catch {
+          // non-fatal; receipt may still be sent from customer email
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
+      clientSecret,
+      intentType,
+      paymentIntentId:
+        intentType === "payment_intent"
+          ? (clientSecret.split("_secret_")[0] ?? undefined)
+          : undefined,
       subscriptionId: subscription.id,
       type: "subscription",
+      inviteSent,
     });
   } catch (error) {
     console.error("Subscription setup error:", error);

@@ -25,11 +25,7 @@ import {
   Session,
 } from "@supabase/supabase-js";
 import { Profile, UserProfile } from "@/utils/supabase/types";
-import {
-  fetchIsAdmin,
-  fetchProfile,
-  signUpWithStripe,
-} from "@/utils/supabase/actions";
+import { signUpWithStripe } from "@/utils/supabase/actions";
 import { createClient } from "@/utils/supabase/client";
 import { logEnvironmentStatus } from "@/utils/env-check";
 // import { updateSubscriberTimezone } from "@/utils/supabase/timezone-tracker";
@@ -48,11 +44,11 @@ type AuthContextType = {
     first_name: string,
     last_name: string,
     email: string,
-    password: string
+    password: string,
   ) => Promise<AuthResponse>;
   signIn: (
     email: string,
-    password: string
+    password: string,
   ) => Promise<AuthTokenResponsePassword>;
   signOut: (scope: "global" | "local" | "others" | undefined) => Promise<{
     error: AuthError | null;
@@ -68,6 +64,44 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const supabase = createClient();
+
+/**
+ * @brief Fetches profile from Supabase using the browser client (avoids server action / 431 when cookies are large).
+ * @param userId User ID to fetch profile for.
+ * @returns Promise with profile data or error.
+ */
+async function fetchProfileClient(
+  userId: string,
+): Promise<{ profile: Profile | null; error: Error | null }> {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select()
+    .eq("id", userId)
+    .single();
+  return {
+    profile: profile ?? null,
+    error: error ? new Error(error.message) : null,
+  };
+}
+
+/**
+ * @brief Checks admin status using the browser client (avoids server action / 431 when cookies are large).
+ * @param userId User ID to check.
+ * @returns Promise with is_admin boolean and optional error.
+ */
+async function fetchIsAdminClient(
+  userId: string,
+): Promise<{ is_admin: boolean; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("admins")
+    .select()
+    .eq("user", userId)
+    .maybeSingle();
+  if (error) {
+    return { is_admin: false, error: new Error(error.message) };
+  }
+  return { is_admin: !!data, error: null };
+}
 
 /**
  * @brief Authentication context provider component.
@@ -102,26 +136,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     if (session?.user) {
       try {
-        const { profile, error } = await fetchProfile(session.user.id);
+        const { profile, error } = await fetchProfileClient(session.user.id);
         if (error) {
-          console.log("[refreshUser] Error fetching profile:", error);
+          console.log("[refreshUser] Error fetching profile:", error.message);
           return;
         }
 
-        const { is_admin, error: adminError } = await fetchIsAdmin(
-          session.user.id
+        const { is_admin, error: adminError } = await fetchIsAdminClient(
+          session.user.id,
         );
         if (adminError) {
-          console.log("[refreshUser] Error fetching admin status:", adminError);
+          console.log(
+            "[refreshUser] Error fetching admin status:",
+            adminError.message,
+          );
           return;
         }
 
         if (profile) {
           // Update pro status using centralized function (handles NFR, Stripe, and iOS)
           try {
-            const { updateUserProStatus } = await import(
-              "@/utils/subscriptions/check-subscription"
-            );
+            const { updateUserProStatus } =
+              await import("@/utils/subscriptions/check-subscription");
             const result = await updateUserProStatus(session.user.id);
 
             // Update profile with the determined subscription status
@@ -157,9 +193,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isUpdatingUserRef.current) {
         return;
       }
-      
+
       isUpdatingUserRef.current = true;
-      
+
       try {
         setLoading(user === null);
         const {
@@ -167,12 +203,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getUser();
 
         if (logged_in_user) {
-          const { profile, error } = await fetchProfile(logged_in_user.id);
+          const { profile, error } = await fetchProfileClient(
+            logged_in_user.id,
+          );
           if (error) {
-            console.log(
-              "error fetching profile",
-              error instanceof Error ? error.message : String(error)
-            );
+            console.log("error fetching profile", error.message);
             // Don't set user to null - keep them logged in even if profile fetch fails
             // This is important for password reset flow
             // Create a minimal profile object with required fields
@@ -194,20 +229,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          const { is_admin, error: adminError } = await fetchIsAdmin(
-            logged_in_user.id
+          const { is_admin, error: adminError } = await fetchIsAdminClient(
+            logged_in_user.id,
           );
           if (adminError) {
-            console.log(
-              "error fetching admin status",
-              adminError instanceof Error
-                ? adminError.message
-                : String(adminError)
-            );
+            console.log("error fetching admin status", adminError.message);
           } else {
             console.log(
               `[AuthContext] Admin status for ${logged_in_user.email}:`,
-              is_admin
+              is_admin,
             );
           }
 
@@ -220,16 +250,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 profile,
                 is_admin: is_admin || false,
               };
-              
+
               // Only update if user ID changed or profile data actually changed
-              if (prevUser && 
-                  prevUser.id === newUser.id &&
-                  prevUser.email === newUser.email &&
-                  prevUser.is_admin === newUser.is_admin &&
-                  JSON.stringify(prevUser.profile) === JSON.stringify(profile)) {
+              if (
+                prevUser &&
+                prevUser.id === newUser.id &&
+                prevUser.email === newUser.email &&
+                prevUser.is_admin === newUser.is_admin &&
+                JSON.stringify(prevUser.profile) === JSON.stringify(profile)
+              ) {
                 return prevUser; // Return same reference if no change
               }
-              
+
               return newUser;
             });
 
@@ -237,56 +269,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Only update if subscription has actually changed to prevent loops
             const currentSubscription = profile.subscription;
             const currentSource = profile.subscription_source;
-            
+
             // Throttle pro status updates - only update if it's been at least 30 seconds since last update
             const now = Date.now();
             const timeSinceLastUpdate = now - lastProStatusUpdateRef.current;
             const UPDATE_THROTTLE_MS = 30000; // 30 seconds
-            
+
             // Skip update if we just updated recently (prevent loops)
             // Only update if:
             // 1. Subscription is "none" (new user, needs initial check)
             // 2. No source set (needs initial check)
             // 3. It's been at least 30 seconds since last update
-            const shouldUpdateProStatus = 
-              (currentSubscription === "none" || !currentSource) ||
-              (timeSinceLastUpdate > UPDATE_THROTTLE_MS);
-            
+            const shouldUpdateProStatus =
+              currentSubscription === "none" ||
+              !currentSource ||
+              timeSinceLastUpdate > UPDATE_THROTTLE_MS;
+
             if (shouldUpdateProStatus) {
               lastProStatusUpdateRef.current = now;
               try {
-                const { updateUserProStatus } = await import(
-                  "@/utils/subscriptions/check-subscription"
-                );
+                const { updateUserProStatus } =
+                  await import("@/utils/subscriptions/check-subscription");
                 const result = await updateUserProStatus(logged_in_user.id);
 
-              // Only update user state if subscription actually changed
-              if (result.subscription !== currentSubscription || 
-                  result.source !== currentSource) {
-                const updatedProfile = {
-                  ...profile,
-                  subscription: result.subscription,
-                  subscription_expiration:
-                    result.subscriptionExpiration?.toISOString() || null,
-                  subscription_source: result.source,
-                };
-
-                // Use functional update to prevent unnecessary re-renders
-                setUser((prevUser) => {
-                  // Only update if the subscription actually changed
-                  if (prevUser && 
-                      prevUser.profile.subscription === result.subscription &&
-                      prevUser.profile.subscription_source === result.source) {
-                    return prevUser; // Return same reference if no change
-                  }
-                  
-                  return {
-                    ...logged_in_user,
-                    profile: updatedProfile,
-                    is_admin: is_admin || false,
+                // Only update user state if subscription actually changed
+                if (
+                  result.subscription !== currentSubscription ||
+                  result.source !== currentSource
+                ) {
+                  const updatedProfile = {
+                    ...profile,
+                    subscription: result.subscription,
+                    subscription_expiration:
+                      result.subscriptionExpiration?.toISOString() || null,
+                    subscription_source: result.source,
                   };
-                });
-              }
+
+                  // Use functional update to prevent unnecessary re-renders
+                  setUser((prevUser) => {
+                    // Only update if the subscription actually changed
+                    if (
+                      prevUser &&
+                      prevUser.profile.subscription === result.subscription &&
+                      prevUser.profile.subscription_source === result.source
+                    ) {
+                      return prevUser; // Return same reference if no change
+                    }
+
+                    return {
+                      ...logged_in_user,
+                      profile: updatedProfile,
+                      is_admin: is_admin || false,
+                    };
+                  });
+                }
               } catch (proStatusError) {
                 // Keep the user logged in even if pro status update fails
                 console.log("Pro status update failed:", proStatusError);
@@ -297,14 +333,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
         }
       } catch (error) {
-        console.log(
-          "error updating user from session",
-          error instanceof Error ? error.message : String(error)
-        );
-        // Only set user to null if we have a real auth error, not a profile fetch error
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes("JWT") || errorMessage.includes("auth")) {
+        console.log("error updating user from session", errorMessage);
+        // 431 or "unexpected response" usually means request headers (cookies) are too large.
+        // Do not clear user; suggest clearing site cookies for this origin.
+        const isHeaderTooLarge =
+          errorMessage.includes("431") ||
+          errorMessage.includes("Request Header Fields Too Large") ||
+          errorMessage.includes("unexpected response was received");
+        if (isHeaderTooLarge) {
+          console.warn(
+            "[AuthContext] Request failed due to large headers (often too many cookies). " +
+              "Clear this site's cookies for localhost (or your dev URL) and reload.",
+          );
+        }
+        // Only set user to null if we have a real auth error, not a profile fetch or header size error
+        if (
+          !isHeaderTooLarge &&
+          (errorMessage.includes("JWT") || errorMessage.includes("auth"))
+        ) {
           setUser(null);
         }
       } finally {
@@ -317,7 +365,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Use stable values from session instead of the whole object
     const sessionToken = session?.access_token;
     const sessionUserId = session?.user?.id;
-    
+
     // Only update if we have a valid session and it's different from current user
     if (sessionToken && sessionUserId) {
       // Check if this is actually a different session than what we have
@@ -381,7 +429,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     first_name: string,
     last_name: string,
     email: string,
-    password: string
+    password: string,
   ) => {
     return await signUpWithStripe(first_name, last_name, email, password);
   };
@@ -446,7 +494,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateProfile,
       refreshUser,
     }),
-    [user, session, loading, refreshUser]
+    [user, session, loading, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

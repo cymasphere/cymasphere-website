@@ -346,16 +346,19 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
       limit: 10, // Get more results to handle potential duplicates
     });
 
-    // If a customer exists, return the first one (most recent)
-    if (customers.data.length > 0) {
-      // If there are multiple customers with the same email, log a warning
-      if (customers.data.length > 1) {
+    // Ignore deleted customers (Stripe may return them in some contexts)
+    const activeCustomers = customers.data.filter(
+      (c) => !(typeof c === "object" && "deleted" in c && c.deleted),
+    );
+
+    // If an active customer exists, return the first one (most recent)
+    if (activeCustomers.length > 0) {
+      if (activeCustomers.length > 1) {
         console.warn(
-          `Found ${customers.data.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`,
+          `Found ${activeCustomers.length} Stripe customers with email ${normalizedEmail}. Using the most recent one.`,
         );
       }
-      // Return the most recently created customer (first in list is typically most recent)
-      return customers.data[0].id;
+      return activeCustomers[0].id;
     }
 
     // Otherwise create a new customer
@@ -377,7 +380,7 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
       );
 
       return customer.id;
-    } catch (createError: any) {
+    } catch (createError: unknown) {
       // If customer creation fails, it could be due to:
       // 1. Idempotency key collision (another request is creating the same customer)
       // 2. Network/API error
@@ -389,29 +392,38 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
 
       const retryCustomers = await stripe.customers.list({
         email: normalizedEmail,
-        limit: 1,
+        limit: 10,
       });
-
-      if (retryCustomers.data.length > 0) {
+      const retryActive = retryCustomers.data.filter(
+        (c) => !(typeof c === "object" && "deleted" in c && c.deleted),
+      );
+      if (retryActive.length > 0) {
         console.log(
-          `Customer found on retry after creation error: ${retryCustomers.data[0].id}`,
+          `Customer found on retry after creation error: ${retryActive[0].id}`,
         );
-        return retryCustomers.data[0].id;
+        return retryActive[0].id;
       }
 
+      const errObj =
+        createError && typeof createError === "object" ? createError : {};
+      const code = "code" in errObj ? errObj.code : undefined;
+      const errType = "type" in errObj ? errObj.type : undefined;
       // If retry also fails, check for specific error codes
       if (
-        createError?.code === "idempotency_key_in_use" ||
-        createError?.type === "StripeIdempotencyError"
+        code === "idempotency_key_in_use" ||
+        errType === "StripeIdempotencyError"
       ) {
         // Idempotency key collision - wait a bit longer and retry lookup
         await new Promise((resolve) => setTimeout(resolve, 500));
         const finalRetry = await stripe.customers.list({
           email: normalizedEmail,
-          limit: 1,
+          limit: 10,
         });
-        if (finalRetry.data.length > 0) {
-          return finalRetry.data[0].id;
+        const finalActive = finalRetry.data.filter(
+          (c) => !(typeof c === "object" && "deleted" in c && c.deleted),
+        );
+        if (finalActive.length > 0) {
+          return finalActive[0].id;
         }
       }
 

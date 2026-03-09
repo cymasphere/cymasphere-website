@@ -218,12 +218,18 @@ function CheckoutSuccessContent() {
   const isLifetime = searchParams.get("isLifetime") === "true";
   const isLoggedIn = !!user;
   const sessionId = searchParams.get("session_id");
-  const paymentIntentId = searchParams.get("payment_intent_id");
+  const paymentIntentId =
+    searchParams.get("payment_intent_id") ?? searchParams.get("payment_intent");
+  const setupIntentId =
+    searchParams.get("setup_intent_id") ?? searchParams.get("setup_intent");
+  const redirectStatus = searchParams.get("redirect_status");
   const detailsParam = paymentIntentId
     ? `payment_intent_id=${paymentIntentId}`
     : sessionId
       ? `session_id=${sessionId}`
-      : null;
+      : setupIntentId
+        ? `setup_intent_id=${setupIntentId}`
+        : null;
 
   // State to track verified trial status (double-check from session if URL param seems wrong)
   const [verifiedIsTrial, setVerifiedIsTrial] = useState<boolean | null>(null);
@@ -284,13 +290,85 @@ function CheckoutSuccessContent() {
   const [subscriptionCurrency, setSubscriptionCurrency] = useState<string>(
     currencyParam || "USD",
   );
-  const [inviteSent, setInviteSent] = useState(false);
+  const [inviteSent, setInviteSent] = useState(
+    searchParams.get("invited") === "1",
+  );
+  const [sendingInvite, setSendingInvite] = useState(false);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
 
   // Ref to track if we've already fired the analytics event
   const hasTrackedEvent = useRef(false);
   // Ref to track if we've already processed the invite/refresh
   const hasProcessedInvite = useRef(false);
+  // When Stripe redirects after 3DS with setup_intent, create the subscription from stored context.
+  // Invite/refresh effect waits for this when setupIntentId is present.
+  const [setupIntentSubscriptionDone, setSetupIntentSubscriptionDone] =
+    useState(false);
+  const hasStartedSetupIntentCompletion = useRef(false);
+
+  useEffect(() => {
+    if (!setupIntentId || redirectStatus !== "succeeded") {
+      setSetupIntentSubscriptionDone(true);
+      return;
+    }
+    if (hasStartedSetupIntentCompletion.current) return;
+    type PendingSetup = {
+      planType?: string;
+      email?: string;
+      customerId?: string;
+      promotionCode?: string;
+      collectPaymentMethod?: boolean;
+      isPlanChange?: boolean;
+    };
+    let pending: PendingSetup | null = null;
+    try {
+      const raw = sessionStorage.getItem("checkout_pending_setup");
+      if (raw) pending = JSON.parse(raw) as PendingSetup;
+    } catch {
+      // ignore
+    }
+    if (!pending?.email?.trim() || !pending?.planType) {
+      setSetupIntentSubscriptionDone(true);
+      return;
+    }
+    const pendingData = pending;
+    hasStartedSetupIntentCompletion.current = true;
+    (async () => {
+      try {
+        const res = await fetch(
+          "/api/stripe/complete-subscription-from-setup",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              setupIntentId,
+              planType: pendingData.planType,
+              email: pendingData.email,
+              customerId: pendingData.customerId,
+              promotionCode: pendingData.promotionCode,
+              collectPaymentMethod: pendingData.collectPaymentMethod ?? false,
+              isPlanChange: pendingData.isPlanChange ?? false,
+            }),
+          },
+        );
+        const data = await res.json();
+        if (data.success) {
+          try {
+            sessionStorage.removeItem("checkout_pending_setup");
+          } catch {
+            // ignore
+          }
+        }
+      } catch (err) {
+        console.error(
+          "[Checkout Success] Complete subscription from setup failed:",
+          err,
+        );
+      } finally {
+        setSetupIntentSubscriptionDone(true);
+      }
+    })();
+  }, [setupIntentId, redirectStatus]);
 
   // Clear guest email used for checkout so next visit doesn't reuse it
   useEffect(() => {
@@ -308,11 +386,13 @@ function CheckoutSuccessContent() {
   }, []); // Run only on mount
 
   // Invite user and refresh pro status (for logged-out users) or refresh pro status (for logged-in users)
-  // Supports both session_id (Stripe Checkout) and payment_intent_id (in-app lifetime)
+  // Supports both session_id (Stripe Checkout) and payment_intent_id (in-app lifetime).
+  // When we landed via setup_intent redirect (3DS), wait until subscription is created first.
   useEffect(() => {
     if (authLoading) return;
     if (hasProcessedInvite.current) return;
     if (!detailsParam) return;
+    if (setupIntentId && !setupIntentSubscriptionDone) return;
 
     const handleUserInviteAndRefresh = async () => {
       hasProcessedInvite.current = true;
@@ -328,59 +408,64 @@ function CheckoutSuccessContent() {
           );
           if (refreshUser) await refreshUser();
         } else if (!isLoggedIn) {
-          console.log(
-            "[Checkout Success] User is not logged in, inviting and refreshing pro status",
-          );
-
-          if (paymentIntentId) {
-            const response = await fetch(
-              `/api/checkout-session-details?${detailsParam}`,
+          setSendingInvite(true);
+          try {
+            console.log(
+              "[Checkout Success] User is not logged in, inviting and refreshing pro status",
             );
-            const data = await response.json();
-            if (data.success && data.customerEmail) {
-              setCustomerEmail(data.customerEmail);
-              const result = await inviteUserByEmailAndRefreshProStatus(
-                data.customerEmail,
-              );
-              if (result.success) {
-                console.log(
-                  `[Checkout Success] User invited (payment intent flow): ${result.subscription}`,
-                );
-                setInviteSent(true);
-              } else {
-                console.error(
-                  "[Checkout Success] Failed to invite (payment intent):",
-                  result.error,
-                );
-              }
-            }
-          } else {
-            try {
+
+            if (paymentIntentId || setupIntentId) {
               const response = await fetch(
                 `/api/checkout-session-details?${detailsParam}`,
               );
               const data = await response.json();
               if (data.success && data.customerEmail) {
                 setCustomerEmail(data.customerEmail);
+                const result = await inviteUserByEmailAndRefreshProStatus(
+                  data.customerEmail,
+                );
+                if (result.success) {
+                  console.log(
+                    `[Checkout Success] User invited (${setupIntentId ? "setup" : "payment"} intent flow): ${result.subscription}`,
+                  );
+                  setInviteSent(true);
+                } else {
+                  console.error(
+                    "[Checkout Success] Failed to invite:",
+                    result.error,
+                  );
+                }
               }
-            } catch (err) {
-              console.error(
-                "[Checkout Success] Error fetching session email:",
-                err,
-              );
+            } else if (sessionId) {
+              try {
+                const response = await fetch(
+                  `/api/checkout-session-details?${detailsParam}`,
+                );
+                const data = await response.json();
+                if (data.success && data.customerEmail) {
+                  setCustomerEmail(data.customerEmail);
+                }
+              } catch (err) {
+                console.error(
+                  "[Checkout Success] Error fetching session email:",
+                  err,
+                );
+              }
+              const result = await inviteUserAndRefreshProStatus(sessionId!);
+              if (result.success) {
+                console.log(
+                  `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`,
+                );
+                setInviteSent(true);
+              } else {
+                console.error(
+                  "[Checkout Success] Failed to invite user and refresh pro status:",
+                  result.error,
+                );
+              }
             }
-            const result = await inviteUserAndRefreshProStatus(sessionId!);
-            if (result.success) {
-              console.log(
-                `[Checkout Success] User invited and pro status refreshed: ${result.subscription} (userId: ${result.userId})`,
-              );
-              setInviteSent(true);
-            } else {
-              console.error(
-                "[Checkout Success] Failed to invite user and refresh pro status:",
-                result.error,
-              );
-            }
+          } finally {
+            setSendingInvite(false);
           }
         }
       } catch (error) {
@@ -397,16 +482,24 @@ function CheckoutSuccessContent() {
     detailsParam,
     sessionId,
     paymentIntentId,
+    setupIntentId,
+    setupIntentSubscriptionDone,
     isLoggedIn,
     user?.id,
     authLoading,
   ]);
 
-  // Refresh subscription status by customer ID (works for both session_id and payment_intent_id)
+  // Refresh subscription status by customer ID (logged-in users only).
+  // For non-logged-in users, the invite flow already calls updateUserProStatus after
+  // inviting, which links customer_id by email and refreshes; no profile has
+  // customer_id yet until that runs, so refreshByCustomerId would fail with "User not found".
+  // When we landed via setup_intent redirect, wait until subscription is created first.
   useEffect(() => {
-    const refreshByCustomerId = async () => {
-      if (!detailsParam) return;
+    if (!isLoggedIn) return;
+    if (!detailsParam) return;
+    if (setupIntentId && !setupIntentSubscriptionDone) return;
 
+    const refreshByCustomerId = async () => {
       try {
         const response = await fetch(
           `/api/checkout-session-details?${detailsParam}`,
@@ -423,7 +516,7 @@ function CheckoutSuccessContent() {
               "subscription:",
               result.subscription,
             );
-            if (isLoggedIn && refreshUser) await refreshUser();
+            if (refreshUser) await refreshUser();
           } else {
             console.error(
               "[Checkout Success] Failed to refresh subscription:",
@@ -441,7 +534,7 @@ function CheckoutSuccessContent() {
 
     refreshByCustomerId();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detailsParam, isLoggedIn]);
+  }, [detailsParam, isLoggedIn, setupIntentId, setupIntentSubscriptionDone]);
 
   // Track promotion conversion
   useEffect(() => {
@@ -728,6 +821,8 @@ function CheckoutSuccessContent() {
 
         {authLoading ? (
           <LoadingSpinner size="small" text="Processing checkout..." />
+        ) : sendingInvite && !isLoggedIn ? (
+          <LoadingSpinner size="small" text="Sending your invitation..." />
         ) : (
           <>
             {inviteSent && !isLoggedIn && (

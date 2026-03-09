@@ -9,7 +9,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  * @fileoverview Checkout session or payment intent details for success page and tracking
  * @module api/checkout-session-details
  *
- * Accepts either session_id (Stripe Checkout Session) or payment_intent_id (in-app lifetime).
+ * Accepts session_id (Stripe Checkout Session), payment_intent_id (in-app payment),
+ * or setup_intent_id (in-app $0 subscription — card collected, no charge).
  * Returns same JSON shape: success, value, currency, isTrial, customerId, customerEmail.
  */
 
@@ -17,6 +18,47 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("session_id");
   const paymentIntentId = searchParams.get("payment_intent_id");
+  const setupIntentId = searchParams.get("setup_intent_id");
+
+  if (setupIntentId) {
+    try {
+      const setupIntent = await stripe.setupIntents.retrieve(setupIntentId, {
+        expand: ["customer"],
+      });
+      const customer =
+        setupIntent.customer == null
+          ? null
+          : typeof setupIntent.customer === "string"
+            ? await stripe.customers.retrieve(setupIntent.customer)
+            : setupIntent.customer;
+      const customerId =
+        typeof setupIntent.customer === "string"
+          ? setupIntent.customer
+          : ((setupIntent.customer as Stripe.Customer | null)?.id ?? null);
+      const customerEmail =
+        customer &&
+        typeof customer === "object" &&
+        !("deleted" in customer && customer.deleted)
+          ? ((customer as Stripe.Customer).email ?? null)
+          : null;
+
+      return NextResponse.json({
+        success: true,
+        value: 0,
+        currency: "USD",
+        isTrial: true,
+        mode: "setup",
+        customerId,
+        customerEmail,
+      });
+    } catch (error) {
+      console.error("Error fetching setup intent details:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch setup intent details" },
+        { status: 500 },
+      );
+    }
+  }
 
   if (paymentIntentId) {
     try {
@@ -64,7 +106,10 @@ export async function GET(request: NextRequest) {
 
   if (!sessionId) {
     return NextResponse.json(
-      { error: "Missing session_id or payment_intent_id parameter" },
+      {
+        error:
+          "Missing session_id, payment_intent_id, or setup_intent_id parameter",
+      },
       { status: 400 },
     );
   }

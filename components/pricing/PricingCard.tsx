@@ -439,6 +439,17 @@ interface PricingCardProps {
   hideButton?: boolean;
   /** @param {"default"|"change_plan"} [variant="default"] - Component variant for different contexts */
   variant?: "default" | "change_plan";
+  /** @param initiateCheckout - When provided (e.g. from PricingSection with inline checkout), use this instead of useCheckout().initiateCheckout */
+  initiateCheckout?: (
+    planType: PlanType,
+    options?: {
+      collectPaymentMethod?: boolean;
+      willProvideCard?: boolean;
+      hasHadTrial?: boolean;
+      email?: string;
+      isPlanChange?: boolean;
+    },
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 /**
@@ -471,11 +482,14 @@ export default function PricingCard({
   compact = false,
   hideButton = false,
   variant = "default",
+  initiateCheckout: initiateCheckoutProp,
 }: PricingCardProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
-  const { initiateCheckout } = useCheckout();
+  const checkoutFromHook = useCheckout();
+  const initiateCheckout =
+    initiateCheckoutProp ?? checkoutFromHook.initiateCheckout;
   const [prices, setPrices] = useState<Record<PlanType, PriceData> | null>(
     null,
   );
@@ -731,6 +745,12 @@ export default function PricingCard({
     const result = await initiateCheckout(billingPeriod, {
       collectPaymentMethod,
       hasHadTrial: hasHadStripeTrial,
+      trialOption:
+        showTrialOptions &&
+        billingPeriod !== "lifetime" &&
+        (billingPeriod === "monthly" || billingPeriod === "annual")
+          ? trialType
+          : undefined,
     });
 
     setCheckoutLoading(null);

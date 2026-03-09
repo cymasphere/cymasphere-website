@@ -7,6 +7,7 @@ import { FaFire, FaGift, FaArrowRight, FaTimes } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useRouter } from "next/navigation";
+import { PlanType } from "@/types/stripe";
 import { useTranslation } from "react-i18next";
 
 const BannerContainer = styled(motion.div)<{
@@ -341,6 +342,17 @@ interface PromotionBannerProps {
   showCountdown?: boolean;
   dismissible?: boolean;
   variant?: "sticky" | "card";
+  /** When provided (e.g. from PricingSection), checkout opens inline modal instead of redirecting. */
+  initiateCheckout?: (
+    planType: PlanType,
+    options?: {
+      collectPaymentMethod?: boolean;
+      willProvideCard?: boolean;
+      hasHadTrial?: boolean;
+      email?: string;
+      isPlanChange?: boolean;
+    },
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface Promotion {
@@ -360,6 +372,7 @@ export default function PromotionBanner({
   showCountdown = true,
   dismissible = true,
   variant = "sticky",
+  initiateCheckout: initiateCheckoutProp,
 }: PromotionBannerProps) {
   const { user } = useAuth();
 
@@ -373,7 +386,9 @@ export default function PromotionBanner({
   const [sale, setSale] = React.useState<Promotion | null>(null);
   const [loading, setLoading] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
-  const { initiateCheckout } = useCheckout();
+  const checkoutFromHook = useCheckout();
+  const initiateCheckout =
+    initiateCheckoutProp ?? checkoutFromHook.initiateCheckout;
   const router = useRouter();
 
   // Check if banner was previously closed (only if dismissible)

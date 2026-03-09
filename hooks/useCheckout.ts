@@ -14,11 +14,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PlanType } from "@/types/stripe";
 
 /**
+ * @brief Trial option when starting a subscription trial from pricing.
+ */
+export type TrialOption = "7day" | "14day";
+
+/**
+ * @brief Params passed to onInlineCheckout when inline checkout is requested.
+ */
+export interface InlineCheckoutParams {
+  planType: PlanType;
+  collectPaymentMethod: boolean;
+  isPlanChange: boolean;
+  /** When starting a trial from pricing: 7-day (no card) or 14-day (card required). */
+  trialOption?: TrialOption;
+}
+
+/**
  * @brief Options for configuring the checkout hook.
- * @description Allows customization of error handling behavior.
+ * @description Allows customization of error handling and optional inline checkout (no redirect).
  */
 interface UseCheckoutOptions {
   onError?: (error: string) => void;
+  /** When set, clicking checkout opens the form inline (e.g. in a modal) instead of navigating to /checkout. */
+  onInlineCheckout?: (params: InlineCheckoutParams) => void;
 }
 
 /**
@@ -35,6 +53,7 @@ interface UseCheckoutReturn {
       hasHadTrial?: boolean;
       email?: string;
       isPlanChange?: boolean;
+      trialOption?: TrialOption;
     },
   ) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
@@ -72,6 +91,7 @@ export function useCheckout(
         willProvideCard?: boolean;
         hasHadTrial?: boolean;
         email?: string;
+        trialOption?: TrialOption;
       },
     ): Promise<{ success: boolean; error?: string }> => {
       // Reset error state
@@ -109,11 +129,22 @@ export function useCheckout(
           collectPaymentMethod = true;
         }
 
+        const isPlanChange = checkoutOptions?.isPlanChange ?? false;
+        const trialOption = checkoutOptions?.trialOption;
+        if (options.onInlineCheckout) {
+          options.onInlineCheckout({
+            planType,
+            collectPaymentMethod,
+            isPlanChange,
+            trialOption,
+          });
+          return { success: true };
+        }
         // Navigate to in-app checkout page (email and promo collected on the page)
         const params = new URLSearchParams();
         params.set("plan", planType);
         if (collectPaymentMethod) params.set("collectPaymentMethod", "true");
-        if (checkoutOptions?.isPlanChange) params.set("isPlanChange", "true");
+        if (isPlanChange) params.set("isPlanChange", "true");
         router.push(`/checkout?${params.toString()}`);
         return { success: true };
       } catch (err) {

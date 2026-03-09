@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 import {
   findOrCreateCustomer,
@@ -16,6 +17,7 @@ import {
 } from "@/utils/stripe/actions";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit, getClientIp } from "@/utils/rate-limit";
+import { inviteUserByEmailAndRefreshProStatus } from "@/app/actions/checkout";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -25,8 +27,8 @@ const STRIPE_UNAVAILABLE_MSG =
 /**
  * @brief POST endpoint to create a Payment Intent for lifetime plan
  *
- * Request body: { planType: "lifetime", email?: string, customerId?: string, savePaymentMethod?: boolean }
- * Returns: { success: true, clientSecret, paymentIntentId } or error with status 400/503.
+ * Request body: { planType: "lifetime", email?, savePaymentMethod?, promotionCode?, paymentMethodId? }
+ * Customer is always resolved by email (find-or-create). Returns: { success: true, clientSecret, paymentIntentId } or error with status 400/503.
  *
  * @param request Next.js request with JSON body
  * @returns NextResponse with clientSecret or error
@@ -52,15 +54,16 @@ export async function POST(request: NextRequest) {
     const {
       planType,
       email,
-      customerId,
       savePaymentMethod = false,
       promotionCode,
+      paymentMethodId,
     }: {
       planType: string;
       email?: string;
-      customerId?: string;
       savePaymentMethod?: boolean;
       promotionCode?: string;
+      /** When set, confirm the payment server-side with this PM (no clientSecret returned). Call after SetupIntent confirm. */
+      paymentMethodId?: string;
     } = body;
 
     if (planType !== "lifetime") {
@@ -86,37 +89,18 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let stripeCustomerId: string | undefined;
-
-    if (customerId) {
-      try {
-        await stripe.customers.retrieve(customerId);
-        stripeCustomerId = customerId;
-      } catch {
-        if (email) {
-          stripeCustomerId = await findOrCreateCustomer(email);
-        } else {
-          return NextResponse.json(
-            {
-              success: false,
-              error: "No such customer. Please provide an email address.",
-            },
-            { status: 400 },
-          );
-        }
-      }
-    } else if (email) {
-      stripeCustomerId = await findOrCreateCustomer(email);
-    } else if (user?.email) {
-      stripeCustomerId = await findOrCreateCustomer(user.email);
-    }
-
-    if (!stripeCustomerId) {
+    const checkoutEmail =
+      (typeof email === "string" && email.trim() ? email.trim() : null) ??
+      user?.email ??
+      null;
+    if (!checkoutEmail) {
       return NextResponse.json(
-        { success: false, error: "Email or customer ID is required." },
+        { success: false, error: "Email is required." },
         { status: 400 },
       );
     }
+
+    const stripeCustomerId = await findOrCreateCustomer(checkoutEmail);
 
     if (user?.id) {
       const { data: profile } = await supabase
@@ -156,6 +140,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let appliedPromo = false;
     if (promotionCode?.trim()) {
       const code = promotionCode.trim();
       const list = await stripe.promotionCodes.list({
@@ -164,11 +149,14 @@ export async function POST(request: NextRequest) {
         limit: 1,
       });
       const promo = list.data[0];
-      if (promo?.coupon) {
-        const coupon =
-          typeof promo.coupon === "string"
-            ? await stripe.coupons.retrieve(promo.coupon)
-            : promo.coupon;
+      const couponRef =
+        promo?.promotion?.coupon ?? (promo as { coupon?: string })?.coupon;
+      if (couponRef) {
+        const couponId =
+          typeof couponRef === "string"
+            ? couponRef
+            : (couponRef as { id: string }).id;
+        const coupon = await stripe.coupons.retrieve(couponId);
         if (coupon.valid) {
           if (coupon.percent_off != null) {
             amount = Math.round((amount * (100 - coupon.percent_off)) / 100);
@@ -178,22 +166,98 @@ export async function POST(request: NextRequest) {
           ) {
             amount = Math.max(50, amount - coupon.amount_off);
           }
+          appliedPromo = true;
         }
       }
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      customer: stripeCustomerId,
-      setup_future_usage: savePaymentMethod ? "off_session" : undefined,
-      metadata: {
-        purchase_type: "lifetime",
-        plan_type: "lifetime",
-        user_id: user?.id ?? "anonymous",
+    const receiptEmail = checkoutEmail;
+
+    const planName = `lifetime_${Math.round(amount / 100)}`;
+    const eventId = randomUUID();
+
+    const now = new Date();
+    const hourKey = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}${String(now.getUTCHours()).padStart(2, "0")}`;
+    const piIdempotencyKey = `pi_${stripeCustomerId}_lifetime_${hourKey}`.substring(
+      0,
+      255,
+    );
+
+    if (paymentMethodId) {
+      const paymentIntent = await stripe.paymentIntents.create(
+        {
+        amount,
+        currency,
+        customer: stripeCustomerId,
+        payment_method: paymentMethodId,
+        confirm: true,
+        setup_future_usage: savePaymentMethod ? "off_session" : undefined,
+        receipt_email: receiptEmail ?? undefined,
+        metadata: {
+          purchase_type: "lifetime",
+          plan_type: "lifetime",
+          plan_name: planName,
+          user_id: user?.id ?? "anonymous",
+          event_id: eventId,
+          ...(receiptEmail && { email: receiptEmail }),
+        },
+        return_url:
+          typeof process.env.NEXT_PUBLIC_SITE_URL === "string"
+            ? `${process.env.NEXT_PUBLIC_SITE_URL}/checkout-success?isLifetime=true`
+            : undefined,
+        },
+        { idempotencyKey: piIdempotencyKey },
+      );
+      if (
+        paymentIntent.status === "requires_action" &&
+        paymentIntent.client_secret
+      ) {
+        return NextResponse.json({
+          success: true,
+          clientSecret: paymentIntent.client_secret,
+          requiresAction: true,
+          paymentIntentId: paymentIntent.id,
+        });
+      }
+      // Invite and refresh pro status for all successful lifetime payments (paymentMethodId path = payment complete in this request).
+      let inviteSent = false;
+      if (receiptEmail?.trim()) {
+        try {
+          await inviteUserByEmailAndRefreshProStatus(receiptEmail.trim());
+          inviteSent = true;
+        } catch (inviteErr) {
+          console.error(
+            "[payment-intent] Invite after payment success:",
+            inviteErr,
+          );
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        paymentIntentId: paymentIntent.id,
+        inviteSent,
+      });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount,
+        currency,
+        customer: stripeCustomerId,
+        setup_future_usage: savePaymentMethod ? "off_session" : undefined,
+        receipt_email: receiptEmail ?? undefined,
+        metadata: {
+          purchase_type: "lifetime",
+          plan_type: "lifetime",
+          plan_name: planName,
+          user_id: user?.id ?? "anonymous",
+          event_id: eventId,
+          ...(receiptEmail && { email: receiptEmail }),
+        },
+        automatic_payment_methods: { enabled: true },
       },
-      automatic_payment_methods: { enabled: true },
-    });
+      { idempotencyKey: piIdempotencyKey },
+    );
 
     return NextResponse.json({
       success: true,

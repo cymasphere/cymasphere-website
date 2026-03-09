@@ -1124,6 +1124,7 @@
     "placeholder": "Ask me anything about Cymasphere...",
     "typing": "Assistant is typing",
     "open_label": "Open chat",
-    "close_label": "Close chat"
+    "close_label": "Close chat",
+    "tooltip_hint": "Need help? Chat with us!"
   }
 }

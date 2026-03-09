@@ -1032,6 +1032,7 @@
     "placeholder": "Demandez-moi n'importe quoi sur Cymasphere...",
     "typing": "L'assistant est en train d'écrire",
     "open_label": "Ouvrir le chat",
-    "close_label": "Fermer le chat"
+    "close_label": "Fermer le chat",
+    "tooltip_hint": "Besoin d'aide ? Discutez avec nous !"
   }
 }
