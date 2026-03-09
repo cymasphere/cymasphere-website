@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "bunx tsc --noEmit",
+    "test": "node --test tests/",
     "test:e2e": "echo \"No E2E tests configured. Replace npm script 'test:e2e' with your E2E runner.\"",
     "supabase-gen-types": "bun x supabase gen types typescript --project-id \"jibirpbauzqhdiwjlrmf\" --schema public,stripe_tables > database.types.ts",
     "supabase-migrate": "bun x supabase db push"

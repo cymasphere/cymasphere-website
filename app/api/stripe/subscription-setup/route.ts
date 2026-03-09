@@ -154,18 +154,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!isPlanChange) {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: resolvedCustomerId,
-        status: "all",
-        limit: 100,
-      });
-      const active = subscriptions.data.filter(
-        (sub) =>
-          sub.status === "active" ||
-          sub.status === "trialing" ||
-          sub.status === "past_due",
-      );
+    const subscriptions = await stripe.subscriptions.list({
+      customer: resolvedCustomerId,
+      status: "all",
+      limit: 100,
+    });
+    const active = subscriptions.data.filter(
+      (sub) =>
+        sub.status === "active" ||
+        sub.status === "trialing" ||
+        sub.status === "past_due",
+    );
+
+    if (isPlanChange) {
+      // Backend-derived: plan change is only valid when customer has exactly one active subscription.
+      if (active.length !== 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "INVALID_PLAN_CHANGE",
+            message:
+              active.length === 0
+                ? "No active subscription found. Start a new subscription from the pricing page."
+                : "Multiple active subscriptions found. Please contact support or manage your subscription in the billing portal.",
+          },
+          { status: 400 },
+        );
+      }
+    } else {
       if (active.length > 0) {
         return NextResponse.json(
           {

@@ -1,9 +1,14 @@
 /**
- * @fileoverview StripeCheckout Component
+ * @fileoverview StripeCheckout Component (legacy)
  * @module components/checkout/StripeCheckout
- * 
- * Component for initiating Stripe checkout sessions. Handles checkout button
- * rendering, loading states, error handling, and redirects to checkout flow.
+ *
+ * Legacy component that redirects to an external checkout API (api.cymasphere.com).
+ * The primary checkout flow uses EmbeddedCheckout and Next.js API routes
+ * (/api/stripe/checkout, subscription-setup, payment-intent). Duplicate-subscription
+ * and lifetime-purchase enforcement for this legacy flow are the responsibility of
+ * the external backend; the main app relies on EmbeddedCheckout + Next.js routes.
+ *
+ * Handles checkout button rendering, loading states, error handling, and redirects.
  * In development mode, redirects to mock checkout instead of actual Stripe.
  * 
  * @example

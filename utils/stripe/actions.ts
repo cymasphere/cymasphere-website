@@ -277,21 +277,24 @@ export async function createCheckoutSession(
       customer: customerId,
     };
 
-    // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set
-    // This ensures metadata is on both payment intent AND invoice for all lifetime purchases
+    // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set.
+    // This mirrors the API route lifetime metadata so downstream Supabase/Stripe utilities can
+    // reliably detect lifetime access from either invoices or payment intents.
     if (planType === "lifetime") {
+      const lifetimeMetadata: Record<string, string> = {
+        purchase_type: "lifetime",
+        plan_type: "lifetime",
+        price_id: priceId,
+      };
+
       sessionConfig.payment_intent_data = {
-        metadata: {
-          purchase_type: "lifetime",
-        },
+        metadata: lifetimeMetadata,
       };
       // Also set metadata on invoice when it's created
       sessionConfig.invoice_creation = {
         enabled: true,
         invoice_data: {
-          metadata: {
-            purchase_type: "lifetime",
-          },
+          metadata: lifetimeMetadata,
         },
       };
     }

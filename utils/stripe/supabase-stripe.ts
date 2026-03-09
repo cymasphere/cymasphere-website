@@ -178,7 +178,7 @@ export async function customerPurchasedProFromSupabase(
       }
     }
 
-    // Check payment intents for lifetime purchase (only if invoice check didn't find lifetime)
+    // Check payment intents for lifetime purchase (only if invoice check didn't find lifetime).
     const safePaymentIntents = paymentIntents || [];
 
     for (const paymentIntent of safePaymentIntents) {
@@ -190,7 +190,7 @@ export async function customerPurchasedProFromSupabase(
           refunded?: boolean;
         }) || {};
 
-      // Check metadata - this should be set by checkout route
+      // Check metadata - this should be set by checkout/payment-intent routes for all new flows
       const hasLifetimeMetadata = attrs?.metadata?.purchase_type === "lifetime";
 
       const isLifetimePurchase = hasLifetimeMetadata;
@@ -200,15 +200,6 @@ export async function customerPurchasedProFromSupabase(
         if (attrs.status === "succeeded" && !attrs.dispute && !attrs.refunded) {
           hasLifetime = true;
           subscriptionType = "lifetime";
-
-          // If metadata is missing, log it for tracking
-          if (!hasLifetimeMetadata && hasLifetimePriceId) {
-            console.warn(
-              `⚠️ Lifetime purchase detected by price ID for customer ${customer_id} ` +
-                `(Payment Intent: ${(paymentIntent as any).id}). ` +
-                `Consider running tag-lifetime-transactions.js to add metadata.`
-            );
-          }
         } else if (
           attrs.status !== "succeeded" &&
           attrs.status !== "canceled"

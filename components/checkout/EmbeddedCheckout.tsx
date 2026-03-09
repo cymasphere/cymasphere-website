@@ -516,10 +516,13 @@ function PaymentFormInner({
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     const returnUrl =
@@ -547,6 +550,7 @@ function PaymentFormInner({
       });
       if (confirmError) setError(confirmError.message ?? "Payment failed");
     }
+    submittingRef.current = false;
     setSubmitting(false);
   };
 
@@ -657,13 +661,22 @@ function SetupIntentCheckoutForm({
     const isActiveSubscriptionError =
       error.includes("already have an active subscription") ||
       error.includes("ACTIVE_SUBSCRIPTION_EXISTS");
+    const isTrialUsedBefore = error.includes("TRIAL_USED_BEFORE");
+    const isLifetimeAlreadyPurchased = error.includes("LIFETIME_ALREADY_PURCHASED");
+    const isInvalidPlanChange = error.includes("INVALID_PLAN_CHANGE");
     return (
       <>
         <ErrorMessage>{error}</ErrorMessage>
-        {isActiveSubscriptionError && (
+        {(isActiveSubscriptionError || isTrialUsedBefore) && (
           <LoginRedirectLink href="/login?redirect=/dashboard">
             Log in to your account
           </LoginRedirectLink>
+        )}
+        {isLifetimeAlreadyPurchased && (
+          <LoginRedirectLink href="/dashboard">Go to dashboard</LoginRedirectLink>
+        )}
+        {isInvalidPlanChange && (
+          <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
         )}
       </>
     );
@@ -849,12 +862,32 @@ function SetupIntentSubmitForm({
     );
   }
 
+  const isServerBlockError =
+    error &&
+    (error.includes("ACTIVE_SUBSCRIPTION_EXISTS") ||
+      error.includes("TRIAL_USED_BEFORE") ||
+      error.includes("LIFETIME_ALREADY_PURCHASED") ||
+      error.includes("INVALID_PLAN_CHANGE"));
+
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElementWrapper>
         <PaymentElement options={{ layout: "tabs" }} />
       </PaymentElementWrapper>
       {error && <ErrorMessage>{error}</ErrorMessage>}
+      {isServerBlockError && (
+        <>
+          {error.includes("LIFETIME_ALREADY_PURCHASED") ? (
+            <LoginRedirectLink href="/dashboard">Go to dashboard</LoginRedirectLink>
+          ) : error.includes("INVALID_PLAN_CHANGE") ? (
+            <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
+          ) : (
+            <LoginRedirectLink href="/login?redirect=/dashboard">
+              Log in to your account
+            </LoginRedirectLink>
+          )}
+        </>
+      )}
       <SubmitButton type="submit" disabled={submitting}>
         {submitting ? "Processing…" : "Pay now"}
       </SubmitButton>
@@ -982,16 +1015,28 @@ function UnifiedCheckoutForm({
   }
 
   if (error && !clientSecretToUse) {
-    const isActiveSubscriptionError = error.includes(
-      "already have an active subscription",
-    );
+    const isActiveSubscriptionError =
+      error.includes("already have an active subscription") ||
+      error.includes("ACTIVE_SUBSCRIPTION_EXISTS");
+    const isLifetimeAlreadyPurchased =
+      error.includes("LIFETIME_ALREADY_PURCHASED");
+    const isTrialUsedBefore = error.includes("TRIAL_USED_BEFORE");
+    const isInvalidPlanChange = error.includes("INVALID_PLAN_CHANGE");
     return (
       <>
         <ErrorMessage>{error}</ErrorMessage>
-        {isActiveSubscriptionError && (
+        {(isActiveSubscriptionError || isTrialUsedBefore) && (
           <LoginRedirectLink href="/login?redirect=/dashboard">
             Log in to your account
           </LoginRedirectLink>
+        )}
+        {isLifetimeAlreadyPurchased && (
+          <LoginRedirectLink href="/dashboard">
+            Go to dashboard
+          </LoginRedirectLink>
+        )}
+        {isInvalidPlanChange && (
+          <LoginRedirectLink href="/dashboard/billing">Manage billing</LoginRedirectLink>
         )}
       </>
     );
@@ -1635,11 +1680,23 @@ function CheckoutPlanCard({
                 {paymentSetupError && (
                   <>
                     <ErrorMessage>{paymentSetupError}</ErrorMessage>
-                    {paymentSetupError.includes(
+                    {(paymentSetupError.includes(
                       "already have an active subscription",
-                    ) && (
+                    ) ||
+                      paymentSetupError.includes("ACTIVE_SUBSCRIPTION_EXISTS") ||
+                      paymentSetupError.includes("TRIAL_USED_BEFORE")) && (
                       <LoginRedirectLink href="/login?redirect=/dashboard">
                         Log in to your account
+                      </LoginRedirectLink>
+                    )}
+                    {paymentSetupError.includes("LIFETIME_ALREADY_PURCHASED") && (
+                      <LoginRedirectLink href="/dashboard">
+                        Go to dashboard
+                      </LoginRedirectLink>
+                    )}
+                    {paymentSetupError.includes("INVALID_PLAN_CHANGE") && (
+                      <LoginRedirectLink href="/dashboard/billing">
+                        Manage billing
                       </LoginRedirectLink>
                     )}
                   </>

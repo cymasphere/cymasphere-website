@@ -280,8 +280,8 @@ export async function POST(request: NextRequest) {
     }
 
     // CRITICAL: Check if customer already has an active subscription (prevents duplicates)
-    // Skip this check for plan changes and lifetime purchases (handled above)
-    if (resolved_customer_id && planType !== "lifetime" && !isPlanChange) {
+    // For plan changes, backend derives validity: only allow if customer has exactly one active subscription.
+    if (resolved_customer_id && planType !== "lifetime") {
       try {
         const subscriptions = await stripe.subscriptions.list({
           customer: resolved_customer_id,
@@ -296,7 +296,24 @@ export async function POST(request: NextRequest) {
             sub.status === "past_due",
         );
 
-        if (activeSubscriptions.length > 0) {
+        if (isPlanChange) {
+          if (activeSubscriptions.length !== 1) {
+            return NextResponse.json(
+              {
+                url: null,
+                error:
+                  activeSubscriptions.length === 0
+                    ? "INVALID_PLAN_CHANGE"
+                    : "ACTIVE_SUBSCRIPTION_EXISTS",
+                message:
+                  activeSubscriptions.length === 0
+                    ? "No active subscription found. Start a new subscription from the pricing page."
+                    : "Multiple active subscriptions found. Please manage your subscription in the billing portal.",
+              },
+              { status: 400 },
+            );
+          }
+        } else if (activeSubscriptions.length > 0) {
           console.warn(
             `⚠️ Customer ${resolved_customer_id} already has ${activeSubscriptions.length} active subscription(s). Blocking duplicate subscription creation.`,
           );
@@ -711,20 +728,33 @@ async function createCheckoutSession(
     }
 
     // Add payment_intent_data and invoice_creation for lifetime purchases to ensure metadata is set
-    // This ensures metadata is on both payment intent AND invoice for all lifetime purchases
+    // This ensures metadata is on both payment intent AND invoice for all lifetime purchases.
+    // Metadata schema is shared across all lifetime flows so downstream Supabase/Stripe utilities
+    // can reliably detect lifetime access:
+    // - purchase_type: "lifetime"
+    // - plan_type: "lifetime"
+    // - plan_name: formatted name with amount (e.g. lifetime_149 or lifetime_149_trial7)
+    // - price_id: Stripe price identifier used for the charge
+    // - user_id/email/event_id: copied from the Checkout Session metadata for correlation
     if (planType === "lifetime" && mode === "payment") {
+      const lifetimeMetadata = {
+        purchase_type: "lifetime",
+        plan_type: planType,
+        plan_name: planName,
+        price_id: priceId,
+        ...(userId && { user_id: userId }),
+        ...(userEmail && { email: userEmail }),
+        event_id: eventId,
+      };
+
       sessionParams.payment_intent_data = {
-        metadata: {
-          purchase_type: "lifetime",
-        },
+        metadata: lifetimeMetadata,
       };
       // Also set metadata on invoice when it's created
       sessionParams.invoice_creation = {
         enabled: true,
         invoice_data: {
-          metadata: {
-            purchase_type: "lifetime",
-          },
+          metadata: lifetimeMetadata,
         },
       };
     }
