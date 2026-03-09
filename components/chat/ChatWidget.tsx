@@ -1,26 +1,35 @@
-'use client';
+/**
+ * @fileoverview Floating chat widget for the Cymasphere assistant (AI help).
+ * @module components/chat/ChatWidget
+ * @description Renders a fixed chat button that opens a conversation UI. After 15s on
+ * public pages (non-dashboard, not logged in), draws attention via a pulse animation and
+ * brief tooltip instead of auto-opening the chat panel.
+ */
 
-import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
-import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
-import ReactMarkdown from 'react-markdown';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import styled from "styled-components";
+import { FaComment, FaTimes, FaPaperPlane, FaRobot } from "react-icons/fa";
+import ReactMarkdown from "react-markdown";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Import audio utilities dynamically to avoid SSR issues
 const playSound = async () => {
   if (typeof window !== "undefined") {
     try {
       console.log("Chat widget: Attempting to play sound...");
-      const { playLydianMaj7Chord, initAudio } = await import("../../utils/audioUtils");
+      const { playLydianMaj7Chord, initAudio } =
+        await import("../../utils/audioUtils");
       console.log("Chat widget: Audio utils imported successfully");
-      
+
       // Initialize audio context first (this will unlock audio on user interaction)
       await initAudio();
       console.log("Chat widget: Audio context initialized");
-      
+
       // Play the sound
       await playLydianMaj7Chord();
       console.log("Chat widget: Sound played successfully");
@@ -53,7 +62,7 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  
+
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     bottom: 15px;
@@ -61,7 +70,7 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
     left: auto;
     align-items: flex-end;
   }
-  
+
   @media (max-width: 480px) {
     bottom: 15px;
     right: 15px;
@@ -70,7 +79,47 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
   }
 `;
 
-const ChatButton = styled.button<{ $isOpen: boolean }>`
+const ChatButtonWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+`;
+
+const ChatTooltip = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  visibility: ${(props) => (props.$visible ? "visible" : "hidden")};
+  transform: translateY(${(props) => (props.$visible ? "0" : "4px")});
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    visibility 0.25s;
+  pointer-events: none;
+  z-index: 10000;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    right: 20px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--card-bg);
+  }
+`;
+
+const ChatButton = styled.button<{ $isOpen: boolean; $attention?: boolean }>`
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -84,16 +133,35 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
   font-size: 24px;
   box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
   transition: all 0.3s ease;
-  transform: ${props => props.$isOpen ? 'scale(0.9)' : 'scale(1)'};
+  transform: ${(props) => (props.$isOpen ? "scale(0.9)" : "scale(1)")};
   position: relative;
   z-index: 9999;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   flex-shrink: 0;
+  animation: ${(props) =>
+    props.$attention && !props.$isOpen
+      ? "chatAttention 2s ease-in-out 3"
+      : "none"};
+
+  @keyframes chatAttention {
+    0%,
+    100% {
+      transform: scale(1.1);
+      box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+    }
+    50% {
+      transform: scale(1.2);
+      box-shadow:
+        0 0 0 8px rgba(108, 99, 255, 0.25),
+        0 6px 28px rgba(108, 99, 255, 0.5);
+    }
+  }
 
   &:hover {
-    transform: ${props => props.$isOpen ? 'scale(0.85)' : 'scale(1.1)'};
+    transform: ${(props) => (props.$isOpen ? "scale(0.85)" : "scale(1.1)")};
     box-shadow: 0 6px 25px rgba(108, 99, 255, 0.4);
+    animation: none;
   }
 
   @media (max-width: 768px) {
@@ -108,7 +176,7 @@ const ChatButton = styled.button<{ $isOpen: boolean }>`
     font-size: 20px;
     position: relative;
     /* Hide the button when chat is open on mobile (close button is in header) */
-    display: ${props => props.$isOpen ? 'none' : 'flex'};
+    display: ${(props) => (props.$isOpen ? "none" : "flex")};
   }
 `;
 
@@ -118,14 +186,14 @@ const ChatWindow = styled.div<{ $isOpen: boolean; $height?: string }>`
   background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  display: ${props => props.$isOpen ? 'flex' : 'none'};
+  display: ${(props) => (props.$isOpen ? "flex" : "none")};
   flex-direction: column;
   overflow: hidden;
   margin-bottom: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 9998;
-  
+
   /* Tablet responsiveness */
   @media (max-width: 768px) {
     width: calc(100vw - 30px);
@@ -134,11 +202,11 @@ const ChatWindow = styled.div<{ $isOpen: boolean; $height?: string }>`
     border-radius: 16px;
     margin-bottom: 15px;
   }
-  
+
   /* Mobile - Full screen overlay with dynamic height */
   @media (max-width: 480px) {
     width: 100vw;
-    height: ${props => props.$height || '100vh'};
+    height: ${(props) => props.$height || "100vh"};
     border-radius: 0;
     margin-bottom: 0;
     position: fixed;
@@ -146,7 +214,7 @@ const ChatWindow = styled.div<{ $isOpen: boolean; $height?: string }>`
     left: 0;
     right: 0;
     top: auto;
-    display: ${props => props.$isOpen ? 'flex' : 'none'};
+    display: ${(props) => (props.$isOpen ? "flex" : "none")};
     flex-direction: column;
     box-shadow: none;
     transition: height 0.2s ease-out;
@@ -210,13 +278,13 @@ const MessagesContainer = styled.div`
   -webkit-overflow-scrolling: touch;
   min-height: 0;
   overflow-anchor: none;
-  
+
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     padding: 14px;
     gap: 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 16px 12px;
     gap: 12px;
@@ -234,14 +302,15 @@ const MessageBubble = styled.div<{ $isUser: boolean }>`
   max-width: 80%;
   padding: 12px 16px;
   border-radius: 18px;
-  background: ${props => props.$isUser 
-    ? 'linear-gradient(135deg, var(--primary), var(--accent))' 
-    : 'rgba(255, 255, 255, 0.08)'};
-  color: ${props => props.$isUser ? 'white' : 'var(--text)'};
-  align-self: ${props => props.$isUser ? 'flex-end' : 'flex-start'};
+  background: ${(props) =>
+    props.$isUser
+      ? "linear-gradient(135deg, var(--primary), var(--accent))"
+      : "rgba(255, 255, 255, 0.08)"};
+  color: ${(props) => (props.$isUser ? "white" : "var(--text)")};
+  align-self: ${(props) => (props.$isUser ? "flex-end" : "flex-start")};
   word-wrap: break-word;
   position: relative;
-  
+
   /* Mobile responsiveness */
   @media (max-width: 480px) {
     max-width: 90%;
@@ -249,7 +318,7 @@ const MessageBubble = styled.div<{ $isUser: boolean }>`
     border-radius: 16px;
     font-size: 14px;
   }
-  
+
   @media (max-width: 360px) {
     max-width: 95%;
     padding: 8px 12px;
@@ -264,7 +333,8 @@ const MessageBubble = styled.div<{ $isUser: boolean }>`
     }
   }
 
-  ul, ol {
+  ul,
+  ol {
     margin: 8px 0;
     padding-left: 20px;
   }
@@ -285,7 +355,7 @@ const MessageBubble = styled.div<{ $isUser: boolean }>`
     background: rgba(255, 255, 255, 0.1);
     padding: 2px 4px;
     border-radius: 3px;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.9em;
   }
 
@@ -309,7 +379,7 @@ const MessageTime = styled.div<{ $isUser: boolean }>`
   font-size: 11px;
   opacity: 0.7;
   margin-top: 4px;
-  text-align: ${props => props.$isUser ? 'right' : 'left'};
+  text-align: ${(props) => (props.$isUser ? "right" : "left")};
 `;
 
 const CTAButton = styled.span`
@@ -323,7 +393,9 @@ const CTAButton = styled.span`
   font-size: 13px;
   text-decoration: none;
   box-shadow: 0 4px 12px rgba(108, 99, 255, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-1px);
@@ -338,13 +410,13 @@ const InputContainer = styled.div`
   gap: 8px;
   flex-shrink: 0;
   background-color: var(--card-bg);
-  
+
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     padding: 14px;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     gap: 8px;
@@ -369,14 +441,14 @@ const MessageInput = styled.input`
   transition: border-color 0.2s;
   -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
-  
+
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     font-size: 16px; /* Prevents zoom on iOS */
     padding: 14px 16px;
     min-height: 48px; /* Better touch target */
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px 16px;
     font-size: 16px; /* Prevents iOS zoom */
@@ -407,7 +479,7 @@ const SendButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
-  
+
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     width: 44px;
@@ -415,7 +487,7 @@ const SendButton = styled.button`
     min-width: 44px;
     min-height: 44px;
   }
-  
+
   @media (max-width: 480px) {
     width: 48px;
     height: 48px;
@@ -448,13 +520,19 @@ const TypingDots = styled.div`
   gap: 2px;
 
   &::after {
-    content: '...';
+    content: "...";
     animation: typing 1.5s infinite;
   }
 
   @keyframes typing {
-    0%, 60%, 100% { opacity: 0.3; }
-    30% { opacity: 1; }
+    0%,
+    60%,
+    100% {
+      opacity: 0.3;
+    }
+    30% {
+      opacity: 1;
+    }
   }
 `;
 
@@ -466,15 +544,17 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [hasTriggeredAttention, setHasTriggeredAttention] = useState(false);
+  const [showAttention, setShowAttention] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [wasEmailModalOpen, setWasEmailModalOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [chatHeight, setChatHeight] = useState<string>('100vh');
+  const [chatHeight, setChatHeight] = useState<string>("100vh");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -483,16 +563,18 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   // Initialize greeting message based on language
   useEffect(() => {
     const initialGreeting: Message = {
-      id: '1',
-      text: t('chat.greeting') || "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
+      id: "1",
+      text:
+        t("chat.greeting") ||
+        "Hi! I'm your Cymasphere assistant. I can help you with questions about our music production tools, pricing, features, and more. What would you like to know?",
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
     setMessages([initialGreeting]);
   }, [i18n.language, t]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -508,12 +590,12 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
   // Handle input focus on mobile
   const handleInputFocus = () => {
     // On mobile, ensure messages container is scrollable
-    if (typeof window !== 'undefined' && window.innerWidth <= 480) {
+    if (typeof window !== "undefined" && window.innerWidth <= 480) {
       // Small delay to let keyboard appear
       setTimeout(() => {
         if (messagesContainerRef.current) {
           // Ensure container can scroll
-          messagesContainerRef.current.style.overflowY = 'scroll';
+          messagesContainerRef.current.style.overflowY = "scroll";
         }
       }, 300);
     }
@@ -531,13 +613,13 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
 
   // Track keyboard height and adjust chat window height on mobile
   useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth > 480) {
-      setChatHeight('100vh');
+    if (typeof window === "undefined" || window.innerWidth > 480) {
+      setChatHeight("100vh");
       return;
     }
 
     if (!isOpen) {
-      setChatHeight('100vh');
+      setChatHeight("100vh");
       return;
     }
 
@@ -546,7 +628,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         // Use visual viewport height (excludes keyboard)
         const viewportHeight = window.visualViewport.height;
         setChatHeight(`${viewportHeight}px`);
-        
+
         // Also update the chat window directly for immediate effect
         if (chatWindowRef.current) {
           chatWindowRef.current.style.height = `${viewportHeight}px`;
@@ -555,7 +637,7 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
         // Fallback for browsers without visual viewport API
         const windowHeight = window.innerHeight;
         setChatHeight(`${windowHeight}px`);
-        
+
         if (chatWindowRef.current) {
           chatWindowRef.current.style.height = `${windowHeight}px`;
         }
@@ -567,43 +649,43 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
 
     // Listen for viewport changes (keyboard show/hide)
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateChatHeight);
-      window.visualViewport.addEventListener('scroll', updateChatHeight);
+      window.visualViewport.addEventListener("resize", updateChatHeight);
+      window.visualViewport.addEventListener("scroll", updateChatHeight);
     } else {
       // Fallback: listen to window resize
-      window.addEventListener('resize', updateChatHeight);
+      window.addEventListener("resize", updateChatHeight);
     }
 
     return () => {
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateChatHeight);
-        window.visualViewport.removeEventListener('scroll', updateChatHeight);
+        window.visualViewport.removeEventListener("resize", updateChatHeight);
+        window.visualViewport.removeEventListener("scroll", updateChatHeight);
       } else {
-        window.removeEventListener('resize', updateChatHeight);
+        window.removeEventListener("resize", updateChatHeight);
       }
     };
   }, [isOpen]);
 
   // Prevent body scroll on mobile when chat is open
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const isMobile = window.innerWidth <= 480;
-    
+
     if (isOpen && isMobile) {
       // Save current scroll position
       const scrollY = window.scrollY;
       // Prevent body scroll
-      document.body.style.position = 'fixed';
+      document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+
       return () => {
         // Restore body scroll
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
         // Restore scroll position
         window.scrollTo(0, scrollY);
       };
@@ -626,13 +708,15 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     };
 
     // Listen for any user interaction to initialize audio
-    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
-    events.forEach(event => {
-      document.addEventListener(event, initializeAudioOnInteraction, { once: true });
+    const events = ["click", "touchstart", "keydown", "mousedown"];
+    events.forEach((event) => {
+      document.addEventListener(event, initializeAudioOnInteraction, {
+        once: true,
+      });
     });
 
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         document.removeEventListener(event, initializeAudioOnInteraction);
       });
     };
@@ -643,35 +727,40 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     const checkEmailModal = () => {
       // Check for modal overlay - EmailCollectionModal uses z-index 9999
       // Exclude chat widget elements
-      const allElements = document.querySelectorAll('*');
+      const allElements = document.querySelectorAll("*");
       let hasEmailModal = false;
-      
+
       for (const el of allElements) {
         // Skip chat widget elements
-        if (el.hasAttribute('data-chat-widget') || 
-            el.closest('[data-chat-widget]') ||
-            el.closest('[class*="ChatContainer"], [class*="ChatWidget"]')) {
+        if (
+          el.hasAttribute("data-chat-widget") ||
+          el.closest("[data-chat-widget]") ||
+          el.closest('[class*="ChatContainer"], [class*="ChatWidget"]')
+        ) {
           continue;
         }
-        
+
         const styles = window.getComputedStyle(el);
         // Check for email modal overlay - it should have z-index 9999, be fixed, and have backdrop blur
         // Also check for specific modal classes or data attributes
-        if (styles.zIndex === '9999' && styles.position === 'fixed') {
+        if (styles.zIndex === "9999" && styles.position === "fixed") {
           // Check if it's a modal overlay (has backdrop blur or specific styling)
           // EmailCollectionModal typically has backdrop-filter blur
-          if ((styles.backdropFilter && styles.backdropFilter !== 'none') || 
-              (styles.backgroundColor === 'rgba(0, 0, 0, 0.7)' && el.classList.toString().includes('Modal'))) {
+          if (
+            (styles.backdropFilter && styles.backdropFilter !== "none") ||
+            (styles.backgroundColor === "rgba(0, 0, 0, 0.7)" &&
+              el.classList.toString().includes("Modal"))
+          ) {
             hasEmailModal = true;
             break;
           }
         }
       }
-      
+
       const emailModalJustOpened = hasEmailModal && !wasEmailModalOpen;
       setIsEmailModalOpen(hasEmailModal);
       setWasEmailModalOpen(hasEmailModal);
-      
+
       // If email modal just opened (not already open), close chat widget
       // Add a small delay to prevent immediate closing when chat opens
       if (emailModalJustOpened && isOpen) {
@@ -688,12 +777,12 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     const observer = new MutationObserver(() => {
       checkEmailModal();
     });
-    
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['style', 'class']
+      attributeFilter: ["style", "class"],
     });
 
     // Also check periodically as fallback
@@ -705,34 +794,49 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
     };
   }, [isOpen]);
 
-  // Auto-open chat widget after 15 seconds if not on dashboard pages and user is not logged in
+  // After 15s, draw attention to the chat button (animate + brief tooltip) instead of auto-opening
   useEffect(() => {
-    const isDashboardPage = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    const isDashboardPage =
+      pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
     const isLoggedIn = !!user;
-    
-    // Don't auto-open if:
-    // - On dashboard/admin pages
-    // - User is logged in
-    // - Email modal is open
-    // - Already auto-opened
-    // - Chat is already open
-    if (!isDashboardPage && !isLoggedIn && !hasAutoOpened && !isOpen && !isEmailModalOpen) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        setHasAutoOpened(true);
-        // Play pleasant sound when auto-opening (only if audio was initialized)
-        if (audioInitialized) {
-          playSound().catch(() => {
-            console.log("Audio not available for chat widget auto-open");
-          });
-        } else {
-          console.log("Audio not initialized yet, skipping auto-open sound");
-        }
-      }, 15000); // 15 seconds
 
-      return () => clearTimeout(timer);
+    if (
+      !isDashboardPage &&
+      !isLoggedIn &&
+      !hasTriggeredAttention &&
+      !isOpen &&
+      !isEmailModalOpen
+    ) {
+      const startTimer = setTimeout(() => {
+        setHasTriggeredAttention(true);
+        setShowAttention(true);
+        setShowTooltip(true);
+      }, 15000);
+
+      return () => clearTimeout(startTimer);
     }
-  }, [pathname, hasAutoOpened, isOpen, audioInitialized, isEmailModalOpen, user]);
+  }, [pathname, hasTriggeredAttention, isOpen, isEmailModalOpen, user]);
+
+  // Hide tooltip after 4 seconds; stop attention animation after 6.5s (3 pulse cycles)
+  useEffect(() => {
+    if (!showAttention) return;
+
+    const tooltipTimer = setTimeout(() => setShowTooltip(false), 4000);
+    const attentionTimer = setTimeout(() => setShowAttention(false), 6500);
+
+    return () => {
+      clearTimeout(tooltipTimer);
+      clearTimeout(attentionTimer);
+    };
+  }, [showAttention]);
+
+  // Clear attention and tooltip when user opens chat
+  useEffect(() => {
+    if (isOpen) {
+      setShowAttention(false);
+      setShowTooltip(false);
+    }
+  }, [isOpen]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -741,87 +845,91 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
       id: Date.now().toString(),
       text: inputValue.trim(),
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: userMessage.text,
           conversationHistory: messages.slice(-5), // Send last 5 messages for context
-          language: i18n.language // Pass current language code (e.g., 'en', 'es', 'fr')
+          language: i18n.language, // Pass current language code (e.g., 'en', 'es', 'fr')
         }),
       });
 
       const data = await response.json();
-      
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || t('chat.error_process') || "I'm sorry, I couldn't process your message right now. Please try again.",
+        text:
+          data.response ||
+          t("chat.error_process") ||
+          "I'm sorry, I couldn't process your message right now. Please try again.",
         isUser: false,
         timestamp: new Date(),
-        cta: null
+        cta: null,
       };
 
       // If message mentions pricing/plans/trial, append CTA to view pricing section
-      const pricingRegex = /(price|pricing|plan|plans|monthly|yearly|lifetime|trial|subscribe|upgrade)/i;
+      const pricingRegex =
+        /(price|pricing|plan|plans|monthly|yearly|lifetime|trial|subscribe|upgrade)/i;
       if (pricingRegex.test(botMessage.text)) {
         botMessage.cta = {
-          label: t('chat.view_pricing') || 'View pricing',
-          href: '/#pricing',
+          label: t("chat.view_pricing") || "View pricing",
+          href: "/#pricing",
         };
       }
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error("Chat error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: t('chat.error_connecting') || "I'm having trouble connecting right now. Please try again in a moment.",
+        text:
+          t("chat.error_connecting") ||
+          "I'm having trouble connecting right now. Please try again in a moment.",
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
   return (
-    <ChatContainer className={className} $isOpen={isOpen} data-chat-widget="true">
-      <ChatWindow 
-        ref={chatWindowRef}
-        $isOpen={isOpen}
-        $height={chatHeight}
-      >
+    <ChatContainer
+      className={className}
+      $isOpen={isOpen}
+      data-chat-widget="true"
+    >
+      <ChatWindow ref={chatWindowRef} $isOpen={isOpen} $height={chatHeight}>
         <ChatHeader>
           <ChatTitle>
             <FaRobot />
-            {t('chat.title') || 'Cymasphere Assistant'}
+            {t("chat.title") || "Cymasphere Assistant"}
           </ChatTitle>
           <CloseButton onClick={() => setIsOpen(false)}>
             <FaTimes />
           </CloseButton>
         </ChatHeader>
-        
-        <MessagesContainer
-          ref={messagesContainerRef}
-        >
+
+        <MessagesContainer ref={messagesContainerRef}>
           {messages.map((message) => (
             <MessageBubble key={message.id} $isUser={message.isUser}>
               {message.isUser ? (
@@ -837,25 +945,25 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
                 </>
               )}
               <MessageTime $isUser={message.isUser}>
-                {message.timestamp.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                {message.timestamp.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </MessageTime>
             </MessageBubble>
           ))}
-          
+
           {isTyping && (
             <TypingIndicator>
               <FaRobot />
-              {t('chat.typing') || 'Assistant is typing'}
+              {t("chat.typing") || "Assistant is typing"}
               <TypingDots />
             </TypingIndicator>
           )}
-          
+
           <div ref={messagesEndRef} />
         </MessagesContainer>
-        
+
         <InputContainer>
           <MessageInput
             ref={inputRef}
@@ -863,10 +971,12 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             onFocus={handleInputFocus}
-            placeholder={t('chat.placeholder') || 'Ask me anything about Cymasphere...'}
+            placeholder={
+              t("chat.placeholder") || "Ask me anything about Cymasphere..."
+            }
             disabled={isTyping}
           />
-          <SendButton 
+          <SendButton
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isTyping}
           >
@@ -874,21 +984,31 @@ export default function ChatWidget({ className }: ChatWidgetProps) {
           </SendButton>
         </InputContainer>
       </ChatWindow>
-      <ChatButton 
-        $isOpen={isOpen}
-        onClick={() => {
-          setIsOpen(!isOpen);
-          // Play sound when manually opening chat
-          if (!isOpen) {
-            playSound().catch(() => {
-              console.log("Audio not available for manual chat open");
-            });
+      <ChatButtonWrapper>
+        <ChatTooltip $visible={showTooltip}>
+          {t("chat.tooltip_hint") || "Need help? Chat with us!"}
+        </ChatTooltip>
+        <ChatButton
+          $isOpen={isOpen}
+          $attention={showAttention}
+          onClick={() => {
+            setIsOpen(!isOpen);
+            // Play sound when manually opening chat
+            if (!isOpen) {
+              playSound().catch(() => {
+                console.log("Audio not available for manual chat open");
+              });
+            }
+          }}
+          aria-label={
+            isOpen
+              ? t("chat.close_label") || "Close chat"
+              : t("chat.open_label") || "Open chat"
           }
-        }}
-        aria-label={isOpen ? t('chat.close_label') || 'Close chat' : t('chat.open_label') || 'Open chat'}
-      >
-        {isOpen ? <FaTimes /> : <FaComment />}
-      </ChatButton>
+        >
+          {isOpen ? <FaTimes /> : <FaComment />}
+        </ChatButton>
+      </ChatButtonWrapper>
     </ChatContainer>
   );
 }
