@@ -213,11 +213,8 @@ export async function POST(
         "email and password fields are required"
       );
 
-    // Extract client IP and device info from request headers for security tracking
-    // Supports both direct IP and proxied requests (x-forwarded-for)
-    const clientIp =
-      request.headers.get("x-forwarded-for")?.split(",")[0] ||
-      request.headers.get("x-real-ip");
+    // Extract device info from request headers for security tracking
+    // Client IP is already derived via getClientIp above
     const userAgent = request.headers.get("user-agent");
 
     // User agent is required for security validation
