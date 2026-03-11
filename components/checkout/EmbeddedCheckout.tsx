@@ -759,6 +759,18 @@ function SetupIntentSubmitForm({
     setSubmitting(true);
     setError(null);
     try {
+      const promoCodeToValidate = promotionCode?.trim() ?? "";
+      if (promoCodeToValidate) {
+        const promoCheck = await validatePromoCodeForCheckout(
+          planType,
+          promoCodeToValidate,
+        );
+        if (!promoCheck.valid) {
+          setError(promoCheck.message);
+          return;
+        }
+      }
+
       const returnUrl =
         typeof window !== "undefined"
           ? `${window.location.origin}/checkout-success?isLifetime=${planType === "lifetime"}`
@@ -1125,6 +1137,74 @@ interface ActivePromotion {
   sale_price_lifetime?: number | null;
 }
 
+type PromoValidationDuration = "once" | "forever" | "repeating";
+
+interface PromoValidationResult {
+  valid: boolean;
+  message: string;
+  amountAfterDiscount?: number;
+  currency?: string;
+  duration?: PromoValidationDuration;
+  durationInMonths?: number | null;
+}
+
+/**
+ * @brief Validates promo codes before checkout submission.
+ * @param {PlanType} planType - Plan being purchased.
+ * @param {string} promotionCode - Promo code entered by the user.
+ * @returns {Promise<PromoValidationResult>} Normalized validation result.
+ */
+async function validatePromoCodeForCheckout(
+  planType: PlanType,
+  promotionCode: string,
+): Promise<PromoValidationResult> {
+  const trimmedCode = promotionCode.trim();
+  if (!trimmedCode) {
+    return { valid: true, message: "" };
+  }
+
+  try {
+    const res = await fetch("/api/stripe/validate-promo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        planType,
+        promotionCode: trimmedCode,
+      }),
+    });
+    const data: {
+      success?: boolean;
+      valid?: boolean;
+      message?: string;
+      amountAfterDiscount?: number;
+      currency?: string;
+      duration?: PromoValidationDuration;
+      durationInMonths?: number | null;
+    } = await res.json();
+
+    if (data.success && data.valid) {
+      return {
+        valid: true,
+        message: data.message ?? "Code applied.",
+        amountAfterDiscount: data.amountAfterDiscount,
+        currency: data.currency ?? "usd",
+        duration: data.duration,
+        durationInMonths: data.durationInMonths ?? null,
+      };
+    }
+
+    return {
+      valid: false,
+      message: data.message ?? "Invalid or expired code.",
+    };
+  } catch {
+    return {
+      valid: false,
+      message: "Could not validate code. Try again.",
+    };
+  }
+}
+
 interface CheckoutPlanCardProps {
   planType: PlanType;
   planTitle: string;
@@ -1185,7 +1265,9 @@ function CheckoutPlanCard({
   const [pricesLoading, setPricesLoading] = useState(true);
   const [activePromotion, setActivePromotion] =
     useState<ActivePromotion | null>(null);
-  const [continuedToPayment, setContinuedToPayment] = useState(false);
+  const [continuedToPayment, setContinuedToPayment] = useState<boolean>(() =>
+    Boolean(user),
+  );
   const [committedFirstName, setCommittedFirstName] = useState<string>("");
   const [committedLastName, setCommittedLastName] = useState<string>("");
   const [paymentSetupLoading, setPaymentSetupLoading] = useState(false);
@@ -1198,7 +1280,7 @@ function CheckoutPlanCard({
     message?: string;
     amountAfterDiscount?: number;
     currency?: string;
-    duration?: "once" | "forever" | "repeating";
+    duration?: PromoValidationDuration;
     durationInMonths?: number | null;
   }>({ status: "idle" });
   const hasAutofilledPromoRef = useRef(false);
@@ -1222,6 +1304,18 @@ function CheckoutPlanCard({
     const firstNameToSend = committedFirstName || checkoutFirstName.trim();
     const lastNameToSend = committedLastName || checkoutLastName.trim();
     try {
+      const promoCodeToValidate = checkoutPromo?.trim() ?? "";
+      if (promoCodeToValidate) {
+        const promoCheck = await validatePromoCodeForCheckout(
+          planType,
+          promoCodeToValidate,
+        );
+        if (!promoCheck.valid) {
+          setPaymentSetupError(promoCheck.message);
+          return;
+        }
+      }
+
       const res = await fetch("/api/stripe/subscription-setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1273,61 +1367,38 @@ function CheckoutPlanCard({
       status: "loading",
       message: undefined,
     }));
-    try {
-      const res = await fetch("/api/stripe/validate-promo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planType,
-          promotionCode: checkoutPromo?.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.valid) {
+    const promoCheck = await validatePromoCodeForCheckout(planType, checkoutPromo);
+    if (promoCheck.valid) {
+      if (checkoutPromo.trim().length === 0) {
+        setPromoValidation({
+          status: "idle",
+          message: undefined,
+        });
+      } else {
         setPromoValidation({
           status: "success",
-          message: data.message ?? "Code applied.",
-          amountAfterDiscount: data.amountAfterDiscount,
-          currency: data.currency ?? "usd",
-          duration: data.duration,
-          durationInMonths: data.durationInMonths ?? null,
+          message: promoCheck.message,
+          amountAfterDiscount: promoCheck.amountAfterDiscount,
+          currency: promoCheck.currency ?? "usd",
+          duration: promoCheck.duration,
+          durationInMonths: promoCheck.durationInMonths ?? null,
         });
-        return true;
       }
-      setPromoValidation({
-        status: "error",
-        message: data.message ?? "Invalid or expired code.",
-      });
-      return false;
-    } catch {
-      setPromoValidation({
-        status: "error",
-        message: "Could not validate code. Try again.",
-      });
-      return false;
+      return true;
     }
+    setPromoValidation({
+      status: "error",
+      message: promoCheck.message,
+    });
+    return false;
   }, [planType, checkoutPromo]);
 
-  const handleContinueClick = useCallback(async () => {
+  const handleContinueClick = useCallback(() => {
     if (!canProceedWithEmail) return;
     setCommittedFirstName(checkoutFirstName.trim());
     setCommittedLastName(checkoutLastName.trim());
-    const hasPromoEntered = !!checkoutPromo?.trim();
-    const promoAlreadyApplied = promoValidation.status === "success";
-    if (hasPromoEntered && !promoAlreadyApplied) {
-      const valid = await applyPromo();
-      if (valid) setContinuedToPayment(true);
-      return;
-    }
     setContinuedToPayment(true);
-  }, [
-    canProceedWithEmail,
-    checkoutFirstName,
-    checkoutLastName,
-    checkoutPromo,
-    promoValidation.status,
-    applyPromo,
-  ]);
+  }, [canProceedWithEmail, checkoutFirstName, checkoutLastName]);
 
   const promoDurationLabel =
     promoValidation.duration === "once"
@@ -1340,6 +1411,62 @@ function CheckoutPlanCard({
               count: promoValidation.durationInMonths,
             })
           : null;
+
+  useEffect(() => {
+    if (user) {
+      setContinuedToPayment(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (promoValidation.status === "success") {
+      setPromoValidation({ status: "idle" });
+    }
+    if (paymentSetupError) {
+      setPaymentSetupError(null);
+    }
+  }, [checkoutPromo, paymentSetupError, promoValidation.status]);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      setPricesLoading(true);
+      try {
+        const response = await fetch("/api/stripe/prices");
+        const result = await response.json();
+        if (result.success && result.prices) setPrices(result.prices);
+      } catch {
+        // leave prices null
+      } finally {
+        setPricesLoading(false);
+      }
+    };
+    fetchPrices();
+  }, []);
+
+  useEffect(() => {
+    const fetchPromotion = async () => {
+      try {
+        const response = await fetch(`/api/promotions/active?plan=${planType}`);
+        const data = await response.json();
+        if (data.success && data.promotion) {
+          setActivePromotion(data.promotion as ActivePromotion);
+          if (
+            data.suggested_promo_code &&
+            typeof data.suggested_promo_code === "string" &&
+            !hasAutofilledPromoRef.current
+          ) {
+            setCheckoutPromo(data.suggested_promo_code);
+            hasAutofilledPromoRef.current = true;
+          }
+        } else {
+          setActivePromotion(null);
+        }
+      } catch {
+        setActivePromotion(null);
+      }
+    };
+    fetchPromotion();
+  }, [planType]);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -1649,89 +1776,53 @@ function CheckoutPlanCard({
         <Divider />
         <FormSection>
           {continuedToPayment ? (
-            <PaymentSummaryRow>
-              <span>
-                {t("checkout.payingAs", "Paying as")}{" "}
-                <strong style={{ color: "var(--text)" }}>
-                  {resolvedEmail}
-                </strong>
-                {checkoutPromo?.trim() && (
-                  <>
-                    {" · "}
-                    {t("checkout.promoLabel", "Promo")}: {checkoutPromo.trim()}
-                    {promoValidation.status === "success" &&
-                      promoValidation.amountAfterDiscount != null && (
-                        <>
-                          {" — "}
-                          {t("checkout.promoApplied", "Code applied")} $
-                          {(promoValidation.amountAfterDiscount / 100).toFixed(
-                            0,
-                          )}
-                          {promoDurationLabel != null &&
-                            ` · ${promoDurationLabel}`}
-                        </>
-                      )}
-                  </>
-                )}
-              </span>
-              <EditLink
-                type="button"
-                onClick={() => {
-                  setContinuedToPayment(false);
-                  setCommittedFirstName("");
-                  setCommittedLastName("");
-                }}
-                aria-label={t("checkout.editEmailPromo", "Edit email or promo")}
-              >
-                {t("checkout.edit", "Edit")}
-              </EditLink>
-            </PaymentSummaryRow>
-          ) : (
             <>
+              <PaymentSummaryRow>
+                <span>
+                  {t("checkout.payingAs", "Paying as")}{" "}
+                  <strong style={{ color: "var(--text)" }}>
+                    {resolvedEmail}
+                  </strong>
+                  {checkoutPromo?.trim() && (
+                    <>
+                      {" · "}
+                      {t("checkout.promoLabel", "Promo")}: {checkoutPromo.trim()}
+                      {promoValidation.status === "success" &&
+                        promoValidation.amountAfterDiscount != null && (
+                          <>
+                            {" — "}
+                            {t("checkout.promoApplied", "Code applied")} $
+                            {(promoValidation.amountAfterDiscount / 100).toFixed(
+                              0,
+                            )}
+                            {promoDurationLabel != null &&
+                              ` · ${promoDurationLabel}`}
+                          </>
+                        )}
+                    </>
+                  )}
+                </span>
+                {!isLoggedIn && (
+                  <EditLink
+                    type="button"
+                    onClick={() => {
+                      setContinuedToPayment(false);
+                      setCommittedFirstName("");
+                      setCommittedLastName("");
+                    }}
+                    aria-label={t("checkout.editEmailPromo", "Edit email or promo")}
+                  >
+                    {t("checkout.edit", "Edit")}
+                  </EditLink>
+                )}
+              </PaymentSummaryRow>
               <FieldGroup>
-                <FieldLabel htmlFor="checkout-email">Email</FieldLabel>
-                <Input
-                  id="checkout-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={userEmail ?? checkoutEmail}
-                  onChange={(e) => setCheckoutEmail(e.target.value)}
-                  disabled={!!userEmail}
-                />
-              </FieldGroup>
-              <NameRow>
-                <FieldGroup>
-                  <FieldLabel htmlFor="checkout-first-name">
-                    {t("checkout.firstName", "First name")}
-                  </FieldLabel>
-                  <Input
-                    id="checkout-first-name"
-                    type="text"
-                    placeholder="Jane"
-                    value={checkoutFirstName}
-                    onChange={(e) => setCheckoutFirstName(e.target.value)}
-                  />
-                </FieldGroup>
-                <FieldGroup>
-                  <FieldLabel htmlFor="checkout-last-name">
-                    {t("checkout.lastName", "Last name")}
-                  </FieldLabel>
-                  <Input
-                    id="checkout-last-name"
-                    type="text"
-                    placeholder="Doe"
-                    value={checkoutLastName}
-                    onChange={(e) => setCheckoutLastName(e.target.value)}
-                  />
-                </FieldGroup>
-              </NameRow>
-              <FieldGroup>
-                <FieldLabel htmlFor="checkout-promo">
+                <FieldLabel htmlFor="checkout-promo-inline">
                   {t("checkout.promoOptional", "Promo code (optional)")}
                 </FieldLabel>
                 <PromoApplyRow>
                   <PromoInput
-                    id="checkout-promo"
+                    id="checkout-promo-inline"
                     type="text"
                     placeholder={t("checkout.promoPlaceholder", "Enter code")}
                     value={checkoutPromo}
@@ -1778,6 +1869,46 @@ function CheckoutPlanCard({
                     </PromoFeedback>
                   )}
               </FieldGroup>
+            </>
+          ) : (
+            <>
+              <FieldGroup>
+                <FieldLabel htmlFor="checkout-email">Email</FieldLabel>
+                <Input
+                  id="checkout-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={userEmail ?? checkoutEmail}
+                  onChange={(e) => setCheckoutEmail(e.target.value)}
+                  disabled={!!userEmail}
+                />
+              </FieldGroup>
+              <NameRow>
+                <FieldGroup>
+                  <FieldLabel htmlFor="checkout-first-name">
+                    {t("checkout.firstName", "First name")}
+                  </FieldLabel>
+                  <Input
+                    id="checkout-first-name"
+                    type="text"
+                    placeholder="Jane"
+                    value={checkoutFirstName}
+                    onChange={(e) => setCheckoutFirstName(e.target.value)}
+                  />
+                </FieldGroup>
+                <FieldGroup>
+                  <FieldLabel htmlFor="checkout-last-name">
+                    {t("checkout.lastName", "Last name")}
+                  </FieldLabel>
+                  <Input
+                    id="checkout-last-name"
+                    type="text"
+                    placeholder="Doe"
+                    value={checkoutLastName}
+                    onChange={(e) => setCheckoutLastName(e.target.value)}
+                  />
+                </FieldGroup>
+              </NameRow>
             </>
           )}
 
