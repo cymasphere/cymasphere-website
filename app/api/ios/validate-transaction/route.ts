@@ -1,5 +1,16 @@
 "use server";
 
+/**
+ * @fileoverview App Store Server API transaction validation endpoint.
+ *
+ * Validates iOS App Store transactions using Apple's official App Store Server API
+ * library, persists subscription state to Supabase, and updates the user's
+ * subscription status. Supports both production and sandbox environments and
+ * falls back gracefully when configuration is incomplete.
+ *
+ * @module api/ios/validate-transaction
+ */
+
 // App Store Server API transaction validation endpoint
 // Updated: 2025-01-14 - Added App Store Server API credentials
 // Updated: 2025-12-14 - Fixed: Using In-App Purchase key (DL4CMD84C4) instead of App Store Connect API key
@@ -7,11 +18,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRole } from "@/utils/supabase/service";
 import { updateUserProStatus } from "@/utils/subscriptions/check-subscription";
-import {
-  AppStoreServerAPIClient,
-  Environment,
-  SignedDataVerifier,
-} from "@apple/app-store-server-library";
+import type { Environment } from "@apple/app-store-server-library";
 import { loadAppleRootCertificates } from "@/utils/apple/root-certificates";
 
 /**
@@ -457,6 +464,10 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
   error?: string;
 }> {
   try {
+    const {
+      AppStoreServerAPIClient,
+      Environment,
+    } = await import("@apple/app-store-server-library");
     // Get App Store Server API credentials
     // Trim whitespace/newlines that might have been added when setting env vars
     const keyId = process.env.APPLE_APP_STORE_KEY_ID?.trim();
@@ -557,7 +568,7 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
 
     // Detect if transaction is from sandbox (sandbox transaction IDs typically start with 200000)
     // Try sandbox first for sandbox transactions to avoid 401 in production
-    const isLikelySandbox = transactionId.startsWith('200000');
+    const isLikelySandbox = transactionId.startsWith("200000");
     const environments = isLikelySandbox
       ? [
           { env: Environment.SANDBOX, name: "sandbox" },
@@ -616,35 +627,59 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
           console.log(
             `[validate-transaction] getTransactionInfo succeeded, got JWS response`
           );
-        } catch (apiError: any) {
+        } catch (apiError: unknown) {
           console.error(
             `[validate-transaction] getTransactionInfo failed:`,
             apiError
           );
-          
-          // Check for HTTP status code in error object
-          const httpStatus = apiError?.httpStatusCode || apiError?.statusCode;
-          const apiErrorMessage = apiError?.apiError || apiError?.errorMessage || apiError?.message;
-          
-          console.error(
-            `[validate-transaction] API error details:`,
-            {
-              httpStatusCode: httpStatus,
-              apiError: apiErrorMessage,
-              errorMessage: apiError?.errorMessage,
-              fullError: JSON.stringify(apiError, Object.getOwnPropertyNames(apiError))
-            }
-          );
-          
+
+          let httpStatus: number | undefined;
+          let apiErrorMessage: string | undefined;
+          let errorMessage: string | undefined;
+          let fullError: string | undefined;
+
+          if (typeof apiError === "object" && apiError !== null) {
+            const errorObject = apiError as {
+              httpStatusCode?: number;
+              statusCode?: number;
+              apiError?: string;
+              errorMessage?: string;
+              message?: string;
+            };
+            httpStatus = errorObject.httpStatusCode ?? errorObject.statusCode;
+            apiErrorMessage =
+              errorObject.apiError ??
+              errorObject.errorMessage ??
+              errorObject.message;
+            errorMessage = errorObject.errorMessage ?? errorObject.message;
+            fullError = JSON.stringify(
+              errorObject,
+              Object.getOwnPropertyNames(errorObject)
+            );
+          } else {
+            errorMessage = String(apiError);
+            fullError = errorMessage;
+          }
+
+          console.error(`[validate-transaction] API error details:`, {
+            httpStatusCode: httpStatus,
+            apiError: apiErrorMessage,
+            errorMessage,
+            fullError,
+          });
+
           // If it's a 401, provide more helpful error message
           if (httpStatus === 401) {
             const authError = new Error(
-              `Authentication failed (401). Please verify: 1. APPLE_APP_STORE_KEY_ID is correct, 2. APPLE_APP_STORE_ISSUER_ID is correct, 3. APPLE_APP_STORE_PRIVATE_KEY is in correct PEM format with headers, 4. The key has proper permissions in App Store Connect. Original error: ${apiErrorMessage || "No error message"}`
+              `Authentication failed (401). Please verify: 1. APPLE_APP_STORE_KEY_ID is correct, 2. APPLE_APP_STORE_ISSUER_ID is correct, 3. APPLE_APP_STORE_PRIVATE_KEY is in correct PEM format with headers, 4. The key has proper permissions in App Store Connect. Original error: ${
+                apiErrorMessage || "No error message"
+              }`
             );
-            (authError as any).httpStatusCode = 401;
+            (authError as Error & { httpStatusCode?: number }).httpStatusCode =
+              401;
             throw authError;
           }
-          
+
           throw apiError;
         }
 
@@ -815,6 +850,9 @@ async function verifyAndDecodeTransactionJWS(
   [key: string]: unknown;
 } | null> {
   try {
+    const { SignedDataVerifier, Environment } = await import(
+      "@apple/app-store-server-library"
+    );
     // Load Apple root certificates
     const appleRootCAs = loadAppleRootCertificates();
 
