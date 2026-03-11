@@ -22,6 +22,17 @@ export type UpdateUserProStatusResult = {
 };
 
 /**
+ * @brief Options for updateUserProStatus
+ *
+ * @param skipEmail When true, suppress welcome/subscription-change emails.
+ *   Use this when the caller is a background sync (e.g. Stripe webhook) and
+ *   the primary route (subscription-setup, payment-intent) already handles emails.
+ */
+export interface UpdateUserProStatusOptions {
+  skipEmail?: boolean;
+}
+
+/**
  * @fileoverview Per-user mutex/lock mechanism to prevent race conditions
  * 
  * This Map tracks ongoing updateUserProStatus operations per user ID.
@@ -107,12 +118,16 @@ export interface AuthorizationResult {
  * ```
  *
  * @param userId - The user ID to update pro status for
+ * @param options - Optional configuration (e.g. skipEmail for webhook callers)
  * @returns Object containing the determined subscription type, expiration date, and source
  * @note This function uses a per-user mutex to prevent race conditions when
  *       multiple calls are made concurrently for the same user. Subsequent calls
  *       will wait for the first one to complete and return the same result.
  */
-export async function updateUserProStatus(userId: string): Promise<UpdateUserProStatusResult> {
+export async function updateUserProStatus(
+  userId: string,
+  options?: UpdateUserProStatusOptions,
+): Promise<UpdateUserProStatusResult> {
   // Check if there's already an ongoing update for this user
   const existingUpdate = userUpdateLocks.get(userId);
   if (existingUpdate) {
@@ -124,7 +139,7 @@ export async function updateUserProStatus(userId: string): Promise<UpdateUserPro
   }
 
   // Create a new update promise
-  const updatePromise = updateUserProStatusInternal(userId);
+  const updatePromise = updateUserProStatusInternal(userId, options);
 
   // Store it in the lock map
   userUpdateLocks.set(userId, updatePromise);
@@ -204,7 +219,10 @@ async function findExistingCustomerByEmail(email: string): Promise<string | null
   }
 }
 
-async function updateUserProStatusInternal(userId: string): Promise<UpdateUserProStatusResult> {
+async function updateUserProStatusInternal(
+  userId: string,
+  options?: UpdateUserProStatusOptions,
+): Promise<UpdateUserProStatusResult> {
   const supabase = await createSupabaseServiceRole();
 
   // Get user's profile and email
@@ -514,7 +532,9 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
   // Determine if we should send an email
   // Send email if subscription type changed (e.g., monthly → annual, annual → lifetime, etc.)
   // Note: NFR already returned early above, so source can't be "nfr" here
-  const shouldSendEmail = subscriptionTypeChanged && profile.email;
+  // Webhook callers pass skipEmail to avoid duplicate sends (the primary route already emailed)
+  const shouldSendEmail =
+    subscriptionTypeChanged && profile.email && !options?.skipEmail;
 
   // Update profile with final subscription status (NFR already updated above and returned early)
   await supabase
@@ -538,7 +558,7 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
       const customerName =
         profile.first_name && profile.last_name
           ? `${profile.first_name} ${profile.last_name}`
-          : undefined;
+          : profile.first_name || profile.last_name || undefined;
 
       // Determine if this is an active trial (trial expiration is in the future)
       const isTrial =
@@ -560,6 +580,8 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
       let subscriptionType: "monthly" | "annual" | undefined;
       let planName: string;
       let subject: string;
+      /** Stable key for dedupe table; one send per (user, email_kind) across instances. */
+      let emailKind: string;
 
       // Determine if this is a new activation (from none to something)
       const isNewActivation =
@@ -570,14 +592,17 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
         planName = "lifetime_149";
         if (isNewActivation) {
           subject = "Welcome to Cymasphere - Lifetime License";
+          emailKind = "lifetime_activated";
         } else if (
           previousSubscription === "monthly" ||
           previousSubscription === "annual"
         ) {
           subject =
             "Your Cymasphere Subscription Has Been Upgraded - Lifetime License";
+          emailKind = "lifetime_upgrade";
         } else {
           subject = "Your Cymasphere Subscription - Lifetime License";
+          emailKind = "subscription_lifetime_other";
         }
       } else if (finalSubscription === "monthly") {
         purchaseType = "subscription";
@@ -587,13 +612,16 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
             : "Welcome to Cymasphere - Monthly Subscription";
+          emailKind = isTrial ? "free_trial_started" : "monthly_activated";
         } else if (previousSubscription === "annual") {
           subject =
             "Your Cymasphere Subscription Has Been Updated - Monthly Plan";
+          emailKind = "subscription_downgrade_monthly";
         } else {
           subject = isTrial
             ? "Your Cymasphere Subscription - Free Trial Started"
             : "Your Cymasphere Subscription - Monthly Plan";
+          emailKind = "subscription_monthly_plan";
         }
       } else if (finalSubscription === "annual") {
         purchaseType = "subscription";
@@ -603,13 +631,16 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
           subject = isTrial
             ? "Welcome to Cymasphere - Free Trial Started"
             : "Welcome to Cymasphere - Annual Subscription";
+          emailKind = isTrial ? "free_trial_started" : "annual_activated";
         } else if (previousSubscription === "monthly") {
           subject =
             "Your Cymasphere Subscription Has Been Upgraded - Annual Plan";
+          emailKind = "subscription_upgrade_annual";
         } else {
           subject = isTrial
             ? "Your Cymasphere Subscription - Free Trial Started"
             : "Your Cymasphere Subscription - Annual Plan";
+          emailKind = "subscription_annual_plan";
         }
       } else {
         // Shouldn't happen, but skip email if subscription type is unknown
@@ -620,6 +651,47 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
         };
       }
 
+      // Dedupe: only send if we can claim this (email, email_kind) in the DB.
+      // Table updated in migrations 20260309231031_add_subscription_emails_sent and
+      // 20260310191202_widen_subscription_email_dedupe_to_email so that the
+      // primary key is (email, email_kind). This guarantees that a given email
+      // address only ever receives one copy of each logical subscription email
+      // kind (e.g., free_trial_started), even if multiple user accounts are
+      // created for the same address.
+      const normalizedEmail =
+        typeof profile.email === "string"
+          ? profile.email.trim().toLowerCase()
+          : "";
+      const { error: insertError } = await supabase
+        .from("subscription_emails_sent")
+        .insert({
+          user_id: userId,
+          email: normalizedEmail,
+          email_kind: emailKind,
+        });
+
+      if (insertError?.code === "23505") {
+        // Unique violation: another request already sent this email; skip.
+        return {
+          subscription: finalSubscription,
+          subscriptionExpiration: finalExpiration,
+          source,
+        };
+      }
+      if (insertError) {
+        console.error(
+          `[updateUserProStatus] Failed to claim subscription email send (${emailKind}):`,
+          insertError
+        );
+        return {
+          subscription: finalSubscription,
+          subscriptionExpiration: finalExpiration,
+          source,
+        };
+      }
+
+      const trialNoCharge = isTrial && trialDays != null && trialDays <= 7;
+
       const welcomeEmailHtml = generateWelcomeEmailHtml({
         customerName,
         customerEmail: profile.email,
@@ -629,6 +701,7 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
         isTrial,
         trialEndDate,
         trialDays,
+        trialNoCharge,
       });
 
       const welcomeEmailText = generateWelcomeEmailText({
@@ -640,6 +713,7 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
         isTrial,
         trialEndDate,
         trialDays,
+        trialNoCharge,
       });
 
       const emailResult = await sendEmail({
@@ -648,6 +722,8 @@ async function updateUserProStatusInternal(userId: string): Promise<UpdateUserPr
         html: welcomeEmailHtml,
         text: welcomeEmailText,
         from: "Cymasphere <support@cymasphere.com>",
+        source: "updateUserProStatus",
+        dedupeKey: emailKind,
       });
 
       if (emailResult.success) {

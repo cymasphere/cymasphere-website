@@ -54,12 +54,16 @@ export async function POST(request: NextRequest) {
     const {
       planType,
       email,
+      firstName,
+      lastName,
       savePaymentMethod = false,
       promotionCode,
       paymentMethodId,
     }: {
       planType: string;
       email?: string;
+      firstName?: string;
+      lastName?: string;
       savePaymentMethod?: boolean;
       promotionCode?: string;
       /** When set, confirm the payment server-side with this PM (no clientSecret returned). Call after SetupIntent confirm. */
@@ -100,7 +104,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripeCustomerId = await findOrCreateCustomer(checkoutEmail);
+    const customerName =
+      [firstName?.trim(), lastName?.trim()].filter(Boolean).join(" ") ||
+      undefined;
+    const stripeCustomerId = await findOrCreateCustomer(
+      checkoutEmail,
+      customerName,
+    );
 
     if (user?.id) {
       const { data: profile } = await supabase
@@ -224,7 +234,11 @@ export async function POST(request: NextRequest) {
       let inviteSent = false;
       if (receiptEmail?.trim()) {
         try {
-          await inviteUserByEmailAndRefreshProStatus(receiptEmail.trim());
+          await inviteUserByEmailAndRefreshProStatus(
+            receiptEmail.trim(),
+            firstName?.trim(),
+            lastName?.trim(),
+          );
           inviteSent = true;
         } catch (inviteErr) {
           console.error(

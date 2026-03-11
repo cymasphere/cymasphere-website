@@ -10,25 +10,30 @@
 
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
 
-/**
- * Parameters for batch email sending (BCC)
- */
-interface SendBatchEmailParams {
-  bcc: string[]; // BCC recipients (up to 50 total recipients per AWS SES limit)
+interface SendEmailParams {
+  to: string | string[];
   subject: string;
   text?: string;
   html?: string;
   from?: string;
   replyTo?: string | string[];
   listUnsubscribe?: string;
+  /**
+   * Optional logical source for logging/diagnostics (e.g. "updateUserProStatus").
+   */
+  source?: string;
+  /**
+   * Optional opaque identifier for higher-level dedupe/tracking (e.g. "free_trial_started").
+   * Currently used only for logging so we can correlate sends across call sites.
+   */
+  dedupeKey?: string;
 }
 
-// AWS Account Configuration
-// CORRECT AWS ACCOUNT: 375240177147
-// Region: us-east-1
-
-interface SendEmailParams {
-  to: string | string[];
+/**
+ * Parameters for batch email sending (BCC)
+ */
+interface SendBatchEmailParams {
+  bcc: string[]; // BCC recipients (up to 50 total recipients per AWS SES limit)
   subject: string;
   text?: string;
   html?: string;
@@ -73,10 +78,11 @@ export async function sendEmail({
   from = "Cymasphere Support <support@cymasphere.com>", // Default sender
   replyTo,
   listUnsubscribe,
+  source,
+  dedupeKey,
 }: SendEmailParams) {
-  // Use us-east-1 as the default region (this needs to match your AWS CLI config)
   const region = process.env.AWS_REGION || "us-east-1";
-  
+
   try {
     // Create SES client using environment variables instead of AWS CLI
     const sesClient = new SESClient({ 
@@ -96,10 +102,6 @@ export async function sendEmail({
     // Generate Message-ID for better deliverability
     const messageId = `<${Date.now()}-${Math.random().toString(36).substring(7)}@cymasphere.com>`;
     const date = new Date().toUTCString();
-
-    // Extract email address from "Name <email>" format
-    const fromEmail = from.match(/<(.+)>/)?.[1] || from;
-    const fromName = from.match(/^(.+?)\s*</)?.[1] || 'Cymasphere Support';
 
     // Build email headers
     const headers: string[] = [
@@ -157,6 +159,12 @@ export async function sendEmail({
     console.log("📤 To:", toAddresses);
     console.log("📤 From:", from);
     console.log("📤 Subject:", subject);
+    if (source) {
+      console.log("📤 Source:", source);
+    }
+    if (dedupeKey) {
+      console.log("📤 DedupeKey:", dedupeKey);
+    }
     console.log("📤 Region:", region);
     console.log("📤 Has AWS credentials:", !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY));
     console.log("📤 AWS_ACCESS_KEY_ID present:", !!process.env.AWS_ACCESS_KEY_ID);
@@ -175,11 +183,10 @@ export async function sendEmail({
       const result = await sesClient.send(command);
       console.log("✅ Email sent successfully via AWS SES, MessageId:", result.MessageId);
       return { success: true, messageId: result.MessageId };
-    } catch (configSetError: any) {
+    } catch (configSetError: unknown) {
       const configSetErrorMessage = configSetError instanceof Error ? configSetError.message : String(configSetError);
       console.warn("⚠️ Failed with configuration set:", configSetErrorMessage);
       
-      // If it's a configuration set error, retry without it
       if (configSetErrorMessage.includes('ConfigurationSetDoesNotExist') || 
           configSetErrorMessage.includes('configuration set') ||
           configSetErrorMessage.includes('InvalidParameterValue')) {
@@ -196,11 +203,9 @@ export async function sendEmail({
           return { success: true, messageId: retryResult.MessageId };
         } catch (retryError) {
           console.error("❌ Retry without config set also failed:", retryError);
-          // Re-throw to be caught by outer catch block
           throw retryError;
         }
       } else {
-        // Not a configuration set error, re-throw to outer catch
         throw configSetError;
       }
     }
@@ -291,9 +296,7 @@ export async function sendBatchEmail({
     // Format reply to addresses
     const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from];
 
-    // Extract email address from "Name <email>" format
     const fromEmail = from.match(/<(.+)>/)?.[1] || from;
-    const fromName = from.match(/^(.+?)\s*</)?.[1] || 'Cymasphere Support';
 
     // Use sender's email as the "To" address (required by SES), all actual recipients go in BCC
     const toAddress = fromEmail;
@@ -367,7 +370,7 @@ export async function sendBatchEmail({
       const result = await sesClient.send(command);
       console.log(`✅ Batch email sent successfully via AWS SES, MessageId: ${result.MessageId}, Recipients: ${bcc.length}`);
       return { success: true, messageId: result.MessageId, recipientCount: bcc.length };
-    } catch (configSetError: any) {
+    } catch (configSetError: unknown) {
       const configSetErrorMessage = configSetError instanceof Error ? configSetError.message : String(configSetError);
       console.warn("⚠️ Failed with configuration set:", configSetErrorMessage);
       

@@ -276,12 +276,14 @@ export async function POST(request: NextRequest) {
     // Find user by customer ID
     const userId = await findUserIdByCustomerId(customerId);
 
-    // If user exists, refresh subscription status using centralized function
+    // If user exists, refresh subscription status using centralized function.
+    // skipEmail: the subscription-setup / payment-intent routes already send
+    // welcome emails; the webhook only syncs DB state to avoid duplicates.
     if (userId) {
       console.log(
         `Refreshing subscription for user ${userId} (customer: ${customerId})`,
       );
-      const result = await updateUserProStatus(userId);
+      const result = await updateUserProStatus(userId, { skipEmail: true });
       console.log(
         `Subscription updated: ${result.subscription} (${result.source})`,
       );

@@ -338,7 +338,10 @@ export async function createCheckoutSession(
  * @param email Customer email to search for
  * @returns The customer ID
  */
-export async function findOrCreateCustomer(email: string): Promise<string> {
+export async function findOrCreateCustomer(
+  email: string,
+  name?: string,
+): Promise<string> {
   try {
     // Normalize email: lowercase and trim to prevent duplicates from case differences
     const normalizedEmail = email.toLowerCase().trim();
@@ -376,6 +379,7 @@ export async function findOrCreateCustomer(email: string): Promise<string> {
       const customer = await stripe.customers.create(
         {
           email: normalizedEmail,
+          ...(name ? { name } : {}),
         },
         {
           idempotencyKey: idempotencyKey.substring(0, 255), // Stripe has 255 char limit

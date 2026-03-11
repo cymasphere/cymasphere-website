@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
           const { updateUserProStatus } = await import(
             "@/utils/subscriptions/check-subscription"
           );
-          await updateUserProStatus(userId);
+          await updateUserProStatus(userId, { skipEmail: true });
           console.log(
             `[Checkout Result] Refreshed subscription status for user ${userId} after trial signup`
           );

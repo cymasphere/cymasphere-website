@@ -11,6 +11,8 @@ export interface WelcomeEmailData {
   isTrial?: boolean;
   trialEndDate?: string; // ISO date string
   trialDays?: number;
+  /** When true the trial has no payment method on file and will simply expire. */
+  trialNoCharge?: boolean;
 }
 
 /**
@@ -80,6 +82,7 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                 Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
               </p>
               
+              ${data.trialNoCharge ? '' : `
               <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid ${purchaseType === 'elite' ? '#9b59b6' : '#6c63ff'};">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: ${purchaseType === 'elite' ? '#9b59b6' : '#6c63ff'}; text-transform: uppercase; letter-spacing: 0.5px;">
                   ${data.isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}
@@ -97,6 +100,7 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                   </p>
                 ` : ''}
               </div>
+              `}
               
               ${data.isTrial ? `
                 <div style="background-color: #f0f9ff; border: 1px solid #4eccd4; padding: 16px; border-radius: 8px; margin: 20px 0;">
@@ -104,7 +108,9 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
                     ⏰ Trial Information
                   </p>
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
-                    Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.
+                    ${data.trialNoCharge
+                      ? `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required — just explore and enjoy!`
+                      : `Your ${data.trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.`}
                   </p>
                 </div>
               ` : ''}
@@ -188,7 +194,10 @@ Welcome to Cymasphere, ${firstName}!
 
 Thank you for joining Cymasphere! We're thrilled to have you as part of our community of musicians, composers, and creators.
 
-${isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}: ${planDisplayName}
+${data.trialNoCharge ? `
+⏰ Trial Information:
+Your ${trialDays || 'free'} day trial gives you full access to all premium features. No payment information is required — just explore and enjoy!
+` : `${isTrial ? 'Your Free Trial' : purchaseType === 'elite' ? 'Your Elite Access' : 'Your Purchase'}: ${planDisplayName}
 ${purchaseType === 'elite' ? `
 ✨ You've been granted Elite Access! Enjoy lifetime premium features.
 ` : isTrial ? `
@@ -197,6 +206,7 @@ ${purchaseType === 'elite' ? `
 ⏰ Trial Information:
 Your ${trialDays || 'free'} day trial gives you full access to all premium features. You won't be charged until ${trialEndDateFormatted}. You can cancel anytime during your trial with no charges.
 ` : ''}
+`}
 
 You now have full access to all premium features of Cymasphere. Whether you're composing, learning music theory, or exploring new harmonic possibilities, we're here to support your creative journey.
 

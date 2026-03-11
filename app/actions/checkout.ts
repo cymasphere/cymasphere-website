@@ -100,6 +100,8 @@ export async function refreshSubscriptionByCustomerId(
  */
 async function inviteByEmailAndRefreshProStatus(
   customerEmail: string,
+  firstName?: string,
+  lastName?: string,
 ): Promise<{
   success: boolean;
   userId?: string;
@@ -132,15 +134,28 @@ async function inviteByEmailAndRefreshProStatus(
           process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com";
         const redirectTo = `${baseUrl}/reset-password`;
 
-        // Extract first part of email (before @) to use as first_name
-        const emailParts = customerEmail.split("@");
-        const firstName = emailParts[0] || "";
+        const resolvedFirstName =
+          firstName?.trim() || customerEmail.split("@")[0] || "";
+
+        const resolvedLastName = lastName?.trim() || "";
+
+        console.log("[Checkout Invite] Name resolution", {
+          inputFirstName: firstName,
+          inputLastName: lastName,
+          resolvedFirstName,
+          resolvedLastName,
+        });
+        const fullName =
+          [resolvedFirstName, resolvedLastName].filter(Boolean).join(" ") ||
+          customerEmail.split("@")[0];
 
         const { data: inviteData, error: inviteError } =
           await supabase.auth.admin.inviteUserByEmail(customerEmail, {
             data: {
               invited_by: "checkout",
-              first_name: firstName,
+              first_name: resolvedFirstName,
+              last_name: resolvedLastName,
+              name: fullName,
             },
             redirectTo: redirectTo,
           });
@@ -230,6 +245,23 @@ async function inviteByEmailAndRefreshProStatus(
       }
     }
 
+    // Persist customer name on the profile so the welcome email can address them.
+    // Always set at least something so the email doesn't say "there!".
+    if (userId) {
+      const resolvedFirst =
+        firstName?.trim() || customerEmail.split("@")[0] || "";
+      const resolvedLast = lastName?.trim() || "";
+      const nameUpdate: Record<string, string> = {};
+      if (resolvedFirst) nameUpdate.first_name = resolvedFirst;
+      if (resolvedLast) nameUpdate.last_name = resolvedLast;
+      if (Object.keys(nameUpdate).length > 0) {
+        await supabase
+          .from("profiles")
+          .update(nameUpdate)
+          .eq("id", userId);
+      }
+    }
+
     // Now refresh pro status for the user
     if (userId) {
       console.log(
@@ -303,6 +335,8 @@ export async function inviteUserAndRefreshProStatus(
  */
 export async function inviteUserByEmailAndRefreshProStatus(
   customerEmail: string,
+  firstName?: string,
+  lastName?: string,
 ): Promise<{
   success: boolean;
   userId?: string;
@@ -314,5 +348,9 @@ export async function inviteUserByEmailAndRefreshProStatus(
   if (!customerEmail?.trim()) {
     return { success: false, error: "Missing customer email" };
   }
-  return inviteByEmailAndRefreshProStatus(customerEmail.toLowerCase().trim());
+  return inviteByEmailAndRefreshProStatus(
+    customerEmail.toLowerCase().trim(),
+    firstName,
+    lastName,
+  );
 }

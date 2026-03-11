@@ -1926,6 +1926,32 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_emails_sent: {
+        Row: {
+          email_kind: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email_kind: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email_kind?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_emails_sent_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_attachments: {
         Row: {
           attachment_type: Database["public"]["Enums"]["attachment_type"]

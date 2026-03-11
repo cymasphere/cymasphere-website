@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
     const {
       planType,
       email,
+      firstName,
+      lastName,
       customerId: bodyCustomerId,
       promotionCode,
       collectPaymentMethod = false,
@@ -88,6 +90,8 @@ export async function POST(request: NextRequest) {
     }: {
       planType: string;
       email?: string;
+      firstName?: string;
+      lastName?: string;
       /** When set, use this Stripe customer ID and skip findOrCreateCustomer lookup. */
       customerId?: string;
       promotionCode?: string;
@@ -135,10 +139,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const customerName =
+      [firstName?.trim(), lastName?.trim()].filter(Boolean).join(" ") ||
+      undefined;
     const resolvedCustomerId =
       typeof bodyCustomerId === "string" && bodyCustomerId.trim()
         ? bodyCustomerId.trim()
-        : await findOrCreateCustomer(checkoutEmail);
+        : await findOrCreateCustomer(checkoutEmail, customerName);
 
     if (user?.id) {
       const { data: profile } = await supabase
@@ -308,7 +315,11 @@ export async function POST(request: NextRequest) {
     let inviteSent = false;
     if (resolvedEmail?.trim()) {
       try {
-        await inviteUserByEmailAndRefreshProStatus(resolvedEmail.trim());
+        await inviteUserByEmailAndRefreshProStatus(
+          resolvedEmail.trim(),
+          firstName?.trim(),
+          lastName?.trim(),
+        );
         inviteSent = true;
       } catch (inviteErr) {
         console.error(

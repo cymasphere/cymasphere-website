@@ -158,8 +158,13 @@ class EmailCampaignScheduler {
 // Singleton instance
 export const emailScheduler = new EmailCampaignScheduler();
 
-// Auto-start in production or when explicitly enabled
-if (typeof window === "undefined") {
-  // Server-side only
+// Auto-start in production or when explicitly enabled.
+// Do NOT start during Next.js production build (NEXT_PHASE === "phase-production-build").
+const isNextBuildPhase =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PHASE === "phase-production-build";
+
+if (typeof window === "undefined" && !isNextBuildPhase) {
+  // Server-side only, excluding build-time
   emailScheduler.start();
 }

@@ -46,6 +46,7 @@ import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { FaCheckCircle } from "react-icons/fa";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import StatLoadingSpinner from "@/components/common/StatLoadingSpinner";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
@@ -278,6 +279,15 @@ const FieldGroup = styled.div`
   margin-bottom: 1.25rem;
 `;
 
+const NameRow = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  & > ${FieldGroup} {
+    flex: 1;
+    margin-bottom: 0;
+  }
+`;
+
 const FieldLabel = styled.label`
   display: block;
   font-size: 0.9rem;
@@ -492,6 +502,8 @@ const SuccessSecondaryButton = styled(Link)`
 interface UnifiedCheckoutFormProps {
   planType: PlanType;
   email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   promotionCode?: string | null;
   customerId?: string | null;
   collectPaymentMethod?: boolean;
@@ -574,8 +586,15 @@ function PaymentFormInner({
         />
       </PaymentElementWrapper>
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      <SubmitButton type="submit" disabled={submitting}>
-        {submitting ? "Processing…" : "Pay now"}
+      <SubmitButton type="submit" disabled={submitting} aria-busy={submitting}>
+        {submitting ? (
+          <>
+            <StatLoadingSpinner size={16} />
+            <span style={{ marginLeft: "0.4rem" }}>Processing…</span>
+          </>
+        ) : (
+          "Pay now"
+        )}
       </SubmitButton>
     </form>
   );
@@ -585,6 +604,8 @@ function PaymentFormInner({
 interface SetupIntentCheckoutFormProps {
   planType: PlanType;
   email: string;
+  firstName?: string;
+  lastName?: string;
   customerId: string | null;
   promotionCode: string | null;
   collectPaymentMethod: boolean;
@@ -602,6 +623,8 @@ const CHECKOUT_PENDING_SETUP_KEY = "checkout_pending_setup";
 function SetupIntentCheckoutForm({
   planType,
   email,
+  firstName,
+  lastName,
   customerId,
   promotionCode,
   collectPaymentMethod,
@@ -694,6 +717,8 @@ function SetupIntentCheckoutForm({
       <SetupIntentSubmitForm
         planType={planType}
         email={email}
+        firstName={firstName}
+        lastName={lastName}
         customerId={customerId}
         promotionCode={promotionCode}
         collectPaymentMethod={collectPaymentMethod}
@@ -712,6 +737,8 @@ interface SetupIntentSubmitFormProps extends SetupIntentCheckoutFormProps {
 function SetupIntentSubmitForm({
   planType,
   email,
+  firstName,
+  lastName,
   customerId,
   promotionCode,
   collectPaymentMethod,
@@ -744,6 +771,8 @@ function SetupIntentSubmitForm({
             JSON.stringify({
               planType,
               email: email.trim(),
+              firstName: firstName?.trim() || undefined,
+              lastName: lastName?.trim() || undefined,
               customerId: customerId ?? undefined,
               promotionCode: promotionCode?.trim() || undefined,
               collectPaymentMethod,
@@ -795,6 +824,8 @@ function SetupIntentSubmitForm({
           ? {
               planType: "lifetime",
               email: email.trim(),
+              firstName: firstName?.trim() || undefined,
+              lastName: lastName?.trim() || undefined,
               customerId: customerId ?? undefined,
               promotionCode: promotionCode?.trim() || undefined,
               paymentMethodId,
@@ -802,6 +833,8 @@ function SetupIntentSubmitForm({
           : {
               planType,
               email: email.trim(),
+              firstName: firstName?.trim() || undefined,
+              lastName: lastName?.trim() || undefined,
               customerId: customerId ?? undefined,
               promotionCode: promotionCode?.trim() || undefined,
               collectPaymentMethod,
@@ -888,8 +921,15 @@ function SetupIntentSubmitForm({
           )}
         </>
       )}
-      <SubmitButton type="submit" disabled={submitting}>
-        {submitting ? "Processing…" : "Pay now"}
+      <SubmitButton type="submit" disabled={submitting} aria-busy={submitting}>
+        {submitting ? (
+          <>
+            <StatLoadingSpinner size={16} />
+            <span style={{ marginLeft: "0.4rem" }}>Processing…</span>
+          </>
+        ) : (
+          "Pay now"
+        )}
       </SubmitButton>
     </form>
   );
@@ -898,6 +938,8 @@ function SetupIntentSubmitForm({
 function UnifiedCheckoutForm({
   planType,
   email,
+  firstName: firstNameProp,
+  lastName: lastNameProp,
   promotionCode,
   customerId,
   collectPaymentMethod,
@@ -926,6 +968,8 @@ function UnifiedCheckoutForm({
     const requestKey = [
       emailForPayment,
       planType,
+      firstNameProp?.trim() ?? "",
+      lastNameProp?.trim() ?? "",
       customerId ?? "",
       promotionCode ?? "",
       collectPaymentMethod,
@@ -953,12 +997,16 @@ function UnifiedCheckoutForm({
         ? {
             planType: "lifetime",
             email: emailForPayment,
+            firstName: firstNameProp?.trim() || undefined,
+            lastName: lastNameProp?.trim() || undefined,
             customerId: customerId ?? undefined,
             promotionCode: promotionCode?.trim() || undefined,
           }
         : {
             planType,
             email: emailForPayment,
+            firstName: firstNameProp?.trim() || undefined,
+            lastName: lastNameProp?.trim() || undefined,
             customerId: customerId ?? undefined,
             promotionCode: promotionCode?.trim() || undefined,
             collectPaymentMethod,
@@ -998,6 +1046,8 @@ function UnifiedCheckoutForm({
     initialClientSecretProp,
     emailForPayment,
     planType,
+    firstNameProp,
+    lastNameProp,
     customerId,
     promotionCode,
     collectPaymentMethod,
@@ -1081,6 +1131,10 @@ interface CheckoutPlanCardProps {
   trialOption?: TrialOption;
   checkoutEmail: string;
   setCheckoutEmail: (v: string) => void;
+  checkoutFirstName: string;
+  setCheckoutFirstName: (v: string) => void;
+  checkoutLastName: string;
+  setCheckoutLastName: (v: string) => void;
   checkoutPromo: string;
   setCheckoutPromo: (v: string) => void;
   userEmail: string | null;
@@ -1104,6 +1158,10 @@ function CheckoutPlanCard({
   trialOption,
   checkoutEmail,
   setCheckoutEmail,
+  checkoutFirstName,
+  setCheckoutFirstName,
+  checkoutLastName,
+  setCheckoutLastName,
   checkoutPromo,
   setCheckoutPromo,
   userEmail,
@@ -1128,6 +1186,8 @@ function CheckoutPlanCard({
   const [activePromotion, setActivePromotion] =
     useState<ActivePromotion | null>(null);
   const [continuedToPayment, setContinuedToPayment] = useState(false);
+  const [committedFirstName, setCommittedFirstName] = useState<string>("");
+  const [committedLastName, setCommittedLastName] = useState<string>("");
   const [paymentSetupLoading, setPaymentSetupLoading] = useState(false);
   const [paymentSetupError, setPaymentSetupError] = useState<string | null>(
     null,
@@ -1159,6 +1219,8 @@ function CheckoutPlanCard({
     trialSubmittingRef.current = true;
     setPaymentSetupError(null);
     setPaymentSetupLoading(true);
+    const firstNameToSend = committedFirstName || checkoutFirstName.trim();
+    const lastNameToSend = committedLastName || checkoutLastName.trim();
     try {
       const res = await fetch("/api/stripe/subscription-setup", {
         method: "POST",
@@ -1166,6 +1228,8 @@ function CheckoutPlanCard({
         body: JSON.stringify({
           planType,
           email: resolvedEmail,
+          firstName: firstNameToSend || undefined,
+          lastName: lastNameToSend || undefined,
           customerId: customerId ?? undefined,
           promotionCode: checkoutPromo?.trim() || undefined,
           collectPaymentMethod: false,
@@ -1193,6 +1257,10 @@ function CheckoutPlanCard({
   }, [
     planType,
     resolvedEmail,
+    committedFirstName,
+    committedLastName,
+    checkoutFirstName,
+    checkoutLastName,
     customerId,
     checkoutPromo,
     isPlanChange,
@@ -1242,6 +1310,8 @@ function CheckoutPlanCard({
 
   const handleContinueClick = useCallback(async () => {
     if (!canProceedWithEmail) return;
+    setCommittedFirstName(checkoutFirstName.trim());
+    setCommittedLastName(checkoutLastName.trim());
     const hasPromoEntered = !!checkoutPromo?.trim();
     const promoAlreadyApplied = promoValidation.status === "success";
     if (hasPromoEntered && !promoAlreadyApplied) {
@@ -1250,7 +1320,14 @@ function CheckoutPlanCard({
       return;
     }
     setContinuedToPayment(true);
-  }, [canProceedWithEmail, checkoutPromo, promoValidation.status, applyPromo]);
+  }, [
+    canProceedWithEmail,
+    checkoutFirstName,
+    checkoutLastName,
+    checkoutPromo,
+    promoValidation.status,
+    applyPromo,
+  ]);
 
   const promoDurationLabel =
     promoValidation.duration === "once"
@@ -1599,7 +1676,11 @@ function CheckoutPlanCard({
               </span>
               <EditLink
                 type="button"
-                onClick={() => setContinuedToPayment(false)}
+                onClick={() => {
+                  setContinuedToPayment(false);
+                  setCommittedFirstName("");
+                  setCommittedLastName("");
+                }}
                 aria-label={t("checkout.editEmailPromo", "Edit email or promo")}
               >
                 {t("checkout.edit", "Edit")}
@@ -1618,6 +1699,32 @@ function CheckoutPlanCard({
                   disabled={!!userEmail}
                 />
               </FieldGroup>
+              <NameRow>
+                <FieldGroup>
+                  <FieldLabel htmlFor="checkout-first-name">
+                    {t("checkout.firstName", "First name")}
+                  </FieldLabel>
+                  <Input
+                    id="checkout-first-name"
+                    type="text"
+                    placeholder="Jane"
+                    value={checkoutFirstName}
+                    onChange={(e) => setCheckoutFirstName(e.target.value)}
+                  />
+                </FieldGroup>
+                <FieldGroup>
+                  <FieldLabel htmlFor="checkout-last-name">
+                    {t("checkout.lastName", "Last name")}
+                  </FieldLabel>
+                  <Input
+                    id="checkout-last-name"
+                    type="text"
+                    placeholder="Doe"
+                    value={checkoutLastName}
+                    onChange={(e) => setCheckoutLastName(e.target.value)}
+                  />
+                </FieldGroup>
+              </NameRow>
               <FieldGroup>
                 <FieldLabel htmlFor="checkout-promo">
                   {t("checkout.promoOptional", "Promo code (optional)")}
@@ -1705,16 +1812,30 @@ function CheckoutPlanCard({
                   type="button"
                   disabled={paymentSetupLoading}
                   onClick={start7DayTrial}
+                  aria-busy={paymentSetupLoading}
                 >
-                  {paymentSetupLoading
-                    ? "…"
-                    : t("checkout.startFreeTrial", "Start free trial")}
+                  {paymentSetupLoading ? (
+                    <>
+                      <StatLoadingSpinner size={16} />
+                      <span style={{ marginLeft: "0.4rem" }}>
+                        {t("checkout.startingFreeTrial", "Starting free trial…")}
+                      </span>
+                    </>
+                  ) : (
+                    t("checkout.startFreeTrial", "Start free trial")
+                  )}
                 </SubmitButton>
               </>
             ) : (
               <SetupIntentCheckoutForm
                 planType={planType}
                 email={resolvedEmail ?? ""}
+                firstName={
+                  (committedFirstName || checkoutFirstName.trim()) || undefined
+                }
+                lastName={
+                  (committedLastName || checkoutLastName.trim()) || undefined
+                }
                 customerId={customerId}
                 promotionCode={checkoutPromo || null}
                 collectPaymentMethod={collectPaymentMethod}
@@ -1791,6 +1912,8 @@ export function EmbeddedCheckout({
 }: EmbeddedCheckoutProps) {
   const { user } = useAuth();
   const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [checkoutFirstName, setCheckoutFirstName] = useState("");
+  const [checkoutLastName, setCheckoutLastName] = useState("");
   const [checkoutPromo, setCheckoutPromo] = useState("");
 
   const resolvedEmail = user?.email ?? (checkoutEmail.trim() || undefined);
@@ -1813,6 +1936,10 @@ export function EmbeddedCheckout({
         trialOption={trialOption}
         checkoutEmail={checkoutEmail}
         setCheckoutEmail={setCheckoutEmail}
+        checkoutFirstName={checkoutFirstName}
+        setCheckoutFirstName={setCheckoutFirstName}
+        checkoutLastName={checkoutLastName}
+        setCheckoutLastName={setCheckoutLastName}
         checkoutPromo={checkoutPromo}
         setCheckoutPromo={setCheckoutPromo}
         userEmail={user?.email ?? null}
