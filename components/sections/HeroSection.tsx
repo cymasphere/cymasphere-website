@@ -413,8 +413,6 @@ const HeroSection = () => {
         
         // Also update the current center word width
         setCenterWordWidth(widths[currentWordIndex] || 120);
-        
-        console.log("Measured widths:", widths);
       }
     }, 800); // Increased timeout to 800ms to ensure FCP is complete before measurement
     
@@ -429,7 +427,6 @@ const HeroSection = () => {
     if (wordWidths && Object.keys(wordWidths).length > 0) {
       const newWidth = wordWidths[currentWordIndex] || 120;
       setCenterWordWidth(newWidth);
-      console.log(`Updated center word width for "${titleWords[currentWordIndex]}" to ${newWidth}px`);
     }
     // Also update from the DOM if possible (as a fallback)
     else if (centerWordRef.current) {
@@ -441,8 +438,6 @@ const HeroSection = () => {
   useEffect(() => {
     // Only run on client side
     if (typeof window === "undefined") return;
-
-    console.log("Setting up word cycling with titleWords:", titleWords.length);
 
     // Create an interval that cycles the words every 2 seconds
     const intervalId = setInterval(() => {
@@ -458,7 +453,6 @@ const HeroSection = () => {
 
     // Clean up the interval on unmount
     return () => {
-      console.log("Cleaning up word cycling interval");
       clearInterval(intervalId);
     };
   }, [titleWords.length]); // Only depend on the length of titleWords, not the array itself
@@ -519,7 +513,6 @@ const HeroSection = () => {
   // Reset transition state on mount to ensure a clean start
   useEffect(() => {
     setTransitioning(false);
-    console.log("Hero section mounted, set initial chord to C Major");
   }, []);
 
   // Define allowed effect types for the effectsChain.getEffect method
@@ -573,7 +566,6 @@ const HeroSection = () => {
 
       document.body.removeChild(tempDiv);
       setWordWidths(widths);
-      console.log("Client-side re-measurement complete:", widths);
     }
   }, [titleWords]);
 
@@ -603,9 +595,6 @@ const HeroSection = () => {
         if (newSynth) {
           try {
             const preset = getPresetById("atmospheric");
-            console.log(
-              `Applying atmospheric preset to hero section floating notes`
-            );
 
             // Apply synth parameters exactly as in SynthesizerContainer.js
             if (preset.synthParams) {
@@ -725,8 +714,6 @@ const HeroSection = () => {
         }
       }
 
-      console.log(`Playing note ${noteWithOctave} with atmospheric preset`);
-
       // Exactly follow the pattern from SynthesizerContainer.js for playing notes
       if (synthRef.current) {
         // Check for _disposed property to avoid playing disposed synths
@@ -758,7 +745,6 @@ const HeroSection = () => {
 
       // Get the current chord's notes
       const currentChord = chordProgression[currentChordIndex];
-      console.log(`Playing chord ${currentChord.name}`);
 
       // Play each note in the chord with proper octave assignment
       if (synthRef.current) {
@@ -812,11 +798,6 @@ const HeroSection = () => {
 
           // Add the bass note to the array of notes to play
           const allNotes = [...notesWithOctaves, bassNote];
-          console.log(
-            `Playing chord with notes: ${notesWithOctaves.join(
-              ", "
-            )} and bass note: ${bassNote}`
-          );
 
           // Play all notes simultaneously
           synth.triggerAttackRelease(allNotes, "0.8s");
@@ -831,13 +812,11 @@ const HeroSection = () => {
   const moveToNextChord = useCallback((): void => {
     // Prevent overlapping transitions using the ref for more reliability
     if (isTransitioningRef.current) {
-      console.log("Skipping chord change - transition already in progress");
       return;
     }
     
     // Get the next chord from the progression
     const nextChordIndex = (currentChordIndex + 1) % chordProgression.length;
-    console.log(`Moving to next chord: ${nextChordIndex} (${chordProgression[nextChordIndex].name})`);
 
     // Get current and next chord notes
     const currentNotes = chordProgression[currentChordIndex].notes;
@@ -923,8 +902,6 @@ const HeroSection = () => {
         voiceLeadingNotes.push(nextNotes[0]);
       }
     }
-    
-    console.log(`Voice leading from ${currentNotes.join(',')} to ${voiceLeadingNotes.join(',')}`);
 
     // Set up the transition
     setPreviousChord(displayedChord);
@@ -950,10 +927,7 @@ const HeroSection = () => {
 
   // Change chord every 4 seconds
   useEffect(() => {
-    console.log("Setting up chord cycling interval");
-    
     const intervalId = setInterval(() => {
-      console.log("Interval triggered - moving to next chord");
       moveToNextChord();
     }, 4000);
 
@@ -963,7 +937,6 @@ const HeroSection = () => {
     }, 2000);
 
     return () => {
-      console.log("Cleaning up chord cycling interval");
       clearInterval(intervalId);
       clearTimeout(initialPlayTimeout);
     };
@@ -975,7 +948,6 @@ const HeroSection = () => {
       return;
     }
 
-    console.log("Starting chord transition animation");
     let startTime: number | null = null;
     const duration = 1200; // 1.2 seconds for the transition (slightly shorter)
 
@@ -990,7 +962,6 @@ const HeroSection = () => {
         animationFrameId = requestAnimationFrame(updateProgress);
       } else {
         // Animation complete
-        console.log("Transition animation complete");
         setTransitioning(false);
       }
     };
@@ -1001,7 +972,6 @@ const HeroSection = () => {
     // Ensure we clean up and force transition to end after max duration
     const safetyTimeout = setTimeout(() => {
       if (transitioning) {
-        console.log("Forcing transition to end via safety timeout");
         setTransitioning(false);
       }
     }, duration + 300); // Add a small buffer to the timeout
@@ -1617,14 +1587,10 @@ const HeroSection = () => {
           disableRemotePlayback
           x-webkit-airplay="deny"
           onError={() => {
-            console.warn('Video failed to load, hiding video background');
             setVideoError(true);
           }}
-          onLoadStart={() => {
-            console.log('Video loading started');
-          }}
+          onLoadStart={() => {}}
           onCanPlay={() => {
-            console.log('Video can play');
             setVideoLoaded(true);
           }}
           style={{ 
