@@ -24,39 +24,14 @@ import {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
- * @brief Generate Stripe update payment method URL
- * 
- * Creates a billing portal session URL that directs users to update their
- * payment method. Uses Stripe's billing portal with return URL tracking.
- * 
- * @param customerId Stripe customer ID
- * @param subscriptionId Stripe subscription ID (for tracking)
- * @returns Billing portal session URL
- * @note Uses Stripe billing portal - users can update payment method from there
- * @note The URL pattern matches Stripe's standard billing portal format
+ * @brief In-app URL for updating payment method (no Stripe redirect).
+ *
+ * Links to the dashboard billing page with action=update_payment so the
+ * Update payment method modal opens automatically.
  */
-async function generateUpdatePaymentMethodUrl(
-  customerId: string,
-  subscriptionId: string
-): Promise<string> {
-  try {
-    // Create a billing portal session
-    // Users will be able to update payment method from the portal
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com'}/dashboard?referer=free_trial_ending`,
-    });
-
-    return session.url;
-  } catch (error) {
-    console.error('Error creating billing portal session:', error);
-    // If billing portal fails, construct a direct URL (fallback)
-    // This matches the pattern from Stripe's email: billing.stripe.com/subscription/update_payment_method/{subscription_id}
-    const baseUrl = process.env.STRIPE_SECRET_KEY?.includes('test')
-      ? 'https://billing.stripe.com/test'
-      : 'https://billing.stripe.com';
-    return `${baseUrl}/subscription/update_payment_method/${subscriptionId}?referer=free_trial_ending`;
-  }
+function getUpdatePaymentUrl(): string {
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
+  return `${base}/dashboard/billing?action=update_payment`;
 }
 
 /**
@@ -216,6 +191,17 @@ export async function POST(request: NextRequest) {
         const trialStart = subscription.trial_start || subscription.created;
         const trialDurationDays = Math.floor((trialEnd - trialStart) / oneDayInSeconds);
 
+        // Get customer early so we have customerEmail for test mode check and for email content
+        const customerId = subscription.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+
+        if (typeof customer === 'string' || customer.deleted || !customer.email) {
+          console.warn(`⚠️ Skipping subscription ${subscription.id}: invalid customer`);
+          continue;
+        }
+
+        const customerEmail = customer.email;
+
         // Determine if we should send reminder
         // Check if trial ends in exactly the target number of days (with small tolerance for timing)
         // OR if testEmail is provided, always send (for testing)
@@ -255,15 +241,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Get customer and user info
-        const customerId = subscription.customer as string;
-        const customer = await stripe.customers.retrieve(customerId);
-        
-        if (typeof customer === 'string' || customer.deleted || !customer.email) {
-          console.warn(`⚠️ Skipping subscription ${subscription.id}: invalid customer`);
-          continue;
-        }
-
         // Find user in database
         let profile = null;
         const { data: profileByCustomerId } = await supabase
@@ -293,12 +270,6 @@ export async function POST(request: NextRequest) {
           ? `${profile.first_name} ${profile.last_name}`
           : customer.name || customer.email?.split('@')[0] || undefined;
 
-        const customerEmail = customer.email;
-        if (!customerEmail) {
-          console.warn(`⚠️ Skipping subscription ${subscription.id}: no email`);
-          continue;
-        }
-
         // Check if we've already sent a reminder for this subscription
         // (You might want to add a tracking table for this)
         // For now, we'll send once per day by checking if trial_end matches our target dates
@@ -306,11 +277,8 @@ export async function POST(request: NextRequest) {
         // Get plan info
         const { planName, monthlyPrice } = getPlanInfo(subscription);
 
-        // Generate update payment method URL
-        const updatePaymentMethodUrl = await generateUpdatePaymentMethodUrl(
-          customerId,
-          subscription.id
-        );
+        // In-app URL so user can update payment method without leaving the app
+        const updatePaymentUrl = getUpdatePaymentUrl();
 
         // Generate email content
         const emailData = {
@@ -320,7 +288,7 @@ export async function POST(request: NextRequest) {
           trialDays: trialDurationDays,
           planName,
           monthlyPrice,
-          updatePaymentMethodUrl,
+          updatePaymentUrl,
         };
 
         const htmlContent = generateTrialEndingReminderHtml(emailData);

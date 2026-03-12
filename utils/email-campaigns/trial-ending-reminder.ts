@@ -14,7 +14,8 @@ export interface TrialEndingReminderData {
   trialDays: number; // 7 or 14
   planName: string; // e.g., "Monthly Subscription"
   monthlyPrice: number; // e.g., 6.00
-  updatePaymentMethodUrl: string; // Stripe billing portal URL
+  /** In-app billing URL (e.g. /dashboard/billing?action=update_payment) so user updates payment without leaving the app. */
+  updatePaymentUrl: string;
 }
 
 /**
@@ -40,7 +41,7 @@ export interface TrialEndingReminderData {
  * ```
  */
 export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): string {
-  const { customerName, customerEmail, trialEndDate, trialDays, planName, monthlyPrice, updatePaymentMethodUrl } = data;
+  const { customerName, customerEmail, trialEndDate, trialDays, planName, monthlyPrice, updatePaymentUrl } = data;
   const firstName = customerName?.split(' ')[0] || 'there';
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
   const logoUrlSupabase = 'https://jibirpbauzqhdiwjlrmf.supabase.co/storage/v1/object/public/logos//cymasphere-logo.png';
@@ -106,7 +107,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
               
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${updatePaymentMethodUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                <a href="${updatePaymentUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(90deg, #6c63ff, #4ecdc4); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">
                   Continue Your Journey →
                 </a>
               </div>
@@ -180,7 +181,7 @@ export function generateTrialEndingReminderHtml(data: TrialEndingReminderData): 
  * ```
  */
 export function generateTrialEndingReminderText(data: TrialEndingReminderData): string {
-  const { customerName, trialEndDate, planName, monthlyPrice, updatePaymentMethodUrl } = data;
+  const { customerName, trialEndDate, planName, monthlyPrice, updatePaymentUrl } = data;
   const firstName = customerName?.split(' ')[0] || 'there';
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cymasphere.com';
 
@@ -206,7 +207,7 @@ Just $${formattedPrice} per ${planName.toLowerCase().includes('annual') ? 'year'
 
 ⏰ Quick action needed: Add your payment method before ${trialEndDateFormatted} to continue seamlessly without any interruption to your workflow.
 
-Continue Your Journey: ${updatePaymentMethodUrl}
+Continue Your Journey: ${updatePaymentUrl}
 Takes less than 2 minutes • Secure payment • Cancel anytime
 
 💡 Why continue?
