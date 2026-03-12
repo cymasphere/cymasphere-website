@@ -39,9 +39,7 @@ import BillingToggle from "../pricing/BillingToggle";
 import PricingCard from "../pricing/PricingCard";
 import PromotionBanner from "../banners/PromotionBanner";
 import { useCheckout, type InlineCheckoutParams } from "@/hooks/useCheckout";
-import { EmbeddedCheckout } from "../checkout/EmbeddedCheckout";
-import { AnimatePresence } from "framer-motion";
-import { FaTimes } from "react-icons/fa";
+import { CheckoutModal } from "../checkout/CheckoutModal";
 
 // Type definitions for chord positions
 interface ChordPosition {
@@ -1299,55 +1297,6 @@ const TrialText = styled.div`
   }
 `;
 
-/** Overlay and container for inline checkout modal. */
-const CheckoutModalOverlay = styled(motion.div)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-`;
-
-const CheckoutModalContainer = styled(motion.div)`
-  position: relative;
-  width: 95%;
-  max-width: 460px;
-  max-height: 95vh;
-  overflow-y: auto;
-  background: var(--background);
-  border-radius: 16px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1.5rem;
-`;
-
-const CheckoutModalCloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--text);
-  }
-`;
-
 /**
  * @brief PricingSection component
  *
@@ -1671,38 +1620,10 @@ const PricingSection = () => {
         </motion.div>
       </ContentContainer>
 
-      <AnimatePresence>
-        {inlineCheckoutParams && (
-          <CheckoutModalOverlay
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setInlineCheckoutParams(null)}
-          >
-            <CheckoutModalContainer
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <CheckoutModalCloseButton
-                type="button"
-                onClick={() => setInlineCheckoutParams(null)}
-                aria-label="Close"
-              >
-                <FaTimes size={18} />
-              </CheckoutModalCloseButton>
-              <EmbeddedCheckout
-                planType={inlineCheckoutParams.planType}
-                collectPaymentMethod={inlineCheckoutParams.collectPaymentMethod}
-                isPlanChange={inlineCheckoutParams.isPlanChange}
-                trialOption={inlineCheckoutParams.trialOption}
-                onClose={() => setInlineCheckoutParams(null)}
-              />
-            </CheckoutModalContainer>
-          </CheckoutModalOverlay>
-        )}
-      </AnimatePresence>
+      <CheckoutModal
+        params={inlineCheckoutParams}
+        onClose={() => setInlineCheckoutParams(null)}
+      />
     </PricingContainer>
   );
 };
