@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
         const { error: insertError } = await supabase
           .from('subscribers')
           .insert({
+            id: crypto.randomUUID(),
             email: email.toLowerCase(),
             status: 'unsubscribed',
             unsubscribe_date: new Date().toISOString(),

@@ -643,7 +643,7 @@ async function createCheckoutSession(
 
         if (profile) {
           userId = profile.id;
-          userEmail = profile.email;
+          userEmail = profile.email ?? undefined;
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -659,7 +659,7 @@ async function createCheckoutSession(
         const customer = await stripe.customers.retrieve(customerId);
         userEmail =
           typeof customer === "object" && !customer.deleted
-            ? customer.email
+            ? (customer.email ?? undefined)
             : undefined;
       } catch (error) {
         console.error("Error retrieving customer email:", error);

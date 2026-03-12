@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     if (sessionResult.mode === "subscription") {
       // CHECK 1: Session subscription_data has trial_period_days (set when session was created)
       // This is the most reliable indicator from the session itself
-      if (sessionResult.subscriptionData?.trial_period_days && sessionResult.subscriptionData.trial_period_days > 0) {
+      if (sessionResult.subscriptionData && typeof (sessionResult.subscriptionData as { trial_period_days?: number }).trial_period_days === 'number' && (sessionResult.subscriptionData as { trial_period_days: number }).trial_period_days > 0) {
         isTrial = true;
         console.log(`[Checkout Result] Trial detected via subscription_data.trial_period_days: ${sessionResult.subscriptionData.trial_period_days}`);
       }

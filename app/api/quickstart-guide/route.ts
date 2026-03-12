@@ -3,14 +3,14 @@ import { CymasphereQuickstartPDF } from '../../../utils/pdfGenerator';
 
 /** In-memory cache for the quickstart PDF (1 hour TTL). Skipped in development. */
 const CACHE_TTL_MS = 60 * 60 * 1000;
-let pdfCache: { buffer: Buffer; cachedAt: number } | null = null;
+let pdfCache: { buffer: Uint8Array; cachedAt: number } | null = null;
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const now = Date.now();
     const useCache = process.env.NODE_ENV !== 'development' && pdfCache && now - pdfCache.cachedAt < CACHE_TTL_MS;
 
-    let pdfBuffer: Buffer;
+    let pdfBuffer: Uint8Array;
     if (useCache && pdfCache) {
       pdfBuffer = pdfCache.buffer;
     } else {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     headers.set('Pragma', 'public');
     headers.set('Expires', new Date(now + 3600 * 1000).toUTCString());
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as BodyInit, {
       status: 200,
       headers,
     });

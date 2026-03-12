@@ -355,7 +355,7 @@ export async function POST(request: NextRequest) {
       const invoice = await stripe.invoices.retrieve(invoiceId, {
         expand: ["payment_intent"],
       });
-      const pi = invoice.payment_intent;
+      const pi = (invoice as { payment_intent?: string | { client_secret?: string } }).payment_intent;
       if (typeof pi === "object" && pi !== null && pi.client_secret) {
         clientSecret = pi.client_secret;
       } else if (typeof pi === "string") {

@@ -11,7 +11,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createSupabaseServiceRole } from '@/utils/supabase/service';
+import type { Database } from '@/database.types';
 import type { SESEventPayload } from '@/types/email-campaigns';
 
 /**
@@ -93,10 +95,7 @@ export async function POST(request: NextRequest) {
       timestamp: message.mail?.timestamp
     });
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = await createSupabaseServiceRole();
 
     await supabase.from('email_webhook_logs').insert({
       provider: 'ses',
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function processSESEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const { eventType, mail } = event;
@@ -160,7 +159,7 @@ async function processSESEvent(
 }
 
 async function handleSendEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const mail = event.mail;
@@ -192,7 +191,7 @@ async function handleSendEvent(
 }
 
 async function handleDeliveryEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const mail = event.mail;
@@ -221,16 +220,15 @@ async function handleDeliveryEvent(
     })
     .eq('id', emailSend.id);
 
-  // Update campaign delivery count
-  await supabase.rpc('increment_campaign_delivered', {
-    campaign_id: emailSend.campaign_id
-  });
+  if (emailSend.campaign_id) {
+    await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<unknown> }).rpc('increment_campaign_delivered', { campaign_id: emailSend.campaign_id });
+  }
 
   console.log(`✅ Updated send record ${emailSend.id} to 'delivered' status`);
 }
 
 async function handleBounceEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const mail = event.mail;
@@ -263,11 +261,11 @@ async function handleBounceEvent(
     })
     .eq('id', emailSend.id);
 
-  await supabase.rpc('increment_campaign_bounced', {
-    campaign_id: emailSend.campaign_id,
-  });
+  if (emailSend.campaign_id) {
+    await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<unknown> }).rpc('increment_campaign_bounced', { campaign_id: emailSend.campaign_id });
+  }
 
-  if (bounce.bounceType === 'Permanent') {
+  if (bounce.bounceType === 'Permanent' && emailSend.subscriber_id) {
     await supabase
       .from('subscribers')
       .update({
@@ -276,7 +274,6 @@ async function handleBounceEvent(
         bounced_at: bouncedAt,
       })
       .eq('id', emailSend.subscriber_id);
-    
     console.log(`🚫 Marked subscriber ${emailSend.subscriber_id} as bounced (hard bounce)`);
   }
 
@@ -284,7 +281,7 @@ async function handleBounceEvent(
 }
 
 async function handleComplaintEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const mail = event.mail;
@@ -306,24 +303,25 @@ async function handleComplaintEvent(
   }
 
   const complainedAt = complaint.timestamp ? new Date(complaint.timestamp).toISOString() : new Date().toISOString();
-  await supabase
-    .from('subscribers')
-    .update({
-      status: 'complained',
-      complained_at: complainedAt,
-    })
-    .eq('id', emailSend.subscriber_id);
+  if (emailSend.subscriber_id) {
+    await supabase
+      .from('subscribers')
+      .update({
+        status: 'complained',
+        complained_at: complainedAt,
+      })
+      .eq('id', emailSend.subscriber_id);
+  }
 
-  // Update campaign spam count
-  await supabase.rpc('increment_campaign_spam', {
-    campaign_id: emailSend.campaign_id
-  });
+  if (emailSend.campaign_id) {
+    await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<unknown> }).rpc('increment_campaign_spam', { campaign_id: emailSend.campaign_id });
+  }
 
   console.log(`⚠️ Marked subscriber ${emailSend.subscriber_id} as complained (spam)`);
 }
 
 async function handleRejectEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const mail = event.mail;
@@ -348,7 +346,7 @@ async function handleRejectEvent(
   await supabase
     .from('email_sends')
     .update({
-      status: 'rejected',
+      status: 'failed',
       bounce_reason: reason,
     })
     .eq('id', emailSend.id);
@@ -357,7 +355,7 @@ async function handleRejectEvent(
 }
 
 async function handleOpenEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const messageId = event.mail?.messageId;
@@ -391,12 +389,12 @@ async function handleOpenEvent(
   });
 
   if (emailSend.campaign_id) {
-    await supabase.rpc('increment_campaign_opened', { campaign_id: emailSend.campaign_id });
+    await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<unknown> }).rpc('increment_campaign_opened', { campaign_id: emailSend.campaign_id });
   }
 }
 
 async function handleClickEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   event: SESEventPayload
 ) {
   const messageId = event.mail?.messageId;
@@ -433,6 +431,6 @@ async function handleClickEvent(
   });
 
   if (emailSend.campaign_id) {
-    await supabase.rpc('increment_campaign_clicked', { campaign_id: emailSend.campaign_id });
+    await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<unknown> }).rpc('increment_campaign_clicked', { campaign_id: emailSend.campaign_id });
   }
 } 

@@ -171,8 +171,7 @@ export async function POST(request: NextRequest) {
     // If validation failed, return error
     if (!validationResult.valid) {
       const errorDetails =
-        validationResult.error ||
-        validationResult.errorMessage ||
+        validationResult.error ??
         "Unknown validation error occurred";
       console.error(
         "[validate-transaction] ERROR - Apple validation failed:",
@@ -684,8 +683,12 @@ async function validateTransactionWithApple(transactionId: string): Promise<{
         }
 
         // Verify and decode the JWS using Apple's root certificates
+        const signedJws = transactionInfoResponse.signedTransactionInfo;
+        if (typeof signedJws !== "string") {
+          continue;
+        }
         const transactionData = await verifyAndDecodeTransactionJWS(
-          transactionInfoResponse.signedTransactionInfo,
+          signedJws,
           bundleId,
           env
         );
@@ -878,7 +881,7 @@ async function verifyAndDecodeTransactionJWS(
       true, // enableOnlineChecks
       environment,
       bundleId,
-      environment === Environment.PRODUCTION ? appAppleId : undefined
+      environment === Environment.PRODUCTION && appAppleId ? Number(appAppleId) : undefined
     );
 
     // Verify and decode the JWS using the official library method
@@ -905,13 +908,13 @@ async function verifyAndDecodeTransactionJWS(
       // Extract the transaction data from the decoded payload
       // The payload structure follows Apple's Transaction schema
       verifiedTransaction = {
-        transactionId: decodedPayload.transactionId,
+        transactionId: decodedPayload.transactionId ?? "",
         originalTransactionId:
-          decodedPayload.originalTransactionId || decodedPayload.transactionId,
-        productId: decodedPayload.productId,
-        purchaseDate: decodedPayload.purchaseDate,
-        expiresDate: decodedPayload.expiresDate,
-        signedDate: decodedPayload.signedDate,
+          decodedPayload.originalTransactionId ?? decodedPayload.transactionId ?? "",
+        productId: decodedPayload.productId ?? "",
+        purchaseDate: Number(decodedPayload.purchaseDate ?? 0),
+        expiresDate: decodedPayload.expiresDate ?? 0,
+        signedDate: Number(decodedPayload.signedDate ?? 0),
       };
     } catch (verificationError) {
       console.error(
