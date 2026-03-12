@@ -532,7 +532,8 @@ export async function hasCustomerPurchasedLifetime(
     const hasLifetimeInvoice = invoices.data.some((invoice) => {
       if (invoice.status !== "paid") return false;
       return invoice.lines.data.some(
-        (line) => line.price?.id === lifetimePriceId,
+        (line) =>
+          (line as { price?: { id?: string } }).price?.id === lifetimePriceId,
       );
     });
     if (hasLifetimeInvoice) return true;
@@ -626,7 +627,7 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
   metadata?: Record<string, string>;
   amountTotal?: number;
   currency?: string;
-  subscriptionData?: Stripe.Checkout.Session.SubscriptionData;
+  subscriptionData?: Record<string, unknown>;
   error?: string;
 }> {
   try {
@@ -696,7 +697,9 @@ export async function getCheckoutSessionResult(sessionId: string): Promise<{
       metadata: session.metadata || undefined,
       amountTotal: session.amount_total || undefined,
       currency: session.currency || undefined,
-      subscriptionData: session.subscription_data || undefined,
+      subscriptionData:
+        ((session as { subscription_data?: unknown }).subscription_data as Record<string, unknown> | undefined) ??
+        undefined,
     };
   } catch (error) {
     console.error("Error fetching checkout session:", error);
@@ -722,9 +725,11 @@ export async function getUpcomingInvoice(customerId: string | null): Promise<{
       return { amount: 0, error: "No customer ID provided", due_date: null };
     }
 
-    const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
-      customer: customerId,
-    });
+    const upcomingInvoice = await (
+      stripe.invoices as unknown as {
+        retrieveUpcoming: (p: { customer: string }) => Promise<Stripe.Invoice>;
+      }
+    ).retrieveUpcoming({ customer: customerId });
 
     return {
       amount: upcomingInvoice.amount_due / 100,
@@ -909,7 +914,7 @@ export async function checkExistingCustomer(email: string): Promise<{
     // Check if customer has any prior transactions (completed charges or paid invoices)
     const hasPriorTransactions =
       charges.data.some((charge) => charge.paid) ||
-      invoices.data.some((invoice) => invoice.paid) ||
+      invoices.data.some((invoice) => (invoice as { paid?: boolean }).paid) ||
       subscriptions.data.some(
         (sub) =>
           sub.status === "trialing" ||
@@ -1085,10 +1090,10 @@ export async function refundInvoice(
       out_of_band_amount: creditNote.out_of_band_amount,
       pdf: creditNote.pdf,
       reason: creditNote.reason,
-      refund: creditNote.refund,
+      refund: (creditNote as { refund?: unknown }).refund,
       status: creditNote.status,
       subtotal: creditNote.subtotal,
-      tax_amounts: creditNote.tax_amounts,
+      tax_amounts: (creditNote as { tax_amounts?: unknown }).tax_amounts,
       total: creditNote.total,
       type: creditNote.type,
       voided_at: creditNote.voided_at,
@@ -1190,10 +1195,10 @@ export async function getInvoiceCreditNotes(
       out_of_band_amount: creditNote.out_of_band_amount,
       pdf: creditNote.pdf,
       reason: creditNote.reason,
-      refund: creditNote.refund,
+      refund: (creditNote as { refund?: unknown }).refund,
       status: creditNote.status,
       subtotal: creditNote.subtotal,
-      tax_amounts: creditNote.tax_amounts,
+      tax_amounts: (creditNote as { tax_amounts?: unknown }).tax_amounts,
       total: creditNote.total,
       type: creditNote.type,
       voided_at: creditNote.voided_at,
@@ -1293,10 +1298,10 @@ export async function createPromotionCode(
   expiresAt?: number,
 ): Promise<{ success: boolean; promotionCode?: any; error?: string }> {
   try {
-    const promotionCodeData: Stripe.PromotionCodeCreateParams = {
+    const promotionCodeData = {
       coupon: couponId,
       max_redemptions: maxRedemptions,
-    };
+    } as unknown as Stripe.PromotionCodeCreateParams;
 
     // Add custom code if provided
     if (code) {
@@ -1311,31 +1316,34 @@ export async function createPromotionCode(
     const promotionCode = await stripe.promotionCodes.create(promotionCodeData);
 
     // Serialize the promotion code object to plain object
+    const promoCoupon = (promotionCode as { coupon?: string | Stripe.Coupon }).coupon;
     const serializedPromotionCode = {
       id: promotionCode.id,
       object: promotionCode.object,
       active: promotionCode.active,
       code: promotionCode.code,
       coupon:
-        typeof promotionCode.coupon === "string"
-          ? promotionCode.coupon
-          : {
-              id: promotionCode.coupon.id,
-              object: promotionCode.coupon.object,
-              amount_off: promotionCode.coupon.amount_off,
-              created: promotionCode.coupon.created,
-              currency: promotionCode.coupon.currency,
-              duration: promotionCode.coupon.duration,
-              duration_in_months: promotionCode.coupon.duration_in_months,
-              livemode: promotionCode.coupon.livemode,
-              max_redemptions: promotionCode.coupon.max_redemptions,
-              metadata: promotionCode.coupon.metadata,
-              name: promotionCode.coupon.name,
-              percent_off: promotionCode.coupon.percent_off,
-              redeem_by: promotionCode.coupon.redeem_by,
-              times_redeemed: promotionCode.coupon.times_redeemed,
-              valid: promotionCode.coupon.valid,
-            },
+        typeof promoCoupon === "string"
+          ? promoCoupon
+          : promoCoupon
+            ? {
+                id: promoCoupon.id,
+                object: promoCoupon.object,
+                amount_off: promoCoupon.amount_off,
+                created: promoCoupon.created,
+                currency: promoCoupon.currency,
+                duration: promoCoupon.duration,
+                duration_in_months: promoCoupon.duration_in_months,
+                livemode: promoCoupon.livemode,
+                max_redemptions: promoCoupon.max_redemptions,
+                metadata: promoCoupon.metadata,
+                name: promoCoupon.name,
+                percent_off: promoCoupon.percent_off,
+                redeem_by: promoCoupon.redeem_by,
+                times_redeemed: promoCoupon.times_redeemed,
+                valid: promoCoupon.valid,
+              }
+            : undefined,
       created: promotionCode.created,
       customer: promotionCode.customer,
       expires_at: promotionCode.expires_at,
@@ -1461,32 +1469,36 @@ export async function listPromotionCodes(options?: {
 
     // Serialize the promotion codes to plain objects
     const serializedPromotionCodes = promotionCodes.data.map(
-      (promotionCode) => ({
-        id: promotionCode.id,
-        object: promotionCode.object,
-        active: promotionCode.active,
-        code: promotionCode.code,
-        coupon:
-          typeof promotionCode.coupon === "string"
-            ? promotionCode.coupon
-            : {
-                id: promotionCode.coupon.id,
-                object: promotionCode.coupon.object,
-                amount_off: promotionCode.coupon.amount_off,
-                created: promotionCode.coupon.created,
-                currency: promotionCode.coupon.currency,
-                duration: promotionCode.coupon.duration,
-                duration_in_months: promotionCode.coupon.duration_in_months,
-                livemode: promotionCode.coupon.livemode,
-                max_redemptions: promotionCode.coupon.max_redemptions,
-                metadata: promotionCode.coupon.metadata,
-                name: promotionCode.coupon.name,
-                percent_off: promotionCode.coupon.percent_off,
-                redeem_by: promotionCode.coupon.redeem_by,
-                times_redeemed: promotionCode.coupon.times_redeemed,
-                valid: promotionCode.coupon.valid,
-              },
-        created: promotionCode.created,
+      (promotionCode) => {
+        const pcCoupon = (promotionCode as { coupon?: string | Stripe.Coupon }).coupon;
+        return {
+          id: promotionCode.id,
+          object: promotionCode.object,
+          active: promotionCode.active,
+          code: promotionCode.code,
+          coupon:
+            typeof pcCoupon === "string"
+              ? pcCoupon
+              : pcCoupon
+                ? {
+                    id: pcCoupon.id,
+                    object: pcCoupon.object,
+                    amount_off: pcCoupon.amount_off,
+                    created: pcCoupon.created,
+                    currency: pcCoupon.currency,
+                    duration: pcCoupon.duration,
+                    duration_in_months: pcCoupon.duration_in_months,
+                    livemode: pcCoupon.livemode,
+                    max_redemptions: pcCoupon.max_redemptions,
+                    metadata: pcCoupon.metadata,
+                    name: pcCoupon.name,
+                    percent_off: pcCoupon.percent_off,
+                    redeem_by: pcCoupon.redeem_by,
+                    times_redeemed: pcCoupon.times_redeemed,
+                    valid: pcCoupon.valid,
+                  }
+                : undefined,
+          created: promotionCode.created,
         customer: promotionCode.customer,
         expires_at: promotionCode.expires_at,
         livemode: promotionCode.livemode,
@@ -1494,7 +1506,8 @@ export async function listPromotionCodes(options?: {
         metadata: promotionCode.metadata,
         restrictions: promotionCode.restrictions,
         times_redeemed: promotionCode.times_redeemed,
-      }),
+        };
+      },
     );
 
     return {
@@ -1600,6 +1613,7 @@ export async function cancelSubscriptionAdmin(
     });
 
     // Serialize the subscription object
+    const sub = subscription as { current_period_end?: number; current_period_start?: number };
     const serializedSubscription = {
       id: subscription.id,
       object: subscription.object,
@@ -1607,8 +1621,8 @@ export async function cancelSubscriptionAdmin(
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at,
       created: subscription.created,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: sub.current_period_end,
+      current_period_start: sub.current_period_start,
       customer:
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -1652,7 +1666,7 @@ export async function reactivateSubscription(
       cancel_at_period_end: false,
     });
 
-    // Serialize the subscription object
+    const subReact = subscription as { current_period_end?: number; current_period_start?: number };
     const serializedSubscription = {
       id: subscription.id,
       object: subscription.object,
@@ -1660,8 +1674,8 @@ export async function reactivateSubscription(
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at,
       created: subscription.created,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: subReact.current_period_end,
+      current_period_start: subReact.current_period_start,
       customer:
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -1726,7 +1740,7 @@ export async function changeSubscriptionPlan(
       billing_cycle_anchor: "now", // Keep the current billing cycle end date
     });
 
-    // Serialize the subscription object
+    const subChange = subscription as { current_period_end?: number; current_period_start?: number };
     const serializedSubscription = {
       id: subscription.id,
       object: subscription.object,
@@ -1734,8 +1748,8 @@ export async function changeSubscriptionPlan(
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at,
       created: subscription.created,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: subChange.current_period_end,
+      current_period_start: subChange.current_period_start,
       customer:
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -1788,7 +1802,7 @@ export async function getSubscriptionDetails(
       expand: ["items.data.price", "customer"],
     });
 
-    // Serialize the subscription object
+    const subDetails = subscription as { current_period_end?: number; current_period_start?: number };
     const serializedSubscription = {
       id: subscription.id,
       object: subscription.object,
@@ -1796,8 +1810,8 @@ export async function getSubscriptionDetails(
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at,
       created: subscription.created,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: subDetails.current_period_end,
+      current_period_start: subDetails.current_period_start,
       customer:
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -1855,16 +1869,18 @@ export async function getCustomerSubscriptions(
       expand: ["data.items.data.price"],
     });
 
-    // Serialize the subscriptions
-    const serializedSubscriptions = subscriptions.data.map((subscription) => ({
+    type SubWithPeriod = { current_period_end?: number; current_period_start?: number };
+    const serializedSubscriptions = subscriptions.data.map((subscription) => {
+      const period = subscription as unknown as SubWithPeriod;
+      return {
       id: subscription.id,
       object: subscription.object,
       cancel_at: subscription.cancel_at,
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at,
       created: subscription.created,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: period.current_period_end,
+      current_period_start: period.current_period_start,
       customer:
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -1890,7 +1906,8 @@ export async function getCustomerSubscriptions(
       })),
       trial_end: subscription.trial_end,
       trial_start: subscription.trial_start,
-    }));
+    };
+    });
 
     return {
       success: true,

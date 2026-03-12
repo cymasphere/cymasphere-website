@@ -109,9 +109,13 @@ export async function customerPurchasedProFromSupabase(
 
           // Check if invoice line items contain lifetime price ID
           const hasLifetimePrice = invoice.lines.data.some(
-            (line) =>
-              line.price?.id === lifetimePriceId ||
-              (lifetimePriceId2 && line.price?.id === lifetimePriceId2)
+            (line) => {
+              const price = (line as { price?: { id?: string } }).price;
+              return (
+                price?.id === lifetimePriceId ||
+                (lifetimePriceId2 && price?.id === lifetimePriceId2)
+              );
+            }
           );
 
           if (hasMetadata || hasLifetimePrice) {
