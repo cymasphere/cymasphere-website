@@ -13,8 +13,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, sendBatchEmail } from "@/utils/email";
-import { injectEmailTracking, createSendRecord } from "@/utils/email-tracking";
 import { personalizeContent } from "@/utils/email-campaigns/email-generation";
+import { getSubscribersForAudiences } from "@/utils/email-campaigns/get-subscribers";
 
 /**
  * Feature flag: Enable parallel batch sending (sends multiple personalized emails concurrently)
@@ -54,114 +54,6 @@ function hasPersonalizationVariables(content: string): boolean {
 
 // Store the last execution time in memory
 let lastCronExecution: string | null = null;
-
-// Helper function to generate proper HTML template for scheduled campaigns
-function generateProperEmailTemplate(
-  contentHtml: string,
-  subject: string
-): string {
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f7f7f7;">
-    <!-- Outer table for background color -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7;">
-        <tr>
-            <td align="center" style="padding: 20px 0;">
-                <!-- Inner table for content width constraint -->
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; min-width: 320px; margin: 0 auto;">
-                    <tr>
-                        <td style="background-color: #ffffff; padding: 0 24px;">
-        .header {
-            background: linear-gradient(135deg, #1a1a1a 0%, #121212 100%);
-            padding: 20px;
-            text-align: center;
-        }
-        .logo {
-            color: #ffffff;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .logo .cyma {
-            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .content {
-            padding: 30px;
-        }
-        .content div {
-            font-size: 1rem;
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-        .content h1 {
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 1rem;
-            text-align: center;
-            background: linear-gradient(135deg, #333, #666);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-        .content a {
-            display: inline-block;
-            padding: 12px 24px;
-            background: linear-gradient(90deg, #6c63ff, #4ecdc4);
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .footer {
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            background-color: #f8f9fa;
-            color: #666666;
-            border-top: 1px solid #e9ecef;
-        }
-        .footer a {
-            color: #6c63ff;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <span class="cyma">CYMA</span><span>SPHERE</span>
-            </div>
-        </div>
-        
-        <div class="content">
-            ${contentHtml}
-                            
-                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #666666;">
-                                <p>You're receiving this email because you're subscribed to Cymasphere updates.</p>
-                                <p><a href="https://cymasphere.com/unsubscribe" style="color: #ffffff; text-decoration: none;">Unsubscribe</a> | <a href="https://cymasphere.com" style="color: #ffffff; text-decoration: none;">Visit our website</a></p>
-                                <p>© ${new Date().getFullYear()} Cymasphere. All rights reserved.</p>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>`;
-}
 
 /**
  * @brief POST endpoint to process scheduled email campaigns
@@ -419,8 +311,9 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Get subscribers for the audiences
+        // Get subscribers for the audiences (shared utility)
         const subscribersResult = await getSubscribersForAudiences(
+          supabase,
           audienceIds,
           excludedAudienceIds
         );
@@ -474,7 +367,7 @@ export async function POST(request: NextRequest) {
           console.log(`   Personalization: ${hasPersonalization ? 'ENABLED (each email personalized)' : 'DISABLED (same content for all)'}`);
           
           // Split subscribers into parallel batches
-          const batches: typeof subscribersResult[][] = [];
+          const batches: (typeof subscribersResult)[] = [];
           for (let i = 0; i < subscribersResult.length; i += PARALLEL_BATCH_SIZE) {
             batches.push(subscribersResult.slice(i, i + PARALLEL_BATCH_SIZE));
           }
@@ -489,38 +382,31 @@ export async function POST(request: NextRequest) {
             // Send all emails in this batch in parallel
             const batchPromises = batch.map(async (subscriber) => {
               try {
-                // Create send record for tracking
-                const sendId = await createSendRecord(
-                  campaign.id,
-                  subscriber.id,
-                  subscriber.email,
-                  supabase
-                );
+                // Create email_sends record for SES webhook correlation (messageId lookup)
+                const { data: sendRecord, error: sendError } = await supabase
+                  .from("email_sends")
+                  .insert({
+                    campaign_id: campaign.id,
+                    subscriber_id: subscriber.id,
+                    email: subscriber.email,
+                    status: "pending",
+                  })
+                  .select("id")
+                  .single();
 
-                // Generate proper HTML template
-                let htmlContentForSubscriber = generateProperEmailTemplate(
-                  campaign.html_content ||
-                    `<h1>${campaign.subject || "Newsletter"}</h1><p>Content coming soon...</p>`,
-                  campaign.subject || "Newsletter"
-                );
+                const sendId = sendError || !sendRecord ? null : sendRecord.id;
 
-                // Add tracking
-                if (sendId) {
-                  htmlContentForSubscriber = injectEmailTracking(
-                    htmlContentForSubscriber,
-                    campaign.id,
-                    subscriber.id,
-                    sendId
-                  );
-                }
+                // Use stored html_content (SES handles tracking natively)
+                const baseHtml = campaign.html_content ||
+                  `<h1>${campaign.subject || "Newsletter"}</h1><p>Content coming soon...</p>`;
 
                 // Personalize content if variables are present
-                let personalizedHtml = htmlContentForSubscriber;
+                let personalizedHtml = baseHtml;
                 let personalizedText = campaign.text_content || campaign.subject || "Newsletter";
                 let personalizedSubject = campaign.subject || "Newsletter";
                 
                 if (hasPersonalization) {
-                  personalizedHtml = personalizeContent(htmlContentForSubscriber, subscriber);
+                  personalizedHtml = personalizeContent(baseHtml, subscriber);
                   personalizedText = personalizeContent(personalizedText, subscriber);
                   personalizedSubject = personalizeContent(personalizedSubject, subscriber);
                 }
@@ -598,46 +484,31 @@ export async function POST(request: NextRequest) {
           
           for (const subscriber of subscribersResult) {
           try {
-            // Create send record for tracking
-            const sendId = await createSendRecord(
-              campaign.id,
-              subscriber.id,
-              subscriber.email,
-              supabase
-            );
+            // Create email_sends record for SES webhook correlation (messageId lookup)
+            const { data: sendRecord, error: sendError } = await supabase
+              .from("email_sends")
+              .insert({
+                campaign_id: campaign.id,
+                subscriber_id: subscriber.id,
+                email: subscriber.email,
+                status: "pending",
+              })
+              .select("id")
+              .single();
 
-            // Generate proper HTML template (instead of using raw html_content)
-            let htmlContent = generateProperEmailTemplate(
-              campaign.html_content ||
-                `<h1>${
-                  campaign.subject || "Newsletter"
-                }</h1><p>Content coming soon...</p>`,
-              campaign.subject || "Newsletter"
-            );
+            const sendId = sendError || !sendRecord ? null : sendRecord.id;
 
-            if (sendId) {
-              htmlContent = injectEmailTracking(
-                htmlContent,
-                campaign.id,
-                subscriber.id,
-                sendId
-              );
-              console.log(
-                `📊 Added tracking to email for ${subscriber.email} (sendId: ${sendId})`
-              );
-            } else {
-              console.log(
-                `⚠️ No tracking added for ${subscriber.email} (send record creation failed)`
-              );
-            }
+            // Use stored html_content (SES handles tracking natively)
+            const baseHtml = campaign.html_content ||
+              `<h1>${campaign.subject || "Newsletter"}</h1><p>Content coming soon...</p>`;
 
             // Personalize content if variables are present
-            let personalizedHtml = htmlContent;
+            let personalizedHtml = baseHtml;
             let personalizedText = campaign.text_content || campaign.subject || "Newsletter";
             let personalizedSubject = campaign.subject || "Newsletter";
             
             if (hasPersonalization) {
-              personalizedHtml = personalizeContent(htmlContent, subscriber);
+              personalizedHtml = personalizeContent(baseHtml, subscriber);
               personalizedText = personalizeContent(personalizedText, subscriber);
               personalizedSubject = personalizeContent(personalizedSubject, subscriber);
             }
@@ -655,7 +526,7 @@ export async function POST(request: NextRequest) {
 
             if (emailResult.success) {
               sentCount++;
-              console.log(`✅ Sent to ${subscriber.email} with tracking`);
+              console.log(`✅ Sent to ${subscriber.email}`);
 
               // Update send record with message_id if we have one
               if (sendId && emailResult.messageId) {
@@ -793,287 +664,6 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * @brief Gets subscribers for given audiences (included and excluded)
- * 
- * Retrieves subscribers from static and dynamic audiences. Handles audience
- * filtering, exclusion logic, and status validation. Returns final list of
- * active subscribers after applying inclusion and exclusion rules.
- * 
- * @param audienceIds Array of audience IDs to include
- * @param excludedAudienceIds Array of audience IDs to exclude (optional)
- * @returns Array of subscriber objects
- * @note Supports both static (junction table) and dynamic (filter-based) audiences
- * @note Filters out inactive and unsubscribed subscribers
- * @note Excluded audiences remove subscribers from the final list
- * 
- * @example
- * ```typescript
- * const subscribers = await getSubscribersForAudiences(["aud1"], ["aud2"]);
- * // Returns: [{ id: "uuid", email: "user@example.com", ... }, ...]
- * ```
- */
-async function getSubscribersForAudiences(
-  audienceIds: string[],
-  excludedAudienceIds: string[] = []
-) {
-  // Use admin client (same as main function)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-
-  console.log("🔍 Fetching subscribers for audiences:", {
-    audienceIds,
-    excludedAudienceIds,
-  });
-
-  try {
-    // Get all unique subscribers from included audiences
-    let includedSubscribers: any[] = [];
-    const subscriberMap = new Map();
-
-    if (audienceIds.length > 0) {
-      // Process each audience individually to handle static vs dynamic
-      for (const audienceId of audienceIds) {
-        // Get audience to check if it's static or dynamic
-        const { data: audience } = await supabase
-          .from("email_audiences")
-          .select("id, name, filters")
-          .eq("id", audienceId)
-          .single();
-
-        if (!audience) {
-          console.error(`❌ Audience ${audienceId} not found`);
-          continue;
-        }
-
-        const filters = (audience.filters as any) || {};
-        const isStatic = filters.audience_type === "static";
-
-        if (isStatic) {
-          // For static audiences, get subscribers from junction table
-          const { data: audienceSubscribers, error: audienceError } = await supabase
-            .from("email_audience_subscribers")
-            .select(
-              `
-              subscriber_id,
-              subscribers (
-                id,
-                email,
-                status,
-                user_id
-              )
-            `
-            )
-            .eq("audience_id", audienceId);
-
-          if (audienceError) {
-            console.error(`❌ Error fetching static audience subscribers:`, audienceError);
-            continue;
-          }
-
-          audienceSubscribers?.forEach((rel: any) => {
-            if (rel.subscribers && 
-                rel.subscribers.status === "active" && 
-                rel.subscribers.status !== "INACTIVE" && 
-                rel.subscribers.status !== "unsubscribed") {
-              subscriberMap.set(rel.subscribers.id, rel.subscribers);
-            }
-          });
-        } else {
-          // For dynamic audiences, query subscribers based on filters
-          console.log(`📋 Processing dynamic audience: ${audience.name}`);
-          
-          try {
-            const rules = filters.rules || [];
-            let statusValue: string | null = null;
-            let subscriptionValue: string | null = null;
-
-            for (const rule of rules) {
-              if (rule.field === 'status') {
-                statusValue = rule.value;
-              } else if (rule.field === 'subscription') {
-                subscriptionValue = rule.value;
-              }
-            }
-
-            const effectiveStatus = statusValue || 'active';
-
-            let subscribersQuery = supabase
-              .from('subscribers')
-              .select('id, email, status, user_id')
-              .eq('status', effectiveStatus);
-
-            if (subscriptionValue) {
-              const { data: profilesData } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('subscription', subscriptionValue);
-
-              const profileIds = (profilesData || []).map((p: any) => p.id);
-              if (profileIds.length === 0) {
-                console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
-                continue;
-              }
-              subscribersQuery = subscribersQuery.in('user_id', profileIds);
-            }
-
-            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
-
-            if (dynamicError) {
-              console.error(`❌ Error querying dynamic subscribers:`, dynamicError);
-              continue;
-            }
-
-            dynamicSubscribers?.forEach((sub: any) => {
-              if (sub.status === "active" && 
-                  sub.status !== "INACTIVE" && 
-                  sub.status !== "unsubscribed") {
-                subscriberMap.set(sub.id, sub);
-              }
-            });
-
-            console.log(`✅ Dynamic audience "${audience.name}" returned ${dynamicSubscribers?.length || 0} subscribers`);
-          } catch (error) {
-            console.error(`❌ Error processing dynamic audience:`, error);
-            continue;
-          }
-        }
-      }
-
-      includedSubscribers = Array.from(subscriberMap.values());
-    }
-
-    // Get excluded subscribers if any
-    let excludedSubscriberIds: string[] = [];
-    const excludedSubscriberSet = new Set<string>();
-
-    if (excludedAudienceIds.length > 0) {
-      // Process each excluded audience individually
-      for (const excludedAudienceId of excludedAudienceIds) {
-        const { data: excludedAudience } = await supabase
-          .from("email_audiences")
-          .select("id, name, filters")
-          .eq("id", excludedAudienceId)
-          .single();
-
-        if (!excludedAudience) {
-          console.error(`❌ Excluded audience ${excludedAudienceId} not found`);
-          continue;
-        }
-
-        const excludedFilters = (excludedAudience.filters as any) || {};
-        const isStatic = excludedFilters.audience_type === "static";
-
-        if (isStatic) {
-          const { data: excludedAudienceSubscribers, error: excludedError } =
-            await supabase
-              .from("email_audience_subscribers")
-              .select("subscriber_id")
-              .eq("audience_id", excludedAudienceId);
-
-          if (excludedError) {
-            console.error(
-              `❌ Error fetching excluded static audience subscribers:`,
-              excludedError
-            );
-            continue;
-          }
-
-          excludedAudienceSubscribers?.forEach((rel: any) => {
-            excludedSubscriberSet.add(rel.subscriber_id);
-          });
-        } else {
-          // For dynamic excluded audiences, query subscribers based on filters
-          console.log(`📋 Processing dynamic excluded audience: ${excludedAudience.name}`);
-          
-          try {
-            const rules = excludedFilters.rules || [];
-            let statusValue: string | null = null;
-            let subscriptionValue: string | null = null;
-
-            for (const rule of rules) {
-              if (rule.field === 'status') {
-                statusValue = rule.value;
-              } else if (rule.field === 'subscription') {
-                subscriptionValue = rule.value;
-              }
-            }
-
-            const effectiveStatus = statusValue || 'active';
-
-            let subscribersQuery = supabase
-              .from('subscribers')
-              .select('id')
-              .eq('status', effectiveStatus);
-
-            if (subscriptionValue) {
-              const { data: profilesData } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('subscription', subscriptionValue);
-
-              const profileIds = (profilesData || []).map((p: any) => p.id);
-              if (profileIds.length > 0) {
-                subscribersQuery = subscribersQuery.in('user_id', profileIds);
-              }
-            }
-
-            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
-
-            if (dynamicError) {
-              console.error(`❌ Error querying dynamic excluded subscribers:`, dynamicError);
-              continue;
-            }
-
-            dynamicSubscribers?.forEach((sub: any) => {
-              excludedSubscriberSet.add(sub.id);
-            });
-
-            console.log(`✅ Dynamic excluded audience "${excludedAudience.name}" returned ${dynamicSubscribers?.length || 0} subscribers`);
-          } catch (error) {
-            console.error(`❌ Error processing dynamic excluded audience:`, error);
-            continue;
-          }
-        }
-      }
-
-      excludedSubscriberIds = Array.from(excludedSubscriberSet);
-    }
-
-    // Filter out excluded subscribers
-    const finalSubscribers = includedSubscribers.filter(
-      (subscriber: any) => !excludedSubscriberIds.includes(subscriber.id)
-    );
-
-    console.log(`📊 Subscriber calculation:`, {
-      includedCount: includedSubscribers.length,
-      excludedCount: excludedSubscriberIds.length,
-      finalCount: finalSubscribers.length,
-    });
-    
-    // Log unsubscribe filtering summary
-    const activeSubscribers = finalSubscribers.filter(s => s?.status === 'active');
-    const inactiveSubscribers = finalSubscribers.filter(s => s?.status === 'INACTIVE' || s?.status === 'unsubscribed');
-    console.log(`🚫 Unsubscribe filtering summary:`, {
-      total: finalSubscribers.length,
-      active: activeSubscribers.length,
-      inactive: inactiveSubscribers.length,
-      inactiveEmails: inactiveSubscribers.map(s => s?.email)
-    });
-
-    return finalSubscribers;
-  } catch (error) {
-    console.error("❌ Error in getSubscribersForAudiences:", error);
-    throw error;
-  }
-}
-
-/**
  * @brief GET endpoint to check scheduled campaign processor status
  * 
  * Returns status information about the scheduled campaign processor including
@@ -1103,17 +693,25 @@ async function getSubscribersForAudiences(
  * // Returns: { message: "...", lastExecutionTime: "...", ... }
  * ```
  */
-export async function GET() {
-  const now = new Date().toISOString();
+/**
+ * @brief GET endpoint for scheduled processor status (requires CRON_SECRET)
+ *
+ * Returns operational metadata. Callers must send Authorization: Bearer <CRON_SECRET>.
+ */
+export async function GET(request: NextRequest) {
+  const secret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!secret || token !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  // Calculate time since last execution
-  let timeSinceLastExecution = null;
+  const now = new Date().toISOString();
+  let timeSinceLastExecution: number | null = null;
   if (lastCronExecution) {
     const lastTime = new Date(lastCronExecution);
-    const currentTime = new Date();
-    const diffMs = currentTime.getTime() - lastTime.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    timeSinceLastExecution = diffMinutes;
+    const diffMs = new Date().getTime() - lastTime.getTime();
+    timeSinceLastExecution = Math.floor(diffMs / (1000 * 60));
   }
 
   return NextResponse.json({

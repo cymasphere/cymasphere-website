@@ -10,6 +10,53 @@
 
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
 
+let sesClientInstance: SESClient | null = null;
+
+/**
+ * @brief Encodes a UTF-8 string as quoted-printable (RFC 2045) for email parts
+ * @param input UTF-8 string
+ * @returns Quoted-printable encoded string with soft line breaks at 76 chars
+ */
+function encodeQuotedPrintable(input: string): string {
+  const buf = Buffer.from(input, "utf8");
+  const lines: string[] = [];
+  let line = "";
+  for (let i = 0; i < buf.length; i++) {
+    const b = buf[i];
+    const char = b >= 32 && b <= 126 && b !== 61 ? String.fromCharCode(b) : `=${b.toString(16).toUpperCase().padStart(2, "0")}`;
+    if (line.length + char.length > 76) {
+      if (line.length > 0) {
+        lines.push(line.endsWith(" ") || line.endsWith("\t") ? line + "=" : line);
+        line = "";
+      }
+      line = char;
+    } else {
+      line += char;
+    }
+  }
+  if (line.length > 0) {
+    lines.push(line.endsWith(" ") || line.endsWith("\t") ? line + "=" : line);
+  }
+  return lines.join("\r\n");
+}
+
+/**
+ * @brief Returns a module-level SES client (singleton, lazy-initialized)
+ */
+function getSESClient(): SESClient {
+  if (!sesClientInstance) {
+    const region = process.env.AWS_REGION || "us-east-1";
+    sesClientInstance = new SESClient({
+      region,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+      },
+    });
+  }
+  return sesClientInstance;
+}
+
 interface SendEmailParams {
   to: string | string[];
   subject: string;
@@ -81,17 +128,8 @@ export async function sendEmail({
   source,
   dedupeKey,
 }: SendEmailParams) {
-  const region = process.env.AWS_REGION || "us-east-1";
-
   try {
-    // Create SES client using environment variables instead of AWS CLI
-    const sesClient = new SESClient({ 
-      region,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
-      }
-    });
+    const sesClient = getSESClient();
 
     // Format recipient email addresses
     const toAddresses = Array.isArray(to) ? to : [to];
@@ -134,20 +172,20 @@ export async function sendEmail({
     // Build email body
     let body = '';
 
-    // Add text part
+    // Add text part (quoted-printable for UTF-8 support)
     if (text) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/plain; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
-      body += `${text}\r\n`;
+      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
+      body += `${encodeQuotedPrintable(text)}\r\n`;
     }
 
-    // Add HTML part
+    // Add HTML part (quoted-printable for UTF-8 support)
     if (html) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/html; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
-      body += `${html}\r\n`;
+      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
+      body += `${encodeQuotedPrintable(html)}\r\n`;
     }
 
     body += `--${boundary}--\r\n`;
@@ -155,22 +193,10 @@ export async function sendEmail({
     // Combine headers and body
     const rawMessage = headers.join('\r\n') + '\r\n\r\n' + body;
 
-    console.log("📤 Attempting to send email via AWS SES...");
-    console.log("📤 To:", toAddresses);
-    console.log("📤 From:", from);
-    console.log("📤 Subject:", subject);
-    if (source) {
-      console.log("📤 Source:", source);
+    if (process.env.EMAIL_DEBUG === "true") {
+      console.log("📤 Sending email via SES", { subject, recipientCount: toAddresses.length, source: source ?? undefined });
     }
-    if (dedupeKey) {
-      console.log("📤 DedupeKey:", dedupeKey);
-    }
-    console.log("📤 Region:", region);
-    console.log("📤 Has AWS credentials:", !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY));
-    console.log("📤 AWS_ACCESS_KEY_ID present:", !!process.env.AWS_ACCESS_KEY_ID);
-    console.log("📤 AWS_SECRET_ACCESS_KEY present:", !!process.env.AWS_SECRET_ACCESS_KEY);
-    console.log("📤 AWS_REGION:", process.env.AWS_REGION || 'us-east-1 (default)');
-    
+
     // Try with configuration set first
     let command = new SendRawEmailCommand({
       RawMessage: {
@@ -181,7 +207,9 @@ export async function sendEmail({
 
     try {
       const result = await sesClient.send(command);
-      console.log("✅ Email sent successfully via AWS SES, MessageId:", result.MessageId);
+      if (process.env.EMAIL_DEBUG === "true") {
+        console.log("✅ Email sent via SES, MessageId:", result.MessageId);
+      }
       return { success: true, messageId: result.MessageId };
     } catch (configSetError: unknown) {
       const configSetErrorMessage = configSetError instanceof Error ? configSetError.message : String(configSetError);
@@ -236,26 +264,21 @@ export async function sendEmail({
 /**
  * @brief Sends a batch email using BCC to multiple recipients
  * 
- * Sends emails to multiple recipients using BCC (Blind Carbon Copy) for efficiency.
- * AWS SES allows up to 50 total recipients per email (To + CC + BCC combined), so
- * this function batches recipients into groups of 49 BCC recipients plus 1 To address.
- * This is much more efficient than sending individual emails.
- * 
- * @param params Batch email parameters including BCC array, subject, and content
- * @returns Promise with array of message IDs from AWS SES
- * @note AWS SES limit: max 50 recipients per email (To + CC + BCC)
- * @note Uses 1 To address (sender) + up to 49 BCC recipients per batch
- * @note Automatically batches large recipient lists into multiple emails
- * @note Uses same email headers and deliverability features as sendEmail
- * 
+ * Sends one email to multiple recipients using BCC. Caller must pass at most 49 BCC
+ * addresses per call (AWS SES limit: 50 total recipients including To).
+ *
+ * @param params Batch email parameters including BCC array (max 49), subject, and content
+ * @returns Promise with success, messageId, and recipientCount (or error)
+ * @note AWS SES limit: max 50 recipients per email (To + CC + BCC). This function
+ *       uses 1 To (sender) + up to 49 BCC. Larger lists must be split by the caller.
+ *
  * @example
  * ```typescript
- * const messageIds = await sendBatchEmail({
- *   bcc: ["user1@example.com", "user2@example.com", ...],
+ * const result = await sendBatchEmail({
+ *   bcc: ["user1@example.com", "user2@example.com"],
  *   subject: "Newsletter",
  *   html: "<h1>Newsletter</h1>"
  * });
- * // Returns: ["message-id-1", "message-id-2", ...]
  * ```
  */
 export async function sendBatchEmail({
@@ -267,12 +290,10 @@ export async function sendBatchEmail({
   replyTo,
   listUnsubscribe,
 }: SendBatchEmailParams) {
-  const region = process.env.AWS_REGION || "us-east-1";
-  
   // AWS SES limit: max 50 recipients per email (To + CC + BCC combined)
   // We use 1 To (sender's own address) and up to 49 BCC recipients
   const MAX_BCC_PER_EMAIL = 49;
-  
+
   if (bcc.length === 0) {
     return { success: false, error: "No BCC recipients provided" };
   }
@@ -285,13 +306,7 @@ export async function sendBatchEmail({
   }
 
   try {
-    const sesClient = new SESClient({ 
-      region,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
-      }
-    });
+    const sesClient = getSESClient();
 
     // Format reply to addresses
     const replyToAddresses = replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : [from.match(/<(.+)>/)?.[1] || from];
@@ -339,15 +354,15 @@ export async function sendBatchEmail({
     if (text) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/plain; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
-      body += `${text}\r\n`;
+      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
+      body += `${encodeQuotedPrintable(text)}\r\n`;
     }
 
     if (html) {
       body += `--${boundary}\r\n`;
       body += `Content-Type: text/html; charset=UTF-8\r\n`;
-      body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
-      body += `${html}\r\n`;
+      body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
+      body += `${encodeQuotedPrintable(html)}\r\n`;
     }
 
     body += `--${boundary}--\r\n`;
@@ -355,7 +370,9 @@ export async function sendBatchEmail({
     // Combine headers and body
     const rawMessage = headers.join('\r\n') + '\r\n\r\n' + body;
 
-    console.log(`📤 Sending batch email via AWS SES to ${bcc.length} recipients (BCC)...`);
+    if (process.env.EMAIL_DEBUG === "true") {
+      console.log(`📤 Sending batch email via SES to ${bcc.length} recipients`);
+    }
 
     // Try with configuration set first
     let command = new SendRawEmailCommand({
@@ -368,7 +385,9 @@ export async function sendBatchEmail({
 
     try {
       const result = await sesClient.send(command);
-      console.log(`✅ Batch email sent successfully via AWS SES, MessageId: ${result.MessageId}, Recipients: ${bcc.length}`);
+      if (process.env.EMAIL_DEBUG === "true") {
+        console.log(`✅ Batch email sent via SES, MessageId: ${result.MessageId}, Recipients: ${bcc.length}`);
+      }
       return { success: true, messageId: result.MessageId, recipientCount: bcc.length };
     } catch (configSetError: unknown) {
       const configSetErrorMessage = configSetError instanceof Error ? configSetError.message : String(configSetError);

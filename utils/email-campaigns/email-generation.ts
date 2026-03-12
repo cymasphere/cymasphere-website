@@ -1,82 +1,41 @@
 /**
  * @fileoverview Email content generation utilities
- * 
+ *
  * This file contains utilities for generating HTML and text email content from
- * email element arrays. Includes link tracking, personalization, unsubscribe
- * link generation, and responsive email HTML generation.
- * 
+ * email element arrays. Includes personalization, unsubscribe link generation,
+ * and responsive email HTML generation. Open/click tracking is handled by AWS SES
+ * via the configuration set; no custom tracking injection.
+ *
  * @module utils/email-campaigns/email-generation
  */
 
 import { generateUnsubscribeUrl } from './unsubscribe-tokens';
+import type { EmailElement, SubscriberRecord } from '@/types/email-campaigns';
 
 /**
- * @brief Generates HTML email content from email elements with tracking
- * 
+ * @brief Generates HTML email content from email elements
+ *
  * Converts an array of email elements (text, images, buttons, etc.) into
- * complete HTML email content. Includes:
- * - Link rewriting for click tracking
- * - Unsubscribe link generation
- * - View-in-browser link
- * - Responsive email styling
- * - Preheader text support
- * 
+ * complete HTML email content. Includes unsubscribe link generation,
+ * view-in-browser link, and responsive email styling. All links must be
+ * absolute URLs for SES click tracking (mail.cymasphere.com) to work.
+ *
  * @param elements Array of email elements to render
  * @param subject Email subject line
- * @param campaignId Optional campaign ID for tracking
- * @param subscriberId Optional subscriber ID for tracking
- * @param sendId Optional send ID for tracking
  * @param preheader Optional preheader text shown in inbox preview
  * @returns Complete HTML email content as string
- * @note Rewrites all links for click tracking if tracking parameters provided
- * @note Uses production URL for tracking even in development
  * @note Handles full-width and constrained-width element layouts
- * 
+ *
  * @example
  * ```typescript
- * const html = generateHtmlFromElements(elements, "Welcome", "campaign-123", "user-456", "send-789");
- * // Returns: "<html>...</html>"
+ * const html = generateHtmlFromElements(elements, "Welcome", "Preview text");
  * ```
  */
 export function generateHtmlFromElements(
-  elements: any[],
+  elements: EmailElement[],
   subject: string,
-  campaignId?: string,
-  subscriberId?: string,
-  sendId?: string,
   preheader?: string
 ): string {
-  // Helper function to rewrite links for click tracking
-  const rewriteLinksForTracking = (html: string): string => {
-    if (!campaignId || !subscriberId || !sendId) {
-      return html; // No tracking if missing parameters
-    }
-
-    // Find and replace all href attributes
-    return html.replace(/href=["']([^"']+)["']/g, (match, url) => {
-      // Skip already tracked URLs
-      if (url.includes("/api/email-campaigns/track/click")) {
-        return match;
-      }
-
-      // Skip internal tracking URLs
-      if (url.includes("unsubscribe") || url.includes("mailto:")) {
-        return match;
-      }
-
-      // Always use production URL for tracking (even in development)
-      // because localhost URLs won't work in external email clients
-      const baseUrl =
-        process.env.NODE_ENV === "production"
-          ? process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com"
-          : "https://cymasphere.com";
-      const trackingUrl = `${baseUrl}/api/email-campaigns/track/click?c=${campaignId}&u=${subscriberId}&s=${sendId}&url=${encodeURIComponent(
-        url
-      )}`;
-      return `href="${trackingUrl}"`;
-    });
-  };
-
   // Resolve base URL for view-in-browser and other absolute links
   // In production, force cymasphere.com if env mistakenly points to localhost
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
@@ -86,21 +45,6 @@ export function generateHtmlFromElements(
 
   const elementHtml = elements
     .map((element) => {
-      // Debug logging to see element properties
-      console.log('🎨 Generating HTML for element:', {
-        id: element.id,
-        type: element.type,
-        fontFamily: element.fontFamily,
-        fontSize: element.fontSize,
-        textColor: element.textColor,
-        backgroundColor: element.backgroundColor,
-        paddingTop: element.paddingTop,
-        paddingBottom: element.paddingBottom,
-        paddingLeft: element.paddingLeft,
-        paddingRight: element.paddingRight,
-        fullWidth: element.fullWidth
-      });
-      
       const wrapperClass = element.fullWidth
         ? "full-width"
         : "constrained-width";
@@ -212,7 +156,7 @@ export function generateHtmlFromElements(
             ? `<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
                  <tr>
                    ${element.socialLinks
-                     .map((social: any) => {
+                     .map((social: { platform?: string; url: string }) => {
                        const key = (social.platform || '').toLowerCase();
                        const iconUrl = iconMap[key];
                        if (!iconUrl) return '';
@@ -295,14 +239,16 @@ export function generateHtmlFromElements(
             </tr>
           </table>`;
 
-        default:
+        default: {
+          const e = element as EmailElement & { content?: string; textAlign?: string; fontSize?: string; fontWeight?: string; fontFamily?: string; lineHeight?: string };
           return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
             <tr>
-              <td class="${wrapperClass}" style="color: #555; text-align: ${element.textAlign || 'left'}; font-size: ${element.fontSize || '16px'}; font-weight: ${element.fontWeight || 'normal'}; font-family: ${element.fontFamily || 'Arial, sans-serif'}; line-height: ${element.lineHeight || '1.6'}; ${cellPaddingStyle}">
-                ${element.content || ""}
+              <td class="${wrapperClass}" style="color: #555; text-align: ${e.textAlign || 'left'}; font-size: ${e.fontSize || '16px'}; font-weight: ${e.fontWeight || 'normal'}; font-family: ${e.fontFamily || 'Arial, sans-serif'}; line-height: ${e.lineHeight || '1.6'}; ${cellPaddingStyle}">
+                ${e.content || ""}
               </td>
             </tr>
           </table>`;
+        }
       }
     })
     .join("");
@@ -466,7 +412,7 @@ export function generateHtmlFromElements(
                     ${preheader || 'Cymasphere - Your Music Production Journey'}
                 </div>
                 <div style="text-align: right; margin-left: auto;">
-                    <a href="${resolvedBaseUrl}/email-preview?c=${campaignId || 'preview'}" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
+                    <a href="${resolvedBaseUrl}/email-preview?c=preview" style="color: #6c63ff; text-decoration: underline; font-weight: 500;">View in browser</a>
                 </div>
             </div>
         </div>
@@ -476,35 +422,13 @@ export function generateHtmlFromElements(
 </body>
 </html>`;
 
-  // Add tracking pixel if we have tracking parameters
-  if (campaignId && subscriberId && sendId) {
-    // Always use production URL for tracking pixels (even in development)
-    // because localhost URLs won't work in external email clients
-    const baseUrl =
-      process.env.NODE_ENV === "production"
-        ? process.env.NEXT_PUBLIC_SITE_URL || "https://cymasphere.com"
-        : "https://cymasphere.com";
-    const trackingPixel = `
-    <!-- Email Open Tracking -->
-    <img src="${baseUrl}/api/email-campaigns/track/open?c=${campaignId}&u=${subscriberId}&s=${sendId}" width="1" height="1" style="display:block;border:0;margin:0;padding:0;" alt="" />`;
-
-    html += trackingPixel;
-  }
-
-  html += `
-</body>
-</html>`;
-
-  // Rewrite links for click tracking
-  html = rewriteLinksForTracking(html);
-
   return html;
 }
 
 /**
  * Generate text content from email elements
  */
-export function generateTextFromElements(elements: any[]): string {
+export function generateTextFromElements(elements: EmailElement[]): string {
   const textContent = elements
     .map((element) => {
       switch (element.type) {
@@ -523,7 +447,7 @@ export function generateTextFromElements(elements: any[]): string {
         case "footer":
           const socialText = element.socialLinks && element.socialLinks.length > 0
             ? element.socialLinks
-                .map((social: any) => `${social.platform}: ${social.url}`)
+                .map((social: { platform?: string; url: string }) => `${social.platform}: ${social.url}`)
                 .join(" | ")
             : "";
           return `\n${"─".repeat(50)}\n${socialText ? socialText + "\n" : ""}${
@@ -537,8 +461,10 @@ export function generateTextFromElements(elements: any[]): string {
           }\n`;
         case "brand-header":
           return `[LOGO] Cymasphere\n${"=".repeat(10)}\n`;
-        default:
-          return `${element.content || ""}\n`;
+        default: {
+          const e = element as EmailElement & { content?: string };
+          return `${e.content || ""}\n`;
+        }
       }
     })
     .join("\n");
@@ -549,7 +475,7 @@ export function generateTextFromElements(elements: any[]): string {
 /**
  * Personalize content with subscriber data
  */
-export function personalizeContent(content: string, subscriber: any): string {
+export function personalizeContent(content: string, subscriber: SubscriberRecord): string {
   const metadata = subscriber.metadata || {};
   
   // Generate unsubscribe URL with token

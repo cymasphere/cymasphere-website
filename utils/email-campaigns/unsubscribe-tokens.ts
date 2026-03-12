@@ -12,22 +12,30 @@ import crypto from 'crypto';
 
 /**
  * @brief Gets the secret key for signing unsubscribe tokens
- * 
+ *
  * Retrieves the unsubscribe token secret from environment variables.
- * Falls back to Supabase service role key or a default (for development only).
- * 
+ * In production, throws if UNSUBSCRIBE_TOKEN_SECRET is not set. In development,
+ * falls back to SUPABASE_SERVICE_ROLE_KEY or a default.
+ *
  * @returns Secret key string for token signing
- * @note In production, should use UNSUBSCRIBE_TOKEN_SECRET environment variable
- * @note Falls back to SUPABASE_SERVICE_ROLE_KEY if available
- * 
+ * @throws Error in production when UNSUBSCRIBE_TOKEN_SECRET is not set
+ *
  * @example
  * ```typescript
  * const secret = getUnsubscribeSecret();
- * // Returns: process.env.UNSUBSCRIBE_TOKEN_SECRET || ...
  * ```
  */
 const getUnsubscribeSecret = (): string => {
-  return process.env.UNSUBSCRIBE_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'default-secret-change-in-production';
+  const secret =
+    process.env.UNSUBSCRIBE_TOKEN_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    (process.env.NODE_ENV !== "production" ? "default-secret-change-in-production" : "");
+  if (process.env.NODE_ENV === "production" && !secret) {
+    throw new Error(
+      "UNSUBSCRIBE_TOKEN_SECRET must be set in production for unsubscribe link signing"
+    );
+  }
+  return secret;
 };
 
 /**

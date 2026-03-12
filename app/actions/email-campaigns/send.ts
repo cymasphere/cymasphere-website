@@ -14,13 +14,16 @@
 import { sendEmail } from "@/utils/email";
 import { createClient } from "@/utils/supabase/server";
 import { generateHtmlFromElements, generateTextFromElements, personalizeContent } from "@/utils/email-campaigns/email-generation";
+import type { EmailElement, SubscriberRecord } from "@/types/email-campaigns";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSubscribersForAudiences as getSubscribersForAudiencesShared } from "@/utils/email-campaigns/get-subscribers";
 
 /**
- * Safety configuration flags for preventing accidental email sends
- * @note Set to true only when explicitly testing email functionality
+ * Safety configuration flags for preventing accidental email sends.
+ * Set via env: EMAIL_DEVELOPMENT_MODE=true, EMAIL_TEST_MODE=true
  */
-const DEVELOPMENT_MODE = false; // Temporarily disabled for testing
-const TEST_MODE = false; // Temporarily disabled for testing
+const DEVELOPMENT_MODE = process.env.EMAIL_DEVELOPMENT_MODE === "true";
+const TEST_MODE = process.env.EMAIL_TEST_MODE === "true";
 
 /**
  * Safe email whitelist for development/testing
@@ -49,7 +52,7 @@ export interface SendCampaignParams {
   brandHeader?: string;
   audienceIds: string[]; // Updated to match new audience system
   excludedAudienceIds?: string[];
-  emailElements: any[];
+  emailElements: EmailElement[];
   scheduleType: "immediate" | "scheduled" | "timezone" | "draft";
   scheduleDate?: string;
   scheduleTime?: string;
@@ -60,6 +63,7 @@ export interface SendCampaignResponse {
   status?: string;
   message?: string;
   campaignId?: string;
+  scheduleType?: "immediate" | "scheduled" | "timezone" | "draft";
   stats?: {
     total?: number;
     sent?: number;
@@ -94,448 +98,45 @@ export interface SendCampaignResponse {
   error?: string;
 }
 
-// Get real subscribers from database based on audience selection
+// Get real subscribers from database based on audience selection (shared utility + send-specific safety)
 async function getSubscribersForAudiences(
-  supabase: any,
+  supabase: SupabaseClient,
   audienceIds: string[],
   excludedAudienceIds: string[] = []
-) {
-  try {
-    console.log("🔍 Getting subscribers for audiences:", {
-      audienceIds,
-      excludedAudienceIds,
-    });
+): Promise<SubscriberRecord[]> {
+  const { data: audiences, error: audienceError } = await supabase
+    .from("email_audiences")
+    .select("id, name, description")
+    .in("id", audienceIds);
 
-    if (!audienceIds || audienceIds.length === 0) {
-      return [];
-    }
-
-    // Get audience details to check if they're test audiences
-    // Use authenticated client (admin check already passed, RLS will allow access)
-    const { data: audiences, error: audienceError } = await supabase
-      .from("email_audiences")
-      .select("id, name, description")
-      .in("id", audienceIds);
-
-    if (audienceError) {
-      console.error("❌ Error fetching audience details:", audienceError);
-      return [];
-    }
-
-    console.log("📊 Audience details:", audiences);
-
-    // 🔒 SAFETY CHECK: Verify we're only sending to test audiences in development
-    if (DEVELOPMENT_MODE || TEST_MODE) {
-      const nonTestAudiences = audiences?.filter(
-        (aud: any) =>
-          !TEST_AUDIENCE_NAMES.some((testName) =>
-            aud.name.toLowerCase().includes(testName.toLowerCase())
-          )
-      );
-
-      if (nonTestAudiences && nonTestAudiences.length > 0) {
-        console.error(
-          "🚨 SAFETY BLOCK: Attempting to send to non-test audience in development mode"
-        );
-        console.error(
-          "Non-test audiences:",
-          nonTestAudiences.map((a: any) => a.name)
-        );
-        throw new Error(
-          `SAFETY BLOCK: Cannot send to non-test audiences in development mode. Detected: ${nonTestAudiences
-            .map((a: any) => a.name)
-            .join(", ")}`
-        );
-      }
-
-      console.log(
-        "🔒 SAFETY: All selected audiences are test audiences, proceeding with whitelist filter"
-      );
-    }
-
-    // Get subscribers directly from database (avoid API authentication issues)
-    const allSubscribers = new Set();
-    const subscriberDetails = new Map();
-
-    for (const audienceId of audienceIds) {
-      try {
-        console.log(`🔍 Getting subscribers for audience: ${audienceId}`);
-
-        // Get audience to check if it's static
-        const { data: audience } = await supabase
-          .from("email_audiences")
-          .select("id, name, filters")
-          .eq("id", audienceId)
-          .single();
-
-        if (!audience) {
-          console.error(`❌ Audience ${audienceId} not found`);
-          continue;
-        }
-
-        const filters = (audience.filters as any) || {};
-        console.log(
-          `📋 Audience "${audience.name}" type:`,
-          filters.audience_type || "dynamic"
-        );
-
-        let subscribers = [];
-
-        // For static audiences, get subscribers from the junction table
-        if (filters.audience_type === "static") {
-          console.log(
-            "📋 Static audience - getting subscribers from junction table"
-          );
-
-          // Get subscribers via junction table
-          const { data: relations, error: relationsError } = await supabase
-            .from("email_audience_subscribers")
-            .select(
-              `
-              subscriber_id,
-              subscribers (
-                id,
-                email,
-                status,
-                created_at,
-                metadata
-              )
-            `
-            )
-            .eq("audience_id", audienceId);
-
-          if (relationsError) {
-            console.error(
-              `❌ Error getting relations for audience ${audienceId}:`,
-              relationsError
-            );
-            continue;
-          }
-
-          console.log(
-            `📊 Found ${relations?.length || 0} subscriber relations`
-          );
-          console.log(
-            "📊 Raw relations data:",
-            JSON.stringify(relations, null, 2)
-          );
-
-          subscribers = (relations || [])
-            .map((rel: any) => rel.subscribers)
-            .filter(Boolean);
-          console.log(
-            "📊 Extracted subscribers:",
-            JSON.stringify(subscribers, null, 2)
-          );
-        } else {
-          // For dynamic audiences, query subscribers based on filters
-          console.log(
-            `📋 Dynamic audience - querying subscribers based on filters`
-          );
-
-          try {
-            // Extract filter rules
-            const rules = filters.rules || [];
-            let statusValue: string | null = null;
-            let subscriptionValue: string | null = null;
-            let additionalRules: any[] = [];
-
-            for (const rule of rules) {
-              if (rule.field === 'status') {
-                statusValue = rule.value;
-              } else if (rule.field === 'subscription') {
-                subscriptionValue = rule.value;
-              } else {
-                additionalRules.push(rule);
-              }
-            }
-
-            // Default to active status if not specified
-            const effectiveStatus = statusValue || 'active';
-
-            // Build query for subscribers
-            let subscribersQuery = supabase
-              .from('subscribers')
-              .select('id, email, status, created_at, metadata, user_id')
-              .eq('status', effectiveStatus);
-
-            // If subscription filter is needed, join with profiles
-            if (subscriptionValue) {
-              const { data: profilesData } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('subscription', subscriptionValue);
-
-              const profileIds = (profilesData || []).map((p: any) => p.id);
-              if (profileIds.length === 0) {
-                console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
-                subscribers = [];
-              } else {
-                subscribersQuery = subscribersQuery.in('user_id', profileIds);
-              }
-            }
-
-            // Execute query
-            const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
-
-            if (dynamicError) {
-              console.error(`❌ Error querying dynamic subscribers:`, dynamicError);
-              continue;
-            }
-
-            subscribers = dynamicSubscribers || [];
-            console.log(
-              `📊 Dynamic audience query returned ${subscribers.length} subscribers`
-            );
-          } catch (error) {
-            console.error(`❌ Error processing dynamic audience:`, error);
-            continue;
-          }
-        }
-
-        console.log(
-          `📧 Audience ${audienceId}: ${subscribers.length} subscribers found`
-        );
-        console.log(
-          `📧 Subscribers:`,
-          subscribers.map((s: any) => ({
-            id: s.id,
-            email: s.email,
-            status: s.status,
-          }))
-        );
-        console.log(
-          `📧 Full subscriber details:`,
-          JSON.stringify(subscribers, null, 2)
-        );
-
-        subscribers.forEach((sub: any) => {
-          // 🚫 UNSUBSCRIBE FILTER: Skip INACTIVE (unsubscribed) subscribers
-          if (sub.status === 'INACTIVE' || sub.status === 'unsubscribed') {
-            console.log(
-              `🚫 UNSUBSCRIBE: Skipping unsubscribed email: ${sub.email} (status: ${sub.status})`
-            );
-            return;
-          }
-
-          // 🔒 SAFETY FILTER: In development, only allow whitelisted emails
-          if (DEVELOPMENT_MODE || TEST_MODE) {
-            if (!SAFE_TEST_EMAILS.includes(sub.email)) {
-              console.log(
-                `🔒 SAFETY: Skipping non-whitelisted email: ${sub.email}`
-              );
-              return;
-            }
-          }
-
-          console.log(`✅ Adding subscriber: ${sub.email} (${sub.status})`);
-          allSubscribers.add(sub.id);
-
-          const metadata = (sub.metadata as any) || {};
-          subscriberDetails.set(sub.id, {
-            id: sub.id,
-            email: sub.email,
-            name:
-              [metadata.first_name, metadata.last_name]
-                .filter(Boolean)
-                .join(" ") || sub.email.split("@")[0],
-            first_name: metadata.first_name,
-            last_name: metadata.last_name,
-            status: sub.status || "active",
-          });
-        });
-      } catch (error) {
-        console.error(
-          `❌ Error fetching subscribers for audience ${audienceId}:`,
-          error
-        );
-      }
-    }
-
-    // Remove excluded audience subscribers
-    // Matching API route logic exactly - implements the same logic directly
-    if (excludedAudienceIds && excludedAudienceIds.length > 0) {
-      for (const excludedAudienceId of excludedAudienceIds) {
-        try {
-          console.log(`🔍 Getting excluded subscribers for audience: ${excludedAudienceId}`);
-
-          // Get audience to check if it's static
-          const { data: excludedAudience } = await supabase
-            .from("email_audiences")
-            .select("id, name, filters")
-            .eq("id", excludedAudienceId)
-            .single();
-
-          if (!excludedAudience) {
-            console.error(`❌ Excluded audience ${excludedAudienceId} not found`);
-            continue;
-          }
-
-          const excludedFilters = (excludedAudience.filters as any) || {};
-          console.log(
-            `📋 Excluded audience "${excludedAudience.name}" type:`,
-            excludedFilters.audience_type || "dynamic"
-          );
-
-          let excludedSubscribers = [];
-
-          // For static audiences, get subscribers from the junction table
-          if (excludedFilters.audience_type === "static") {
-            console.log(
-              "📋 Static excluded audience - getting subscribers from junction table"
-            );
-
-            // Get subscribers via junction table
-            const { data: relations, error: relationsError } = await supabase
-              .from("email_audience_subscribers")
-              .select(
-                `
-                subscriber_id,
-                subscribers (
-                  id,
-                  email,
-                  status,
-                  created_at,
-                  metadata
-                )
-              `
-              )
-              .eq("audience_id", excludedAudienceId);
-
-            if (relationsError) {
-              console.error(
-                `❌ Error getting relations for excluded audience ${excludedAudienceId}:`,
-                relationsError
-              );
-              continue;
-            }
-
-            excludedSubscribers = (relations || [])
-              .map((rel: any) => rel.subscribers)
-              .filter(Boolean);
-          } else {
-            // For dynamic excluded audiences, query subscribers based on filters
-            console.log(
-              `📋 Dynamic excluded audience - querying subscribers based on filters`
-            );
-
-            try {
-              // Extract filter rules
-              const rules = excludedFilters.rules || [];
-              let statusValue: string | null = null;
-              let subscriptionValue: string | null = null;
-              let additionalRules: any[] = [];
-
-              for (const rule of rules) {
-                if (rule.field === 'status') {
-                  statusValue = rule.value;
-                } else if (rule.field === 'subscription') {
-                  subscriptionValue = rule.value;
-                } else {
-                  additionalRules.push(rule);
-                }
-              }
-
-              // Default to active status if not specified
-              const effectiveStatus = statusValue || 'active';
-
-              // Build query for subscribers
-              let subscribersQuery = supabase
-                .from('subscribers')
-                .select('id, email, status, created_at, metadata, user_id')
-                .eq('status', effectiveStatus);
-
-              // If subscription filter is needed, join with profiles
-              if (subscriptionValue) {
-                const { data: profilesData } = await supabase
-                  .from('profiles')
-                  .select('id')
-                  .eq('subscription', subscriptionValue);
-
-                const profileIds = (profilesData || []).map((p: any) => p.id);
-                if (profileIds.length === 0) {
-                  console.log(`⚠️ No profiles found with subscription: ${subscriptionValue}`);
-                  excludedSubscribers = [];
-                } else {
-                  subscribersQuery = subscribersQuery.in('user_id', profileIds);
-                }
-              }
-
-              // Execute query
-              const { data: dynamicSubscribers, error: dynamicError } = await subscribersQuery;
-
-              if (dynamicError) {
-                console.error(`❌ Error querying dynamic excluded subscribers:`, dynamicError);
-                continue;
-              }
-
-              excludedSubscribers = dynamicSubscribers || [];
-              console.log(
-                `📊 Dynamic excluded audience query returned ${excludedSubscribers.length} subscribers`
-              );
-            } catch (error) {
-              console.error(`❌ Error processing dynamic excluded audience:`, error);
-              continue;
-            }
-          }
-
-          console.log(
-            `📧 Excluded audience ${excludedAudienceId}: ${excludedSubscribers.length} subscribers found`
-          );
-
-          // Remove excluded subscribers from the main list
-          excludedSubscribers.forEach((sub: any) => {
-            allSubscribers.delete(sub.id);
-            subscriberDetails.delete(sub.id);
-            console.log(`🚫 Removed excluded subscriber: ${sub.email} (${sub.id})`);
-          });
-        } catch (error) {
-          console.error(
-            `❌ Error fetching excluded subscribers for audience ${excludedAudienceId}:`,
-            error
-          );
-        }
-      }
-    }
-
-    const finalSubscribers = Array.from(allSubscribers).map((id) =>
-      subscriberDetails.get(id)
-    );
-
-    console.log(`🎯 Final subscriber count: ${finalSubscribers.length}`);
-    console.log(
-      `🎯 Final subscribers:`,
-      finalSubscribers.map((s: any) => ({
-        id: s?.id,
-        email: s?.email,
-        status: s?.status,
-      }))
-    );
-    
-    // Log unsubscribe filtering summary
-    const activeSubscribers = finalSubscribers.filter(s => s?.status === 'active');
-    const inactiveSubscribers = finalSubscribers.filter(s => s?.status === 'INACTIVE' || s?.status === 'unsubscribed');
-    console.log(`🚫 Unsubscribe filtering summary:`, {
-      total: finalSubscribers.length,
-      active: activeSubscribers.length,
-      inactive: inactiveSubscribers.length,
-      inactiveEmails: inactiveSubscribers.map(s => s?.email)
-    });
-    console.log(`🎯 All subscriber IDs:`, Array.from(allSubscribers));
-    console.log(
-      `🎯 Subscriber details map:`,
-      Object.fromEntries(subscriberDetails)
-    );
-    console.log(
-      `🔒 Safety mode: ${DEVELOPMENT_MODE ? "DEVELOPMENT" : "PRODUCTION"}`
-    );
-    console.log(`🔒 Whitelisted emails: ${SAFE_TEST_EMAILS.join(", ")}`);
-
-    return finalSubscribers;
-  } catch (error) {
-    console.error("❌ Error getting subscribers:", error);
-    throw error;
+  if (audienceError || !audienceIds?.length) {
+    if (audienceIds?.length) console.error("❌ Error fetching audience details:", audienceError);
+    return [];
   }
+
+  // 🔒 SAFETY: In development, only allow test audiences
+  if (DEVELOPMENT_MODE || TEST_MODE) {
+    const nonTestAudiences = audiences?.filter(
+      (aud) =>
+        !TEST_AUDIENCE_NAMES.some((testName) =>
+          (aud.name ?? "").toLowerCase().includes(testName.toLowerCase())
+        )
+    );
+    if (nonTestAudiences?.length) {
+      throw new Error(
+        `SAFETY BLOCK: Cannot send to non-test audiences in development mode. Detected: ${nonTestAudiences.map((a) => a.name).join(", ")}`
+      );
+    }
+  }
+
+  let list = await getSubscribersForAudiencesShared(supabase, audienceIds, excludedAudienceIds);
+
+  // 🔒 SAFETY: In development, only whitelisted emails
+  if (DEVELOPMENT_MODE || TEST_MODE) {
+    list = list.filter((sub) => SAFE_TEST_EMAILS.includes(sub.email));
+  }
+
+  return list;
 }
 
 // NOTE: Email generation functions are now imported from utils/email-campaigns/email-generation.ts
@@ -604,7 +205,8 @@ export async function sendCampaign(
       scheduleTime,
     } = params;
 
-    console.log("📧 Send campaign request:", {
+    if (process.env.EMAIL_DEBUG === "true") {
+      console.log("📧 Send campaign request:", {
       name,
       subject,
       audienceIds,
@@ -618,19 +220,6 @@ export async function sendCampaign(
       developmentMode: DEVELOPMENT_MODE,
       testMode: TEST_MODE,
     });
-
-    // 🔍 DEBUG: Check padding values in emailElements
-    if (emailElements && emailElements.length > 0) {
-      console.log("🎯 PADDING DEBUG - First element padding values:", {
-        id: emailElements[0].id,
-        type: emailElements[0].type,
-        paddingTop: emailElements[0].paddingTop,
-        paddingBottom: emailElements[0].paddingBottom,
-        paddingLeft: emailElements[0].paddingLeft,
-        paddingRight: emailElements[0].paddingRight,
-        fullWidth: emailElements[0].fullWidth,
-        allKeys: Object.keys(emailElements[0])
-      });
     }
 
     // 🎯 TEST EMAIL MODE: If testEmail is provided, send a single email to that address (process FIRST)
@@ -674,9 +263,6 @@ export async function sendCampaign(
       const baseHtmlContentForTest = generateHtmlFromElements(
         emailElements,
         subjectWithTest,
-        realCampaignIdForTest,
-        undefined,
-        undefined,
         preheader
       );
 
@@ -953,9 +539,6 @@ export async function sendCampaign(
           html_content: generateHtmlFromElements(
             emailElements,
             subject,
-            undefined,
-            undefined,
-            undefined,
             preheader
           ),
           text_content: generateTextFromElements(emailElements),
@@ -977,13 +560,10 @@ export async function sendCampaign(
       console.log("✅ Created campaign record with UUID:", realCampaignId);
     }
 
-    // Generate base HTML and text content (without tracking yet)
+    // Generate base HTML and text content (SES handles tracking natively)
     const baseHtmlContent = generateHtmlFromElements(
       emailElements,
       subject,
-      undefined,
-      undefined,
-      undefined,
       preheader
     );
     const textContent = generateTextFromElements(emailElements);
@@ -1022,13 +602,13 @@ export async function sendCampaign(
       status?: string;
     }> = [];
 
-    console.log(`\n🚀 Starting email send process...`);
-    console.log(`📧 Target subscribers: ${targetSubscribers.length}`);
-    targetSubscribers.forEach((sub, i) => {
-      console.log(
-        `   ${i + 1}. ${sub.email} (ID: ${sub.id}, Status: ${sub.status})`
-      );
-    });
+    const emailDebug = process.env.EMAIL_DEBUG === "true";
+    console.log(`🚀 Sending campaign to ${targetSubscribers.length} subscribers`);
+    if (emailDebug) {
+      targetSubscribers.forEach((sub, i) => {
+        console.log(`   ${i + 1}. ${sub.email} (ID: ${sub.id}, Status: ${sub.status})`);
+      });
+    }
 
     for (const subscriber of targetSubscribers) {
       try {
@@ -1041,7 +621,7 @@ export async function sendCampaign(
             subscriber_id: subscriber.id,
             email: subscriber.email,
             status: "pending",
-          } as any)
+          })
           .select("id")
           .single();
 
@@ -1060,59 +640,21 @@ export async function sendCampaign(
         }
 
         const sendId = sendRecord.id;
-        console.log(
-          `📝 Created send record: ${sendId} for ${subscriber.email}`
-        );
+        if (emailDebug) {
+          console.log(`📝 Created send record: ${sendId} for subscriber`);
+        }
 
-        // Generate tracking-enabled HTML content
-        console.log(`🔧 Generating tracked HTML for ${subscriber.email}:`, {
-          emailElementsCount: emailElements.length,
-          campaignId: realCampaignId,
-          subscriberId: subscriber.id,
-          sendId,
-          elementsPreview: emailElements.slice(0, 2),
-        });
-
-        const trackedHtmlContent = generateHtmlFromElements(
-          emailElements,
-          subject,
-          realCampaignId,
-          subscriber.id,
-          sendId,
-          preheader
-        );
-
-        console.log(`📧 Generated tracked HTML for ${subscriber.email}:`, {
-          length: trackedHtmlContent.length,
-          hasTrackingPixel: trackedHtmlContent.includes(
-            "/api/email-campaigns/track/open"
-          ),
-          hasTrackingParams: trackedHtmlContent.includes(`c=${realCampaignId}`),
-          lastChars: trackedHtmlContent.slice(-200),
-        });
-
-        // Personalize content
+        // Personalize the single base HTML per subscriber (SES handles tracking)
         const personalizedHtml = personalizeContent(
-          trackedHtmlContent,
+          baseHtmlContent,
           subscriber
         );
         const personalizedText = personalizeContent(textContent, subscriber);
         const personalizedSubject = personalizeContent(subject, subscriber);
 
-        console.log(`\n📧 Processing subscriber: ${subscriber.email}`);
-        console.log(`   - Send ID: ${sendId}`);
-        console.log(`   - Personalized subject: "${personalizedSubject}"`);
-        console.log(
-          `   - HTML content length: ${personalizedHtml.length} chars`
-        );
-        console.log(
-          `   - Text content length: ${personalizedText.length} chars`
-        );
-        console.log(
-          `   - Mode: ${DEVELOPMENT_MODE ? "DEVELOPMENT" : "PRODUCTION"}`
-        );
-
-        console.log(`📤 Calling sendEmail function...`);
+        if (emailDebug) {
+          console.log(`📧 Processing subscriber (sendId: ${sendId}), subject length: ${personalizedSubject.length}`);
+        }
         const result = await sendEmail({
           to: subscriber.email,
           subject: personalizedSubject,
@@ -1120,8 +662,6 @@ export async function sendCampaign(
           text: personalizedText,
           from: "Cymasphere Support <support@cymasphere.com>",
         });
-
-        console.log(`📬 sendEmail result:`, JSON.stringify(result, null, 2));
 
         if (result.success) {
           // Update send record to sent status with message_id
@@ -1141,9 +681,9 @@ export async function sendCampaign(
             sendId: sendId,
             status: "sent",
           });
-          console.log(`✅ SUCCESS: Email sent to ${subscriber.email}`);
-          console.log(`   - Message ID: ${result.messageId}`);
-          console.log(`   - Send ID: ${sendId}`);
+          if (emailDebug) {
+            console.log(`✅ Sent (messageId: ${result.messageId}, sendId: ${sendId})`);
+          }
         } else {
           // Update send record to failed status
           await supabase
@@ -1161,8 +701,7 @@ export async function sendCampaign(
             sendId: sendId,
             status: "failed",
           });
-          console.error(`❌ FAILED: Could not send to ${subscriber.email}`);
-          console.error(`   - Error: ${result.error}`);
+          console.error(`❌ Send failed: ${result.error}`);
           console.error(`   - Full result:`, result);
         }
 
@@ -1185,30 +724,10 @@ export async function sendCampaign(
     const errorCount = errors.length;
     const totalCount = targetSubscribers.length;
 
-    // Update campaign statistics AND store the tracked HTML template
+    // Update campaign statistics and store the HTML template (same as sent)
     if (realCampaignId) {
       try {
-        // Generate a sample tracked HTML template
-        const sampleSubscriber = targetSubscribers[0];
-        let trackedHtmlTemplate = null;
-        let sampleSendId = null;
-
-        if (sampleSubscriber) {
-          // Use existing send ID if available, otherwise generate a placeholder ID for template
-          sampleSendId =
-            results.find((r) => r.subscriberId === sampleSubscriber.id)
-              ?.sendId || "template-placeholder-id";
-          trackedHtmlTemplate = generateHtmlFromElements(
-            emailElements,
-            subject,
-            realCampaignId,
-            sampleSubscriber.id,
-            sampleSendId,
-            preheader
-          );
-        }
-
-        if (trackedHtmlTemplate) {
+        if (baseHtmlContent) {
           // Use authenticated client (admin check already passed, RLS will allow access)
           await supabase
             .from("email_campaigns")
@@ -1217,7 +736,7 @@ export async function sendCampaign(
               total_recipients: totalCount,
               sent_at: successCount > 0 ? new Date().toISOString() : null,
               status: successCount > 0 ? "sent" : "draft",
-              html_content: trackedHtmlTemplate, // Store the tracked HTML template
+              html_content: baseHtmlContent,
             })
             .eq("id", realCampaignId);
 
@@ -1225,7 +744,7 @@ export async function sendCampaign(
             `📊 Updated campaign stats: ${successCount} sent, ${totalCount} total`
           );
           console.log(
-            `📧 Updated campaign with tracked HTML template (${trackedHtmlTemplate.length} chars)`
+            `📧 Updated campaign with HTML template (${baseHtmlContent.length} chars)`
           );
         } else {
           // Fallback: update without HTML if we can't generate template
