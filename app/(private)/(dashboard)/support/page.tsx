@@ -810,11 +810,12 @@ function SupportPage() {
     let aValue = a[sortField as keyof typeof a];
     let bValue = b[sortField as keyof typeof b];
 
-    if (typeof aValue === "string") aValue = aValue.toLowerCase();
-    if (typeof bValue === "string") bValue = bValue.toLowerCase();
-
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    if (aValue != null && typeof aValue === "string") aValue = aValue.toLowerCase();
+    if (bValue != null && typeof bValue === "string") bValue = bValue.toLowerCase();
+    const aStr = aValue != null ? String(aValue) : "";
+    const bStr = bValue != null ? String(bValue) : "";
+    if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+    if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -1125,7 +1126,7 @@ function SupportPage() {
             </TableHeader>
             <TableBody>
               {loadingTickets ? (
-                <TableLoadingRow colSpan={5} />
+                <TableLoadingRow colSpan={5} message="Loading tickets..." />
               ) : filteredTickets.length === 0 ? (
                 <tr>
                   <td
@@ -1477,7 +1478,7 @@ function SupportPage() {
                             transition={{
                               duration: 1,
                               repeat: Infinity,
-                              ease: "linear",
+                              ease: "linear" as const,
                             }}
                             style={{
                               width: "20px",
@@ -1767,9 +1768,9 @@ function SupportPage() {
                                   </Message>
                                 );
                               })}
-                            {(!ticketDetails.get(selectedTicketId)?.messages ||
-                              ticketDetails.get(selectedTicketId)!.messages
-                                .length === 0) && (
+                            {(!selectedTicketId ||
+                              !ticketDetails.get(selectedTicketId)?.messages ||
+                              (ticketDetails.get(selectedTicketId)?.messages?.length ?? 0) === 0) && (
                               <div
                                 style={{
                                   padding: "2rem",
