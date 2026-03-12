@@ -14,10 +14,9 @@ import {
 } from "react-icons/fa";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { SubscriptionType } from "@/utils/supabase/types";
-import {
-  createCustomerPortalSession,
-} from "@/utils/stripe/actions";
-import { useCheckout } from "@/hooks/useCheckout";
+import { useCheckout, type InlineCheckoutParams } from "@/hooks/useCheckout";
+import { CheckoutModal } from "@/components/checkout/CheckoutModal";
+import { UpdatePaymentMethodModal } from "@/components/checkout/UpdatePaymentMethodModal";
 import PricingCard from "@/components/pricing/PricingCard";
 import BillingToggle from "@/components/pricing/BillingToggle";
 import { PlanType } from "@/types/stripe";
@@ -420,28 +419,6 @@ const TrialBadgeSubtext = styled.div`
   margin-top: 0.25rem;
 `;
 
-// Add these styled components for the loading overlay
-const LoadingOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-`;
-
-const SpinnerText = styled.div`
-  color: white;
-  font-size: 1.2rem;
-  margin-top: 1.5rem;
-  font-weight: 500;
-`;
-
 export default function BillingPage() {
   const { t } = useTranslation();
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -452,6 +429,12 @@ export default function BillingPage() {
     useState<SubscriptionType>("none");
   const [willProvideCard, setWillProvideCard] = useState(false);
   const [isPlanChangeLoading, setIsPlanChangeLoading] = useState(false);
+  const [inlineCheckoutParams, setInlineCheckoutParams] =
+    useState<InlineCheckoutParams | null>(null);
+  const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
 
   const { user: userAuth, refreshUser: refreshUserFromAuth } = useAuth();
   const user = userAuth!;
@@ -477,13 +460,14 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
-  // Use centralized checkout hook
+  // Use centralized checkout hook; inline modal so checkout opens in modal like homepage pricing
   const { initiateCheckout: initiateCheckoutHook } = useCheckout({
     onError: (error) => {
       setConfirmationTitle("Error");
       setConfirmationMessage(`Failed to create checkout session: ${error}`);
       setShowConfirmationModal(true);
     },
+    onInlineCheckout: setInlineCheckoutParams,
   });
 
   // Get subscription data from user object and cast to extended profile type
@@ -523,8 +507,6 @@ export default function BillingPage() {
   // Discounts and invoices are now provided by DashboardContext
 
 
-  // Add state for portal redirect loading
-  const [isPortalLoading, setIsPortalLoading] = useState(false);
 
   // Check if user has completed a trial
   const hasCompletedTrial = useMemo(() => {
@@ -807,16 +789,12 @@ export default function BillingPage() {
     setWillProvideCard(newValue);
   };
 
-  // Handle "Manage Billing" depending on subscription source
-  const handleManageBilling = async () => {
-    // If subscription is managed through the iOS App Store, send the user there
+  // Open App Store subscriptions page for iOS-managed subscriptions only
+  const handleManageBillingAppStore = () => {
     if (userSubscription.subscription_source === "ios") {
-      // For App Store subscriptions, billing is managed in the App Store / Apple ID settings,
-      // not via Stripe. Redirect to Apple's subscriptions management page.
       try {
         window.location.href = "https://apps.apple.com/account/subscriptions";
       } catch {
-        // If redirect fails for some reason, fall back to an explanatory message.
         setConfirmationTitle(
           t(
             "dashboard.billing.appStoreManageTitle",
@@ -831,62 +809,88 @@ export default function BillingPage() {
         );
         setShowConfirmationModal(true);
       }
-      return;
     }
+  };
 
-    // Stripe / web-managed subscriptions
-    if (!user?.profile?.customer_id) {
-      setConfirmationTitle("Error");
-      setConfirmationMessage("No customer account found.");
-      setShowConfirmationModal(true);
-      return;
-    }
-
+  const handleConfirmCancelSubscription = async () => {
+    setIsCancelling(true);
     try {
-      // Show loading spinner
-      setIsPortalLoading(true);
-
-      const { url, error } = await createCustomerPortalSession(
-        user.profile.customer_id
-      );
-
-      if (url) {
-        // Redirect to Stripe Customer Portal
-        window.location.href = url;
-      } else {
-        // Hide loading spinner on error
-        setIsPortalLoading(false);
-
-        // Show error message
-        setConfirmationTitle(t("dashboard.billing.error", "Error"));
+      const res = await fetch("/api/stripe/customer-portal/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowCancelConfirmModal(false);
+        await refreshAllData();
+        setConfirmationTitle(t("dashboard.billing.cancelScheduled", "Cancellation scheduled"));
         setConfirmationMessage(
           t(
-            "dashboard.billing.portalAccessError",
-            "Failed to access billing portal: {{error}}",
-            {
-              error: error || t("common.unknownError", "Unknown error"),
-            }
+            "dashboard.billing.cancelScheduledMessage",
+            "Your subscription will end at the end of your current billing period. You will have access until then."
           )
         );
         setShowConfirmationModal(true);
+      } else {
+        setConfirmationTitle(t("dashboard.billing.error", "Error"));
+        setConfirmationMessage(data.error ?? "Failed to cancel subscription");
+        setShowConfirmationModal(true);
       }
     } catch (e) {
-      // Hide loading spinner on error
-      setIsPortalLoading(false);
-
-      console.error("Billing portal error:", e);
       setConfirmationTitle(t("dashboard.billing.error", "Error"));
       setConfirmationMessage(
-        t("dashboard.billing.errorOccurred", "An error occurred: {{error}}", {
-          error:
-            e instanceof Error
-              ? e.message
-              : t("common.unknownError", "Unknown error"),
-        })
+        e instanceof Error ? e.message : "Failed to cancel subscription"
       );
       setShowConfirmationModal(true);
+    } finally {
+      setIsCancelling(false);
     }
   };
+
+  const handleReactivateSubscription = async () => {
+    setIsReactivating(true);
+    try {
+      const res = await fetch("/api/stripe/customer-portal/reactivate-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        await refreshAllData();
+        setConfirmationTitle(t("dashboard.billing.reactivated", "Subscription reactivated"));
+        setConfirmationMessage(
+          t("dashboard.billing.reactivatedMessage", "Your subscription will continue. You will not be charged until the end of your current period.")
+        );
+        setShowConfirmationModal(true);
+      } else {
+        setConfirmationTitle(t("dashboard.billing.error", "Error"));
+        setConfirmationMessage(data.error ?? "Failed to reactivate");
+        setShowConfirmationModal(true);
+      }
+    } catch (e) {
+      setConfirmationTitle(t("dashboard.billing.error", "Error"));
+      setConfirmationMessage(
+        e instanceof Error ? e.message : "Failed to reactivate subscription"
+      );
+      setShowConfirmationModal(true);
+    } finally {
+      setIsReactivating(false);
+    }
+  };
+
+  // Open update payment method modal when arriving from trial-ending email link
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "update_payment" || params.get("referer") === "free_trial_ending") {
+      setShowUpdatePaymentModal(true);
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("action");
+      url.searchParams.delete("referer");
+      window.history.replaceState({}, "", url.pathname + (url.search || ""));
+    }
+  }, []);
 
   // Debug: Log customer_id to help diagnose issues
   useEffect(() => {
@@ -897,19 +901,6 @@ export default function BillingPage() {
 
   return (
     <BillingContainer>
-      {/* Loading overlay */}
-      {isPortalLoading && (
-        <LoadingOverlay>
-          <LoadingComponent size="50px" text="" />
-          <SpinnerText>
-            {t(
-              "dashboard.billing.redirectingPortal",
-              "Redirecting to billing portal..."
-            )}
-          </SpinnerText>
-        </LoadingOverlay>
-      )}
-
       <SectionTitle>
         {t("dashboard.billing.title", "Billing & Subscription")}
       </SectionTitle>
@@ -1030,14 +1021,6 @@ export default function BillingPage() {
                 </div>
               </PlanDetails>
               
-              {/* Show Manage Billing button if user has a customer_id */}
-              {userSubscription.customer_id && (
-                <ButtonContainer>
-                  <Button onClick={handleManageBilling}>
-                    {t("dashboard.billing.manageBilling", "Manage Billing")}
-                  </Button>
-                </ButtonContainer>
-              )}
             </CardContent>
           </BillingCard>
 
@@ -1056,6 +1039,7 @@ export default function BillingPage() {
               setSelectedBillingPeriodForPricing(period)
             }
             showTrialOptions={!hasHadTrial}
+            initiateCheckout={initiateCheckoutHook}
           />
         </div>
       ) : (
@@ -1302,19 +1286,56 @@ export default function BillingPage() {
             </PlanDetails>
 
             <ButtonContainer>
-              <Button onClick={handleManageBilling}>
-                {t("dashboard.billing.manageBilling", "Manage Billing")}
-              </Button>
-              {/* Show change plan only for non-lifetime subscriptions */}
-              {!isSubscriptionLifetime(userSubscription.subscription) && (
-                <Button
-                  onClick={handlePlanChange}
-                  style={{
-                    background: "rgba(255, 255, 255, 0.1)",
-                  }}
-                >
-                  {t("dashboard.billing.changePlan", "Change Plan")}
+              {userSubscription.subscription_source === "ios" ? (
+                <Button onClick={handleManageBillingAppStore}>
+                  {t("dashboard.billing.manageInAppStore", "Manage in App Store")}
                 </Button>
+              ) : (
+                <>
+                  {userSubscription.subscription !== "lifetime" &&
+                    userSubscription.customer_id && (
+                      <Button onClick={() => setShowUpdatePaymentModal(true)}>
+                        {t("dashboard.billing.updatePaymentMethod", "Update payment method")}
+                      </Button>
+                    )}
+                  {!isSubscriptionLifetime(userSubscription.subscription) && (
+                    <Button
+                      onClick={handlePlanChange}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
+                      {t("dashboard.billing.changePlan", "Change Plan")}
+                    </Button>
+                  )}
+                  {userSubscription.subscription !== "lifetime" &&
+                    userSubscription.customer_id &&
+                    (userSubscription.cancel_at_period_end ? (
+                      <Button
+                        onClick={handleReactivateSubscription}
+                        disabled={isReactivating}
+                        style={{
+                          background: "rgba(78, 205, 196, 0.2)",
+                          gridColumn: "1 / -1",
+                        }}
+                      >
+                        {isReactivating
+                          ? t("common.loading", "Loading...")
+                          : t("dashboard.billing.undoCancellation", "Undo cancellation")}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => setShowCancelConfirmModal(true)}
+                        style={{
+                          background: "rgba(255, 87, 51, 0.2)",
+                          color: "var(--warning)",
+                          gridColumn: "1 / -1",
+                        }}
+                      >
+                        {t("dashboard.billing.cancelSubscription", "Cancel subscription")}
+                      </Button>
+                    ))}
+                </>
               )}
             </ButtonContainer>
           </CardContent>
@@ -1531,6 +1552,81 @@ export default function BillingPage() {
           </ModalOverlay>
         )}
       </AnimatePresence>
+
+      {/* Cancel subscription confirmation modal */}
+      <AnimatePresence>
+        {showCancelConfirmModal && (
+          <ModalOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !isCancelling && setShowCancelConfirmModal(false)}
+          >
+            <ModalContent
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: "440px" }}
+            >
+              <ModalHeader>
+                <ModalTitle>
+                  {t("dashboard.billing.cancelSubscription", "Cancel subscription")}
+                </ModalTitle>
+                <CloseButton
+                  onClick={() => !isCancelling && setShowCancelConfirmModal(false)}
+                  disabled={isCancelling}
+                >
+                  <FaTimes />
+                </CloseButton>
+              </ModalHeader>
+              <ModalBody style={{ padding: "1.5rem" }}>
+                <p style={{ color: "var(--text)", marginBottom: "1rem" }}>
+                  {t(
+                    "dashboard.billing.cancelConfirmMessage",
+                    "Your subscription will be canceled at the end of your current billing period. You will have access until then. No further charges will be applied."
+                  )}
+                </p>
+                {userSubscription.subscription_expiration && (
+                  <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+                    {t("dashboard.billing.accessUntil", "Access until")}:{" "}
+                    {formatDate(userSubscription.subscription_expiration)}
+                  </p>
+                )}
+              </ModalBody>
+              <ModalFooter style={{ gap: "0.75rem", flexWrap: "wrap" }}>
+                <Button
+                  onClick={() => !isCancelling && setShowCancelConfirmModal(false)}
+                  disabled={isCancelling}
+                  style={{ background: "rgba(255,255,255,0.1)" }}
+                >
+                  {t("common.cancel", "Cancel")}
+                </Button>
+                <Button
+                  onClick={handleConfirmCancelSubscription}
+                  disabled={isCancelling}
+                  style={{ background: "rgba(255, 87, 51, 0.3)", color: "var(--warning)" }}
+                >
+                  {isCancelling
+                    ? t("common.loading", "Loading...")
+                    : t("dashboard.billing.confirmCancel", "Yes, cancel at period end")}
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
+
+      <UpdatePaymentMethodModal
+        open={showUpdatePaymentModal}
+        onClose={() => setShowUpdatePaymentModal(false)}
+        onSuccess={refreshAllData}
+      />
+
+      <CheckoutModal
+        params={inlineCheckoutParams}
+        onClose={() => setInlineCheckoutParams(null)}
+      />
     </BillingContainer>
   );
 }
