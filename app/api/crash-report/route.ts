@@ -84,6 +84,16 @@ export async function POST(request: NextRequest) {
     const dateStr = new Date().toISOString().slice(0, 10);
     const subject = `Crash Report - ${dateStr}`;
 
+    const { data: ticketNumber, error: numError } = await supabase.rpc(
+      "generate_ticket_number"
+    );
+    if (numError || !ticketNumber) {
+      return NextResponse.json(
+        { success: false, error: "Failed to generate ticket number" },
+        { status: 500 }
+      );
+    }
+
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
       .insert({
@@ -91,6 +101,7 @@ export async function POST(request: NextRequest) {
         description: message,
         user_id: user.id,
         status: "open",
+        ticket_number: ticketNumber,
       })
       .select("id, ticket_number")
       .single();
