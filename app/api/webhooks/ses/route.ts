@@ -1,11 +1,18 @@
+/**
+ * @fileoverview AWS SES event webhook endpoint
+ *
+ * Receives SNS notifications for SES events (send, delivery, bounce, complaint,
+ * reject, Open, Click). Verifies optional bearer secret, logs to email_webhook_logs,
+ * and processes events to update email_sends, email_opens, email_clicks, and
+ * campaign counters. Supabase client is created inside the handler to avoid
+ * stale connections in serverless.
+ *
+ * @module api/webhooks/ses
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-// Create Supabase client with service role key for webhook processing
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import type { SESEventPayload } from '@/types/email-campaigns';
 
 /**
  * @brief Verifies webhook request using optional shared secret
@@ -51,18 +58,21 @@ export async function POST(request: NextRequest) {
       // Handle SNS subscription confirmation
       if (snsMessage.Type === 'SubscriptionConfirmation') {
         console.log('🔔 SNS Subscription confirmation received');
-        console.log('Subscribe URL:', snsMessage.SubscribeURL);
-        
-        // Auto-confirm subscription (optional - you might want to do this manually)
-        if (snsMessage.SubscribeURL) {
+        const subscribeUrl = snsMessage.SubscribeURL;
+        // Only fetch SubscribeURL if it is a real AWS SNS endpoint (SSRF protection)
+        const isValidSnsUrl =
+          typeof subscribeUrl === 'string' &&
+          /^https:\/\/sns\.[a-z0-9-]+\.amazonaws\.com\//i.test(subscribeUrl);
+        if (subscribeUrl && isValidSnsUrl) {
           try {
-            await fetch(snsMessage.SubscribeURL);
+            await fetch(subscribeUrl);
             console.log('✅ SNS subscription confirmed automatically');
           } catch (error) {
             console.error('❌ Failed to confirm SNS subscription:', error);
           }
+        } else if (subscribeUrl && !isValidSnsUrl) {
+          console.warn('⚠️ SNS SubscribeURL rejected (not a valid AWS SNS endpoint)');
         }
-        
         return NextResponse.json({ message: 'Subscription confirmed' });
       }
       
@@ -83,7 +93,11 @@ export async function POST(request: NextRequest) {
       timestamp: message.mail?.timestamp
     });
 
-    // Log the webhook for debugging
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     await supabase.from('email_webhook_logs').insert({
       provider: 'ses',
       event_type: message.eventType,
@@ -91,8 +105,7 @@ export async function POST(request: NextRequest) {
       processed: false
     });
 
-    // Process the SES event
-    await processSESEvent(message);
+    await processSESEvent(supabase, message);
 
     return NextResponse.json({ message: 'Webhook processed successfully' });
   } catch (error) {
@@ -101,10 +114,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processSESEvent(event: any) {
+async function processSESEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
   const { eventType, mail } = event;
   const messageId = mail?.messageId;
-  
+
   if (!messageId) {
     console.warn('⚠️ No messageId in SES event, skipping');
     return;
@@ -115,19 +131,25 @@ async function processSESEvent(event: any) {
   try {
     switch (eventType) {
       case 'send':
-        await handleSendEvent(event);
+        await handleSendEvent(supabase, event);
         break;
       case 'delivery':
-        await handleDeliveryEvent(event);
+        await handleDeliveryEvent(supabase, event);
         break;
       case 'bounce':
-        await handleBounceEvent(event);
+        await handleBounceEvent(supabase, event);
         break;
       case 'complaint':
-        await handleComplaintEvent(event);
+        await handleComplaintEvent(supabase, event);
         break;
       case 'reject':
-        await handleRejectEvent(event);
+        await handleRejectEvent(supabase, event);
+        break;
+      case 'Open':
+        await handleOpenEvent(supabase, event);
+        break;
+      case 'Click':
+        await handleClickEvent(supabase, event);
         break;
       default:
         console.log(`ℹ️ Unhandled SES event type: ${eventType}`);
@@ -137,13 +159,16 @@ async function processSESEvent(event: any) {
   }
 }
 
-async function handleSendEvent(event: any) {
-  const { mail } = event;
-  const messageId = mail.messageId;
-  
+async function handleSendEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const mail = event.mail;
+  const messageId = mail?.messageId;
+  if (!messageId || !mail) return;
+
   console.log(`📤 Handling send event for message ${messageId}`);
-  
-  // Find the email send record by message_id
+
   const { data: emailSend, error } = await supabase
     .from('email_sends')
     .select('*')
@@ -155,25 +180,28 @@ async function handleSendEvent(event: any) {
     return;
   }
 
-  // Update the send record
   await supabase
     .from('email_sends')
     .update({
       status: 'sent',
-      sent_at: new Date(mail.timestamp).toISOString()
+      sent_at: mail.timestamp ? new Date(mail.timestamp).toISOString() : new Date().toISOString(),
     })
     .eq('id', emailSend.id);
 
   console.log(`✅ Updated send record ${emailSend.id} to 'sent' status`);
 }
 
-async function handleDeliveryEvent(event: any) {
-  const { mail, delivery } = event;
-  const messageId = mail.messageId;
-  
+async function handleDeliveryEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const mail = event.mail;
+  const delivery = event.delivery;
+  const messageId = mail?.messageId;
+  if (!messageId || !mail || !delivery) return;
+
   console.log(`📬 Handling delivery event for message ${messageId}`);
-  
-  // Find the email send record
+
   const { data: emailSend, error } = await supabase
     .from('email_sends')
     .select('*')
@@ -185,12 +213,11 @@ async function handleDeliveryEvent(event: any) {
     return;
   }
 
-  // Update the send record to delivered
   await supabase
     .from('email_sends')
     .update({
       status: 'delivered',
-      delivered_at: new Date(delivery.timestamp).toISOString()
+      delivered_at: delivery.timestamp ? new Date(delivery.timestamp).toISOString() : new Date().toISOString(),
     })
     .eq('id', emailSend.id);
 
@@ -202,13 +229,17 @@ async function handleDeliveryEvent(event: any) {
   console.log(`✅ Updated send record ${emailSend.id} to 'delivered' status`);
 }
 
-async function handleBounceEvent(event: any) {
-  const { mail, bounce } = event;
-  const messageId = mail.messageId;
-  
+async function handleBounceEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const mail = event.mail;
+  const bounce = event.bounce;
+  const messageId = mail?.messageId;
+  if (!messageId || !mail || !bounce) return;
+
   console.log(`🚫 Handling bounce event for message ${messageId}`);
-  
-  // Find the email send record
+
   const { data: emailSend, error } = await supabase
     .from('email_sends')
     .select('*')
@@ -220,31 +251,29 @@ async function handleBounceEvent(event: any) {
     return;
   }
 
-  // Update the send record to bounced
   const bounceReason = bounce.bouncedRecipients?.[0]?.diagnosticCode || 'Unknown bounce reason';
-  
+  const bouncedAt = bounce.timestamp ? new Date(bounce.timestamp).toISOString() : new Date().toISOString();
+
   await supabase
     .from('email_sends')
     .update({
       status: 'bounced',
-      bounced_at: new Date(bounce.timestamp).toISOString(),
-      bounce_reason: bounceReason
+      bounced_at: bouncedAt,
+      bounce_reason: bounceReason,
     })
     .eq('id', emailSend.id);
 
-  // Update campaign bounce count
   await supabase.rpc('increment_campaign_bounced', {
-    campaign_id: emailSend.campaign_id
+    campaign_id: emailSend.campaign_id,
   });
 
-  // If it's a hard bounce, mark subscriber as bounced
   if (bounce.bounceType === 'Permanent') {
     await supabase
       .from('subscribers')
       .update({
         status: 'bounced',
         bounce_reason: bounceReason,
-        bounced_at: new Date(bounce.timestamp).toISOString()
+        bounced_at: bouncedAt,
       })
       .eq('id', emailSend.subscriber_id);
     
@@ -254,13 +283,17 @@ async function handleBounceEvent(event: any) {
   console.log(`✅ Updated send record ${emailSend.id} to 'bounced' status`);
 }
 
-async function handleComplaintEvent(event: any) {
-  const { mail, complaint } = event;
-  const messageId = mail.messageId;
-  
+async function handleComplaintEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const mail = event.mail;
+  const complaint = event.complaint;
+  const messageId = mail?.messageId;
+  if (!messageId || !mail || !complaint) return;
+
   console.log(`⚠️ Handling complaint (spam) event for message ${messageId}`);
-  
-  // Find the email send record
+
   const { data: emailSend, error } = await supabase
     .from('email_sends')
     .select('*')
@@ -272,12 +305,12 @@ async function handleComplaintEvent(event: any) {
     return;
   }
 
-  // Mark subscriber as complained (spam)
+  const complainedAt = complaint.timestamp ? new Date(complaint.timestamp).toISOString() : new Date().toISOString();
   await supabase
     .from('subscribers')
     .update({
       status: 'complained',
-      complained_at: new Date(complaint.timestamp).toISOString()
+      complained_at: complainedAt,
     })
     .eq('id', emailSend.subscriber_id);
 
@@ -289,13 +322,17 @@ async function handleComplaintEvent(event: any) {
   console.log(`⚠️ Marked subscriber ${emailSend.subscriber_id} as complained (spam)`);
 }
 
-async function handleRejectEvent(event: any) {
-  const { mail, reject } = event;
-  const messageId = mail.messageId;
-  
+async function handleRejectEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const mail = event.mail;
+  const reject = event.reject;
+  const messageId = mail?.messageId;
+  if (!messageId || !mail) return;
+
   console.log(`❌ Handling reject event for message ${messageId}`);
-  
-  // Find the email send record
+
   const { data: emailSend, error } = await supabase
     .from('email_sends')
     .select('*')
@@ -307,14 +344,95 @@ async function handleRejectEvent(event: any) {
     return;
   }
 
-  // Update the send record to rejected
+  const reason = reject?.reason ?? 'Email rejected by SES';
   await supabase
     .from('email_sends')
     .update({
       status: 'rejected',
-      bounce_reason: reject.reason || 'Email rejected by SES'
+      bounce_reason: reason,
     })
     .eq('id', emailSend.id);
 
   console.log(`❌ Updated send record ${emailSend.id} to 'rejected' status`);
+}
+
+async function handleOpenEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const messageId = event.mail?.messageId;
+  const open = event.open;
+  if (!messageId || !open) return;
+
+  const { data: emailSend, error } = await supabase
+    .from('email_sends')
+    .select('id, campaign_id, subscriber_id')
+    .eq('message_id', messageId)
+    .single();
+
+  if (error || !emailSend) return;
+
+  const { data: existing } = await supabase
+    .from('email_opens')
+    .select('id')
+    .eq('send_id', emailSend.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return;
+
+  await supabase.from('email_opens').insert({
+    send_id: emailSend.id,
+    campaign_id: emailSend.campaign_id,
+    subscriber_id: emailSend.subscriber_id,
+    ip_address: open.ipAddress ?? null,
+    user_agent: open.userAgent ?? null,
+    opened_at: open.timestamp ? new Date(open.timestamp).toISOString() : new Date().toISOString(),
+  });
+
+  if (emailSend.campaign_id) {
+    await supabase.rpc('increment_campaign_opened', { campaign_id: emailSend.campaign_id });
+  }
+}
+
+async function handleClickEvent(
+  supabase: ReturnType<typeof createClient>,
+  event: SESEventPayload
+) {
+  const messageId = event.mail?.messageId;
+  const click = event.click;
+  if (!messageId || !click) return;
+
+  const { data: emailSend, error } = await supabase
+    .from('email_sends')
+    .select('id, campaign_id, subscriber_id')
+    .eq('message_id', messageId)
+    .single();
+
+  if (error || !emailSend) return;
+
+  const url = click.link ?? '';
+  const { data: existing } = await supabase
+    .from('email_clicks')
+    .select('id')
+    .eq('send_id', emailSend.id)
+    .eq('url', url)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return;
+
+  await supabase.from('email_clicks').insert({
+    send_id: emailSend.id,
+    campaign_id: emailSend.campaign_id,
+    subscriber_id: emailSend.subscriber_id,
+    url,
+    ip_address: click.ipAddress ?? null,
+    user_agent: click.userAgent ?? null,
+    clicked_at: click.timestamp ? new Date(click.timestamp).toISOString() : new Date().toISOString(),
+  });
+
+  if (emailSend.campaign_id) {
+    await supabase.rpc('increment_campaign_clicked', { campaign_id: emailSend.campaign_id });
+  }
 } 
